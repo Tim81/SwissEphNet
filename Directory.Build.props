@@ -41,12 +41,31 @@
   </PropertyGroup>
 
   <!--
-    IsTrimmable/IsAotCompatible are set in Directory.Build.targets, not here: for a
-    single-TargetFramework project, $(TargetFramework) is not yet assigned at the
-    point Directory.Build.props is imported (it comes from Sdk.props, which runs
-    before the project's own PropertyGroup sets TargetFramework), so a condition on
-    it here would silently never match. Directory.Build.targets is imported after
-    Sdk.targets, once TargetFramework is resolved for every project shape.
+    Deliberately NOT setting IsTrimmable/IsAotCompatible here. An earlier version of
+    this file did (conditioned on TargetFramework in Directory.Build.targets, since a
+    single-TargetFramework project has not yet assigned $(TargetFramework) at the
+    point Directory.Build.props itself is imported), but that has two problems:
+
+    1. The condition matched net10.0-windows too (SweWin, a WinForms app, which is
+       not trim/AOT-safe), and there was no way for a project to opt back out:
+       Directory.Build.targets is imported after a project's own PropertyGroup, so an
+       explicit <IsTrimmable>false</IsTrimmable> in SweWin.csproj would have been
+       silently overwritten.
+
+    2. IsTrimmable=true is stamped into the shipped assembly as
+       AssemblyMetadata("IsTrimmable","True"), a public promise to the trimmer that
+       nothing in this repo validates. Attempting to validate it here (publishing a
+       small net10.0 console app that references SwissEphNet with PublishTrimmed=true
+       or PublishAot=true) fails immediately with NETSDK1124/NETSDK1207: MSBuild's
+       cross-project target-framework negotiation evaluates SwissEphNet's
+       netstandard2.0 leg too, even though the consuming app only ever resolves the
+       net10.0 asset, and netstandard2.0 supports neither trimming nor AOT. Making
+       that validation actually work is real, separate work (either restructuring how
+       multi-targeting interacts with publish, or scoping the check some other way),
+       not something to bolt on to a toolchain-retarget PR.
+
+    Shipping the promise without validating it is worse than not making the promise
+    yet. Revisit once there is an actual trim/AOT smoke check.
   -->
 
 </Project>
