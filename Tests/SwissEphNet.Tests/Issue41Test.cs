@@ -29,7 +29,7 @@ namespace SwissEphNet.Tests
             yield return new object[] { ",alVir", 4, "Spica,alVir", null };
         }
 
-        [WindowsOnlyTheory(SkipReasons.FixedStarWindows1252AndCulture)]
+        [Theory]
         [MemberData(nameof(TestDataFixstar))]
         public void TestFixstar(string search, int eres, string estar, string error)
         {
@@ -41,7 +41,7 @@ namespace SwissEphNet.Tests
                 swe.OnLoadFile += (s, e) =>
                 {
                     string f = e.FileName;
-                    string fn = Path.GetFileName(f);
+                    string fn = ResourceFileHelpers.GetPortableFileName(f);
                     if (File.Exists(f))
                     {
                         e.File = new FileStream(f, FileMode.Open, FileAccess.Read);
@@ -88,7 +88,7 @@ namespace SwissEphNet.Tests
             yield return new object[] { ",alVir", 4, "Spica,alVir", null };
         }
 
-        [WindowsOnlyTheory(SkipReasons.FixedStarWindows1252AndCulture)]
+        [Theory]
         [MemberData(nameof(TestDataFixstar2))]
         public void TestFixstar2(string search, int eres, string estar, string error)
         {
@@ -100,7 +100,7 @@ namespace SwissEphNet.Tests
                 swe.OnLoadFile += (s, e) =>
                 {
                     string f = e.FileName;
-                    string fn = Path.GetFileName(f);
+                    string fn = ResourceFileHelpers.GetPortableFileName(f);
                     if (File.Exists(f))
                     {
                         e.File = new FileStream(f, FileMode.Open, FileAccess.Read);

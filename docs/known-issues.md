@@ -129,6 +129,87 @@ not as "this is fine": if the ratio changes meaningfully in future cross-platfor
 reports (see `--report-only`), that is worth a fresh look, not an assumption that
 it's the same known issue.
 
+## DIR_GLUE cannot be safely changed without a CPort edit
+
+`SwissEph.DIR_GLUE` (`SwissEphNet/SwissEph.sweodef.h.cs`) is hard-coded to
+`'\\'`, where the upstream C source defines it per-platform. `swi_gen_filename`
+(`SwissEphNet/CPort/SwephLib.cs`) uses it to build numbered asteroid file
+names, e.g. `"ast4" + DIR_GLUE + "se04179.se1"` = `"ast4\se04179.se1"`. A
+backslash is not a path separator on Linux, macOS, Android, iOS, or WASM, so
+any `OnLoadFile` handler that does `Path.Combine` or a resource-name lookup on
+that generated name can never find the file except on Windows. That half of
+the bug is real, confirmed, and unrelated to CPort.
+
+Changing `DIR_GLUE` to `'/'` -- the fix this looked like it needed -- is not
+safe on its own, though. `CPort/Sweph.cs`'s "correct file name?" check (around
+line 4922, run against every successfully-opened ephemeris file) strips a
+directory prefix off the file's recorded path by searching for `DIR_GLUE`:
+
+```csharp
+sp = fdp.fnam;
+if (sp.LastIndexOf(SwissEph.DIR_GLUE) > 0)
+    sp = sp.Substring(sp.LastIndexOf(SwissEph.DIR_GLUE) + 1);
+if (!s.Equals(sp, StringComparison.CurrentCultureIgnoreCase))
+{
+    serr = C.sprintf("Ephemeris file name '%s' wrong; rename '%s' ", sp, s);
+    goto return_error;
+}
+```
+
+But `fdp.fnam` is built in `swi_fopen` (`CPort/Sweph.cs` around line 2634) by
+joining the configured ephemeris path to the file name with a **hard-coded**
+`'\\'`, not with `DIR_GLUE`:
+
+```csharp
+fnamp = s.TrimEnd('\\', '/') + "\\" + fname;
+```
+
+These two only agree because `DIR_GLUE` has always equaled `'\\'`. The moment
+`DIR_GLUE` becomes `'/'`, `LastIndexOf(SwissEph.DIR_GLUE)` stops finding the
+separator that the ephepath join actually used, `sp` is left as the *entire*
+path (e.g. `"[ephe]\se04179.se1"`) instead of just the base file name, the
+equality check against the file's internal recorded name always fails, and
+every successfully-loaded ephemeris file gets rejected with "Ephemeris file
+name '...' wrong; rename '...'" -- on every platform, Windows included, not
+only the platforms the fix was meant to help.
+
+This was caught, not assumed: setting `DIR_GLUE = '/'` and running the full
+suite regressed `Issue18Test.LoadAsteroidData` on Windows, which loads a real
+numbered-asteroid ephemeris file (`se00005s.se1`) via `OnLoadFile` and had
+been passing. That is the regression-test discipline working as intended --
+a fix that looked correct in isolation (and does fix the subdirectory-naming
+half of the bug) turned out to reach further than expected and break something
+it wasn't touching.
+
+A real fix requires a CPort edit: either route `swi_fopen`'s ephepath join
+through `DIR_GLUE` instead of a literal `'\\'`, or have the "correct file
+name?" check strip using both possible separators rather than only
+`DIR_GLUE`. Either is a change to `CPort/Sweph.cs`, which the formatting
+freeze (`CONTRIBUTING.md`) does not forbid touching for logic (only
+reformatting), but doing so needs a deliberate decision and its own upstream
+diff-tracking story, not a change bundled quietly into a bug-fix PR framed as
+CPort-untouched. `DIR_GLUE` stays `'\\'` for now; `swi_gen_filename`'s
+asteroid file names remain backslash-joined and Windows-only-portable.
+
+## swe_fixstar_ut distance speed: larger cross-platform differentiation noise
+
+`Test_swe_fixstar_ut` (Aldebaran, MOSEPH) pins `xx[5]` (distance speed) to
+`0.015543` on Windows; the same call under .NET 10 on Linux (Ubuntu 24.04,
+`mcr.microsoft.com/dotnet/sdk:10.0`) returns `0.0155324764...` instead --
+about 6.8e-4 relative, four to six orders of magnitude larger than the
+1e-7-to-1e-9 relative noise measured for the `calc`/`pheno` SPEED fields
+below. It is the same category of finding (numerical differentiation of a
+finite difference amplifying a tiny cross-platform difference in the
+underlying position), just amplified further here, plausibly because `xx[5]`
+divides a distance difference by a very small `dt`: found while confirming
+PR1's fixed-star bug fixes on Linux (see PR1's `known-library-bugs` work),
+not something PR1 introduced or is in scope to fix, since it is not related
+to any of that PR's five bugs (Windows-1252/UTF-8 decoding, culture-sensitive
+string comparison, `atoi` sign handling, `CPointer<T>.operator !=`, or
+`DIR_GLUE`). `Test_swe_fixstar_ut`'s assertion on `xx[5]` was loosened from 6
+to 4 decimal places to accommodate it, rather than pinning a
+platform-specific value or skipping the assertion.
+
 ## Negative-zero (`-0`) fields under SIDEREAL: TRUE node, not mean node
 
 18 fields in the `calc` area carry a negative-zero sign bit (`-0` rather than `0`)

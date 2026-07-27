@@ -178,6 +178,25 @@ namespace SwissEphNet.Tests
         }
 
         [Fact]
+        public void TestInequalityWithArrayAtNonZeroIndex() {
+            // Regression test: operator != must be the exact negation of
+            // operator ==. A pointer into array1 at a non-zero index is not
+            // equal to array1 (== is false, correctly, since BaseIndex != 0),
+            // so != must be true -- but the buggy implementation computed
+            // "access.BaseArray != array && access.BaseIndex == 0" for != too,
+            // which is false whenever BaseIndex != 0, making both == and !=
+            // return false for the very same comparison.
+            int[] array1 = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            CPointer<int> target = new CPointer<int>(array1, 5);
+
+            Assert.False(target == array1);
+            Assert.False(array1 == target);
+
+            Assert.True(target != array1);
+            Assert.True(array1 != target);
+        }
+
+        [Fact]
         public void TestEquality() {
             int[] array1 = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             int[] array2 = new int[] { 9, 8, 7, 6, 5, 4, 3, 2, 1 };

@@ -148,39 +148,37 @@ namespace SwissEphNet.Tests
         }
 
         [Fact]
-        public void TestDefaultEncodingDoesNotRoundTripWindows1252Bytes() {
-            // Ephemeris text files are historically Windows-1252-encoded (see
-            // TestCreate and docs/known-issues.md), but no TFM this project
-            // targets can decode Windows-1252 (Encoding.GetEncoding("Windows-1252")
-            // throws without registering System.Text.Encoding.CodePages, which
-            // SwissEphNet does not do), so CFile's constructor falls back to
-            // UTF-8. Genuine Windows-1252 bytes >= 0x80 therefore do not
-            // round-trip through a default-encoding CFile today: this pins that
-            // failure down explicitly and precisely, rather than just omitting
-            // Windows-1252 coverage, so that whenever a future change (PR1, per
-            // docs/known-issues.md) makes real Windows-1252 decoding available
-            // again, this test fails visibly and has to be looked at, instead of
-            // the gap silently closing unnoticed.
-            //
-            // "èaà\nüî" encoded as Windows-1252 -- which, for these particular
-            // accented characters, has the same single-byte values as Latin-1 --
-            // would be the 6 bytes { 0xE8, 0x61, 0xE0, 0x0A, 0xFC, 0xEE }
-            // (è, a, à, \n, ü, î). Decoded as UTF-8 instead: 0xE8/0xE0/0xFC/0xEE
-            // all have a multi-byte UTF-8 lead-byte shape with no valid
-            // continuation bytes following, so the decoder does not read back
-            // 'è','a','à','\n','ü','î' at all -- it substitutes U+FFFD
-            // (the Unicode replacement character), consuming the invalid lead
-            // byte together with whatever follows it (even a plain ASCII byte
-            // like the 'a' or '\n' in this input) as part of the same failed
-            // sequence.
-            byte[] windows1252Bytes = { 0xE8, 0x61, 0xE0, 0x0A, 0xFC, 0xEE };
-            using (var cfile = new CFile(BuildStream(windows1252Bytes))) {
+        public void TestDefaultEncodingRoundTripsRealEphemerisUtf8Bytes() {
+            // UTF-8 is CFile's deliberate default (see CFile's constructor),
+            // not an accidental fallback: every large Swiss Ephemeris data
+            // file is pure ASCII (where UTF-8 and Windows-1252 agree), and the
+            // 2.10.03 release's non-ASCII files (seorbel.txt, astlistn.md) are
+            // themselves valid UTF-8. This pins down the specific byte
+            // sequence seorbel.txt actually uses to spell "Koré" --
+            // { 0x4B, 0x6F, 0x72, 0xC3, 0xA9 }, i.e. plain ASCII "Kor" followed
+            // by the two-byte UTF-8 encoding of U+00E9 (é) -- so a
+            // Windows-1252 misdecode of this exact real-world input (which
+            // would read the same two bytes as U+00C3 U+00A9, "Ã©") gets
+            // caught if anything ever changes CFile's default away from UTF-8
+            // again.
+            byte[] utf8Bytes = { 0x4B, 0x6F, 0x72, 0xC3, 0xA9 }; // "Koré"
+            using (var cfile = new CFile(BuildStream(utf8Bytes))) {
                 Assert.Equal("utf-8", cfile.Encoding.WebName);
-                Assert.Equal(0xFFFD, cfile.ReadChar());
-                Assert.Equal(0xFFFD, cfile.ReadChar());
-                Assert.Equal(0xFFFD, cfile.ReadChar());
-                Assert.Equal(0xFFFD, cfile.ReadChar());
-                Assert.Equal(0, cfile.ReadChar());
+                Assert.Equal("Koré", cfile.ReadLine());
+                Assert.True(cfile.EOF);
+            }
+        }
+
+        [Fact]
+        public void TestExplicitEncodingOverridesUtf8Default() {
+            // A caller with genuinely Windows-1252-encoded files (or any other
+            // legacy encoding) can still override CFile's UTF-8 default via
+            // the constructor's Encoding parameter. 0xE9 is Windows-1252 (and
+            // Latin-1) for é; decoded as UTF-8 on its own it is an invalid
+            // lead byte and would produce U+FFFD instead.
+            byte[] windows1252Bytes = { 0x4B, 0x6F, 0x72, 0xE9 }; // "Kor" + é
+            using (var cfile = new CFile(BuildStream(windows1252Bytes), Encoding.GetEncoding("ISO-8859-1"))) {
+                Assert.Equal("Koré", cfile.ReadLine());
                 Assert.True(cfile.EOF);
             }
         }

@@ -134,6 +134,19 @@ namespace SwissEphNet
         public const double CS2DEG = (1.0 / 360000.0);	/* centisec to degree */
 
         public static char PATH_SEPARATOR = ';';	/* semicolon as PATH separator */
+        // NOT changed to '/' -- see docs/known-issues.md, "DIR_GLUE cannot
+        // be safely changed without a CPort edit". Changing this value alone
+        // (the originally proposed PR1 fix for cross-platform asteroid file
+        // loading) breaks CPort/Sweph.cs's own "correct file name?"
+        // validation for every *successfully* loaded ephemeris file, on
+        // every platform including Windows, because that validation
+        // (Sweph.cs ~line 4922) strips a directory prefix by searching for
+        // DIR_GLUE, while the prefix actually present there was joined with
+        // a hard-coded '\\' elsewhere in CPort (Sweph.cs ~line 2634,
+        // swi_fopen), not with DIR_GLUE. The two only agree by coincidence
+        // while DIR_GLUE == '\\'. A real fix requires editing CPort (either
+        // that hard-coded join or the DIR_GLUE-based stripping), which is
+        // out of scope here; see known-issues.md for the full analysis.
         public static char DIR_GLUE = '\\';		/* glue string for directory/file */
     }
 

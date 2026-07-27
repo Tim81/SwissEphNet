@@ -670,7 +670,7 @@ namespace SwissEphNet
         public string swe_dotnet_version()
         {
             var vrs = new System.Reflection.AssemblyName(typeof(SwissEph).GetAssembly().FullName).Version;
-            return String.Format("{0}.{1:D2}.{2:D2}-net-{3:D4}", vrs.Major, vrs.Minor, vrs.Build, vrs.Revision);
+            return String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0}.{1:D2}.{2:D2}-net-{3:D4}", vrs.Major, vrs.Minor, vrs.Build, vrs.Revision);
         }
 
         /// <summary>

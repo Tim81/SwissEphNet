@@ -47,26 +47,27 @@ naming, and formatting. Do not take the opportunity to also modernize the
 C# style of the lines you're touching -- keep that change isolated to what the
 upstream diff actually changed.
 
-## Known follow-up for PR1: the analyzer carve-out is inverted
+## The analyzer carve-out (fixed in PR1)
 
-`SwissEphNet/CPort/.editorconfig` re-enables six analyzer rules --
+`SwissEphNet/CPort/.editorconfig` re-enables five analyzer rules --
 CA1304/CA1305/CA1307/CA1309/CA1310 (culture-sensitive string/number
 operations) -- specifically because they catch real transliteration bugs, the
 `C.strcmp` bug being the example already found this way. Declaring them only
-in that nested file means they fire *inside* `CPort/`, where policy forbids
+in that nested file meant they fired *inside* `CPort/`, where policy forbids
 fixing them, and nowhere else -- including `SwissEphNet/Tools/C.cs`, where the
-same class of bug actually lives and can be fixed. A probe against the
-current tree confirms this: all six rules fire inside `CPort/` as designed,
-but enabling them at the repo root instead would surface 71 additional
-warnings outside it, including `C.cs:122` (`string.Compare` in `strcmp` --
-the known bug), `strncmp`/`strstr`/`strchr` nearby, and 45 CA1305 hits across
-`C.printf.cs`, `C.scanf.cs`, and `SwissEph.Format.cs` (format/parse calls with
-no `IFormatProvider`, in a library whose correctness story is entirely about
-numeric formatting).
-
-Moving these six severities from `SwissEphNet/CPort/.editorconfig` to the
-root `.editorconfig` belongs with PR1, since PR1 is the one that touches
-`Tools/C.cs` to fix `C.strcmp`. `SwissEphNet/CPort/.editorconfig`'s
+same class of bug actually lived and was fixable. PR1 moved these five
+severities to the root `.editorconfig` (they are also still declared, now
+redundantly, in `CPort/.editorconfig`, which documents on its own which rules
+it deliberately keeps enabled). Enabling them at the repo root surfaced ~50
+additional warning sites outside `CPort/`; PR1 fixed all of them, either with
+an explicit `StringComparison.Ordinal`/`CultureInfo.InvariantCulture` where
+that changed a real (if narrow) culture-dependent bug, or with a scoped
+`#pragma warning disable CA1307` plus a comment where the suggested
+`StringComparison`-taking overload does not exist on `netstandard2.0` (one of
+this project's three target frameworks) and the overload actually in use is
+already ordinal by definition (`string.Contains(char)`,
+`string.Replace(string, string)`). Net warning count outside `CPort/` after
+PR1: zero. `SwissEphNet/CPort/.editorconfig`'s
 `dotnet_analyzer_diagnostic.severity = none` stays in place regardless and
 continues to silence everything else inside `CPort/`.
 

@@ -31,3 +31,21 @@ csharp_new_line_before_open_brace = all
 # CA2007 (ConfigureAwait) does not apply: this is a synchronous port with no
 # async code anywhere in the tree.
 dotnet_diagnostic.CA2007.severity = none
+
+# Culture-sensitive string/number operations. These belong at the repo root,
+# not only in SwissEphNet/CPort/.editorconfig: declaring them solely in that
+# nested file meant they fired *inside* CPort, where the formatting freeze
+# (see CONTRIBUTING.md) forbids fixing them, and stayed silent everywhere
+# else -- including SwissEphNet/Tools/C.cs, where this exact class of bug
+# (C.strcmp using string.Compare instead of an ordinal comparison) actually
+# lived and was fixable. CPort/.editorconfig's
+# dotnet_analyzer_diagnostic.severity = none still silences everything else
+# in that folder; its own nested copies of these five severities are
+# redundant with the root values below but are left in place so CPort's file
+# continues to document, on its own, exactly which rules it deliberately
+# keeps enabled and why.
+dotnet_diagnostic.CA1304.severity = warning
+dotnet_diagnostic.CA1305.severity = warning
+dotnet_diagnostic.CA1307.severity = warning
+dotnet_diagnostic.CA1309.severity = warning
+dotnet_diagnostic.CA1310.severity = warning

@@ -18,7 +18,15 @@ namespace SwissEphNet
         public static bool Contains(this String s, Char c)
         {
             if (String.IsNullOrEmpty(s)) return false;
-            return s.Contains(c.ToString());
+            // string.Contains(char, StringComparison) is not part of the
+            // netstandard2.0 API surface (one of this project's three target
+            // frameworks); string.Contains(char) is already ordinal
+            // (culture-insensitive) per its documented behavior, so this is
+            // not a real CA1307 finding, just an overload that does not
+            // exist everywhere this multi-targets.
+#pragma warning disable CA1307
+            return s.Contains(c);
+#pragma warning restore CA1307
         }
 
         /// <summary>
@@ -29,7 +37,11 @@ namespace SwissEphNet
             if (charSet == null || String.IsNullOrWhiteSpace(s)) return false;
             foreach (var c in charSet)
             {
+                // See the single-char Contains(Char) overload above for why
+                // this stays on the plain (already-ordinal) overload.
+#pragma warning disable CA1307
                 if (s.Contains(c)) return true;
+#pragma warning restore CA1307
             }
             return false;
         }
