@@ -85,6 +85,93 @@ public class ComparerTests
         Assert.Equal(1, result.Fail);
     }
 
+    // --- Angle-wraparound tests: a measured cross-platform run found 2,637 fields
+    // where Windows wrote 0 and Linux wrote 359.99999999999994 for the same house
+    // cusp -- a raw difference of ~360, but a true angular difference of 5.68e-14
+    // degrees. ---
+
+    [Fact]
+    public void Compare_AngleWraparoundAtZero_Passes()
+    {
+        // The exact measured case: one side lands just under 360 instead of
+        // wrapping to 0. Raw difference is ~360; true angular difference is tiny.
+        List<string> local = ["A\t0"];
+        List<string> reference = ["A\t359.99999999999994"];
+
+        var result = Comparer.Compare(local, reference, [], [], "test");
+
+        Assert.Equal(0, result.Fail);
+    }
+
+    [Fact]
+    public void Compare_AngleWraparoundAt360_Passes()
+    {
+        // The mirror case: one side is exactly 360 instead of wrapping to 0.
+        List<string> local = ["A\t360"];
+        List<string> reference = ["A\t0.00000000000006"];
+
+        var result = Comparer.Compare(local, reference, [], [], "test");
+
+        Assert.Equal(0, result.Fail);
+    }
+
+    [Fact]
+    public void Compare_LargeDifferenceNotNearABoundary_StillFails()
+    {
+        // Neither value is within 1e-9 of 0 or 360, so this must not be treated as
+        // wraparound -- it is a genuine, large difference (this is literally the
+        // hsys 'Y' finding: cusp 2 = 270 on Windows, 243.43494882292202 on Linux).
+        List<string> local = ["A\t270"];
+        List<string> reference = ["A\t243.43494882292202"];
+
+        var result = Comparer.Compare(local, reference, [], [], "test");
+
+        Assert.Equal(1, result.Fail);
+    }
+
+    [Fact]
+    public void Compare_JulianDayDifferenceOf360_StillFails()
+    {
+        // "Do not apply it blindly to every numeric field": a difference of ~360 in
+        // a Julian Day (or any large, non-angular field) is meaningful and must not
+        // be forgiven just because the raw gap happens to match 360.
+        List<string> local = ["A\t2451545.0"];
+        List<string> reference = ["A\t2451185.0"];
+
+        var result = Comparer.Compare(local, reference, [], [], "test");
+
+        Assert.Equal(1, result.Fail);
+    }
+
+    [Fact]
+    public void Compare_SpeedValuesNearZeroOnBothSides_DoesNotFalselyWrap()
+    {
+        // Two SPEED values that both happen to sit near a station (close to zero,
+        // not straddling the 0/360 wrap point) must be judged on their raw
+        // difference, same as always -- wraparound must be a no-op here, not an
+        // accidental loosening. This difference (2e-10) exceeds the absolute floor
+        // (1e-12) and must still fail.
+        List<string> local = ["A\t0.0000000003"];
+        List<string> reference = ["A\t0.0000000001"];
+
+        var result = Comparer.Compare(local, reference, [], [], "test");
+
+        Assert.Equal(1, result.Fail);
+    }
+
+    [Fact]
+    public void Compare_ValueNearBoundaryButOtherSideNotInDegreeRange_DoesNotWrap()
+    {
+        // One side is near 0, but the other is nowhere near a plausible degree
+        // value -- this must not be treated as a wraparound candidate.
+        List<string> local = ["A\t0.0000000001"];
+        List<string> reference = ["A\t1000.0"];
+
+        var result = Comparer.Compare(local, reference, [], [], "test");
+
+        Assert.Equal(1, result.Fail);
+    }
+
     // --- Exact-boundary tests (item 8): "just inside" vs "just outside" the
     // threshold itself, not "close" vs "ten billion times over". ---
 

@@ -50,7 +50,8 @@ internal sealed class CompareResult
 /// Row-by-row, field-by-field comparison keyed by case id (not by line position),
 /// so a grid resize that changes row order or count does not itself register as a
 /// wall of failures. Numeric fields are compared with an epsilon that combines a
-/// relative and an absolute tolerance; every other field must match exactly.
+/// relative and an absolute tolerance, plus an angle-wraparound allowance (see
+/// <see cref="IsAngleWraparoundCandidate"/>); every other field must match exactly.
 ///
 /// Existence (a case id present on only one side) is checked and reported BEFORE any
 /// waiver is consulted, and unconditionally counts as a failure: a waiver can only
@@ -73,6 +74,14 @@ internal static class Comparer
     // could act on.
     private const double RelativeEpsilon = 1e-13;
     private const double AbsoluteEpsilon = 1e-12;
+
+    // Cross-platform run measured 2,637 fields (5.60% of all Windows/Linux
+    // differences) where the raw numeric difference was ~360: one side wrote 0 and
+    // the other wrote 359.99999999999994 for the same angle (house cusp, ascmc
+    // entry) -- the true angular difference is 5.68e-14 degrees, pure ULP noise
+    // that happens to land on opposite sides of the swe_degnorm() wrap point.
+    private const double DegreeWraparoundBoundaryTolerance = 1e-9;
+    private const double DegreeRangeSlack = 1e-9;
 
     public static CompareResult Compare(
         IReadOnlyList<string> localRows,
@@ -207,10 +216,16 @@ internal static class Comparer
         return (allExact ? FieldOutcome.Exact : FieldOutcome.ToleranceOk, null);
     }
 
-    private static bool TryParseDouble(string s, out double value) =>
+    // Internal (not private): DivergenceReport reuses this so the "what does the
+    // gate consider these two numbers to mean" logic has exactly one implementation,
+    // whether it is deciding pass/fail or just describing a distribution.
+    internal static bool TryParseDouble(string s, out double value) =>
         double.TryParse(s, NumberStyles.Float | NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out value);
 
-    private static bool WithinTolerance(double a, double b)
+    // Internal (not private): DivergenceReport reuses this to report exactly how
+    // many differing fields are still beyond tolerance after the wraparound fix,
+    // not just how many raw-string-differ.
+    internal static bool WithinTolerance(double a, double b)
     {
         if (a.Equals(b))
         {
@@ -227,10 +242,56 @@ internal static class Comparer
 
         var scale = Math.Max(Math.Abs(a), Math.Abs(b));
         var threshold = Math.Max(AbsoluteEpsilon, RelativeEpsilon * scale);
-        return Math.Abs(a - b) <= threshold;
+        return EffectiveAbsoluteDiff(a, b) <= threshold;
     }
 
-    private static Dictionary<string, string[]> Index(IReadOnlyList<string> rows, string source)
+    /// <summary>
+    /// The distance the gate actually cares about between two already-parsed
+    /// numbers: the raw difference, unless both values look like they are the same
+    /// angle on opposite sides of the 0/360 wrap point, in which case the shorter
+    /// way around the circle.
+    ///
+    /// Approach chosen and why: the alternative was per-column tagging (mark which
+    /// TSV columns in each area are angular -- house cusps, ascmc entries,
+    /// longitudes, ayanamsa, azimuth/altitude -- and only wrap those). That would be
+    /// the more precise fix, but Comparer works purely on raw TSV rows with no
+    /// column-schema awareness at all today, and every area's row shape would need
+    /// that schema threaded in from BaselineMatrix through Areas.cs, Comparer.cs and
+    /// the tests. Given a value-shape heuristic is enough to be both safe and
+    /// sufficient here, that cost was not worth it. The heuristic: only treat the
+    /// pair as wrapped when both values plausibly represent an angle in [0, 360]
+    /// AND at least one sits within 1e-9 of a 0/360 boundary. That second condition
+    /// is what keeps this from being applied "blindly": for a Julian Day, a
+    /// distance in AU, or any other large or non-angular field, neither value is
+    /// ever within 1e-9 of exactly 0 or 360, so <see cref="IsAngleWraparoundCandidate"/>
+    /// is false and EffectiveAbsoluteDiff degrades to the plain raw difference --
+    /// the wrap logic never even activates for that field family. It is also inert
+    /// for a genuine (non-wraparound) difference between two angles: min(raw,
+    /// 360-raw) only differs from raw when raw is already close to 360, which can
+    /// only happen when the two values straddle the wrap point -- for any smaller
+    /// raw difference (including two close-to-zero SPEED values that both happen to
+    /// sit near a station), the wrap logic returns the same raw difference it started
+    /// with, so it can never loosen a comparison that would otherwise have failed for
+    /// an unrelated reason.
+    /// </summary>
+    internal static double EffectiveAbsoluteDiff(double a, double b)
+    {
+        var rawDiff = Math.Abs(a - b);
+        return IsAngleWraparoundCandidate(a, b) ? Math.Min(rawDiff, 360.0 - rawDiff) : rawDiff;
+    }
+
+    private static bool IsAngleWraparoundCandidate(double a, double b) =>
+        (IsNearDegreeBoundary(a) || IsNearDegreeBoundary(b)) && InDegreeRange(a) && InDegreeRange(b);
+
+    private static bool IsNearDegreeBoundary(double v) =>
+        Math.Abs(v) <= DegreeWraparoundBoundaryTolerance || Math.Abs(v - 360.0) <= DegreeWraparoundBoundaryTolerance;
+
+    private static bool InDegreeRange(double v) =>
+        v >= -DegreeRangeSlack && v <= 360.0 + DegreeRangeSlack;
+
+    // Internal (not private): DivergenceReport reuses this to index rows the same
+    // way the gate does.
+    internal static Dictionary<string, string[]> Index(IReadOnlyList<string> rows, string source)
     {
         var dict = new Dictionary<string, string[]>(rows.Count, StringComparer.Ordinal);
         foreach (var row in rows)

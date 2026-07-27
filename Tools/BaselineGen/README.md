@@ -84,6 +84,17 @@ in local mode, runs every area, and compares each against
   across OS, architecture, or runtime version -- only `Math.Sqrt` is exempt from
   that). The absolute floor matters because a large share of the matrix's numeric
   fields are exactly zero, where a purely relative tolerance is meaningless.
+- On top of that, a pair of values is also treated as within tolerance if their
+  *angular* distance (`min(|a-b|, 360-|a-b|)`) is within the same threshold, for
+  values that plausibly represent a degree in `[0, 360]` and land within `1e-9` of
+  the `0`/`360` wrap point (`Comparer.EffectiveAbsoluteDiff`). This exists because
+  one platform can normalize the same angle to `0` and another to
+  `359.99999999999994` -- a raw difference of ~360 with a true angular difference
+  of 5.68e-14 degrees. It is not applied to every field: a Julian Day or a distance
+  is never near a 0/360 boundary, so the check never activates for those, and for
+  two values that are not straddling the wrap point it is a no-op (see the doc
+  comment on `EffectiveAbsoluteDiff` for why it cannot loosen an unrelated
+  comparison). See "Platform lock" below for the measured impact.
 - Any field that parses as a number -- including plain integers like return codes
   and iflag values -- goes through that same numeric comparison; a field that does
   not parse as a number (strings, the `EXCEPTION` marker, `serr` text) must match
@@ -118,6 +129,52 @@ Exit code is 0 only if every area has zero FAIL, zero ONLY-LOCAL and zero
 ONLY-REFERENCE rows, no stale waivers, no area over either 5% cap, and the
 assembly-identity check does not detect a suspicious match.
 
+## Platform lock
+
+**The committed baseline is Windows-specific, and this gate is deliberately locked
+to Windows.** It is not portable to Linux/macOS by construction, and that is a
+choice, not an oversight -- see the measurements below for why.
+
+A full Windows-vs-Linux comparison (same source, same commit, `.NET SDK 10.0.302`
+both sides, Linux via `mcr.microsoft.com/dotnet/sdk:10.0` on Ubuntu 24.04) found:
+
+- **3,443,058** numeric fields compared; **47,052** (1.37%) differ at all between
+  platforms.
+- Of those 47,052: **43,598** (92.66%) are ULP-level noise already absorbed by
+  `max(1e-12 abs, 1e-13 rel)` -- this validates the tolerance design against real
+  data, not just synthetic boundary tests.
+- **2,637** (5.60%) were angle-wraparound artifacts (see above). After adding the
+  wraparound allowance, field-level "still beyond tolerance" across the whole
+  matrix dropped from 3,454 (2,637 + 817) to **3,346** -- a smaller reduction than
+  2,637 would suggest, because the `1e-9` boundary-distance rule (chosen
+  deliberately conservative, per the instruction that produced it) only forgives
+  wraparound pairs where at least one side is genuinely that close to the `0`/`360`
+  edge. Row-level, this resolved **108** rows, all in `houses-armc`
+  (192 -> 84 FAIL rows); `calc` (1,368), `pheno` (140) and `houses` (1) were
+  unaffected, because none of their divergences are wraparound-shaped. Whole-run
+  Linux FAIL count: 1,701 -> 1,593 rows.
+- The remaining ~3,346 beyond-tolerance fields split into a handful of
+  differentiation-noise fields in `calc`/`pheno` (SPEED values, expected but not
+  fully explained) and one confirmed numerical-stability bug in `swe_houses_armc`
+  hsys `'Y'`. See `docs/known-issues.md` for both, in detail.
+
+**Why the fix was a platform lock, not a looser tolerance:** the p99 relative
+difference for `calc`'s genuine (non-wraparound) divergence is on the order of
+1e-6. A tolerance loose enough to swallow that -- and everything up to its
+max, which for some fields is order-1 relative when the reference value is itself
+extremely close to zero -- would also swallow a real regression of similar size.
+Cross-platform floating-point drift and an actual behavior change look the same to
+a purely numeric comparison at that magnitude; the only honest fix is to not ask
+the comparison to do a job it cannot do, which is why `Tests/baseline/` is
+Windows-only and CI's Windows job (`verify-baseline`) is the one that gates merges.
+The Linux job (`verify-baseline-linux`) exists purely to keep tracking this drift
+over time -- see the next section. Run it yourself with
+`./scripts/verify-baseline.ps1 -ReportOnly` for current numbers instead of the
+ones above (from a Linux shell, or via Docker:
+`docker run --rm -v "<repo>:/src" -w /src mcr.microsoft.com/dotnet/sdk:10.0 bash -c
+'dotnet run --project Tools/BaselineVerify/BaselineVerify.csproj -c Release --
+/src/Tests/baseline --report-only'`).
+
 ## Why a separate solution
 
 `BaselineMatrix`/`BaselineGen`/`BaselineVerify`/`BaselineVerify.Tests` target
@@ -135,10 +192,11 @@ this has no effect on `SwissEphNet.sln` at the repo root.
 Tools/BaselineVerify.Tests` followed by `scripts/verify-baseline.ps1`, on
 `windows-latest`, on every push and PR -- a separate CI system from AppVeyor, so
 neither one's SDK requirements constrain the other. A second, `continue-on-error`
-job runs the same two steps on `ubuntu-latest`: non-blocking, since the tolerance's
-whole justification is that the transcendental functions it is meant to insure
-against are not guaranteed bit-identical across platforms, and this is how that
-claim gets checked against real data instead of staying an assumption.
+job runs the unit tests plus `scripts/verify-baseline.ps1 -ReportOnly` on
+`ubuntu-latest`: this never asserts PASS/FAIL (see "Platform lock" above for why),
+it only prints the divergence distribution, so continue-on-error is there purely as
+a backstop against the test suite itself breaking on Linux, not because the report
+step can fail.
 
 ## Matrix coverage
 

@@ -110,6 +110,8 @@ Beware the build version number in AppVeyor is not the same than the published l
 Before any change to the C-to-C# port, a frozen golden-master file records what the
 library currently outputs for a large matrix of calls. See `Tools/BaselineGen/README.md`
 for what it covers and `scripts/verify-baseline.ps1` to check current code against it.
+The baseline is Windows-specific by design; see that file's "Platform lock" section.
+Numerical-stability findings turned up while building it are in `docs/known-issues.md`.
 
 # Firsts steps
 

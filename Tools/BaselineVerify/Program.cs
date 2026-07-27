@@ -24,18 +24,35 @@
 // it can be unit tested. A waiver can never excuse a missing or added row, only a
 // value difference on a row both sides agree exists.
 //
-// Usage: BaselineVerify [baseline-directory]
-// If omitted, the baseline directory is discovered by walking up from this
-// assembly's location to find SwissEphNet.sln, then Tests/baseline under that.
+// The baseline was generated on Windows and the gate is deliberately locked to
+// Windows -- see Tools/BaselineGen/README.md for the measured cross-platform
+// divergence that makes a single tolerance loose enough to pass everywhere
+// unacceptable (it would also hide real regressions). --report-only runs the same
+// comparison but never fails: it exists purely to track cross-platform drift over
+// time (see the non-blocking ubuntu-latest job in .github/workflows/baseline.yml),
+// printing a divergence distribution instead of a PASS/FAIL verdict, and always
+// exiting 0.
+//
+// Usage: BaselineVerify [--report-only] [baseline-directory]
+// If the directory is omitted, it is discovered by walking up from this assembly's
+// location to find SwissEphNet.sln, then Tests/baseline under that.
 
 using BaselineMatrix;
 using BaselineVerify;
 
-var baselineDir = args.Length > 0 ? Path.GetFullPath(args[0]) : DiscoverBaselineDir();
+var reportOnly = args.Any(static a => a is "--report-only" or "-ReportOnly");
+var positionalArgs = args.Where(static a => a is not ("--report-only" or "-ReportOnly")).ToArray();
+
+var baselineDir = positionalArgs.Length > 0 ? Path.GetFullPath(positionalArgs[0]) : DiscoverBaselineDir();
 if (!Directory.Exists(baselineDir))
 {
     Console.Error.WriteLine($"Baseline directory not found: {baselineDir}");
     return 2;
+}
+
+if (reportOnly)
+{
+    return RunReportMode(baselineDir);
 }
 
 var waiversPath = Path.Combine(AppContext.BaseDirectory, "waivers.tsv");
@@ -138,6 +155,85 @@ foreach (var waiver in waivers)
 Console.WriteLine();
 Console.WriteLine(overallExitCode == 0 ? "PASS" : "FAIL");
 return overallExitCode;
+
+/// <summary>
+/// Diagnostic-only pass: same matrix, same rows, no waivers, no PASS/FAIL of any
+/// kind. Prints how many numeric fields differ at all between local and reference,
+/// the relative-difference distribution across the differing ones (median/p90/p99/
+/// max), and per-area exact/tolerance/beyond-tolerance row counts for context.
+/// Always returns 0, regardless of what it finds -- including if an area throws.
+/// </summary>
+static int RunReportMode(string baselineDir)
+{
+    Console.WriteLine(EnvInfo.Describe());
+    Console.WriteLine($"Baseline directory: {baselineDir}");
+    Console.WriteLine("Mode: REPORT ONLY -- always exits 0. This tracks cross-platform/cross-runtime drift; it is not a gate.");
+    Console.WriteLine();
+
+    var header = $"{"AREA",-14} {"FIELDS",8} {"DIFFER",8} {"BEYOND",7} {"DIFFER%",8} {"EXACT-RN",9} {"TOL-RN",7} {"FAIL-RN",8} {"MED-REL",10} {"P90-REL",10} {"P99-REL",10} {"MAX-REL",10}";
+    Console.WriteLine(header);
+    Console.WriteLine("(FIELDS/DIFFER/BEYOND are per numeric field; -RN columns are per row, from the same row-level comparison the gate uses)");
+    Console.WriteLine(new string('-', header.Length));
+
+    var totalFieldsCompared = 0;
+    var totalFieldsDiffering = 0;
+    var totalFieldsBeyondTolerance = 0;
+    var allDiffs = new List<double>();
+
+    foreach (var (name, populate) in Areas.All)
+    {
+        var baselinePath = Path.Combine(baselineDir, $"baseline-{name}.tsv");
+        if (!File.Exists(baselinePath))
+        {
+            Console.WriteLine($"{name,-14} -- no committed baseline file at {baselinePath}");
+            continue;
+        }
+
+        try
+        {
+            var localRows = Areas.Generate(populate);
+            var referenceRows = File.ReadAllLines(baselinePath);
+
+            var result = Comparer.Compare(localRows, referenceRows, [], [], name);
+            var divergence = DivergenceReport.Collect(localRows, referenceRows, name);
+
+            totalFieldsCompared += divergence.FieldsCompared;
+            totalFieldsDiffering += divergence.FieldsDiffering;
+            totalFieldsBeyondTolerance += divergence.FieldsBeyondTolerance;
+            allDiffs.AddRange(divergence.SortedRelativeDiffs);
+
+            var differPct = divergence.FieldsCompared > 0 ? divergence.FieldsDiffering / (double)divergence.FieldsCompared : 0;
+            Console.WriteLine(
+                $"{name,-14} {divergence.FieldsCompared,8} {divergence.FieldsDiffering,8} {divergence.FieldsBeyondTolerance,7} {differPct,8:P2} " +
+                $"{result.Exact,9} {result.ToleranceOk,7} {result.Fail,8} " +
+                $"{divergence.Median,10:E2} {divergence.P90,10:E2} {divergence.P99,10:E2} {divergence.Max,10:E2}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"{name,-14} -- {ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
+    allDiffs.Sort();
+    Console.WriteLine();
+    var overallPct = totalFieldsCompared > 0 ? totalFieldsDiffering / (double)totalFieldsCompared : 0;
+    Console.WriteLine(
+        $"Overall: {totalFieldsCompared} numeric fields compared, {totalFieldsDiffering} differing ({overallPct:P4}), " +
+        $"{totalFieldsBeyondTolerance} still beyond tolerance after the angle-wraparound allowance.");
+    if (allDiffs.Count > 0)
+    {
+        Console.WriteLine(
+            $"Overall relative-difference distribution across differing fields: " +
+            $"median={DivergenceStats.Percentile(allDiffs, 50):E2} " +
+            $"p90={DivergenceStats.Percentile(allDiffs, 90):E2} " +
+            $"p99={DivergenceStats.Percentile(allDiffs, 99):E2} " +
+            $"max={allDiffs[^1]:E2}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("Report complete.");
+    return 0;
+}
 
 static string DiscoverBaselineDir()
 {

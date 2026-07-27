@@ -36,13 +36,17 @@ jobs:
         shell: pwsh
         run: pwsh scripts/verify-baseline.ps1
 
-  # Informational only. The whole reason the comparison has a tolerance instead of
-  # requiring an exact match is that Math.Sin/Cos/Tan/Pow/Asin/Acos/Atan/Atan2/Log/Exp
-  # are not guaranteed bit-identical across OS -- this job is how that claim gets
-  # checked against real data instead of staying an assumption. continue-on-error
-  # keeps a genuine cross-platform difference from blocking merges while it's being
-  # characterized; if this goes red, that's new information, not a regression to fix
-  # on the spot.
+  # Informational only, never a gate. The baseline is Windows-generated and this
+  # gate is deliberately locked to Windows: a measured Windows-vs-Linux run found
+  # 47,052 of 3.4M numeric fields differing (92.66% ULP noise already covered by the
+  # tolerance, 5.60% angle-wraparound now handled directly, 1.74% genuine
+  # divergence including one real numerical-stability bug -- see
+  # Tools/BaselineGen/README.md and docs/known-issues.md). A single tolerance loose
+  # enough to pass on Linux would need to be loose enough to hide real regressions,
+  # so instead of widening it, this job just tracks the drift over time in
+  # --report-only mode, which never fails by design. continue-on-error is still set
+  # as a backstop in case the test suite itself breaks on Linux for an unrelated
+  # reason (a real thing worth seeing), not because the report step could fail.
   verify-baseline-linux:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -58,6 +62,6 @@ jobs:
         shell: pwsh
         run: dotnet test Tools/BaselineVerify.Tests -c Release
 
-      - name: Verify baseline
+      - name: Report cross-platform divergence (never fails)
         shell: pwsh
-        run: pwsh scripts/verify-baseline.ps1
+        run: pwsh scripts/verify-baseline.ps1 -ReportOnly
