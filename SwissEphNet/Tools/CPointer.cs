@@ -116,7 +116,7 @@ namespace SwissEphNet
         /// Test if an inner array is not the same of an array
         /// </summary>
         public static bool operator !=(CPointer<T> access, T[] array) {
-            return access.BaseArray != array && access.BaseIndex == 0;
+            return !(access == array);
         }
 
         /// <summary>
@@ -130,7 +130,7 @@ namespace SwissEphNet
         /// Test if an inner array is not the same of an array
         /// </summary>
         public static bool operator !=(T[] array, CPointer<T> access) {
-            return access.BaseArray != array && access.BaseIndex == 0;
+            return !(access == array);
         }
 
         /// <summary>

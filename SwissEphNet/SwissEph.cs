@@ -18,14 +18,12 @@ namespace SwissEphNet
         /// </summary>
         static SwissEph()
         {
-            try
-            {
-                DefaultEncoding = Encoding.GetEncoding("Windows-1252");
-            }
-            catch
-            {
-                DefaultEncoding = Encoding.UTF8;
-            }
+            // See CFile's constructor for why UTF-8 is the correct, deliberate
+            // default here rather than an attempted Windows-1252 fallback:
+            // every large Swiss Ephemeris data file is pure ASCII, and the
+            // files that do carry non-ASCII text (2.10.03's seorbel.txt,
+            // astlistn.md) are valid UTF-8, not Windows-1252.
+            DefaultEncoding = Encoding.UTF8;
         }
 
         /// <summary>

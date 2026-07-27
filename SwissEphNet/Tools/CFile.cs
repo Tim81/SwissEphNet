@@ -21,14 +21,31 @@ namespace SwissEphNet
         public CFile(Stream stream, Encoding encoding = null) {
             this._Stream = stream;
             EOF = _Stream == null;
-            try
-            {
-                this.Encoding = encoding ?? Encoding.GetEncoding("Windows-1252");
-            }
-            catch
-            {
-                this.Encoding = encoding ?? Encoding.UTF8;
-            }
+            // UTF-8 is the correct default, not a fallback. Every large
+            // Swiss Ephemeris data file (sefstars.txt, seasnam.txt,
+            // sedeltat.txt, the eop_*.txt files, plmolist.txt) is pure ASCII,
+            // where UTF-8 and Windows-1252 are byte-identical and the choice
+            // between them is irrelevant. The files that do carry non-ASCII
+            // text (seorbel.txt, astlistn.md, both from the 2.10.03 release)
+            // are valid UTF-8 -- e.g. seorbel.txt spells "Koré" as the UTF-8
+            // sequence { 0x4B, 0x6F, 0x72, 0xC3, 0xA9, ... }, not as the
+            // single Windows-1252 byte 0xE9. Decoding that as Windows-1252
+            // would render it "KorÃ©", a regression against the very release
+            // this port targets. Encoding.GetEncoding("Windows-1252") is also
+            // unavailable on .NET Core and later without registering
+            // System.Text.Encoding.CodePages, which this library does not do,
+            // so there is no reason to attempt it here at all. This
+            // constructor's own Encoding parameter is not something a real
+            // OnLoadFile consumer can reach, though: the event only exposes a
+            // Stream (LoadFileEventArgs.File), and SwissEph.LoadFile
+            // (SwissEph.cs) is the only caller of this constructor, always
+            // with encoding: e.Encoding ?? DefaultEncoding. Callers with
+            // genuinely non-UTF-8-encoded files should set
+            // LoadFileEventArgs.Encoding inside their OnLoadFile handler
+            // instead (checked per file, since it is reset for every
+            // LoadFileEventArgs), or set the static SwissEph.DefaultEncoding
+            // once for every file that does not override it.
+            this.Encoding = encoding ?? Encoding.UTF8;
             this._Decoder = Encoding.GetDecoder();
         }
 

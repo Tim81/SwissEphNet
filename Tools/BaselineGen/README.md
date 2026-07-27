@@ -99,6 +99,8 @@ noted gap rather than solved here.
 
 ## Regenerating the golden files
 
+### Reference mode (default)
+
 Only needed when the reference package version changes (i.e., essentially never,
 until the harness itself is retargeted at a newer frozen release). Run:
 
@@ -108,8 +110,85 @@ until the harness itself is retargeted at a newer frozen release). Run:
 
 This builds `BaselineGen` in reference mode, generates twice into separate temp
 directories, diffs them to confirm reproducibility, and then copies the result
+(both the per-area TSVs and the environment sidecar, replacing it wholesale)
 into `Tests/baseline/` for you to review and commit. See that script for the
 exact `dotnet build`/`dotnet run` commands if you want to run them by hand.
+
+### Local mode -- when it is legitimate
+
+```powershell
+./scripts/regenerate-baseline.ps1 -FromLocal -DeviationNote "<what changed and why>"
+```
+
+This builds `BaselineGen` against the in-repo `SwissEphNet` project instead of
+the reference package, so the committed baseline can track a real change in
+local code.
+
+**The gate failing is the mechanism working, not a problem to make go away.**
+`scripts/verify-baseline.ps1` failing means the matrix's frozen output no
+longer matches what the current code produces. There are exactly two honest
+responses to that:
+
+1. The code has a bug that made it diverge unintentionally -- fix the code,
+   not the baseline. This is the common case, and it needs no special
+   regeneration mode at all: once the code is fixed, `verify-baseline.ps1`
+   passes again against the *existing* baseline, because the code now matches
+   what was always expected.
+2. The code changed on purpose, in a way that is supposed to alter observable
+   behavior, and the baseline needs to start reflecting the new, intended
+   behavior from here on. This is what `-FromLocal` is for, and only this.
+
+A red gate is never, by itself, a reason to run `-FromLocal` -- that would
+turn the gate into a formality that always passes, which defeats the entire
+point of freezing behavior in the first place. Before using it, you should
+already be able to explain, precisely, which rows will change and why, the
+same way you would explain any other reviewed code change. If you cannot
+explain a FAIL row before regenerating, you are not ready to regenerate it --
+go find out why it FAILs first.
+
+This PR (`fix/known-library-bugs`, the `DIR_GLUE` mis-transliteration fix; see
+`docs/known-issues.md`) is the worked example: fixing `CPort/Sweph.cs:2634` and
+`SwissEph.DIR_GLUE` changed a `serr` diagnostic string's path separator from
+`[ephe]\` to `[ephe]/` in exactly 207 rows (192 `ayanamsa`, 15 `datetime`), and
+nothing else -- confirmed by dumping the *full*, non-truncated failure list
+(the console output truncates at 50 per area) and checking that every one of
+the 207 rows differs from the committed baseline in only that one substring,
+with zero numeric fields touched. Only once that was established did
+`-FromLocal` get used, with a `-DeviationNote` describing exactly this.
+
+**Local mode does not touch the sidecar's original reference identity.** The
+committed `SwissEphModuleVersionId`/`SwissEphAssemblySha256` fields describe
+the reference package build and stay exactly as they were (see "Provenance
+sidecar" below); `-FromLocal` instead appends a dated, commit-stamped entry
+to that file's append-only "Local regenerations" log, using `-DeviationNote`
+as the description. `-DeviationNote` is required with `-FromLocal` specifically
+so that log entry cannot be an empty placeholder -- writing the description is
+part of using the switch, not an optional afterthought.
+
+## Provenance sidecar: what it means once local rows exist
+
+`Tests/baseline/baseline-<version>.env.txt` started as a pure description of
+one reference-mode run (`SwissEphNet <version>` NuGet package: framework, OS,
+architecture, the assembly's `ModuleVersionId` and SHA-256). That description
+is exactly what `BaselineVerify`'s assembly-identity check needs, and it never
+changes once local rows start landing -- see `CheckAssemblyIdentity` in
+`Tools/BaselineVerify/Program.cs`, which fails the run if the *current*
+build's identity ever matches what is recorded there (local mode should never
+accidentally compile to the same bytes as the reference package).
+
+Once any row in `Tests/baseline/*.tsv` has been regenerated from local code
+(`-FromLocal`), the sidecar's original eight fields no longer describe *every*
+row in the directory, and saying so honestly matters more than a filename.
+Rather than rename `baseline-<version>.env.txt` (which is derived from
+`EnvInfo.ReferenceVersion` specifically so a future version bump cannot leave
+a stale-named file behind -- see `EnvInfo.SidecarFileName` -- and which no
+script or doc hard-codes as a literal string, only as a `baseline-*.env.txt`
+pattern), the file grows an append-only "Local regenerations" log recording
+every deliberate deviation, most recent last. Open the file: the ambiguity is
+resolved in its content, not its name. This was a deliberate choice, not an
+oversight -- renaming would decouple the filename from the
+version-bump-safety property `SidecarFileName` exists to guarantee, for a
+cosmetic gain the file's own content already delivers.
 
 ## Verifying current code against the baseline
 

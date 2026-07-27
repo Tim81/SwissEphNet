@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -106,12 +107,21 @@ namespace SwissEphNet
         public String HMS(double value, int iFlag, bool outputExtraPrecision = false) {
             // hms() function is a little buggy so we correct some formats
             var dmsResult = DMS(value, iFlag, outputExtraPrecision);
-            int oPos = dmsResult.IndexOf(SwissEph.ODEGREE_STRING);
+            int oPos = dmsResult.IndexOf(SwissEph.ODEGREE_STRING, StringComparison.Ordinal);
             if (oPos >= 0) {
+                // string.Replace(string, string, StringComparison) is not
+                // part of the netstandard2.0 API surface (one of this
+                // project's three target frameworks); the plain 2-argument
+                // string.Replace(string, string) is already ordinal
+                // (culture-insensitive) per its documented behavior, so this
+                // is not a real CA1307 finding, just an overload that does
+                // not exist everywhere this multi-targets.
+#pragma warning disable CA1307
                 dmsResult = dmsResult
                     .Replace(SwissEph.ODEGREE_STRING, ":")
                     .Replace("'", ":");
-                int sPos = dmsResult.IndexOf("\"");
+#pragma warning restore CA1307
+                int sPos = dmsResult.IndexOf("\"", StringComparison.Ordinal);
                 if (sPos >= 0) {
                     dmsResult = dmsResult.Substring(0, sPos);
                 } else {
@@ -217,24 +227,24 @@ namespace SwissEphNet
                 }
                 // Format
                 switch (c) {
-                    case 'd': result.AppendFormat(String.Format("{{0,{0}}}", l), deg); break;
-                    case 'D': result.AppendFormat(String.Format("{{0:D{0}}}", sgn < 0 ? l - 1 : l), deg); break;
-                    case 'a': result.AppendFormat(String.Format("{{0,{0}}}", l), adeg); break;
-                    case 'A': result.AppendFormat(String.Format("{{0:D{0}}}", l), adeg); break;
-                    case 'n': result.AppendFormat(String.Format("{{0,{0}}}", l), znum); break;
-                    case 'N': result.AppendFormat(String.Format("{{0:D{0}}}", l), znum); break;
-                    case 'g': result.AppendFormat(String.Format("{{0,{0}}}", l), zdeg); break;
-                    case 'G': result.AppendFormat(String.Format("{{0:D{0}}}", l), zdeg); break;
-                    case 'm': result.AppendFormat(String.Format("{{0,{0}}}", l), min); break;
-                    case 'M': result.AppendFormat(String.Format("{{0:D{0}}}", l), min); break;
-                    case 's': result.AppendFormat(String.Format("{{0,{0}}}", l), (int)Math.Round(dsec, l)); break;
-                    case 'S': result.AppendFormat(String.Format("{{0:D{0}}}", l), (int)Math.Round(dsec, l)); break;
+                    case 'd': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0,{0}}}", l), deg); break;
+                    case 'D': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", sgn < 0 ? l - 1 : l), deg); break;
+                    case 'a': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0,{0}}}", l), adeg); break;
+                    case 'A': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", l), adeg); break;
+                    case 'n': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0,{0}}}", l), znum); break;
+                    case 'N': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", l), znum); break;
+                    case 'g': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0,{0}}}", l), zdeg); break;
+                    case 'G': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", l), zdeg); break;
+                    case 'm': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0,{0}}}", l), min); break;
+                    case 'M': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", l), min); break;
+                    case 's': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0,{0}}}", l), (int)Math.Round(dsec, l)); break;
+                    case 'S': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", l), (int)Math.Round(dsec, l)); break;
                     case 'p':
                     case 'P':
                         var t = Math.Round(dsec, l);
                         var prec = t - (int)t;
                         prec = Math.Round(prec * Math.Pow(10, l));
-                        result.AppendFormat(String.Format("{{0:D{0}}}", l), (int)prec);
+                        result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", l), (int)prec);
                         break;
                     case 'z':
                     case 'Z':

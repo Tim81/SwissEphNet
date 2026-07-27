@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    This project exists for exactly one reason: to actually execute SwissEphNet's
+    netstandard2.0 asset. SwissEphNet.csproj multi-targets
+    netstandard2.0;net8.0;net10.0, but Tests/SwissEphNet.Tests only targets
+    net8.0;net10.0: a modern .NET host always resolves the net8.0/net10.0 asset
+    in preference to netstandard2.0 when both are available from a
+    ProjectReference, so the netstandard2.0 build has never actually been run by
+    anything. That gap let a real bug ship silently: an extension method that
+    called itself recursively on netstandard2.0 (no such call ever throws a
+    compile error there, since C# happily binds the call to the extension method
+    itself when no better match exists) but was masked entirely on net8.0/net10.0,
+    where the real BCL instance method exists and wins overload resolution. See
+    docs/known-issues.md for the write-up.
+
+    net48 is a deliberate choice of "host that cannot use the net8.0/net10.0
+    asset": a .NET Framework consumer resolves a multi-targeted ProjectReference
+    down to the highest asset it can actually use, which for net48 is
+    netstandard2.0 (net8.0/net10.0 assets require a modern .NET runtime that net48
+    does not have). That forces exactly the asset this project exists to exercise,
+    with no special MSBuild wiring needed beyond picking net48 as the TFM.
+
+    This project is intentionally NOT included in SwissEphNet.CrossPlatform.slnf,
+    the filter used for Linux/cross-platform builds, since net48 cannot build or
+    run outside Windows (same reason Programs/SweWin, a WinForms app, is excluded
+    from that filter). It is part of SwissEphNet.sln and runs on Windows only, via
+    `dotnet test Tests/NetStandard20Smoke.Tests -c Release`.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <AssemblyName>NetStandard20Smoke.Tests</AssemblyName>
+    <RootNamespace>SwissEphNet.NetStandard20Smoke.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\SwissEphNet\SwissEphNet.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <!--
+      Matches Tests/SwissEphNet.Tests: stays on xunit v2, not the v3 used by
+      Tools/BaselineVerify.Tests, so its runner needs the matching v2 major.
+    -->
+    <PackageReference Include="xunit.runner.visualstudio" VersionOverride="2.8.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="xunit" />
+  </ItemGroup>
+
+</Project>

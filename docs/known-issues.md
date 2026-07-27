@@ -129,6 +129,139 @@ not as "this is fine": if the ratio changes meaningfully in future cross-platfor
 reports (see `--report-only`), that is worth a fresh look, not an assumption that
 it's the same known issue.
 
+## DIR_GLUE fixed: CPort/Sweph.cs:2634 was a mis-transliteration
+
+`SwissEph.DIR_GLUE` (`SwissEphNet/SwissEph.sweodef.h.cs`) used to be
+hard-coded to `'\\'`, where the upstream C source defines it per-platform.
+`swi_gen_filename` (`SwissEphNet/CPort/SwephLib.cs`) uses it to build
+numbered asteroid file names, e.g. `"ast4" + DIR_GLUE + "se04179.se1"` =
+`"ast4\se04179.se1"` with the old value. A backslash is not a path separator
+on Linux, macOS, Android, iOS, or WASM, so any `OnLoadFile` handler that does
+`Path.Combine` or a resource-name lookup on that generated name could never
+find the file except on Windows.
+
+The first attempt to fix this by changing `DIR_GLUE` to `'/'` alone regressed
+`Issue18Test.LoadAsteroidData` on Windows: `CPort/Sweph.cs`'s "correct file
+name?" check (around line 4922, run against every successfully-opened
+ephemeris file) strips a directory prefix off the file's recorded path by
+searching for `DIR_GLUE`, but `swi_fopen`'s ephepath+filename join (around
+line 2634) had been hard-coded to a literal `'\\'` instead of using
+`DIR_GLUE`:
+
+```csharp
+fnamp = s.TrimEnd('\\', '/') + "\\" + fname;
+```
+
+That looked at first like a deliberate platform choice CPort couldn't own,
+and the CPort formatting freeze (`CONTRIBUTING.md`) reads, on a fast pass, as
+forbidding any edit there. It is not: checking the actual upstream C source
+(2.08 `sweph.c:2362-2363`) shows the equivalent site uses `DIR_GLUE`, not a
+literal backslash:
+
+```c
+if (*s != '\0' && *(s + j - 1) != *DIR_GLUE)
+  strcat(s, DIR_GLUE);
+```
+
+So `CPort/Sweph.cs:2634`'s hard-coded `"\\"` is a mis-transliteration, not a
+platform-specific deviation from the source. The proof it is an error rather
+than a convention: the parallel site in `swe_set_ephe_path`
+(`Sweph.cs:1514-1515`, corresponding to `sweph.c:1356-1357`, an identical C
+pattern) was transliterated correctly, using `DIR_GLUE`. One site right, one
+site wrong -- CPort's own internal inconsistency is the evidence, independent
+of the C source lookup. Fixing `2634` to use `DIR_GLUE` (keeping
+`TrimEnd('\\', '/')` as-is, since tolerating either separator on input is
+harmless) restores line-for-line fidelity with the C source rather than
+deviating from it, which is exactly what the freeze in `CONTRIBUTING.md` is
+for protecting -- it was never a rule against correcting a transliteration
+error, only against reformatting or restructuring faithful code. See
+`CONTRIBUTING.md`'s "Porting upstream changes" section for the general
+principle this case established: a parallel site transliterated correctly
+elsewhere in the same file is strong evidence that a divergence is an error,
+not a deliberate choice.
+
+With both `DIR_GLUE = '/'` and `Sweph.cs:2634` fixed together,
+`Issue18Test.LoadAsteroidData` passes again (confirmed, not assumed --
+re-run on Windows specifically because it is what caught the original
+regression), and the full suite passes on Windows (net8.0/net10.0,
+Debug/Release) and in a Linux container (net10.0).
+
+**Behavior change for consumers:** asteroid file names passed to `OnLoadFile`
+now use `/` instead of `\`, e.g. `"ast4/se04179.se1"` instead of
+`"ast4\se04179.se1"`. Windows accepts both forward and backward slashes in
+paths, so existing Windows-only `OnLoadFile` handlers that pass the name
+straight to `File.Open`/`Path.Combine` continue to work unchanged; handlers
+that parsed the name expecting a literal backslash (e.g. via
+`Path.GetFileName`, which does not recognize `\` as a separator on
+non-Windows) should split on both separators, as this port's own test harness
+now does (`ResourceFileHelpers.GetPortableFileName`).
+
+**Baseline gate: updated, deliberately, via local-mode regeneration.** The
+same `swe_set_ephe_path` code path that appends `DIR_GLUE` to the configured
+ephemeris path also feeds "file not found" diagnostic messages, e.g. `SwissEph
+file 'sefstars.txt' not found in PATH '[ephe]/'` instead of `'[ephe]\'`. This
+surfaced as 207 baseline rows per TFM (192 in `ayanamsa`, 15 in `datetime` --
+both areas that exercise a missing-file/Moshier-fallback path) once `DIR_GLUE`
+and `Sweph.cs:2634` were fixed together. Every one of the 207 rows, confirmed
+by dumping the full (non-truncated) failure list rather than trusting the
+console's `Take(50)` sample, was exactly this one string-content change in a
+diagnostic message column; none was a numeric divergence.
+
+This is a real, intended behavior change -- the path separator genuinely is
+`/` now, so `swe_set_ephe_path` echoing `'[ephe]/'` into its diagnostic is
+accurate -- so the committed baseline needed to start reflecting it, not stay
+frozen on the pre-fix text forever. `scripts/regenerate-baseline.ps1
+-FromLocal` (see `Tools/BaselineGen/README.md`, "Local mode -- when it is
+legitimate") regenerated it from local code; the resulting diff against the
+previously committed baseline was confirmed, row by row, to be exactly those
+207 rows, exactly that one string substitution, nothing else. `git diff
+--stat Tests/baseline` at the time: `baseline-ayanamsa.tsv` (192 rows changed),
+`baseline-datetime.tsv` (15 rows changed), `baseline-2.8.0.2.env.txt` (a new
+append-only provenance entry, not a rewrite of its original reference
+fields). `scripts/verify-baseline.ps1` passes again on both TFMs after this,
+with the assembly-identity check still correctly reporting that the current
+(local) build's `ModuleVersionId`/SHA-256 differ from the original reference
+package's, unchanged, recorded in the sidecar.
+
+The sidecar (`Tests/baseline/baseline-2.8.0.2.env.txt`) is not renamed despite
+no longer describing every row in the directory: its name is derived from
+`EnvInfo.ReferenceVersion` specifically so a future version bump cannot leave
+a stale-named file behind, and nothing hard-codes that literal name (only a
+`baseline-*.env.txt` pattern), so renaming would cost real coupling for a
+purely cosmetic gain. Instead, the file itself now carries an explicit,
+append-only "Local regenerations" log stating exactly this: the original
+eight fields describe the reference-mode run and are kept verbatim (the
+assembly-identity check depends on that), and this deviation -- 207 rows, the
+`serr` path separator, this DIR_GLUE fix -- is recorded as entry 1.
+
+## swe_fixstar_ut distance speed: larger cross-platform differentiation noise
+
+`Test_swe_fixstar_ut` (Aldebaran, MOSEPH) pins `xx[5]` (distance speed) to
+`0.015543` on Windows; the same call under .NET 10 on Linux (Ubuntu 24.04,
+`mcr.microsoft.com/dotnet/sdk:10.0`) returns `0.0155324764...` instead --
+about 6.8e-4 relative, four to six orders of magnitude larger than the
+1e-7-to-1e-9 relative noise measured for the `calc`/`pheno` SPEED fields
+below. It is the same category of finding (numerical differentiation of a
+finite difference amplifying a tiny cross-platform difference in the
+underlying position), just amplified further here, plausibly because `xx[5]`
+divides a distance difference by a very small `dt`: found while confirming
+PR1's fixed-star bug fixes on Linux (see PR1's `known-library-bugs` work),
+not something PR1 introduced or is in scope to fix, since it is not related
+to any of that PR's bugs (Windows-1252/UTF-8 decoding, culture-sensitive
+string comparison, `atoi` sign handling, `CPointer<T>.operator !=`, `DIR_GLUE`,
+or the fixed-star `bsearch` comparator).
+
+**Confirmed against the base branch, not assumed:** re-ran this exact test on
+the unmodified `release/2.10.03` branch (a `git worktree` checkout, the
+`WindowsOnlyFact` skip removed only in that throwaway copy, no other change),
+in the same Linux container. It fails identically: `Expected: 0.015543
+... Actual: 0.015532000000000001 (rounded from 0.015532476471018478)`,
+byte-for-byte the same numbers PR1's branch produces. This rules out any of
+PR1's own changes as the cause -- the divergence predates all of them.
+`Test_swe_fixstar_ut`'s assertion on `xx[5]` was loosened from 6 to 4 decimal
+places to accommodate it, rather than pinning a platform-specific value or
+skipping the assertion.
+
 ## Negative-zero (`-0`) fields under SIDEREAL: TRUE node, not mean node
 
 18 fields in the `calc` area carry a negative-zero sign bit (`-0` rather than `0`)

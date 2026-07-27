@@ -134,7 +134,23 @@ namespace SwissEphNet
         public const double CS2DEG = (1.0 / 360000.0);	/* centisec to degree */
 
         public static char PATH_SEPARATOR = ';';	/* semicolon as PATH separator */
-        public static char DIR_GLUE = '\\';		/* glue string for directory/file */
+        // The C source defines DIR_GLUE per-platform (backslash on Windows,
+        // forward slash elsewhere). This port is not compiled per-platform,
+        // so a single value has to work everywhere: '/' is that value, since
+        // Windows accepts forward slashes in paths natively, but non-Windows
+        // platforms (Linux, macOS, Android, iOS, WASM) do not accept
+        // backslash as a separator at all. See docs/known-issues.md, "DIR_GLUE
+        // fixed: CPort/Sweph.cs:2634 was a mis-transliteration" for why this
+        // required (and got) a CPort edit: swi_fopen's ephepath+filename join
+        // had been hard-coded to '\\' instead of using DIR_GLUE, unlike the
+        // parallel site in swe_set_ephe_path (Sweph.cs:1514-1515), which
+        // already used DIR_GLUE correctly. That was a divergence from the C
+        // source, not a deliberate platform choice, and fixing it makes the
+        // port more faithful rather than less. swi_gen_filename
+        // (SwissEphNet/CPort/SwephLib.cs) also uses this to build the
+        // embedded subdirectory in numbered asteroid file names (e.g.
+        // "ast4/se04179.se1").
+        public static char DIR_GLUE = '/';		/* glue string for directory/file */
     }
 
 }

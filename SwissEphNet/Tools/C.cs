@@ -35,11 +35,24 @@ namespace SwissEphNet
         public static int atoi(string s)
         {
             s = (s ?? string.Empty).Trim();
-            int i = s.IndexOfFirstNot(ichars);
+            // A leading sign is not one of the digit characters in ichars, so
+            // IndexOfFirstNot(ichars) would stop at position 0 for "-5" or
+            // "+5", leaving an empty digit string and making the whole call
+            // return 0 instead of the signed value C's atoi returns. Strip a
+            // single leading sign first, apply the digit-only truncation to
+            // the remainder, then re-attach the sign for parsing.
+            string sign = string.Empty;
+            string digits = s;
+            if (digits.Length > 0 && (digits[0] == '+' || digits[0] == '-'))
+            {
+                sign = digits.Substring(0, 1);
+                digits = digits.Substring(1);
+            }
+            int i = digits.IndexOfFirstNot(ichars);
             if (i >= 0)
-                s = s.Substring(0, i);
+                digits = digits.Substring(0, i);
             int result = 0;
-            if (int.TryParse(s, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out result))
+            if (int.TryParse(sign + digits, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out result))
                 return result;
             return 0;
         }
@@ -119,15 +132,15 @@ namespace SwissEphNet
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int strcmp(string a, string b)
         {
-            return string.Compare(a, b);
+            return string.CompareOrdinal(a, b);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int strncmp(string a, string b, int n)
         {
             if (string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b))
-                return string.Compare(a, b);
-            return string.Compare(a.Substring(0, Math.Min(a.Length, n)), b.Substring(0, Math.Min(b.Length, n)));
+                return string.CompareOrdinal(a, b);
+            return string.CompareOrdinal(a.Substring(0, Math.Min(a.Length, n)), b.Substring(0, Math.Min(b.Length, n)));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -135,7 +148,7 @@ namespace SwissEphNet
         {
             if (string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b))
                 return -1;
-            return a.IndexOf(b);
+            return a.IndexOf(b, StringComparison.Ordinal);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -143,7 +156,20 @@ namespace SwissEphNet
         {
             if (string.IsNullOrEmpty(s))
                 return -1;
-            return s.IndexOf(c);
+            // string.IndexOf(char) (no StringComparison) was already ordinal
+            // here -- that overload is documented as performing an ordinal
+            // comparison unconditionally, unlike IndexOf(string)/Compare/
+            // StartsWith, so strchr was never actually culture-sensitive.
+            // This is a manual loop instead of s.IndexOf(c) purely because
+            // string.IndexOf(char, StringComparison), the explicit overload,
+            // is not part of the netstandard2.0 API surface (one of this
+            // project's three target frameworks) -- a char-to-char ==
+            // comparison is inherently ordinal (it compares UTF-16 code unit
+            // values, not linguistic weight) either way, so this is exactly
+            // the same semantics as before, on every TFM.
+            for (int i = 0; i < s.Length; i++)
+                if (s[i] == c) return i;
+            return -1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

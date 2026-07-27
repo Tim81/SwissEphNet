@@ -7,8 +7,22 @@ namespace SwissEphNet.Tests
     
     public class CPrintfTest
     {
-        private readonly string sepDecimal = System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
-        private readonly string sep1000 = System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator;
+        // C.sprintf's numeric formatting is deliberately culture-invariant
+        // (see the CultureInfo.InvariantCulture arguments throughout
+        // SwissEphNet/Tools/C.printf.cs): it emulates C's own printf without
+        // an explicit setlocale() call, which formats numbers the same way
+        // regardless of the host machine's default culture. These fields
+        // used to read System.Globalization.CultureInfo.CurrentCulture,
+        // which only ever matched because C.sprintf used to format through
+        // CurrentCulture implicitly (a real, if narrow, CA1305 bug: the
+        // exact behavior this test asserts would silently change on a
+        // machine whose default culture uses different separators, e.g.
+        // "65,537" as a valid decimal rather than a thousands-grouped
+        // integer). Reading InvariantCulture here instead keeps this test
+        // passing under any host culture, matching what C.sprintf now
+        // actually does.
+        private readonly string sepDecimal = System.Globalization.CultureInfo.InvariantCulture.NumberFormat.NumberDecimalSeparator;
+        private readonly string sep1000 = System.Globalization.CultureInfo.InvariantCulture.NumberFormat.NumberGroupSeparator;
 
         #region Tests
         #region Special Formats

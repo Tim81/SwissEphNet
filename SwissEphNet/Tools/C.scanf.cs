@@ -348,7 +348,7 @@ namespace SwissEphNet
                 while (Char.IsDigit(format.Peek()))
                     format.MoveAhead();
                 if (format.Position > start)
-                    spec.Width = int.Parse(format.Extract(start, format.Position));
+                    spec.Width = int.Parse(format.Extract(start, format.Position), CultureInfo.InvariantCulture);
                 else
                     spec.Width = 0;
 
@@ -359,7 +359,7 @@ namespace SwissEphNet
                         format.MoveAhead();
                         spec.Modifier = Modifiers.ShortShort;
                     } else spec.Modifier = Modifiers.Short;
-                } else if (Char.ToLower(format.Peek()) == 'l') {
+                } else if (Char.ToLowerInvariant(format.Peek()) == 'l') {
                     format.MoveAhead();
                     if (format.Peek() == 'l') {
                         format.MoveAhead();
@@ -417,7 +417,7 @@ namespace SwissEphNet
                         spec.ScanSet = format.Extract(start, format.Position);
                         break;
                     default:
-                        string msg = String.Format("Unknown format type specified : '{0}'", format.Peek());
+                        string msg = String.Format(CultureInfo.InvariantCulture, "Unknown format type specified : '{0}'", format.Peek());
                         throw new Exception(msg);
                 }
                 format.MoveAhead();
@@ -520,7 +520,7 @@ namespace SwissEphNet
                 }
 
                 // Parse exponential notation
-                if (Char.ToLower(input.Peek()) == 'e') {
+                if (Char.ToLowerInvariant(input.Peek()) == 'e') {
                     input.MoveAhead();
                     if (input.Peek() == '+' || input.Peek() == '-')
                         input.MoveAhead();
@@ -622,13 +622,29 @@ namespace SwissEphNet
             protected bool ParseScanSet(TextParser input, FormatSpecifier spec) {
                 // Parse characters
                 int start = input.Position;
+                // string.IndexOf(char, StringComparison) is not part of the
+                // netstandard2.0 API surface (one of this project's three
+                // target frameworks); string.IndexOf(char) (no
+                // StringComparison argument) is on every TFM, including
+                // netstandard2.0, and is already ordinal
+                // (culture-insensitive) per its documented behavior, so the
+                // CA1307 suggestion here is a false positive. (This must not
+                // be spec.ScanSet.Contains(ch): netstandard2.0's
+                // System.String has no instance Contains(char) overload at
+                // all, which would resolve to this project's own
+                // StringExtensions.Contains(this string, char) extension
+                // instead -- correct there, but there is no reason to route
+                // through an extension method when IndexOf(char) already
+                // does the job on every TFM directly.)
+#pragma warning disable CA1307
                 if (!spec.ScanSetExclude) {
-                    while (spec.ScanSet.Contains(input.Peek()))
+                    while (spec.ScanSet.IndexOf(input.Peek()) >= 0)
                         input.MoveAhead();
                 } else {
-                    while (!input.EndOfText && !spec.ScanSet.Contains(input.Peek()))
+                    while (!input.EndOfText && spec.ScanSet.IndexOf(input.Peek()) < 0)
                         input.MoveAhead();
                 }
+#pragma warning restore CA1307
 
                 // Don't exceed field width
                 if (spec.Width > 0) {
@@ -678,7 +694,15 @@ namespace SwissEphNet
 
             // Determines if the given digit is valid for the given radix
             private bool IsValidDigit(char c, int radix) {
-                int i = "0123456789abcdef".IndexOf(Char.ToLower(c));
+                // string.IndexOf(char, StringComparison) is not part of the
+                // netstandard2.0 API surface (one of this project's three
+                // target frameworks); string.IndexOf(char) is already
+                // ordinal (culture-insensitive) per its documented behavior,
+                // so this is not a real CA1307 finding, just an overload
+                // that does not exist everywhere this multi-targets.
+#pragma warning disable CA1307
+                int i = "0123456789abcdef".IndexOf(Char.ToLowerInvariant(c));
+#pragma warning restore CA1307
                 if (i >= 0 && i < radix)
                     return true;
                 return false;

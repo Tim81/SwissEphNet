@@ -54,7 +54,7 @@ namespace SwissEphNet.Tests
             // File loading defined
             using (var target = new SwissEph()) {
                 target.OnLoadFile += (s, e) => {
-                    if (e.FileName == @"[ephe]\seasnam.txt") {
+                    if (e.FileName == "[ephe]/seasnam.txt") {
                         e.File = new System.IO.MemoryStream(System.Text.Encoding.ASCII.GetBytes(@"
 000096  Aegle
 000097  Klotho
@@ -71,6 +71,39 @@ namespace SwissEphNet.Tests
                 Assert.Equal("Hekate", target.swe_get_planet_name(SwissEph.SE_AST_OFFSET + 100));
             }
 
+        }
+
+        [Fact]
+        public void TestOnLoadFileHandlerCanOverrideEncodingPerFile() {
+            // LoadFileEventArgs.Encoding is the reachable escape hatch for a
+            // non-UTF-8-encoded file: it starts out set to DefaultEncoding
+            // (see SwissEph.LoadFile in SwissEph.cs), but a handler can
+            // overwrite it before returning, and LoadFile passes exactly that
+            // value (e.Encoding ?? DefaultEncoding) to the CFile it
+            // constructs. This is the mechanism a real consumer with a
+            // genuinely non-UTF-8-encoded ephemeris file uses -- unlike
+            // CFile's own Encoding constructor parameter (see CFileTest's
+            // TestExplicitEncodingOverridesUtf8Default), which no OnLoadFile
+            // consumer can reach: the event only ever exposes a Stream.
+            using (var target = new SwissEph()) {
+                target.OnLoadFile += (s, e) => {
+                    if (e.FileName == "[ephe]/seasnam.txt") {
+                        e.Encoding = System.Text.Encoding.GetEncoding("ISO-8859-1");
+                        // 0xE9 is Windows-1252 (and Latin-1) for é; decoded
+                        // as UTF-8 on its own it is an invalid lead byte, so
+                        // if the handler's Encoding override were ignored
+                        // (falling back to UTF-8), this would read back as
+                        // "Kor�", not "Koré".
+                        var bytes = new System.Collections.Generic.List<byte>();
+                        bytes.AddRange(System.Text.Encoding.ASCII.GetBytes("000200  Kor"));
+                        bytes.Add(0xE9);
+                        bytes.AddRange(System.Text.Encoding.ASCII.GetBytes("\n"));
+                        e.File = new System.IO.MemoryStream(bytes.ToArray());
+                    } else
+                        e.File = null;
+                };
+                Assert.Equal("Koré", target.swe_get_planet_name(SwissEph.SE_AST_OFFSET + 200));
+            }
         }
 
         [Fact(Skip = "")]

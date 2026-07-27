@@ -97,7 +97,7 @@ namespace SwissEphNet.Tests
                 bool isLoaded = false;
                 swe.OnLoadFile += (s, e) =>
                 {
-                    if (e.FileName == "[ephe]\\sedeltat.txt")
+                    if (e.FileName == "[ephe]/sedeltat.txt")
                     {
                         var asm = this.GetType().GetAssembly();
                         String sr = e.FileName.Replace("[ephe]", @"SwissEphNet.Tests.files").Replace("/", ".").Replace("\\", ".");
@@ -534,7 +534,7 @@ namespace SwissEphNet.Tests
             serr = null;
             using (var swe = new SwissEph()) {
                 swe.OnLoadFile += (s, e) => {
-                    if (e.FileName == @"[ephe]\seleapsec.txt") {
+                    if (e.FileName == "[ephe]/seleapsec.txt") {
                         e.File = new System.IO.MemoryStream(Encoding.ASCII.GetBytes(content));
                     }
                 };
@@ -555,7 +555,7 @@ namespace SwissEphNet.Tests
             serr = null;
             using (var swe = new SwissEph()) {
                 swe.OnLoadFile += (s, e) => {
-                    if (e.FileName == @"[ephe]\seleapsec.txt") {
+                    if (e.FileName == "[ephe]/seleapsec.txt") {
                         e.File = new System.IO.MemoryStream(Encoding.ASCII.GetBytes(content));
                     }
                 };

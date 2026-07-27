@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -273,7 +274,7 @@ namespace SwissEphNet
                 paramIx = defaultParamIx;
                 if (m.Groups[1] != null && m.Groups[1].Value.Length > 0) {
                     string val = m.Groups[1].Value.Substring(0, m.Groups[1].Value.Length - 1);
-                    paramIx = Convert.ToInt32(val) - 1;
+                    paramIx = Convert.ToInt32(val, CultureInfo.InvariantCulture) - 1;
                 };
                 #endregion
 
@@ -288,11 +289,27 @@ namespace SwissEphNet
                 if (m.Groups[2] != null && m.Groups[2].Value.Length > 0) {
                     string flags = m.Groups[2].Value;
 
-                    flagAlternate = (flags.IndexOf('#') >= 0);
-                    flagLeft2Right = (flags.IndexOf('-') >= 0);
-                    flagPositiveSign = (flags.IndexOf('+') >= 0);
-                    flagPositiveSpace = (flags.IndexOf(' ') >= 0);
-                    flagGroupThousands = (flags.IndexOf('\'') >= 0);
+                    // string.IndexOf(char, StringComparison) is not part of
+                    // the netstandard2.0 API surface (one of this project's
+                    // three target frameworks); string.IndexOf(char) (no
+                    // StringComparison argument) is on every TFM, including
+                    // netstandard2.0, and is already ordinal
+                    // (culture-insensitive) per its documented behavior, so
+                    // the CA1307 suggestion here is a false positive. (This
+                    // must not be flags.Contains(ch): netstandard2.0's
+                    // System.String has no instance Contains(char) overload
+                    // at all, which would resolve to this project's own
+                    // StringExtensions.Contains(this string, char) extension
+                    // instead -- correct there, but there is no reason to
+                    // route through an extension method when IndexOf(char)
+                    // already does the job on every TFM directly.)
+#pragma warning disable CA1307
+                    flagAlternate = flags.IndexOf('#') >= 0;
+                    flagLeft2Right = flags.IndexOf('-') >= 0;
+                    flagPositiveSign = flags.IndexOf('+') >= 0;
+                    flagPositiveSpace = flags.IndexOf(' ') >= 0;
+                    flagGroupThousands = flags.IndexOf('\'') >= 0;
+#pragma warning restore CA1307
 
                     // positive + indicator overrides a
                     // positive space character
@@ -307,7 +324,7 @@ namespace SwissEphNet
                 paddingCharacter = ' ';
                 fieldLength = int.MinValue;
                 if (m.Groups[3] != null && m.Groups[3].Value.Length > 0) {
-                    fieldLength = Convert.ToInt32(m.Groups[3].Value);
+                    fieldLength = Convert.ToInt32(m.Groups[3].Value, CultureInfo.InvariantCulture);
                     flagZeroPadding = (m.Groups[3].Value[0] == '0');
                 }
                 #endregion
@@ -325,7 +342,7 @@ namespace SwissEphNet
                 // extract field precision
                 fieldPrecision = int.MinValue;
                 if (m.Groups[4] != null && m.Groups[4].Value.Length > 0)
-                    fieldPrecision = Convert.ToInt32(m.Groups[4].Value);
+                    fieldPrecision = Convert.ToInt32(m.Groups[4].Value, CultureInfo.InvariantCulture);
                 #endregion
 
                 #region short / long indicator
@@ -346,7 +363,7 @@ namespace SwissEphNet
                 if (fieldPrecision == int.MinValue &&
                     formatSpecifier != 's' &&
                     formatSpecifier != 'c' &&
-                    Char.ToUpper(formatSpecifier) != 'X' &&
+                    Char.ToUpperInvariant(formatSpecifier) != 'X' &&
                     formatSpecifier != 'o')
                     fieldPrecision = 6;
 
@@ -436,7 +453,7 @@ namespace SwissEphNet
                     #region c - character
                     case 'c':   // character
                         if (IsNumericType(o))
-                            w = Convert.ToChar(o).ToString();
+                            w = Convert.ToChar(o, CultureInfo.InvariantCulture).ToString();
                         else if (o is char)
                             w = ((char)o).ToString();
                         else if (o is string && ((string)o).Length > 0)
@@ -446,7 +463,6 @@ namespace SwissEphNet
                     #endregion
                     #region s - string
                     case 's':   // string
-                        string t = "{0" + (fieldLength != int.MinValue ? "," + (flagLeft2Right ? "-" : String.Empty) + fieldLength.ToString() : String.Empty) + ":s}";
                         w = (o ?? String.Empty).ToString();
                         if (fieldPrecision >= 0)
                             w = w.Substring(0, fieldPrecision);
@@ -507,7 +523,7 @@ namespace SwissEphNet
                     #region p - pointer
                     case 'p':   // pointer
                         if (o is IntPtr)
-                            w = "0x" + ((IntPtr)o).ToInt64().ToString("x");
+                            w = "0x" + ((IntPtr)o).ToInt64().ToString("x", CultureInfo.InvariantCulture);
                         defaultParamIx++;
                         break;
                     #endregion
@@ -551,7 +567,7 @@ namespace SwissEphNet
             string lengthFormat = "{0" + (FieldLength != int.MinValue ?
                                             "," + (Left2Right ?
                                                     "-" :
-                                                    String.Empty) + FieldLength.ToString() :
+                                                    String.Empty) + FieldLength.ToString(CultureInfo.InvariantCulture) :
                                             String.Empty) + "}";
 
             if (IsNumericType(Value)) {
@@ -560,7 +576,7 @@ namespace SwissEphNet
                 if (Left2Right || Padding == ' ') {
                     if (Alternate && w != "0")
                         w = "0" + w;
-                    w = String.Format(lengthFormat, w);
+                    w = String.Format(CultureInfo.InvariantCulture, lengthFormat, w);
                 } else {
                     if (FieldLength != int.MinValue)
                         w = w.PadLeft(FieldLength - (Alternate && w != "0" ? 1 : 0), Padding);
@@ -581,19 +597,19 @@ namespace SwissEphNet
             string lengthFormat = "{0" + (FieldLength != int.MinValue ?
                                             "," + (Left2Right ?
                                                     "-" :
-                                                    String.Empty) + FieldLength.ToString() :
+                                                    String.Empty) + FieldLength.ToString(CultureInfo.InvariantCulture) :
                                             String.Empty) + "}";
             string numberFormat = "{0:" + NativeFormat + (FieldPrecision != int.MinValue ?
-                                            FieldPrecision.ToString() :
+                                            FieldPrecision.ToString(CultureInfo.InvariantCulture) :
                                             String.Empty) + "}";
 
             if (IsNumericType(Value)) {
-                w = String.Format(numberFormat, Value);
+                w = String.Format(CultureInfo.InvariantCulture, numberFormat, Value);
 
                 if (Left2Right || Padding == ' ') {
                     if (Alternate)
                         w = (NativeFormat == "x" ? "0x" : "0X") + w;
-                    w = String.Format(lengthFormat, w);
+                    w = String.Format(CultureInfo.InvariantCulture, lengthFormat, w);
                 } else {
                     if (FieldLength != int.MinValue)
                         w = w.PadLeft(FieldLength - (Alternate ? 2 : 0), Padding);
@@ -615,22 +631,22 @@ namespace SwissEphNet
             string lengthFormat = "{0" + (FieldLength != int.MinValue ?
                                             "," + (Left2Right ?
                                                     "-" :
-                                                    String.Empty) + FieldLength.ToString() :
+                                                    String.Empty) + FieldLength.ToString(CultureInfo.InvariantCulture) :
                                             String.Empty) + "}";
             string numberFormat = "{0:" + NativeFormat + (FieldPrecision != int.MinValue ?
-                                            FieldPrecision.ToString() :
+                                            FieldPrecision.ToString(CultureInfo.InvariantCulture) :
                                             "0") + "}";
 
             if (IsNumericType(Value)) {
-                w = String.Format(numberFormat, Value);
+                w = String.Format(CultureInfo.InvariantCulture, numberFormat, Value);
 
                 if (Left2Right || Padding == ' ') {
                     if (IsPositive(Value, true))
                         w = (PositiveSign ?
                                 "+" : (PositiveSpace ? " " : String.Empty)) + w;
-                    w = String.Format(lengthFormat, w);
+                    w = String.Format(CultureInfo.InvariantCulture, lengthFormat, w);
                 } else {
-                    if (w.StartsWith("-"))
+                    if (w.StartsWith("-", StringComparison.Ordinal))
                         w = w.Substring(1);
                     if (FieldLength != int.MinValue)
                         w = w.PadLeft(FieldLength - (PositiveSign || PositiveSpace || !IsPositive(Value, true) ? 1 : 0), Padding);
