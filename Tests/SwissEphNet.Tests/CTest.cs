@@ -112,13 +112,21 @@ namespace SwissEphNet.Tests
         [Fact]
         public void TestStrstrIsOrdinal()
         {
-            // string.IndexOf(string) with no StringComparison is
-            // CurrentCulture-aware on every TFM this project targets,
-            // including netstandard2.0 (.NET Framework), where it is not
-            // merely culture-aware but linguistic (accent- and
-            // symbol-folding), unlike the ordinal-leaning default .NET Core
-            // has used since 2.1. Explicit StringComparison.Ordinal is the
-            // only choice that is guaranteed byte-exact on every TFM.
+            // string.IndexOf(string) with no StringComparison is documented
+            // CurrentCulture-aware on every TFM this project targets, so
+            // C.strstr uses StringComparison.Ordinal explicitly, which is the
+            // only choice guaranteed byte-exact on every TFM. That said: this
+            // specific assertion set is plain ASCII with no culture wrapper,
+            // and passes against the pre-fix implementation too on the ICU
+            // version this was verified against (repeated attempts at finding
+            // an input where CurrentCulture-vs-Ordinal actually disagree on
+            // *substring presence*, including Turkish dotless/dotted "i" and
+            // ligature-folding cases that work for Compare, did not turn up
+            // one here) -- so treat this as characterization of the current,
+            // correct behavior, not a red-before/green-after regression test.
+            // TestStrcmpIsOrdinalNotCultureSensitive/
+            // TestStrncmpIsOrdinalNotCultureSensitive above are the ones with
+            // an actual demonstrated pre-fix failure.
             Assert.Equal(1, C.strstr("xabc", "abc"));
             Assert.Equal(-1, C.strstr("xabc", "xyz"));
             Assert.Equal(0, C.strstr("abc", "abc"));
@@ -130,6 +138,16 @@ namespace SwissEphNet.Tests
         [Fact]
         public void TestStrchrIsOrdinal()
         {
+            // Unlike strcmp/strncmp/strstr, C.strchr was never actually
+            // culture-sensitive: string.IndexOf(char) (no StringComparison)
+            // is documented as performing an ordinal comparison already, on
+            // every TFM. C.strchr moved off string.IndexOf(char) to a manual
+            // loop only because string.IndexOf(char, StringComparison) --
+            // the explicit overload -- is not part of the netstandard2.0 API
+            // surface, not because the previous behavior was wrong. This is
+            // a characterization test of already-correct behavior, not a
+            // regression test: it passes against the pre-fix implementation
+            // too.
             Assert.Equal(1, C.strchr("xabc", 'a'));
             Assert.Equal(-1, C.strchr("xabc", 'z'));
             Assert.Equal(-1, C.strchr("", 'a'));

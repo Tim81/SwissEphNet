@@ -34,9 +34,17 @@ namespace SwissEphNet
             // this port targets. Encoding.GetEncoding("Windows-1252") is also
             // unavailable on .NET Core and later without registering
             // System.Text.Encoding.CodePages, which this library does not do,
-            // so there is no reason to attempt it here at all. Callers with
-            // genuinely Windows-1252-encoded files can still pass their own
-            // Encoding via the constructor overload below.
+            // so there is no reason to attempt it here at all. This
+            // constructor's own Encoding parameter is not something a real
+            // OnLoadFile consumer can reach, though: the event only exposes a
+            // Stream (LoadFileEventArgs.File), and SwissEph.LoadFile
+            // (SwissEph.cs) is the only caller of this constructor, always
+            // with encoding: e.Encoding ?? DefaultEncoding. Callers with
+            // genuinely non-UTF-8-encoded files should set
+            // LoadFileEventArgs.Encoding inside their OnLoadFile handler
+            // instead (checked per file, since it is reset for every
+            // LoadFileEventArgs), or set the static SwissEph.DefaultEncoding
+            // once for every file that does not override it.
             this.Encoding = encoding ?? Encoding.UTF8;
             this._Decoder = Encoding.GetDecoder();
         }

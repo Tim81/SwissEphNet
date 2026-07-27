@@ -247,11 +247,20 @@ underlying position), just amplified further here, plausibly because `xx[5]`
 divides a distance difference by a very small `dt`: found while confirming
 PR1's fixed-star bug fixes on Linux (see PR1's `known-library-bugs` work),
 not something PR1 introduced or is in scope to fix, since it is not related
-to any of that PR's five bugs (Windows-1252/UTF-8 decoding, culture-sensitive
-string comparison, `atoi` sign handling, `CPointer<T>.operator !=`, or
-`DIR_GLUE`). `Test_swe_fixstar_ut`'s assertion on `xx[5]` was loosened from 6
-to 4 decimal places to accommodate it, rather than pinning a
-platform-specific value or skipping the assertion.
+to any of that PR's bugs (Windows-1252/UTF-8 decoding, culture-sensitive
+string comparison, `atoi` sign handling, `CPointer<T>.operator !=`, `DIR_GLUE`,
+or the fixed-star `bsearch` comparator).
+
+**Confirmed against the base branch, not assumed:** re-ran this exact test on
+the unmodified `release/2.10.03` branch (a `git worktree` checkout, the
+`WindowsOnlyFact` skip removed only in that throwaway copy, no other change),
+in the same Linux container. It fails identically: `Expected: 0.015543
+... Actual: 0.015532000000000001 (rounded from 0.015532476471018478)`,
+byte-for-byte the same numbers PR1's branch produces. This rules out any of
+PR1's own changes as the cause -- the divergence predates all of them.
+`Test_swe_fixstar_ut`'s assertion on `xx[5]` was loosened from 6 to 4 decimal
+places to accommodate it, rather than pinning a platform-specific value or
+skipping the assertion.
 
 ## Negative-zero (`-0`) fields under SIDEREAL: TRUE node, not mean node
 

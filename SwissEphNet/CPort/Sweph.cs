@@ -6797,7 +6797,7 @@ namespace SwissEphNet.CPort
         }*/
         static int fstar_node_compare(string key, fixed_star value)
         {
-            return string.Compare(key, value.skey);
+            return C.strcmp(key, value.skey);
         }
 
         /* function cuts a comma-separated fixed star data record from sefstars.txt 

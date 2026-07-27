@@ -156,13 +156,17 @@ namespace SwissEphNet
         {
             if (string.IsNullOrEmpty(s))
                 return -1;
-            // string.IndexOf(char, StringComparison) is not part of the
-            // netstandard2.0 API surface (one of this project's three target
-            // frameworks), so a plain value comparison loop is used instead
-            // of that overload. A char-to-char == comparison is inherently
-            // ordinal (it compares UTF-16 code unit values, not linguistic
-            // weight), so this is already exactly the semantics C's strchr
-            // needs, on every TFM.
+            // string.IndexOf(char) (no StringComparison) was already ordinal
+            // here -- that overload is documented as performing an ordinal
+            // comparison unconditionally, unlike IndexOf(string)/Compare/
+            // StartsWith, so strchr was never actually culture-sensitive.
+            // This is a manual loop instead of s.IndexOf(c) purely because
+            // string.IndexOf(char, StringComparison), the explicit overload,
+            // is not part of the netstandard2.0 API surface (one of this
+            // project's three target frameworks) -- a char-to-char ==
+            // comparison is inherently ordinal (it compares UTF-16 code unit
+            // values, not linguistic weight) either way, so this is exactly
+            // the same semantics as before, on every TFM.
             for (int i = 0; i < s.Length; i++)
                 if (s[i] == c) return i;
             return -1;

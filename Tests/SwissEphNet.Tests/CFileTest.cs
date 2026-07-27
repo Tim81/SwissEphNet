@@ -171,11 +171,17 @@ namespace SwissEphNet.Tests
 
         [Fact]
         public void TestExplicitEncodingOverridesUtf8Default() {
-            // A caller with genuinely Windows-1252-encoded files (or any other
-            // legacy encoding) can still override CFile's UTF-8 default via
-            // the constructor's Encoding parameter. 0xE9 is Windows-1252 (and
-            // Latin-1) for é; decoded as UTF-8 on its own it is an invalid
-            // lead byte and would produce U+FFFD instead.
+            // This exercises CFile's own Encoding constructor parameter
+            // directly, which is a real feature of CFile itself, but not one
+            // an OnLoadFile consumer can reach: SwissEph.LoadFile is the only
+            // caller of this constructor from that path, and it always passes
+            // e.Encoding ?? DefaultEncoding (SwissEph.cs). A consumer with
+            // genuinely non-UTF-8-encoded files sets LoadFileEventArgs.Encoding
+            // inside the handler instead -- see
+            // TestOnLoadFileHandlerCanOverrideEncodingPerFile below for that
+            // actually-reachable path. 0xE9 is Windows-1252 (and Latin-1) for
+            // é; decoded as UTF-8 on its own it is an invalid lead byte and
+            // would produce U+FFFD instead.
             byte[] windows1252Bytes = { 0x4B, 0x6F, 0x72, 0xE9 }; // "Kor" + é
             using (var cfile = new CFile(BuildStream(windows1252Bytes), Encoding.GetEncoding("ISO-8859-1"))) {
                 Assert.Equal("Koré", cfile.ReadLine());
