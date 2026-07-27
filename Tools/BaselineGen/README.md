@@ -5,18 +5,24 @@ of Swiss Ephemeris calls that need no ephemeris data files (Moshier and analytic
 paths only) and freezes their output, so a later PR can prove it did not change
 numerical behavior.
 
-Three projects, one shared matrix:
+Four projects, one shared matrix:
 
 - **`BaselineMatrix`** -- the actual matrix code (Houses.cs, Calc.cs, Ayanamsa.cs,
   etc.) and the `UseReferencePackage` switch that decides how it resolves
   `SwissEphNet`. Nothing in here is run directly.
 - **`BaselineGen`** -- a console app that runs the matrix and writes one TSV file
   per area, plus an environment sidecar, to a directory you give it.
-- **`BaselineVerify`** -- a console app that runs the matrix in local mode (always;
-  it never builds against the reference package) and compares it against the
-  files committed under `Tests/baseline/`.
+- **`BaselineVerify`** -- a console app that runs the matrix in local mode and
+  compares it against the files committed under `Tests/baseline/`. It refuses to
+  build at all with `UseReferencePackage=true` (see `BaselineVerify.csproj`) --
+  without that guard, verification could compare the reference package against a
+  baseline generated from that same package and pass regardless of what changed.
+- **`BaselineVerify.Tests`** -- xUnit tests for `Comparer` and `Waivers` themselves:
+  exact/tolerance/beyond-tolerance/zero-vs-negligible comparisons, arity changes,
+  missing rows, glob anchoring, and rejection of catch-all waivers. The gate's own
+  logic needs coverage independent of whatever the matrix happens to produce.
 
-These three, plus `SwissEphNet.csproj` itself, live in `Tools/BaselineTools.slnx`.
+These four, plus `SwissEphNet.csproj` itself, live in `Tools/BaselineTools.slnx`.
 They are **not** part of `SwissEphNet.sln` -- see "Why a separate solution" below.
 
 ## The two modes
@@ -66,28 +72,40 @@ This builds `BaselineVerify` in Release and runs it, which builds `BaselineMatri
 in local mode, runs every area, and compares each against
 `Tests/baseline/baseline-<area>.tsv`:
 
-- Numeric fields are compared with a relative epsilon of 1e-13 (CPort calls
-  `Math.Sin`/`Cos`/`Tan`/`Pow`/`Asin`/`Acos`/`Atan`/`Atan2`/`Log`/`Exp` several
+- Numeric fields are compared with `max(1e-12 absolute, 1e-13 relative)` (CPort
+  calls `Math.Sin`/`Cos`/`Tan`/`Pow`/`Asin`/`Acos`/`Atan`/`Atan2`/`Log`/`Exp` several
   hundred times, and .NET does not guarantee bit-identical transcendental results
   across OS, architecture, or runtime version -- only `Math.Sqrt` is exempt from
-  that).
+  that). The absolute floor matters because a large share of the matrix's numeric
+  fields are exactly zero, where a purely relative tolerance is meaningless.
 - String and integer fields must match exactly.
-- A row is reported as PASS (either exact or within tolerance), FAIL (exact-match
-  mismatch on a non-numeric field, or a numeric field beyond tolerance), or WAIVED
-  (its case id matches a glob in `Tools/BaselineVerify/waivers.tsv`, which also
-  records the reason -- see that file for the current entries).
+- Existence -- a case id present on only one side -- is checked before any waiver
+  and can never be waived; a waiver only ever excuses a value difference on a row
+  both sides agree exists.
+- A row is reported as PASS (exact or within tolerance), FAIL (exact-match mismatch
+  on a non-numeric field, a numeric field beyond tolerance, an arity change, or a
+  row missing from one side), or WAIVED (its case id matches a glob in
+  `Tools/BaselineVerify/waivers.tsv`, which also records the PR it belongs to and
+  the reason -- see that file's format and current entries).
+- Every waiver is checked for staleness at the end of the run: if it matched zero
+  rows, or every row it matched was byte-for-byte identical anyway, the run fails.
+  An area also fails outright if more than 5% of its rows are waived.
 
 Exit code is 0 only if every area has zero FAIL, zero ONLY-LOCAL and zero
-ONLY-REFERENCE rows (after waivers).
+ONLY-REFERENCE rows, no stale waivers, and no area over the 5% waived-fraction cap.
 
 ## Why a separate solution
 
-`BaselineMatrix`/`BaselineGen`/`BaselineVerify` target `net10.0`. AppVeyor CI
-(`appveyor.yml`) builds `SwissEphNet.sln` on the `Visual Studio 2017` image, whose
-bundled SDK does not know `net10.0` -- adding these projects to `SwissEphNet.sln`
-would break `dotnet restore .\SwissEphNet.sln` in CI before the build step even
-starts. `Tools/BaselineTools.slnx` keeps them buildable and discoverable locally
-without going anywhere near the CI image or the library's own target frameworks.
+`BaselineMatrix`/`BaselineGen`/`BaselineVerify`/`BaselineVerify.Tests` target
+`net10.0`. AppVeyor CI (`appveyor.yml`) builds `SwissEphNet.sln` on the
+`Visual Studio 2017` image, whose bundled SDK does not know `net10.0` -- adding
+these projects to `SwissEphNet.sln` would break `dotnet restore .\SwissEphNet.sln`
+in CI before the build step even starts. `Tools/BaselineTools.slnx` keeps them
+buildable and discoverable locally without going anywhere near the CI image or the
+library's own target frameworks. `.github/workflows/baseline.yml` is what actually
+runs `scripts/verify-baseline.ps1` on every push/PR, on `windows-latest` with the
+net10.0 SDK via `actions/setup-dotnet` -- a separate CI system from AppVeyor, so
+neither one's SDK requirements constrain the other.
 
 ## Matrix coverage
 
@@ -97,10 +115,10 @@ each area covers. Areas and their files:
 | Area | File | Covers |
 |---|---|---|
 | houses-armc | `Houses.cs` | `swe_houses_armc` (dense sweep), the saved_sundec hazard |
-| houses | `HousesEx.cs` | `swe_houses`, `swe_houses_ex` (including `SEFLG_SIDEREAL`) |
+| houses | `HousesEx.cs` | `swe_houses`, `swe_houses_ex` (including `SEFLG_SIDEREAL` with `swe_set_sid_mode`, plain and with `SE_SIDBIT_ECL_T0`/`SE_SIDBIT_SSY_PLANE`) |
 | house-pos | `HousePos.cs` | `swe_house_pos`, `swe_house_name` |
 | calc | `Calc.cs` | `swe_calc`, `swe_calc_ut` |
-| pheno | `Pheno.cs` | `swe_pheno`, `swe_pheno_ut` |
+| pheno | `Pheno.cs` | `swe_pheno`, `swe_pheno_ut`, including a topocentric pass (`attr[5]`) |
 | ayanamsa | `Ayanamsa.cs` | `swe_get_ayanamsa[_ut]`, `_ex[_ut]`, `SE_SIDM_USER`, SIDBIT flags |
 | datetime | `DateTime_.cs` | date/time conversions, Delta-T, tidal acceleration |
 | coord | `CoordHelpers.cs` | `swe_cotrans[_sp]`, `swe_azalt[_rev]` |

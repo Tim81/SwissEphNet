@@ -8,18 +8,23 @@ namespace BaselineMatrix;
 internal static class Grids
 {
     // All house-system letters, plus two invalid ones ('Z' and '0') to exercise the
-    // default (Placidus) fallback and its serr/deprecation path from an input that
-    // was never assigned a house system at all. 'I' and 'i' are distinct (upper =
-    // Treindl solution, lower = Makransky solution). 'J' and 'P' are not implemented
-    // explicitly and fall through to the default branch too -- that fallback is
-    // itself behavior worth freezing.
+    // default fallback and its serr/deprecation path from an input that was never
+    // assigned a house system at all. 'I' and 'i' are distinct (upper = Treindl
+    // solution, lower = Makransky solution). 'P' has no case of its own in the
+    // switch because the default branch IS the Placidus implementation -- there is
+    // no separate "unhandled letter" fallback to fall through to. 'J' has no case
+    // either and reaches that same default, which is worth freezing as an explicit,
+    // deliberate input rather than an accident nobody is watching.
     public static readonly char[] HouseSystems =
         "ABCDEFGHIiJKLMNOPQRSTUVWXYZ0".ToCharArray();
 
-    // Real mean obliquity, and the degenerate eps=0 edge case. Every house system
-    // depends on eps (sind(eps)/cosd(eps) feed the whole CalcH computation), so both
-    // values exercise every system; a third arbitrary value added little beyond that.
-    public static readonly double[] Eps = [23.4392911, 0.0];
+    // Real mean obliquity, the degenerate eps=0 edge case, and eps=40: not just
+    // another arithmetic sample, eps=40 moves the polar-degeneracy boundary for
+    // Placidus/Koch to |geolat| = 50, so it puts a different subset of GeoLats
+    // (namely the 50s) onto the degenerate branch than the real obliquity does.
+    // Dropping it would sample only one branch-selection boundary, not the
+    // mechanism that selects the boundary in the first place.
+    public static readonly double[] Eps = [23.4392911, 0.0, 40.0];
 
     // Geographic latitudes: a coarse regular grid plus explicit polar-circle
     // extremes (|lat| > 66) where Placidus and Koch degenerate.

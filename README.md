@@ -105,6 +105,12 @@ Current build status of the branch ```master``` : [![Build status](https://ci.ap
 
 Beware the build version number in AppVeyor is not the same than the published library.
 
+# Characterization baseline
+
+Before any change to the C-to-C# port, a frozen golden-master file records what the
+library currently outputs for a large matrix of calls. See `Tools/BaselineGen/README.md`
+for what it covers and `scripts/verify-baseline.ps1` to check current code against it.
+
 # Firsts steps
 
 Our first step is to convert the C source code to C#, and provide some conversions from C like string format.

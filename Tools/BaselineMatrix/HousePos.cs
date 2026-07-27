@@ -7,9 +7,14 @@ namespace BaselineMatrix;
 internal static class HousePos
 {
     private static readonly double Eps = 23.4392911;
-    private static readonly double[] Armcs = [0, 90, 180, 270];
+
+    // 37.5 and 123.456 are deliberately non-cardinal: every other armc/longitude
+    // here is a multiple of 90, which makes most cases land exactly on a house
+    // cusp or a quadrant boundary -- useful for eyeballing, but it means the grid
+    // barely samples the general (non-degenerate) code path at all.
+    private static readonly double[] Armcs = [0, 37.5, 90, 180, 270];
     private static readonly double[] GeoLats = [-80, -45, 0, 45, 80];
-    private static readonly double[] Lons = [0, 90, 180, 270];
+    private static readonly double[] Lons = [0, 90, 123.456, 180, 270];
     private static readonly double[] Lats = [-5, 0, 5];
 
     public static void AddRows(List<string> rows)

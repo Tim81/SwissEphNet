@@ -3,7 +3,7 @@
 // Runs the fixed matrix defined in Tools/BaselineMatrix (Swiss Ephemeris calls that
 // need no ephemeris data files -- Moshier / analytic paths only, since no OnLoadFile
 // handler is ever subscribed) and writes one tab-separated file per area into the
-// directory given as argv[0], plus a baseline-2.8.0.2.env.txt sidecar recording the
+// directory given as argv[0], plus an EnvInfo.SidecarFileName sidecar recording the
 // environment the run executed in.
 //
 // The matrix code lives in BaselineMatrix.csproj, which is built in one of two
@@ -49,7 +49,7 @@ internal static class Program
             totalRows += rows.Count;
         }
 
-        var envPath = Path.Combine(outputDir, "baseline-2.8.0.2.env.txt");
+        var envPath = Path.Combine(outputDir, EnvInfo.SidecarFileName);
         File.WriteAllText(envPath, env + "\n", new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
         Console.WriteLine($"Total: {totalRows} rows across {Areas.All.Length} areas.");

@@ -1,13 +1,15 @@
 # Case-ID waivers for BaselineVerify.
 #
-# Format: <glob>\t<reason>
-# One glob per line. '*' matches any run of characters within a case id (the whole
-# pipe-delimited field, tabs excluded since a case id never contains one). Lines
-# starting with # and blank lines are ignored. A waived case is reported separately
-# from PASS/FAIL and never fails the run, no matter what it changed to or whether it
-# now throws, stopped throwing, or produced different numbers.
+# Format: <glob>\t<PR-number>\t<reason>
+# All three fields are required and non-empty; a malformed line is a hard load-time
+# error, not a silent skip. See Waivers.cs for glob syntax ('*' is field-local,
+# '**' crosses fields) and why "*"/"**" and anything matching the synthetic probe
+# case id are rejected outright.
 #
-# Use this to declare "these rows are expected to change" for a specific PR instead
-# of the alternative, which is quietly loosening the comparison for everyone.
-
-HP|G|*	swe_house_pos throws IndexOutOfRangeException for hsys 'G' (Gauquelin sectors): its internal cusp array is sized for 12 houses but Gauquelin needs 36. Expected to stop throwing once the 2.10.03 port delta lands; remove this waiver at that point so the fixed values get frozen instead.
+# Every waiver is checked for staleness at the end of a run: if it matched zero rows,
+# or every row it matched was byte-for-byte identical anyway, the run fails. A waiver
+# that isn't earning its keep is worse than no waiver: it's coverage nobody is
+# looking at. Add a waiver in the same PR that needs it, and delete it in the PR that
+# makes it unnecessary -- do not leave it behind "just in case".
+#
+# No entries at the moment: intentionally empty.
