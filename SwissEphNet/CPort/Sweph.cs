@@ -4921,7 +4921,9 @@ namespace SwissEphNet.CPort
             sp = fdp.fnam;
             if (sp.LastIndexOf(SwissEph.DIR_GLUE) > 0)
                 sp = sp.Substring(sp.LastIndexOf(SwissEph.DIR_GLUE) + 1);
-            if (!s.Equals(sp, StringComparison.CurrentCultureIgnoreCase))
+            // C compares with a plain strcmp (case-sensitive, ASCII) after lower-casing
+            // both sides by hand; CurrentCultureIgnoreCase pulls in the caller's culture.
+            if (!s.Equals(sp, StringComparison.OrdinalIgnoreCase))
             {
                 serr = C.sprintf("Ephemeris file name '%s' wrong; rename '%s' ", sp, s);
                 goto return_error;
@@ -6750,7 +6752,11 @@ namespace SwissEphNet.CPort
              * keep uppercase with Bayer/Flamsteed designations after comma */
             int p = sstar.IndexOf(',');
             if (p > 0)
-                sstar = sstar.Substring(0, p - 1).ToLower() + sstar.Substring(p);
+                // sweph.c:5996-5997: `for (sp = sstar; *sp != '\0' && *sp != ','; sp++)`
+                // lowercases indices [0, p) -- everything strictly before the comma,
+                // i.e. p characters. Substring(0, p - 1) took only p-1, silently
+                // dropping the character immediately before the comma.
+                sstar = sstar.Substring(0, p).ToLower() + sstar.Substring(p);
             else if (p < 0)
                 sstar = sstar.ToLower();
             if (sstar == string.Empty)
@@ -6968,7 +6974,8 @@ namespace SwissEphNet.CPort
                     // remove white spaces from star name
                     fstdata.skey = fstdata.skey.Replace(" ", string.Empty);
                     // star name to lowercase and compare with search string
-                    fstdata.skey = fstdata.skey.ToLower();
+                    // ASCII tolower loop in C, not culture-sensitive.
+                    fstdata.skey = fstdata.skey.ToLowerInvariant();
                     if ((retc = save_star_in_struct(nrecs, fstdata, ref serr)) == ERR) return ERR;
                 }
                 // also save it with Bayer designation as search key;
@@ -8270,13 +8277,18 @@ namespace SwissEphNet.CPort
                 // remove white spaces from star name
                 //while ((sp = strchr(fstar, ' ')) != -1)
                 //  swi_strcpy(sp, sp+1);
-                fstar = fstar.Trim(' ');
+                // sweph.c:7386-7387 removes ALL internal spaces via the loop above,
+                // not just leading/trailing ones; Trim(' ') only stripped the ends,
+                // leaving multi-word names ("Galactic Center") unfindable because
+                // the search key (line ~6748 above) strips all spaces.
+                fstar = fstar.Replace(" ", string.Empty);
                 i = strlen(fstar);
                 // length of star name differs from length of search string: continue
                 if (i < cmplen)
                     continue;
                 // star name to lowercase and compare with search string
-                fstar = fstar.ToLower();
+                // ASCII tolower loop in C, not culture-sensitive.
+                fstar = fstar.ToLowerInvariant();
                 //for (sp2 = fstar; *sp2 != '\0'; sp2++)
                 //{
                 //    *sp2 = tolower((int)*sp2);

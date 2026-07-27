@@ -790,7 +790,8 @@ namespace SwissEphNet.CPort
                     elem_found = true;
                     /* epoch of elements */
                     //    if (tjd0 != NULL) {
-                    sp = cpos[0].ToLower();
+                    // ASCII tolower loop in C, not culture-sensitive.
+                    sp = cpos[0].ToLowerInvariant();
                     if (sp.StartsWith("j2000"))
                         tjd0 = Sweph.J2000;
                     else if (sp.StartsWith("b1950"))
@@ -806,7 +807,8 @@ namespace SwissEphNet.CPort
                     //    }
                     /* equinox */
                     //    if (tequ != NULL) {
-                    sp = cpos[1].TrimStart(' ', '\t').ToLower();
+                    // ASCII tolower loop in C, not culture-sensitive.
+                    sp = cpos[1].TrimStart(' ', '\t').ToLowerInvariant();
                     if (sp.StartsWith("j2000"))
                         tequ = Sweph.J2000;
                     else if (sp.StartsWith("b1950"))
@@ -890,7 +892,8 @@ namespace SwissEphNet.CPort
                     //    }
                     /* geocentric */
                     if (ncpos > 9) {
-                        cpos[9] = cpos[9].ToLower();
+                        // ASCII tolower loop in C, not culture-sensitive.
+                        cpos[9] = cpos[9].ToLowerInvariant();
                         if (cpos[9].Contains("geo"))
                             fict_ifl |= FICT_GEO;
                     }

@@ -2367,7 +2367,9 @@ namespace SweTest
                 if (spi > 0)
                     Console.Write(gap);
                 //if (sp == fmt && list_hor && !is_first && strchr("yYJtT", *sp) == NULL)
-                if (spi == 0 && list_hor && !is_first && "yYJtT".IndexOf(sp) >= 0)
+                // swetest.c:1931 (2.08): emit the gap when the first format char is
+                // NOT in "yYJtT"; ">= 0" tested the opposite condition.
+                if (spi == 0 && list_hor && !is_first && "yYJtT".IndexOf(sp) < 0)
                     //fputs(gap, stdout);
                     Console.Write(gap);
                 switch (sp)
@@ -4386,7 +4388,10 @@ namespace SweTest
             var c = SwissEph.ODEGREE_STRING;
             x += 0.5 / 36000.0; /* round to 0.1 sec */
             var s = dms(x, iflag);
-            var spi = s.IndexOf(c);
+            // C uses strstr (byte-exact); default IndexOf(string) is culture-sensitive
+            // and the result below feeds Substring arithmetic that assumes an exact
+            // char-for-char match. Same fix as SwissEph.Format.cs:110.
+            var spi = s.IndexOf(c, StringComparison.Ordinal);
             if (spi >= 0)
             {
                 s = String.Concat(s.Substring(0, spi), ":", s.Substring(spi + 1));
