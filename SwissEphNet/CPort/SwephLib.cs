@@ -4242,7 +4242,12 @@ namespace SwissEphNet.CPort
             {
                 //strncpy(s, samod, 20);
                 //s[20] = '\0';
-                s = samod.Substring(0, 20);
+                // swephlib.c:4052: strncpy copies up to 20 bytes and null-pads if
+                // samod is shorter; Substring(0, 20) instead threw whenever samod
+                // (including "" or null) was under 20 chars, which is always in
+                // practice. Pad to 20 first so the fixed-offset IndexOf/atof calls
+                // below stay valid, matching the C buffer's null-padded bytes.
+                s = (samod ?? string.Empty).PadRight(20, '\0').Substring(0, 20);
                 // remove second '.' in "SE2.05.01"
                 //if ((sp = strchr(s + 5, '.')) != null)
                 //    swi_strcpy(sp, sp + 1);
@@ -4253,7 +4258,11 @@ namespace SwissEphNet.CPort
                 //    swi_strcpy(sp, sp + 1);
                 sp = s.IndexOf('b', 5);
                 if (sp >= 0) s = s.Remove(sp, 1);
-                dversion = C.atof(s + 2);
+                // swephlib.c:4058: atof(s + 2) is pointer arithmetic (skip 2 bytes);
+                // "s + 2" in C# is string concatenation ("SE2.05.01" + 2 ->
+                // "SE2.05.012"), so C.atof saw the leading 'S' and returned 0,
+                // silently falling through to the current version.
+                dversion = C.atof(s.Substring(2));
                 if (dversion == 0)
                     dversion = C.atof(Sweph.SE_VERSION);
                 if (dversion >= 2.06)

@@ -268,7 +268,8 @@ namespace SwissEphNet.CPort
             CIb = 0.7; /* color of background (from Ben Sugerman)*/
             CIi = 0.5; /* Color index for white (from Ben Sugerman), should be function of ObjectName*/
             ObjectSize = 0;
-            if (String.Compare(ObjectName, "moon") == 0) {
+            // Two-arg String.Compare is culture-sensitive; C uses strcmp.
+            if (String.CompareOrdinal(ObjectName, "moon") == 0) {
                 /*ObjectSize and CI needs to be determined (depending on JDNDaysUT)*/
                 ;
             }
@@ -323,7 +324,8 @@ namespace SwissEphNet.CPort
             //char s[AS_MAXCH];
             //char *sp;
             Int32 ipl;
-            var s = ObjectName.ToLower();
+            // ASCII tolower loop in C, not culture-sensitive.
+            var s = ObjectName.ToLowerInvariant();
             if (s.StartsWith("sun"))
                 return SwissEph.SE_SUN;
             if (s.StartsWith("venus"))
@@ -393,7 +395,10 @@ namespace SwissEphNet.CPort
         Int32 call_swe_fixstar_mag(string star, ref double mag, ref string serr) {
             Int32 retval;
             string star2;
-            if (String.Compare(star, call_swe_fixstar_mag_star_save) == 0) {
+            // Two-arg String.Compare is culture-sensitive; C uses strcmp. This is the
+            // swe_fixstar_mag cache key, so a linguistic collision here would return
+            // a cached magnitude for the wrong star.
+            if (String.CompareOrdinal(star, call_swe_fixstar_mag_star_save) == 0) {
                 mag = call_swe_fixstar_mag_dmag;
                 return SwissEph.OK;
             }
@@ -1418,10 +1423,19 @@ namespace SwissEphNet.CPort
             //char* sp;
             //for (sp = str; *sp != '\0' && *sp != ','; sp++)
             //    *sp = tolower(*sp);
+            // swehel.c:1443-1449 mutates the caller's buffer in place via the
+            // ref parameter. This never wrote back to str (all 3 call sites pass
+            // ref and rely on the mutation), and used Substring(0, p - 1),
+            // dropping the character before the comma (same off-by-one as
+            // Sweph.cs's fixstar_format_search_name, sweph.c:5996-5997) without
+            // the p > 0 guard, so p == 0 threw ArgumentOutOfRangeException.
             if (str == null) return null;
             int p = str.IndexOf(',');
-            if (p < 0) return str.ToLower();
-            return str.Substring(0, p - 1).ToLower() + str.Substring(p);
+            if (p > 0)
+                str = str.Substring(0, p).ToLower() + str.Substring(p);
+            else if (p < 0)
+                str = str.ToLower();
+            return str;
         }
 
         /* Limiting magnitude in dark skies 
@@ -2964,7 +2978,8 @@ namespace SwissEphNet.CPort
             double d = 0, phot_scot_opic, phot_scot_opic_sv; double[] darr = new double[10];
             double d0 = 100.0 / 86400.0;
             tret = tjd;
-            if (String.Compare(ObjectName, "moon") == 0) {
+            // Two-arg String.Compare is culture-sensitive; C uses strcmp.
+            if (String.CompareOrdinal(ObjectName, "moon") == 0) {
                 d0 *= 10;
                 ncnt = 4;
             }
