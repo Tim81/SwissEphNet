@@ -148,6 +148,44 @@ namespace SwissEphNet.Tests
         }
 
         [Fact]
+        public void TestDefaultEncodingDoesNotRoundTripWindows1252Bytes() {
+            // Ephemeris text files are historically Windows-1252-encoded (see
+            // TestCreate and docs/known-issues.md), but no TFM this project
+            // targets can decode Windows-1252 (Encoding.GetEncoding("Windows-1252")
+            // throws without registering System.Text.Encoding.CodePages, which
+            // SwissEphNet does not do), so CFile's constructor falls back to
+            // UTF-8. Genuine Windows-1252 bytes >= 0x80 therefore do not
+            // round-trip through a default-encoding CFile today: this pins that
+            // failure down explicitly and precisely, rather than just omitting
+            // Windows-1252 coverage, so that whenever a future change (PR1, per
+            // docs/known-issues.md) makes real Windows-1252 decoding available
+            // again, this test fails visibly and has to be looked at, instead of
+            // the gap silently closing unnoticed.
+            //
+            // "èaà\nüî" encoded as Windows-1252 -- which, for these particular
+            // accented characters, has the same single-byte values as Latin-1 --
+            // would be the 6 bytes { 0xE8, 0x61, 0xE0, 0x0A, 0xFC, 0xEE }
+            // (è, a, à, \n, ü, î). Decoded as UTF-8 instead: 0xE8/0xE0/0xFC/0xEE
+            // all have a multi-byte UTF-8 lead-byte shape with no valid
+            // continuation bytes following, so the decoder does not read back
+            // 'è','a','à','\n','ü','î' at all -- it substitutes U+FFFD
+            // (the Unicode replacement character), consuming the invalid lead
+            // byte together with whatever follows it (even a plain ASCII byte
+            // like the 'a' or '\n' in this input) as part of the same failed
+            // sequence.
+            byte[] windows1252Bytes = { 0xE8, 0x61, 0xE0, 0x0A, 0xFC, 0xEE };
+            using (var cfile = new CFile(BuildStream(windows1252Bytes))) {
+                Assert.Equal("utf-8", cfile.Encoding.WebName);
+                Assert.Equal(0xFFFD, cfile.ReadChar());
+                Assert.Equal(0xFFFD, cfile.ReadChar());
+                Assert.Equal(0xFFFD, cfile.ReadChar());
+                Assert.Equal(0xFFFD, cfile.ReadChar());
+                Assert.Equal(0, cfile.ReadChar());
+                Assert.True(cfile.EOF);
+            }
+        }
+
+        [Fact]
         public void TestReadLineEncoded() {
             using (var cfile = new CFile(BuildStream("èaà\nüî"))) {
                 Assert.Equal("èaà", cfile.ReadLine());
