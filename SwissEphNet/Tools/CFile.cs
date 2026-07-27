@@ -23,9 +23,6 @@ namespace SwissEphNet
             EOF = _Stream == null;
             try
             {
-#if NET_STANDARD
-            //Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-#endif
                 this.Encoding = encoding ?? Encoding.GetEncoding("Windows-1252");
             }
             catch

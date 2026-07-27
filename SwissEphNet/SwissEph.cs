@@ -20,9 +20,6 @@ namespace SwissEphNet
         {
             try
             {
-#if NET_STANDARD
-            //Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-#endif
                 DefaultEncoding = Encoding.GetEncoding("Windows-1252");
             }
             catch
