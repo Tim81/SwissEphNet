@@ -9,11 +9,11 @@ internal sealed record Waiver(string Glob, string PrNumber, string Reason, Regex
 /// <summary>Usage counters for one waiver, accumulated across every area in a single run.</summary>
 internal sealed class WaiverStats
 {
-    /// <summary>Rows present on both sides whose case id matched this waiver's glob.</summary>
+    /// <summary>Rows present on both sides whose case id matched this waiver's glob, regardless of outcome.</summary>
     public int Matched;
 
-    /// <summary>Of those, rows that were not byte-for-byte identical (tolerance-ok or beyond-tolerance).</summary>
-    public int Differed;
+    /// <summary>Of those, rows that would have FAILED comparison without this waiver.</summary>
+    public int Waived;
 }
 
 /// <summary>
@@ -24,23 +24,36 @@ internal sealed class WaiverStats
 /// Glob syntax is deliberately not shell/gitignore glob: a case id is a run of
 /// pipe-delimited fields (e.g. "H|A|23.4392911|-89|0"), so '*' matches within a single
 /// field (compiles to <c>[^|]*</c>) and '**' matches across fields (compiles to
-/// <c>.*</c>). A bare "H*" therefore matches nothing real -- every case id has more
-/// than one field -- which is intentional: it stops a two-character glob from silently
-/// sweeping in every area whose prefix starts with the same letter (H, HP, HN, HS, HX,
-/// HSUN all start with 'H'). To waive an entire area, spell it out: "H|**".
+/// <c>.*</c>). To waive an entire area, spell it out with the separator: "H|**".
 ///
-/// A waiver that is exactly "*" or "**", or whose compiled pattern matches the
-/// synthetic probe case id below, is rejected at load time: both are catch-alls in
-/// disguise and would make the comparison vacuous.
+/// The segment of the glob before its first '|' (the area prefix) must be written as a
+/// literal string with no '*' in it at all -- this is enforced at load time, not just
+/// documented. Without that rule, "H**" would compile to <c>^H.*$</c> and silently
+/// sweep in every area whose prefix starts with 'H' (H, HP, HN, HS, HX, HSUN), and
+/// "*|*|*|*|*" would match every five-field case id in the whole matrix -- both look
+/// scoped at a glance and are not. "H|**" (with the pipe) is the correct, and only,
+/// way to waive a whole area.
+///
+/// A waiver that is exactly "*" or "**", or whose compiled pattern matches any of the
+/// synthetic probe case ids below, is also rejected at load time.
 /// </summary>
 internal static class Waivers
 {
     /// <summary>
-    /// A case id no real matrix case can ever produce (area prefixes are short,
-    /// hand-written identifiers; this is deliberately long, multi-field, and
-    /// nonsensical). Any waiver glob that matches this is too broad to be trusted.
+    /// Case ids no real matrix case can ever produce (area prefixes are short,
+    /// hand-written identifiers; these are deliberately long, nonsensical, and of
+    /// varying field count). Any waiver glob that matches one of these is too broad
+    /// to be trusted. This is a backstop for shapes the leading-literal-prefix rule
+    /// does not itself cover (e.g. a glob with a legitimate-looking literal prefix
+    /// that is still unreasonably broad after it), not the primary defense.
     /// </summary>
-    private const string ProbeCaseId = "ZZZ_WAIVER_PROBE|field-one|field-two|field-three|field-four|field-five";
+    private static readonly string[] ProbeCaseIds =
+    [
+        "ZZZ_WAIVER_PROBE|field-one|field-two|field-three|field-four|field-five",
+        "ZZZ_WAIVER_PROBE",
+        "ZZZ_WAIVER_PROBE|field-one",
+        "ZZZ_WAIVER_PROBE|field-one|field-two",
+    ];
 
     private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
 
@@ -79,11 +92,22 @@ internal static class Waivers
                     $"{path}:{lineNumber + 1}: waiver glob '{glob}' is a catch-all and is not allowed. Scope it to a specific area and case shape.");
             }
 
-            var pattern = ToRegex(glob);
-            if (pattern.IsMatch(ProbeCaseId))
+            var firstPipe = glob.IndexOf('|');
+            var leadingSegment = firstPipe < 0 ? glob : glob[..firstPipe];
+            if (leadingSegment.Contains('*'))
             {
                 throw new InvalidOperationException(
-                    $"{path}:{lineNumber + 1}: waiver glob '{glob}' matches the synthetic probe case id (\"{ProbeCaseId}\") and is too broad. Narrow it.");
+                    $"{path}:{lineNumber + 1}: waiver glob '{glob}' has a wildcard before its first '|' (area prefix \"{leadingSegment}\"). " +
+                    "Write the area prefix literally and use the separator, e.g. \"H|**\" not \"H**\" -- " +
+                    "otherwise a two-character glob can silently sweep in every area sharing a leading letter.");
+            }
+
+            var pattern = ToRegex(glob);
+            var matchedProbe = Array.Find(ProbeCaseIds, pattern.IsMatch);
+            if (matchedProbe is not null)
+            {
+                throw new InvalidOperationException(
+                    $"{path}:{lineNumber + 1}: waiver glob '{glob}' matches the synthetic probe case id (\"{matchedProbe}\") and is too broad. Narrow it.");
             }
 
             waivers.Add(new Waiver(glob, prNumber, reason, pattern));
@@ -95,16 +119,24 @@ internal static class Waivers
     public static Dictionary<Waiver, WaiverStats> InitStats(IReadOnlyList<Waiver> waivers) =>
         waivers.ToDictionary(w => w, _ => new WaiverStats());
 
-    public static Waiver? Match(IReadOnlyList<Waiver> waivers, string caseId)
+    /// <summary>
+    /// Every waiver whose glob matches <paramref name="caseId"/>, not just the first.
+    /// A case id can legitimately fall under more than one waiver (a broad area waiver
+    /// and a narrower one nested inside it); if only the first match got credit, the
+    /// second would always show zero matches and get flagged stale by line-order
+    /// accident.
+    /// </summary>
+    public static IReadOnlyList<Waiver> MatchAll(IReadOnlyList<Waiver> waivers, string caseId)
     {
+        List<Waiver>? matches = null;
         foreach (var waiver in waivers)
         {
             if (waiver.Pattern.IsMatch(caseId))
             {
-                return waiver;
+                (matches ??= []).Add(waiver);
             }
         }
-        return null;
+        return (IReadOnlyList<Waiver>?)matches ?? [];
     }
 
     private static Regex ToRegex(string glob)

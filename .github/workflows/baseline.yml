@@ -5,15 +5,58 @@ on:
     branches: ["**"]
   pull_request:
 
+permissions:
+  contents: read
+
+# Push (all branches) + pull_request means a same-repo PR branch would otherwise run
+# this workflow twice for the same commit; cancel the older run instead of paying for both.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  # Primary gate. Tools/global.json pins the SDK to the 10.0 major.minor line (see
+  # that file) so the runtime the tolerance is meant to insure against does not
+  # itself drift silently underneath this job.
   verify-baseline:
     runs-on: windows-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
+
+      - name: Run gate unit tests
+        shell: pwsh
+        run: dotnet test Tools/BaselineVerify.Tests -c Release
+
+      - name: Verify baseline
+        shell: pwsh
+        run: pwsh scripts/verify-baseline.ps1
+
+  # Informational only. The whole reason the comparison has a tolerance instead of
+  # requiring an exact match is that Math.Sin/Cos/Tan/Pow/Asin/Acos/Atan/Atan2/Log/Exp
+  # are not guaranteed bit-identical across OS -- this job is how that claim gets
+  # checked against real data instead of staying an assumption. continue-on-error
+  # keeps a genuine cross-platform difference from blocking merges while it's being
+  # characterized; if this goes red, that's new information, not a regression to fix
+  # on the spot.
+  verify-baseline-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Run gate unit tests
+        shell: pwsh
+        run: dotnet test Tools/BaselineVerify.Tests -c Release
 
       - name: Verify baseline
         shell: pwsh

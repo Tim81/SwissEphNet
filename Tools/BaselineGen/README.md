@@ -17,10 +17,16 @@ Four projects, one shared matrix:
   build at all with `UseReferencePackage=true` (see `BaselineVerify.csproj`) --
   without that guard, verification could compare the reference package against a
   baseline generated from that same package and pass regardless of what changed.
-- **`BaselineVerify.Tests`** -- xUnit tests for `Comparer` and `Waivers` themselves:
-  exact/tolerance/beyond-tolerance/zero-vs-negligible comparisons, arity changes,
-  missing rows, glob anchoring, and rejection of catch-all waivers. The gate's own
-  logic needs coverage independent of whatever the matrix happens to produce.
+- **`BaselineVerify.Tests`** -- xUnit tests for `Comparer`, `Waivers`, and `Verdict`
+  (the PASS/FAIL policy itself, pulled out of `Program.cs`'s top-level statements
+  specifically so it is reachable from tests): exact/tolerance/beyond-tolerance
+  comparisons at and near the threshold, the relative-vs-absolute crossover, arity
+  changes, missing rows, glob anchoring, rejection of catch-all waivers, the waived
+  and matched-breadth fraction caps on both sides of 5%, both stale-waiver
+  conditions, and all four assembly-identity-check outcomes. The gate's own logic
+  needs coverage independent of whatever the matrix happens to produce. Run with
+  `dotnet test Tools/BaselineVerify.Tests -c Release`; CI runs this before every
+  verify.
 
 These four, plus `SwissEphNet.csproj` itself, live in `Tools/BaselineTools.slnx`.
 They are **not** part of `SwissEphNet.sln` -- see "Why a separate solution" below.
@@ -78,7 +84,12 @@ in local mode, runs every area, and compares each against
   across OS, architecture, or runtime version -- only `Math.Sqrt` is exempt from
   that). The absolute floor matters because a large share of the matrix's numeric
   fields are exactly zero, where a purely relative tolerance is meaningless.
-- String and integer fields must match exactly.
+- Any field that parses as a number -- including plain integers like return codes
+  and iflag values -- goes through that same numeric comparison; a field that does
+  not parse as a number (strings, the `EXCEPTION` marker, `serr` text) must match
+  exactly. This makes no practical difference for integers (a real integer
+  difference is always many orders of magnitude past the tolerance), but it is the
+  numeric path, not a separate exact-integer path, that actually runs for them.
 - Existence -- a case id present on only one side -- is checked before any waiver
   and can never be waived; a waiver only ever excuses a value difference on a row
   both sides agree exists.
@@ -86,13 +97,26 @@ in local mode, runs every area, and compares each against
   on a non-numeric field, a numeric field beyond tolerance, an arity change, or a
   row missing from one side), or WAIVED (its case id matches a glob in
   `Tools/BaselineVerify/waivers.tsv`, which also records the PR it belongs to and
-  the reason -- see that file's format and current entries).
-- Every waiver is checked for staleness at the end of the run: if it matched zero
-  rows, or every row it matched was byte-for-byte identical anyway, the run fails.
-  An area also fails outright if more than 5% of its rows are waived.
+  the reason -- see that file's format, glob syntax, and current entries). A case id
+  can match more than one waiver; every matching waiver gets credit for the row, not
+  just the first one found.
+- Every waiver is checked for staleness at the end of the run: it fails if it
+  matched zero rows, or if every row it matched passed on its own (exact or within
+  tolerance) and the waiver never actually excused a failure.
+- An area fails outright if more than 5% of its rows had a failure excused by a
+  waiver (`WaivedFraction`), **or** if more than 5% of its rows were touched by a
+  waiver at all regardless of outcome (`MatchedFraction`) -- the second cap exists
+  because a broad glob is a risk the moment it matches a lot of rows, not only once
+  one of those rows starts failing.
+- The committed environment sidecar (`Tests/baseline/baseline-<version>.env.txt`,
+  written by whichever run produced the reference file) is compared against the
+  currently running build's `ModuleVersionId` and DLL SHA-256. If either matches,
+  the run fails: local mode should never be compiling to the same bytes as the
+  reference package.
 
 Exit code is 0 only if every area has zero FAIL, zero ONLY-LOCAL and zero
-ONLY-REFERENCE rows, no stale waivers, and no area over the 5% waived-fraction cap.
+ONLY-REFERENCE rows, no stale waivers, no area over either 5% cap, and the
+assembly-identity check does not detect a suspicious match.
 
 ## Why a separate solution
 
@@ -102,10 +126,19 @@ ONLY-REFERENCE rows, no stale waivers, and no area over the 5% waived-fraction c
 these projects to `SwissEphNet.sln` would break `dotnet restore .\SwissEphNet.sln`
 in CI before the build step even starts. `Tools/BaselineTools.slnx` keeps them
 buildable and discoverable locally without going anywhere near the CI image or the
-library's own target frameworks. `.github/workflows/baseline.yml` is what actually
-runs `scripts/verify-baseline.ps1` on every push/PR, on `windows-latest` with the
-net10.0 SDK via `actions/setup-dotnet` -- a separate CI system from AppVeyor, so
-neither one's SDK requirements constrain the other.
+library's own target frameworks. `Tools/global.json` pins the SDK to the `10.0`
+major.minor line for anything built from under `Tools/`; SDK resolution walks up
+from a project's own directory, not from the invoking shell's working directory, so
+this has no effect on `SwissEphNet.sln` at the repo root.
+
+`.github/workflows/baseline.yml` is what actually runs the gate: `dotnet test
+Tools/BaselineVerify.Tests` followed by `scripts/verify-baseline.ps1`, on
+`windows-latest`, on every push and PR -- a separate CI system from AppVeyor, so
+neither one's SDK requirements constrain the other. A second, `continue-on-error`
+job runs the same two steps on `ubuntu-latest`: non-blocking, since the tolerance's
+whole justification is that the transcendental functions it is meant to insure
+against are not guaranteed bit-identical across platforms, and this is how that
+claim gets checked against real data instead of staying an assumption.
 
 ## Matrix coverage
 

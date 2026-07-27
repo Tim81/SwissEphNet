@@ -8,15 +8,21 @@
 // absolute tolerance, since CPort calls Math.Sin/Cos/Tan/Pow/Asin/Acos/Atan/Atan2/
 // Log/Exp hundreds of times and .NET does not guarantee bit-identical transcendental
 // results across OS, architecture or runtime version (Math.Sqrt is the one
-// exception). String and integer fields must match exactly.
+// exception). Every field that parses as a number -- including plain integers like
+// return codes and iflag values -- goes through that same numeric comparison; only
+// fields that do not parse as a number (strings, the EXCEPTION marker, serr text)
+// require an exact string match. In practice this makes no difference for integers,
+// since a real difference between them is always many orders of magnitude past the
+// tolerance, but the numeric path is what actually runs for them.
 //
 // A row whose case id matches a glob in waivers.tsv is reported separately and never
 // fails the run BY ITSELF -- but the run still fails if any waiver matched zero rows,
-// every row it matched was byte-for-byte identical (both are the stale-waiver case:
-// the waiver is not earning its keep), or an area's waived fraction exceeds 5% (a
-// waiver list that big is hiding a real problem, not documenting a handful of known
-// ones). A waiver can never excuse a missing or added row, only a value difference on
-// a row both sides agree exists.
+// every row it matched passed on its own (exact or within tolerance, so the waiver
+// never actually excused a failure), an area's waived-failures fraction exceeds 5%, or
+// an area's waiver match breadth (rows touched at all, regardless of outcome) exceeds
+// 5%. All of the PASS/FAIL policy above lives in Verdict.cs, not here, specifically so
+// it can be unit tested. A waiver can never excuse a missing or added row, only a
+// value difference on a row both sides agree exists.
 //
 // Usage: BaselineVerify [baseline-directory]
 // If omitted, the baseline directory is discovered by walking up from this
@@ -24,8 +30,6 @@
 
 using BaselineMatrix;
 using BaselineVerify;
-
-const double MaxWaivedFraction = 0.05;
 
 var baselineDir = args.Length > 0 ? Path.GetFullPath(args[0]) : DiscoverBaselineDir();
 if (!Directory.Exists(baselineDir))
@@ -41,53 +45,74 @@ var waiverStats = Waivers.InitStats(waivers);
 Console.WriteLine(EnvInfo.Describe());
 Console.WriteLine($"Baseline directory: {baselineDir}");
 Console.WriteLine($"Waivers file: {waiversPath} ({waivers.Count} entries)");
-WarnIfModuleVersionMatchesSidecar(baselineDir);
-Console.WriteLine();
 
 var overallExitCode = 0;
+
+if (CheckAssemblyIdentity(baselineDir))
+{
+    overallExitCode = 1;
+}
+
+Console.WriteLine();
 var header = $"{"STATUS",-6} {"AREA",-14} {"TOTAL",7} {"LOCAL-LN",8} {"REF-LN",7} {"EXACT",7} {"TOL-OK",7} {"FAIL",6} {"WAIVED",7} {"ONLY-LOCAL",10} {"ONLY-REF",9}";
 Console.WriteLine(header);
 Console.WriteLine(new string('-', header.Length));
 
 foreach (var (name, populate) in Areas.All)
 {
-    var localRows = Areas.Generate(populate);
     var baselinePath = Path.Combine(baselineDir, $"baseline-{name}.tsv");
-
-    if (!File.Exists(baselinePath))
+    try
     {
-        Console.WriteLine($"{"FAIL",-6} {name,-14} -- no committed baseline file at {baselinePath}");
-        overallExitCode = 1;
-        continue;
-    }
+        if (!File.Exists(baselinePath))
+        {
+            var missing = Verdict.MissingBaselineFile(baselinePath);
+            Console.WriteLine($"{"FAIL",-6} {name,-14} -- {missing.Reasons[0]}");
+            overallExitCode = 1;
+            continue;
+        }
 
-    var referenceRows = File.ReadAllLines(baselinePath);
-    var result = Comparer.Compare(localRows, referenceRows, waivers, waiverStats, name);
-    var waivedFractionTooHigh = !double.IsNaN(result.WaivedFraction) && result.WaivedFraction > MaxWaivedFraction;
-    var areaFailed = result.Fail > 0 || result.OnlyLocal > 0 || result.OnlyReference > 0 || waivedFractionTooHigh;
-    var status = areaFailed ? "FAIL" : "PASS";
+        var localRows = Areas.Generate(populate);
+        var referenceRows = File.ReadAllLines(baselinePath);
+        var result = Comparer.Compare(localRows, referenceRows, waivers, waiverStats, name);
+        var verdict = Verdict.ForArea(result);
 
-    Console.WriteLine(
-        $"{status,-6} {name,-14} {result.Total,7} {result.LocalLineCount,8} {result.ReferenceLineCount,7} {result.Exact,7} {result.ToleranceOk,7} {result.Fail,6} {result.Waived,7} {result.OnlyLocal,10} {result.OnlyReference,9}");
-
-    if (waivedFractionTooHigh)
-    {
-        overallExitCode = 1;
         Console.WriteLine(
-            $"    FAIL {name}: waived fraction {result.WaivedFraction:P1} exceeds the {MaxWaivedFraction:P0} cap ({result.Waived} of {result.Total} rows waived)");
-    }
+            $"{(verdict.Passed ? "PASS" : "FAIL"),-6} {name,-14} {result.Total,7} {result.LocalLineCount,8} {result.ReferenceLineCount,7} " +
+            $"{result.Exact,7} {result.ToleranceOk,7} {result.Fail,6} {result.Waived,7} {result.OnlyLocal,10} {result.OnlyReference,9}");
 
-    if (areaFailed)
+        if (!verdict.Passed)
+        {
+            overallExitCode = 1;
+            foreach (var reason in verdict.Reasons)
+            {
+                Console.WriteLine($"    FAIL {name}: {reason}");
+            }
+            foreach (var detail in result.FailureDetails.Take(50))
+            {
+                Console.WriteLine($"    FAIL {detail}");
+            }
+            if (result.FailureDetails.Count > 50)
+            {
+                Console.WriteLine($"    ... and {result.FailureDetails.Count - 50} more FAIL rows in {name}");
+            }
+        }
+
+        foreach (var detail in result.WaivedDetails.Take(20))
+        {
+            Console.WriteLine($"    WAIVED {detail}");
+        }
+        if (result.WaivedDetails.Count > 20)
+        {
+            Console.WriteLine($"    ... and {result.WaivedDetails.Count - 20} more WAIVED rows in {name}");
+        }
+    }
+    catch (Exception ex)
     {
+        // Deliberately caught here rather than left to crash the process: one bad
+        // area (e.g. a duplicate case id) should not prevent every other area from
+        // being checked and reported.
         overallExitCode = 1;
-        foreach (var detail in result.FailureDetails.Take(50))
-        {
-            Console.WriteLine($"    FAIL {detail}");
-        }
-        if (result.FailureDetails.Count > 50)
-        {
-            Console.WriteLine($"    ... and {result.FailureDetails.Count - 50} more in {name}");
-        }
+        Console.WriteLine($"{"ERROR",-6} {name,-14} -- {ex.GetType().Name}: {ex.Message}");
     }
 }
 
@@ -100,17 +125,13 @@ if (waivers.Count == 0)
 foreach (var waiver in waivers)
 {
     var stats = waiverStats[waiver];
-    Console.WriteLine($"  {waiver.Glob} -> {stats.Matched} matched, {stats.Differed} differed  (PR {waiver.PrNumber}: {waiver.Reason})");
+    Console.WriteLine($"  {waiver.Glob} -> {stats.Matched} matched, {stats.Waived} waived  (PR {waiver.PrNumber}: {waiver.Reason})");
 
-    if (stats.Matched == 0)
+    var waiverVerdict = Verdict.ForWaiver(waiver, stats);
+    if (waiverVerdict.Stale)
     {
         overallExitCode = 1;
-        Console.WriteLine($"    FAIL stale waiver: \"{waiver.Glob}\" matched zero rows. Remove it.");
-    }
-    else if (stats.Differed == 0)
-    {
-        overallExitCode = 1;
-        Console.WriteLine($"    FAIL stale waiver: \"{waiver.Glob}\" matched {stats.Matched} row(s) but every one was byte-for-byte identical. Remove it.");
+        Console.WriteLine($"    FAIL stale waiver: {waiverVerdict.Reason}");
     }
 }
 
@@ -136,24 +157,56 @@ static string DiscoverBaselineDir()
     return Path.Combine(dir.FullName, "Tests", "baseline");
 }
 
-static void WarnIfModuleVersionMatchesSidecar(string baselineDir)
+/// <summary>Reads the sidecar (if any), delegates the actual decision to Verdict.CheckAssemblyIdentity, prints the outcome, and returns whether it should fail the run.</summary>
+static bool CheckAssemblyIdentity(string baselineDir)
 {
     var sidecarPath = Path.Combine(baselineDir, EnvInfo.SidecarFileName);
-    if (!File.Exists(sidecarPath))
+    string? content = File.Exists(sidecarPath) ? File.ReadAllText(sidecarPath) : null;
+    var currentMvid = EnvInfo.CurrentModuleVersionId();
+    var currentSha256 = EnvInfo.CurrentSha256();
+    var verdict = Verdict.CheckAssemblyIdentity(content, currentMvid, currentSha256);
+
+    Console.WriteLine($"Current SwissEph ModuleVersionId: {currentMvid:D}");
+    Console.WriteLine($"Current SwissEph SHA-256: {currentSha256}");
+
+    switch (verdict.MvidOutcome)
     {
-        return;
+        case MvidCheckOutcome.Skipped:
+            Console.WriteLine($"Assembly-identity check SKIPPED: no sidecar found at {sidecarPath}.");
+            break;
+        case MvidCheckOutcome.Unparseable:
+            Console.WriteLine($"Assembly-identity check SKIPPED: {sidecarPath} exists but has no parseable SwissEphModuleVersionId= line.");
+            break;
+        case MvidCheckOutcome.Matches:
+            Console.WriteLine(
+                $"FAIL assembly-identity check: current ModuleVersionId matches the one recorded in {sidecarPath} " +
+                "(from the reference-mode generation run). Local mode should be compiling a different assembly " +
+                "than the reference package -- verify BaselineVerify did not build with UseReferencePackage=true.");
+            break;
+        case MvidCheckOutcome.Differs:
+            Console.WriteLine("Assembly-identity check OK: ModuleVersionId differs from the reference build, as expected for local mode.");
+            break;
     }
 
-    var committedMvid = EnvInfo.ParseModuleVersionId(File.ReadAllText(sidecarPath));
-    var currentMvid = EnvInfo.CurrentModuleVersionId();
-    Console.WriteLine($"Current SwissEph ModuleVersionId: {currentMvid:D}");
+    if (verdict.MvidOutcome is MvidCheckOutcome.Skipped or MvidCheckOutcome.Unparseable)
+    {
+        return verdict.IsSuspiciousMatch;
+    }
 
-    if (committedMvid == currentMvid)
+    if (!verdict.Sha256Comparable)
+    {
+        Console.WriteLine($"SHA-256 check SKIPPED: {sidecarPath} has no parseable SwissEphAssemblySha256= line.");
+    }
+    else if (verdict.Sha256Matches)
     {
         Console.WriteLine(
-            $"WARNING: current ModuleVersionId matches the one recorded in {sidecarPath} " +
-            "(from the reference-mode generation run). Local mode should be compiling a different " +
-            "assembly than the reference package; if this is unexpected, verify BaselineVerify did " +
-            "not build against UseReferencePackage=true.");
+            "FAIL assembly-identity check: current assembly SHA-256 matches the reference build's. " +
+            "This should not happen for local mode -- investigate before trusting this run.");
     }
+    else
+    {
+        Console.WriteLine("SHA-256 check OK: differs from the reference build, as expected for local mode.");
+    }
+
+    return verdict.IsSuspiciousMatch;
 }

@@ -51,6 +51,9 @@ public static class EnvInfo
     /// <summary>The GUID baked into the currently loaded SwissEphNet assembly at compile time.</summary>
     public static Guid CurrentModuleVersionId() => typeof(SwissEph).Assembly.ManifestModule.ModuleVersionId;
 
+    /// <summary>SHA-256 of the currently loaded SwissEphNet assembly's bytes on disk.</summary>
+    public static string CurrentSha256() => ComputeSha256(typeof(SwissEph).Assembly.Location);
+
     /// <summary>Extracts the SwissEphModuleVersionId= line from a previously captured <see cref="Describe"/> block, or null if absent/unparseable.</summary>
     public static Guid? ParseModuleVersionId(string envFileContent)
     {
@@ -62,6 +65,22 @@ public static class EnvInfo
                 Guid.TryParse(trimmed[prefix.Length..], out var guid))
             {
                 return guid;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>Extracts the SwissEphAssemblySha256= line from a previously captured <see cref="Describe"/> block, or null if absent.</summary>
+    public static string? ParseSha256(string envFileContent)
+    {
+        const string prefix = "SwissEphAssemblySha256=";
+        foreach (var line in envFileContent.Split('\n'))
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                var value = trimmed[prefix.Length..].Trim();
+                return value.Length == 0 ? null : value;
             }
         }
         return null;

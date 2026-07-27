@@ -16,13 +16,34 @@ internal sealed class CompareResult
     public int Exact;
     public int ToleranceOk;
     public int Fail;
+
+    /// <summary>Rows that would have failed comparison but were excused by at least one waiver.</summary>
     public int Waived;
+
+    /// <summary>
+    /// Rows touched by at least one waiver's glob, regardless of comparison outcome.
+    /// Always &gt;= Waived: a glob can match a row that turns out to be Exact or
+    /// ToleranceOk on its own, in which case it counts here but not in Waived. This is
+    /// "breadth of match" as distinct from "failures actually absorbed" -- a glob that
+    /// touches a lot of rows is a risk even if today most of those rows happen to pass
+    /// anyway, since tomorrow's regression in one of them would be silently swallowed.
+    /// </summary>
+    public int MatchedByAnyWaiver;
+
     public int OnlyLocal;
     public int OnlyReference;
+
+    /// <summary>One line per FAIL row (not waived), in report order.</summary>
     public List<string> FailureDetails { get; } = [];
 
-    /// <summary>Fraction of Total that was waived. NaN if Total is 0.</summary>
+    /// <summary>One line per row that failed comparison but was excused by a waiver, so a reviewer can see how far the value moved without re-running by hand.</summary>
+    public List<string> WaivedDetails { get; } = [];
+
+    /// <summary>Fraction of Total whose failure was excused by a waiver. NaN if Total is 0.</summary>
     public double WaivedFraction => Total == 0 ? double.NaN : Waived / (double)Total;
+
+    /// <summary>Fraction of Total touched by a waiver at all, regardless of outcome. NaN if Total is 0.</summary>
+    public double MatchedFraction => Total == 0 ? double.NaN : MatchedByAnyWaiver / (double)Total;
 }
 
 /// <summary>
@@ -36,6 +57,10 @@ internal sealed class CompareResult
 /// ever excuse a value difference on a row both sides agree exists, never the
 /// disappearance or appearance of a row. Waiving row deletion would let a matrix
 /// change silently drop coverage while still reporting green.
+///
+/// A case id can match more than one waiver (e.g. a broad area waiver and a narrower
+/// one nested inside it); every matching waiver gets credit, not just the first one
+/// found, so waiver semantics do not silently depend on line order in waivers.tsv.
 /// </summary>
 internal static class Comparer
 {
@@ -91,20 +116,35 @@ internal static class Comparer
             }
 
             var (outcome, detail) = CompareFields(caseId, localFields!, referenceFields!);
+            var matchingWaivers = Waivers.MatchAll(waivers, caseId);
 
-            var waiver = Waivers.Match(waivers, caseId);
-            if (waiver is not null && waiverStats.TryGetValue(waiver, out var stats))
+            if (matchingWaivers.Count > 0)
             {
-                stats.Matched++;
-                if (outcome != FieldOutcome.Exact)
+                result.MatchedByAnyWaiver++;
+                foreach (var waiver in matchingWaivers)
                 {
-                    stats.Differed++;
+                    if (!waiverStats.TryGetValue(waiver, out var stats))
+                    {
+                        continue;
+                    }
+                    stats.Matched++;
+                    // Only a row that would actually have FAILED counts toward "this
+                    // waiver is earning its keep". A row that is merely ToleranceOk
+                    // needed no excuse -- it already passes on its own -- so crediting
+                    // it here would let a waiver whose matches are all within-tolerance
+                    // (never an outright failure) dodge the stale-waiver check forever.
+                    if (outcome == FieldOutcome.Fail)
+                    {
+                        stats.Waived++;
+                    }
                 }
             }
 
-            if (outcome == FieldOutcome.Fail && waiver is not null)
+            if (outcome == FieldOutcome.Fail && matchingWaivers.Count > 0)
             {
                 result.Waived++;
+                var globs = string.Join(", ", matchingWaivers.Select(w => w.Glob));
+                result.WaivedDetails.Add($"{detail} (waived by: {globs})");
                 continue;
             }
 

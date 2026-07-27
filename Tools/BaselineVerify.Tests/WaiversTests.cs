@@ -74,11 +74,62 @@ public class WaiversTests
     }
 
     [Fact]
+    public void Load_RejectsHDoubleStarWithoutSeparator()
+    {
+        // The exact bypass a review found: "H**" compiles to ^H.*$ without the
+        // leading-literal-segment rule, and would silently match every area whose
+        // prefix starts with 'H' (H, HP, HN, HS, HX, HSUN).
+        var path = WriteWaiversFile("H**\t123\treason\n");
+        try
+        {
+            var ex = Assert.Throws<InvalidOperationException>(() => Waivers.Load(path));
+            Assert.Contains("wildcard before its first '|'", ex.Message, StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void Load_RejectsAllFieldsWildcardGlob()
+    {
+        // The other bypass a review found: matches every five-field case id in the
+        // whole matrix.
+        var path = WriteWaiversFile("*|*|*|*|*\t123\treason\n");
+        try
+        {
+            Assert.Throws<InvalidOperationException>(() => Waivers.Load(path));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void Load_AcceptsLiteralPrefixWithSeparatorBeforeDoubleStar()
+    {
+        // The correct, and only, way to waive an entire area.
+        var path = WriteWaiversFile("H|**\t123\treason\n");
+        try
+        {
+            var waivers = Waivers.Load(path);
+            Assert.Single(waivers);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void Load_RejectsGlobThatMatchesSyntheticProbe()
     {
-        // Not literally "*" or "**", but its compiled pattern ("^ZZZ_WAIVER_PROBE\|.*$")
-        // matches the probe case id -- this exercises the probe-match rejection path
-        // specifically, not the literal bare-star check.
+        // Not literally "*" or "**", and its leading segment ("ZZZ_WAIVER_PROBE") is
+        // a literal, so it passes the structural check -- but its compiled pattern
+        // still matches one of the probe case ids, exercising the probe-match
+        // rejection specifically.
         var path = WriteWaiversFile("ZZZ_WAIVER_PROBE|**\t123\treason\n");
         try
         {
@@ -110,14 +161,14 @@ public class WaiversTests
     }
 
     [Fact]
-    public void Match_FieldLocalStarDoesNotCrossPipes()
+    public void MatchAll_FieldLocalStarDoesNotCrossPipes()
     {
         var path = WriteWaiversFile("H|*\t123\treason\n");
         try
         {
             var waivers = Waivers.Load(path);
-            Assert.NotNull(Waivers.Match(waivers, "H|A"));
-            Assert.Null(Waivers.Match(waivers, "H|A|1|2|3"));
+            Assert.NotEmpty(Waivers.MatchAll(waivers, "H|A"));
+            Assert.Empty(Waivers.MatchAll(waivers, "H|A|1|2|3"));
         }
         finally
         {
@@ -126,14 +177,14 @@ public class WaiversTests
     }
 
     [Fact]
-    public void Match_DoubleStarCrossesPipes()
+    public void MatchAll_DoubleStarCrossesPipes()
     {
         var path = WriteWaiversFile("H|**\t123\treason\n");
         try
         {
             var waivers = Waivers.Load(path);
-            Assert.NotNull(Waivers.Match(waivers, "H|A"));
-            Assert.NotNull(Waivers.Match(waivers, "H|A|1|2|3"));
+            Assert.NotEmpty(Waivers.MatchAll(waivers, "H|A"));
+            Assert.NotEmpty(Waivers.MatchAll(waivers, "H|A|1|2|3"));
         }
         finally
         {
@@ -142,17 +193,34 @@ public class WaiversTests
     }
 
     [Fact]
-    public void Match_DoesNotSweepInUnrelatedAreasSharingAPrefixLetter()
+    public void MatchAll_ReturnsEveryMatchingWaiverNotJustTheFirst()
     {
-        // "H*" without a field separator is the historical bug this glob syntax
-        // exists to prevent: it must not match "HP|...", "HN|...", "HSUN|...", etc.
-        var path = WriteWaiversFile("H*\t123\treason\n");
+        // A broad area waiver and a narrower one nested inside it must both get
+        // credit for the same row -- otherwise the narrower one always shows zero
+        // matches and gets flagged stale purely because of line order.
+        var path = WriteWaiversFile("H|**\t1\tbroad\nH|G|**\t2\tnarrow\n");
         try
         {
             var waivers = Waivers.Load(path);
-            Assert.Null(Waivers.Match(waivers, "HP|G|0|-45|0|-5"));
-            Assert.Null(Waivers.Match(waivers, "HSUN|I|0|0|0|sentinel99"));
-            Assert.Null(Waivers.Match(waivers, "H|A|23.4392911|-89|0"));
+            var matches = Waivers.MatchAll(waivers, "H|G|23.4392911|-89|0");
+            Assert.Equal(2, matches.Count);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void MatchAll_DoesNotSweepInUnrelatedAreasSharingAPrefixLetter()
+    {
+        var path = WriteWaiversFile("H|**\t123\treason\n");
+        try
+        {
+            var waivers = Waivers.Load(path);
+            Assert.Empty(Waivers.MatchAll(waivers, "HP|G|0|-45|0|-5"));
+            Assert.Empty(Waivers.MatchAll(waivers, "HSUN|I|0|0|0|sentinel99"));
+            Assert.NotEmpty(Waivers.MatchAll(waivers, "H|A|23.4392911|-89|0"));
         }
         finally
         {

@@ -59,12 +59,20 @@ if ($mismatch) {
 
 Write-Host "Reproducible: run A and run B are byte-identical."
 
-Write-Host "Copying run A into $baselineDir"
-New-Item -ItemType Directory -Force -Path $baselineDir | Out-Null
-Get-ChildItem $baselineDir -Filter 'baseline-*.tsv' -ErrorAction SilentlyContinue | Remove-Item -Force
-Copy-Item (Join-Path $runA 'baseline-*.tsv') $baselineDir
-Copy-Item (Join-Path $runA 'baseline-2.8.0.2.env.txt') $baselineDir -Force
-
-Remove-Item $runA, $runB -Recurse -Force
+# The sidecar filename is derived from EnvInfo.ReferenceVersion (baseline-<version>.env.txt),
+# not hardcoded here -- a version bump must not leave a stale-named sidecar sitting next
+# to freshly regenerated TSVs. Delete and copy by pattern, not by a literal name, for both
+# file kinds.
+try {
+    Write-Host "Copying run A into $baselineDir"
+    New-Item -ItemType Directory -Force -Path $baselineDir | Out-Null
+    Get-ChildItem $baselineDir -Filter 'baseline-*.tsv' -ErrorAction SilentlyContinue | Remove-Item -Force
+    Get-ChildItem $baselineDir -Filter 'baseline-*.env.txt' -ErrorAction SilentlyContinue | Remove-Item -Force
+    Copy-Item (Join-Path $runA 'baseline-*.tsv') $baselineDir
+    Copy-Item (Join-Path $runA 'baseline-*.env.txt') $baselineDir
+}
+finally {
+    Remove-Item $runA, $runB -Recurse -Force -ErrorAction SilentlyContinue
+}
 
 Write-Host "Done. Review the diff in $baselineDir (git diff --stat Tests/baseline) and commit if it looks right."
