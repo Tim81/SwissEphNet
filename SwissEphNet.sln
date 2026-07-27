@@ -30,6 +30,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SweTest", "Programs\SweTest
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SweWin", "Programs\SweWin\SweWin.csproj", "{D1AE1640-218C-4CCB-BD09-EADCAE96335A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{07C2787E-EAC7-C090-1BA3-A61EC2A24D84}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BaselineGen", "Tools\BaselineGen\BaselineGen.csproj", "{0B3986F2-B650-4FE3-9B24-0EA8772B0A5C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,6 +60,10 @@ Global
 		{D1AE1640-218C-4CCB-BD09-EADCAE96335A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D1AE1640-218C-4CCB-BD09-EADCAE96335A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D1AE1640-218C-4CCB-BD09-EADCAE96335A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B3986F2-B650-4FE3-9B24-0EA8772B0A5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B3986F2-B650-4FE3-9B24-0EA8772B0A5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B3986F2-B650-4FE3-9B24-0EA8772B0A5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B3986F2-B650-4FE3-9B24-0EA8772B0A5C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -65,6 +73,7 @@ Global
 		{7D8FDC4D-94FB-4FB7-9457-23DDDE1DE55A} = {6D5C2702-2FF1-42A8-B86D-E5E5EAE41F66}
 		{0565849E-C335-4A55-ABB0-EB6CAEE8DAAD} = {DA9EB626-FC40-46C3-A44D-3EE76D044CC8}
 		{D1AE1640-218C-4CCB-BD09-EADCAE96335A} = {DA9EB626-FC40-46C3-A44D-3EE76D044CC8}
+		{0B3986F2-B650-4FE3-9B24-0EA8772B0A5C} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C3365763-6184-4409-A0B5-050E80CF0800}

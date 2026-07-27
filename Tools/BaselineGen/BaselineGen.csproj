@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>BaselineGen</RootNamespace>
+    <AssemblyName>BaselineGen</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!--
+      Switch between resolving SwissEphNet from the published NuGet package (the frozen
+      reference build) and resolving it from the in-repo project (current code under test).
+      Both point at the same matrix source in Program.cs, so a diff between the two modes'
+      output is a diff in library behavior, not in the harness.
+
+      dotnet run -p:UseReferencePackage=true   -> reference mode (NuGet 2.8.0.2)
+      dotnet run                               -> local mode (ProjectReference)
+    -->
+    <UseReferencePackage Condition="'$(UseReferencePackage)' == ''">false</UseReferencePackage>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(UseReferencePackage)' == 'true'">
+    <PackageReference Include="SwissEphNet" Version="2.8.0.2" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseReferencePackage)' != 'true'">
+    <ProjectReference Include="..\..\SwissEphNet\SwissEphNet.csproj" />
+  </ItemGroup>
+
+</Project>
