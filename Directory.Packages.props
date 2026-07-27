@@ -1,0 +1,23 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Test infrastructure shared by both test projects. -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+
+    <!--
+      Tools/BaselineVerify.Tests is xunit v3 (a self-executing console app); default
+      versions here are for that project. Tests/SwissEphNet.Tests stays on xunit v2
+      (see its csproj) and overrides xunit.runner.visualstudio with VersionOverride,
+      since the v2 and v3 runners are not interchangeable.
+    -->
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+  </ItemGroup>
+
+</Project>

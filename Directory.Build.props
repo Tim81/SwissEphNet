@@ -1,0 +1,39 @@
+<Project>
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Deterministic>true</Deterministic>
+    <!--
+      ContinuousIntegrationBuild forces deterministic source paths into the PDB
+      (used by SourceLink). Only set it under CI: doing it locally too replaces
+      real file paths with unresolvable ones in a debugger.
+    -->
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true' or '$(TF_BUILD)' == 'true' or '$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!--
+      Explicitly OFF, not merely defaulted off. SwissEphNet/CPort is a 1:1
+      transliteration of the Swiss Ephemeris C source (see CONTRIBUTING.md);
+      turning on nullable reference types would produce tens of thousands of
+      warnings across 1.5 MB of ported C with no bug-finding value, and the
+      next person to "helpfully" flip it on needs to see it was a deliberate
+      choice, not an oversight.
+    -->
+    <Nullable>disable</Nullable>
+    <!-- Packing happens explicitly (dotnet pack), not as a side effect of building. -->
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <!--
+    IsTrimmable/IsAotCompatible are set in Directory.Build.targets, not here: for a
+    single-TargetFramework project, $(TargetFramework) is not yet assigned at the
+    point Directory.Build.props is imported (it comes from Sdk.props, which runs
+    before the project's own PropertyGroup sets TargetFramework), so a condition on
+    it here would silently never match. Directory.Build.targets is imported after
+    Sdk.targets, once TargetFramework is resolved for every project shape.
+  -->
+
+</Project>

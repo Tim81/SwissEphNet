@@ -1,0 +1,34 @@
+# SwissEphNet/CPort/ is a line-by-line transliteration of the Swiss Ephemeris C
+# source. See ../../CONTRIBUTING.md before changing anything in this folder:
+# it must never be reformatted, and that includes analyzer-driven code-style
+# fixes, not only whitespace.
+#
+# Every analyzer diagnostic is silenced here except the small set below that
+# has actually caught real bugs in this port (the C.strcmp culture-sensitivity
+# bug was found by CA1304/CA1310) or that flags a mis-transliterated `goto`
+# (unreachable/unused-code warnings are a real signal in ported C, where a
+# `goto` that should have landed on a label sometimes lands past it instead).
+
+[*.cs]
+dotnet_analyzer_diagnostic.severity = none
+
+# Culture-sensitive string/number operations -- these are what surfaced the
+# C.strcmp bug (string.Compare without StringComparison, culture-sensitive on
+# some platforms/locales). Real transliteration bugs hide behind these.
+dotnet_diagnostic.CA1304.severity = warning
+dotnet_diagnostic.CA1305.severity = warning
+dotnet_diagnostic.CA1307.severity = warning
+dotnet_diagnostic.CA1309.severity = warning
+dotnet_diagnostic.CA1310.severity = warning
+
+# NaN comparison via == / != instead of double.IsNaN -- always a bug.
+dotnet_diagnostic.CA2242.severity = warning
+
+# Missing XML doc comments: not meaningful for a mechanical C port.
+dotnet_diagnostic.CS1591.severity = none
+
+# Unreachable/unused code -- in a hand-transliterated port, this usually means
+# a goto or conditional landed on the wrong label.
+dotnet_diagnostic.CS0162.severity = warning
+dotnet_diagnostic.CS0164.severity = warning
+dotnet_diagnostic.CS0219.severity = warning

@@ -1,0 +1,33 @@
+# Repo-wide defaults. SwissEphNet/CPort/ has its own nested .editorconfig that
+# relaxes analyzer severities for the transliterated C source; see that file
+# and CONTRIBUTING.md before touching anything under CPort/.
+
+root = true
+
+[*]
+charset = utf-8-bom
+end_of_line = crlf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{md,yml,yaml,json}]
+charset = utf-8
+indent_size = 2
+
+[*.{sln,slnx,slnf}]
+indent_style = tab
+
+[*.cs]
+csharp_using_directive_placement = outside_namespace:suggestion
+csharp_prefer_braces = true:suggestion
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = false:suggestion
+csharp_style_var_elsewhere = false:suggestion
+csharp_new_line_before_open_brace = all
+
+# Compiler/analyzer diagnostics.
+# CA2007 (ConfigureAwait) does not apply: this is a synchronous port with no
+# async code anywhere in the tree.
+dotnet_diagnostic.CA2007.severity = none

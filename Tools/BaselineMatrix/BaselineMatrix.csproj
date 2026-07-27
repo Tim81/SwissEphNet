@@ -47,7 +47,12 @@
     since verification is specifically "does current code match the frozen reference".
   -->
   <ItemGroup Condition="'$(UseReferencePackage)' == 'true'">
-    <PackageReference Include="SwissEphNet" Version="2.8.0.2" />
+    <!--
+      VersionOverride, not a central PackageVersion entry: this is the frozen
+      reference release the baseline was generated against, not a real dependency
+      of the repo, so it should not appear in Directory.Packages.props as if it were.
+    -->
+    <PackageReference Include="SwissEphNet" VersionOverride="2.8.0.2" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(UseReferencePackage)' != 'true'">
