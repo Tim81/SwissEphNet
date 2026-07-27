@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>BaselineVerify</RootNamespace>
+    <AssemblyName>BaselineVerify</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!--
+    Verification means "does the current in-repo code match the frozen reference",
+    so this must always build BaselineMatrix in local mode. GlobalPropertiesToRemove
+    strips UseReferencePackage from what gets passed down to BaselineMatrix, so even
+    a stray -p:UseReferencePackage=true on this project's own command line cannot
+    leak into the referenced build. That alone is not enough to trust on its own,
+    since a global property could in principle still reach BaselineMatrix through
+    some other build path, which is why the RejectReferenceMode target below is the
+    real guard: it fails this project's own build outright if UseReferencePackage is
+    true, so there is no way to produce a "verify" run that quietly compares the
+    reference package against a baseline generated from that same package.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\BaselineMatrix\BaselineMatrix.csproj" GlobalPropertiesToRemove="UseReferencePackage" />
+  </ItemGroup>
+
+  <Target Name="RejectReferenceMode" BeforeTargets="Restore;Build">
+    <Error
+      Condition="'$(UseReferencePackage)' == 'true'"
+      Text="BaselineVerify must never build with UseReferencePackage=true. It exists to compare current in-repo code against the frozen reference; if it built against the reference package, it would compare that package against a baseline generated from itself and pass no matter what changed. Remove -p:UseReferencePackage=true from the command line." />
+  </Target>
+
+  <ItemGroup>
+    <None Update="waivers.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="BaselineVerify.Tests" />
+  </ItemGroup>
+
+</Project>

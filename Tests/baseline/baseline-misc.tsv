@@ -1,0 +1,34 @@
+PN|-1	-1
+PN|-10	-10
+PN|0	Sun
+PN|1	Moon
+PN|10	mean Node
+PN|11	true Node
+PN|12	mean Apogee
+PN|13	osc. Apogee
+PN|14	Earth
+PN|15	Chiron
+PN|16	Pholus
+PN|17	Ceres
+PN|18	Pallas
+PN|19	Juno
+PN|2	Mercury
+PN|20	Vesta
+PN|21	intp. Apogee
+PN|22	intp. Perigee
+PN|3	Venus
+PN|4	Mars
+PN|40	Cupido
+PN|41	Hades
+PN|42	Zeus
+PN|43	Kronos
+PN|44	Apollon
+PN|45	Admetos
+PN|46	Vulkanus
+PN|47	Poseidon
+PN|5	Jupiter
+PN|6	Saturn
+PN|7	Uranus
+PN|8	Neptune
+PN|9	Pluto
+VER|1	2.08

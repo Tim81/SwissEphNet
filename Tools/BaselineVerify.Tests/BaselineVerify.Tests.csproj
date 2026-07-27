@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>BaselineVerify.Tests</RootNamespace>
+    <AssemblyName>BaselineVerify.Tests</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <!--
+    Never build against UseReferencePackage=true. Not because these tests exercise
+    SwissEph output directly (they exercise Comparer/Waivers, which don't), but so a
+    stray global property on the command line can't silently change which
+    BaselineMatrix these tests link against.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\BaselineVerify\BaselineVerify.csproj" GlobalPropertiesToRemove="UseReferencePackage" />
+  </ItemGroup>
+
+  <Target Name="RejectReferenceMode" BeforeTargets="Restore;Build">
+    <Error
+      Condition="'$(UseReferencePackage)' == 'true'"
+      Text="BaselineVerify.Tests must never build with UseReferencePackage=true." />
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

@@ -4,6 +4,14 @@
 * text=auto
 
 ###############################################################################
+# Characterization baseline: must check out with LF on every platform, since
+# BaselineGen always writes LF and BaselineVerify compares generated output
+# against these files directly (some fields exact-string, not just numeric).
+###############################################################################
+Tests/baseline/*.tsv text eol=lf
+Tests/baseline/*.env.txt text eol=lf
+
+###############################################################################
 # Set default behavior for command prompt diff.
 #
 # This is need for earlier builds of msysgit that does not have it on by

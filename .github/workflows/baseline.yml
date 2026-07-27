@@ -1,0 +1,67 @@
+name: Characterization baseline
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+# Push (all branches) + pull_request means a same-repo PR branch would otherwise run
+# this workflow twice for the same commit; cancel the older run instead of paying for both.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Primary gate. Tools/global.json pins the SDK to the 10.0 major.minor line (see
+  # that file) so the runtime the tolerance is meant to insure against does not
+  # itself drift silently underneath this job.
+  verify-baseline:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Run gate unit tests
+        shell: pwsh
+        run: dotnet test Tools/BaselineVerify.Tests -c Release
+
+      - name: Verify baseline
+        shell: pwsh
+        run: pwsh scripts/verify-baseline.ps1
+
+  # Informational only, never a gate. The baseline is Windows-generated and this
+  # gate is deliberately locked to Windows: a measured Windows-vs-Linux run found
+  # 47,052 of 3.4M numeric fields differing (92.66% ULP noise already covered by the
+  # tolerance, 5.60% angle-wraparound now handled directly, 1.74% genuine
+  # divergence including one real numerical-stability bug -- see
+  # Tools/BaselineGen/README.md and docs/known-issues.md). A single tolerance loose
+  # enough to pass on Linux would need to be loose enough to hide real regressions,
+  # so instead of widening it, this job just tracks the drift over time in
+  # --report-only mode, which never fails by design. continue-on-error is still set
+  # as a backstop in case the test suite itself breaks on Linux for an unrelated
+  # reason (a real thing worth seeing), not because the report step could fail.
+  verify-baseline-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Run gate unit tests
+        shell: pwsh
+        run: dotnet test Tools/BaselineVerify.Tests -c Release
+
+      - name: Report cross-platform divergence (never fails)
+        shell: pwsh
+        run: pwsh scripts/verify-baseline.ps1 -ReportOnly

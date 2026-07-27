@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="../SwissEphNet/SwissEphNet.csproj" />
+  <Project Path="BaselineGen/BaselineGen.csproj" />
+  <Project Path="BaselineMatrix/BaselineMatrix.csproj" />
+  <Project Path="BaselineVerify.Tests/BaselineVerify.Tests.csproj" />
+  <Project Path="BaselineVerify/BaselineVerify.csproj" />
+</Solution>

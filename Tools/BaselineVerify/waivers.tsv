@@ -1,0 +1,15 @@
+# Case-ID waivers for BaselineVerify.
+#
+# Format: <glob>\t<PR-number>\t<reason>
+# All three fields are required and non-empty; a malformed line is a hard load-time
+# error, not a silent skip. See Waivers.cs for glob syntax ('*' is field-local,
+# '**' crosses fields) and why "*"/"**" and anything matching the synthetic probe
+# case id are rejected outright.
+#
+# Every waiver is checked for staleness at the end of a run: if it matched zero rows,
+# or every row it matched was byte-for-byte identical anyway, the run fails. A waiver
+# that isn't earning its keep is worse than no waiver: it's coverage nobody is
+# looking at. Add a waiver in the same PR that needs it, and delete it in the PR that
+# makes it unnecessary -- do not leave it behind "just in case".
+#
+# No entries at the moment: intentionally empty.

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>BaselineGen</RootNamespace>
+    <AssemblyName>BaselineGen</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!--
+    The actual SwissEphNet reference (package vs project, the UseReferencePackage
+    switch) lives in BaselineMatrix.csproj, since that is the project that compiles
+    the matrix code. MSBuild propagates the UseReferencePackage property from this
+    project's command line down into BaselineMatrix automatically. See
+    Tools\BaselineGen\README.md for the exact commands for reference and local mode.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\BaselineMatrix\BaselineMatrix.csproj" />
+  </ItemGroup>
+
+</Project>
