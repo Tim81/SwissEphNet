@@ -69,9 +69,13 @@ $baselineDir = Join-Path $repoRoot 'Tests\baseline'
 $modeArgs = @()
 if ($FromLocal) {
     Write-Host "Mode: LOCAL (in-repo SwissEphNet project via ProjectReference)."
-    Write-Host "This only updates Tests/baseline/*.tsv rows that a deliberate, reviewed local"
-    Write-Host "behavior change actually touched. It never re-baselines the whole file, and it"
-    Write-Host "never overwrites the committed sidecar's original reference identity."
+    Write-Host "This replaces every committed baseline-*.tsv file wholesale, exactly like"
+    Write-Host "reference mode does -- there is no per-row logic anywhere in this script. The"
+    Write-Host "diff ending up narrow (only the rows a real behavior change actually touches)"
+    Write-Host "is a property of the change you made, not of this script. Before trusting the"
+    Write-Host "result, diff it yourself (git diff Tests/baseline) and confirm every changed"
+    Write-Host "row is explained by -DeviationNote -- if anything else moved, stop and find out"
+    Write-Host "why before committing."
 }
 else {
     $modeArgs = @('-p:UseReferencePackage=true')
@@ -121,16 +125,46 @@ Write-Host "Reproducible: run A and run B are byte-identical."
 try {
     Write-Host "Copying run A's *.tsv files into $baselineDir"
     New-Item -ItemType Directory -Force -Path $baselineDir | Out-Null
-    Copy-Item (Join-Path $runA 'baseline-*.tsv') $baselineDir -Force
+    # Delete existing TSVs before copying the fresh set, not just Copy-Item -Force
+    # over them: -Force only overwrites files that exist in the source, it does
+    # not delete a destination file with no counterpart in $runA. Without this,
+    # an area renamed or removed from BaselineMatrix's Areas.All would leave an
+    # orphaned baseline-<old-name>.tsv behind that BaselineVerify would never
+    # notice (it only ever looks for baseline-<name>.tsv for names it currently
+    # knows about), silently keeping stale data around indefinitely.
+    Get-ChildItem $baselineDir -Filter 'baseline-*.tsv' -ErrorAction SilentlyContinue | Remove-Item -Force
+    Copy-Item (Join-Path $runA 'baseline-*.tsv') $baselineDir
 
     if (-not $FromLocal) {
-        # Reference mode: the sidecar is a full, honest description of this run
-        # (a new reference version), so replace it wholesale -- by pattern, not a
-        # literal name, since EnvInfo.SidecarFileName is derived from
-        # ReferenceVersion and a version bump must not leave a stale-named sidecar
-        # sitting next to freshly regenerated TSVs.
-        Get-ChildItem $baselineDir -Filter 'baseline-*.env.txt' -ErrorAction SilentlyContinue | Remove-Item -Force
+        # Reference mode: the sidecar's eight identity fields are a full,
+        # honest description of this run (a new reference version), so those
+        # get replaced wholesale -- by pattern, not a literal name, since
+        # EnvInfo.SidecarFileName is derived from ReferenceVersion and a
+        # version bump must not leave a stale-named sidecar sitting next to
+        # freshly regenerated TSVs. But if the previous sidecar had
+        # accumulated a "Local regenerations" history (entries from past
+        # -FromLocal runs), that history is preserved, not silently deleted:
+        # a version bump does not retroactively erase the fact that local code
+        # once deviated from a prior reference for a deliberate, reviewed
+        # reason, and a human looking at the new reference should still see
+        # that history to decide whether each entry still applies against it.
+        $oldSidecars = @(Get-ChildItem $baselineDir -Filter 'baseline-*.env.txt' -ErrorAction SilentlyContinue)
+        $preservedLog = $null
+        foreach ($old in $oldSidecars) {
+            $oldContent = Get-Content -Raw -Path $old.FullName
+            $idx = $oldContent.IndexOf('## Local regenerations')
+            if ($idx -ge 0) {
+                $preservedLog = $oldContent.Substring($idx).TrimEnd()
+            }
+        }
+        $oldSidecars | Remove-Item -Force
         Copy-Item (Join-Path $runA 'baseline-*.env.txt') $baselineDir
+        if ($preservedLog) {
+            $newSidecar = @(Get-ChildItem $baselineDir -Filter 'baseline-*.env.txt')[0].FullName
+            $newContent = (Get-Content -Raw -Path $newSidecar).TrimEnd()
+            Set-Content -Path $newSidecar -Value ($newContent + "`n`n" + $preservedLog + "`n") -NoNewline -Encoding utf8NoBOM
+            Write-Host "Preserved the previous sidecar's 'Local regenerations' history across this reference-mode regeneration."
+        }
         Write-Host "Done. Review the diff in $baselineDir (git diff --stat Tests/baseline) and commit if it looks right."
     }
     else {
