@@ -531,3 +531,31 @@ so it just returned small differences unchanged and mislabeled them). The
 corrected number is 108, confirmed by checking that the wraparound fix resolves
 exactly that many fields and rows, and that zero of the remaining 3,346
 beyond-tolerance fields have a raw difference anywhere near 360.
+
+## swe_house_pos: internal cusp buffer is one element short for Gauquelin houses
+
+Found by the correctness oracle (`Tests/SwissEphNet.Conformance.Tests`), not the
+characterization baseline: `SwissEphNet/CPort/SweHouse.cs:1903` allocates
+`hcusp` as `new double[36]` inside `swe_house_pos`, then passes it to
+`swe_houses_armc`, which for the Gauquelin sector house system ('G') writes
+`cusp[36]` (upstream's own array is `double cusp[37]`, indices 0-36 -- see
+`external/swisseph/swehouse.c`). The one-element-short C# buffer throws
+`IndexOutOfRangeException` where the real C silently keeps going (writing past
+the end of a 37-slot stack array is undefined behavior C does not catch
+either, it just usually gets away with it).
+
+This reproduces through two call paths in the conformance corpus: directly, via
+`swe_house_pos` itself (suite 6, testcase 6 -- see that testcase's own remarks
+in `Suite06Houses.cs` for why it is classified `Unreproducible` rather than
+dispatched, for an unrelated, C-vs-C# representational reason), and indirectly
+via `swe_gauquelin_sector`, which calls `swe_house_pos` internally with a
+hardcoded Gauquelin `hsys` (suite 6, testcase 7 -- 22 iterations recorded as
+`ERROR` in `Tests/conformance/known-fail.tsv`).
+
+**Not fixed in `test/conformance-oracle`, deliberately:** this is a real library
+defect, not test infrastructure, and fixing `SwissEphNet/CPort/SweHouse.cs`
+would flip the ~240 currently-waived baseline rows tied to `house-pos` --
+enough surface area to want under its own review, separate from the oracle
+this branch adds. Fix it (`new double[37]`, matching upstream) as its own
+reviewed PR, then remove the corresponding `known-fail.tsv` rows and drop this
+entry.

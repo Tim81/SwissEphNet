@@ -138,4 +138,79 @@ public class ExpReaderTests
         Assert.Equal(2, doc.TotalTestCaseCount);
         Assert.Equal(3, doc.TotalIterationCount);
     }
+
+    [Fact]
+    public void DuplicateKeyKeepsFirstOccurrence_MatchingReferenceFindValue()
+    {
+        // external/swisseph/setest/reader.c: find_value returns the *first*
+        // matching entry (push_row only appends, never overwrites) --
+        // observed for real in suite_09_rise.c, which reads "atpress" twice
+        // per iteration. Both occurrences carry identical values in the real
+        // corpus, but the semantics must still match: first wins.
+        using var reader = new StringReader("""
+            TESTSUITE
+              section-id: 1
+              TESTCASE
+                section-id: 1
+                ITERATION
+                  section-id: 1
+                  atpress: 1000
+                  atpress: 9999
+            """);
+        var doc = ExpReader.Read(reader, "sample");
+        var iteration = doc.TestSuites[0].TestCases[0].Iterations[0];
+
+        Assert.Equal(1000, iteration.Fields.GetDouble("atpress"), 10);
+    }
+
+    [Fact]
+    public void RawLineCountCountsDuplicateLinesSeparately_UnlikeDeduplicatedRawValuesCount()
+    {
+        using var reader = new StringReader("""
+            TESTSUITE
+              section-id: 1
+              TESTCASE
+                section-id: 1
+                ITERATION
+                  section-id: 1
+                  atpress: 1000
+                  atpress: 9999
+            """);
+        var doc = ExpReader.Read(reader, "sample");
+        var iteration = doc.TestSuites[0].TestCases[0].Iterations[0];
+
+        // "section-id" and "atpress" (twice) = 3 physical lines, but only 2
+        // distinct keys.
+        Assert.Equal(3, iteration.Fields.RawLineCount);
+        Assert.Equal(2, iteration.Fields.RawValues.Count);
+        Assert.Equal(3, doc.TotalValueLineCount);
+    }
+
+    [Fact]
+    public void UnconsumedKeys_ReportsFieldsNoAccessorEverRead()
+    {
+        using var reader = new StringReader("""
+            TESTSUITE
+              section-id: 1
+              TESTCASE
+                section-id: 1
+                ITERATION
+                  section-id: 1
+                  jd: 5
+                  rc: 2
+            """);
+        var doc = ExpReader.Read(reader, "sample");
+        var fields = doc.TestSuites[0].TestCases[0].Iterations[0].Fields;
+
+        // Nothing has read "jd" or "rc" yet ("section-id" is excluded, and is
+        // also already consumed by the reader itself via RequireId).
+        var unconsumed = fields.UnconsumedKeys(["section-id"]);
+        Assert.Equal(2, unconsumed.Count);
+        Assert.Contains("jd", unconsumed);
+        Assert.Contains("rc", unconsumed);
+
+        fields.GetDouble("jd");
+        fields.GetInt("rc");
+        Assert.Empty(fields.UnconsumedKeys(["section-id"]));
+    }
 }

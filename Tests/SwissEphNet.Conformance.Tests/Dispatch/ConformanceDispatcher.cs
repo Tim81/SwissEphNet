@@ -14,6 +14,11 @@ public sealed class ConformanceDispatcher
     // instance per corpus run reproduces that.
     private readonly Suite02FixStar _suite02 = new();
 
+    // Suite 8's xxtret/xxgeopos/xxattr are suite-scoped C locals too (see
+    // Suite08Eclipses' remarks) -- some testcases' expected values are pure
+    // carry-over from a previous testcase's last call.
+    private readonly Suite08Eclipses _suite08 = new();
+
     public DispatchOutcome Dispatch(SwissEph swe, ExpTestSuite suite, ExpTestCase testCase, ExpIteration iteration, Precision precision)
     {
         if (TryGetStaticNotImplementedReason(suite.Id, testCase.Id, out var staticReason))
@@ -51,7 +56,7 @@ public sealed class ConformanceDispatcher
             5 => Suite05DateTime.Dispatch(swe, testCase.Id, iteration, precision),
             6 => Suite06Houses.Dispatch(swe, testCase.Id, iteration, precision),
             7 => Suite07Apsides.Dispatch(swe, testCase.Id, iteration, precision),
-            8 => Suite08Eclipses.Dispatch(swe, testCase.Id, iteration, precision),
+            8 => _suite08.Dispatch(swe, testCase.Id, iteration, precision),
             9 => Suite09Rise.Dispatch(swe, testCase.Id, iteration, precision),
             10 => Suite10Solcross.Dispatch(testCase.Id, iteration),
             _ => DispatchOutcome.Error($"Unknown suite id {suite.Id}."),

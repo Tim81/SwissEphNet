@@ -13,20 +13,38 @@ public sealed record SuiteSummary(
     int NotImplemented,
     int DataMissing,
     int ValueMismatch,
-    int Error)
+    int Error,
+    int Unreproducible)
 {
-    /// <summary>Pass rate over iterations that were actually dispatched (excludes NOT-IMPLEMENTED/DATA-MISSING).</summary>
-    public int Dispatched => Total - NotImplemented - DataMissing;
+    /// <summary>Pass rate over iterations that were actually dispatched and comparable (excludes NOT-IMPLEMENTED/DATA-MISSING/UNREPRODUCIBLE).</summary>
+    public int Dispatched => Total - NotImplemented - DataMissing - Unreproducible;
 
     public double PassRate => Dispatched == 0 ? 1.0 : (double)Passed / Dispatched;
 }
+
+/// <summary>A known-fail entry whose recorded category no longer matches what the port actually does now.</summary>
+public sealed record CategoryDrift(IterationResult Result, FailureCategory RecordedCategory);
 
 public sealed class ConformanceReport
 {
     public required IReadOnlyList<IterationResult> All { get; init; }
 
-    /// <summary>Failing now, and not on the known-fail list: a regression.</summary>
+    /// <summary>
+    /// Failing now and either not on the known-fail list at all, or on it
+    /// under a different category (see <see cref="Drifted"/>): a regression
+    /// either way.
+    /// </summary>
     public required IReadOnlyList<IterationResult> Regressions { get; init; }
+
+    /// <summary>
+    /// The subset of <see cref="Regressions"/> that *is* on the known-fail
+    /// list, just recorded under a category the current run no longer
+    /// matches -- e.g. a VALUE-MISMATCH that degraded into an ERROR crash, or
+    /// a mismatch that got orders of magnitude worse in a way that changed
+    /// its classification. Key-membership alone would let these through as
+    /// "still failing, still on the list"; they are not the same failure.
+    /// </summary>
+    public required IReadOnlyList<CategoryDrift> Drifted { get; init; }
 
     /// <summary>On the known-fail list, but passing now: progress -- remove the entry.</summary>
     public required IReadOnlyList<KnownFailEntry> NewlyPassing { get; init; }
@@ -36,19 +54,40 @@ public sealed class ConformanceReport
 
     public required IReadOnlyList<SuiteSummary> SuiteSummaries { get; init; }
 
-    public bool Passed => Regressions.Count == 0;
+    /// <summary>
+    /// The full contract: no regressions (new failures or category drift),
+    /// nothing newly passing left un-pruned, and no stale rows left behind.
+    /// Any of the three failing means known-fail.tsv and the port have
+    /// diverged from each other in a way a reviewer needs to see as a diff.
+    /// </summary>
+    public bool Passed => Regressions.Count == 0 && NewlyPassing.Count == 0 && Stale.Count == 0;
 
     public static ConformanceReport Build(IReadOnlyList<IterationResult> results, IReadOnlyDictionary<IterationKey, KnownFailEntry> knownFail)
     {
         var seenKeys = new HashSet<IterationKey>();
         var regressions = new List<IterationResult>();
+        var drifted = new List<CategoryDrift>();
 
         foreach (var result in results)
         {
             seenKeys.Add(result.Key);
-            if (result.Kind != OutcomeKind.Passed && !knownFail.ContainsKey(result.Key))
+
+            if (result.Kind == OutcomeKind.Passed)
+            {
+                continue;
+            }
+
+            if (!knownFail.TryGetValue(result.Key, out var entry))
             {
                 regressions.Add(result);
+                continue;
+            }
+
+            var currentCategory = FailureCategoryNames.FromOutcomeKind(result.Kind);
+            if (currentCategory != entry.Category)
+            {
+                regressions.Add(result);
+                drifted.Add(new CategoryDrift(result, entry.Category));
             }
         }
 
@@ -80,13 +119,15 @@ public sealed class ConformanceReport
                 g.Count(r => r.Kind == OutcomeKind.NotImplemented),
                 g.Count(r => r.Kind == OutcomeKind.DataMissing),
                 g.Count(r => r.Kind == OutcomeKind.ValueMismatch),
-                g.Count(r => r.Kind == OutcomeKind.Error)))
+                g.Count(r => r.Kind == OutcomeKind.Error),
+                g.Count(r => r.Kind == OutcomeKind.Unreproducible)))
             .ToList();
 
         return new ConformanceReport
         {
             All = results,
             Regressions = regressions,
+            Drifted = drifted,
             NewlyPassing = newlyPassing,
             Stale = stale,
             SuiteSummaries = suiteSummaries,
@@ -99,17 +140,27 @@ public sealed class ConformanceReport
         sb.AppendLine($"Total iterations: {All.Count}");
         sb.AppendLine();
         sb.AppendLine("Per-suite:");
-        sb.AppendLine($"{"Suite",-6}{"Passed",8}{"Dispatched",12}{"PassRate",10}{"NotImpl",9}{"DataMiss",10}{"Mismatch",10}{"Error",7}  Description");
+        sb.AppendLine($"{"Suite",-6}{"Passed",8}{"Dispatched",12}{"PassRate",10}{"NotImpl",9}{"DataMiss",10}{"Mismatch",10}{"Error",7}{"Unrepro",9}  Description");
         foreach (var s in SuiteSummaries)
         {
-            sb.AppendLine($"{s.SuiteId,-6}{s.Passed,8}{s.Dispatched,12}{s.PassRate,10:P1}{s.NotImplemented,9}{s.DataMissing,10}{s.ValueMismatch,10}{s.Error,7}  {s.Description}");
+            sb.AppendLine($"{s.SuiteId,-6}{s.Passed,8}{s.Dispatched,12}{s.PassRate,10:P1}{s.NotImplemented,9}{s.DataMissing,10}{s.ValueMismatch,10}{s.Error,7}{s.Unreproducible,9}  {s.Description}");
         }
 
         sb.AppendLine();
-        sb.AppendLine($"Regressions (failing now, not on known-fail list): {Regressions.Count}");
+        sb.AppendLine($"Regressions (failing now and either off the known-fail list or drifted to a different category): {Regressions.Count}");
         foreach (var r in Regressions.Take(50))
         {
             sb.AppendLine($"  {r.Key} [{r.Kind}] {r.Reason ?? string.Join("; ", r.Mismatches.Select(m => $"{m.Name}: expected {m.Expected}, got {m.Actual}"))}");
+        }
+
+        if (Drifted.Count > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine($"  Of which, category drift (still on the list, but recorded under a different category): {Drifted.Count}");
+            foreach (var d in Drifted.Take(50))
+            {
+                sb.AppendLine($"    {d.Result.Key} recorded as {FailureCategoryNames.ToName(d.RecordedCategory)}, now {d.Result.Kind}");
+            }
         }
 
         sb.AppendLine();

@@ -1,0 +1,1 @@
+2026-07-27 6999453 (0 -> 4945, 4945 more rows): Post-review fixes: CheckDD prefix-match false-pass fix, suite 6.5/6.6 raw-ihsy handling and 6.6 unreproducibility, suite 8 suite-scoped buffers, suite 9 buffer sizing, completeness guard, category-drift gate. Full details in the branch history.

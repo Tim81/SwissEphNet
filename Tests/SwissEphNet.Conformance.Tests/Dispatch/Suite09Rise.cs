@@ -58,9 +58,20 @@ internal static class Suite09Rise
             {
                 var geopos = new[] { geolon, geolat, altitude };
                 var datm = new[] { atpress, attemp, athumid, atktot };
-                var dobs = new[] { obsage, obsSN, 0.0, 0.0, 0.0 };
+                // "double dobs[5] = {obsage, obsSN,};" in the reference C, but
+                // default_heliacal_parameters unconditionally writes dobs[5]
+                // (SweHel.cs:1330-ish: "for (i = 2; i <= 5; i++) dobs[i] = 0;")
+                // -- a one-element buffer overrun the reference tool and the
+                // real C library both get away with (undefined behavior,
+                // silently scribbling adjacent stack memory) and .NET does
+                // not. Must be 6, not 5: the callee's write length sets the
+                // requirement, not the declared/checked size.
+                var dobs = new[] { obsage, obsSN, 0.0, 0.0, 0.0, 0.0 };
                 var jd = f.GetDouble("jd");
-                var xxtret = new double[10]; // reference tool declares xxtret[10]; only 3 are checked
+                // swe_heliacal_ut's dret writes top out at index 8 (verified
+                // against every dret[N] write reachable from it); only the
+                // first 3 are checked.
+                var xxtret = new double[10];
                 string serr = "";
                 var rc = swe.swe_heliacal_ut(jd, geopos, datm, dobs, f.GetRawString("object"), f.GetInt("evtype"), f.GetInt("helflag"), xxtret, ref serr);
                 var ctx = new CheckContext(f, precision);
@@ -73,9 +84,14 @@ internal static class Suite09Rise
             {
                 var geopos = new[] { geolon, geolat, altitude };
                 var datm = new[] { atpress, attemp, athumid, atktot };
-                var dobs = new[] { obsage, obsSN, 0.0, 0.0, 0.0 };
+                var dobs = new[] { obsage, obsSN, 0.0, 0.0, 0.0, 0.0 }; // see case 3's remark: must be 6
                 var jd = f.GetDouble("jd");
-                var xxtret = new double[10]; // reference tool declares xxtret[10]; only 3 are checked
+                // swe_heliacal_pheno_ut unconditionally writes darr[0..27]
+                // (SweHel.cs, swe_heliacal_pheno_ut body: darr[27] = illum;
+                // is the highest live write) -- needs at least 28, not 10.
+                // Only the first 3 are checked; the callee's write length,
+                // not the checked count, sets the buffer size.
+                var xxtret = new double[28];
                 string serr = "";
                 var rc = swe.swe_heliacal_pheno_ut(jd, geopos, datm, dobs, f.GetRawString("object"), f.GetInt("evtype"), f.GetInt("helflag"), xxtret, ref serr);
                 var ctx = new CheckContext(f, precision);
@@ -88,9 +104,9 @@ internal static class Suite09Rise
             {
                 var geopos = new[] { geolon, geolat, altitude };
                 var datm = new[] { atpress, attemp, athumid, atktot };
-                var dobs = new[] { obsage, obsSN, 0.0, 0.0, 0.0 };
+                var dobs = new[] { obsage, obsSN, 0.0, 0.0, 0.0, 0.0 }; // see case 3's remark: must be 6
                 var jd = f.GetDouble("jd");
-                var xxtret = new double[10]; // reference tool declares xxtret[10]; only 3 are checked
+                var xxtret = new double[10]; // swe_vis_limit_mag's dret tops out at index 7
                 string serr = "";
                 var rc = swe.swe_vis_limit_mag(jd, geopos, datm, dobs, f.GetRawString("object"), f.GetInt("helflag"), xxtret, ref serr);
                 var ctx = new CheckContext(f, precision);

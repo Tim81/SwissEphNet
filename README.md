@@ -224,10 +224,22 @@ is a regression.
   (`ipl` 9000-9999) need `ephe/sat/` at ~227 MB (opt in with
   `SWISSEPH_CONFORMANCE_INCLUDE_MOONS=1` and that directory populated).
 
-- Not part of the fast CI path: `dotnet test Tests/SwissEphNet.Conformance.Tests`
-  runs the full 12,757-iteration corpus, which does not belong in the same
-  loop as `Tests/SwissEphNet.Tests`. See `.github/workflows/conformance.yml`
-  (scheduled + manually dispatchable) instead of `ci.yml`.
+- A separate workflow, not folded into `ci.yml`'s fast job:
+  `.github/workflows/conformance.yml` runs on a schedule, on demand, and on
+  pull requests that touch `SwissEphNet/**` or the oracle itself -- gated by
+  `paths`, so it does not run on every PR the way `ci.yml` does. It earns that
+  spot on the PR path on cost, not by default: dispatching all 12,757
+  iterations is ~2s in-process (measured, Release build,
+  `Tools/ConformanceKnownFailGen`), and `dotnet test
+  Tests/SwissEphNet.Conformance.Tests` end-to-end (both TFMs, including test
+  host startup) is ~8s. The submodule checkout is the only real cost and is
+  sparse (~25 MB, not the full ~444 MB `git submodule update --init` would
+  pull) and cached on the pinned commit SHA.
+
+- Regenerating `Tests/conformance/known-fail.tsv` is
+  `scripts/regenerate-known-fail.ps1 -Reason "..."` -- see "Correctness oracle
+  known-fail list" in `CONTRIBUTING.md` for the invariant it enforces (rows
+  may be removed freely; adding one needs a written reason and review).
 
 **Licensing note:** vendoring Swiss Ephemeris 2.10.x source is consistent with
 the AGPL-3.0 relicensing Astrodienst has planned for that line, but that

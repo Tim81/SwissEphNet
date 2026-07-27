@@ -17,3 +17,10 @@
 # The scripts that run both gates, and the CI wiring around them.
 /scripts/                       @Tim81
 /.github/workflows/             @Tim81
+
+# See CONTRIBUTING.md, "Correctness oracle known-fail list", for why this path
+# is protected: Tests/conformance/known-fail.tsv is a gate (rows may be
+# removed freely as progress; adding a row needs a written reason via
+# scripts/regenerate-known-fail.ps1 -Reason, and a reviewer). CODEOWNERS makes
+# that reviewer step unavoidable rather than a convention someone can skip.
+/Tests/conformance/ @Tim81

@@ -1,3 +1,6 @@
+using System;
+using SwissEphNet.Conformance.Tests.Dispatch;
+
 namespace SwissEphNet.Conformance.Tests.KnownFail;
 
 public enum FailureCategory
@@ -6,6 +9,7 @@ public enum FailureCategory
     ValueMismatch,
     DataMissing,
     Error,
+    Unreproducible,
 }
 
 public static class FailureCategoryNames
@@ -14,6 +18,7 @@ public static class FailureCategoryNames
     public const string ValueMismatch = "VALUE-MISMATCH";
     public const string DataMissing = "DATA-MISSING";
     public const string Error = "ERROR";
+    public const string Unreproducible = "UNREPRODUCIBLE";
 
     public static string ToName(FailureCategory category) => category switch
     {
@@ -21,7 +26,8 @@ public static class FailureCategoryNames
         FailureCategory.ValueMismatch => ValueMismatch,
         FailureCategory.DataMissing => DataMissing,
         FailureCategory.Error => Error,
-        _ => throw new System.ArgumentOutOfRangeException(nameof(category)),
+        FailureCategory.Unreproducible => Unreproducible,
+        _ => throw new ArgumentOutOfRangeException(nameof(category)),
     };
 
     public static FailureCategory Parse(string name) => name switch
@@ -30,7 +36,28 @@ public static class FailureCategoryNames
         ValueMismatch => FailureCategory.ValueMismatch,
         DataMissing => FailureCategory.DataMissing,
         Error => FailureCategory.Error,
-        _ => throw new System.FormatException($"Unknown failure category '{name}'."),
+        Unreproducible => FailureCategory.Unreproducible,
+        _ => throw new FormatException($"Unknown failure category '{name}'."),
+    };
+
+    /// <summary>
+    /// The FailureCategory a live dispatch <see cref="OutcomeKind"/> maps to.
+    /// The gate (ConformanceReport) uses this to catch a known-fail entry's
+    /// recorded category silently rotting -- e.g. a VALUE-MISMATCH that has
+    /// degraded into an ERROR crash, or vice versa -- which key-membership
+    /// alone would let through as "still on the list, still failing".
+    /// <see cref="OutcomeKind.Passed"/> has no failure category; callers must
+    /// not ask for one.
+    /// </summary>
+    public static FailureCategory FromOutcomeKind(OutcomeKind kind) => kind switch
+    {
+        OutcomeKind.NotImplemented => FailureCategory.NotImplemented,
+        OutcomeKind.ValueMismatch => FailureCategory.ValueMismatch,
+        OutcomeKind.DataMissing => FailureCategory.DataMissing,
+        OutcomeKind.Error => FailureCategory.Error,
+        OutcomeKind.Unreproducible => FailureCategory.Unreproducible,
+        OutcomeKind.Passed => throw new InvalidOperationException("Passed has no failure category."),
+        _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 }
 

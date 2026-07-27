@@ -1,10 +1,23 @@
 name: Conformance oracle
 
-# Deliberately NOT on push/pull_request: this runs the full 12,757-iteration
-# setest corpus against the port and is not fast-CI material (see
-# Tests/SwissEphNet.Conformance.Tests and the "Correctness oracle" section of
-# README.md). It runs on a schedule and can be triggered on demand instead.
+# On pull_request (gated by paths -- only when the port or the oracle itself
+# actually changed) as well as on a schedule and on demand. Whether it belongs
+# on the PR path at all came down to cost: a full run dispatches all 12,757
+# iterations in-process in ~2s (measured locally, Tools/ConformanceKnownFailGen,
+# Release build) and `dotnet test` end-to-end (both TFMs, including host
+# startup) in ~8s -- see README.md's "Correctness oracle" section for the
+# measurement. That is cheap enough that not running it at review time (the
+# primary evidence for whether a porting PR actually helped) would have been
+# the wrong tradeoff, not a necessary one. The submodule checkout below is the
+# only real cost, and is sparse + cached for exactly that reason.
 on:
+  pull_request:
+    paths:
+      - "SwissEphNet/**"
+      - "Tests/SwissEphNet.Conformance.Tests/**"
+      - "Tests/conformance/**"
+      - "Tools/ConformanceKnownFailGen/**"
+      - ".github/workflows/conformance.yml"
   schedule:
     - cron: "17 4 * * 1" # Mondays, 04:17 UTC
   workflow_dispatch:
@@ -13,7 +26,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -23,18 +36,53 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Locally this submodule is sparse-checked-out to ~25 MB (see
-      # "Correctness oracle" in README.md): sparse-checkout patterns live in
-      # the submodule's own .git/info/sparse-checkout, which is local
-      # configuration, not something `.gitmodules` or the superproject commit
-      # can carry to a fresh clone. A plain `actions/checkout` with submodules
-      # therefore pulls the full ~444 MB tree here. That is an accepted cost
-      # for a job that only runs weekly/on-demand, not on every push or PR --
-      # rigging sparse-checkout to survive a fresh CI clone is more complexity
-      # than this non-blocking job is worth.
-      - name: Checkout external/swisseph submodule
+      # Reproduces the same sparse, partial checkout used locally (see
+      # README.md's "Correctness oracle" section) instead of a plain
+      # `git submodule update --init`, which would pull the full ~444 MB tree
+      # (sparse-checkout patterns live in the submodule's own
+      # .git/info/sparse-checkout, local configuration that a fresh clone does
+      # not inherit from .gitmodules). Cached on the pinned commit SHA
+      # (external/swisseph is pinned to tag v2.10.3final and only moves in a
+      # deliberate submodule-bump commit), so every run except the first after
+      # a bump restores instantly instead of re-cloning.
+      - name: Cache external/swisseph submodule
+        id: submodule-cache
+        uses: actions/cache@v4
+        with:
+          path: external/swisseph
+          key: swisseph-submodule-af9823fe7b06ffefe3d3968fdc5680be8b5eec5f
+
+      - name: Checkout external/swisseph submodule (sparse, ~25 MB)
+        if: steps.submodule-cache.outputs.cache-hit != 'true'
         shell: pwsh
-        run: git submodule update --init external/swisseph
+        run: |
+          # Kept in sync with the cache key above and external/swisseph's
+          # actual gitlink (git ls-files --stage external/swisseph) -- this
+          # workflow does not parse it out dynamically, to keep the "what
+          # commit will this checkout" answer readable from this file alone.
+          $pinnedSha = "af9823fe7b06ffefe3d3968fdc5680be8b5eec5f"
+          git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
+          Push-Location external/swisseph
+          git config core.autocrlf false
+          git sparse-checkout init --no-cone
+          @(
+            '/*.c'
+            '/*.h'
+            '/Makefile'
+            '/LICENSE'
+            '/setest/*'
+            '/ephe/seas_12.se1'
+            '/ephe/semo_12.se1'
+            '/ephe/sepl_12.se1'
+            '/ephe/seas_18.se1'
+            '/ephe/semo_18.se1'
+            '/ephe/sepl_18.se1'
+            '/ephe/sefstars.txt'
+            '/ephe/seorbel.txt'
+            '/seleapsec.txt'
+          ) | Set-Content .git/info/sparse-checkout
+          git checkout $pinnedSha
+          Pop-Location
 
       - uses: actions/setup-dotnet@v4
         with:

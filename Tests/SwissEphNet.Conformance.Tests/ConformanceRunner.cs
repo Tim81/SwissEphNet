@@ -14,6 +14,21 @@ namespace SwissEphNet.Conformance.Tests;
 /// </summary>
 public static class ConformanceRunner
 {
+    /// <summary>
+    /// Keys every iteration may legitimately carry without any dispatcher
+    /// ever reading them: "section-id" is consumed by the reader itself (see
+    /// ExpReader.RequireId) but is included here defensively; "section-descr"
+    /// is a purely decorative comment some iterations echo back (e.g. "Mars
+    /// in cor solis"); "initialize" is read by this runner's own TEARDOWN
+    /// step, not by a suite dispatcher.
+    /// </summary>
+    private static readonly HashSet<string> DecorativeKeys = new(StringComparer.Ordinal)
+    {
+        "section-id",
+        "section-descr",
+        "initialize",
+    };
+
     public static (ExpDocument Document, IReadOnlyList<IterationResult> Iterations) Run()
     {
         var expPath = Path.Combine(RepoLocator.SetestDir, "t.exp");
@@ -53,6 +68,27 @@ public static class ConformanceRunner
                         }
 
                         outcome = DispatchOutcome.Error($"{ex.GetType().Name}: {ex.Message}");
+                    }
+
+                    // Completeness guard: for an outcome that actually attempted a
+                    // comparison (Passed or ValueMismatch), every non-decorative key
+                    // t.exp carries for this iteration must have been read by
+                    // something -- either as an input, or as an expected value in a
+                    // Check* call. A leftover key means a dispatcher never even looked
+                    // at an asserted value (e.g. an undersized buffer stopping a
+                    // CHECK_DD short), which would otherwise pass silently and
+                    // wrongly. Converts that whole class of bug from a silent false
+                    // pass into a loud, reported failure.
+                    if (outcome.Kind is OutcomeKind.Passed or OutcomeKind.ValueMismatch)
+                    {
+                        var unconsumed = iteration.Fields.UnconsumedKeys(DecorativeKeys);
+                        if (unconsumed.Count > 0)
+                        {
+                            outcome = DispatchOutcome.Error(
+                                $"harness completeness guard: {unconsumed.Count} field(s) present in t.exp for this iteration " +
+                                $"were never read by the dispatcher (neither as input nor as a comparison): {string.Join(", ", unconsumed)}. " +
+                                "This means a Check* call is missing or a buffer is undersized relative to what t.exp actually recorded.");
+                        }
                     }
 
                     results.Add(new IterationResult(

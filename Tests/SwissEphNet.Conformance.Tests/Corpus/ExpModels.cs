@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 
 namespace SwissEphNet.Conformance.Tests.Corpus;
 
@@ -17,12 +18,36 @@ namespace SwissEphNet.Conformance.Tests.Corpus;
 public sealed class ExpFields
 {
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _consumed = new(StringComparer.Ordinal);
 
     public int LineNumber { get; init; }
 
     public IReadOnlyDictionary<string, string> RawValues => _values;
 
-    public void Set(string name, string rawValue) => _values[name] = rawValue;
+    /// <summary>Every physical "name: value" line seen, including duplicates that overwrote nothing.</summary>
+    public int RawLineCount { get; private set; }
+
+    /// <summary>
+    /// Keys read via any accessor (GetDouble/GetInt/GetRawString/...), whether
+    /// as a testcase input or as an expected-value comparison. Used by
+    /// the completeness guard in <c>ConformanceRunner.Run</c> to catch a testcase/comparison that
+    /// silently never looked at a field t.exp actually asserts.
+    /// </summary>
+    public IReadOnlyCollection<string> ConsumedKeys => _consumed;
+
+    /// <summary>
+    /// Records a "name: value" line. Matches the reference reader's semantics
+    /// (external/swisseph/setest/reader.c: find_value returns the *first*
+    /// matching entry in the block's table -- push_row only ever appends, it
+    /// never overwrites) rather than a plain dictionary assignment's
+    /// last-write-wins: on a repeated key within the same section, the first
+    /// occurrence wins and later ones are recorded only in the raw line count.
+    /// </summary>
+    public void Set(string name, string rawValue)
+    {
+        RawLineCount++;
+        _values.TryAdd(name, rawValue);
+    }
 
     public bool Contains(string name) => _values.ContainsKey(name);
 
@@ -33,10 +58,20 @@ public sealed class ExpFields
             throw new KeyNotFoundException($"Field '{name}' not found (line {LineNumber}).");
         }
 
+        _consumed.Add(name);
         return value;
     }
 
-    public string? TryGetRawString(string name) => _values.TryGetValue(name, out var value) ? value : null;
+    public string? TryGetRawString(string name)
+    {
+        if (!_values.TryGetValue(name, out var value))
+        {
+            return null;
+        }
+
+        _consumed.Add(name);
+        return value;
+    }
 
     /// <summary>Parses a value as a double, truncating at a trailing "#" comment first.</summary>
     public double GetDouble(string name)
@@ -78,6 +113,17 @@ public sealed class ExpFields
 
         return result;
     }
+
+    /// <summary>
+    /// Keys present in this block that no accessor has read, excluding a
+    /// caller-supplied set of purely-decorative/structural keys (section-id,
+    /// section-descr, initialize -- see ConformanceRunner). A non-empty result
+    /// means either an input the dispatcher ignores (harmless) or, more
+    /// importantly, an asserted value the dispatcher never compared (a silent
+    /// false pass: e.g. an undersized buffer that stops a CHECK_DD short).
+    /// </summary>
+    public IReadOnlyList<string> UnconsumedKeys(IReadOnlyCollection<string> excludedKeys) =>
+        _values.Keys.Where(k => !_consumed.Contains(k) && !excludedKeys.Contains(k)).ToList();
 
     private static string TruncateComment(string raw)
     {
@@ -145,7 +191,12 @@ public sealed class ExpDocument
         }
     }
 
-    /// <summary>Total number of "name: value" assertion/data lines across every iteration.</summary>
+    /// <summary>
+    /// Total number of physical "name: value" lines across every iteration
+    /// (RawLineCount, not the deduplicated RawValues.Count -- a handful of
+    /// iterations in suite 9 read the same field twice with identical values,
+    /// and a line count should still count both).
+    /// </summary>
     public int TotalValueLineCount
     {
         get
@@ -157,7 +208,7 @@ public sealed class ExpDocument
                 {
                     foreach (var iteration in testCase.Iterations)
                     {
-                        total += iteration.Fields.RawValues.Count;
+                        total += iteration.Fields.RawLineCount;
                     }
                 }
             }

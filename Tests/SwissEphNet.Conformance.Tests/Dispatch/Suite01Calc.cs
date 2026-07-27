@@ -57,6 +57,16 @@ internal static class Suite01Calc
                 // "swe_calc( ) - Equatorial followed by Ecliptic": a pure
                 // runtime self-consistency check (CHECK_EQUALS_I(rc,iflag)),
                 // not compared against a stored expected value.
+                //
+                // SETUP unconditionally reads "iflag" every iteration in the
+                // reference C, regardless of which testcase runs -- this
+                // testcase's own body never uses that value (it computes its
+                // own local iflag from iephe instead), but t.exp still
+                // carries the field because SETUP recorded it. Read it here
+                // too, purely so the harness completeness guard
+                // (ConformanceRunner) sees it as accounted for rather than
+                // silently unchecked.
+                _ = f.GetInt("iflag");
                 var iephe = f.GetInt("iephe");
                 var jd = f.GetDouble("jd");
                 var ipl = f.GetInt("ipl");

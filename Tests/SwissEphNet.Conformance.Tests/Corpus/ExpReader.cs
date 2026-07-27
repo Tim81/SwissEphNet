@@ -196,8 +196,8 @@ public static class ExpReader
         }
 
         // Iteration section-id lines carry a trailing "#1.1.1"-style comment;
-        // GetInt's comment truncation handles that uniformly.
-        fields.Set("section-id", raw);
+        // truncate it the same way GetInt would (this must not call
+        // fields.Set again -- that would double-count the line in RawLineCount).
         if (!int.TryParse(TruncateForId(raw), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id))
         {
             throw new FormatException(

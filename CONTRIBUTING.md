@@ -285,3 +285,34 @@ is no separate CLA to sign. Contributions must be your own work, or work you
 have the right to submit under these terms. Do not remove or reduce the
 per-file attribution to Yan Grenier (the original C-to-C# port, 2014-2019)
 that many files under `SwissEphNet/CPort/` carry in their header comment.
+
+## Correctness oracle known-fail list
+
+`Tests/SwissEphNet.Conformance.Tests` checks the port against Astrodienst's
+own 2.10.03 reference values (`external/swisseph/setest/t.exp`), not against
+the port's own prior output -- see "Correctness oracle" in `README.md`.
+`Tests/conformance/known-fail.tsv` is the work queue: every iteration the port
+is currently known not to match, by category. The gate passes only when the
+file and the port's actual behavior agree exactly (no new failure, no known
+failure whose category drifted, nothing newly passing left un-pruned, no row
+left over for an iteration that no longer exists).
+
+**The invariant:** rows may be *removed* freely -- that is a porting PR making
+progress, and needs no special justification beyond the PR itself making the
+port more correct. *Adding* a row (a regression, or newly covering an
+iteration) needs a written reason and a reviewer, because a known-fail row is
+silent by design: once it is in the file, a matching failure never shows up
+again as a gate failure, so nothing else will catch a bad addition. This is
+why `/Tests/conformance/` has a `CODEOWNERS` entry, and why the only supported
+way to touch `known-fail.tsv` is `scripts/regenerate-known-fail.ps1 -Reason
+"..."` -- it refuses to run without `-Reason`, and appends a dated,
+commit-stamped log entry to `Tests/conformance/regenerations.log` so the
+history of *why* the file changed survives independently of the diff itself.
+
+Never hand-edit `known-fail.tsv` and never add a row to make a failing
+`dotnet test Tests/SwissEphNet.Conformance.Tests` go green without first
+understanding whether the new failure is a regression in the port, or a
+defect in the harness itself (see `ConformanceRunner.Run`'s completeness
+guard, and `Suite06Houses.cs`'s remarks on why testcase 6 is classified
+`Unreproducible` rather than dispatched -- both exist specifically to keep a
+harness bug from silently generating a wrong verdict in either direction).

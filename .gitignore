@@ -182,3 +182,8 @@ FakesAssemblies/
 # scripts/pyswisseph-2.08.manifest.tsv on demand; never committed.
 /external/pyswisseph-2.08/
 /external/.pyswisseph-2.08-download/
+
+# Committed, append-only provenance log for scripts/regenerate-known-fail.ps1
+# (see CONTRIBUTING.md, "Correctness oracle known-fail list") -- would
+# otherwise be excluded by the blanket "*.log" rule above.
+!/Tests/conformance/regenerations.log
