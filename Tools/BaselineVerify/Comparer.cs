@@ -75,11 +75,15 @@ internal static class Comparer
     private const double RelativeEpsilon = 1e-13;
     private const double AbsoluteEpsilon = 1e-12;
 
-    // Cross-platform run measured 2,637 fields (5.60% of all Windows/Linux
-    // differences) where the raw numeric difference was ~360: one side wrote 0 and
-    // the other wrote 359.99999999999994 for the same angle (house cusp, ascmc
-    // entry) -- the true angular difference is 5.68e-14 degrees, pure ULP noise
-    // that happens to land on opposite sides of the swe_degnorm() wrap point.
+    // Cross-platform run measured 108 fields where the raw numeric difference was
+    // > 180 (true angle wraparound): one side wrote 0 and the other wrote
+    // 359.99999999999994 for the same angle (house cusp, ascmc entry) -- the true
+    // angular difference is 5.68e-14 degrees, pure ULP noise that happens to land
+    // on opposite sides of the swe_degnorm() wrap point. (A separate, much larger
+    // set of small numeric differences unrelated to wraparound was initially
+    // mislabeled as wraparound too, by a classifier that computed min(d, |360-d|)
+    // without first checking d was actually close to 360; see
+    // docs/known-issues.md for the corrected numbers.)
     private const double DegreeWraparoundBoundaryTolerance = 1e-9;
     private const double DegreeRangeSlack = 1e-9;
 

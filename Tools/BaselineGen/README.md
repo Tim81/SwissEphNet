@@ -140,33 +140,60 @@ both sides, Linux via `mcr.microsoft.com/dotnet/sdk:10.0` on Ubuntu 24.04) found
 
 - **3,443,058** numeric fields compared; **47,052** (1.37%) differ at all between
   platforms.
-- Of those 47,052: **43,598** (92.66%) are ULP-level noise already absorbed by
-  `max(1e-12 abs, 1e-13 rel)` -- this validates the tolerance design against real
-  data, not just synthetic boundary tests.
-- **2,637** (5.60%) were angle-wraparound artifacts (see above). After adding the
-  wraparound allowance, field-level "still beyond tolerance" across the whole
-  matrix dropped from 3,454 (2,637 + 817) to **3,346** -- a smaller reduction than
-  2,637 would suggest, because the `1e-9` boundary-distance rule (chosen
-  deliberately conservative, per the instruction that produced it) only forgives
-  wraparound pairs where at least one side is genuinely that close to the `0`/`360`
-  edge. Row-level, this resolved **108** rows, all in `houses-armc`
+- Of those 47,052, only **108** are genuine angle-wraparound (raw difference > 180
+  degrees, i.e. one side normalized to 0 and the other to something just under 360)
+  -- and the wraparound allowance resolves all 108 of them, exactly. (An earlier
+  pass at this classification mislabeled 2,529 additional fields as "wraparound"
+  by computing `min(d, |360-d|)`, which is a no-op and just returns `d` back for
+  any already-small difference; those 2,529 are small (1e-12 to 1e-9) numeric
+  divergences with nothing to do with angle wraparound, already counted below.)
+  Row-level, resolving those 108 fields cleared **108** rows, all in `houses-armc`
   (192 -> 84 FAIL rows); `calc` (1,368), `pheno` (140) and `houses` (1) were
-  unaffected, because none of their divergences are wraparound-shaped. Whole-run
+  unaffected, since none of their divergences are wraparound-shaped. Whole-run
   Linux FAIL count: 1,701 -> 1,593 rows.
-- The remaining ~3,346 beyond-tolerance fields split into a handful of
-  differentiation-noise fields in `calc`/`pheno` (SPEED values, expected but not
-  fully explained) and one confirmed numerical-stability bug in `swe_houses_armc`
-  hsys `'Y'`. See `docs/known-issues.md` for both, in detail.
+- **3,346** fields are still beyond the shipped tolerance
+  (`max(1e-12 abs, 1e-13 rel)`) after the wraparound fix. The rest (43,598,
+  92.66% of the 47,052 that differ at all) are ULP-level noise the tolerance
+  already absorbs -- this validates the tolerance design against real data, not
+  just synthetic boundary tests.
+- The remaining 3,346 beyond-tolerance fields split into differentiation-noise
+  fields in `calc`/`pheno` (SPEED values, expected but not fully explained) and
+  one confirmed numerical-stability bug in `swe_houses_armc` hsys `'Y'`. See
+  `docs/known-issues.md` for both, in detail.
 
-**Why the fix was a platform lock, not a looser tolerance:** the p99 relative
-difference for `calc`'s genuine (non-wraparound) divergence is on the order of
-1e-6. A tolerance loose enough to swallow that -- and everything up to its
-max, which for some fields is order-1 relative when the reference value is itself
-extremely close to zero -- would also swallow a real regression of similar size.
-Cross-platform floating-point drift and an actual behavior change look the same to
-a purely numeric comparison at that magnitude; the only honest fix is to not ask
-the comparison to do a job it cannot do, which is why `Tests/baseline/` is
-Windows-only and CI's Windows job (`verify-baseline`) is the one that gates merges.
+**What a looser, cross-platform-passing tolerance would actually cost** (measured
+directly, angle-awareness applied at every level, so these are not estimates):
+
+| Absolute floor | Relative | Fields still beyond tolerance | Worst areas |
+|---|---|---|---|
+| 1e-12 (shipped) | 1e-13 (shipped) | 3,346 | calc 2,973 / houses-armc 210 / pheno 162 |
+| 1e-11 | 1e-13 | 2,328 | calc 2,078 / houses-armc 162 / pheno 88 |
+| 1e-10 | 1e-13 | 1,215 | calc 1,152 / pheno 62 / houses-armc 1 |
+| 1e-09 | 1e-13 | 817 | calc 777 / pheno 39 / houses-armc 1 |
+| 1e-09 | 1e-09 | 407 | calc 406 / houses-armc 1 |
+| 1e-08 | 1e-08 | 97 | calc 96 / houses-armc 1 |
+
+Two things stand out. First, raising just the absolute floor to 1e-9 degrees
+(3.6e-6 arcsec, still far below anything meaningful for an ephemeris) would cut
+failures from 3,346 to 817 on its own -- most of the remaining divergence is
+absolute-scale noise near zero, not something that needs a looser *relative*
+tolerance at all. Second, exactly one `houses-armc` field survives every level in
+this table, including the loosest (1e-8 absolute / 1e-8 relative): the hsys `'Y'`
+case at 26.6 degrees (see `docs/known-issues.md`). Surviving every threshold up to
+1e-8 -- eight orders of magnitude looser than what ships -- is itself evidence
+this is a real algorithmic divergence, not accumulated floating-point noise.
+
+**Why the fix was a platform lock, not a looser shipped tolerance:** even 1e-9
+absolute (which would clear most of the noise) still leaves 817 fields beyond
+tolerance, concentrated in `calc`'s SPEED fields -- a real regression of similar
+magnitude in those fields would look identical to this drift under a purely
+numeric comparison. The only honest fix is to not ask the comparison to do a job
+it cannot do, which is why `Tests/baseline/` is Windows-only and CI's Windows job
+(`verify-baseline`) is the one that gates merges. The shipped tolerance stays at
+`1e-12`/`1e-13`; 1e-9 absolute is recorded here as the value a future *opt-in*
+cross-platform profile would use if one is ever built, not as something wired up
+today.
+
 The Linux job (`verify-baseline-linux`) exists purely to keep tracking this drift
 over time -- see the next section. Run it yourself with
 `./scripts/verify-baseline.ps1 -ReportOnly` for current numbers instead of the

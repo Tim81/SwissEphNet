@@ -85,7 +85,7 @@ public class ComparerTests
         Assert.Equal(1, result.Fail);
     }
 
-    // --- Angle-wraparound tests: a measured cross-platform run found 2,637 fields
+    // --- Angle-wraparound tests: a measured cross-platform run found 108 fields
     // where Windows wrote 0 and Linux wrote 359.99999999999994 for the same house
     // cusp -- a raw difference of ~360, but a true angular difference of 5.68e-14
     // degrees. ---

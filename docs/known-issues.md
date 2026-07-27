@@ -25,6 +25,15 @@ the other (a classic source of platform-dependent NaN/branch divergence in
 trigonometric code that does not clamp its inputs). This is a numerical-stability
 problem in the port, not in the harness or the tolerance.
 
+This is not a tolerance problem: it survives every threshold measured in
+`Tools/BaselineGen/README.md`'s "Platform lock" table, including the loosest
+(1e-8 absolute / 1e-8 relative -- eight orders of magnitude looser than what
+ships). It is the only `houses-armc` field that does. Everything else that
+diverges cross-platform shrinks as the tolerance loosens, the way accumulated
+floating-point noise should; this one field does not move, which is exactly the
+signature of two platforms executing genuinely different branches rather than
+the same branch with a slightly different rounding error.
+
 **Action for the 2.10.03 port work:** when porting the SweHouse delta, check
 whether the C source clamps the argument passed to `acos`/`asin` in the APC branch
 (search for `case 'Y'` in `SwissEphNet/CPort/SweHouse.cs`), and whether upstream
@@ -64,10 +73,20 @@ case it becomes relevant when porting the 2.10.03 SweHouse delta.
 
 ## Cross-platform divergence: measured, and why the gate is platform-locked
 
-Full numbers, and the reasoning for locking the gate to Windows instead of loosening
-the tolerance to pass everywhere, are in `Tools/BaselineGen/README.md` under
-"Platform lock". Summary: of 3,443,058 numeric fields compared, 47,052 differ at all
-between Windows and Linux; after the angle-wraparound fix
-(`Comparer.EffectiveAbsoluteDiff`), 3,346 are still beyond tolerance. The two
-findings above (APC houses, and the calc/pheno SPEED fields) account for the bulk of
-that remainder.
+Full numbers, the tolerance-level cost table, and the reasoning for locking the
+gate to Windows instead of loosening the shipped tolerance, are in
+`Tools/BaselineGen/README.md` under "Platform lock". Summary: of 3,443,058 numeric
+fields compared, 47,052 differ at all between Windows and Linux. Of those, only
+108 are genuine angle-wraparound (raw difference > 180 degrees) and the
+wraparound fix (`Comparer.EffectiveAbsoluteDiff`) resolves all 108 of them
+exactly; 3,346 fields are still beyond the shipped `1e-12`/`1e-13` tolerance. The
+two findings above (APC houses, and the calc/pheno SPEED fields) account for the
+bulk of that remainder.
+
+An earlier pass at this classification reported 2,637 fields as "wraparound" --
+that number came from a comparison bug (`min(d, |360-d|)` computed on the raw
+difference without first checking it was actually a large, near-360 difference,
+so it just returned small differences unchanged and mislabeled them). The
+corrected number is 108, confirmed by checking that the wraparound fix resolves
+exactly that many fields and rows, and that zero of the remaining 3,346
+beyond-tolerance fields have a raw difference anywhere near 360.
