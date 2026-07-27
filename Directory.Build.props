@@ -15,6 +15,19 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!--
+      CS1591 (missing XML doc comment) is off repo-wide, not just under
+      SwissEphNet/CPort/: this whole library's public API (55+ KB of it, most
+      of it a mechanical C port) has no XML docs today, and that is a known,
+      accepted state, not something to warn about on every build. A per-directory
+      .editorconfig severity override is not used for this one, because .editorconfig
+      severity does not reliably suppress every compiler-level (CS-prefixed)
+      diagnostic the same way it does analyzer (CA/IDE) diagnostics, and NoWarn is
+      the long-standing, reliable way to turn this specific warning off. This must
+      stay a project-wide NoWarn, not a style choice a nested .editorconfig can
+      quietly re-enable.
+    -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!--
       Explicitly OFF, not merely defaulted off. SwissEphNet/CPort is a 1:1
       transliteration of the Swiss Ephemeris C source (see CONTRIBUTING.md);
       turning on nullable reference types would produce tens of thousands of
