@@ -1,8 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!--
+    net8.0;net10.0, not just net10.0: this project's own asset is what runs
+    the comparison, and building/running it against both TFMs is how the gate
+    exercises both of SwissEphNet's shipped modern-.NET assets instead of only
+    net10.0. See the "Why net8.0 and net10.0" note in
+    Tools/BaselineGen/README.md and scripts/verify-baseline.ps1, which runs
+    and reports each TFM separately.
+  -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>BaselineVerify</RootNamespace>

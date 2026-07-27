@@ -70,6 +70,33 @@ a way none of the other checks would catch: a `serr` comparison would pass or fa
 based on whoever's regional settings generated the file, not on any actual
 behavior change. Do not remove this property later without re-checking that.
 
+## Why net8.0 and net10.0
+
+`BaselineMatrix` and `BaselineVerify` both multi-target `net8.0;net10.0` (not
+just `net10.0`). SwissEphNet itself ships three assets --
+`netstandard2.0`, `net8.0`, `net10.0` -- and there is no guarantee they behave
+identically. This is not theoretical: `C.ToUnsigned` (called from the
+library's own printf path, `SwissEphNet/Tools/C.printf.cs`, not just from
+tests) converts an out-of-range negative float/double to an unsigned integral
+type, which the C# language spec leaves unspecified, and its concrete result
+changed between the .NET 8 and .NET 10 JIT (wrapping vs. saturating to zero --
+confirmed by running the same test binary against both runtimes). A gate that
+only ever built `BaselineMatrix`/`BaselineVerify` as `net10.0` would only ever
+exercise one of SwissEphNet's three shipped assets and could stay green while
+the `net8.0` asset silently diverged.
+
+`scripts/verify-baseline.ps1` builds `BaselineVerify` once, then runs it once
+per TFM (`dotnet run -f net8.0`, then `-f net10.0`), reporting each as its own
+section. Both must pass for the script to exit 0.
+
+`netstandard2.0` is deliberately not exercised this way: `BaselineVerify` is a
+`dotnet run` console app, and any modern host resolves `net8.0` or `net10.0`
+in preference to a `netstandard2.0` reference, so there is no way to make it
+actually execute the `netstandard2.0` asset without a separate, older host
+leg (e.g. .NET Framework) to run it under. That would cost more to build and
+maintain right now than the coverage is worth, so it is left as a known,
+noted gap rather than solved here.
+
 ## Regenerating the golden files
 
 Only needed when the reference package version changes (i.e., essentially never,
@@ -90,7 +117,8 @@ exact `dotnet build`/`dotnet run` commands if you want to run them by hand.
 ./scripts/verify-baseline.ps1
 ```
 
-This builds `BaselineVerify` in Release and runs it, which builds `BaselineMatrix`
+This builds `BaselineVerify` in Release (both TFMs it targets), then runs it once
+per TFM -- see "Why net8.0 and net10.0" above -- which builds `BaselineMatrix`
 in local mode, runs every area, and compares each against
 `Tests/baseline/baseline-<area>.tsv`:
 
@@ -215,20 +243,26 @@ over time -- see the next section. Run it yourself with
 `./scripts/verify-baseline.ps1 -ReportOnly` for current numbers instead of the
 ones above (from a Linux shell, or via Docker:
 `docker run --rm -v "<repo>:/src" -w /src mcr.microsoft.com/dotnet/sdk:10.0 bash -c
-'dotnet run --project Tools/BaselineVerify/BaselineVerify.csproj -c Release --
-/src/Tests/baseline --report-only'`).
+'dotnet run --project Tools/BaselineVerify/BaselineVerify.csproj -c Release -f net10.0 --
+/src/Tests/baseline --report-only'`; add a second run with `-f net8.0` to check that
+asset too -- BaselineVerify targets both, see "Why net8.0 and net10.0" above).
 
 ## Why a separate solution
 
-`BaselineMatrix`/`BaselineGen`/`BaselineVerify`/`BaselineVerify.Tests` target
-`net10.0`. AppVeyor CI (`appveyor.yml`) builds `SwissEphNet.sln` on the
-`Visual Studio 2017` image, whose bundled SDK does not know `net10.0` -- adding
-these projects to `SwissEphNet.sln` would break `dotnet restore .\SwissEphNet.sln`
-in CI before the build step even starts. `Tools/BaselineTools.slnx` keeps them
-buildable and discoverable locally without going anywhere near the CI image or the
-library's own target frameworks. `Tools/global.json` pins the SDK to the `10.0`
-major.minor line for anything built from under `Tools/`; SDK resolution walks up
-from a project's own directory, not from the invoking shell's working directory, so
+`BaselineGen`/`BaselineVerify.Tests` target `net10.0`; `BaselineMatrix` and
+`BaselineVerify` target `net8.0;net10.0` (see "Why net8.0 and net10.0" above).
+None of that overlaps with what `SwissEphNet.sln` itself used to build under
+the old AppVeyor CI (`appveyor.yml`, since deleted -- see
+`.github/workflows/ci.yml`), which ran on a `Visual Studio 2017` image whose
+bundled SDK knew neither `net8.0`/`net10.0` nor central package management.
+Adding these projects to `SwissEphNet.sln` back then would have broken
+`dotnet restore .\SwissEphNet.sln` in that CI before the build step even
+started. `Tools/BaselineTools.slnx` predates AppVeyor's removal and has
+stayed separate since; it still keeps these projects buildable and
+discoverable locally without going anywhere near the library's own target
+frameworks. `Tools/global.json` pins the SDK to the `10.0` major.minor line
+for anything built from under `Tools/`; SDK resolution walks up from a
+project's own directory, not from the invoking shell's working directory, so
 this has no effect on `SwissEphNet.sln` at the repo root.
 
 `.github/workflows/baseline.yml` is what actually runs the gate: `dotnet test
