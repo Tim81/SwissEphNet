@@ -289,19 +289,26 @@ namespace SwissEphNet
                 if (m.Groups[2] != null && m.Groups[2].Value.Length > 0) {
                     string flags = m.Groups[2].Value;
 
-                    // string.Contains(char, StringComparison) is not part of
+                    // string.IndexOf(char, StringComparison) is not part of
                     // the netstandard2.0 API surface (one of this project's
-                    // three target frameworks); string.Contains(char) is
-                    // already ordinal (culture-insensitive) per its
-                    // documented behavior, so this is not a real CA1307
-                    // finding, just an overload that does not exist
-                    // everywhere this multi-targets.
+                    // three target frameworks); string.IndexOf(char) (no
+                    // StringComparison argument) is on every TFM, including
+                    // netstandard2.0, and is already ordinal
+                    // (culture-insensitive) per its documented behavior, so
+                    // the CA1307 suggestion here is a false positive. (This
+                    // must not be flags.Contains(ch): netstandard2.0's
+                    // System.String has no instance Contains(char) overload
+                    // at all, which would resolve to this project's own
+                    // StringExtensions.Contains(this string, char) extension
+                    // instead -- correct there, but there is no reason to
+                    // route through an extension method when IndexOf(char)
+                    // already does the job on every TFM directly.)
 #pragma warning disable CA1307
-                    flagAlternate = flags.Contains('#');
-                    flagLeft2Right = flags.Contains('-');
-                    flagPositiveSign = flags.Contains('+');
-                    flagPositiveSpace = flags.Contains(' ');
-                    flagGroupThousands = flags.Contains('\'');
+                    flagAlternate = flags.IndexOf('#') >= 0;
+                    flagLeft2Right = flags.IndexOf('-') >= 0;
+                    flagPositiveSign = flags.IndexOf('+') >= 0;
+                    flagPositiveSpace = flags.IndexOf(' ') >= 0;
+                    flagGroupThousands = flags.IndexOf('\'') >= 0;
 #pragma warning restore CA1307
 
                     // positive + indicator overrides a

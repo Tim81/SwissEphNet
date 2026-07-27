@@ -622,18 +622,26 @@ namespace SwissEphNet
             protected bool ParseScanSet(TextParser input, FormatSpecifier spec) {
                 // Parse characters
                 int start = input.Position;
-                // string.Contains(char, StringComparison) is not part of the
+                // string.IndexOf(char, StringComparison) is not part of the
                 // netstandard2.0 API surface (one of this project's three
-                // target frameworks); string.Contains(char) is already
-                // ordinal (culture-insensitive) per its documented behavior,
-                // so this is not a real CA1307 finding, just an overload
-                // that does not exist everywhere this multi-targets.
+                // target frameworks); string.IndexOf(char) (no
+                // StringComparison argument) is on every TFM, including
+                // netstandard2.0, and is already ordinal
+                // (culture-insensitive) per its documented behavior, so the
+                // CA1307 suggestion here is a false positive. (This must not
+                // be spec.ScanSet.Contains(ch): netstandard2.0's
+                // System.String has no instance Contains(char) overload at
+                // all, which would resolve to this project's own
+                // StringExtensions.Contains(this string, char) extension
+                // instead -- correct there, but there is no reason to route
+                // through an extension method when IndexOf(char) already
+                // does the job on every TFM directly.)
 #pragma warning disable CA1307
                 if (!spec.ScanSetExclude) {
-                    while (spec.ScanSet.Contains(input.Peek()))
+                    while (spec.ScanSet.IndexOf(input.Peek()) >= 0)
                         input.MoveAhead();
                 } else {
-                    while (!input.EndOfText && !spec.ScanSet.Contains(input.Peek()))
+                    while (!input.EndOfText && spec.ScanSet.IndexOf(input.Peek()) < 0)
                         input.MoveAhead();
                 }
 #pragma warning restore CA1307
