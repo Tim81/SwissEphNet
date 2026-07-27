@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        configuration: [Debug, Release]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      # SweWin (net10.0-windows, WinForms) only builds on Windows -- see
+      # SwissEphNet.CrossPlatform.slnf and the note in CONTRIBUTING.md/README.
+      - name: Build (Windows, full solution including SweWin)
+        if: runner.os == 'Windows'
+        run: dotnet build SwissEphNet.sln -c ${{ matrix.configuration }}
+
+      - name: Build (cross-platform subset)
+        if: runner.os != 'Windows'
+        run: dotnet build SwissEphNet.CrossPlatform.slnf -c ${{ matrix.configuration }}
+
+      - name: Test
+        run: dotnet test Tests/SwissEphNet.Tests/SwissEphNet.Tests.csproj -c ${{ matrix.configuration }} --no-build --logger trx --results-directory TestResults
+
+      - name: Publish test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.os }}-${{ matrix.configuration }}
+          path: TestResults/*.trx
+
+  # No `dotnet format --verify-no-changes` job yet: the pre-existing SweWin
+  # WinForms code (never previously run through dotnet format) has formatting
+  # debt unrelated to this change, and gating every PR on fixing it is a
+  # separate piece of work. Whoever adds that job must run it as
+  # `dotnet format SwissEphNet.sln --verify-no-changes --exclude SwissEphNet/CPort/`
+  # -- see CONTRIBUTING.md for why the exclusion is mandatory.
