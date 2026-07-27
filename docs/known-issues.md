@@ -196,18 +196,43 @@ that parsed the name expecting a literal backslash (e.g. via
 non-Windows) should split on both separators, as this port's own test harness
 now does (`ResourceFileHelpers.GetPortableFileName`).
 
-**Baseline gate note:** the same `swe_set_ephe_path` code path that appends
-`DIR_GLUE` to the configured ephemeris path also feeds "file not found"
-diagnostic messages, e.g. `SwissEph file 'sefstars.txt' not found in PATH
-'[ephe]/'` instead of `'[ephe]\'`. This surfaces as 207 baseline rows per TFM
-(192 in `ayanamsa`, 15 in `datetime` -- both areas that exercise a
-missing-file/Moshier-fallback path). Every one of the 207 rows, confirmed by
-dumping the full (non-truncated) failure list rather than trusting the
-console's `Take(50)` sample, is exactly this one string-content change in a
-diagnostic message column; none is a numeric divergence. This is the expected
-reach of the fix (the same effect the "behavior change for consumers" note
-above describes), not a separate finding, and is reported here rather than
-silently waived or baked into a baseline regeneration without review.
+**Baseline gate: updated, deliberately, via local-mode regeneration.** The
+same `swe_set_ephe_path` code path that appends `DIR_GLUE` to the configured
+ephemeris path also feeds "file not found" diagnostic messages, e.g. `SwissEph
+file 'sefstars.txt' not found in PATH '[ephe]/'` instead of `'[ephe]\'`. This
+surfaced as 207 baseline rows per TFM (192 in `ayanamsa`, 15 in `datetime` --
+both areas that exercise a missing-file/Moshier-fallback path) once `DIR_GLUE`
+and `Sweph.cs:2634` were fixed together. Every one of the 207 rows, confirmed
+by dumping the full (non-truncated) failure list rather than trusting the
+console's `Take(50)` sample, was exactly this one string-content change in a
+diagnostic message column; none was a numeric divergence.
+
+This is a real, intended behavior change -- the path separator genuinely is
+`/` now, so `swe_set_ephe_path` echoing `'[ephe]/'` into its diagnostic is
+accurate -- so the committed baseline needed to start reflecting it, not stay
+frozen on the pre-fix text forever. `scripts/regenerate-baseline.ps1
+-FromLocal` (see `Tools/BaselineGen/README.md`, "Local mode -- when it is
+legitimate") regenerated it from local code; the resulting diff against the
+previously committed baseline was confirmed, row by row, to be exactly those
+207 rows, exactly that one string substitution, nothing else. `git diff
+--stat Tests/baseline` at the time: `baseline-ayanamsa.tsv` (192 rows changed),
+`baseline-datetime.tsv` (15 rows changed), `baseline-2.8.0.2.env.txt` (a new
+append-only provenance entry, not a rewrite of its original reference
+fields). `scripts/verify-baseline.ps1` passes again on both TFMs after this,
+with the assembly-identity check still correctly reporting that the current
+(local) build's `ModuleVersionId`/SHA-256 differ from the original reference
+package's, unchanged, recorded in the sidecar.
+
+The sidecar (`Tests/baseline/baseline-2.8.0.2.env.txt`) is not renamed despite
+no longer describing every row in the directory: its name is derived from
+`EnvInfo.ReferenceVersion` specifically so a future version bump cannot leave
+a stale-named file behind, and nothing hard-codes that literal name (only a
+`baseline-*.env.txt` pattern), so renaming would cost real coupling for a
+purely cosmetic gain. Instead, the file itself now carries an explicit,
+append-only "Local regenerations" log stating exactly this: the original
+eight fields describe the reference-mode run and are kept verbatim (the
+assembly-identity check depends on that), and this deviation -- 207 rows, the
+`serr` path separator, this DIR_GLUE fix -- is recorded as entry 1.
 
 ## swe_fixstar_ut distance speed: larger cross-platform differentiation noise
 

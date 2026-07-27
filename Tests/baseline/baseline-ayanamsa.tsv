@@ -286,22 +286,22 @@ AYEXUT|16|2371428.5714285714|0	66	16.92716699972367	 \nusing Moshier eph.;
 AYEXUT|16|2371428.5714285714|NONUT	66	16.930411792830228	 \nusing Moshier eph.; 
 AYEXUT|16|2600000|0	66	25.675891748787514	 \nusing Moshier eph.; 
 AYEXUT|16|2600000|NONUT	66	25.675619882226158	 \nusing Moshier eph.; 
-AYEXUT|17|1000000|0	2	331.8115992372598	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|17|1000000|NONUT	2	331.80859659330804	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|17|1228571.4285714286|0	2	340.4162767966365	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|17|1228571.4285714286|NONUT	2	340.4205267254582	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|17|1457142.8571428573|0	2	349.05758689522884	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|17|1457142.8571428573|NONUT	2	349.054498848623	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|17|1685714.2857142857|0	2	357.7025278064111	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|17|1685714.2857142857|NONUT	2	357.7024024693968	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|17|1914285.7142857143|0	2	6.3650028781310315	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|17|1914285.7142857143|NONUT	2	6.368016469966136	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|17|2142857.1428571427|0	2	15.068025881028742	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|17|2142857.1428571427|NONUT	2	15.063671512472638	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|17|2371428.5714285714|0	2	23.788001016593103	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|17|2371428.5714285714|NONUT	2	23.79124580969966	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|17|2600000|0	2	32.54023424680461	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|17|2600000|NONUT	2	32.53996238024325	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
+AYEXUT|17|1000000|0	2	331.8115992372598	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|17|1000000|NONUT	2	331.80859659330804	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|17|1228571.4285714286|0	2	340.4162767966365	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|17|1228571.4285714286|NONUT	2	340.4205267254582	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|17|1457142.8571428573|0	2	349.05758689522884	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|17|1457142.8571428573|NONUT	2	349.054498848623	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|17|1685714.2857142857|0	2	357.7025278064111	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|17|1685714.2857142857|NONUT	2	357.7024024693968	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|17|1914285.7142857143|0	2	6.3650028781310315	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|17|1914285.7142857143|NONUT	2	6.368016469966136	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|17|2142857.1428571427|0	2	15.068025881028742	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|17|2142857.1428571427|NONUT	2	15.063671512472638	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|17|2371428.5714285714|0	2	23.788001016593103	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|17|2371428.5714285714|NONUT	2	23.79124580969966	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|17|2600000|0	2	32.54023424680461	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|17|2600000|NONUT	2	32.53996238024325	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
 AYEXUT|18|1000000|0	66	304.957332024303	
 AYEXUT|18|1000000|NONUT	66	304.9543293803512	
 AYEXUT|18|1228571.4285714286|0	66	313.5593704925257	
@@ -462,54 +462,54 @@ AYEXUT|26|2371428.5714285714|0	66	19.939971878809718	 \nusing Moshier eph.;
 AYEXUT|26|2371428.5714285714|NONUT	66	19.943216671916275	 \nusing Moshier eph.; 
 AYEXUT|26|2600000|0	66	28.688692818060396	 \nusing Moshier eph.; 
 AYEXUT|26|2600000|NONUT	66	28.68842095149904	 \nusing Moshier eph.; 
-AYEXUT|27|1000000|0	-1	0.003002519603874635	SwissEph file 'sefstars.txt' not found in PATH '[ephe]\\'
-AYEXUT|27|1000000|NONUT	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]\\'
-AYEXUT|27|1228571.4285714286|0	-1	-0.004249967161266396	SwissEph file 'sefstars.txt' not found in PATH '[ephe]\\'
-AYEXUT|27|1228571.4285714286|NONUT	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]\\'
-AYEXUT|27|1457142.8571428573|0	-1	0.0030880440212499947	SwissEph file 'sefstars.txt' not found in PATH '[ephe]\\'
-AYEXUT|27|1457142.8571428573|NONUT	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]\\'
-AYEXUT|27|1685714.2857142857|0	-1	0.0001253330468198629	SwissEph file 'sefstars.txt' not found in PATH '[ephe]\\'
-AYEXUT|27|1685714.2857142857|NONUT	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]\\'
-AYEXUT|27|1914285.7142857143|0	-1	-0.0030135832969052897	SwissEph file 'sefstars.txt' not found in PATH '[ephe]\\'
-AYEXUT|27|1914285.7142857143|NONUT	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]\\'
-AYEXUT|27|2142857.1428571427|0	-1	0.004354371093275974	SwissEph file 'sefstars.txt' not found in PATH '[ephe]\\'
-AYEXUT|27|2142857.1428571427|NONUT	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]\\'
-AYEXUT|27|2371428.5714285714|0	-1	-0.0032447928868686166	SwissEph file 'sefstars.txt' not found in PATH '[ephe]\\'
-AYEXUT|27|2371428.5714285714|NONUT	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]\\'
-AYEXUT|27|2600000|0	-1	0.0002718665613572726	SwissEph file 'sefstars.txt' not found in PATH '[ephe]\\'
-AYEXUT|27|2600000|NONUT	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]\\'
-AYEXUT|28|1000000|0	2	324.87611050913847	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|28|1000000|NONUT	2	324.8731078651867	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|28|1228571.4285714286|0	2	333.5014725215342	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|28|1228571.4285714286|NONUT	2	333.5057224503559	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|28|1457142.8571428573|0	2	342.1531482513353	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|28|1457142.8571428573|NONUT	2	342.15006020472947	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|28|1685714.2857142857|0	2	350.8163743518996	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|28|1685714.2857142857|NONUT	2	350.8162490148853	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|28|1914285.7142857143|0	2	359.51064527101147	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|28|1914285.7142857143|NONUT	2	359.51365886284657	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|28|2142857.1428571427|0	2	8.242552099828057	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|28|2142857.1428571427|NONUT	2	8.238197731271953	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|28|2371428.5714285714|0	2	16.975499463461166	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|28|2371428.5714285714|NONUT	2	16.978744256567722	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|28|2600000|0	2	25.73730280187406	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|28|2600000|NONUT	2	25.737030935312703	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|29|1000000|0	2	327.63421635622916	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|29|1000000|NONUT	2	327.6312137122774	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|29|1228571.4285714286|0	2	336.2368937736508	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|29|1228571.4285714286|NONUT	2	336.2411437024725	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|29|1457142.8571428573|0	2	344.8796975138812	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|29|1457142.8571428573|NONUT	2	344.87660946727533	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|29|1685714.2857142857|0	2	353.5419099921741	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|29|1685714.2857142857|NONUT	2	353.5417846551598	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|29|1914285.7142857143|0	2	2.2256514029931598	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|29|1914285.7142857143|NONUT	2	2.2286649948282644	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|29|2142857.1428571427|0	2	10.933880270939778	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|29|2142857.1428571427|NONUT	2	10.929525902383673	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|29|2371428.5714285714|0	2	19.64854477195394	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|29|2371428.5714285714|NONUT	2	19.651789565060497	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|29|2600000|0	2	28.406187688307405	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|29|2600000|NONUT	2	28.40591582174605	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
+AYEXUT|27|1000000|0	-1	0.003002519603874635	SwissEph file 'sefstars.txt' not found in PATH '[ephe]/'
+AYEXUT|27|1000000|NONUT	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]/'
+AYEXUT|27|1228571.4285714286|0	-1	-0.004249967161266396	SwissEph file 'sefstars.txt' not found in PATH '[ephe]/'
+AYEXUT|27|1228571.4285714286|NONUT	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]/'
+AYEXUT|27|1457142.8571428573|0	-1	0.0030880440212499947	SwissEph file 'sefstars.txt' not found in PATH '[ephe]/'
+AYEXUT|27|1457142.8571428573|NONUT	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]/'
+AYEXUT|27|1685714.2857142857|0	-1	0.0001253330468198629	SwissEph file 'sefstars.txt' not found in PATH '[ephe]/'
+AYEXUT|27|1685714.2857142857|NONUT	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]/'
+AYEXUT|27|1914285.7142857143|0	-1	-0.0030135832969052897	SwissEph file 'sefstars.txt' not found in PATH '[ephe]/'
+AYEXUT|27|1914285.7142857143|NONUT	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]/'
+AYEXUT|27|2142857.1428571427|0	-1	0.004354371093275974	SwissEph file 'sefstars.txt' not found in PATH '[ephe]/'
+AYEXUT|27|2142857.1428571427|NONUT	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]/'
+AYEXUT|27|2371428.5714285714|0	-1	-0.0032447928868686166	SwissEph file 'sefstars.txt' not found in PATH '[ephe]/'
+AYEXUT|27|2371428.5714285714|NONUT	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]/'
+AYEXUT|27|2600000|0	-1	0.0002718665613572726	SwissEph file 'sefstars.txt' not found in PATH '[ephe]/'
+AYEXUT|27|2600000|NONUT	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]/'
+AYEXUT|28|1000000|0	2	324.87611050913847	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|28|1000000|NONUT	2	324.8731078651867	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|28|1228571.4285714286|0	2	333.5014725215342	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|28|1228571.4285714286|NONUT	2	333.5057224503559	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|28|1457142.8571428573|0	2	342.1531482513353	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|28|1457142.8571428573|NONUT	2	342.15006020472947	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|28|1685714.2857142857|0	2	350.8163743518996	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|28|1685714.2857142857|NONUT	2	350.8162490148853	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|28|1914285.7142857143|0	2	359.51064527101147	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|28|1914285.7142857143|NONUT	2	359.51365886284657	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|28|2142857.1428571427|0	2	8.242552099828057	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|28|2142857.1428571427|NONUT	2	8.238197731271953	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|28|2371428.5714285714|0	2	16.975499463461166	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|28|2371428.5714285714|NONUT	2	16.978744256567722	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|28|2600000|0	2	25.73730280187406	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|28|2600000|NONUT	2	25.737030935312703	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|29|1000000|0	2	327.63421635622916	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|29|1000000|NONUT	2	327.6312137122774	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|29|1228571.4285714286|0	2	336.2368937736508	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|29|1228571.4285714286|NONUT	2	336.2411437024725	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|29|1457142.8571428573|0	2	344.8796975138812	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|29|1457142.8571428573|NONUT	2	344.87660946727533	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|29|1685714.2857142857|0	2	353.5419099921741	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|29|1685714.2857142857|NONUT	2	353.5417846551598	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|29|1914285.7142857143|0	2	2.2256514029931598	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|29|1914285.7142857143|NONUT	2	2.2286649948282644	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|29|2142857.1428571427|0	2	10.933880270939778	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|29|2142857.1428571427|NONUT	2	10.929525902383673	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|29|2371428.5714285714|0	2	19.64854477195394	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|29|2371428.5714285714|NONUT	2	19.651789565060497	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|29|2600000|0	2	28.406187688307405	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|29|2600000|NONUT	2	28.40591582174605	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
 AYEXUT|2|1000000|0	66	332.76691668204893	
 AYEXUT|2|1000000|NONUT	66	332.76391403809714	
 AYEXUT|2|1228571.4285714286|0	66	341.36895836040486	
@@ -526,70 +526,70 @@ AYEXUT|2|2371428.5714285714|0	66	24.743833800064742
 AYEXUT|2|2371428.5714285714|NONUT	66	24.7470785931713	
 AYEXUT|2|2600000|0	66	33.49259293169886	
 AYEXUT|2|2600000|NONUT	66	33.4923210651375	
-AYEXUT|30|1000000|0	2	327.4346582202598	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|30|1000000|NONUT	2	327.431655576308	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|30|1228571.4285714286|0	2	336.03933577963653	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|30|1228571.4285714286|NONUT	2	336.04358570845824	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|30|1457142.8571428573|0	2	344.68064587822886	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|30|1457142.8571428573|NONUT	2	344.677557831623	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|30|1685714.2857142857|0	2	353.3255867894111	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|30|1685714.2857142857|NONUT	2	353.3254614523968	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|30|1914285.7142857143|0	2	1.9880618611310314	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|30|1914285.7142857143|NONUT	2	1.991075452966136	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|30|2142857.1428571427|0	2	10.691084864028742	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|30|2142857.1428571427|NONUT	2	10.686730495472638	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|30|2371428.5714285714|0	2	19.411059999593103	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|30|2371428.5714285714|NONUT	2	19.41430479269966	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|30|2600000|0	2	28.16329322980461	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|30|2600000|NONUT	2	28.163021363243253	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|31|1000000|0	2	334.67587528611847	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|31|1000000|NONUT	2	334.6728726421667	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|31|1228571.4285714286|0	2	343.3263199510234	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|31|1228571.4285714286|NONUT	2	343.3305698798451	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|31|1457142.8571428573|0	2	352.01190195282646	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|31|1457142.8571428573|NONUT	2	352.0088139062206	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|31|1685714.2857142857|0	2	0.7087422640205789	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|31|1685714.2857142857|NONUT	2	0.7086169270062896	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|31|1914285.7142857143|0	2	9.42776376995476	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|31|1914285.7142857143|NONUT	2	9.430777361789865	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|31|2142857.1428571427|0	2	18.180223916648995	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|31|2142857.1428571427|NONUT	2	18.17586954809289	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|31|2371428.5714285714|0	2	26.94099452123918	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|31|2371428.5714285714|NONUT	2	26.944239314345737	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|31|2600000|0	2	35.73627152935635	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|31|2600000|NONUT	2	35.735999662794995	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|32|1000000|0	2	334.72883283432344	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|32|1000000|NONUT	2	334.72583019037165	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|32|1228571.4285714286|0	2	343.3792784251994	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|32|1228571.4285714286|NONUT	2	343.3835283540211	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|32|1457142.8571428573|0	2	352.0648586727766	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|32|1457142.8571428573|NONUT	2	352.06177062617076	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|32|1685714.2857142857|0	2	0.7616946200599914	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|32|1685714.2857142857|NONUT	2	0.7615692830457022	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|32|1914285.7142857143|0	2	9.480709228475172	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|32|1914285.7142857143|NONUT	2	9.483722820310277	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|32|2142857.1428571427|0	2	18.233160021339952	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|32|2142857.1428571427|NONUT	2	18.228805652783848	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|32|2371428.5714285714|0	2	26.993918893243848	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|32|2371428.5714285714|NONUT	2	26.997163686350405	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|32|2600000|0	2	35.78918186876681	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|32|2600000|NONUT	2	35.788910002205455	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|33|1000000|0	2	328.06216616762345	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|33|1000000|NONUT	2	328.05916352367166	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|33|1228571.4285714286|0	2	336.71261175849935	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|33|1228571.4285714286|NONUT	2	336.71686168732106	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|33|1457142.8571428573|0	2	345.39819200607656	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|33|1457142.8571428573|NONUT	2	345.3951039594707	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|33|1685714.2857142857|0	2	354.09502795336	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|33|1685714.2857142857|NONUT	2	354.0949026163457	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|33|1914285.7142857143|0	2	2.814042561775172	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|33|1914285.7142857143|NONUT	2	2.8170561536102765	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|33|2142857.1428571427|0	2	11.566493354639952	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|33|2142857.1428571427|NONUT	2	11.562138986083848	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|33|2371428.5714285714|0	2	20.327252226543848	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|33|2371428.5714285714|NONUT	2	20.330497019650405	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|33|2600000|0	2	29.12251520206681	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|33|2600000|NONUT	2	29.122243335505456	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
+AYEXUT|30|1000000|0	2	327.4346582202598	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|30|1000000|NONUT	2	327.431655576308	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|30|1228571.4285714286|0	2	336.03933577963653	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|30|1228571.4285714286|NONUT	2	336.04358570845824	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|30|1457142.8571428573|0	2	344.68064587822886	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|30|1457142.8571428573|NONUT	2	344.677557831623	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|30|1685714.2857142857|0	2	353.3255867894111	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|30|1685714.2857142857|NONUT	2	353.3254614523968	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|30|1914285.7142857143|0	2	1.9880618611310314	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|30|1914285.7142857143|NONUT	2	1.991075452966136	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|30|2142857.1428571427|0	2	10.691084864028742	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|30|2142857.1428571427|NONUT	2	10.686730495472638	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|30|2371428.5714285714|0	2	19.411059999593103	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|30|2371428.5714285714|NONUT	2	19.41430479269966	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|30|2600000|0	2	28.16329322980461	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|30|2600000|NONUT	2	28.163021363243253	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|31|1000000|0	2	334.67587528611847	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|31|1000000|NONUT	2	334.6728726421667	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|31|1228571.4285714286|0	2	343.3263199510234	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|31|1228571.4285714286|NONUT	2	343.3305698798451	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|31|1457142.8571428573|0	2	352.01190195282646	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|31|1457142.8571428573|NONUT	2	352.0088139062206	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|31|1685714.2857142857|0	2	0.7087422640205789	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|31|1685714.2857142857|NONUT	2	0.7086169270062896	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|31|1914285.7142857143|0	2	9.42776376995476	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|31|1914285.7142857143|NONUT	2	9.430777361789865	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|31|2142857.1428571427|0	2	18.180223916648995	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|31|2142857.1428571427|NONUT	2	18.17586954809289	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|31|2371428.5714285714|0	2	26.94099452123918	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|31|2371428.5714285714|NONUT	2	26.944239314345737	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|31|2600000|0	2	35.73627152935635	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|31|2600000|NONUT	2	35.735999662794995	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|32|1000000|0	2	334.72883283432344	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|32|1000000|NONUT	2	334.72583019037165	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|32|1228571.4285714286|0	2	343.3792784251994	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|32|1228571.4285714286|NONUT	2	343.3835283540211	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|32|1457142.8571428573|0	2	352.0648586727766	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|32|1457142.8571428573|NONUT	2	352.06177062617076	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|32|1685714.2857142857|0	2	0.7616946200599914	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|32|1685714.2857142857|NONUT	2	0.7615692830457022	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|32|1914285.7142857143|0	2	9.480709228475172	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|32|1914285.7142857143|NONUT	2	9.483722820310277	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|32|2142857.1428571427|0	2	18.233160021339952	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|32|2142857.1428571427|NONUT	2	18.228805652783848	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|32|2371428.5714285714|0	2	26.993918893243848	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|32|2371428.5714285714|NONUT	2	26.997163686350405	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|32|2600000|0	2	35.78918186876681	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|32|2600000|NONUT	2	35.788910002205455	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|33|1000000|0	2	328.06216616762345	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|33|1000000|NONUT	2	328.05916352367166	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|33|1228571.4285714286|0	2	336.71261175849935	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|33|1228571.4285714286|NONUT	2	336.71686168732106	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|33|1457142.8571428573|0	2	345.39819200607656	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|33|1457142.8571428573|NONUT	2	345.3951039594707	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|33|1685714.2857142857|0	2	354.09502795336	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|33|1685714.2857142857|NONUT	2	354.0949026163457	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|33|1914285.7142857143|0	2	2.814042561775172	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|33|1914285.7142857143|NONUT	2	2.8170561536102765	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|33|2142857.1428571427|0	2	11.566493354639952	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|33|2142857.1428571427|NONUT	2	11.562138986083848	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|33|2371428.5714285714|0	2	20.327252226543848	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|33|2371428.5714285714|NONUT	2	20.330497019650405	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|33|2600000|0	2	29.12251520206681	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|33|2600000|NONUT	2	29.122243335505456	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
 AYEXUT|34|1000000|0	66	334.9751253088926	
 AYEXUT|34|1000000|NONUT	66	334.9721226649408	
 AYEXUT|34|1228571.4285714286|0	66	343.57716381557145	
@@ -606,38 +606,38 @@ AYEXUT|34|2371428.5714285714|0	66	26.951997451954302
 AYEXUT|34|2371428.5714285714|NONUT	66	26.95524224506086	
 AYEXUT|34|2600000|0	66	35.70075586812519	
 AYEXUT|34|2600000|NONUT	66	35.70048400156384	
-AYEXUT|35|1000000|0	2	329.5660131647739	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|35|1000000|NONUT	2	329.5630105208221	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|35|1228571.4285714286|0	2	338.16559038654015	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|35|1228571.4285714286|NONUT	2	338.16984031536185	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|35|1457142.8571428573|0	2	346.80285372456683	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|35|1457142.8571428573|NONUT	2	346.799765677961	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|35|1685714.2857142857|0	2	355.4443554746574	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|35|1685714.2857142857|NONUT	2	355.4442301376431	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|35|1914285.7142857143|0	2	4.103631433176554	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|35|1914285.7142857143|NONUT	2	4.106645025011659	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|35|2142857.1428571427|0	2	12.803967489796289	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|35|2142857.1428571427|NONUT	2	12.799613121240185	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|35|2371428.5714285714|0	2	21.522290637612617	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|35|2371428.5714285714|NONUT	2	21.525535430719174	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|35|2600000|0	2	30.27376416786192	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|35|2600000|NONUT	2	30.273492301300564	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|36|1000000|0	2	323.18706239923114	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|36|1000000|NONUT	2	323.18405975527935	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|36|1228571.4285714286|0	2	331.96250386136967	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|36|1228571.4285714286|NONUT	2	331.9667537901914	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|36|1457142.8571428573|0	2	340.82505359275325	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|36|1457142.8571428573|NONUT	2	340.8219655461474	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|36|1685714.2857142857|0	2	349.737723840421	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|36|1685714.2857142857|NONUT	2	349.7375985034067	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|36|1914285.7142857143|0	2	358.7090812321227	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|36|1914285.7142857143|NONUT	2	358.7120948239578	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|36|2142857.1428571427|0	2	7.755993043251292	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|36|2142857.1428571427|NONUT	2	7.751638674695187	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|36|2371428.5714285714|0	2	16.846977233250687	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|36|2371428.5714285714|NONUT	2	16.850222026357244	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|36|2600000|0	2	25.987286014718315	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|36|2600000|NONUT	2	25.98701414815696	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
+AYEXUT|35|1000000|0	2	329.5660131647739	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|35|1000000|NONUT	2	329.5630105208221	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|35|1228571.4285714286|0	2	338.16559038654015	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|35|1228571.4285714286|NONUT	2	338.16984031536185	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|35|1457142.8571428573|0	2	346.80285372456683	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|35|1457142.8571428573|NONUT	2	346.799765677961	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|35|1685714.2857142857|0	2	355.4443554746574	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|35|1685714.2857142857|NONUT	2	355.4442301376431	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|35|1914285.7142857143|0	2	4.103631433176554	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|35|1914285.7142857143|NONUT	2	4.106645025011659	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|35|2142857.1428571427|0	2	12.803967489796289	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|35|2142857.1428571427|NONUT	2	12.799613121240185	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|35|2371428.5714285714|0	2	21.522290637612617	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|35|2371428.5714285714|NONUT	2	21.525535430719174	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|35|2600000|0	2	30.27376416786192	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|35|2600000|NONUT	2	30.273492301300564	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|36|1000000|0	2	323.18706239923114	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|36|1000000|NONUT	2	323.18405975527935	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|36|1228571.4285714286|0	2	331.96250386136967	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|36|1228571.4285714286|NONUT	2	331.9667537901914	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|36|1457142.8571428573|0	2	340.82505359275325	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|36|1457142.8571428573|NONUT	2	340.8219655461474	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|36|1685714.2857142857|0	2	349.737723840421	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|36|1685714.2857142857|NONUT	2	349.7375985034067	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|36|1914285.7142857143|0	2	358.7090812321227	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|36|1914285.7142857143|NONUT	2	358.7120948239578	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|36|2142857.1428571427|0	2	7.755993043251292	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|36|2142857.1428571427|NONUT	2	7.751638674695187	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|36|2371428.5714285714|0	2	16.846977233250687	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|36|2371428.5714285714|NONUT	2	16.850222026357244	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|36|2600000|0	2	25.987286014718315	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|36|2600000|NONUT	2	25.98701414815696	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
 AYEXUT|37|1000000|0	66	325.5325544107077	 \nusing Moshier eph.; 
 AYEXUT|37|1000000|NONUT	66	325.5295517667559	 \nusing Moshier eph.; 
 AYEXUT|37|1228571.4285714286|0	66	334.1346747660206	 \nusing Moshier eph.; 
@@ -670,22 +670,22 @@ AYEXUT|38|2371428.5714285714|0	66	21.549971345570487	 \nusing Moshier eph.;
 AYEXUT|38|2371428.5714285714|NONUT	66	21.553216138677044	 \nusing Moshier eph.; 
 AYEXUT|38|2600000|0	66	30.2986563374968	 \nusing Moshier eph.; 
 AYEXUT|38|2600000|NONUT	66	30.298384470935446	 \nusing Moshier eph.; 
-AYEXUT|39|1000000|0	2	330.1415741399791	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|39|1000000|NONUT	2	330.13857149602734	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|39|1228571.4285714286|0	2	338.7442515574008	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|39|1228571.4285714286|NONUT	2	338.7485014862225	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|39|1457142.8571428573|0	2	347.3870552976312	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|39|1457142.8571428573|NONUT	2	347.38396725102535	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|39|1685714.2857142857|0	2	356.0492677759241	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|39|1685714.2857142857|NONUT	2	356.04914243890977	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|39|1914285.7142857143|0	2	4.733009186743155	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|39|1914285.7142857143|NONUT	2	4.73602277857826	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|39|2142857.1428571427|0	2	13.441238054689773	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|39|2142857.1428571427|NONUT	2	13.436883686133669	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|39|2371428.5714285714|0	2	22.155902555703936	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|39|2371428.5714285714|NONUT	2	22.159147348810492	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|39|2600000|0	2	30.9135454720574	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|39|2600000|NONUT	2	30.913273605496045	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
+AYEXUT|39|1000000|0	2	330.1415741399791	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|39|1000000|NONUT	2	330.13857149602734	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|39|1228571.4285714286|0	2	338.7442515574008	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|39|1228571.4285714286|NONUT	2	338.7485014862225	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|39|1457142.8571428573|0	2	347.3870552976312	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|39|1457142.8571428573|NONUT	2	347.38396725102535	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|39|1685714.2857142857|0	2	356.0492677759241	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|39|1685714.2857142857|NONUT	2	356.04914243890977	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|39|1914285.7142857143|0	2	4.733009186743155	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|39|1914285.7142857143|NONUT	2	4.73602277857826	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|39|2142857.1428571427|0	2	13.441238054689773	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|39|2142857.1428571427|NONUT	2	13.436883686133669	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|39|2371428.5714285714|0	2	22.155902555703936	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|39|2371428.5714285714|NONUT	2	22.159147348810492	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|39|2600000|0	2	30.9135454720574	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|39|2600000|NONUT	2	30.913273605496045	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
 AYEXUT|3|1000000|0	66	327.36830668204885	
 AYEXUT|3|1000000|NONUT	66	327.36530403809707	
 AYEXUT|3|1228571.4285714286|0	66	335.97034836040484	
@@ -702,22 +702,22 @@ AYEXUT|3|2371428.5714285714|0	66	19.345223800064723
 AYEXUT|3|2371428.5714285714|NONUT	66	19.34846859317128	
 AYEXUT|3|2600000|0	66	28.09398293169884	
 AYEXUT|3|2600000|NONUT	66	28.093711065137484	
-AYEXUT|40|1000000|0	2	301.8115992372598	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|40|1000000|NONUT	2	301.80859659330804	SwissEph file 'seplm24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|40|1228571.4285714286|0	2	310.4162767966365	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|40|1228571.4285714286|NONUT	2	310.4205267254582	SwissEph file 'seplm18.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|40|1457142.8571428573|0	2	319.05758689522884	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|40|1457142.8571428573|NONUT	2	319.054498848623	SwissEph file 'seplm12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|40|1685714.2857142857|0	2	327.7025278064111	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|40|1685714.2857142857|NONUT	2	327.7024024693968	SwissEph file 'seplm06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|40|1914285.7142857143|0	2	336.36500287813107	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|40|1914285.7142857143|NONUT	2	336.36801646996616	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|40|2142857.1428571427|0	2	345.06802588102875	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|40|2142857.1428571427|NONUT	2	345.06367151247264	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|40|2371428.5714285714|0	2	353.7880010165931	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|40|2371428.5714285714|NONUT	2	353.79124580969966	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|40|2600000|0	2	2.5402342468046104	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
-AYEXUT|40|2600000|NONUT	2	2.539962380243253	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]\\' \nusing Moshier eph.; 
+AYEXUT|40|1000000|0	2	301.8115992372598	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|40|1000000|NONUT	2	301.80859659330804	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|40|1228571.4285714286|0	2	310.4162767966365	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|40|1228571.4285714286|NONUT	2	310.4205267254582	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|40|1457142.8571428573|0	2	319.05758689522884	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|40|1457142.8571428573|NONUT	2	319.054498848623	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|40|1685714.2857142857|0	2	327.7025278064111	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|40|1685714.2857142857|NONUT	2	327.7024024693968	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|40|1914285.7142857143|0	2	336.36500287813107	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|40|1914285.7142857143|NONUT	2	336.36801646996616	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|40|2142857.1428571427|0	2	345.06802588102875	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|40|2142857.1428571427|NONUT	2	345.06367151247264	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|40|2371428.5714285714|0	2	353.7880010165931	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|40|2371428.5714285714|NONUT	2	353.79124580969966	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|40|2600000|0	2	2.5402342468046104	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+AYEXUT|40|2600000|NONUT	2	2.539962380243253	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
 AYEXUT|41|1000000|0	66	329.95735111776736	 \nusing Moshier eph.; 
 AYEXUT|41|1000000|NONUT	66	329.95434847381557	 \nusing Moshier eph.; 
 AYEXUT|41|1228571.4285714286|0	66	338.55938958603116	 \nusing Moshier eph.; 
