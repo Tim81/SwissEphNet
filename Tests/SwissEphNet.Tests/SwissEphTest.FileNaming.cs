@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Xunit;
@@ -21,44 +23,28 @@ namespace SwissEphNet.Tests
         }
 
         [Fact]
-        public void TestAsteroidFileNameStillUsesBackslashNotForwardSlash()
+        public void TestAsteroidFileNameUsesForwardSlashNotBackslash()
         {
-            // DIR_GLUE (SwissEphNet/SwissEph.sweodef.h.cs) is NOT '/' despite
-            // that being the originally proposed PR1 fix for this exact
-            // cross-platform problem: swi_gen_filename (CPort/SwephLib.cs)
-            // embeds DIR_GLUE into numbered asteroid file names as
-            // "ast<thousands><DIR_GLUE>se<number>.se1", e.g.
-            // "ast4\se04179.se1". A backslash is not a path separator on
-            // Linux/macOS/Android/iOS/WASM, so an OnLoadFile handler that
-            // does Path.Combine or a resource-name lookup on that generated
-            // name can never find the file except on Windows -- that part of
-            // the bug is real and confirmed.
+            // DIR_GLUE (SwissEphNet/SwissEph.sweodef.h.cs) is '/'.
+            // swi_gen_filename (CPort/SwephLib.cs) embeds it into numbered
+            // asteroid file names as "ast<thousands><DIR_GLUE>se<number>.se1",
+            // e.g. "ast4/se04179.se1". A backslash is not a path separator on
+            // Linux/macOS/Android/iOS/WASM, so an OnLoadFile handler that does
+            // Path.Combine or a resource-name lookup on that generated name
+            // could never find the file except on Windows with the old '\\'
+            // value.
             //
-            // But changing DIR_GLUE to '/' is not a safe fix in isolation:
-            // CPort/Sweph.cs's own "correct file name?" validation
-            // (swi_fixstar-adjacent code, ~line 4922) strips a directory
-            // prefix off the *loaded* file's recorded name by searching for
-            // DIR_GLUE, while that prefix was actually joined with a
-            // hard-coded '\\' elsewhere in CPort (Sweph.cs ~line 2634,
-            // swi_fopen's ephepath+filename join) -- not with DIR_GLUE. The
-            // two only agree because DIR_GLUE has always equaled '\\'.
-            // Setting DIR_GLUE to '/' breaks that coincidental agreement and
-            // makes the validation reject every successfully-loaded
-            // ephemeris file, on every platform, confirmed by
-            // Issue18Test.LoadAsteroidData regressing on Windows the moment
-            // DIR_GLUE was changed (a real numbered-asteroid file, loaded
-            // successfully via OnLoadFile, gets rejected with "Ephemeris
-            // file name ... wrong; rename ..."). See docs/known-issues.md
-            // for the full write-up. A real fix needs a CPort edit (either
-            // the hard-coded join or the DIR_GLUE-based stripping), which is
-            // out of scope for a CPort-byte-identical PR.
-            //
-            // This test pins the CURRENT (still-backslash, still
-            // platform-limited) behavior precisely, the same way
-            // PR0's TestDefaultEncodingDoesNotRoundTripWindows1252Bytes
-            // pinned a known, not-yet-fixed bug: so that if DIR_GLUE is ever
-            // changed again, this test fails visibly and has to be looked
-            // at, rather than the regression risk silently reappearing.
+            // This required (and got) a CPort edit: CPort/Sweph.cs:2634
+            // (swi_fopen's ephepath+filename join) had been hard-coded to
+            // '\\' instead of using DIR_GLUE -- a mis-transliteration, not a
+            // deliberate platform choice, since the parallel site in
+            // swe_set_ephe_path (Sweph.cs:1514-1515) already used DIR_GLUE
+            // correctly for the identical C pattern. See docs/known-issues.md
+            // for the full analysis, including why the fix regressed
+            // Issue18Test.LoadAsteroidData until 2634 itself was corrected
+            // (fixing DIR_GLUE alone, without fixing 2634, breaks the
+            // "correct file name?" validation for every successfully-loaded
+            // file).
             using (var swe = new SwissEph())
             {
                 double tjd = swe.swe_julday(1974, 8, 16, 0.5, SwissEph.SE_GREG_CAL);
@@ -70,7 +56,8 @@ namespace SwissEphNet.Tests
                 // naming convention.
                 var fname = GenFileName(swe, tjd, SwissEph.SE_AST_OFFSET + 4179);
 
-                Assert.Equal("ast4\\se04179.se1", fname);
+                Assert.Equal("ast4/se04179.se1", fname);
+                Assert.DoesNotContain("\\", fname, StringComparison.Ordinal);
             }
         }
 
@@ -79,8 +66,8 @@ namespace SwissEphNet.Tests
         {
             // SEI_MOON's generated file name (e.g. "semo_18.se1") never
             // embeds a subdirectory, so it is unaffected by DIR_GLUE either
-            // way -- unlike the asteroid case above, this one is not blocked
-            // on a CPort fix.
+            // way -- unlike the asteroid case above, this one was never
+            // blocked on a CPort fix.
             using (var swe = new SwissEph())
             {
                 double tjd = swe.swe_julday(1974, 8, 16, 0.5, SwissEph.SE_GREG_CAL);
@@ -88,8 +75,37 @@ namespace SwissEphNet.Tests
                 var fname = GenFileName(swe, tjd, 1 /* SEI_MOON */);
 
                 Assert.Matches(new Regex(@"^semo[_m]\d\d\.se1$"), fname);
-                Assert.DoesNotContain("\\", fname);
-                Assert.DoesNotContain("/", fname);
+                Assert.DoesNotContain("\\", fname, StringComparison.Ordinal);
+                Assert.DoesNotContain("/", fname, StringComparison.Ordinal);
+            }
+        }
+
+        [Fact]
+        public void TestAsteroidFileNameReachesOnLoadFileWithForwardSlash()
+        {
+            // End-to-end version of TestAsteroidFileNameUsesForwardSlashNotBackslash:
+            // confirms the forward slash actually reaches an OnLoadFile
+            // consumer through swe_calc/swi_fopen, not just swi_gen_filename
+            // in isolation.
+            using (var swe = new SwissEph())
+            {
+                var capturedFileNames = new List<string>();
+                swe.OnLoadFile += (s, e) =>
+                {
+                    capturedFileNames.Add(e.FileName);
+                    e.File = null; // force "not found": we only need the requested name
+                };
+
+                double tjd = swe.swe_julday(1974, 8, 16, 0.5, SwissEph.SE_GREG_CAL);
+                double[] xx = new double[6];
+                string serr = null;
+
+                swe.swe_calc(tjd, SwissEph.SE_AST_OFFSET + 4179, SwissEph.SEFLG_SWIEPH, xx, ref serr);
+
+                var asteroidFileName = capturedFileNames.FirstOrDefault(f => f.Contains("ast4", StringComparison.Ordinal));
+                Assert.NotNull(asteroidFileName);
+                Assert.Contains("ast4/se04179.se1", asteroidFileName, StringComparison.Ordinal);
+                Assert.DoesNotContain("ast4\\se04179", asteroidFileName, StringComparison.Ordinal);
             }
         }
 

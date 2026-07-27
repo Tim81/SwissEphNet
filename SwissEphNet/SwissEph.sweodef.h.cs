@@ -134,20 +134,23 @@ namespace SwissEphNet
         public const double CS2DEG = (1.0 / 360000.0);	/* centisec to degree */
 
         public static char PATH_SEPARATOR = ';';	/* semicolon as PATH separator */
-        // NOT changed to '/' -- see docs/known-issues.md, "DIR_GLUE cannot
-        // be safely changed without a CPort edit". Changing this value alone
-        // (the originally proposed PR1 fix for cross-platform asteroid file
-        // loading) breaks CPort/Sweph.cs's own "correct file name?"
-        // validation for every *successfully* loaded ephemeris file, on
-        // every platform including Windows, because that validation
-        // (Sweph.cs ~line 4922) strips a directory prefix by searching for
-        // DIR_GLUE, while the prefix actually present there was joined with
-        // a hard-coded '\\' elsewhere in CPort (Sweph.cs ~line 2634,
-        // swi_fopen), not with DIR_GLUE. The two only agree by coincidence
-        // while DIR_GLUE == '\\'. A real fix requires editing CPort (either
-        // that hard-coded join or the DIR_GLUE-based stripping), which is
-        // out of scope here; see known-issues.md for the full analysis.
-        public static char DIR_GLUE = '\\';		/* glue string for directory/file */
+        // The C source defines DIR_GLUE per-platform (backslash on Windows,
+        // forward slash elsewhere). This port is not compiled per-platform,
+        // so a single value has to work everywhere: '/' is that value, since
+        // Windows accepts forward slashes in paths natively, but non-Windows
+        // platforms (Linux, macOS, Android, iOS, WASM) do not accept
+        // backslash as a separator at all. See docs/known-issues.md, "DIR_GLUE
+        // fixed: CPort/Sweph.cs:2634 was a mis-transliteration" for why this
+        // required (and got) a CPort edit: swi_fopen's ephepath+filename join
+        // had been hard-coded to '\\' instead of using DIR_GLUE, unlike the
+        // parallel site in swe_set_ephe_path (Sweph.cs:1514-1515), which
+        // already used DIR_GLUE correctly. That was a divergence from the C
+        // source, not a deliberate platform choice, and fixing it makes the
+        // port more faithful rather than less. swi_gen_filename
+        // (SwissEphNet/CPort/SwephLib.cs) also uses this to build the
+        // embedded subdirectory in numbered asteroid file names (e.g.
+        // "ast4/se04179.se1").
+        public static char DIR_GLUE = '/';		/* glue string for directory/file */
     }
 
 }

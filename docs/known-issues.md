@@ -129,67 +129,85 @@ not as "this is fine": if the ratio changes meaningfully in future cross-platfor
 reports (see `--report-only`), that is worth a fresh look, not an assumption that
 it's the same known issue.
 
-## DIR_GLUE cannot be safely changed without a CPort edit
+## DIR_GLUE fixed: CPort/Sweph.cs:2634 was a mis-transliteration
 
-`SwissEph.DIR_GLUE` (`SwissEphNet/SwissEph.sweodef.h.cs`) is hard-coded to
-`'\\'`, where the upstream C source defines it per-platform. `swi_gen_filename`
-(`SwissEphNet/CPort/SwephLib.cs`) uses it to build numbered asteroid file
-names, e.g. `"ast4" + DIR_GLUE + "se04179.se1"` = `"ast4\se04179.se1"`. A
-backslash is not a path separator on Linux, macOS, Android, iOS, or WASM, so
-any `OnLoadFile` handler that does `Path.Combine` or a resource-name lookup on
-that generated name can never find the file except on Windows. That half of
-the bug is real, confirmed, and unrelated to CPort.
+`SwissEph.DIR_GLUE` (`SwissEphNet/SwissEph.sweodef.h.cs`) used to be
+hard-coded to `'\\'`, where the upstream C source defines it per-platform.
+`swi_gen_filename` (`SwissEphNet/CPort/SwephLib.cs`) uses it to build
+numbered asteroid file names, e.g. `"ast4" + DIR_GLUE + "se04179.se1"` =
+`"ast4\se04179.se1"` with the old value. A backslash is not a path separator
+on Linux, macOS, Android, iOS, or WASM, so any `OnLoadFile` handler that does
+`Path.Combine` or a resource-name lookup on that generated name could never
+find the file except on Windows.
 
-Changing `DIR_GLUE` to `'/'` -- the fix this looked like it needed -- is not
-safe on its own, though. `CPort/Sweph.cs`'s "correct file name?" check (around
-line 4922, run against every successfully-opened ephemeris file) strips a
-directory prefix off the file's recorded path by searching for `DIR_GLUE`:
-
-```csharp
-sp = fdp.fnam;
-if (sp.LastIndexOf(SwissEph.DIR_GLUE) > 0)
-    sp = sp.Substring(sp.LastIndexOf(SwissEph.DIR_GLUE) + 1);
-if (!s.Equals(sp, StringComparison.CurrentCultureIgnoreCase))
-{
-    serr = C.sprintf("Ephemeris file name '%s' wrong; rename '%s' ", sp, s);
-    goto return_error;
-}
-```
-
-But `fdp.fnam` is built in `swi_fopen` (`CPort/Sweph.cs` around line 2634) by
-joining the configured ephemeris path to the file name with a **hard-coded**
-`'\\'`, not with `DIR_GLUE`:
+The first attempt to fix this by changing `DIR_GLUE` to `'/'` alone regressed
+`Issue18Test.LoadAsteroidData` on Windows: `CPort/Sweph.cs`'s "correct file
+name?" check (around line 4922, run against every successfully-opened
+ephemeris file) strips a directory prefix off the file's recorded path by
+searching for `DIR_GLUE`, but `swi_fopen`'s ephepath+filename join (around
+line 2634) had been hard-coded to a literal `'\\'` instead of using
+`DIR_GLUE`:
 
 ```csharp
 fnamp = s.TrimEnd('\\', '/') + "\\" + fname;
 ```
 
-These two only agree because `DIR_GLUE` has always equaled `'\\'`. The moment
-`DIR_GLUE` becomes `'/'`, `LastIndexOf(SwissEph.DIR_GLUE)` stops finding the
-separator that the ephepath join actually used, `sp` is left as the *entire*
-path (e.g. `"[ephe]\se04179.se1"`) instead of just the base file name, the
-equality check against the file's internal recorded name always fails, and
-every successfully-loaded ephemeris file gets rejected with "Ephemeris file
-name '...' wrong; rename '...'" -- on every platform, Windows included, not
-only the platforms the fix was meant to help.
+That looked at first like a deliberate platform choice CPort couldn't own,
+and the CPort formatting freeze (`CONTRIBUTING.md`) reads, on a fast pass, as
+forbidding any edit there. It is not: checking the actual upstream C source
+(2.08 `sweph.c:2362-2363`) shows the equivalent site uses `DIR_GLUE`, not a
+literal backslash:
 
-This was caught, not assumed: setting `DIR_GLUE = '/'` and running the full
-suite regressed `Issue18Test.LoadAsteroidData` on Windows, which loads a real
-numbered-asteroid ephemeris file (`se00005s.se1`) via `OnLoadFile` and had
-been passing. That is the regression-test discipline working as intended --
-a fix that looked correct in isolation (and does fix the subdirectory-naming
-half of the bug) turned out to reach further than expected and break something
-it wasn't touching.
+```c
+if (*s != '\0' && *(s + j - 1) != *DIR_GLUE)
+  strcat(s, DIR_GLUE);
+```
 
-A real fix requires a CPort edit: either route `swi_fopen`'s ephepath join
-through `DIR_GLUE` instead of a literal `'\\'`, or have the "correct file
-name?" check strip using both possible separators rather than only
-`DIR_GLUE`. Either is a change to `CPort/Sweph.cs`, which the formatting
-freeze (`CONTRIBUTING.md`) does not forbid touching for logic (only
-reformatting), but doing so needs a deliberate decision and its own upstream
-diff-tracking story, not a change bundled quietly into a bug-fix PR framed as
-CPort-untouched. `DIR_GLUE` stays `'\\'` for now; `swi_gen_filename`'s
-asteroid file names remain backslash-joined and Windows-only-portable.
+So `CPort/Sweph.cs:2634`'s hard-coded `"\\"` is a mis-transliteration, not a
+platform-specific deviation from the source. The proof it is an error rather
+than a convention: the parallel site in `swe_set_ephe_path`
+(`Sweph.cs:1514-1515`, corresponding to `sweph.c:1356-1357`, an identical C
+pattern) was transliterated correctly, using `DIR_GLUE`. One site right, one
+site wrong -- CPort's own internal inconsistency is the evidence, independent
+of the C source lookup. Fixing `2634` to use `DIR_GLUE` (keeping
+`TrimEnd('\\', '/')` as-is, since tolerating either separator on input is
+harmless) restores line-for-line fidelity with the C source rather than
+deviating from it, which is exactly what the freeze in `CONTRIBUTING.md` is
+for protecting -- it was never a rule against correcting a transliteration
+error, only against reformatting or restructuring faithful code. See
+`CONTRIBUTING.md`'s "Porting upstream changes" section for the general
+principle this case established: a parallel site transliterated correctly
+elsewhere in the same file is strong evidence that a divergence is an error,
+not a deliberate choice.
+
+With both `DIR_GLUE = '/'` and `Sweph.cs:2634` fixed together,
+`Issue18Test.LoadAsteroidData` passes again (confirmed, not assumed --
+re-run on Windows specifically because it is what caught the original
+regression), and the full suite passes on Windows (net8.0/net10.0,
+Debug/Release) and in a Linux container (net10.0).
+
+**Behavior change for consumers:** asteroid file names passed to `OnLoadFile`
+now use `/` instead of `\`, e.g. `"ast4/se04179.se1"` instead of
+`"ast4\se04179.se1"`. Windows accepts both forward and backward slashes in
+paths, so existing Windows-only `OnLoadFile` handlers that pass the name
+straight to `File.Open`/`Path.Combine` continue to work unchanged; handlers
+that parsed the name expecting a literal backslash (e.g. via
+`Path.GetFileName`, which does not recognize `\` as a separator on
+non-Windows) should split on both separators, as this port's own test harness
+now does (`ResourceFileHelpers.GetPortableFileName`).
+
+**Baseline gate note:** the same `swe_set_ephe_path` code path that appends
+`DIR_GLUE` to the configured ephemeris path also feeds "file not found"
+diagnostic messages, e.g. `SwissEph file 'sefstars.txt' not found in PATH
+'[ephe]/'` instead of `'[ephe]\'`. This surfaces as 207 baseline rows per TFM
+(192 in `ayanamsa`, 15 in `datetime` -- both areas that exercise a
+missing-file/Moshier-fallback path). Every one of the 207 rows, confirmed by
+dumping the full (non-truncated) failure list rather than trusting the
+console's `Take(50)` sample, is exactly this one string-content change in a
+diagnostic message column; none is a numeric divergence. This is the expected
+reach of the fix (the same effect the "behavior change for consumers" note
+above describes), not a separate finding, and is reported here rather than
+silently waived or baked into a baseline regeneration without review.
 
 ## swe_fixstar_ut distance speed: larger cross-platform differentiation noise
 

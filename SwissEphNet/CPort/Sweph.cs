@@ -2631,7 +2631,7 @@ namespace SwissEphNet.CPort
             for (i = 0; i < np; i++)
             {
                 s = cpos[i];
-                fnamp = s.TrimEnd('\\', '/') + "\\" + fname;
+                fnamp = s.TrimEnd('\\', '/') + SwissEph.DIR_GLUE + fname;
                 if (ifno >= 0)
                 {
                     swed.fidat[ifno].fnam = fnamp;

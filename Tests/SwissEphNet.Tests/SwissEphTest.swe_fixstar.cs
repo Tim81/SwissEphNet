@@ -21,7 +21,7 @@ namespace SwissEphNet.Tests
 
                 swe.OnLoadFile += (s, e) =>
                 {
-                    if (string.Equals(e.FileName, "[ephe]\\sefstars.txt", StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(e.FileName, "[ephe]/sefstars.txt", StringComparison.OrdinalIgnoreCase))
                     {
                         e.File = ResourceFileHelpers.OpenResourceFile("sefstars.txt");
                     }
@@ -58,7 +58,7 @@ namespace SwissEphNet.Tests
 
                 swe.OnLoadFile += (s, e) =>
                 {
-                    if (string.Equals(e.FileName, "[ephe]\\sefstars.txt", StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(e.FileName, "[ephe]/sefstars.txt", StringComparison.OrdinalIgnoreCase))
                     {
                         e.File = ResourceFileHelpers.OpenResourceFile("sefstars.txt");
                     }
@@ -99,7 +99,7 @@ namespace SwissEphNet.Tests
 
                 swe.OnLoadFile += (s, e) =>
                 {
-                    if (string.Equals(e.FileName, "[ephe]\\sefstars.txt", StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(e.FileName, "[ephe]/sefstars.txt", StringComparison.OrdinalIgnoreCase))
                     {
                         e.File = ResourceFileHelpers.OpenResourceFile("sefstars.txt");
                     }

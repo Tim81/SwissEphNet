@@ -1,51 +1,68 @@
 # Contributing
 
-## SwissEphNet/CPort/ must never be reformatted
+## Transliterated files must never be reformatted
 
-**`SwissEphNet/CPort/` is a deliberate, line-by-line transliteration of the
-Swiss Ephemeris C source.** Every file in that folder corresponds, statement
-for statement, to a file in the upstream C release. That correspondence is
-what makes each upstream Swiss Ephemeris upgrade tractable: a porter diffs the
-new C release against the old one, then applies the same diff, in the same
-shape, to the matching C# file. If the C# no longer reads like the C it came
-from, that process stops working and every future upgrade gets harder, not
-easier.
+**`SwissEphNet/CPort/`, `Programs/SweTest/Program.cs`, and
+`Programs/SweMini/Program.cs` are deliberate, line-by-line transliterations of
+the Swiss Ephemeris C source** (`sweph.c`/`swephlib.c`/etc., `swetest.c`, and
+`swemini.c` respectively -- each file carries the same port header identifying
+it as such). Every one of these files corresponds, statement for statement, to
+a file in the upstream C release. That correspondence is what makes each
+upstream Swiss Ephemeris upgrade tractable: a porter diffs the new C release
+against the old one, then applies the same diff, in the same shape, to the
+matching C# file. If the C# no longer reads like the C it came from, that
+process stops working and every future upgrade gets harder, not easier. This
+is not a theoretical concern for the `Programs/` files either: `swetest.c`
+alone changes by +484/-244 lines in the 2.10.03 delta.
 
 **Do not run `dotnet format`, an IDE "clean up code" command, a `var`-for-explicit-type
 rewrite, expression-bodied member conversion, or brace reflowing against
-anything under `SwissEphNet/CPort/`.** Any of these will destroy the
-line-by-line correspondence permanently, even though each one individually
-looks like a harmless style fix.
+any of these files.** Any of these will destroy the line-by-line
+correspondence permanently, even though each one individually looks like a
+harmless style fix.
 
 This applies to humans and to automation equally. If a tool you're running
-offers to "fix" or "clean up" files under `CPort/`, decline, or scope the tool
-away from that folder first.
+offers to "fix" or "clean up" `CPort/`, `Programs/SweTest/Program.cs`, or
+`Programs/SweMini/Program.cs`, decline, or scope the tool away from those
+first.
 
 ### Running `dotnet format` anywhere else
 
-`SwissEphNet/CPort/.editorconfig` sets analyzer severities so the folder does
-not generate build-warning noise, but **`.editorconfig` severities do not stop
+`SwissEphNet/CPort/.editorconfig`, `Programs/SweTest/.editorconfig`, and
+`Programs/SweMini/.editorconfig` set analyzer severities so these files do not
+generate build-warning noise, but **`.editorconfig` severities do not stop
 `dotnet format whitespace` or `dotnet format style`** -- those look at what the
 formatting rules would change, not at whether a diagnostic is enabled. The
-only thing that reliably keeps `dotnet format` out of `CPort/` is excluding the
-folder on the command line:
+only thing that reliably keeps `dotnet format` out of these files is excluding
+them on the command line:
 
 ```powershell
-dotnet format --exclude SwissEphNet/CPort/
+dotnet format --exclude SwissEphNet/CPort/ --exclude Programs/SweTest/Program.cs --exclude Programs/SweMini/Program.cs
 ```
 
 Any CI job or pre-commit hook that runs `dotnet format` must use this
-exclusion. A format check without it will eventually "fix" `CPort/` and quietly
-break the correspondence with upstream.
+exclusion. A format check without it will eventually "fix" these files and
+quietly break the correspondence with upstream.
 
 ## Porting upstream changes
 
 When updating to a newer Swiss Ephemeris release, diff the new upstream C
 source against the version this port is currently tracking, and apply the same
-diff to the matching file under `CPort/`, preserving its existing structure,
-naming, and formatting. Do not take the opportunity to also modernize the
-C# style of the lines you're touching -- keep that change isolated to what the
-upstream diff actually changed.
+diff to the matching file under `CPort/` (or to `Programs/SweTest/Program.cs`
+/ `Programs/SweMini/Program.cs` for `swetest.c` / `swemini.c`), preserving its
+existing structure, naming, and formatting. Do not take the opportunity to
+also modernize the C# style of the lines you're touching -- keep that change
+isolated to what the upstream diff actually changed.
+
+The freeze on these files is about never reformatting and never restructuring
+-- it is not a blanket ban on ever touching them. Where the C# genuinely
+diverges from what its C source does (a mis-transliteration, not a deliberate
+platform-specific choice), correcting it is in scope and makes the port more
+faithful, not less; see "DIR_GLUE" in `docs/known-issues.md` for a worked
+example, including the evidence standard used to tell "divergence from the
+source" apart from "deliberate platform difference" (a parallel site
+transliterated correctly elsewhere in the same file is strong evidence of the
+former).
 
 ## The analyzer carve-out (fixed in PR1)
 

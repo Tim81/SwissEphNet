@@ -54,7 +54,7 @@ namespace SwissEphNet.Tests
             // File loading defined
             using (var target = new SwissEph()) {
                 target.OnLoadFile += (s, e) => {
-                    if (e.FileName == @"[ephe]\seasnam.txt") {
+                    if (e.FileName == "[ephe]/seasnam.txt") {
                         e.File = new System.IO.MemoryStream(System.Text.Encoding.ASCII.GetBytes(@"
 000096  Aegle
 000097  Klotho
