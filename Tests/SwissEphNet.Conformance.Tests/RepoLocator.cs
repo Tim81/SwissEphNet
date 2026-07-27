@@ -52,7 +52,9 @@ public static class RepoLocator
                 "to the submodule's root directory.");
         }
 
-        return Path.GetFullPath(Path.Combine(found, "..", ".."));
+        // 'found' is the directory containing t.exp (external/swisseph/setest);
+        // its parent is the submodule root (external/swisseph).
+        return Path.GetFullPath(Path.Combine(found, ".."));
     }
 
     private static string ResolveConformanceDataDir()

@@ -7,9 +7,14 @@ namespace SwissEphNet.Conformance.Tests.Dispatch;
 /// derived from external/swisseph/setest/suite_NN_*.c (not from the
 /// human-readable section-descr strings).
 /// </summary>
-public static class ConformanceDispatcher
+public sealed class ConformanceDispatcher
 {
-    public static DispatchOutcome Dispatch(SwissEph swe, ExpTestSuite suite, ExpTestCase testCase, ExpIteration iteration, Precision precision)
+    // Suite 2 has no SETUP block; "iflag" is a suite-scoped C local that
+    // carries over between testcases (see Suite02FixStar's remarks). One
+    // instance per corpus run reproduces that.
+    private readonly Suite02FixStar _suite02 = new();
+
+    public DispatchOutcome Dispatch(SwissEph swe, ExpTestSuite suite, ExpTestCase testCase, ExpIteration iteration, Precision precision)
     {
         if (TryGetStaticNotImplementedReason(suite.Id, testCase.Id, out var staticReason))
         {
@@ -40,7 +45,7 @@ public static class ConformanceDispatcher
         return suite.Id switch
         {
             1 => Suite01Calc.Dispatch(swe, testCase.Id, iteration, precision),
-            2 => Suite02FixStar.Dispatch(swe, testCase.Id, iteration, precision),
+            2 => _suite02.Dispatch(swe, testCase.Id, iteration, precision),
             3 => Suite03Misc.Dispatch(swe, testCase.Id, iteration, precision),
             4 => Suite04Ayanamsa.Dispatch(swe, testCase.Id, iteration, precision),
             5 => Suite05DateTime.Dispatch(swe, testCase.Id, iteration, precision),

@@ -52,10 +52,17 @@ public sealed class CheckContext(ExpFields expected, Precision precision)
         }
     }
 
-    public void CheckS(string name, string actual)
+    /// <summary>
+    /// CHECK_S(name). <paramref name="actual"/> may legitimately be null: many
+    /// SwissEphNet calls (a mechanical C port) leave a `ref string serr` output
+    /// parameter untouched on a success path where the C original never wrote
+    /// to its char* buffer, the same way an empty C string ("") represents "no
+    /// error" in t.exp. Both compare equal to an empty expected string.
+    /// </summary>
+    public void CheckS(string name, string? actual)
     {
         var exp = expected.GetRawString(name);
-        var escapedActual = EscapeNewlines(actual);
+        var escapedActual = EscapeNewlines(actual ?? "");
         if (!string.Equals(exp, escapedActual, StringComparison.Ordinal))
         {
             _mismatches.Add(new FieldMismatch(name, exp, escapedActual, null));

@@ -14,25 +14,40 @@ internal static class Suite06Houses
         var hsys = HouseSystemCodec.DecodeHsys(f.GetInt("ihsy"));
         var geolat = f.GetDouble("geolat");
         var geolon = f.GetDouble("geolon");
-        var cuspCount = hsys is 'G' or 'g' ? 37 : 13;
+
+        // The reference tool's local `cusps` buffer is always sized 37
+        // (external/swisseph/setest/suite_06_houses.c: "double cusps[37],...")
+        // regardless of house system -- allocate the same here to avoid an
+        // under-sized buffer inside SwissEphNet's own house calculations.
+        //
+        // How many of those 37 slots t.exp actually recorded (and so how many
+        // this run compares) is derived from the data itself -- whether
+        // "cusps[13]" is present -- rather than from ihsy=='G': at least one
+        // recorded iteration (a failure case, rc=-1, in the polar circle)
+        // has ihsy='G' yet only 13 cusps were written, so the reference
+        // tool's own CHECK_DD(cusps,37)-vs-13 branch does not purely track
+        // the ihsy character the way check_swehouses_results' source alone
+        // would suggest. Deriving the count from what is actually present
+        // matches every iteration by construction.
+        var cuspCount = f.Contains("cusps[13]") ? 37 : 13;
 
         switch (testCaseId)
         {
             case 1:
             {
-                var cusps = new double[cuspCount];
+                var cusps = new double[37];
                 var ascmc = new double[10];
                 var rc = swe.swe_houses(jdUt, geolat, geolon, hsys, cusps, ascmc);
-                return CheckHouses(f, precision, rc, jdUt, cusps, ascmc);
+                return CheckHouses(f, precision, rc, jdUt, cusps, ascmc, cuspCount);
             }
 
             case 2:
             {
                 var iflag = f.GetInt("iflag");
-                var cusps = new double[cuspCount];
+                var cusps = new double[37];
                 var ascmc = new double[10];
                 var rc = swe.swe_houses_ex(jdUt, iflag, geolat, geolon, hsys, cusps, ascmc);
-                return CheckHouses(f, precision, rc, jdUt, cusps, ascmc);
+                return CheckHouses(f, precision, rc, jdUt, cusps, ascmc, cuspCount);
             }
 
             case 3:
@@ -40,10 +55,10 @@ internal static class Suite06Houses
                 var isid = f.GetInt("isid");
                 var iflag = f.GetInt("iflag");
                 swe.swe_set_sid_mode(isid, 0, 0);
-                var cusps = new double[cuspCount];
+                var cusps = new double[37];
                 var ascmc = new double[10];
                 var rc = swe.swe_houses_ex(jdUt, iflag, geolat, geolon, hsys, cusps, ascmc);
-                return CheckHouses(f, precision, rc, jdUt, cusps, ascmc);
+                return CheckHouses(f, precision, rc, jdUt, cusps, ascmc, cuspCount);
             }
 
             case 4:
@@ -53,10 +68,10 @@ internal static class Suite06Houses
                 swe.swe_calc(jdUt, SwissEph.SE_ECL_NUT, 0, xx, ref serr);
                 var eps = xx[0];
                 var armc = swe.swe_degnorm(swe.swe_sidtime(jdUt) + geolon);
-                var cusps = new double[cuspCount];
+                var cusps = new double[37];
                 var ascmc = new double[10];
                 var rc = swe.swe_houses_armc(armc, geolat, eps, hsys, cusps, ascmc);
-                return CheckHousesArmc(f, precision, rc, armc, cusps, ascmc);
+                return CheckHousesArmc(f, precision, rc, armc, cusps, ascmc, cuspCount);
             }
 
             case 5:
@@ -109,21 +124,21 @@ internal static class Suite06Houses
         }
     }
 
-    private static DispatchOutcome CheckHouses(ExpFields f, Precision precision, int rc, double jdUt, double[] cusps, double[] ascmc)
+    private static DispatchOutcome CheckHouses(ExpFields f, Precision precision, int rc, double jdUt, double[] cusps, double[] ascmc, int cuspCount)
     {
         var ctx = new CheckContext(f, precision);
         ctx.CheckD("jd_ut", jdUt);
-        ctx.CheckDD("cusps", cusps);
+        ctx.CheckDD("cusps", cusps[..cuspCount]);
         ctx.CheckDD("ascmc", ascmc[..6]);
         ctx.CheckI("rc", rc);
         return DispatchOutcome.FromMismatches(ctx.Mismatches);
     }
 
-    private static DispatchOutcome CheckHousesArmc(ExpFields f, Precision precision, int rc, double armc, double[] cusps, double[] ascmc)
+    private static DispatchOutcome CheckHousesArmc(ExpFields f, Precision precision, int rc, double armc, double[] cusps, double[] ascmc, int cuspCount)
     {
         var ctx = new CheckContext(f, precision);
         ctx.CheckD("armc", armc);
-        ctx.CheckDD("cusps", cusps);
+        ctx.CheckDD("cusps", cusps[..cuspCount]);
         ctx.CheckDD("ascmc", ascmc[..6]);
         ctx.CheckI("rc", rc);
         return DispatchOutcome.FromMismatches(ctx.Mismatches);

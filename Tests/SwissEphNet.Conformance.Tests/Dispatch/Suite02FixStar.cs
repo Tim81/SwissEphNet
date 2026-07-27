@@ -2,10 +2,24 @@ using SwissEphNet.Conformance.Tests.Corpus;
 
 namespace SwissEphNet.Conformance.Tests.Dispatch;
 
-/// <summary>Suite 2: "Fixed stars" (external/swisseph/setest/suite_02_fixstar.c).</summary>
-internal static class Suite02FixStar
+/// <summary>
+/// Suite 2: "Fixed stars" (external/swisseph/setest/suite_02_fixstar.c).
+/// </summary>
+/// <remarks>
+/// Unlike every other suite, suite 2 declares no SETUP block: "iflag" is a
+/// plain local declared once for the whole suite ("int rc, iflag, ipl;") and
+/// only reassigned in testcase 1 and testcase 6 ("iflag = GET_I(iflag);").
+/// Testcases 2, 4, 5, and 7 read whatever value iflag was last set to by a
+/// previous testcase in the same run -- t.exp reflects this exactly: those
+/// testcases carry no "iflag" field of their own at all. This class is
+/// therefore stateful (one instance per corpus run, not a static method) so
+/// that carry-over is reproduced in testcase execution order.
+/// </remarks>
+internal sealed class Suite02FixStar
 {
-    public static DispatchOutcome Dispatch(SwissEph swe, int testCaseId, ExpIteration iteration, Precision precision)
+    private int _iflag;
+
+    public DispatchOutcome Dispatch(SwissEph swe, int testCaseId, ExpIteration iteration, Precision precision)
     {
         var f = iteration.Fields;
 
@@ -14,22 +28,21 @@ internal static class Suite02FixStar
             case 1:
             {
                 var jd = f.GetDouble("jd");
-                var iflag = f.GetInt("iflag");
+                _iflag = f.GetInt("iflag");
                 var star = f.GetRawString("star");
                 var xx = new double[6];
                 string serr = "";
-                var rc = swe.swe_fixstar(ref star, jd, iflag, xx, ref serr);
+                var rc = swe.swe_fixstar(ref star, jd, _iflag, xx, ref serr);
                 return CheckCalc(f, precision, rc, xx, serr);
             }
 
             case 2:
             {
                 var jd = f.GetDouble("jd");
-                var iflag = f.GetInt("iflag"); // carried over from the previous iteration's local, as in upstream
                 var star = f.GetRawString("star");
                 var xx = new double[6];
                 string serr = "";
-                var rc = swe.swe_fixstar_ut(ref star, jd, iflag, xx, ref serr);
+                var rc = swe.swe_fixstar_ut(ref star, jd, _iflag, xx, ref serr);
                 return CheckCalc(f, precision, rc, xx, serr);
             }
 
@@ -51,12 +64,11 @@ internal static class Suite02FixStar
                 // "Mercury, then Betelgeuze": priming swe_calc(Mercury) call is
                 // discarded, only the swe_fixstar result is compared.
                 var jd = f.GetDouble("jd");
-                var iflag = f.GetInt("iflag");
                 var star = f.GetRawString("star");
                 var xx = new double[6];
                 string serr = "";
-                swe.swe_calc(jd, 2 /* SE_MERCURY */, iflag, xx, ref serr);
-                var rc = swe.swe_fixstar(ref star, jd, iflag, xx, ref serr);
+                swe.swe_calc(jd, 2 /* SE_MERCURY */, _iflag, xx, ref serr);
+                var rc = swe.swe_fixstar(ref star, jd, _iflag, xx, ref serr);
                 return CheckCalc(f, precision, rc, xx, serr);
             }
 
@@ -65,35 +77,33 @@ internal static class Suite02FixStar
                 // "Algol, then Betelgeuze": priming swe_fixstar("Algol") call is
                 // discarded, only the second (real) star is compared.
                 var jd = f.GetDouble("jd");
-                var iflag = f.GetInt("iflag");
                 var xx = new double[6];
                 string serr = "";
                 var algol = "Algol";
-                swe.swe_fixstar(ref algol, jd, iflag, xx, ref serr);
+                swe.swe_fixstar(ref algol, jd, _iflag, xx, ref serr);
                 var star = f.GetRawString("star");
-                var rc = swe.swe_fixstar(ref star, jd, iflag, xx, ref serr);
+                var rc = swe.swe_fixstar(ref star, jd, _iflag, xx, ref serr);
                 return CheckCalc(f, precision, rc, xx, serr);
             }
 
             case 6:
             {
                 var jd = f.GetDouble("jd");
-                var iflag = f.GetInt("iflag");
+                _iflag = f.GetInt("iflag");
                 var star = f.GetRawString("star");
                 var xx = new double[6];
                 string serr = "";
-                var rc = swe.swe_fixstar2(ref star, jd, iflag, xx, ref serr);
+                var rc = swe.swe_fixstar2(ref star, jd, _iflag, xx, ref serr);
                 return CheckCalc(f, precision, rc, xx, serr);
             }
 
             case 7:
             {
                 var jd = f.GetDouble("jd");
-                var iflag = f.GetInt("iflag");
                 var star = f.GetRawString("star");
                 var xx = new double[6];
                 string serr = "";
-                var rc = swe.swe_fixstar2_ut(ref star, jd, iflag, xx, ref serr);
+                var rc = swe.swe_fixstar2_ut(ref star, jd, _iflag, xx, ref serr);
                 return CheckCalc(f, precision, rc, xx, serr);
             }
 

@@ -47,13 +47,16 @@ internal static class Suite07Apsides
             {
                 var jd = f.GetDouble("jd");
                 var ipl = f.GetInt("ipl");
-                var xxdret = new double[17];
+                // Reference tool declares "double ... xxdret[20]"; only the
+                // first 17 are checked (CHECK_DD(xxdret,17)), but the buffer
+                // passed to swe_get_orbital_elements must be the full 20.
+                var xxdret = new double[20];
                 string serr = "";
                 var rc = swe.swe_get_orbital_elements(jd, ipl, iflag | iephe, xxdret, ref serr);
                 var ctx = new CheckContext(f, precision);
                 ctx.CheckI("rc", rc);
                 ctx.CheckS("serr", serr);
-                ctx.CheckDD("xxdret", xxdret);
+                ctx.CheckDD("xxdret", xxdret[..17]);
                 return DispatchOutcome.FromMismatches(ctx.Mismatches);
             }
 

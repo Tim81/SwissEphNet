@@ -60,12 +60,12 @@ internal static class Suite09Rise
                 var datm = new[] { atpress, attemp, athumid, atktot };
                 var dobs = new[] { obsage, obsSN, 0.0, 0.0, 0.0 };
                 var jd = f.GetDouble("jd");
-                var xxtret = new double[3];
+                var xxtret = new double[10]; // reference tool declares xxtret[10]; only 3 are checked
                 string serr = "";
                 var rc = swe.swe_heliacal_ut(jd, geopos, datm, dobs, f.GetRawString("object"), f.GetInt("evtype"), f.GetInt("helflag"), xxtret, ref serr);
                 var ctx = new CheckContext(f, precision);
                 ctx.CheckI("rc", rc);
-                ctx.CheckDD("xxtret", xxtret);
+                ctx.CheckDD("xxtret", xxtret[..3]);
                 return DispatchOutcome.FromMismatches(ctx.Mismatches);
             }
 
@@ -75,12 +75,12 @@ internal static class Suite09Rise
                 var datm = new[] { atpress, attemp, athumid, atktot };
                 var dobs = new[] { obsage, obsSN, 0.0, 0.0, 0.0 };
                 var jd = f.GetDouble("jd");
-                var xxtret = new double[3];
+                var xxtret = new double[10]; // reference tool declares xxtret[10]; only 3 are checked
                 string serr = "";
                 var rc = swe.swe_heliacal_pheno_ut(jd, geopos, datm, dobs, f.GetRawString("object"), f.GetInt("evtype"), f.GetInt("helflag"), xxtret, ref serr);
                 var ctx = new CheckContext(f, precision);
                 ctx.CheckI("rc", rc);
-                ctx.CheckDD("xxtret", xxtret);
+                ctx.CheckDD("xxtret", xxtret[..3]);
                 return DispatchOutcome.FromMismatches(ctx.Mismatches);
             }
 
@@ -90,12 +90,12 @@ internal static class Suite09Rise
                 var datm = new[] { atpress, attemp, athumid, atktot };
                 var dobs = new[] { obsage, obsSN, 0.0, 0.0, 0.0 };
                 var jd = f.GetDouble("jd");
-                var xxtret = new double[3];
+                var xxtret = new double[10]; // reference tool declares xxtret[10]; only 3 are checked
                 string serr = "";
                 var rc = swe.swe_vis_limit_mag(jd, geopos, datm, dobs, f.GetRawString("object"), f.GetInt("helflag"), xxtret, ref serr);
                 var ctx = new CheckContext(f, precision);
                 ctx.CheckI("rc", rc);
-                ctx.CheckDD("xxtret", xxtret);
+                ctx.CheckDD("xxtret", xxtret[..3]);
                 return DispatchOutcome.FromMismatches(ctx.Mismatches);
             }
 

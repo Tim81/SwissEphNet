@@ -1,0 +1,60 @@
+name: Conformance oracle
+
+# Deliberately NOT on push/pull_request: this runs the full 12,757-iteration
+# setest corpus against the port and is not fast-CI material (see
+# Tests/SwissEphNet.Conformance.Tests and the "Correctness oracle" section of
+# README.md). It runs on a schedule and can be triggered on demand instead.
+on:
+  schedule:
+    - cron: "17 4 * * 1" # Mondays, 04:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  conformance:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # Locally this submodule is sparse-checked-out to ~25 MB (see
+      # "Correctness oracle" in README.md): sparse-checkout patterns live in
+      # the submodule's own .git/info/sparse-checkout, which is local
+      # configuration, not something `.gitmodules` or the superproject commit
+      # can carry to a fresh clone. A plain `actions/checkout` with submodules
+      # therefore pulls the full ~444 MB tree here. That is an accepted cost
+      # for a job that only runs weekly/on-demand, not on every push or PR --
+      # rigging sparse-checkout to survive a fresh CI clone is more complexity
+      # than this non-blocking job is worth.
+      - name: Checkout external/swisseph submodule
+        shell: pwsh
+        run: git submodule update --init external/swisseph
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Run conformance oracle
+        shell: pwsh
+        run: >
+          dotnet test Tests/SwissEphNet.Conformance.Tests/SwissEphNet.Conformance.Tests.csproj
+          -c Release
+          --logger "console;verbosity=detailed"
+          --logger trx
+          --results-directory TestResults
+
+      - name: Upload conformance report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: conformance-report
+          path: TestResults/*.trx
+          if-no-files-found: ignore

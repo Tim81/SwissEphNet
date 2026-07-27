@@ -11,7 +11,7 @@ namespace SwissEphNet.Conformance.Tests.Dispatch;
 /// a meaningful encoding -- it is uninitialized-stack-memory garbage from the
 /// reference tool's own fixture parser
 /// (external/swisseph/setest/multivalues.c: parse_int_range, the
-/// <c>sscanf(p0 + 1, "%c", (char *) &i0)</c> branch writes one byte into an
+/// <c>sscanf(p0 + 1, "%c", (char *) &amp;i0)</c> branch writes one byte into an
 /// otherwise-uninitialized <c>int i0</c>). It happens to be a *repeatable*
 /// artifact of one specific compiled build, not a real value: the upper 3
 /// bytes are always 0x00 0x7F 0x00, confirmed empirically across all 16

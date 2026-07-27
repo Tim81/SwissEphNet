@@ -182,6 +182,59 @@ for what it covers and `scripts/verify-baseline.ps1` to check current code again
 The baseline is Windows-specific by design; see that file's "Platform lock" section.
 Numerical-stability findings turned up while building it are in `docs/known-issues.md`.
 
+The characterization baseline proves *self-consistency*: a change did not alter
+anything it wasn't supposed to. It cannot prove *correctness*, because it is
+generated from the port's own output. That is what the correctness oracle below
+is for.
+
+# Correctness oracle
+
+`Tests/SwissEphNet.Conformance.Tests` checks the port's output against
+Astrodienst's own reference values, not against the port's own prior output.
+The reference corpus is Swiss Ephemeris **2.10.03**'s `setest` test suite
+(12,757 iterations, ~321K asserted values across 10 functional areas); the
+port is currently at **2.08**, so most iterations fail today, and that is the
+expected starting state -- the known-fail list is the work queue for the
+port. Each porting PR should remove entries from it; any entry that reappears
+is a regression.
+
+- `external/swisseph` -- a git submodule, sparse-checked-out, pinned to tag
+  `v2.10.3final`. It serves two purposes:
+  1. **The reference corpus** for the conformance oracle: `setest/t.exp`
+     (expected values) and `setest/t.fix` (tolerances), plus the core `.se1`
+     ephemeris files, `sefstars.txt`, `seorbel.txt`, and `seleapsec.txt` that
+     the SWIEPH/analytic iterations need to run.
+  2. **The C source to diff the port against**, file by file, as porting work
+     from 2.08 to 2.10.03 proceeds (`*.c`, `*.h`, `Makefile`, `LICENSE`).
+
+  Initialize it with `git submodule update --init external/swisseph` (~25 MB;
+  it is sparse-checked-out, not the ~444 MB full checkout).
+
+- `Tests/conformance/known-fail.tsv` -- one row per iteration currently known
+  to fail, with a category (`NOT-IMPLEMENTED`, `VALUE-MISMATCH`,
+  `DATA-MISSING`, or `ERROR`) and a short reason. The conformance run passes
+  if the set of failures is a subset of this list, fails if any iteration
+  fails that isn't on it (a regression), and reports -- without failing -- any
+  listed iteration that now passes (progress; remove that row).
+
+- Two data sources this repo does not ship are skipped by default and
+  reported as `DATA-MISSING`, not run: `SEFLG_JPLEPH` iterations need a
+  multi-hundred-MB JPL DE file (opt in with `SWISSEPH_CONFORMANCE_INCLUDE_JPL=1`
+  and `SWISSEPH_CONFORMANCE_JPL_FILE=<path>`), and planetary-moon bodies
+  (`ipl` 9000-9999) need `ephe/sat/` at ~227 MB (opt in with
+  `SWISSEPH_CONFORMANCE_INCLUDE_MOONS=1` and that directory populated).
+
+- Not part of the fast CI path: `dotnet test Tests/SwissEphNet.Conformance.Tests`
+  runs the full 12,757-iteration corpus, which does not belong in the same
+  loop as `Tests/SwissEphNet.Tests`. See `.github/workflows/conformance.yml`
+  (scheduled + manually dispatchable) instead of `ci.yml`.
+
+**Licensing note:** vendoring Swiss Ephemeris 2.10.x source is consistent with
+the AGPL-3.0 relicensing Astrodienst has planned for that line, but that
+relicensing has **not** happened in this repo yet -- `LICENSE` here is still
+GPL-2. The license itself is unchanged by the submodule; a separate PR should
+land that relicensing before or alongside any further 2.10.03 porting work.
+
 # Firsts steps
 
 Our first step is to convert the C source code to C#, and provide some conversions from C like string format.
