@@ -4,8 +4,13 @@ VisualStudioVersion = 15.0.26730.10
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GitHub", "GitHub", "{E1A57EF3-7B69-420D-9A11-F708D677C0C6}"
 	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
+		CONTRIBUTING.md = CONTRIBUTING.md
+		Directory.Build.props = Directory.Build.props
+		Directory.Packages.props = Directory.Packages.props
+		global.json = global.json
 		LICENSE = LICENSE
 		README.md = README.md
 	EndProjectSection
@@ -16,8 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Programs", "Programs", "{DA
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CI", "CI", "{D0592369-8075-4795-BABB-818AF5AD967D}"
 	ProjectSection(SolutionItems) = preProject
-		appveyor.yml = appveyor.yml
-		make-dist.ps1 = make-dist.ps1
+		.github\workflows\ci.yml = .github\workflows\ci.yml
+		.github\workflows\baseline.yml = .github\workflows\baseline.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SweMini", "Programs\SweMini\SweMini.csproj", "{67BE4773-CC1F-4C5B-A3A6-38A163C9768C}"

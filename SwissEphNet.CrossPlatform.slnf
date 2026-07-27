@@ -1,0 +1,11 @@
+{
+  "solution": {
+    "path": "SwissEphNet.sln",
+    "projects": [
+      "Programs\\SweMini\\SweMini.csproj",
+      "Programs\\SweTest\\SweTest.csproj",
+      "SwissEphNet\\SwissEphNet.csproj",
+      "Tests\\SwissEphNet.Tests\\SwissEphNet.Tests.csproj"
+    ]
+  }
+}

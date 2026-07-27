@@ -1,0 +1,45 @@
+# SwissEphNet/CPort/ is a line-by-line transliteration of the Swiss Ephemeris C
+# source. See ../../CONTRIBUTING.md before changing anything in this folder:
+# it must never be reformatted, and that includes analyzer-driven code-style
+# fixes, not only whitespace.
+#
+# Every analyzer diagnostic is silenced here except the small set below that
+# has actually caught real bugs in this port (the C.strcmp culture-sensitivity
+# bug was found by CA1304/CA1310) or that flags a mis-transliterated `goto`
+# (unreachable/unused-code warnings are a real signal in ported C, where a
+# `goto` that should have landed on a label sometimes lands past it instead).
+#
+# dotnet_analyzer_diagnostic.severity is a bulk key that only covers Roslyn
+# analyzer diagnostics (CA*/IDE*); it does not touch compiler-native (CS*)
+# diagnostics at all, which is why those are listed individually below, both
+# the ones silenced (CS1587, CS8981 -- pure noise from this being transliterated
+# C, not a real signal) and the ones deliberately left on (CS0162/CS0164/CS0219).
+# CS1591 is off for the whole repo via Directory.Build.props, not repeated here.
+
+[*.cs]
+dotnet_analyzer_diagnostic.severity = none
+
+# Culture-sensitive string/number operations -- these are what surfaced the
+# C.strcmp bug (string.Compare without StringComparison, culture-sensitive on
+# some platforms/locales). Real transliteration bugs hide behind these.
+dotnet_diagnostic.CA1304.severity = warning
+dotnet_diagnostic.CA1305.severity = warning
+dotnet_diagnostic.CA1307.severity = warning
+dotnet_diagnostic.CA1309.severity = warning
+dotnet_diagnostic.CA1310.severity = warning
+
+# NaN comparison via == / != instead of double.IsNaN -- always a bug.
+dotnet_diagnostic.CA2242.severity = warning
+
+# XML comments transliterated straight from C block comments often land on
+# the wrong declaration, and CPort has plenty of type names inherited
+# verbatim from lower_snake_case C struct/typedef names -- neither is
+# something we can or should fix by touching CPort's text, so silence both.
+dotnet_diagnostic.CS1587.severity = none
+dotnet_diagnostic.CS8981.severity = none
+
+# Unreachable/unused code -- in a hand-transliterated port, this usually means
+# a goto or conditional landed on the wrong label.
+dotnet_diagnostic.CS0162.severity = warning
+dotnet_diagnostic.CS0164.severity = warning
+dotnet_diagnostic.CS0219.severity = warning

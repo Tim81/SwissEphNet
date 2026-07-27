@@ -757,11 +757,19 @@ namespace SwissEphNet.Tests
             Assert.Equal((UInt16)(65526), C.ToUnsigned((Int16)(-10)));
             Assert.Equal((UInt32)(4294967286), C.ToUnsigned((Int32)(-10)));
             Assert.Equal((UInt64)(18446744073709551606), C.ToUnsigned((Int64)(-10)));
-            Assert.Equal((UInt32)(4294967286), C.ToUnsigned((Single)(-10)));
-            Assert.Equal((UInt64)(18446744073709551606), C.ToUnsigned((Double)(-10)));
+            // A negative float/double converted to an unsigned integral type is an
+            // out-of-range conversion, and the C# language spec (ECMA-334 SS10.2.11)
+            // leaves the result of an unchecked out-of-range floating-to-integral
+            // conversion unspecified. .NET 8 wraps (matching the historical .NET
+            // Framework/older Core behavior); .NET 10's JIT saturates to 0 instead
+            // (matching the SSE cvttss2si/cvttsd2si instructions it now emits). Both
+            // are valid per spec, so this asserts either rather than pinning to one
+            // runtime's choice.
+            AssertUnsignedOutOfRangeConversion((UInt32)4294967286, (UInt32)0, C.ToUnsigned((Single)(-10)));
+            AssertUnsignedOutOfRangeConversion((UInt64)18446744073709551606, (UInt64)0, C.ToUnsigned((Double)(-10)));
             //Assert.Equal((UInt64)(18446744073709551606), C.ToUnsigned((Decimal)(-10)));
-            Assert.Equal((UInt32)(4294967286), C.ToUnsigned((Single)(-10.345)));
-            Assert.Equal((UInt64)(18446744073709551606), C.ToUnsigned((Double)(-10.345)));
+            AssertUnsignedOutOfRangeConversion((UInt32)4294967286, (UInt32)0, C.ToUnsigned((Single)(-10.345)));
+            AssertUnsignedOutOfRangeConversion((UInt64)18446744073709551606, (UInt64)0, C.ToUnsigned((Double)(-10.345)));
             //Assert.Equal((UInt64)(18446744073709551606), C.ToUnsigned((Decimal)(-10.345)));
 
             Assert.Null(C.ToUnsigned(""));
@@ -873,6 +881,13 @@ namespace SwissEphNet.Tests
         #endregion
 
         #region Private Methods
+        #region AssertUnsignedOutOfRangeConversion
+        private static void AssertUnsignedOutOfRangeConversion(object wrapped, object saturated, object actual) {
+            Assert.True(Equals(wrapped, actual) || Equals(saturated, actual),
+                $"Expected either the wrapped value {wrapped} (.NET 8 and earlier) or the " +
+                $"saturated value {saturated} (.NET 10+), but got {actual}.");
+        }
+        #endregion
         #region RunTest
         //[Ignore()]
         private bool RunTest(string Format, string Wanted, params object[] Parameters) {

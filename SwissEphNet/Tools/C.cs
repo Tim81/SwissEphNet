@@ -47,9 +47,7 @@ namespace SwissEphNet
         /// <summary>
         /// 
         /// </summary>
-#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static double fmod(double numer, double denom)
         {
             return numer % denom;
@@ -98,47 +96,33 @@ namespace SwissEphNet
             return idx >= 0 ? array + idx : new CPointer<TVal>();
         }
 
-#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static int strlen(string s) => s?.Length ?? 0;
 
-#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static string strcpy(out string a, string b) => a = b;
 
-#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static void strncpy(out string a, string b, int n)
             => a = b != null ? b.Substring(0, Math.Min(n, b.Length)) : null;
 
-#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static void strcat(ref string a, string b) => a = string.Concat(a, b);
 
-#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static void strncat(ref string a, string b, int n) {
             n = Math.Min(n, b?.Length ?? 0);
             if (n > 0)
                 a = string.Concat(a, b.Substr(0, n));
         }
 
-#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static int strcmp(string a, string b)
         {
             return string.Compare(a, b);
         }
 
-#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static int strncmp(string a, string b, int n)
         {
             if (string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b))
@@ -146,9 +130,7 @@ namespace SwissEphNet
             return string.Compare(a.Substring(0, Math.Min(a.Length, n)), b.Substring(0, Math.Min(b.Length, n)));
         }
 
-#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static int strstr(string a, string b)
         {
             if (string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b))
@@ -156,9 +138,7 @@ namespace SwissEphNet
             return a.IndexOf(b);
         }
 
-#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static int strchr(string s, char c)
         {
             if (string.IsNullOrEmpty(s))
@@ -166,18 +146,14 @@ namespace SwissEphNet
             return s.IndexOf(c);
         }
 
-#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static void rewind(CFile file)
         {
             if (file != null)
                 file.Seek(0, System.IO.SeekOrigin.Begin);
         }
 
-#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static void fclose(CFile file)
             => file?.Dispose();
 

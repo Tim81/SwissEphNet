@@ -25,8 +25,15 @@
 
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
 
+  <!--
+    net8.0;net10.0, not just net10.0: SwissEphNet ships three assets
+    (netstandard2.0, net8.0, net10.0) and they are not guaranteed to behave
+    identically; see the "Why net8.0 and net10.0" note in
+    Tools/BaselineGen/README.md. A gate that only ever built this project as
+    net10.0 would only ever exercise one of the three shipped assets.
+  -->
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>BaselineMatrix</RootNamespace>
@@ -47,7 +54,12 @@
     since verification is specifically "does current code match the frozen reference".
   -->
   <ItemGroup Condition="'$(UseReferencePackage)' == 'true'">
-    <PackageReference Include="SwissEphNet" Version="2.8.0.2" />
+    <!--
+      VersionOverride, not a central PackageVersion entry: this is the frozen
+      reference release the baseline was generated against, not a real dependency
+      of the repo, so it should not appear in Directory.Packages.props as if it were.
+    -->
+    <PackageReference Include="SwissEphNet" VersionOverride="2.8.0.2" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(UseReferencePackage)' != 'true'">
