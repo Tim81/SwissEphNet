@@ -6,14 +6,14 @@
     <RootNamespace>SwissEphNet</RootNamespace>
     <PackageId>SwissEphNet</PackageId>
     <Version>2.8.0.2</Version>
-    <Authors>Yan Grenier</Authors>
+    <Authors>Yan Grenier, Timothy van der Ham</Authors>
     <Company>Yan Grenier</Company>
     <Product>SwissEphNet</Product>
     <Description>Swiss Ephemeris .Net portage</Description>
-    <Copyright>Copyright © Yan Grenier 2014-2019</Copyright>
+    <Copyright>Copyright (C) 1997-2021 Astrodienst AG; (C) 2014-2019 Yan Grenier; (C) 2026 Timothy van der Ham</Copyright>
     <PackageLicenseUrl></PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/ygrenier/SwissEphNet</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/ygrenier/SwissEphNet</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Tim81/SwissEphNet</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Tim81/SwissEphNet</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>Swiss Ephemeris</PackageTags>
     <PackageReleaseNotes>2.8.0.2:
@@ -42,6 +42,16 @@
 - Update the code to the Swiss Ephemeris 2.06.00 version.
 </PackageReleaseNotes>
     <NeutralLanguage>Anglais</NeutralLanguage>
+    <!--
+      Deliberately PackageLicenseFile, not PackageLicenseExpression. NuGet only
+      accepts OSI/FSF-approved SPDX identifiers in PackageLicenseExpression, and
+      the Swiss Ephemeris Professional License arm of this dual license has no
+      SPDX identifier, so the dual license cannot be expressed that way. Do not
+      "fix" this to PackageLicenseExpression=AGPL-3.0-or-later: that would drop
+      the Professional option from the package metadata and misrepresent the
+      license under which this library is actually offered. See LICENSE and
+      NOTICE for the real terms.
+    -->
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
@@ -55,6 +65,14 @@
 
   <ItemGroup>
     <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="..\agpl-3.0.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="..\NOTICE">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
