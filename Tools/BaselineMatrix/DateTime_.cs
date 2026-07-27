@@ -6,7 +6,9 @@ namespace BaselineMatrix;
 /// <summary>
 /// Date/time conversions: swe_julday, swe_revjul, swe_date_conversion, swe_deltat,
 /// swe_deltat_ex, swe_set_tid_acc/swe_get_tid_acc, swe_set_delta_t_userdef,
-/// swe_sidtime, swe_sidtime0, swe_time_equ, swe_jdet_to_utc, swe_utc_to_jd.
+/// swe_sidtime, swe_sidtime0, swe_time_equ, swe_jdet_to_utc, swe_utc_to_jd,
+/// swe_jdut1_to_utc, swe_utc_time_zone. The last two complete the leap-second
+/// family swe_jdet_to_utc/swe_utc_to_jd already start.
 /// </summary>
 internal static class DateTime_
 {
@@ -87,6 +89,8 @@ internal static class DateTime_
         AddTimeEqu(rows);
         AddJdetToUtc(rows);
         AddUtcToJd(rows);
+        AddJdut1ToUtc(rows);
+        AddUtcTimeZone(rows);
     }
 
     private static void AddJulday(List<string> rows)
@@ -297,6 +301,46 @@ internal static class DateTime_
                     string? serr = null;
                     var retc = swe.swe_utc_to_jd(y, m, d, h, mi, s, greg, dret, ref serr);
                     return [I(retc), D(dret[0]), D(dret[1]), S(serr)];
+                }));
+            }
+        }
+    }
+
+    private static void AddJdut1ToUtc(List<string> rows)
+    {
+        foreach (var jd in Grids.JdSpread(12))
+        {
+            foreach (var greg in GregFlags)
+            {
+                var caseId = $"JUT1|{D(jd)}|{I(greg)}";
+                rows.Add(SafeRow(caseId, () =>
+                {
+                    using var swe = new SwissEph();
+                    int y = 0, m = 0, d = 0, h = 0, mi = 0;
+                    double s = 0;
+                    swe.swe_jdut1_to_utc(jd, greg, ref y, ref m, ref d, ref h, ref mi, ref s);
+                    return [I(y), I(m), I(d), I(h), I(mi), D(s)];
+                }));
+            }
+        }
+    }
+
+    private static readonly double[] TimeZoneOffsets = [0.0, 1.0, -5.0, 9.5, -12.0, 13.0];
+
+    private static void AddUtcTimeZone(List<string> rows)
+    {
+        foreach (var (y, m, d, h, mi, s) in UtcDates)
+        {
+            foreach (var tz in TimeZoneOffsets)
+            {
+                var caseId = $"UTZ|{I(y)}|{I(m)}|{I(d)}|{I(h)}|{I(mi)}|{D(s)}|{D(tz)}";
+                rows.Add(SafeRow(caseId, () =>
+                {
+                    using var swe = new SwissEph();
+                    int yo = 0, mo = 0, dOut = 0, ho = 0, mio = 0;
+                    double so = 0;
+                    swe.swe_utc_time_zone(y, m, d, h, mi, s, tz, ref yo, ref mo, ref dOut, ref ho, ref mio, ref so);
+                    return [I(yo), I(mo), I(dOut), I(ho), I(mio), D(so)];
                 }));
             }
         }

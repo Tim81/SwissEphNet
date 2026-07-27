@@ -5,8 +5,11 @@ namespace BaselineMatrix;
 
 /// <summary>
 /// swe_pheno / swe_pheno_ut on the Moshier path: phase angle, phase, elongation,
-/// apparent diameter, magnitude, and (Moon only, topocentric only) horizontal
-/// parallax in attr[5].
+/// apparent diameter, magnitude, and (Moon only) horizontal parallax in attr[5].
+/// attr[5] is populated for the Moon regardless of SEFLG_TOPOCTR -- geocentric
+/// parallax is computed unconditionally, then overwritten with the topocentric
+/// value only if SEFLG_TOPOCTR is set (two separate branches in SweCL.cs); it is
+/// not topocentric-only, only Moon-only.
 ///
 /// swe_pheno masks iflag down to SEFLG_EPHMASK | TRUEPOS | J2000 | NONUT | NOGDEFL |
 /// NOABERR | TOPOCTR before doing anything with it -- SEFLG_HELCTR is not in that
@@ -31,6 +34,15 @@ internal static class Pheno
         (-118.24, 34.05, 100),
     ];
 
+    // See Calc.cs's TopoIflagVariants for why: the topocentric pass originally had
+    // no SPEED variant, leaving speed-dependent output untested for every
+    // topocentric pheno row.
+    private static readonly (string Name, int Flag)[] TopoIflagVariants =
+    [
+        ("", 0),
+        ("_SPEED", SwissEph.SEFLG_SPEED),
+    ];
+
     public static void AddRows(List<string> rows)
     {
         foreach (var ipl in Grids.CalcPlanets)
@@ -48,8 +60,11 @@ internal static class Pheno
             {
                 foreach (var observer in TopoObservers)
                 {
-                    rows.Add(BuildTopoRow("PHTOPO", ipl, jd, observer, useUt: false));
-                    rows.Add(BuildTopoRow("PHUTTOPO", ipl, jd, observer, useUt: true));
+                    foreach (var (variantName, variantFlag) in TopoIflagVariants)
+                    {
+                        rows.Add(BuildTopoRow($"PHTOPO{variantName}", ipl, jd, observer, variantFlag, useUt: false));
+                        rows.Add(BuildTopoRow($"PHUTTOPO{variantName}", ipl, jd, observer, variantFlag, useUt: true));
+                    }
                 }
             }
         }
@@ -70,14 +85,14 @@ internal static class Pheno
         });
     }
 
-    private static string BuildTopoRow(string prefix, int ipl, double jd, (double Lon, double Lat, double Height) observer, bool useUt)
+    private static string BuildTopoRow(string prefix, int ipl, double jd, (double Lon, double Lat, double Height) observer, int extraFlag, bool useUt)
     {
         var caseId = $"{prefix}|{I(ipl)}|{D(jd)}|{D(observer.Lon)},{D(observer.Lat)},{D(observer.Height)}";
         return SafeRow(caseId, () =>
         {
             using var swe = new SwissEph();
             swe.swe_set_topo(observer.Lon, observer.Lat, observer.Height);
-            var iflag = SwissEph.SEFLG_MOSEPH | SwissEph.SEFLG_TOPOCTR;
+            var iflag = SwissEph.SEFLG_MOSEPH | SwissEph.SEFLG_TOPOCTR | extraFlag;
             var attr = new double[20];
             string? serr = null;
             var retc = useUt

@@ -54,6 +54,22 @@ Math.Sin/Cos/etc. round intermediate values). Comparing a Debug run against a
 Release-generated baseline risks spurious tolerance failures that have nothing to
 do with an actual behavior change.
 
+**`<InvariantGlobalization>true</InvariantGlobalization>` in `BaselineMatrix.csproj`
+is load-bearing, not incidental.** `%f`-style formatting inside CPort's own
+`C.printf`/`sprintf` (which builds the text embedded in `serr` messages) goes
+through `String.Format(numberFormat, value)` with no explicit `IFormatProvider`,
+so it uses `CultureInfo.CurrentCulture` by default (`SwissEphNet/Tools/C.printf.cs`,
+`FormatNumber`/`FormatHex`). Confirmed on this machine directly: `CurrentCulture` is
+`nl-NL`, whose decimal separator is a comma (`3.14` formats as `3,14`). Every
+double the harness itself records already goes through
+`.ToString("R", CultureInfo.InvariantCulture)` regardless of this setting (see
+`Format.D`), but a number embedded inside a `serr` string by CPort's own formatting
+does not -- without `InvariantGlobalization`, that text would render with commas
+on a machine like this one, and the baseline would be silently machine-specific in
+a way none of the other checks would catch: a `serr` comparison would pass or fail
+based on whoever's regional settings generated the file, not on any actual
+behavior change. Do not remove this property later without re-checking that.
+
 ## Regenerating the golden files
 
 Only needed when the reference package version changes (i.e., essentially never,
@@ -232,18 +248,23 @@ each area covers. Areas and their files:
 
 | Area | File | Covers |
 |---|---|---|
-| houses-armc | `Houses.cs` | `swe_houses_armc` (dense sweep), the saved_sundec hazard |
+| houses-armc | `Houses.cs` | `swe_houses_armc` (dense sweep), the saved_sundec hazard, and a small deliberate exception to the fresh-instance rule (see below) |
 | houses | `HousesEx.cs` | `swe_houses`, `swe_houses_ex` (including `SEFLG_SIDEREAL` with `swe_set_sid_mode`, plain and with `SE_SIDBIT_ECL_T0`/`SE_SIDBIT_SSY_PLANE`) |
 | house-pos | `HousePos.cs` | `swe_house_pos`, `swe_house_name` |
-| calc | `Calc.cs` | `swe_calc`, `swe_calc_ut` |
-| pheno | `Pheno.cs` | `swe_pheno`, `swe_pheno_ut`, including a topocentric pass (`attr[5]`) |
+| calc | `Calc.cs` | `swe_calc`, `swe_calc_ut`, including a topocentric pass with and without `SEFLG_SPEED` |
+| pheno | `Pheno.cs` | `swe_pheno`, `swe_pheno_ut`, including a topocentric pass (`attr[5]`) with and without `SEFLG_SPEED` |
+| nodaps | `NodAps.cs` | `swe_nod_aps`, `swe_nod_aps_ut` |
 | ayanamsa | `Ayanamsa.cs` | `swe_get_ayanamsa[_ut]`, `_ex[_ut]`, `SE_SIDM_USER`, SIDBIT flags |
-| datetime | `DateTime_.cs` | date/time conversions, Delta-T, tidal acceleration |
+| datetime | `DateTime_.cs` | date/time conversions, Delta-T, tidal acceleration, `swe_jdut1_to_utc`, `swe_utc_time_zone` |
 | coord | `CoordHelpers.cs` | `swe_cotrans[_sp]`, `swe_azalt[_rev]` |
-| format | `FormatHelpers.cs` | `swe_split_deg`, `swe_cs2*str`, norm/midpoint helpers |
+| format | `FormatHelpers.cs` | `swe_split_deg`, `swe_cs2*str`, norm/midpoint helpers, and their radian/centisecond siblings (`swe_radnorm`, `swe_difrad2n`, `swe_difcsn`, `swe_difcs2n`, `swe_csroundsec`, `swe_d2l`, `swe_day_of_week`) |
 | misc | `Misc.cs` | `swe_get_planet_name`, `swe_version` |
 
-Every row uses a brand new `SwissEph` instance. `swe_houses_armc` keeps a hidden
-field (`saved_sundec`) that emulates a C `static`, so reusing an instance across
-rows would make hsys `'I'`/`'i'` depend on call order and the baseline would not
-be reproducible.
+Every row uses a brand new `SwissEph` instance, with one deliberate, explicitly-named
+exception: `Houses.AddStatefulPairRows` shares a single instance across two ordered
+calls, specifically to exercise `swe_houses_armc`'s hidden `saved_sundec` field (a
+C `static` emulated as a C# instance field) in the one state it actually matters --
+a real declination stored by one call, consumed by a sentinel call right after it on
+the same instance. Every other row uses a fresh instance, since reusing one there
+would make hsys `'I'`/`'i'` depend on call order and the baseline would not be
+reproducible.

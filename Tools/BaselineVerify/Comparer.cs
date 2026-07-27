@@ -277,6 +277,19 @@ internal static class Comparer
     /// sit near a station), the wrap logic returns the same raw difference it started
     /// with, so it can never loosen a comparison that would otherwise have failed for
     /// an unrelated reason.
+    ///
+    /// One deliberate exclusion: a value of exactly 360.0 is never treated as the
+    /// "near-360" side of a wrap. swe_degnorm-style normalization is defined to
+    /// produce [0, 360), so a correct computation never emits exactly 360.0 --
+    /// genuine ULP wraparound noise looks like 0 vs 359.99999999999994 (residual
+    /// 360-rawDiff is a tiny nonzero number), never 0 vs exactly 360.0 (residual
+    /// exactly zero). The baseline itself has a live example: hsys 'i' emits
+    /// cusp = 360.0 for a subset of rows because a normalization call is missing
+    /// (see docs/known-issues.md). Without this exclusion, if that gets fixed and
+    /// those fields change from 360.0 to 0.0, EffectiveAbsoluteDiff(360.0, 0.0)
+    /// would compute rawDiff=360, wrapped=min(360, 360-360=0)=0, and silently pass
+    /// -- exactly the "swallows a real behavior change" failure mode the wraparound
+    /// allowance exists to avoid, not cause.
     /// </summary>
     internal static double EffectiveAbsoluteDiff(double a, double b)
     {
@@ -285,6 +298,7 @@ internal static class Comparer
     }
 
     private static bool IsAngleWraparoundCandidate(double a, double b) =>
+        a != 360.0 && b != 360.0 &&
         (IsNearDegreeBoundary(a) || IsNearDegreeBoundary(b)) && InDegreeRange(a) && InDegreeRange(b);
 
     private static bool IsNearDegreeBoundary(double v) =>

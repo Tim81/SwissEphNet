@@ -5,7 +5,11 @@ namespace BaselineMatrix;
 
 /// <summary>
 /// swe_split_deg, swe_cs2degstr, swe_cs2timestr, swe_cs2lonlatstr, swe_degnorm,
-/// swe_difdeg2n, swe_difdegn, swe_csnorm, swe_deg_midp, swe_rad_midp.
+/// swe_difdeg2n, swe_difdegn, swe_csnorm, swe_deg_midp, swe_rad_midp, and their
+/// pure-function siblings swe_radnorm, swe_difrad2n, swe_difcsn, swe_difcs2n,
+/// swe_csroundsec, swe_d2l, swe_day_of_week -- added alongside the degree/centisec
+/// versions above specifically so leaving them out stays a deliberate choice
+/// rather than an arbitrary gap.
 /// </summary>
 internal static class FormatHelpers
 {
@@ -19,6 +23,12 @@ internal static class FormatHelpers
         AddDifDeg(rows);
         AddCsNorm(rows);
         AddMidp(rows);
+        AddRadNorm(rows);
+        AddDifRad2n(rows);
+        AddDifCsn(rows);
+        AddCsRoundSec(rows);
+        AddD2l(rows);
+        AddDayOfWeek(rows);
     }
 
     private static readonly double[] SplitDegValues =
@@ -181,6 +191,102 @@ internal static class FormatHelpers
                     return [D(swe.swe_rad_midp(x1, x0))];
                 }));
             }
+        }
+    }
+
+    // Radian-scale mirror of DegNormValues: same shape (near zero, near the wrap
+    // point at 2*PI, negative, and a large out-of-range value), scaled to radians.
+    private static readonly double[] RadValues =
+        [-4 * Math.PI, -Math.PI, -0.0001, 0, 0.0001, Math.PI, 2 * Math.PI, 2 * Math.PI + 0.0001, 10, -10];
+
+    private static void AddRadNorm(List<string> rows)
+    {
+        foreach (var x in RadValues)
+        {
+            var caseId = $"RN|{D(x)}";
+            rows.Add(SafeRow(caseId, () =>
+            {
+                using var swe = new SwissEph();
+                return [D(swe.swe_radnorm(x))];
+            }));
+        }
+    }
+
+    private static void AddDifRad2n(List<string> rows)
+    {
+        foreach (var p1 in RadValues)
+        {
+            foreach (var p2 in RadValues)
+            {
+                var caseId = $"R2N|{D(p1)}|{D(p2)}";
+                rows.Add(SafeRow(caseId, () =>
+                {
+                    using var swe = new SwissEph();
+                    return [D(swe.swe_difrad2n(p1, p2))];
+                }));
+            }
+        }
+    }
+
+    private static void AddDifCsn(List<string> rows)
+    {
+        foreach (var p1 in CsNormValues)
+        {
+            foreach (var p2 in CsNormValues)
+            {
+                rows.Add(SafeRow($"DCN|{I(p1)}|{I(p2)}", () =>
+                {
+                    using var swe = new SwissEph();
+                    return [I(swe.swe_difcsn(p1, p2))];
+                }));
+                rows.Add(SafeRow($"DC2N|{I(p1)}|{I(p2)}", () =>
+                {
+                    using var swe = new SwissEph();
+                    return [I(swe.swe_difcs2n(p1, p2))];
+                }));
+            }
+        }
+    }
+
+    private static void AddCsRoundSec(List<string> rows)
+    {
+        foreach (var p in CsNormValues)
+        {
+            var caseId = $"CRS|{I(p)}";
+            rows.Add(SafeRow(caseId, () =>
+            {
+                using var swe = new SwissEph();
+                return [I(swe.swe_csroundsec(p))];
+            }));
+        }
+    }
+
+    // Moderate values including .5 rounding-edge cases; swe_d2l does no overflow
+    // check, so this deliberately avoids values large enough to overflow Int32,
+    // which would just be testing undefined behavior rather than the function.
+    private static readonly double[] D2lValues =
+        [0, 0.4, 0.5, 0.6, -0.4, -0.5, -0.6, 123456.789, -123456.789, 2_000_000_000.4];
+
+    private static void AddD2l(List<string> rows)
+    {
+        // swe_d2l is static -- no SwissEph instance needed or created.
+        foreach (var x in D2lValues)
+        {
+            var caseId = $"D2L|{D(x)}";
+            rows.Add(SafeRow(caseId, () => [I(SwissEph.swe_d2l(x))]));
+        }
+    }
+
+    private static void AddDayOfWeek(List<string> rows)
+    {
+        foreach (var jd in Grids.JdSpread(10))
+        {
+            var caseId = $"DOW|{D(jd)}";
+            rows.Add(SafeRow(caseId, () =>
+            {
+                using var swe = new SwissEph();
+                return [I(swe.swe_day_of_week(jd))];
+            }));
         }
     }
 }

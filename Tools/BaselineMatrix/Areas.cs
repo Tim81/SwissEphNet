@@ -10,11 +10,12 @@ public static class Areas
 {
     public static readonly (string Name, Action<List<string>> Populate)[] All =
     [
-        ("houses-armc", rows => { Houses.AddRows(rows); Houses.AddSunshineStateRows(rows); }),
+        ("houses-armc", rows => { Houses.AddRows(rows); Houses.AddSunshineStateRows(rows); Houses.AddStatefulPairRows(rows); }),
         ("houses", HousesEx.AddRows),
         ("house-pos", rows => { HousePos.AddRows(rows); HouseName.AddRows(rows); }),
         ("calc", Calc.AddRows),
         ("pheno", Pheno.AddRows),
+        ("nodaps", NodAps.AddRows),
         ("ayanamsa", Ayanamsa.AddRows),
         ("datetime", DateTime_.AddRows),
         ("coord", CoordHelpers.AddRows),

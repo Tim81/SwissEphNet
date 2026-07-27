@@ -104,15 +104,49 @@ public class ComparerTests
     }
 
     [Fact]
-    public void Compare_AngleWraparoundAt360_Passes()
+    public void Compare_AngleWraparoundMirror_NeitherSideExactlyAtBoundary_Passes()
     {
-        // The mirror case: one side is exactly 360 instead of wrapping to 0.
-        List<string> local = ["A\t360"];
+        // The mirror of the first case: one side lands just under 360 and the other
+        // just above 0, neither one landing exactly on the literal boundary value.
+        // Still genuine ULP wraparound, so this must pass.
+        List<string> local = ["A\t359.99999999999994"];
         List<string> reference = ["A\t0.00000000000006"];
 
         var result = Comparer.Compare(local, reference, [], [], "test");
 
         Assert.Equal(0, result.Fail);
+    }
+
+    [Fact]
+    public void Compare_ExactZeroVersusExact360_Fails()
+    {
+        // The blind spot: a value of exactly 360.0 must never be treated as the
+        // "near-360" side of a wrap, even though it satisfies the boundary-distance
+        // check trivially (distance 0). Genuine ULP wraparound noise never lands on
+        // exactly 360.0 -- it lands near it (359.99999999999994, as in the test
+        // above). A cusp of exactly 360.0 is itself a sign of a missing
+        // swe_degnorm call (see docs/known-issues.md, hsys 'i'): if that gets fixed
+        // and the value changes from 360.0 to 0.0, this pair must be reported as a
+        // genuine change, not silently wrapped away.
+        List<string> local = ["A\t0"];
+        List<string> reference = ["A\t360.0"];
+
+        var result = Comparer.Compare(local, reference, [], [], "test");
+
+        Assert.Equal(1, result.Fail);
+    }
+
+    [Fact]
+    public void Compare_ExactZeroVersusExact360_ReverseOrder_Fails()
+    {
+        // Same as above with the sides swapped, since EffectiveAbsoluteDiff must be
+        // symmetric in which argument is "local" vs "reference".
+        List<string> local = ["A\t360.0"];
+        List<string> reference = ["A\t0"];
+
+        var result = Comparer.Compare(local, reference, [], [], "test");
+
+        Assert.Equal(1, result.Fail);
     }
 
     [Fact]

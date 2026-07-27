@@ -20,6 +20,18 @@ internal static class Calc
         (-118.24, 34.05, 100),
     ];
 
+    // The topocentric pass originally covered only plain SEFLG_TOPOCTR, leaving
+    // xx[3..5] (speed) at zero for all 160 CTOPO/CUTOPO rows -- the largest single
+    // dead-column block in the file. Topocentric speed runs through
+    // swi_get_observer plus numerical differentiation, both named as churn areas,
+    // and SPEED fields are already the worst cross-platform offenders (see
+    // docs/known-issues.md), so this is specifically worth freezing.
+    private static readonly (string Name, int Flag)[] TopoIflagVariants =
+    [
+        ("", 0),
+        ("_SPEED", SwissEph.SEFLG_SPEED),
+    ];
+
     public static void AddRows(List<string> rows)
     {
         foreach (var ipl in Grids.CalcPlanets)
@@ -38,8 +50,11 @@ internal static class Calc
             {
                 foreach (var observer in TopoObservers)
                 {
-                    rows.Add(BuildTopoRow("CTOPO", ipl, jd, observer, useUt: false));
-                    rows.Add(BuildTopoRow("CUTOPO", ipl, jd, observer, useUt: true));
+                    foreach (var (variantName, variantFlag) in TopoIflagVariants)
+                    {
+                        rows.Add(BuildTopoRow($"CTOPO{variantName}", ipl, jd, observer, variantFlag, useUt: false));
+                        rows.Add(BuildTopoRow($"CUTOPO{variantName}", ipl, jd, observer, variantFlag, useUt: true));
+                    }
                 }
             }
         }
@@ -66,14 +81,14 @@ internal static class Calc
         });
     }
 
-    private static string BuildTopoRow(string prefix, int ipl, double jd, (double Lon, double Lat, double Height) observer, bool useUt)
+    private static string BuildTopoRow(string prefix, int ipl, double jd, (double Lon, double Lat, double Height) observer, int extraFlag, bool useUt)
     {
         var caseId = $"{prefix}|{I(ipl)}|{D(jd)}|{D(observer.Lon)},{D(observer.Lat)},{D(observer.Height)}";
         return SafeRow(caseId, () =>
         {
             using var swe = new SwissEph();
             swe.swe_set_topo(observer.Lon, observer.Lat, observer.Height);
-            var iflag = SwissEph.SEFLG_MOSEPH | SwissEph.SEFLG_TOPOCTR;
+            var iflag = SwissEph.SEFLG_MOSEPH | SwissEph.SEFLG_TOPOCTR | extraFlag;
             var xx = new double[6];
             string? serr = null;
             var retc = useUt
