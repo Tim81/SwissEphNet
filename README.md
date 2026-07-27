@@ -3,6 +3,36 @@
 This project is an Astrodienst Swiss Ephemeris (http://www.astro.com/swisseph/) .Net portage from 
 C (version 2.06) to C# in a PCL/.Net Core project for cross platform usage.
 
+## About this repository
+
+This repository, https://github.com/Tim81/SwissEphNet, is a maintained fork of
+[ygrenier/SwissEphNet](https://github.com/ygrenier/SwissEphNet). The original C-to-C# port is
+Yan Grenier's work (2014-2019); this fork continues it. Since 2026 it has been maintained by
+Timothy van der Ham, who has modernized the build and target frameworks (netstandard2.0, net8.0,
+net10.0) and fixed a number of bugs in the port: the fixed-star search returning the wrong star,
+multi-word star names being unfindable, the heliacal Moon branch never being taken,
+`swe_set_astro_models` throwing, the `DIR_GLUE` path separator, culture-sensitive string
+comparison, and a netstandard2.0 infinite recursion. See `NOTICE` and the package release notes
+for details.
+
+## License
+
+Swiss Ephemeris, and therefore this library, is dual-licensed. You must choose one of:
+
+- **AGPL-3.0** (GNU Affero General Public License) - free, but with a network clause: if you
+  run a modified or unmodified version of this library as part of a service that users interact
+  with over a network (a web app, an API, a SaaS product, etc.), the AGPL requires you to offer
+  those users the complete corresponding source code of your whole service, not just this
+  library. This reaches server-side and SaaS use even when you never distribute a binary to
+  anyone - it is triggered by operating the service, not by shipping a copy. If that obligation
+  does not work for your project, AGPL is not the option for you.
+- **Swiss Ephemeris Professional License** - a commercial license purchased from
+  [Astrodienst](http://www.astro.com/swisseph/) that does not carry the AGPL's source-disclosure
+  obligation. Contact Astrodienst directly to obtain one.
+
+See [`LICENSE`](LICENSE) for the full license conditions, [`agpl-3.0.txt`](agpl-3.0.txt) for the
+AGPL text, and [`NOTICE`](NOTICE) for attribution.
+
 Since version 2.6.0.21, the nuget package includes 2 versions:
 - .Net 4.0
 - .Net Standard 1.0
