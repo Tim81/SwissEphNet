@@ -9,7 +9,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # github.event.pull_request.number, not github.ref: on pull_request, github.ref is
+  # refs/pull/<n>/merge, while the push event for the same commit uses
+  # refs/heads/<branch> -- different groups, so both would run side by side and a
+  # same-repo PR branch would build every job twice per commit. Falling back to
+  # github.ref for push (where pull_request.number is unset) keeps unrelated
+  # branches from canceling each other.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 env:
@@ -32,7 +38,13 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "10.0.x"
+          # Both runtimes, not just 10.0.x: the test project targets
+          # net8.0;net10.0, and the 10.0 SDK does not carry the 8.0 runtime on its
+          # own, so the net8.0 leg would fail to launch (the same failure mode as
+          # the netcoreapp2.1 leg this PR removes) without it installed explicitly.
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
       # SweWin (net10.0-windows, WinForms) only builds on Windows -- see
       # SwissEphNet.CrossPlatform.slnf and the note in CONTRIBUTING.md/README.

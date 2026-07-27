@@ -260,10 +260,14 @@ Adding these projects to `SwissEphNet.sln` back then would have broken
 started. `Tools/BaselineTools.slnx` predates AppVeyor's removal and has
 stayed separate since; it still keeps these projects buildable and
 discoverable locally without going anywhere near the library's own target
-frameworks. `Tools/global.json` pins the SDK to the `10.0` major.minor line
-for anything built from under `Tools/`; SDK resolution walks up from a
-project's own directory, not from the invoking shell's working directory, so
-this has no effect on `SwissEphNet.sln` at the repo root.
+frameworks. `global.json` at the repo root pins the SDK to the `10.0` major.minor
+line for everything in the repo, including these four projects. It used to live
+at `Tools/global.json` instead, on the theory that SDK resolution walks up from
+a project's own directory -- it does not: `dotnet` walks up from the *invoking
+process's current working directory*, and every build in this repo (CI, the
+verify/regenerate scripts) is invoked from the repo root, so a `Tools/global.json`
+was never actually being found or honored by any of them. Moving it to the root
+is what makes the pin real.
 
 `.github/workflows/baseline.yml` is what actually runs the gate: `dotnet test
 Tools/BaselineVerify.Tests` followed by `scripts/verify-baseline.ps1`, on

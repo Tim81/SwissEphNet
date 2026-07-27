@@ -10,14 +10,19 @@ permissions:
 
 # Push (all branches) + pull_request means a same-repo PR branch would otherwise run
 # this workflow twice for the same commit; cancel the older run instead of paying for both.
+# github.event.pull_request.number, not github.ref: on pull_request, github.ref is
+# refs/pull/<n>/merge, while the push event for the same commit uses refs/heads/<branch>
+# -- different groups, so both would run side by side instead of the push run being
+# canceled. Falling back to github.ref for push (where pull_request.number is unset)
+# keeps unrelated branches from canceling each other.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # Primary gate. Tools/global.json pins the SDK to the 10.0 major.minor line (see
-  # that file) so the runtime the tolerance is meant to insure against does not
-  # itself drift silently underneath this job.
+  # Primary gate. global.json (repo root) pins the SDK to the 10.0 major.minor line
+  # so the runtime the tolerance is meant to insure against does not itself drift
+  # silently underneath this job.
   verify-baseline:
     runs-on: windows-latest
     timeout-minutes: 30
@@ -26,7 +31,12 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "10.0.x"
+          # Both runtimes: scripts/verify-baseline.ps1 runs BaselineVerify against
+          # both net8.0 and net10.0 (see Tools/BaselineGen/README.md, "Why net8.0
+          # and net10.0"), and the 10.0 SDK does not carry the 8.0 runtime on its own.
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
       - name: Run gate unit tests
         shell: pwsh
@@ -56,7 +66,10 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "10.0.x"
+          # Both runtimes; see the note on the same step in verify-baseline above.
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
       - name: Run gate unit tests
         shell: pwsh
