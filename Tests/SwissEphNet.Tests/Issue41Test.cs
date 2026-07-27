@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -29,7 +29,7 @@ namespace SwissEphNet.Tests
             yield return new object[] { ",alVir", 4, "Spica,alVir", null };
         }
 
-        [Theory]
+        [WindowsOnlyTheory(SkipReasons.FixedStarWindows1252AndCulture)]
         [MemberData(nameof(TestDataFixstar))]
         public void TestFixstar(string search, int eres, string estar, string error)
         {
@@ -88,7 +88,7 @@ namespace SwissEphNet.Tests
             yield return new object[] { ",alVir", 4, "Spica,alVir", null };
         }
 
-        [Theory]
+        [WindowsOnlyTheory(SkipReasons.FixedStarWindows1252AndCulture)]
         [MemberData(nameof(TestDataFixstar2))]
         public void TestFixstar2(string search, int eres, string estar, string error)
         {

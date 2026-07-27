@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using Xunit;
 
 namespace SwissEphNet.Tests
 {
     partial class SwissEphTest
     {
-        [Fact]
+        [WindowsOnlyFact(SkipReasons.FixedStarWindows1252AndCulture)]
         public void Test_swe_fixstar()
         {
             using (var swe = new SwissEph())
@@ -46,7 +46,7 @@ namespace SwissEphNet.Tests
             }
         }
 
-        [Fact]
+        [WindowsOnlyFact(SkipReasons.FixedStarWindows1252AndCulture)]
         public void Test_swe_fixstar_ut()
         {
             using (var swe = new SwissEph())
@@ -78,7 +78,7 @@ namespace SwissEphNet.Tests
             }
         }
 
-        [Fact]
+        [WindowsOnlyFact(SkipReasons.FixedStarWindows1252AndCulture)]
         public void Test_swe_fixstar_mag()
         {
             using (var swe = new SwissEph())
