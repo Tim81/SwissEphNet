@@ -154,7 +154,10 @@ namespace SwissEphNet.CPort
             for (i = 0; i < 2; i++)
                 nutlo[i] *= SwissEph.RADTODEG;
             armc = SE.swe_degnorm(SE.swe_sidtime0(tjd_ut, eps + nutlo[1], nutlo[0]) * 15 + geolon);
-            if (char.ToUpper(hsys) == 'I')
+            // C uses toupper (ASCII); char.ToUpper is culture-sensitive and maps
+            // 'i' -> 'İ' (U+0130) under tr-TR/az-Latn-AZ, silently missing house
+            // system 'i' (Sunshine).
+            if (char.ToUpperInvariant(hsys) == 'I')
             {	// compute sun declination for sunshine houses
                 int flags = SwissEph.SEFLG_SPEED | SwissEph.SEFLG_EQUATORIAL;
                 double[] xp = new double[6];
@@ -247,7 +250,10 @@ namespace SwissEphNet.CPort
             /*houses_to_sidereal(tjde, geolat, hsys, eps, cusp, ascmc, iflag);*/
             armc = SE.swe_degnorm(SE.swe_sidtime0(tjd_ut, eps_mean + nutlo[1], nutlo[0]) * 15 + geolon);
             //fprintf(stderr, "armc=%f, iflag=%d\n", armc, iflag);
-            if (char.ToUpper(hsys) == 'I')
+            // C uses toupper (ASCII); char.ToUpper is culture-sensitive and maps
+            // 'i' -> 'İ' (U+0130) under tr-TR/az-Latn-AZ, silently missing house
+            // system 'i' (Sunshine).
+            if (char.ToUpperInvariant(hsys) == 'I')
             {	// compute sun declination for sunshine houses
                 int flags = SwissEph.SEFLG_SPEED | SwissEph.SEFLG_EQUATORIAL;
                 int result = SE.swe_calc_ut(tjd_ut, SwissEph.SE_SUN, flags, xp, ref sdummy);
@@ -264,7 +270,8 @@ namespace SwissEphNet.CPort
                     retc = sidereal_houses_trad(tjde, iflag, armc, eps_mean + nutlo[1], nutlo[0], geolat, hsys, cusp, ascmc);
             } else {
                 retc = swe_houses_armc(armc, geolat, eps_mean + nutlo[1], hsys, cusp, ascmc);
-                if (char.ToUpper(hsys) == 'I')   // compute sun declination for sunshine houses
+                // toupper (ASCII) in C; ToUpperInvariant avoids tr-TR/az-Latn-AZ 'i' -> 'İ'.
+                if (char.ToUpperInvariant(hsys) == 'I')   // compute sun declination for sunshine houses
                     ascmc[9] = xp[1];	// declination in ascmc[9];
             }
             if ((iflag & SwissEph.SEFLG_RADIANS) != 0) {
@@ -602,7 +609,8 @@ namespace SwissEphNet.CPort
             else
                 ito = 12;
             armc = SE.swe_degnorm(armc);
-            if (char.ToUpper(hsys) ==  'I') {	// declination for sunshine houses
+            // toupper (ASCII) in C; ToUpperInvariant avoids tr-TR/az-Latn-AZ 'i' -> 'İ'.
+            if (char.ToUpperInvariant(hsys) ==  'I') {	// declination for sunshine houses
                 if (ascmc[9] == 99) {
                     h.sundec = 0;
                     if (saved_sundec != 99) h.sundec = saved_sundec;
@@ -626,7 +634,8 @@ namespace SwissEphNet.CPort
             ascmc[7] = h.polasc;	/* "polar ascendant" (M. Munkasey) */
             for (i = SwissEph.SE_NASCMC; i < 10; i++)
                 ascmc[i] = 0;
-            if (char.ToUpper(hsys) == 'I')   // declination for sunshine houses
+            // toupper (ASCII) in C; ToUpperInvariant avoids tr-TR/az-Latn-AZ 'i' -> 'İ'.
+            if (char.ToUpperInvariant(hsys) == 'I')   // declination for sunshine houses
                 ascmc[9] = h.sundec;
 #if TRACE
             //swi_open_trace(NULL);
@@ -1615,7 +1624,8 @@ namespace SwissEphNet.CPort
                     }
                     break;
             } /* end switch */
-            if (hsy != 'G' && hsy != 'Y' && char.ToUpper(hsy) != 'I')
+            // toupper (ASCII) in C; ToUpperInvariant avoids tr-TR/az-Latn-AZ 'i' -> 'İ'.
+            if (hsy != 'G' && hsy != 'Y' && char.ToUpperInvariant(hsy) != 'I')
             {
                 hsp.cusp[4] = SE.swe_degnorm(hsp.cusp[10] + 180);
                 hsp.cusp[5] = SE.swe_degnorm(hsp.cusp[11] + 180);
@@ -1897,7 +1907,9 @@ namespace SwissEphNet.CPort
             int i, j, nloop;
             double dsun = 0, darmc, harmc, y, sinpsi, sa;
             bool is_western_half = false;
-            hsys = char.ToUpper(hsys);
+            // toupper (ASCII) in C; ToUpperInvariant avoids tr-TR/az-Latn-AZ 'i' -> 'İ',
+            // which would otherwise break the `hsys == 'I'` comparisons below.
+            hsys = char.ToUpperInvariant(hsys);
             if (true)
             {
                 /* input is a house position: no calculation is required */
