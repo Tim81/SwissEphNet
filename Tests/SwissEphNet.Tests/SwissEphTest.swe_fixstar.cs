@@ -35,15 +35,9 @@ namespace SwissEphNet.Tests
                 Assert.Equal(69.43785467706, xx[0], 11);
                 Assert.Equal(-5.46862068665, xx[1], 11);
                 Assert.Equal(4214356.43826371, xx[2], 8);
-#if DEBUG
                 Assert.Equal(0.00014896, xx[3], 8);
                 Assert.Equal(1.723E-05, xx[4], 8);
                 Assert.Equal(0.01522108, xx[5], 8);
-#else
-                Assert.Equal(0.00014887, xx[3], 8);
-                Assert.Equal(1.724E-05, xx[4], 8);
-                Assert.Equal(0.01536112, xx[5], 8);
-#endif
 
                 name = "unknown";
                 iflag = swe.swe_fixstar(ref name, tjd, SwissEph.SEFLG_MOSEPH, xx, ref serr);
@@ -80,15 +74,7 @@ namespace SwissEphNet.Tests
                 Assert.Equal(4214356.43827158, xx[2], 7);
                 Assert.Equal(0.000151, xx[3], 6);
                 Assert.Equal(1.7E-05, xx[4], 6);
-#if DEBUG
-#if NET_STANDARD
                 Assert.Equal(0.015543, xx[5], 6);
-#else
-                Assert.Equal(0.015532, xx[5], 6);
-#endif
-#else
-                Assert.Equal(0.01536, xx[5], 6);
-#endif
             }
         }
 
