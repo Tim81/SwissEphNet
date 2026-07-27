@@ -1,21 +1,24 @@
 // Characterization ("golden master") generator for SwissEphNet.
 //
-// Runs a fixed matrix of Swiss Ephemeris calls that need no ephemeris data files
-// (Moshier / analytic paths only, since no OnLoadFile handler is ever subscribed)
-// and writes one tab-separated row per case to the path given as argv[0].
+// Runs the fixed matrix defined in Tools/BaselineMatrix (Swiss Ephemeris calls that
+// need no ephemeris data files -- Moshier / analytic paths only, since no OnLoadFile
+// handler is ever subscribed) and writes one tab-separated file per area into the
+// directory given as argv[0], plus a baseline-2.8.0.2.env.txt sidecar recording the
+// environment the run executed in.
 //
-// This file is shared, unmodified, between two build modes selected by the
-// UseReferencePackage MSBuild property:
+// The matrix code lives in BaselineMatrix.csproj, which is built in one of two
+// modes selected by the UseReferencePackage MSBuild property:
 //   - reference mode: SwissEphNet resolved from NuGet package 2.8.0.2
 //   - local mode:     SwissEphNet resolved via ProjectReference to the in-repo library
 // Both modes must produce byte-identical output when the local code matches 2.8.0.2.
+// See Tools/BaselineGen/README.md for the exact commands.
 //
 // swe_houses_armc carries a hidden static-like field (saved_sundec) that affects
 // hsys 'I' when ascmc[9] == 99. To keep output reproducible regardless of call
-// order, every single row in this file uses a brand new SwissEph instance.
+// order, every single row in the matrix uses a brand new SwissEph instance.
 
-using System.Globalization;
-using SwissEphNet;
+using System.Text;
+using BaselineMatrix;
 
 namespace BaselineGen;
 
@@ -25,42 +28,41 @@ internal static class Program
     {
         if (args.Length != 1)
         {
-            Console.Error.WriteLine("Usage: BaselineGen <output-file>");
+            Console.Error.WriteLine("Usage: BaselineGen <output-directory>");
             return 1;
         }
 
-        var rows = new List<string>(150_000);
+        var outputDir = Path.GetFullPath(args[0]);
+        Directory.CreateDirectory(outputDir);
 
-        Houses.AddRows(rows);
-        Houses.AddSunshineStateRows(rows);
-        HousePos.AddRows(rows);
-        HouseName.AddRows(rows);
-        Calc.AddRows(rows);
-        Ayanamsa.AddRows(rows);
-        DateTime_.AddRows(rows);
-        CoordHelpers.AddRows(rows);
-        FormatHelpers.AddRows(rows);
-        Misc.AddRows(rows);
+        var env = EnvInfo.Describe();
+        Console.WriteLine(env);
 
-        rows.Sort(StringComparer.Ordinal);
-
-        var outputPath = args[0];
-        var directory = Path.GetDirectoryName(Path.GetFullPath(outputPath));
-        if (!string.IsNullOrEmpty(directory))
+        var totalRows = 0;
+        foreach (var (name, populate) in Areas.All)
         {
-            Directory.CreateDirectory(directory);
+            var rows = Areas.Generate(populate);
+            var path = Path.Combine(outputDir, $"baseline-{name}.tsv");
+            WriteFile(path, rows);
+            var size = new FileInfo(path).Length;
+            Console.WriteLine($"{name,-14} {rows.Count,7} rows  {size,10} bytes  {path}");
+            totalRows += rows.Count;
         }
 
-        using (var writer = new StreamWriter(outputPath, append: false, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false)))
-        {
-            writer.NewLine = "\n";
-            foreach (var row in rows)
-            {
-                writer.WriteLine(row);
-            }
-        }
+        var envPath = Path.Combine(outputDir, "baseline-2.8.0.2.env.txt");
+        File.WriteAllText(envPath, env + "\n", new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
-        Console.WriteLine($"Wrote {rows.Count} rows to {outputPath}");
+        Console.WriteLine($"Total: {totalRows} rows across {Areas.All.Length} areas.");
         return 0;
+    }
+
+    private static void WriteFile(string path, List<string> rows)
+    {
+        using var writer = new StreamWriter(path, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        writer.NewLine = "\n";
+        foreach (var row in rows)
+        {
+            writer.WriteLine(row);
+        }
     }
 }

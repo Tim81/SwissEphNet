@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>BaselineVerify</RootNamespace>
+    <AssemblyName>BaselineVerify</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!--
+    UseReferencePackage is intentionally never passed for this project: verification
+    means "does the current in-repo code match the frozen reference", so this always
+    builds BaselineMatrix in local mode (ProjectReference to SwissEphNet\SwissEphNet.csproj).
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\BaselineMatrix\BaselineMatrix.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="waivers.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

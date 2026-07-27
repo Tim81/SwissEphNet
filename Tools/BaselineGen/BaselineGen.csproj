@@ -9,24 +9,17 @@
     <AssemblyName>BaselineGen</AssemblyName>
     <IsPackable>false</IsPackable>
     <InvariantGlobalization>true</InvariantGlobalization>
-    <!--
-      Switch between resolving SwissEphNet from the published NuGet package (the frozen
-      reference build) and resolving it from the in-repo project (current code under test).
-      Both point at the same matrix source in Program.cs, so a diff between the two modes'
-      output is a diff in library behavior, not in the harness.
-
-      dotnet run -p:UseReferencePackage=true   -> reference mode (NuGet 2.8.0.2)
-      dotnet run                               -> local mode (ProjectReference)
-    -->
-    <UseReferencePackage Condition="'$(UseReferencePackage)' == ''">false</UseReferencePackage>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(UseReferencePackage)' == 'true'">
-    <PackageReference Include="SwissEphNet" Version="2.8.0.2" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(UseReferencePackage)' != 'true'">
-    <ProjectReference Include="..\..\SwissEphNet\SwissEphNet.csproj" />
+  <!--
+    The actual SwissEphNet reference (package vs project, the UseReferencePackage
+    switch) lives in BaselineMatrix.csproj, since that is the project that compiles
+    the matrix code. MSBuild propagates the UseReferencePackage property from this
+    project's command line down into BaselineMatrix automatically. See
+    Tools\BaselineGen\README.md for the exact commands for reference and local mode.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\BaselineMatrix\BaselineMatrix.csproj" />
   </ItemGroup>
 
 </Project>

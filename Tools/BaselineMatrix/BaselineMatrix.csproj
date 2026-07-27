@@ -1,0 +1,59 @@
+<Project>
+
+  <!--
+    UseReferencePackage must be resolved, and BaseOutputPath/BaseIntermediateOutputPath
+    must be set, before Sdk.props runs, which is why this project uses explicit Sdk
+    imports instead of the single-line <Project Sdk="..."> shorthand. Without that,
+    switching UseReferencePackage between builds without an intervening clean can leave
+    a stale obj/project.assets.json from the other mode in place, and the build either
+    fails with CS0246 or, worse, silently reuses the wrong reference.
+  -->
+  <PropertyGroup>
+    <UseReferencePackage Condition="'$(UseReferencePackage)' == ''">false</UseReferencePackage>
+    <BaseOutputPath>bin\$(UseReferencePackage)\</BaseOutputPath>
+    <BaseIntermediateOutputPath>obj\$(UseReferencePackage)\</BaseIntermediateOutputPath>
+    <!--
+      The default compile-item exclude only knows about THIS build's own
+      BaseOutputPath/BaseIntermediateOutputPath, not the other mode's sibling
+      folder (bin\true vs bin\false, obj\true vs obj\false). Without this, a
+      "true" build picks up generated AssemblyInfo.cs files left behind under
+      obj\false\ by an earlier "false" build and fails with CS0579 duplicate
+      attributes. Exclude both mode roots outright.
+    -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;obj\**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>BaselineMatrix</RootNamespace>
+    <AssemblyName>BaselineMatrix</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!--
+    reference mode: SwissEphNet resolved from the published NuGet package 2.8.0.2
+    local mode (default): SwissEphNet resolved via ProjectReference to the in-repo library
+
+    dotnet build -p:UseReferencePackage=true   -> reference mode
+    dotnet build                               -> local mode
+
+    BaselineGen builds this project in both modes to produce the golden files.
+    BaselineVerify only ever builds it in local mode (the property is never passed),
+    since verification is specifically "does current code match the frozen reference".
+  -->
+  <ItemGroup Condition="'$(UseReferencePackage)' == 'true'">
+    <PackageReference Include="SwissEphNet" Version="2.8.0.2" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseReferencePackage)' != 'true'">
+    <ProjectReference Include="..\..\SwissEphNet\SwissEphNet.csproj" />
+  </ItemGroup>
+
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+
+</Project>
