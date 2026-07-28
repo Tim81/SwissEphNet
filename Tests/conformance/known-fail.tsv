@@ -2822,471 +2822,433 @@ suite	testcase	iteration	category	reason
 9	3	7	VALUE-MISMATCH	xxtret[0]: expected 2415022.1416456504, got 2415022.1362058395; xxtret[1]: expected 2415022.1753262039, got 2415022.1755576846
 9	4	1	VALUE-MISMATCH	xxtret[0]: expected 33.145011261992082, got 33.145011168638788; xxtret[1]: expected 33.169089752416745, got 33.169089659148987; xxtret[2]: expected 33.916884650620688, got 33.916884558292104
 9	5	1	VALUE-MISMATCH	xxtret[0]: expected 2.2166985140567554, got 2.2166964135506717; xxtret[1]: expected 33.145011261992082, got 33.145011168638788; xxtret[2]: expected 126.06420943116143, got 126.0642089925293
-10	1	1	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	1	2	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	1	3	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	1	4	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	1	5	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	1	6	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	1	7	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	1	8	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	1	9	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	1	10	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	1	11	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	1	12	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	1	13	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	1	14	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	1	15	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	1	16	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	1	17	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	1	18	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	2	1	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	2	2	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	2	3	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	2	4	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	2	5	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	2	6	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	2	7	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	2	8	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	2	9	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	2	10	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	2	11	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	2	12	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	2	13	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	2	14	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	2	15	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	2	16	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	2	17	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	2	18	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	3	1	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	3	2	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	3	3	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	3	4	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	3	5	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	3	6	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	3	7	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	3	8	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	3	9	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	3	10	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	3	11	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	3	12	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	3	13	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	3	14	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	3	15	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	3	16	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	3	17	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	3	18	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	4	1	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	4	2	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	4	3	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	4	4	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	4	5	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	4	6	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	4	7	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	4	8	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	4	9	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	4	10	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	4	11	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	4	12	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	4	13	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	4	14	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	4	15	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	4	16	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	4	17	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	4	18	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	5	1	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	5	2	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	5	3	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	5	4	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	5	5	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	5	6	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	6	1	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	6	2	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	6	3	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	6	4	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	6	5	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	6	6	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	1	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	2	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	3	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	4	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	5	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	6	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	7	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	8	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	9	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	10	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	11	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	12	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	13	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	14	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	15	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	16	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	17	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	18	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	19	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	20	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	21	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	22	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	23	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	24	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	25	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	26	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	27	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	28	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	29	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	30	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	31	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	32	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	33	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	34	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	35	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	36	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	37	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	38	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	39	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	40	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	41	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	42	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	43	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	44	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	45	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	46	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	47	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	48	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	49	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	50	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	51	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	52	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	53	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	54	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	55	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	56	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	57	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	58	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	59	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	60	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	61	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	62	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	63	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	64	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	65	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	66	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	67	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	68	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	69	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	70	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	71	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	72	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	73	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	74	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	75	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	76	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	77	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	78	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	79	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	80	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	81	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	82	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	83	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	84	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	85	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	86	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	87	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	88	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	89	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	90	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	91	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	92	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	93	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	94	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	95	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	96	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	97	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	98	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	99	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	100	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	101	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	102	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	103	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	104	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	105	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	106	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	107	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	108	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	109	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	110	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	111	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	112	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	113	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	114	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	115	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	116	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	117	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	118	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	119	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	120	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	121	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	122	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	123	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	124	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	125	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	126	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	127	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	128	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	129	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	130	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	131	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	132	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	133	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	134	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	135	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	136	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	137	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	138	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	139	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	140	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	141	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	142	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	143	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	144	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	145	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	146	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	147	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	148	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	149	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	150	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	151	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	152	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	153	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	154	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	155	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	156	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	157	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	158	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	159	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	160	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	161	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	162	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	163	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	164	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	165	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	166	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	167	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	168	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	169	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	170	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	171	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	172	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	173	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	174	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	175	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	176	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	177	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	178	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	179	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	180	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	181	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	182	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	183	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	184	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	185	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	186	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	187	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	188	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	189	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	190	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	191	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	7	192	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	1	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	2	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	3	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	4	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	5	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	6	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	7	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	8	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	9	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	10	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	11	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	12	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	13	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	14	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	15	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	16	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	17	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	18	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	19	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	20	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	21	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	22	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	23	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	24	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	25	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	26	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	27	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	28	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	29	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	30	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	31	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	32	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	33	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	34	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	35	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	36	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	37	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	38	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	39	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	40	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	41	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	42	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	43	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	44	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	45	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	46	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	47	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	48	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	49	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	50	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	51	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	52	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	53	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	54	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	55	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	56	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	57	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	58	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	59	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	60	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	61	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	62	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	63	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	64	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	65	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	66	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	67	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	68	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	69	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	70	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	71	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	72	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	73	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	74	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	75	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	76	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	77	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	78	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	79	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	80	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	81	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	82	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	83	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	84	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	85	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	86	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	87	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	88	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	89	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	90	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	91	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	92	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	93	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	94	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	95	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	96	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	97	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	98	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	99	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	100	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	101	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	102	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	103	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	104	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	105	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	106	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	107	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	108	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	109	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	110	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	111	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	112	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	113	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	114	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	115	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	116	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	117	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	118	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	119	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	120	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	121	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	122	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	123	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	124	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	125	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	126	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	127	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	128	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	129	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	130	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	131	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	132	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	133	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	134	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	135	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	136	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	137	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	138	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	139	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	140	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	141	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	142	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	143	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	144	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	145	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	146	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	147	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	148	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	149	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	150	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	151	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	152	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	153	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	154	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	155	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	156	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	157	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	158	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	159	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	160	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	161	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	162	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	163	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	164	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	165	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	166	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	167	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	168	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	169	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	170	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	171	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	172	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	173	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	174	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	175	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	176	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	177	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	178	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	179	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	180	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	181	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	182	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	183	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	184	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	185	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	186	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	187	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	188	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	189	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	190	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	191	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
-10	8	192	NOT-IMPLEMENTED	the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).
+10	1	2	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	1	3	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	1	4	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	1	5	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	1	6	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	1	8	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	1	9	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	1	10	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	1	11	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	1	12	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	1	14	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	1	15	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	1	16	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	1	17	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	1	18	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	2	2	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	2	3	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	2	4	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	2	5	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	2	6	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	2	8	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	2	9	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	2	10	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	2	11	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	2	12	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	2	14	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	2	15	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	2	16	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	2	17	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	2	18	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	3	2	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	3	3	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	3	4	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	3	5	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	3	6	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	3	8	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	3	9	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	3	10	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	3	11	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	3	12	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	3	14	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	3	15	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	3	16	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	3	17	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	3	18	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	4	2	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	4	3	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	4	4	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	4	5	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	4	6	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	4	8	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	4	9	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	4	10	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	4	11	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	4	12	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	4	14	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	4	15	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	4	16	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	4	17	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	4	18	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	5	1	VALUE-MISMATCH	jx: expected 2455334.1525965487, got 2455334.1525874734; xlon: expected 102.73339203829151, got 102.73326513671689
+10	5	2	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	5	3	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	5	4	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	5	5	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	5	6	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	6	1	VALUE-MISMATCH	jx: expected 2455334.1518307286, got 2455334.1518216534; xlon: expected 102.73339203829151, got 102.73326513671689
+10	6	2	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	6	3	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	6	4	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	6	5	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	6	6	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	1	VALUE-MISMATCH	jx: expected 2455805.7592047593, got 2455805.7592177596
+10	7	2	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	3	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	4	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	5	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	6	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	7	VALUE-MISMATCH	jx: expected 2455467.7127356352, got 2455467.7127472307
+10	7	8	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	9	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	10	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	11	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	12	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	13	VALUE-MISMATCH	jx: expected 2461855.3803309645, got 2461855.3803342045
+10	7	14	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	15	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	16	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	17	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	18	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	19	VALUE-MISMATCH	jx: expected 2460954.5597210405, got 2460954.5597249693
+10	7	20	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	21	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	22	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	23	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	24	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	26	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	27	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	28	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	29	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	30	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	32	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	33	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	34	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	35	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	36	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	38	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	39	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	40	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	41	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	42	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	44	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	45	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	46	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	47	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	48	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	50	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	51	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	52	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	53	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	54	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	56	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	57	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	58	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	59	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	60	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	61	VALUE-MISMATCH	jx: expected 2458365.1497020596, got 2458365.1494858381
+10	7	62	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	63	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	64	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	65	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	66	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	67	VALUE-MISMATCH	jx: expected 2455498.2487896979, got 2455498.2485313709
+10	7	68	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	69	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	70	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	71	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	72	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	73	VALUE-MISMATCH	jx: expected 2465728.6939821118, got 2465728.6959758853
+10	7	74	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	75	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	76	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	77	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	78	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	79	VALUE-MISMATCH	jx: expected 2460654.8566095894, got 2460654.8570231749
+10	7	80	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	81	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	82	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	83	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	84	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	85	VALUE-MISMATCH	jx: expected 2486750.226354951, got 2486750.2030657567
+10	7	86	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	87	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	88	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	89	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	90	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	91	VALUE-MISMATCH	jx: expected 2475930.5394914695, got 2475930.5270748716
+10	7	92	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	93	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	94	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	95	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	96	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	97	VALUE-MISMATCH	jx: expected 2451476.1572904964, got 2451476.1572970171
+10	7	98	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	99	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	100	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	101	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	102	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	103	VALUE-MISMATCH	jx: expected 2451137.8359138682, got 2451137.8359205574
+10	7	104	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	105	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	106	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	107	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	108	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	110	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	111	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	112	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	113	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	114	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	115	VALUE-MISMATCH	jx: expected 2450205.8131016488, got 2450205.8131029657
+10	7	116	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	117	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	118	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	119	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	120	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	122	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	123	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	124	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	125	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	126	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	128	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	129	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	130	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	131	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	132	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	134	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	135	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	136	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	137	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	138	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	140	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	141	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	142	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	143	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	144	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	146	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	147	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	148	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	149	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	150	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	152	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	153	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	154	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	155	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	156	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	157	VALUE-MISMATCH	jx: expected 2427784.4246295006, got 2427784.422605698
+10	7	158	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	159	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	160	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	161	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	162	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	163	VALUE-MISMATCH	jx: expected 2424923.6902495194, got 2424923.6881804713
+10	7	164	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	165	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	166	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	167	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	168	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	169	VALUE-MISMATCH	jx: expected 2405918.1302405992, got 2405918.1151796975
+10	7	170	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	171	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	172	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	173	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	174	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	175	VALUE-MISMATCH	jx: expected 2400842.1168492152, got 2400842.0999664264
+10	7	176	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	177	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	178	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	179	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	180	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	181	VALUE-MISMATCH	jx: expected 2397486.3147031772, got 2397486.3411918348
+10	7	182	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	183	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	184	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	185	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	186	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	187	VALUE-MISMATCH	jx: expected 2386497.0928004403, got 2386497.1315526236
+10	7	188	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	189	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	190	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	7	191	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	7	192	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	1	VALUE-MISMATCH	jx: expected 2455805.7584349993, got 2455805.7584479996
+10	8	2	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	3	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	4	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	5	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	6	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	7	VALUE-MISMATCH	jx: expected 2455467.7119687484, got 2455467.7119803438
+10	8	8	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	9	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	10	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	11	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	12	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	13	VALUE-MISMATCH	jx: expected 2461855.379534041, got 2461855.3794865846
+10	8	14	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	15	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	16	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	17	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	18	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	19	VALUE-MISMATCH	jx: expected 2460954.558923305, got 2460954.5588872661
+10	8	20	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	21	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	22	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	23	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	24	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	26	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	27	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	28	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	29	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	30	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	32	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	33	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	34	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	35	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	36	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	38	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	39	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	40	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	41	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	42	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	44	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	45	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	46	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	47	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	48	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	50	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	51	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	52	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	53	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	54	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	56	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	57	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	58	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	59	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	60	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	61	VALUE-MISMATCH	jx: expected 2458365.148901708, got 2458365.148685501
+10	8	62	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	63	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	64	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	65	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	66	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	67	VALUE-MISMATCH	jx: expected 2455498.248022567, got 2455498.24776424
+10	8	68	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	69	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	70	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	71	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	72	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	73	VALUE-MISMATCH	jx: expected 2465728.6931546484, got 2465728.6951031592
+10	8	74	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	75	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	76	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	77	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	78	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	79	VALUE-MISMATCH	jx: expected 2460654.8558109091, got 2460654.8561901725
+10	8	80	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	81	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	82	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	83	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	84	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	85	VALUE-MISMATCH	jx: expected 2486750.2252954869, got 2486750.2019905183
+10	8	86	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	87	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	88	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	89	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	90	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	91	VALUE-MISMATCH	jx: expected 2475930.538566879, got 2475930.52611933
+10	8	92	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	93	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	94	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	95	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	96	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	97	VALUE-MISMATCH	jx: expected 2451476.15655242, got 2451476.1565589407
+10	8	98	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	99	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	100	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	101	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	102	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	103	VALUE-MISMATCH	jx: expected 2451137.8351798523, got 2451137.8351865415
+10	8	104	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	105	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	106	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	107	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	108	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	110	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	111	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	112	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	113	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	114	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	115	VALUE-MISMATCH	jx: expected 2450205.8123856415, got 2450205.8123869584
+10	8	116	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	117	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	118	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	119	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	120	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	122	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	123	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	124	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	125	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	126	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	128	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	129	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	130	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	131	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	132	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	134	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	135	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	136	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	137	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	138	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	140	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	141	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	142	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	143	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	144	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	146	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	147	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	148	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	149	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	150	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	152	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	153	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	154	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	155	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	156	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	157	VALUE-MISMATCH	jx: expected 2427784.4243498067, got 2427784.4223260041
+10	8	158	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	159	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	160	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	161	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	162	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	163	VALUE-MISMATCH	jx: expected 2424923.6899693091, got 2424923.687900261
+10	8	164	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	165	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	166	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	167	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	168	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	169	VALUE-MISMATCH	jx: expected 2405918.1302543869, got 2405918.1151934848
+10	8	170	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	171	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	172	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	173	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	174	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	175	VALUE-MISMATCH	jx: expected 2400842.1167456214, got 2400842.0998628321
+10	8	176	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	177	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	178	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	179	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	180	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	181	VALUE-MISMATCH	jx: expected 2397486.3145883232, got 2397486.3410769803
+10	8	182	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	183	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	184	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	185	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	186	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	187	VALUE-MISMATCH	jx: expected 2386497.0926153888, got 2386497.1313675744
+10	8	188	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	189	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	190	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+10	8	191	DATA-MISSING	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
+10	8	192	DATA-MISSING	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
