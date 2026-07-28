@@ -87,6 +87,9 @@ function Get-Fingerprint {
     $lines = 0        # total physical lines; any reflow moves this
     $krBraces = 0     # `) {` -- the transliterated C's brace style, what Allman-ising destroys
     $trailingWs = 0   # trailing whitespace; what `dotnet format whitespace` strips
+    # Accumulates every frozen file's normalized content, in the sorted order
+    # Get-FrozenFile returns, so the hash below is stable across machines.
+    $contents = [System.Collections.Generic.List[string]]::new()
 
     foreach ($file in $files) {
         # Read raw so line-ending normalization cannot mask a change, and split on both
@@ -99,6 +102,9 @@ function Get-Fingerprint {
             $fileLines = $fileLines[0..($fileLines.Count - 2)]
         }
 
+        # Hash the path too, so moving content between frozen files is a change.
+        [void]$contents.Add($file.FullName.Substring($repoRoot.Length).Replace([char]92, [char]47))
+        [void]$contents.Add(($fileLines -join "`n"))
         $lines += $fileLines.Count
         foreach ($line in $fileLines) {
             if ($line.Contains(') {')) { $krBraces++ }
@@ -106,12 +112,29 @@ function Get-Fingerprint {
         }
     }
 
+    # The four counts above are a proxy, and a proxy has blind spots. Re-indenting every
+    # line of a file moves none of them: file count, total lines, `) {` count and
+    # trailing-whitespace count are all invariant under indentation. Measured: doubling
+    # the indentation of SweDate.cs rewrites 568 of its 612 lines and the fingerprint is
+    # byte-identical, so the check passed on a file where every content line had changed.
+    # That is not a corner case -- indentation normalization is the bulk of what
+    # `dotnet format whitespace` does, which is the exact tool this script exists to
+    # catch. The hash makes the check exact instead of a four-number approximation.
+    #
+    # The counts are kept alongside it because they say *what kind* of change happened:
+    # a hash mismatch tells you something moved, the counts tell a reviewer whether it
+    # was a reflow, a whitespace strip, or added lines.
+    $sha = [System.BitConverter]::ToString(
+        [System.Security.Cryptography.SHA256]::HashData(
+            [System.Text.Encoding]::UTF8.GetBytes(($contents -join "`n")))).Replace('-', '')
+    
     [pscustomobject]@{
         Path       = $RelativePath
         Files      = $files.Count
         Lines      = $lines
         KrBraces   = $krBraces
         TrailingWs = $trailingWs
+        Sha256     = $sha
     }
 }
 
@@ -123,10 +146,10 @@ if ($Update) {
     [void]$out.AppendLine('# Checked by scripts/verify-freeze.ps1; regenerate with -Update.')
     [void]$out.AppendLine('# Update this ONLY alongside an intended change to a frozen file, so')
     [void]$out.AppendLine('# the new counts are reviewed with the change that caused them.')
-    [void]$out.AppendLine("path`tfiles`tlines`tkr_braces`ttrailing_ws")
+    [void]$out.AppendLine("path`tfiles`tlines`tkr_braces`ttrailing_ws`tsha256")
     foreach ($row in $current) {
         [void]$out.AppendLine(
-            "$($row.Path)`t$($row.Files)`t$($row.Lines)`t$($row.KrBraces)`t$($row.TrailingWs)")
+            "$($row.Path)`t$($row.Files)`t$($row.Lines)`t$($row.KrBraces)`t$($row.TrailingWs)`t$($row.Sha256)")
     }
     [System.IO.File]::WriteAllText($ManifestPath, $out.ToString())
     Write-Host "Wrote $ManifestPath"
@@ -145,12 +168,12 @@ foreach ($line in [System.IO.File]::ReadAllLines($ManifestPath)) {
     if ($line.StartsWith('#') -or $line.Trim() -eq '' -or $line.StartsWith('path`t')) { continue }
     if ($line -like "path`t*") { continue }
     $f = $line -split "`t"
-    if ($f.Count -ne 5) {
+    if ($f.Count -ne 6) {
         Write-Host "FAIL: malformed manifest row: $line"
         exit 1
     }
     $expected[$f[0]] = [pscustomobject]@{
-        Files = [int]$f[1]; Lines = [int]$f[2]; KrBraces = [int]$f[3]; TrailingWs = [int]$f[4]
+        Files = [int]$f[1]; Lines = [int]$f[2]; KrBraces = [int]$f[3]; TrailingWs = [int]$f[4]; Sha256 = $f[5]
     }
 }
 
@@ -165,7 +188,7 @@ foreach ($row in $current) {
         continue
     }
 
-    foreach ($metric in 'Files', 'Lines', 'KrBraces', 'TrailingWs') {
+    foreach ($metric in 'Sha256', 'Files', 'Lines', 'KrBraces', 'TrailingWs') {
         if ($row.$metric -ne $want.$metric) {
             if (-not $failed) { Write-Host $header; Write-Host ('-' * $header.Length) }
             Write-Host ('{0,-30} {1,-12} {2,12} {3,12}' -f
