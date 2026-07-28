@@ -104,6 +104,9 @@ namespace SwissEphNet.CPort
 
         bool SID_TNODE_FROM_ECL_T0 = false;
 
+        // sweph.c:8308
+        const double CROSS_PRECISION = 1 / 3600000.0; 	// one milliarc sec
+
         //#define SEFLG_EPHMASK	(SEFLG_JPLEPH|SEFLG_SWIEPH|SEFLG_MOSEPH)
         //#define SEFLG_COORDSYS  (SEFLG_EQUATORIAL | SEFLG_XYZ | SEFLG_RADIANS)
 
@@ -8913,5 +8916,348 @@ namespace SwissEphNet.CPort
         //  return OK;
         //}
         //#endif
+
+        /*************************************************
+         * compute Sun'scrossing over some longitude
+         * flag covers the following bits as used by swe_calc():
+           SEFLG_HELCTR 		0 = geocentric, SUN, 1 = heliocentric, EARTH
+           SEFLG_TRUEPOS 	   	0 = apparent positions, 1 = true positions
+           SEFLG_NONUT 		0 = do nutation (true equinox of date)
+         * returns juldate of the next crossing, with jd > jd_et
+         * The returned time is ephemeris time; to get UT we must do
+         * jd_ut = jd - deltat(jd) or use swe_solcross_ut.
+         * Errors are indicated by returning a jd < jd_et!
+         *************************************************/
+        // sweph.c:8310-8343
+        public double swe_solcross(double x2cross, double jd_et, int flag, ref string serr)
+        {
+            double[] x = new double[6];
+            double xlp, dist;
+            double jd;
+            int ipl = SwissEph.SE_SUN;
+            /*
+             * compute the SUN at start date, and then estimate the crossing date
+             */
+            flag |= SwissEph.SEFLG_SPEED;
+            if (swe_calc(jd_et, ipl, flag, x, ref serr) < 0)
+                return jd_et - 1;
+            xlp = 360.0 / 365.24;	/* mean solar speed */
+            dist = SE.swe_degnorm(x2cross - x[0]);
+            jd = jd_et + dist / xlp;
+            for (; ; )
+            {
+                if (swe_calc(jd, ipl, flag, x, ref serr) < 0)
+                    return jd_et - 1;
+                dist = SE.swe_difdeg2n(x2cross, x[0]);
+                jd += dist / x[3];
+                if (Math.Abs(dist) < CROSS_PRECISION) break;
+            }
+            return jd;
+        }
+
+        /*************************************************
+         * compute Sun'scrossing over some longitude, in UT
+         * flag covers the following bits as used by swe_calc():
+           SEFLG_HELCTR 		0 = geocentric, SUN, 1 = heliocentric, EARTH
+           SEFLG_TRUEPOS 	   	0 = apparent positions, 1 = true positions
+           SEFLG_NONUT 		0 = do nutation (true equinox of date)
+         * returns juldate of the next crossing, with jd > jd_ut
+         * The returned time is universal time;
+         * Errors are indicated by returning a jd < jd_ut!
+         *************************************************/
+        // sweph.c:8345-8377
+        public double swe_solcross_ut(double x2cross, double jd_ut, int flag, ref string serr)
+        {
+            double[] x = new double[6];
+            double xlp, dist;
+            double jd;
+            int ipl = SwissEph.SE_SUN;
+            /*
+             * compute the SUN at start date, and then estimate the crossing date
+             */
+            flag |= SwissEph.SEFLG_SPEED;
+            if (swe_calc_ut(jd_ut, ipl, flag, x, ref serr) < 0)
+                return jd_ut - 1;
+            xlp = 360.0 / 365.24;	/* mean solar speed */
+            dist = SE.swe_degnorm(x2cross - x[0]);
+            jd = jd_ut + dist / xlp;
+            for (; ; )
+            {
+                if (swe_calc_ut(jd, ipl, flag, x, ref serr) < 0)
+                    return jd_ut - 1;
+                dist = SE.swe_difdeg2n(x2cross, x[0]);
+                jd += dist / x[3];
+                if (Math.Abs(dist) < CROSS_PRECISION) break;
+            }
+            return jd;
+        }
+
+        /*************************************************
+         * compute Moon's crossing over some longitude
+         * flag covers the following bits as used by swe_calc():
+           SEFLG_TRUEPOS 	   	0 = apparent positions, 1 = true positions
+           SEFLG_NONUT 		0 = do nutation (true equinox of date)
+         * returns juldate of the next crossing, with jd > jd_et
+         * The returned time is ephemeris time; to get UT we must do
+         * jd_ut = jd - deltat(jd);
+         * Errors are indicated by returning a jd < jd_et!
+         *************************************************/
+        // sweph.c:8379-8411
+        public double swe_mooncross(double x2cross, double jd_et, int flag, ref string serr)
+        {
+            double[] x = new double[6];
+            double xlp, dist;
+            double jd;
+            int ipl = SwissEph.SE_MOON;
+            /*
+             * compute the SUN at start date, and then estimate the crossing date
+             */
+            flag |= SwissEph.SEFLG_SPEED;
+            if (swe_calc(jd_et, ipl, flag, x, ref serr) < 0)
+                return jd_et - 1;
+            xlp = 360.0 / 27.32;	/* mean lunar speed */
+            dist = SE.swe_degnorm(x2cross - x[0]);
+            jd = jd_et + dist / xlp;
+            for (; ; )
+            {
+                if (swe_calc(jd, ipl, flag, x, ref serr) < 0)
+                    return jd_et - 1;
+                dist = SE.swe_difdeg2n(x2cross, x[0]);
+                jd += dist / x[3];
+                if (Math.Abs(dist) < CROSS_PRECISION) break;
+            }
+            return jd;
+        }
+
+        /*************************************************
+         * compute Moon's crossing over some longitude
+         * flag covers the following bits as used by swe_calc_ut():
+           SEFLG_TRUEPOS 	0 = apparent positions, 1 = true positions
+           SEFLG_NONUT 		0 = do nutation (true equinox of date)
+           SEFLG_SIDEREAL       0 = do tropical
+         * returns juldate of the next crossing, with jd > jd_ut
+         * The returned time is UT
+         * Errors are indicated by returning a jd < jd_ut!
+         * If sidereal is chosen, default mode is Fagan/Bradley. For different aynamshas,
+         * swe_set_sid_mode() must be called first.
+         *************************************************/
+        // sweph.c:8413-8447
+        public double swe_mooncross_ut(double x2cross, double jd_ut, int flag, ref string serr)
+        {
+            double[] x = new double[6];
+            double xlp, dist;
+            double jd;
+            int ipl = SwissEph.SE_MOON;
+            /*
+             * compute the SUN at start date, and then estimate the crossing date
+             */
+            flag |= SwissEph.SEFLG_SPEED;
+            if (swe_calc_ut(jd_ut, ipl, flag, x, ref serr) < 0)
+                return jd_ut - 1;
+            xlp = 360.0 / 27.32;	/* mean lunar speed */
+            dist = SE.swe_degnorm(x2cross - x[0]);
+            jd = jd_ut + dist / xlp;
+            for (; ; )
+            {
+                if (swe_calc_ut(jd, ipl, flag, x, ref serr) < 0)
+                    return jd_ut - 1;
+                dist = SE.swe_difdeg2n(x2cross, x[0]);
+                jd += dist / x[3];
+                if (Math.Abs(dist) < CROSS_PRECISION) break;
+            }
+            return jd;
+        }
+
+        /*************************************************
+         * compute next Moon crossing over node, by finding zero latitude crossing
+         * returns juldate of the next crossing, with jd > jd_et
+         * The returned time is ephemeris time; to get UT we must do
+         * jd_ut = jd - deltat(jd);
+         * Errors are indicated by returning a jd < jd_et!
+         *************************************************/
+        // sweph.c:8449-8486
+        public double swe_mooncross_node(double jd_et, int flag, ref double xlon, ref double xla, ref string serr)
+        {
+            double[] x = new double[6];
+            double xlat, dist;
+            double jd;
+            int ipl = SwissEph.SE_MOON;
+            flag |= SwissEph.SEFLG_SPEED;
+            if (swe_calc(jd_et, ipl, flag, x, ref serr) < 0)
+                return jd_et - 1;
+            xlat = x[1];
+            jd = jd_et + 1;
+            for (; ; )
+            {	// get to sign change
+                if (swe_calc(jd, ipl, flag, x, ref serr) < 0)
+                    return jd_et - 1;
+                if ((x[1] >= 0 && xlat < 0) || (x[1] < 0 && xlat > 0))
+                    break;
+                jd += 1;
+            }
+            dist = x[1];
+            for (; ; )
+            {
+                jd -= dist / x[4];
+                if (swe_calc(jd, ipl, flag, x, ref serr) < 0)
+                    return jd_et - 1;
+                dist = x[1];
+                if (Math.Abs(dist) < CROSS_PRECISION)
+                {
+                    xlon = x[0];
+                    xla = x[1];
+                    break;
+                }
+            }
+            return jd;
+        }
+        /*************************************************
+         * compute next Moon crossing over node in UT, by finding zero latitude crossing
+         * returns juldate of the next crossing, with jd > jd_ut
+         * The returned time is universal time;
+         * Errors are indicated by returning a jd < jd_ut!
+         *************************************************/
+        // sweph.c:8487-8523
+        public double swe_mooncross_node_ut(double jd_ut, int flag, ref double xlon, ref double xla, ref string serr)
+        {
+            double[] x = new double[6];
+            double xlat, dist;
+            double jd;
+            int ipl = SwissEph.SE_MOON;
+            flag |= SwissEph.SEFLG_SPEED;
+            if (swe_calc_ut(jd_ut, ipl, flag, x, ref serr) < 0)
+                return jd_ut - 1;
+            xlat = x[1];
+            jd = jd_ut + 1;
+            for (; ; )
+            {	// get to sign change
+                if (swe_calc_ut(jd, ipl, flag, x, ref serr) < 0)
+                    return jd_ut - 1;
+                if ((x[1] >= 0 && xlat < 0) || (x[1] < 0 && xlat > 0))
+                    break;
+                jd += 1;
+            }
+            dist = x[1];
+            for (; ; )
+            {
+                jd -= dist / x[4];
+                if (swe_calc_ut(jd, ipl, flag, x, ref serr) < 0)
+                    return jd_ut - 1;
+                dist = x[1];
+                if (Math.Abs(dist) < CROSS_PRECISION)
+                {
+                    xlon = x[0];
+                    xla = x[1];
+                    break;
+                }
+            }
+            return jd;
+        }
+
+        /*************************************************
+         * compute a planets heliocentric crossing over some longitude
+         * returns juldate of the next crossing, with jd > jd_et if dir >= 0,
+         * or the previous crossing, if dir < 0.
+         * The returned time is ephemeris time.
+         * Errors are indicated by returning ERR;
+         * This should only be used for rought house entry or exit times.
+         *************************************************/
+        // sweph.c:8525-8569
+        public Int32 swe_helio_cross(int ipl, double x2cross, double jd_et, int iflag, int dir, ref double jd_cross, ref string serr)
+        {
+            double[] x = new double[6];
+            double xlp, dist;
+            double jd;
+            int flag = iflag | SwissEph.SEFLG_SPEED | SwissEph.SEFLG_HELCTR;
+            if (ipl == SwissEph.SE_SUN
+              || ipl == SwissEph.SE_MOON
+              || (ipl >= SwissEph.SE_MEAN_NODE && ipl <= SwissEph.SE_OSCU_APOG)
+              || (ipl >= SwissEph.SE_INTP_APOG && ipl < SwissEph.SE_NPLANETS)
+            )
+            {
+                string snam = null;
+                swe_get_planet_name(ipl, ref snam);
+                if (serr != null) serr = sprintf("swe_helio_cross: not possible for object %d = %s", ipl, snam);
+                return ERR;
+            }
+            if (swe_calc(jd_et, ipl, flag, x, ref serr) < 0)
+                return ERR;
+            xlp = x[3];
+            if (ipl == SwissEph.SE_CHIRON)
+                xlp = 0.01971;	// use mean speeed
+            dist = SE.swe_degnorm(x2cross - x[0]);
+            if (dir >= 0)
+            {
+                jd = jd_et + dist / xlp;
+            }
+            else
+            {
+                dist = 360.0 - dist;
+                jd = jd_et - dist / xlp;
+            }
+            for (; ; )
+            {
+                if (swe_calc(jd, ipl, flag, x, ref serr) < 0)
+                    return ERR;
+                dist = SE.swe_difdeg2n(x2cross, x[0]);
+                jd += dist / x[3];
+                if (Math.Abs(dist) < CROSS_PRECISION) break;
+            }
+            jd_cross = jd;
+            return OK;
+        }
+
+        /*************************************************
+         * compute a planets heliocentric crossing over some longitude
+         * returns juldate of the next crossing, with jd > jd_ut if dir >= 0,
+         * or the previous crossing, if dir < 0.
+         * The returned time is Universal time.
+         * Errors are indicated by returning ERR;
+         * This should only be used for rought house entry or exit times.
+         *************************************************/
+        // sweph.c:8571-8615
+        public Int32 swe_helio_cross_ut(int ipl, double x2cross, double jd_ut, int iflag, int dir, ref double jd_cross, ref string serr)
+        {
+            double[] x = new double[6];
+            double xlp, dist;
+            double jd;
+            int flag = iflag | SwissEph.SEFLG_SPEED | SwissEph.SEFLG_HELCTR;
+            if (ipl == SwissEph.SE_SUN
+              || ipl == SwissEph.SE_MOON
+              || (ipl >= SwissEph.SE_MEAN_NODE && ipl <= SwissEph.SE_OSCU_APOG)
+              || (ipl >= SwissEph.SE_INTP_APOG && ipl < SwissEph.SE_NPLANETS)
+            )
+            {
+                string snam = null;
+                swe_get_planet_name(ipl, ref snam);
+                if (serr != null) serr = sprintf("swe_helio_cross: not possible for object %d = %s", ipl, snam);
+                return ERR;
+            }
+            if (swe_calc_ut(jd_ut, ipl, flag, x, ref serr) < 0)
+                return ERR;
+            xlp = x[3];
+            if (ipl == SwissEph.SE_CHIRON)
+                xlp = 0.01971;	// use mean speeed
+            dist = SE.swe_degnorm(x2cross - x[0]);
+            if (dir >= 0)
+            {
+                jd = jd_ut + dist / xlp;
+            }
+            else
+            {
+                dist = 360.0 - dist;
+                jd = jd_ut - dist / xlp;
+            }
+            for (; ; )
+            {
+                if (swe_calc_ut(jd, ipl, flag, x, ref serr) < 0)
+                    return ERR;
+                dist = SE.swe_difdeg2n(x2cross, x[0]);
+                jd += dist / x[3];
+                if (Math.Abs(dist) < CROSS_PRECISION) break;
+            }
+            jd_cross = jd;
+            return OK;
+        }
     }
 }

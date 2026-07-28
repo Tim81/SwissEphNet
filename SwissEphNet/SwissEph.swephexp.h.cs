@@ -686,6 +686,40 @@ namespace SwissEphNet
             return Sweph.swe_calc_ut(tjd_ut, ipl, iflag, xx, ref serr);
         }
 
+        // sweph.c:8310-8615
+        public double swe_solcross(double x2cross, double jd_et, Int32 flag, ref string serr)
+        {
+            return Sweph.swe_solcross(x2cross, jd_et, flag, ref serr);
+        }
+        public double swe_solcross_ut(double x2cross, double jd_ut, Int32 flag, ref string serr)
+        {
+            return Sweph.swe_solcross_ut(x2cross, jd_ut, flag, ref serr);
+        }
+        public double swe_mooncross(double x2cross, double jd_et, Int32 flag, ref string serr)
+        {
+            return Sweph.swe_mooncross(x2cross, jd_et, flag, ref serr);
+        }
+        public double swe_mooncross_ut(double x2cross, double jd_ut, Int32 flag, ref string serr)
+        {
+            return Sweph.swe_mooncross_ut(x2cross, jd_ut, flag, ref serr);
+        }
+        public double swe_mooncross_node(double jd_et, Int32 flag, ref double xlon, ref double xlat, ref string serr)
+        {
+            return Sweph.swe_mooncross_node(jd_et, flag, ref xlon, ref xlat, ref serr);
+        }
+        public double swe_mooncross_node_ut(double jd_ut, Int32 flag, ref double xlon, ref double xlat, ref string serr)
+        {
+            return Sweph.swe_mooncross_node_ut(jd_ut, flag, ref xlon, ref xlat, ref serr);
+        }
+        public Int32 swe_helio_cross(Int32 ipl, double x2cross, double jd_et, Int32 iflag, Int32 dir, ref double jd_cross, ref string serr)
+        {
+            return Sweph.swe_helio_cross(ipl, x2cross, jd_et, iflag, dir, ref jd_cross, ref serr);
+        }
+        public Int32 swe_helio_cross_ut(Int32 ipl, double x2cross, double jd_ut, Int32 iflag, Int32 dir, ref double jd_cross, ref string serr)
+        {
+            return Sweph.swe_helio_cross_ut(ipl, x2cross, jd_ut, iflag, dir, ref jd_cross, ref serr);
+        }
+
         /// <summary>
         /// fixed stars
         /// </summary>
