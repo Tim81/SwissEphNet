@@ -35,13 +35,22 @@
 //
 // Usage: BaselineVerify [--report-only] [--dump-failures <path>] [baseline-directory]
 //        BaselineVerify --diff-scope <old-baseline-dir> <new-baseline-dir> --expected-scope <glob> [<glob> ...]
+//        BaselineVerify --list-prefixes
 // If the directory is omitted, it is discovered by walking up from this assembly's
 // location to find SwissEphNet.sln, then Tests/baseline under that.
 //
 // --diff-scope is a wholly separate mode used by scripts/regenerate-baseline.ps1's
 // -ExpectedScope gate (see RunDiffScopeMode below): it never runs the matrix at all,
 // it only diffs two already-generated baseline directories against each other by
-// case id and checks every changed/added/removed one against the given globs.
+// case id and checks every changed/added/removed one against the given globs. It also
+// prints, on SCOPE-OK, the case-id prefixes present in the rows just regenerated (PrefixMap.cs)
+// -- the same information --list-prefixes reports standalone, useful for confirming an
+// -ExpectedScope glob's leading segment actually matches something.
+//
+// --list-prefixes runs the matrix and prints, per area, every distinct case-id prefix it
+// produces (see PrefixMap.cs and Tools/BaselineGen/README.md's "Case id prefixes by area").
+// It exists so that mapping can be looked up before writing an -ExpectedScope glob, rather
+// than only being discoverable after the fact via a SCOPE-VIOLATION's OFFENDER lines.
 
 using System.Security.Cryptography;
 using BaselineMatrix;
@@ -58,6 +67,11 @@ if (parsed.IsError)
 {
     Console.Error.WriteLine(parsed.Error);
     return 2;
+}
+
+if (parsed.IsListPrefixes)
+{
+    return RunListPrefixesMode();
 }
 
 if (parsed.IsDiffScope)
@@ -109,6 +123,14 @@ foreach (var orphan in orphanedBaselineFiles)
 {
     var orphanPath = Path.Combine(baselineDir, orphan);
     var verdict = Verdict.OrphanedBaselineFile(orphanPath);
+    Console.WriteLine($"{"FAIL",-6} {orphan,-14} -- {verdict.Reasons[0]}");
+    overallExitCode = 1;
+}
+
+var orphanedRowCountEntries = Verdict.FindOrphanedRowCountEntries(rowCounts.Keys, Areas.All.Select(static a => a.Name));
+foreach (var orphan in orphanedRowCountEntries)
+{
+    var verdict = Verdict.OrphanedRowCountEntry(orphan);
     Console.WriteLine($"{"FAIL",-6} {orphan,-14} -- {verdict.Reasons[0]}");
     overallExitCode = 1;
 }
@@ -251,6 +273,7 @@ static int RunDiffScopeMode(string oldDir, string newDir, string[] globs)
     var summaries = new List<string>();
     var sha256Lines = new List<string>();
     var rowCountLines = new List<string>();
+    var newRowPrefixesByArea = new List<(string Name, IReadOnlyList<string> Prefixes)>();
 
     foreach (var (name, _) in Areas.All)
     {
@@ -258,13 +281,24 @@ static int RunDiffScopeMode(string oldDir, string newDir, string[] globs)
         var newPath = Path.Combine(newDir, $"baseline-{name}.tsv");
         var oldRows = File.Exists(oldPath) ? File.ReadAllLines(oldPath) : [];
         var newRows = File.Exists(newPath) ? File.ReadAllLines(newPath) : [];
+        newRowPrefixesByArea.Add((name, PrefixMap.Discover(newRows)));
 
         var areaResult = ScopeDiff.ComputeArea(name, oldRows, newRows, compiled);
         offenders.AddRange(areaResult.Offenders);
 
         if (areaResult.Changed + areaResult.Added + areaResult.Removed > 0)
         {
-            summaries.Add($"{name}: {areaResult.Changed:N0} changed / {areaResult.Added:N0} added / {areaResult.Removed:N0} removed");
+            // The percentage is the magnitude signal -ExpectedScope's per-case-id guarantee does
+            // not itself provide (see the doc comment on AreaResult.TouchedFraction and
+            // Tools/BaselineGen/README.md's "-ExpectedScope: proving the diff, not just
+            // describing it"): every changed/added/removed id here is provably covered by a
+            // glob, but a single glob can cover a large fraction of the area, and this is where
+            // a reviewer sees how large. Deliberately not a pass/fail threshold -- see this
+            // area's own reasoning in the README for why a hard cap here would be a knob nobody
+            // could keep set correctly for legitimate, often area-wide porting changes.
+            summaries.Add(
+                $"{name}: {areaResult.Changed:N0} changed / {areaResult.Added:N0} added / {areaResult.Removed:N0} removed " +
+                $"({areaResult.TouchedFraction:P1} of the area's {areaResult.UnionRowCount:N0} case ids)");
         }
 
         if (File.Exists(newPath))
@@ -307,6 +341,18 @@ static int RunDiffScopeMode(string oldDir, string newDir, string[] globs)
     {
         Console.WriteLine($"ROWCOUNT {line}");
     }
+
+    // Emits the area -> case-id-prefix mapping computed from the rows just regenerated (the
+    // "new" dir), so whoever wrote -ExpectedScope for this run sees, at the moment it succeeds,
+    // exactly which prefixes exist and can confirm their glob's leading segment matches one --
+    // and, for every area they did NOT intend to touch, that none of its prefixes appear here
+    // as something they should have scoped. This is the discoverability half of the fix; the
+    // static reference table lives in Tools/BaselineGen/README.md ("Case id prefixes by area").
+    foreach (var (name, prefixes) in newRowPrefixesByArea)
+    {
+        Console.WriteLine($"PREFIX {name}: {string.Join(", ", prefixes)}");
+    }
+
     return 0;
 }
 
@@ -385,6 +431,25 @@ static int RunReportMode(string baselineDir)
 
     Console.WriteLine();
     Console.WriteLine("Report complete.");
+    return 0;
+}
+
+// Prints the area -> case-id-prefix mapping (see PrefixMap.cs), computed directly from the
+// matrix's current output rather than any committed file, so this can never drift from the
+// code: an area or a prefix that Areas.All can produce is what this reports, full stop. This
+// is the command Tools/BaselineGen/README.md's "Case id prefixes by area" table tells a reader
+// to run to refresh that table, and the one a reviewer can run standalone (no baseline
+// directory, no -ExpectedScope globs) just to look up a prefix before writing one. (Plain
+// `//`, not `///`: see RunDiffScopeMode's comment above for why.)
+static int RunListPrefixesMode()
+{
+    foreach (var (name, populate) in Areas.All)
+    {
+        var rows = Areas.Generate(populate);
+        var prefixes = PrefixMap.Discover(rows);
+        Console.WriteLine($"{name}\t{string.Join(", ", prefixes)}");
+    }
+
     return 0;
 }
 

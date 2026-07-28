@@ -22,6 +22,35 @@ public class ScopeDiffTests
         Assert.Equal(1, result.Removed); // H|B|1
         Assert.Empty(result.Offenders);  // all covered by H|**
         Assert.Equal(2, result.NewRowCount);
+        // H|A (changed), H|B (removed), H|C (added) out of 3 distinct ids total (H|A, H|B, H|C).
+        Assert.Equal(3, result.UnionRowCount);
+        Assert.Equal(1.0, result.TouchedFraction);
+    }
+
+    [Fact]
+    public void TouchedFraction_PartialOverlap_IsChangedPlusAddedPlusRemovedOverUnion()
+    {
+        // Mirrors the houses-armc shape this check exists for: a glob like "H|**" can be
+        // satisfied by every changed/added/removed id (SCOPE-OK) while still moving a large
+        // fraction of the area -- TouchedFraction is what surfaces that magnitude, since
+        // per-case-id coverage alone does not.
+        string[] oldRows = ["H|A|1\tfoo\tbar", "H|B|1\tfoo\tbar", "H|C|1\tfoo\tbar", "H|D|1\tfoo\tbar"];
+        string[] newRows = ["H|A|1\tfoo\tCHANGED", "H|B|1\tfoo\tbar", "H|C|1\tfoo\tbar", "H|D|1\tfoo\tbar"];
+
+        var result = ScopeDiff.ComputeArea("houses-armc", oldRows, newRows, Compile("H|**"));
+
+        Assert.Equal(1, result.Changed);
+        Assert.Equal(4, result.UnionRowCount);
+        Assert.Equal(0.25, result.TouchedFraction);
+    }
+
+    [Fact]
+    public void TouchedFraction_NoRowsEitherSide_IsNaN()
+    {
+        var result = ScopeDiff.ComputeArea("houses", [], [], []);
+
+        Assert.Equal(0, result.UnionRowCount);
+        Assert.True(double.IsNaN(result.TouchedFraction));
     }
 
     [Fact]

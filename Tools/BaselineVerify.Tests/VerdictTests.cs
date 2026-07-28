@@ -147,6 +147,50 @@ public class VerdictTests
     }
 
     [Fact]
+    public void OrphanedRowCountEntry_Fails()
+    {
+        var verdict = Verdict.OrphanedRowCountEntry("retired-area");
+        Assert.False(verdict.Passed);
+        Assert.Contains("retired-area", verdict.Reasons[0]);
+        Assert.Contains("row-counts.tsv", verdict.Reasons[0]);
+    }
+
+    [Fact]
+    public void FindOrphanedRowCountEntries_EntryWithNoMatchingArea_IsReported()
+    {
+        // Simulates deleting "calc" from Areas.cs while row-counts.tsv still has an entry
+        // for it -- the exact hole this check exists to close (see BaselineVerify's
+        // Program.cs and the equivalent FindOrphanedBaselineFiles check for baseline-*.tsv).
+        var present = new[] { "calc", "retired-area" };
+        var knownAreas = new[] { "calc" };
+
+        var orphans = Verdict.FindOrphanedRowCountEntries(present, knownAreas);
+
+        Assert.Equal(["retired-area"], orphans);
+    }
+
+    [Fact]
+    public void FindOrphanedRowCountEntries_KnownArea_IsNotReported()
+    {
+        var present = new[] { "calc" };
+        var knownAreas = new[] { "calc" };
+
+        var orphans = Verdict.FindOrphanedRowCountEntries(present, knownAreas);
+
+        Assert.Empty(orphans);
+    }
+
+    [Fact]
+    public void FindOrphanedRowCountEntries_NoAreasKnown_AllEntriesReported()
+    {
+        var present = new[] { "calc" };
+
+        var orphans = Verdict.FindOrphanedRowCountEntries(present, []);
+
+        Assert.Equal(["calc"], orphans);
+    }
+
+    [Fact]
     public void MissingRowCountEntry_Fails()
     {
         var verdict = Verdict.MissingRowCountEntry("calc");
