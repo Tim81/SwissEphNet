@@ -47,52 +47,30 @@ using System.Security.Cryptography;
 using BaselineMatrix;
 using BaselineVerify;
 
-var diffScopeFlagIndex = Array.IndexOf(args, "--diff-scope");
-if (diffScopeFlagIndex >= 0)
+// All argv parsing (both modes, including the --dump-failures/positional-argument index math
+// that used to silently drop the baseline-directory argument whenever --dump-failures was
+// absent -- see CliTests) lives in Cli.Parse, a pure function unit-tested directly in
+// BaselineVerify.Tests without spinning up this process. Everything below this point is
+// orchestration: turn a parsed request into actual directory resolution and I/O, exactly the
+// rule Verdict.cs's own doc comment states for Program.cs.
+var parsed = Cli.Parse(args);
+if (parsed.IsError)
 {
-    if (diffScopeFlagIndex + 2 >= args.Length)
-    {
-        Console.Error.WriteLine("--diff-scope requires two directory arguments: <old-baseline-dir> <new-baseline-dir>.");
-        return 2;
-    }
-    var oldDir = Path.GetFullPath(args[diffScopeFlagIndex + 1]);
-    var newDir = Path.GetFullPath(args[diffScopeFlagIndex + 2]);
-
-    var scopeFlagIndex = Array.IndexOf(args, "--expected-scope");
-    if (scopeFlagIndex < 0)
-    {
-        Console.Error.WriteLine("--diff-scope requires --expected-scope <glob> [<glob> ...].");
-        return 2;
-    }
-    var scopeGlobs = args[(scopeFlagIndex + 1)..];
-    if (scopeGlobs.Length == 0)
-    {
-        Console.Error.WriteLine("--expected-scope requires at least one glob.");
-        return 2;
-    }
-
-    return RunDiffScopeMode(oldDir, newDir, scopeGlobs);
+    Console.Error.WriteLine(parsed.Error);
+    return 2;
 }
 
-var reportOnly = args.Any(static a => a is "--report-only" or "-ReportOnly");
-
-var dumpFailuresFlagIndex = Array.IndexOf(args, "--dump-failures");
-string? dumpFailuresPath = null;
-if (dumpFailuresFlagIndex >= 0)
+if (parsed.IsDiffScope)
 {
-    if (dumpFailuresFlagIndex + 1 >= args.Length)
-    {
-        Console.Error.WriteLine("--dump-failures requires a file path argument.");
-        return 2;
-    }
-    dumpFailuresPath = args[dumpFailuresFlagIndex + 1];
+    var request = parsed.DiffScope!;
+    return RunDiffScopeMode(Path.GetFullPath(request.OldDir), Path.GetFullPath(request.NewDir), request.Globs);
 }
 
-var positionalArgs = args
-    .Where((a, i) => a is not ("--report-only" or "-ReportOnly" or "--dump-failures") && i != dumpFailuresFlagIndex + 1)
-    .ToArray();
+var verifyRequest = parsed.Verify!;
+var reportOnly = verifyRequest.ReportOnly;
+var dumpFailuresPath = verifyRequest.DumpFailuresPath;
 
-var baselineDir = positionalArgs.Length > 0 ? Path.GetFullPath(positionalArgs[0]) : DiscoverBaselineDir();
+var baselineDir = verifyRequest.BaselineDir is not null ? Path.GetFullPath(verifyRequest.BaselineDir) : DiscoverBaselineDir();
 if (!Directory.Exists(baselineDir))
 {
     Console.Error.WriteLine($"Baseline directory not found: {baselineDir}");
@@ -241,18 +219,21 @@ Console.WriteLine();
 Console.WriteLine(overallExitCode == 0 ? "PASS" : "FAIL");
 return overallExitCode;
 
-/// <summary>
-/// scripts/regenerate-baseline.ps1's -ExpectedScope gate. Diffs every area's TSV between
-/// two already-generated baseline directories (old = currently committed, new = the fresh
-/// run about to replace it) by case id, and refuses (nonzero exit) if any added, removed, or
-/// changed case id in any area fails to match at least one of the given globs. Never runs the
-/// matrix itself -- both directories are assumed already generated (by BaselineGen, via the
-/// calling script).
-///
-/// Reuses Waivers.CompileGlob for the same anti-bypass rules a waiver glob must satisfy (no
-/// catch-all, no wildcard before the first '|', no match against the synthetic probe ids) --
-/// see that method's doc comment for why a second implementation was rejected.
-/// </summary>
+// scripts/regenerate-baseline.ps1's -ExpectedScope gate. Diffs every area's TSV between
+// two already-generated baseline directories (old = currently committed, new = the fresh
+// run about to replace it) by case id, and refuses (nonzero exit) if any added, removed, or
+// changed case id in any area fails to match at least one of the given globs. Never runs the
+// matrix itself -- both directories are assumed already generated (by BaselineGen, via the
+// calling script).
+//
+// Reuses Waivers.CompileGlob for the same anti-bypass rules a waiver glob must satisfy (no
+// catch-all, no wildcard before the first '|', no match against the synthetic probe ids) --
+// see that method's doc comment for why a second implementation was rejected.
+//
+// Not a `///` doc comment: a local function inside a top-level-statements file is not a
+// documentable member as far as the compiler is concerned, and `///` there is CS1587 ("XML
+// comment is not placed on a valid language element"). A plain `//` block says the same thing
+// without the warning.
 static int RunDiffScopeMode(string oldDir, string newDir, string[] globs)
 {
     List<(string Glob, System.Text.RegularExpressions.Regex Pattern)> compiled;
@@ -278,52 +259,12 @@ static int RunDiffScopeMode(string oldDir, string newDir, string[] globs)
         var oldRows = File.Exists(oldPath) ? File.ReadAllLines(oldPath) : [];
         var newRows = File.Exists(newPath) ? File.ReadAllLines(newPath) : [];
 
-        var oldIndex = Comparer.Index(oldRows, $"{name} (old)");
-        var newIndex = Comparer.Index(newRows, $"{name} (new)");
+        var areaResult = ScopeDiff.ComputeArea(name, oldRows, newRows, compiled);
+        offenders.AddRange(areaResult.Offenders);
 
-        var allIds = new SortedSet<string>(StringComparer.Ordinal);
-        allIds.UnionWith(oldIndex.Keys);
-        allIds.UnionWith(newIndex.Keys);
-
-        var changed = 0;
-        var added = 0;
-        var removed = 0;
-
-        foreach (var id in allIds)
+        if (areaResult.Changed + areaResult.Added + areaResult.Removed > 0)
         {
-            var hasOld = oldIndex.TryGetValue(id, out var oldFields);
-            var hasNew = newIndex.TryGetValue(id, out var newFields);
-
-            string kind;
-            if (!hasOld)
-            {
-                kind = "added";
-                added++;
-            }
-            else if (!hasNew)
-            {
-                kind = "removed";
-                removed++;
-            }
-            else if (!oldFields!.SequenceEqual(newFields!))
-            {
-                kind = "changed";
-                changed++;
-            }
-            else
-            {
-                continue;
-            }
-
-            if (!compiled.Any(c => c.Pattern.IsMatch(id)))
-            {
-                offenders.Add($"{name}\t{id}\t{kind}");
-            }
-        }
-
-        if (changed + added + removed > 0)
-        {
-            summaries.Add($"{name}: {changed:N0} changed / {added:N0} added / {removed:N0} removed");
+            summaries.Add($"{name}: {areaResult.Changed:N0} changed / {areaResult.Added:N0} added / {areaResult.Removed:N0} removed");
         }
 
         if (File.Exists(newPath))
@@ -333,7 +274,7 @@ static int RunDiffScopeMode(string oldDir, string newDir, string[] globs)
             sha256Lines.Add($"{name}\t{sha}");
         }
 
-        rowCountLines.Add($"{name}\t{newIndex.Count}");
+        rowCountLines.Add($"{name}\t{areaResult.NewRowCount}");
     }
 
     if (offenders.Count > 0)
@@ -369,13 +310,12 @@ static int RunDiffScopeMode(string oldDir, string newDir, string[] globs)
     return 0;
 }
 
-/// <summary>
-/// Diagnostic-only pass: same matrix, same rows, no waivers, no PASS/FAIL of any
-/// kind. Prints how many numeric fields differ at all between local and reference,
-/// the relative-difference distribution across the differing ones (median/p90/p99/
-/// max), and per-area exact/tolerance/beyond-tolerance row counts for context.
-/// Always returns 0, regardless of what it finds -- including if an area throws.
-/// </summary>
+// Diagnostic-only pass: same matrix, same rows, no waivers, no PASS/FAIL of any
+// kind. Prints how many numeric fields differ at all between local and reference,
+// the relative-difference distribution across the differing ones (median/p90/p99/
+// max), and per-area exact/tolerance/beyond-tolerance row counts for context.
+// Always returns 0, regardless of what it finds -- including if an area throws.
+// (Plain `//`, not `///`: see RunDiffScopeMode's comment above for why.)
 static int RunReportMode(string baselineDir)
 {
     Console.WriteLine(EnvInfo.Describe());
@@ -466,7 +406,9 @@ static string DiscoverBaselineDir()
     return Path.Combine(dir.FullName, "Tests", "baseline");
 }
 
-/// <summary>Reads the sidecar (if any), delegates the actual decision to Verdict.CheckAssemblyIdentity, prints the outcome, and returns whether it should fail the run.</summary>
+// Reads the sidecar (if any), delegates the actual decision to Verdict.CheckAssemblyIdentity,
+// prints the outcome, and returns whether it should fail the run. (Plain `//`, not `///`: see
+// RunDiffScopeMode's comment above for why.)
 static bool CheckAssemblyIdentity(string baselineDir)
 {
     var sidecarPath = Path.Combine(baselineDir, EnvInfo.SidecarFileName);

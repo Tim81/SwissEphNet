@@ -167,7 +167,8 @@ first), unlimited -- so the next review does not have to improvise it again.
 `scripts/regenerate-baseline.ps1` requires `-ExpectedScope <glob> [<glob> ...]` in
 both modes (one or more case-id globs, same syntax as
 `Tests/baseline/waivers.tsv` -- `*` is field-local, `**` crosses fields,
-e.g. `-ExpectedScope 'H|J|**'` to scope an entire area). Before anything under
+e.g. `-ExpectedScope 'H|**'` to scope an entire area, or `-ExpectedScope 'H|J|**'`
+to scope only house system J within it). Before anything under
 `Tests/baseline/` is touched, the script diffs the currently committed
 baseline against the freshly generated run, by case id, across every area
 (`BaselineVerify --diff-scope`), and refuses -- prints every offending case id,

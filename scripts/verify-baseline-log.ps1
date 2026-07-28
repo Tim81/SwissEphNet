@@ -131,8 +131,22 @@ $baseCount = Get-LogEntryCount $baseContent
 $headCount = Get-LogEntryCount $headContent
 
 if ($headCount -le $baseCount) {
-    Write-Error @"
-Tests/baseline/*.tsv changed ($($changedTsv.Count) file(s), listed above) between $BaseRef
+    # Tests/baseline/*.tsv sweeps up three different kinds of file: the golden
+    # baseline-<area>.tsv files regenerate-baseline.ps1 writes, plus waivers.tsv and
+    # row-counts.tsv, which land in the same glob deliberately (see
+    # Tools/BaselineGen/README.md, "Why waivers.tsv lives at Tests/baseline/, not
+    # Tools/BaselineVerify/") but are never written by that script. Recommending
+    # `regenerate-baseline.ps1 -FromLocal` unconditionally is actively dangerous for a
+    # waivers.tsv-only or row-counts.tsv-only change -- that flag rewrites all 19 golden
+    # files from local code, which is exactly the undeliberate, unreviewed rebaseline this
+    # gate exists to prevent, and it is precisely the wrong tool for a PR whose only job is
+    # deleting a stale waiver (which the gate itself, via BaselineVerify's stale-waiver
+    # check, can require).
+    $changedGoldenTsv = @($changedTsv | Where-Object { (Split-Path $_ -Leaf) -like 'baseline-*.tsv' })
+
+    if ($changedGoldenTsv.Count -gt 0) {
+        Write-Error @"
+Tests/baseline/*.tsv changed ($($changedTsv.Count) file(s), listed above, including $($changedGoldenTsv.Count) golden baseline-*.tsv file(s)) between $BaseRef
 and HEAD, but $headSidecarRelPath's '## Local regenerations' log did not gain a new entry
 ($baseCount -> $headCount).
 
@@ -146,6 +160,23 @@ to see why every number in the committed baseline changed at once (see
 Tools/BaselineGen/README.md, 'Local mode -- when it is legitimate', for why this is a hard
 gate rather than a review checklist item).
 "@
+    }
+    else {
+        Write-Error @"
+Tests/baseline/*.tsv changed ($($changedTsv.Count) file(s), listed above -- waivers.tsv and/or
+row-counts.tsv only, no golden baseline-*.tsv file) between $BaseRef and HEAD, but
+$headSidecarRelPath's '## Local regenerations' log did not gain a new entry ($baseCount -> $headCount).
+
+Do NOT run scripts/regenerate-baseline.ps1 -FromLocal for this -- nothing wrote a golden
+baseline-*.tsv file, so that would rewrite all of them from local code for no reason, which is
+exactly the undeliberate rebaseline this gate exists to prevent (and is very likely to move
+numbers this change has nothing to do with). Add an entry to the sidecar's '## Local
+regenerations' log by hand instead, describing which waiver or row-count entry changed and why
+(e.g. a stale waiver being deleted, as BaselineVerify's own stale-waiver check can require, or a
+waiver being added or narrowed) -- see Tools/BaselineGen/README.md, 'Why waivers.tsv lives at
+Tests/baseline/, not Tools/BaselineVerify/'.
+"@
+    }
     exit 1
 }
 

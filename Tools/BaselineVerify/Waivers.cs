@@ -42,10 +42,21 @@ internal static class Waivers
     /// <summary>
     /// Case ids no real matrix case can ever produce (area prefixes are short,
     /// hand-written identifiers; these are deliberately long, nonsensical, and of
-    /// varying field count). Any waiver glob that matches one of these is too broad
-    /// to be trusted. This is a backstop for shapes the leading-literal-prefix rule
-    /// does not itself cover (e.g. a glob with a legitimate-looking literal prefix
-    /// that is still unreasonably broad after it), not the primary defense.
+    /// varying field count, and all begin with the reserved literal "ZZZ_WAIVER_PROBE").
+    /// A waiver glob that matches one of these is rejected.
+    ///
+    /// What this backstop does NOT do: catch a glob with a legitimate-looking literal area
+    /// prefix that is still unreasonably broad after it (e.g. "GQ|*|*|*|*|*", matching every
+    /// row in the gauquelin area). It cannot -- the leading-literal-prefix rule below requires
+    /// the glob's area-prefix segment to be a literal with no wildcard, and every probe id
+    /// begins with the literal "ZZZ_WAIVER_PROBE", so only a glob whose own literal prefix is
+    /// that exact reserved text can ever match one; a real area prefix like "GQ" or "H" never
+    /// touches the probe ids at all. That is not a gap this backstop needs to close, either:
+    /// "H|**" is the documented, correct way to waive an entire area (see this class's own
+    /// summary and Tools/BaselineGen/README.md), so a real-prefix-then-all-wildcards glob
+    /// matching every row in its area is intended behavior, not something to reject. This
+    /// backstop's actual job is narrower: guarding the reserved probe-id namespace itself
+    /// against a waiver (deliberately or accidentally) claiming to cover it.
     /// </summary>
     private static readonly string[] ProbeCaseIds =
     [
