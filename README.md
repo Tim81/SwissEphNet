@@ -51,7 +51,7 @@ For working with the async context read the [this paragraph](https://github.com/
 
 # Breaking changes
 
-## V:2.8.0.2
+## Unreleased
 
 `swe_houses`, `swe_houses_ex`, `swe_houses_armc`, `swe_house_pos`, and `swe_house_name`
 each gained an `int hsys` overload alongside the existing `char hsys` overload, to match
@@ -73,11 +73,16 @@ Source-level and reflection-based consumers can be affected:
   of the five widened methods) no longer compiles under C# 10+ natural-type inference:
   the compiler cannot pick between the two overloads and reports `CS8917`. Declare an
   explicit delegate type instead, e.g. `Func<char, string> f = swe.swe_house_name;`.
-- **A `char` above `U+00FF`** passed to any of the five `char` overloads now takes its
-  low byte when resolving the house system, matching what a genuine 8-bit C `char` would
-  resolve to, rather than being widened untruncated as before. This only affects callers
-  passing a `char` outside the Latin-1 range, which was never a valid house-system letter
-  either way; see `docs/known-issues.md` for the measured before/after.
+- **A `char` above `U+00FF`** passed to `swe_houses`, `swe_houses_ex` or
+  `swe_houses_armc` now takes its low byte when resolving the house system, matching what
+  a genuine 8-bit C `char` would resolve to, rather than being widened untruncated as
+  before -- measured, `(char)331` (low byte `0x4B` = `'K'`) resolved to Placidus before
+  and resolves to Koch now. `swe_house_pos` changes the same way in its internal cusp
+  computation, but its own house-system dispatch compares the raw value and is unchanged,
+  and `swe_house_name` never narrows at all -- its behaviour is identical before and
+  after. This only affects callers passing a `char` outside the Latin-1 range, which was
+  never a valid house-system letter either way; see `docs/known-issues.md` for the
+  measured before/after.
 - **`swe_house_pos` with `hsys = 'G'`** (Gauquelin sectors) no longer throws
   `IndexOutOfRangeException` -- an internal cusp array was undersized relative to
   upstream 2.10.03. If your code wraps that call in a guard specifically to catch this

@@ -4,9 +4,8 @@ using Xunit;
 namespace SwissEphNet.Tests
 {
     /// <summary>
-    /// Regression tests for two house-API fidelity defects found by two independent
-    /// reviews. Each is documented at its fix site with the C file/line it diverged
-    /// from; see also docs/known-issues.md.
+    /// Regression tests for three house-API fidelity defects. Each is documented at its
+    /// fix site with the C file/line it diverged from; see also docs/known-issues.md.
     ///
     /// Defect 1: SweHouse.cs passes hsys to C.sprintf under %c at several sites.
     /// C.printf.cs's %c handler boxes a char and calls Convert.ToChar(int) when the
@@ -16,13 +15,21 @@ namespace SwissEphNet.Tests
     /// Fixed by narrowing to (char)(hsys &amp; 0xFF) before formatting.
     ///
     /// Defect 2: swehouse.c:661's CalcH(..., (char)hsys, ...) truncates to a *signed*
-    /// char (C's char is signed on both reference platforms), so a low byte &gt;= 0x80
+    /// char (plain char is signed on the reference platforms, x86-64 Windows and
+    /// Linux), so a low byte &gt;= 0x80
     /// becomes negative there. SweHouse.cs previously reproduced only the width of that
     /// truncation, not its signedness ("&amp; 0xFF", which is always non-negative), so
     /// CalcH's `hsy &gt; 95` sign check (SweHouse.cs, used to fold lower-case letters to
     /// upper-case) took the wrong branch for such inputs. Fixed by narrowing via
     /// (sbyte)hsys -- C#'s (sbyte) cast on an int matches C's (char) cast on a signed
     /// char platform -- and widening CalcH's parameter to int so the sign survives.
+    ///
+    /// Defect 3: swe_house_pos declared its internal hcusp array one element short.
+    /// swe_houses_armc writes cusp[36] for hsys = 'G' (Gauquelin, ito = 36), so every
+    /// swe_house_pos call with 'G' threw IndexOutOfRangeException, as did every caller
+    /// reaching the same path indirectly (swe_gauquelin_sector). The port was faithful
+    /// to C 2.08, which has the same off-by-one; upstream 2.10.03 (swehouse.c:2224)
+    /// declares hcusp[37]. Fixed here ahead of the full 2.10.03 re-transliteration.
     /// </summary>
     public class HouseApiFidelityTest
     {
@@ -150,6 +157,11 @@ namespace SwissEphNet.Tests
 
                 Assert.Null(ex);
                 Assert.Contains("simplified algorithm", serr ?? string.Empty, StringComparison.Ordinal);
+                // C's %c converts the int vararg to unsigned char, so the message must
+                // carry the low byte: -1 & 0xFF = 0xFF. Pinning the character, not just
+                // "did not throw", is what distinguishes the C-faithful narrowing from
+                // any other in-range one (& 0xFFFF, Math.Abs, a placeholder).
+                Assert.Contains("system ÿ", serr ?? string.Empty, StringComparison.Ordinal);
                 Assert.InRange(hpos, 0.0, 13.0);
             }
         }
@@ -170,6 +182,9 @@ namespace SwissEphNet.Tests
 
                 Assert.Null(ex);
                 Assert.Contains("simplified algorithm", serr ?? string.Empty, StringComparison.Ordinal);
+                // 70000 & 0xFF = 112 = 'p'. See the sibling test for why the character
+                // itself is asserted rather than only the absence of an exception.
+                Assert.Contains("system p", serr ?? string.Empty, StringComparison.Ordinal);
                 Assert.InRange(hpos, 0.0, 13.0);
             }
         }
@@ -280,7 +295,7 @@ namespace SwissEphNet.Tests
         }
 
         // ---------------------------------------------------------------------------
-        // Defect 2: swe_house_pos with hsys = 'G' (Gauquelin) must not throw
+        // Defect 3: swe_house_pos with hsys = 'G' (Gauquelin) must not throw
         // (hcusp[36] -> hcusp[37], swehouse.c:2224).
         // ---------------------------------------------------------------------------
 
@@ -326,7 +341,7 @@ namespace SwissEphNet.Tests
             }
         }
 
-        // --- Defect 2: reached via swe_gauquelin_sector (SweCL.cs), per docs/known-issues.md ---
+        // --- Defect 3: reached via swe_gauquelin_sector (SweCL.cs), per docs/known-issues.md ---
 
         [Fact]
         public void TestGauquelinSector_DoesNotThrow()

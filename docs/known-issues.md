@@ -356,7 +356,7 @@ computation path (declination/ascensional-difference trig for Sunshine houses)
 that is evidently more sensitive to it than most. Not chased further; flagged in
 case it becomes relevant when porting the 2.10.03 SweHouse delta.
 
-## hcusp[36] fixed: CPort/SweHouse.cs:1983 was faithful to 2.08, not to 2.10.03
+## hcusp[36] fixed: swe_house_pos was faithful to 2.08, not to 2.10.03
 
 `swe_house_pos` (`SwissEphNet/CPort/SweHouse.cs`) declared `double[] hcusp = new
 double[36]`. `swe_houses_armc` writes `cusp[36]` when `hsys` is `'G'`
@@ -370,7 +370,8 @@ upstream C **2.08** also declares `double hcusp[36]` at the equivalent site in
 `swehouse.c`, so the port was faithful to its source at the time. Upstream
 **2.10.03** `swehouse.c:2224` changed the declaration to `double hcusp[37]` --
 a real bug fix on Astrodienst's side, not a porting error on this side. Fixed
-here (`SwissEphNet/CPort/SweHouse.cs:1983`, `new double[37]`) ahead of the full
+here (`SwissEphNet/CPort/SweHouse.cs`, the `hcusp` declaration in
+`swe_house_pos`, now `new double[37]`) ahead of the full
 2.10.03 `swehouse.c` re-transliteration, because the port is heading there
 regardless and the conformance oracle already caught the live crash. **Do not
 reapply this change when `swehouse.c` is re-transliterated for 2.10.03** -- the
@@ -416,8 +417,8 @@ predecessor to widen.
 This is not merely a style narrowing. Internally, C truncates `hsys` to a
 `char` only once, at the `CalcH` call inside `swe_houses_armc`
 (`swehouse.c:661`, `CalcH(..., (char)hsys, ...)`), an 8-bit cast. The *outer*
-functions -- `swe_house_name` (`swehouse.c:829`) and `swe_house_pos`
-(`swehouse.c:2231`/`:2835`) -- compare the **raw, untruncated** int, via
+functions -- `swe_house_name` (`swehouse.c:830`) and `swe_house_pos`
+(`swehouse.c:2231`) -- compare the **raw, untruncated** int, via
 `toupper()`, and fall through to their `default:` branch when it does not
 match a house-system letter. A `char`-typed parameter cannot express that
 distinction: every caller effectively already truncated before the port ever
@@ -450,11 +451,14 @@ the way C would resolve its low byte.
 
 The faithful truncation at the `CalcH` call site in `swe_houses_armc`
 (`SwissEphNet/CPort/SweHouse.cs`, citing `swehouse.c:661`) is reproduced as
-`(sbyte)hsys`, not `(char)(hsys & 0xFF)`: C's `char` is signed on both
-reference platforms, so `(char)hsys` in C narrows to a *signed* 8-bit value,
+`(sbyte)hsys`, not `(char)(hsys & 0xFF)`: plain `char` is signed on the
+reference platforms this port is verified against (x86-64 Windows and x86-64
+Linux), so `(char)hsys` in C narrows to a *signed* 8-bit value,
 and unlike `& 0xFF`, C#'s `(sbyte)` cast on an `int` reproduces that sign --
 which matters observably, since `CalcH`'s lower-case-letter fold branches on
-that sign (see the review findings for the `0x89`-low-byte case). Confirmed:
+that sign -- pinned by
+`TestHousesArmc_LowByte0x89_ResolvesToPlacidusNotSunshine` in
+`Tests/SwissEphNet.Tests/HouseApiFidelityTest.cs`. Confirmed:
 `swe_house_name(65611)` (`0x1004B`, low byte `'K'`) returns `"Placidus"`
 (falls to `default:`, matching the raw-int comparison, not the low byte)
 while `swe_house_name('P')` still returns `"Placidus"` and
@@ -465,6 +469,14 @@ though the outer comparisons never match a named letter. Out-of-range `int`
 values (negative, or `> 65535`) no longer throw at any entry point --
 formatting sites that render `hsys` into a diagnostic message narrow it first
 rather than passing the raw `int` to a `%c`-style formatter.
+
+Note that plain `char` signedness is implementation-defined in C, and is
+**unsigned** by default on ARM and PowerPC Linux. Upstream C built there would
+resolve a low byte of `0x89` to Sunshine where x86-64 resolves it to Placidus.
+The port pins the x86-64 behaviour deliberately, since that is what the
+conformance corpus and every reference run here are generated on. If an arm64
+conformance runner is ever added, a divergence confined to low bytes `>= 0x80`
+is this, not a regression.
 
 Baseline effect: none. The characterization matrix only ever calls through the
 pre-existing `char`-typed API (there is no way to construct an out-of-range

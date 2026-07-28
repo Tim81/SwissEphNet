@@ -90,8 +90,8 @@ namespace SwissEphNet.CPort
         const double MILLIARCSEC = (1.0 / 3600000.0);
 
         // swephexp.h:812-835 declares int hsys on every house entry point. C's toupper()
-        // macro, invoked on the raw, untruncated int by swe_house_name (swehouse.c:829) and
-        // swe_house_pos (swehouse.c:2231/:2835), only case-folds ASCII 'a'-'z' and leaves any
+        // macro, invoked on the raw, untruncated int by swe_house_name (swehouse.c:830) and
+        // swe_house_pos (swehouse.c:2231), only case-folds ASCII 'a'-'z' and leaves any
         // other value -- including one far outside char range -- unchanged, so an
         // out-of-range hsys falls through to each function's default: branch instead of
         // matching a house-system letter. char.ToUpperInvariant only accepts a char, so this
@@ -304,7 +304,7 @@ namespace SwissEphNet.CPort
                     retc = sidereal_houses_trad(tjde, iflag, armc, eps_mean + nutlo[1], nutlo[0], geolat, hsys, cusp, ascmc);
             } else {
                 retc = swe_houses_armc(armc, geolat, eps_mean + nutlo[1], hsys, cusp, ascmc);
-                // toupper (ASCII) in C; ToUpperInvariant avoids tr-TR/az-Latn-AZ 'i' -> 'İ'.
+                // toupper (ASCII) in C; ToUpperAsciiHsys avoids tr-TR/az-Latn-AZ 'i' -> 'İ'.
                 if (ToUpperAsciiHsys(hsys) == 'I')   // compute sun declination for sunshine houses
                     ascmc[9] = xp[1];	// declination in ascmc[9];
             }
@@ -656,7 +656,7 @@ namespace SwissEphNet.CPort
             else
                 ito = 12;
             armc = SE.swe_degnorm(armc);
-            // toupper (ASCII) in C; ToUpperInvariant avoids tr-TR/az-Latn-AZ 'i' -> 'İ'.
+            // toupper (ASCII) in C; ToUpperAsciiHsys avoids tr-TR/az-Latn-AZ 'i' -> 'İ'.
             if (ToUpperAsciiHsys(hsys) ==  'I') {	// declination for sunshine houses
                 if (ascmc[9] == 99) {
                     h.sundec = 0;
@@ -666,12 +666,15 @@ namespace SwissEphNet.CPort
                     saved_sundec = h.sundec;
                 }
             }
-            // swehouse.c:661: CalcH(..., (char)hsys, ...). C's char is signed on both reference
-            // platforms, so this is a narrowing to *signed* 8 bits, not an unsigned truncation:
+            // swehouse.c:661: CalcH(..., (char)hsys, ...). Plain char is signed on the reference
+            // platforms (x86-64 Windows and Linux), so this is a narrowing to *signed* 8 bits,
+            // not an unsigned truncation:
             // a low byte >= 0x80 becomes negative in C. C#'s (sbyte) cast on an int reproduces
             // that exactly (unlike & 0xFF, which yields an unsigned 0-255 value and silently
             // changes which branch CalcH's `hsy > 95` sign check takes -- see CalcH below).
-            retc = CalcH(armc, geolat, eps, (sbyte)hsys, 2, h);
+            // Explicitly unchecked: C truncates silently, so this must not throw if the
+            // project is ever built with CheckForOverflowUnderflow enabled.
+            retc = CalcH(armc, geolat, eps, unchecked((sbyte)hsys), 2, h);
             cusp[0] = 0;
             for (i = 1; i <= ito; i++) {
                 cusp[i] = h.cusp[i];
@@ -686,7 +689,7 @@ namespace SwissEphNet.CPort
             ascmc[7] = h.polasc;	/* "polar ascendant" (M. Munkasey) */
             for (i = SwissEph.SE_NASCMC; i < 10; i++)
                 ascmc[i] = 0;
-            // toupper (ASCII) in C; ToUpperInvariant avoids tr-TR/az-Latn-AZ 'i' -> 'İ'.
+            // toupper (ASCII) in C; ToUpperAsciiHsys avoids tr-TR/az-Latn-AZ 'i' -> 'İ'.
             if (ToUpperAsciiHsys(hsys) == 'I')   // declination for sunshine houses
                 ascmc[9] = h.sundec;
 #if TRACE
@@ -805,7 +808,7 @@ namespace SwissEphNet.CPort
             return swe_house_name((int)hsys);
         }
 
-        // swehouse.c:829 applies toupper() to the raw, untruncated int hsys before
+        // swehouse.c:830 applies toupper() to the raw, untruncated int hsys before
         // comparing it against house-system letters, so a value outside char range never
         // matches a case label and falls through to the Placidus default -- exactly what
         // happens here since none of the case labels below can equal such a value.
@@ -959,12 +962,12 @@ namespace SwissEphNet.CPort
             /* we respect smaller case letter for i, otherwise they are deprecated */
             // swehouse.c:989-991. hsy is now `int`; the C.sprintf %c site needs an explicit
             // (char) since C.printf.cs's IsNumericType() would otherwise route a boxed int
-            // through Convert.ToChar, which throws outside [0,65535] (hsy is bounded to
-            // sbyte range here, so this specific cast cannot overflow).
+            // through Convert.ToChar, which throws outside [0,65535]. The guard below pins
+            // hsy to [96,127] before the cast, so it cannot overflow regardless of caller.
             if (hsy > 95 && hsy != 'i')
             {
                 hsp.serr = C.sprintf("use of lower case letters like %c for house systems is deprecated", (char)hsy);
-                hsy = hsy - 32;/* translate into capital letter */
+                hsy = unchecked((sbyte)(hsy - 32));/* translate into capital letter */
             }
             switch (hsy) {
                 case 'A':	/* equal houses */
@@ -1977,10 +1980,11 @@ namespace SwissEphNet.CPort
             return swe_house_pos(armc, geolat, eps, (int)hsys, xpin, ref serr);
         }
 
-        // swehouse.c:2231/:2835 apply toupper() to the raw, untruncated int hsys before
+        // swehouse.c:2231 applies toupper() to the raw, untruncated int hsys before
         // comparing it against house-system letters in the switch below, so a value outside
-        // char range never matches a named branch and falls through to default: (the
-        // simplified interpolation algorithm), even though swe_houses_armc below still
+        // char range never matches a named branch and falls through to default: at
+        // swehouse.c:2835 (the simplified interpolation algorithm), even though
+        // swe_houses_armc below still
         // resolves the correct house system internally via its own 8-bit truncation
         // (swehouse.c:661).
         public double swe_house_pos(
@@ -2002,7 +2006,7 @@ namespace SwissEphNet.CPort
             int i, j, nloop;
             double dsun = 0, darmc, harmc, y, sinpsi, sa;
             bool is_western_half = false;
-            // toupper (ASCII) in C; ToUpperInvariant avoids tr-TR/az-Latn-AZ 'i' -> 'İ',
+            // toupper (ASCII) in C; ToUpperAsciiHsys avoids tr-TR/az-Latn-AZ 'i' -> 'İ',
             // which would otherwise break the `hsys == 'I'` comparisons below.
             hsys = ToUpperAsciiHsys(hsys);
             if (true)
