@@ -356,6 +356,86 @@ computation path (declination/ascensional-difference trig for Sunshine houses)
 that is evidently more sensitive to it than most. Not chased further; flagged in
 case it becomes relevant when porting the 2.10.03 SweHouse delta.
 
+## hcusp[36] fixed: CPort/SweHouse.cs:1983 was faithful to 2.08, not to 2.10.03
+
+`swe_house_pos` (`SwissEphNet/CPort/SweHouse.cs`) declared `double[] hcusp = new
+double[36]`. `swe_houses_armc` writes `cusp[36]` when `hsys` is `'G'`
+(Gauquelin, `ito = 36`), which needs an array of length 37 -- indices `0..36`
+inclusive -- so every `swe_house_pos` call with `hsys = 'G'` threw
+`IndexOutOfRangeException`, and so did every caller that reaches the same code
+path indirectly, including `swe_gauquelin_sector` (`SwissEphNet/CPort/SweCL.cs`).
+
+This was not a mis-transliteration against the C version this port was tracking:
+upstream C **2.08** also declares `double hcusp[36]` at the equivalent site in
+`swehouse.c`, so the port was faithful to its source at the time. Upstream
+**2.10.03** `swehouse.c:2224` changed the declaration to `double hcusp[37]` --
+a real bug fix on Astrodienst's side, not a porting error on this side. Fixed
+here (`SwissEphNet/CPort/SweHouse.cs:1983`, `new double[37]`) ahead of the full
+2.10.03 `swehouse.c` re-transliteration, because the port is heading there
+regardless and the conformance oracle already caught the live crash. **Do not
+reapply this change when `swehouse.c` is re-transliterated for 2.10.03** -- the
+array size will already match upstream at that point, and re-diffing the
+upstream 2.08-to-2.10.03 change against an already-2.10.03-shaped line would be
+a no-op at best and a miscount at worst.
+
+Baseline effect: 375 `HP|G|*` rows in `Tests/baseline/baseline-house-pos.tsv`
+were frozen as `EXCEPTION IndexOutOfRangeException` (the waiver mechanism
+`docs/known-issues.md`'s characterization baseline exists for -- freezing a
+known-bad result rather than working around it). Fixing the array size turns
+all 375 into real Gauquelin house-position values, confirmed row by row: every
+one of the 375 changed rows is `HP|G|*` and every one was `EXCEPTION` before
+the fix, nothing else moved.
+
+## swe_houses/swe_houses_armc/swe_house_pos/swe_house_name: hsys narrowed to char (caused conformance suite 6.6 to be misclassified)
+
+`external/swisseph/swephexp.h:812-835` declares **`int hsys`** on every house
+entry point (`swe_houses`, `swe_houses_ex`, `swe_houses_armc`, `swe_house_pos`,
+`swe_house_name`). The port had narrowed all of them to `char hsys`
+(`SwissEphNet/CPort/SweHouse.cs`, plus the internal `sidereal_houses_ecl_t0` /
+`sidereal_houses_ssypl` / `sidereal_houses_trad` helpers, which the port's own
+commented-out C signatures directly above them already showed as `int hsys`).
+
+This is not merely a style narrowing. Internally, C truncates `hsys` to a
+`char` only once, at the `CalcH` call inside `swe_houses_armc`
+(`swehouse.c:661`, `CalcH(..., (char)hsys, ...)`), an 8-bit cast. The *outer*
+functions -- `swe_house_name` (`swehouse.c:829`) and `swe_house_pos`
+(`swehouse.c:2233`/`:2835`) -- compare the **raw, untruncated** int, via
+`toupper()`, and fall through to their `default:` branch when it does not
+match a house-system letter. A `char`-typed parameter cannot express that
+distinction: every caller effectively already truncated before the port ever
+saw the value, so out-of-range `int` inputs -- reproducible only by calling
+through a signature the port did not offer -- could never be exercised.
+
+This is exactly why conformance suite 6.6 (house-name/house-pos behavior for
+out-of-range `hsys` values) was misclassified as unreproducible: the test
+cases in that suite call `swe_house_name`/`swe_house_pos` with `hsys` values
+outside `char` range specifically to exercise the raw-int-vs-truncated-char
+split, and there was no way to construct that call against a `char`-only
+signature.
+
+Fixed by adding `int`-taking overloads matching upstream's signatures
+(`SwissEphNet/SwissEph.swephexp.h.cs` on the public surface,
+`SwissEphNet/CPort/SweHouse.cs` for the transliterated implementation), while
+keeping the existing `char`-taking overloads as thin delegates (widening
+`char` to `int`, no truncation, so every existing caller is unaffected). The
+faithful 8-bit truncation is reproduced explicitly as `(char)(hsys & 0xFF)` at
+the `CalcH` call site in `swe_houses_armc` (`SwissEphNet/CPort/SweHouse.cs`,
+citing `swehouse.c:661`), since C#'s `(char)` cast on an `int` does not
+truncate to 8 bits the way C's does (C# `char` is a 16-bit UTF-16 code unit,
+not an 8-bit C `char`). Confirmed: `swe_house_name(32592)` returns
+`"Placidus"` (falls to `default:`, matching the raw-int comparison) while
+`swe_house_name('P')` still returns `"Placidus"` and `swe_house_name('K')`
+still returns `"Koch"`; `swe_houses_armc(..., 32592, ...)` produces cusps
+identical to an explicit `hsys = 'P'` call (32592 & 0xFF == `'P'`), confirming
+the internal 8-bit truncation resolves the correct house system even though
+the outer comparisons never match a named letter.
+
+Baseline effect: none. The characterization matrix only ever calls through the
+pre-existing `char`-typed API (there is no way to construct an out-of-range
+`int` call against a `char` parameter), and the new `char` overloads are
+behavior-preserving delegates, so `scripts/verify-baseline.ps1` shows zero
+change in the `houses`/`houses-armc` areas from this fix.
+
 ## Cross-platform divergence: measured, and why the gate is platform-locked
 
 Full numbers, the tolerance-level cost table, and the reasoning for locking the

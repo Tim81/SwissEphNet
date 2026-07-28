@@ -830,7 +830,19 @@ namespace SwissEphNet
             return SweHouse.swe_houses(tjd_ut, geolat, geolon, hsys, cusps, ascmc);
         }
 
+        // swephexp.h:812 declares int hsys.
+        public int swe_houses(double tjd_ut, double geolat, double geolon, int hsys, double[] cusps, double[] ascmc)
+        {
+            return SweHouse.swe_houses(tjd_ut, geolat, geolon, hsys, cusps, ascmc);
+        }
+
         public int swe_houses_ex(double tjd_ut, Int32 iflag, double geolat, double geolon, char hsys, CPointer<double> hcusps, CPointer<double> ascmc)
+        {
+            return SweHouse.swe_houses_ex(tjd_ut, iflag, geolat, geolon, hsys, hcusps, ascmc);
+        }
+
+        // swephexp.h:816 declares int hsys.
+        public int swe_houses_ex(double tjd_ut, Int32 iflag, double geolat, double geolon, int hsys, CPointer<double> hcusps, CPointer<double> ascmc)
         {
             return SweHouse.swe_houses_ex(tjd_ut, iflag, geolat, geolon, hsys, hcusps, ascmc);
         }
@@ -840,12 +852,27 @@ namespace SwissEphNet
             return SweHouse.swe_houses_armc(armc, geolat, eps, hsys, cusps, ascmc);
         }
 
+        // swephexp.h:824 declares int hsys.
+        public int swe_houses_armc(double armc, double geolat, double eps, int hsys, double[] cusps, double[] ascmc)
+        {
+            return SweHouse.swe_houses_armc(armc, geolat, eps, hsys, cusps, ascmc);
+        }
+
         public double swe_house_pos(double armc, double geolat, double eps, char hsys, double[] xpin, ref string serr)
         {
             return SweHouse.swe_house_pos(armc, geolat, eps, hsys, xpin, ref serr);
         }
 
+        // swephexp.h:832 declares int hsys.
+        public double swe_house_pos(double armc, double geolat, double eps, int hsys, double[] xpin, ref string serr)
+        {
+            return SweHouse.swe_house_pos(armc, geolat, eps, hsys, xpin, ref serr);
+        }
+
         public string swe_house_name(char hsys) { return SweHouse.swe_house_name(hsys); }
+
+        // swephexp.h:835 declares int hsys.
+        public string swe_house_name(int hsys) { return SweHouse.swe_house_name(hsys); }
 
         /**************************** 
          * exports from swecl.c 
