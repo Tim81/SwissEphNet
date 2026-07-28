@@ -12,7 +12,20 @@ namespace BaselineVerify;
 /// </summary>
 internal static class ScopeDiff
 {
-    internal readonly record struct AreaResult(int Changed, int Added, int Removed, int NewRowCount, IReadOnlyList<string> Offenders);
+    internal readonly record struct AreaResult(int Changed, int Added, int Removed, int NewRowCount, int UnionRowCount, IReadOnlyList<string> Offenders)
+    {
+        /// <summary>
+        /// Fraction of every case id present on either side (<see cref="UnionRowCount"/>) that
+        /// changed, was added, or was removed. This is the "magnitude" -ExpectedScope's own
+        /// guarantee does not bound: a single glob like "H|**" can be satisfied by a change that
+        /// touches every row under that prefix, not just a few, and this number is what makes
+        /// that visible next to the per-case-id SCOPE-OK/SCOPE-VIOLATION verdict (see
+        /// Program.cs's RunDiffScopeMode and Tools/BaselineGen/README.md's "-ExpectedScope:
+        /// proving the diff, not just describing it"). NaN when the area is empty on both sides
+        /// (nothing to express a fraction of).
+        /// </summary>
+        public double TouchedFraction => UnionRowCount == 0 ? double.NaN : (double)(Changed + Added + Removed) / UnionRowCount;
+    }
 
     /// <summary>
     /// Indexes <paramref name="oldRows"/> and <paramref name="newRows"/> by case id (via
@@ -72,6 +85,6 @@ internal static class ScopeDiff
             }
         }
 
-        return new AreaResult(changed, added, removed, newIndex.Count, offenders);
+        return new AreaResult(changed, added, removed, newIndex.Count, allIds.Count, offenders);
     }
 }

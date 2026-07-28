@@ -123,6 +123,30 @@ internal static class Verdict
             .ToList();
     }
 
+    public static AreaVerdict OrphanedRowCountEntry(string area) =>
+        AreaVerdict.Fail(
+            $"row-counts.tsv has an entry for '{area}', which does not correspond to any area in " +
+            "Tools/BaselineMatrix/Areas.cs's Areas.All. Either the area was renamed/removed and this " +
+            "entry was left behind (delete it), or it is a new area that still needs registering in " +
+            "Areas.All.");
+
+    /// <summary>
+    /// Mirrors <see cref="FindOrphanedBaselineFiles"/> for row-counts.tsv: a stale entry left
+    /// behind for an area that no longer exists in Areas.All is silently ignored by every other
+    /// check (the dictionary lookup in Program.cs's main loop is keyed by the areas BaselineMatrix
+    /// currently knows about, so a row-counts.tsv entry for a retired area is simply never looked
+    /// at). Closing this is the same class of gap that <c>FindOrphanedBaselineFiles</c> closed for
+    /// baseline-*.tsv files, just on the manifest side rather than the data-file side.
+    /// </summary>
+    public static IReadOnlyList<string> FindOrphanedRowCountEntries(IEnumerable<string> presentAreaNames, IEnumerable<string> knownAreaNames)
+    {
+        var known = knownAreaNames.ToHashSet(StringComparer.Ordinal);
+        return presentAreaNames
+            .Where(a => !known.Contains(a))
+            .OrderBy(static a => a, StringComparer.Ordinal)
+            .ToList();
+    }
+
     /// <summary>
     /// Every area must have a committed expected row count in Tests/baseline/row-counts.tsv
     /// (see RowCounts.cs). Missing entirely is its own failure, distinct from a mismatch,

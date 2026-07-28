@@ -144,4 +144,27 @@ public class CliTests
         var result = Cli.Parse(["--report-only", "--diff-scope", "old", "new", "--expected-scope", "H|**"]);
         Assert.True(result.IsDiffScope);
     }
+
+    [Fact]
+    public void Parse_ListPrefixes_IsRecognized()
+    {
+        var result = Cli.Parse(["--list-prefixes"]);
+
+        Assert.False(result.IsError);
+        Assert.True(result.IsListPrefixes);
+        Assert.False(result.IsDiffScope);
+        Assert.Null(result.Verify);
+        Assert.Null(result.DiffScope);
+    }
+
+    [Fact]
+    public void Parse_ListPrefixes_TakesPrecedenceOverDiffScopeAndVerifyFlags()
+    {
+        // --list-prefixes needs no other arguments, so it must win even if the command line
+        // also happens to contain flags that look like the other modes.
+        var result = Cli.Parse(["--diff-scope", "old", "new", "--expected-scope", "H|**", "--list-prefixes"]);
+
+        Assert.True(result.IsListPrefixes);
+        Assert.False(result.IsDiffScope);
+    }
 }

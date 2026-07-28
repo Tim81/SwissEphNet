@@ -77,8 +77,18 @@
     followed by someone using this script's own console output as their guide: a corrupted
     constant can move thousands of rows by less than the comparison tolerance, failing only
     one area in scripts/verify-baseline.ps1 while -FromLocal's diff is silently much wider than
-    that. -ExpectedScope turns "read the full diff yourself" into "read the one line this tool
-    already proved true" -- see Tools/BaselineVerify/Program.cs's RunDiffScopeMode.
+    that.
+
+    What -ExpectedScope actually proves is per case id, not per magnitude: every added,
+    removed, or changed case id in this run matches at least one glob -- it does not mean a
+    matching glob only let a handful of rows through. A single glob such as "H|**" is satisfied
+    identically whether it covers one row or every row under that prefix (houses-armc's "H"
+    prefix alone is 54,432 of its 55,512 rows). SCOPE-OK is "every touched id was one you
+    named," not "not much moved." The CHANGED-AREA line this script prints below carries a
+    percentage of the area's case ids for exactly this reason (see
+    Tools/BaselineVerify/ScopeDiff.cs's AreaResult.TouchedFraction) -- read that number, not
+    just the SCOPE-OK/PASS verdict, to judge whether a change this wide was the one you
+    intended. See Tools/BaselineVerify/Program.cs's RunDiffScopeMode.
 #>
 
 param(

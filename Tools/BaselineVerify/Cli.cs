@@ -18,18 +18,25 @@ internal static class Cli
     internal sealed class ParseResult
     {
         public bool IsDiffScope { get; private init; }
+        public bool IsListPrefixes { get; private init; }
         public DiffScopeRequest? DiffScope { get; private init; }
         public VerifyRequest? Verify { get; private init; }
         public string? Error { get; private init; }
         public bool IsError => Error is not null;
 
         public static ParseResult ForDiffScope(DiffScopeRequest request) => new() { IsDiffScope = true, DiffScope = request };
+        public static ParseResult ForListPrefixes() => new() { IsListPrefixes = true };
         public static ParseResult ForVerify(VerifyRequest request) => new() { IsDiffScope = false, Verify = request };
         public static ParseResult ForError(string message) => new() { Error = message };
     }
 
     public static ParseResult Parse(string[] args)
     {
+        if (Array.IndexOf(args, "--list-prefixes") >= 0)
+        {
+            return ParseResult.ForListPrefixes();
+        }
+
         var diffScopeFlagIndex = Array.IndexOf(args, "--diff-scope");
         return diffScopeFlagIndex >= 0 ? ParseDiffScope(args, diffScopeFlagIndex) : ParseVerify(args);
     }
