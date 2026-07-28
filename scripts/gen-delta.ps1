@@ -238,7 +238,16 @@ function Get-Hunks {
 # multi-line block-comment header itself (the common, legitimate case this filter exists for)
 # is prose with no preprocessor directives or statement terminators on any of its lines, so this
 # veto does not affect it.
-$codeVetoRegex = '#\s*(define|include|if|ifdef|ifndef|else|elif|endif|undef|pragma)\b|;'
+#
+# The double quote is in the veto for a case the directive/semicolon pair does not cover: a
+# licence URL rewritten inside a string literal. Such a line carries neither a preprocessor
+# directive nor a statement terminator, so without this it matches the licence patterns, the
+# hunk classifies as noise, and a real source change disappears with nothing printed but a
+# count. No occurrence exists in 2.10.3 -- every gpl-2.0.html/agpl-3.0.html sits in a block
+# comment -- so this is a guard against a future upstream release, not a live defect. It costs
+# nothing to carry: none of the 241 changed lines currently classified as licence noise
+# contains a double quote, so the 450/47/403 split is unaffected.
+$codeVetoRegex = '#\s*(define|include|if|ifdef|ifndef|else|elif|endif|undef|pragma)\b|;|"'
 
 function Test-LicenseHunk {
     param($Hunk)
@@ -248,6 +257,13 @@ function Test-LicenseHunk {
     # hunk made entirely of context is not a real diff hunk (git never emits one), so this only
     # ever filters the classification input, not the pass/fail default below.
     $changeLines = @($Hunk.Lines | Where-Object { $_.Type -ne 'context' })
+    # A hunk with no changed lines cannot be licence noise, because there is nothing to
+    # classify. Falling through the loop would return $true and drop it. git does not emit
+    # such a hunk from `diff --no-index --unified=3` on two text files, so this is unreachable
+    # today, but the default belongs on the keeping side: in a tool whose whole purpose is to
+    # stop losing lines quietly, an unforeseen input should survive into the output where a
+    # human sees it, not vanish into a counter.
+    if ($changeLines.Count -eq 0) { return $false }
     foreach ($line in $changeLines) {
         if ($line.Text -match $codeVetoRegex) { return $false }
         if ($line.Text -notmatch $licenseRegex) { return $false }
