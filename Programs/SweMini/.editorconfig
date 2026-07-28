@@ -29,13 +29,19 @@
 # run against this repo strips every trailing-whitespace line here (7 measured) and reflows
 # every K&R `) {` to Allman style, silently destroying the line-by-line correspondence with
 # swemini.c that this file exists to preserve. CONTRIBUTING.md's `--exclude` flag is the
-# primary defense, but it depends on whoever runs `dotnet format` remembering to pass it;
-# these options make the freeze hold even if they don't, by pinning the two settings that
-# actually fired and the one most likely to next (K&R brace placement is exactly the
-# transliterated C style, not just this repo's default).
-trim_trailing_whitespace = false
-insert_final_newline = false
-csharp_new_line_before_open_brace = none
+# primary defense, and it stays the only one. No formatting options are pinned here,
+# deliberately, and this directory is the clearest evidence why: with no pins at all, an
+# unexcluded `dotnet format whitespace` run changes nothing here whatsoever. Every pin tried
+# turned that clean no-op into a rewrite -- 2 files with trim_trailing_whitespace and
+# insert_final_newline set, 41 lines with csharp_new_line_before_open_brace = none, which is
+# especially wrong here since Program.cs is almost pure Allman (13 lone-brace lines against
+# 2 K&R). One of the 2 files is Properties/AssemblyInfo.cs, which is not even frozen: the
+# [*.cs] section scopes to the whole directory, so a pin meant for one file reaches all of
+# them. See SwissEphNet/CPort/.editorconfig for the full measurement.
+#
+# scripts/verify-freeze.ps1 runs in CI and fails on any reformatting of the frozen paths.
+# `dotnet_analyzer_diagnostic.severity = none` below is a severity, not a formatting option,
+# and does hold.
 
 dotnet_analyzer_diagnostic.severity = none
 
