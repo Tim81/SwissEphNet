@@ -15,7 +15,7 @@
 // since a real difference between them is always many orders of magnitude past the
 // tolerance, but the numeric path is what actually runs for them.
 //
-// A row whose case id matches a glob in waivers.tsv is reported separately and never
+// A row whose case id matches a glob in Tests/baseline/waivers.tsv is reported separately and never
 // fails the run BY ITSELF -- but the run still fails if any waiver matched zero rows,
 // every row it matched passed on its own (exact or within tolerance, so the waiver
 // never actually excused a failure), an area's waived-failures fraction exceeds 5%, or
@@ -33,15 +33,64 @@
 // printing a divergence distribution instead of a PASS/FAIL verdict, and always
 // exiting 0.
 //
-// Usage: BaselineVerify [--report-only] [baseline-directory]
+// Usage: BaselineVerify [--report-only] [--dump-failures <path>] [baseline-directory]
+//        BaselineVerify --diff-scope <old-baseline-dir> <new-baseline-dir> --expected-scope <glob> [<glob> ...]
 // If the directory is omitted, it is discovered by walking up from this assembly's
 // location to find SwissEphNet.sln, then Tests/baseline under that.
+//
+// --diff-scope is a wholly separate mode used by scripts/regenerate-baseline.ps1's
+// -ExpectedScope gate (see RunDiffScopeMode below): it never runs the matrix at all,
+// it only diffs two already-generated baseline directories against each other by
+// case id and checks every changed/added/removed one against the given globs.
 
+using System.Security.Cryptography;
 using BaselineMatrix;
 using BaselineVerify;
 
+var diffScopeFlagIndex = Array.IndexOf(args, "--diff-scope");
+if (diffScopeFlagIndex >= 0)
+{
+    if (diffScopeFlagIndex + 2 >= args.Length)
+    {
+        Console.Error.WriteLine("--diff-scope requires two directory arguments: <old-baseline-dir> <new-baseline-dir>.");
+        return 2;
+    }
+    var oldDir = Path.GetFullPath(args[diffScopeFlagIndex + 1]);
+    var newDir = Path.GetFullPath(args[diffScopeFlagIndex + 2]);
+
+    var scopeFlagIndex = Array.IndexOf(args, "--expected-scope");
+    if (scopeFlagIndex < 0)
+    {
+        Console.Error.WriteLine("--diff-scope requires --expected-scope <glob> [<glob> ...].");
+        return 2;
+    }
+    var scopeGlobs = args[(scopeFlagIndex + 1)..];
+    if (scopeGlobs.Length == 0)
+    {
+        Console.Error.WriteLine("--expected-scope requires at least one glob.");
+        return 2;
+    }
+
+    return RunDiffScopeMode(oldDir, newDir, scopeGlobs);
+}
+
 var reportOnly = args.Any(static a => a is "--report-only" or "-ReportOnly");
-var positionalArgs = args.Where(static a => a is not ("--report-only" or "-ReportOnly")).ToArray();
+
+var dumpFailuresFlagIndex = Array.IndexOf(args, "--dump-failures");
+string? dumpFailuresPath = null;
+if (dumpFailuresFlagIndex >= 0)
+{
+    if (dumpFailuresFlagIndex + 1 >= args.Length)
+    {
+        Console.Error.WriteLine("--dump-failures requires a file path argument.");
+        return 2;
+    }
+    dumpFailuresPath = args[dumpFailuresFlagIndex + 1];
+}
+
+var positionalArgs = args
+    .Where((a, i) => a is not ("--report-only" or "-ReportOnly" or "--dump-failures") && i != dumpFailuresFlagIndex + 1)
+    .ToArray();
 
 var baselineDir = positionalArgs.Length > 0 ? Path.GetFullPath(positionalArgs[0]) : DiscoverBaselineDir();
 if (!Directory.Exists(baselineDir))
@@ -59,11 +108,16 @@ var waiversPath = Path.Combine(AppContext.BaseDirectory, "waivers.tsv");
 var waivers = Waivers.Load(waiversPath);
 var waiverStats = Waivers.InitStats(waivers);
 
+var rowCountsPath = Path.Combine(baselineDir, RowCounts.FileName);
+var rowCounts = RowCounts.Load(rowCountsPath);
+
 Console.WriteLine(EnvInfo.Describe());
 Console.WriteLine($"Baseline directory: {baselineDir}");
 Console.WriteLine($"Waivers file: {waiversPath} ({waivers.Count} entries)");
+Console.WriteLine($"Row-counts file: {rowCountsPath} ({rowCounts.Count} entries)");
 
 var overallExitCode = 0;
+var fullFieldDump = dumpFailuresPath is not null ? new List<string>() : null;
 
 if (CheckAssemblyIdentity(baselineDir))
 {
@@ -101,17 +155,30 @@ foreach (var (name, populate) in Areas.All)
 
         var localRows = Areas.Generate(populate);
         var referenceRows = File.ReadAllLines(baselinePath);
-        var result = Comparer.Compare(localRows, referenceRows, waivers, waiverStats, name);
+        var result = Comparer.Compare(localRows, referenceRows, waivers, waiverStats, name, fullFieldDump);
         var verdict = Verdict.ForArea(result);
 
+        // Row-count check is independent of, and additional to, Verdict.ForArea:
+        // an area can have zero FAIL/ONLY-LOCAL/ONLY-REFERENCE rows and still have
+        // silently lost coverage if both sides shrank together (a narrowed generator
+        // paired with a matching regeneration). See RowCounts.cs.
+        var rowCountVerdict = rowCounts.TryGetValue(name, out var expectedCount)
+            ? (result.Total == expectedCount ? AreaVerdict.Pass() : Verdict.RowCountMismatch(name, expectedCount, result.Total))
+            : Verdict.MissingRowCountEntry(name);
+
+        var passed = verdict.Passed && rowCountVerdict.Passed;
         Console.WriteLine(
-            $"{(verdict.Passed ? "PASS" : "FAIL"),-6} {name,-14} {result.Total,7} {result.LocalLineCount,8} {result.ReferenceLineCount,7} " +
+            $"{(passed ? "PASS" : "FAIL"),-6} {name,-14} {result.Total,7} {result.LocalLineCount,8} {result.ReferenceLineCount,7} " +
             $"{result.Exact,7} {result.ToleranceOk,7} {result.Fail,6} {result.Waived,7} {result.OnlyLocal,10} {result.OnlyReference,9}");
 
-        if (!verdict.Passed)
+        if (!passed)
         {
             overallExitCode = 1;
             foreach (var reason in verdict.Reasons)
+            {
+                Console.WriteLine($"    FAIL {name}: {reason}");
+            }
+            foreach (var reason in rowCountVerdict.Reasons)
             {
                 Console.WriteLine($"    FAIL {name}: {reason}");
             }
@@ -163,9 +230,144 @@ foreach (var waiver in waivers)
     }
 }
 
+if (dumpFailuresPath is not null)
+{
+    File.WriteAllLines(dumpFailuresPath, fullFieldDump!);
+    Console.WriteLine();
+    Console.WriteLine($"Dumped {fullFieldDump!.Count} full field-difference line(s) (every non-exact row, every differing field, not just the first) to {dumpFailuresPath}.");
+}
+
 Console.WriteLine();
 Console.WriteLine(overallExitCode == 0 ? "PASS" : "FAIL");
 return overallExitCode;
+
+/// <summary>
+/// scripts/regenerate-baseline.ps1's -ExpectedScope gate. Diffs every area's TSV between
+/// two already-generated baseline directories (old = currently committed, new = the fresh
+/// run about to replace it) by case id, and refuses (nonzero exit) if any added, removed, or
+/// changed case id in any area fails to match at least one of the given globs. Never runs the
+/// matrix itself -- both directories are assumed already generated (by BaselineGen, via the
+/// calling script).
+///
+/// Reuses Waivers.CompileGlob for the same anti-bypass rules a waiver glob must satisfy (no
+/// catch-all, no wildcard before the first '|', no match against the synthetic probe ids) --
+/// see that method's doc comment for why a second implementation was rejected.
+/// </summary>
+static int RunDiffScopeMode(string oldDir, string newDir, string[] globs)
+{
+    List<(string Glob, System.Text.RegularExpressions.Regex Pattern)> compiled;
+    try
+    {
+        compiled = globs.Select(g => (g, Waivers.CompileGlob(g, "--expected-scope", "-ExpectedScope glob"))).ToList();
+    }
+    catch (InvalidOperationException ex)
+    {
+        Console.Error.WriteLine(ex.Message);
+        return 2;
+    }
+
+    var offenders = new List<string>();
+    var summaries = new List<string>();
+    var sha256Lines = new List<string>();
+    var rowCountLines = new List<string>();
+
+    foreach (var (name, _) in Areas.All)
+    {
+        var oldPath = Path.Combine(oldDir, $"baseline-{name}.tsv");
+        var newPath = Path.Combine(newDir, $"baseline-{name}.tsv");
+        var oldRows = File.Exists(oldPath) ? File.ReadAllLines(oldPath) : [];
+        var newRows = File.Exists(newPath) ? File.ReadAllLines(newPath) : [];
+
+        var oldIndex = Comparer.Index(oldRows, $"{name} (old)");
+        var newIndex = Comparer.Index(newRows, $"{name} (new)");
+
+        var allIds = new SortedSet<string>(StringComparer.Ordinal);
+        allIds.UnionWith(oldIndex.Keys);
+        allIds.UnionWith(newIndex.Keys);
+
+        var changed = 0;
+        var added = 0;
+        var removed = 0;
+
+        foreach (var id in allIds)
+        {
+            var hasOld = oldIndex.TryGetValue(id, out var oldFields);
+            var hasNew = newIndex.TryGetValue(id, out var newFields);
+
+            string kind;
+            if (!hasOld)
+            {
+                kind = "added";
+                added++;
+            }
+            else if (!hasNew)
+            {
+                kind = "removed";
+                removed++;
+            }
+            else if (!oldFields!.SequenceEqual(newFields!))
+            {
+                kind = "changed";
+                changed++;
+            }
+            else
+            {
+                continue;
+            }
+
+            if (!compiled.Any(c => c.Pattern.IsMatch(id)))
+            {
+                offenders.Add($"{name}\t{id}\t{kind}");
+            }
+        }
+
+        if (changed + added + removed > 0)
+        {
+            summaries.Add($"{name}: {changed:N0} changed / {added:N0} added / {removed:N0} removed");
+        }
+
+        if (File.Exists(newPath))
+        {
+            using var stream = File.OpenRead(newPath);
+            var sha = Convert.ToHexString(SHA256.HashData(stream));
+            sha256Lines.Add($"{name}\t{sha}");
+        }
+
+        rowCountLines.Add($"{name}\t{newIndex.Count}");
+    }
+
+    if (offenders.Count > 0)
+    {
+        Console.WriteLine("SCOPE-VIOLATION");
+        Console.WriteLine($"{offenders.Count} case id(s) changed, added, or removed outside -ExpectedScope ({string.Join(", ", globs)}):");
+        foreach (var offender in offenders)
+        {
+            var fields = offender.Split('\t');
+            Console.WriteLine($"OFFENDER area={fields[0]} caseid={fields[1]} ({fields[2]})");
+        }
+        Console.WriteLine("SCOPE-FAIL");
+        return 1;
+    }
+
+    Console.WriteLine("SCOPE-OK");
+    if (summaries.Count == 0)
+    {
+        Console.WriteLine("No areas changed.");
+    }
+    foreach (var summary in summaries)
+    {
+        Console.WriteLine($"CHANGED-AREA {summary}");
+    }
+    foreach (var line in sha256Lines)
+    {
+        Console.WriteLine($"SHA256 {line}");
+    }
+    foreach (var line in rowCountLines)
+    {
+        Console.WriteLine($"ROWCOUNT {line}");
+    }
+    return 0;
+}
 
 /// <summary>
 /// Diagnostic-only pass: same matrix, same rows, no waivers, no PASS/FAIL of any

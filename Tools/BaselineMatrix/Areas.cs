@@ -28,6 +28,7 @@ public static class Areas
         ("orbit", Orbit.AddRows),
         ("gauquelin", Gauquelin.AddRows),
         ("astromodels", AstroModels.AddRows),
+        ("calc-defaulteph", CalcDefaultEph.AddRows),
     ];
 
     /// <summary>Runs one area's generator and returns its rows, sorted deterministically.</summary>

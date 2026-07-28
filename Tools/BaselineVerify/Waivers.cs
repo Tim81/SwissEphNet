@@ -17,7 +17,7 @@ internal sealed class WaiverStats
 }
 
 /// <summary>
-/// Loads Tools/BaselineVerify/waivers.tsv: one "glob&lt;TAB&gt;PR-number&lt;TAB&gt;reason" per
+/// Loads Tests/baseline/waivers.tsv: one "glob&lt;TAB&gt;PR-number&lt;TAB&gt;reason" per
 /// line, all three fields required and non-empty. Malformed lines are a hard load-time
 /// failure, not a silent skip.
 ///
@@ -86,29 +86,7 @@ internal static class Waivers
             var prNumber = parts[1].Trim();
             var reason = parts[2].Trim();
 
-            if (glob is "*" or "**")
-            {
-                throw new InvalidOperationException(
-                    $"{path}:{lineNumber + 1}: waiver glob '{glob}' is a catch-all and is not allowed. Scope it to a specific area and case shape.");
-            }
-
-            var firstPipe = glob.IndexOf('|');
-            var leadingSegment = firstPipe < 0 ? glob : glob[..firstPipe];
-            if (leadingSegment.Contains('*'))
-            {
-                throw new InvalidOperationException(
-                    $"{path}:{lineNumber + 1}: waiver glob '{glob}' has a wildcard before its first '|' (area prefix \"{leadingSegment}\"). " +
-                    "Write the area prefix literally and use the separator, e.g. \"H|**\" not \"H**\" -- " +
-                    "otherwise a two-character glob can silently sweep in every area sharing a leading letter.");
-            }
-
-            var pattern = ToRegex(glob);
-            var matchedProbe = Array.Find(ProbeCaseIds, pattern.IsMatch);
-            if (matchedProbe is not null)
-            {
-                throw new InvalidOperationException(
-                    $"{path}:{lineNumber + 1}: waiver glob '{glob}' matches the synthetic probe case id (\"{matchedProbe}\") and is too broad. Narrow it.");
-            }
+            var pattern = CompileGlob(glob, $"{path}:{lineNumber + 1}", "waiver glob");
 
             waivers.Add(new Waiver(glob, prNumber, reason, pattern));
         }
@@ -137,6 +115,47 @@ internal static class Waivers
             }
         }
         return (IReadOnlyList<Waiver>?)matches ?? [];
+    }
+
+    /// <summary>
+    /// Validates and compiles one glob, applying every rule a waiver glob must pass
+    /// (no bare "*"/"**", no wildcard before the first '|', no match against the
+    /// synthetic probe case ids). Shared by <see cref="Load"/> for Tests/baseline/waivers.tsv and by
+    /// BaselineVerify's <c>--diff-scope</c> mode for <c>-ExpectedScope</c> globs
+    /// (scripts/regenerate-baseline.ps1) -- both need exactly the same anti-bypass
+    /// rules, and a second implementation of this logic is precisely the kind of
+    /// drift that would let one of them quietly diverge from the other over time.
+    /// </summary>
+    /// <param name="glob">The glob to compile.</param>
+    /// <param name="errorContext">Prefix for any exception message, e.g. a "path:line" location or a CLI flag name.</param>
+    /// <param name="globKindLabel">What to call the glob in an error message ("waiver glob", "-ExpectedScope glob", ...).</param>
+    public static Regex CompileGlob(string glob, string errorContext, string globKindLabel = "waiver glob")
+    {
+        if (glob is "*" or "**")
+        {
+            throw new InvalidOperationException(
+                $"{errorContext}: {globKindLabel} '{glob}' is a catch-all and is not allowed. Scope it to a specific area and case shape.");
+        }
+
+        var firstPipe = glob.IndexOf('|');
+        var leadingSegment = firstPipe < 0 ? glob : glob[..firstPipe];
+        if (leadingSegment.Contains('*'))
+        {
+            throw new InvalidOperationException(
+                $"{errorContext}: {globKindLabel} '{glob}' has a wildcard before its first '|' (area prefix \"{leadingSegment}\"). " +
+                "Write the area prefix literally and use the separator, e.g. \"H|**\" not \"H**\" -- " +
+                "otherwise a two-character glob can silently sweep in every area sharing a leading letter.");
+        }
+
+        var pattern = ToRegex(glob);
+        var matchedProbe = Array.Find(ProbeCaseIds, pattern.IsMatch);
+        if (matchedProbe is not null)
+        {
+            throw new InvalidOperationException(
+                $"{errorContext}: {globKindLabel} '{glob}' matches the synthetic probe case id (\"{matchedProbe}\") and is too broad. Narrow it.");
+        }
+
+        return pattern;
     }
 
     private static Regex ToRegex(string glob)

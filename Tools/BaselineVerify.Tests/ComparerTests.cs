@@ -59,6 +59,65 @@ public class ComparerTests
     }
 
     [Fact]
+    public void DescribeAllFieldDifferences_ReportsEveryDifferingField_NotJustTheFirst()
+    {
+        // CompareFields (the pass/fail path) returns as soon as it hits the first
+        // beyond-tolerance field, so a row with three divergent fields only ever
+        // shows one of them in FailureDetails. --dump-failures exists specifically
+        // to give the complete picture; this is the check that it actually does.
+        var local = new[] { "1.5", "9.9", "3.0" };
+        var reference = new[] { "1.0", "9.9", "3.5" };
+
+        var details = Comparer.DescribeAllFieldDifferences("CASE1", local, reference).ToList();
+
+        Assert.Equal(2, details.Count);
+        Assert.Contains(details, d => d.Contains("array index 0", StringComparison.Ordinal));
+        Assert.Contains(details, d => d.Contains("array index 2", StringComparison.Ordinal));
+        Assert.DoesNotContain(details, d => d.Contains("array index 1", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void DescribeAllFieldDifferences_TagsWithinToleranceSeparatelyFromBeyond()
+    {
+        var local = new[] { "1.0000000000005", "1.01" };
+        var reference = new[] { "1.0", "1.0" };
+
+        var details = Comparer.DescribeAllFieldDifferences("CASE1", local, reference).ToList();
+
+        Assert.Equal(2, details.Count);
+        Assert.Contains(details, d => d.Contains("array index 0", StringComparison.Ordinal) && d.Contains("within tolerance", StringComparison.Ordinal));
+        Assert.Contains(details, d => d.Contains("array index 1", StringComparison.Ordinal) && d.Contains("BEYOND TOLERANCE", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Compare_FullFieldDumpSink_CollectsEveryNonExactRowWithAllFields()
+    {
+        List<string> local = ["A\t1.5\t9.9\t3.0", "B\t5.0"];
+        List<string> reference = ["A\t1.0\t9.9\t3.5", "B\t5.0"];
+        var dump = new List<string>();
+
+        var result = Comparer.Compare(local, reference, [], [], "test-area", dump);
+
+        Assert.Equal(1, result.Fail); // row A is beyond tolerance on index 0
+        // Both differing fields of row A show up in the dump, not just the first.
+        Assert.Contains(dump, d => d.Contains("test-area", StringComparison.Ordinal) && d.Contains("array index 0", StringComparison.Ordinal));
+        Assert.Contains(dump, d => d.Contains("test-area", StringComparison.Ordinal) && d.Contains("array index 2", StringComparison.Ordinal));
+        // The exact row (B) contributes nothing to the dump.
+        Assert.DoesNotContain(dump, d => d.StartsWith("test-area\tB:", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Compare_NoFullFieldDumpSink_DoesNotThrow()
+    {
+        List<string> local = ["A\t1.01"];
+        List<string> reference = ["A\t1.0"];
+
+        var result = Comparer.Compare(local, reference, [], [], "test");
+
+        Assert.Equal(1, result.Fail);
+    }
+
+    [Fact]
     public void Compare_ZeroVersusNegligibleValue_IsWithinTolerance()
     {
         // The regression case: mutating an exact-zero field to 1e-18 must PASS, since

@@ -105,19 +105,20 @@ Only needed when the reference package version changes (i.e., essentially never,
 until the harness itself is retargeted at a newer frozen release). Run:
 
 ```powershell
-./scripts/regenerate-baseline.ps1
+./scripts/regenerate-baseline.ps1 -ExpectedScope '<glob>','<glob>...'
 ```
 
 This builds `BaselineGen` in reference mode, generates twice into separate temp
-directories, diffs them to confirm reproducibility, and then copies the result
-(both the per-area TSVs and the environment sidecar, replacing it wholesale)
-into `Tests/baseline/` for you to review and commit. See that script for the
-exact `dotnet build`/`dotnet run` commands if you want to run them by hand.
+directories, diffs them to confirm reproducibility, checks the result against
+`-ExpectedScope` (see below), and then copies the result (both the per-area
+TSVs and the environment sidecar, replacing it wholesale) into
+`Tests/baseline/` for you to review and commit. See that script for the exact
+`dotnet build`/`dotnet run` commands if you want to run them by hand.
 
 ### Local mode -- when it is legitimate
 
 ```powershell
-./scripts/regenerate-baseline.ps1 -FromLocal -DeviationNote "<what changed and why>"
+./scripts/regenerate-baseline.ps1 -FromLocal -DeviationNote "<what changed and why>" -ExpectedScope '<glob>','<glob>...'
 ```
 
 This builds `BaselineGen` against the in-repo `SwissEphNet` project instead of
@@ -150,11 +151,64 @@ PR #4 (`fix/known-library-bugs`, the `DIR_GLUE` mis-transliteration fix; see
 `docs/known-issues.md`) is the worked example: fixing `CPort/Sweph.cs:2634` and
 `SwissEph.DIR_GLUE` changed a `serr` diagnostic string's path separator from
 `[ephe]\` to `[ephe]/` in exactly 207 rows (192 `ayanamsa`, 15 `datetime`), and
-nothing else -- confirmed by dumping the *full*, non-truncated failure list
-(the console output truncates at 50 per area) and checking that every one of
-the 207 rows differs from the committed baseline in only that one substring,
-with zero numeric fields touched. Only once that was established did
-`-FromLocal` get used, with a `-DeviationNote` describing exactly this.
+nothing else -- confirmed at the time by dumping the *full*, non-truncated
+failure list by hand (the console output truncates at 50 per area and shows
+only the first differing field) and checking that every one of the 207 rows
+differs from the committed baseline in only that one substring, with zero
+numeric fields touched. Only once that was established did `-FromLocal` get
+used, with a `-DeviationNote` describing exactly this. That manual dump does
+not scale past a few hundred rows; `BaselineVerify --dump-failures <path>`
+(see "Verifying current code against the baseline" below) now does the same
+thing directly -- every non-exact row, every differing field (not just the
+first), unlimited -- so the next review does not have to improvise it again.
+
+### `-ExpectedScope`: proving the diff, not just describing it
+
+`scripts/regenerate-baseline.ps1` requires `-ExpectedScope <glob> [<glob> ...]` in
+both modes (one or more case-id globs, same syntax as
+`Tests/baseline/waivers.tsv` -- `*` is field-local, `**` crosses fields,
+e.g. `-ExpectedScope 'H|J|**'` to scope an entire area). Before anything under
+`Tests/baseline/` is touched, the script diffs the currently committed
+baseline against the freshly generated run, by case id, across every area
+(`BaselineVerify --diff-scope`), and refuses -- prints every offending case id,
+writes nothing -- if any added, removed, or changed case id in any area is not
+covered by at least one glob.
+
+This exists because "diff it yourself and confirm every changed row is
+explained by `-DeviationNote`" cannot actually be followed by someone using
+this script's own console output as their guide: a single corrupted constant
+(one character trimmed off `EPS0`) failed only one area in
+`scripts/verify-baseline.ps1` while silently moving roughly 12,300 rows across
+seven areas by less than the comparison tolerance -- `-FromLocal` accepted and
+committed all of it with no gate signal, before or after. `-ExpectedScope`
+turns "read the full diff yourself" into "read the one line the tool already
+proved true" -- e.g. `calc-defaulteph: 0 changed / 2,720 added / 0 removed`,
+not 2,720 rows to eyeball.
+
+`-ExpectedScope` also gates the row-count manifest and hashes this script
+writes: on success it rewrites `Tests/baseline/row-counts.tsv` (see
+`Tools/BaselineVerify/RowCounts.cs`) from the new run's per-area counts, and
+for `-FromLocal` appends the per-area changed/added/removed summary plus every
+new TSV's SHA-256 into the same numbered log entry `-DeviationNote` writes --
+so a reviewer sees the tool's own proof of scope right next to the human
+explanation of intent, not just the latter.
+
+### Why `waivers.tsv` lives at `Tests/baseline/`, not `Tools/BaselineVerify/`
+
+`Tests/baseline/waivers.tsv` (formerly `Tools/BaselineVerify/waivers.tsv`) excuses a
+real, committed difference from the frozen reference, area by area, exactly the way
+a `-FromLocal` regeneration does -- but unlike a regeneration, adding or editing a
+waiver went through no check at all: `scripts/verify-baseline-log.ps1` only ever
+looked at `Tests/baseline/*.tsv`, so a waiver change needed no accompanying log
+entry and left no append-only record, even though each line already carries its own
+PR number and reason (see the file's own header). Moving the file under
+`Tests/baseline/` puts it inside that same glob with no code change to the log
+script itself -- it is swept up automatically, the same way any other
+`baseline-*.tsv` file is. There is no `regenerate-baseline.ps1` mode that writes a
+waiver, so (same as a reference-mode version bump already requires) add the log
+entry by hand, describing which waiver changed and why.
+`Tools/BaselineVerify/BaselineVerify.csproj` links the file into the build output
+under its bare name, so `Program.cs`'s runtime lookup did not need to change.
 
 **Local mode does not touch the sidecar's original reference identity.** The
 committed `SwissEphModuleVersionId`/`SwissEphAssemblySha256` fields describe
@@ -259,7 +313,7 @@ in local mode, runs every area, and compares each against
 - A row is reported as PASS (exact or within tolerance), FAIL (exact-match mismatch
   on a non-numeric field, a numeric field beyond tolerance, an arity change, or a
   row missing from one side), or WAIVED (its case id matches a glob in
-  `Tools/BaselineVerify/waivers.tsv`, which also records the PR it belongs to and
+  `Tests/baseline/waivers.tsv`, which also records the PR it belongs to and
   the reason -- see that file's format, glob syntax, and current entries). A case id
   can match more than one waiver; every matching waiver gets credit for the row, not
   just the first one found.
@@ -276,6 +330,20 @@ in local mode, runs every area, and compares each against
   currently running build's `ModuleVersionId` and DLL SHA-256. If either matches,
   the run fails: local mode should never be compiling to the same bytes as the
   reference package.
+- Every area's row count (case id count) is checked against
+  `Tests/baseline/row-counts.tsv` (`Tools/BaselineVerify/RowCounts.cs`). A missing
+  entry, or a count that does not match, fails the area outright -- independent of
+  and in addition to FAIL/ONLY-LOCAL/ONLY-REFERENCE. This exists because those
+  three, plus the waiver fractions, all read zero (and so report PASS) for an area
+  whose committed TSV has been silently reduced to zero rows and whose generator
+  has been narrowed to match; `scripts/regenerate-baseline.ps1` is the only thing
+  that rewrites this manifest, in the same pass as the TSVs, gated behind
+  `-ExpectedScope`.
+
+Pass `--dump-failures <path>` to write every non-exact row's *every* differing
+field (not just the first, which is all the console table shows) to a file,
+unlimited (the console output truncates at 50 FAIL rows per area). Use this
+instead of the manual dump the DIR_GLUE review above had to improvise.
 
 Exit code is 0 only if every area has zero FAIL, zero ONLY-LOCAL and zero
 ONLY-REFERENCE rows, no stale waivers, no area over either 5% cap, and the
@@ -423,6 +491,7 @@ each area covers. Areas and their files:
 | orbit | `Orbit.cs` | `swe_get_orbital_elements`, `swe_orbit_max_min_true_distance` |
 | gauquelin | `Gauquelin.cs` | `swe_gauquelin_sector` (imeth 0/1 hit a known undersized-array bug in `swe_house_pos` for hsys `'G'` -- see the file's doc comment) |
 | astromodels | `AstroModels.cs` | `swe_set_astro_models`/`swe_get_astro_models` across the `SEMOD_PREC_*`/`SEMOD_NUT_*`/`SEMOD_DELTAT_*`/`SEMOD_JPLHOR*` families and the `"SE<version>"` bundle form, plus `swe_set_interpolate_nut` |
+| calc-defaulteph | `CalcDefaultEph.cs` | `swe_calc`/`swe_calc_ut` with iflag combinations that do NOT force `SEFLG_MOSEPH`, exercising `plaus_iflag`'s ephemeris-defaulting branch (`CPort/Sweph.cs:6698-6699`) that the `calc` area's own sweep never reaches (`Calc.cs` ORs `SEFLG_MOSEPH` into every combination, including the nominal `"0"` one) |
 
 Every row uses a brand new `SwissEph` instance, with one deliberate, explicitly-named
 exception: `Houses.AddStatefulPairRows` shares a single instance across two ordered

@@ -43,11 +43,44 @@ jobs:
             base="${{ github.event.pull_request.base.sha }}"
           else
             base="${{ github.event.before }}"
-            # github.event.before is all-zeros for the first push of a new branch (nothing
-            # to diff against) -- fall back to the repo's root commit so the check still
-            # runs against full history instead of silently no-opping.
+            # github.event.before is all-zeros for the first push of a new branch --
+            # nothing to diff against *on this ref*, but falling back to the repo's
+            # literal root commit was its own bypass: the sidecar-regenerations log
+            # accumulated over the repo's entire history sits between the root commit
+            # and here, so "count at root -> count now" is a large, unconditional gain
+            # that has nothing to do with whether *this push*'s own commits added an
+            # entry. That made every first push of every new branch a free pass,
+            # silently -- this workflow's pull_request leg still catches the same PR
+            # later, so it read as a decorative gap rather than a wrong verdict, but it
+            # is still wrong on its own terms.
+            #
+            # The actual base for "what did this push add" is the fork point: the
+            # nearest commit this branch shares with anything already on the remote.
+            # actions/checkout with fetch-depth 0 only fetches full history of the ref
+            # being built, not other branches' tips, so those have to be fetched
+            # explicitly before merge-base can see them.
             if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
-              base=$(git rev-list --max-parents=0 HEAD | tail -n1)
+              git fetch --quiet origin '+refs/heads/*:refs/remotes/origin/*' --prune
+              best=""
+              for candidate in $(git for-each-ref --format='%(objectname)' refs/remotes/origin/); do
+                mb=$(git merge-base HEAD "$candidate" 2>/dev/null) || continue
+                if [ -z "$best" ]; then
+                  best="$mb"
+                elif git merge-base --is-ancestor "$best" "$mb" 2>/dev/null; then
+                  # $mb is a descendant of (more recent than) $best -- prefer it, the
+                  # closest shared ancestor found so far across every known branch.
+                  best="$mb"
+                fi
+              done
+              if [ -n "$best" ]; then
+                base="$best"
+              else
+                # No other branch to compare against at all (e.g. the very first
+                # commit in the repository's entire history) -- genuinely nothing to
+                # diff, not a bypass. This is the one case the root-commit fallback
+                # was actually correct for.
+                base=$(git rev-list --max-parents=0 HEAD | tail -n1)
+              fi
             fi
           fi
           echo "sha=$base" >> "$GITHUB_OUTPUT"
