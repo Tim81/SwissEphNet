@@ -1,10 +1,16 @@
-# Baseline: state of the code as inherited
+# Baseline: state of the code as inherited (historical record)
+
+**This is a historical record, not an open task list.** It documents the state of the code as
+inherited before this fork made any change, and the plan that followed from that state at the
+time. The two Release-only test failures and the "PR0" work item described below were resolved by
+PR #4 (`fix/known-library-bugs`) -- see `docs/known-issues.md` and the commit history. Nothing in
+this file describes current work remaining to be done.
 
 Recorded at commit `8118f32` (tag `v2.8.0.2-import`), the last upstream commit from 2019-12-15,
 before any change in this fork. Environment: Windows 11, .NET SDK 10.0.302 as the only installed
 SDK, runtimes 8.0.29 and 10.0.10, VS 2026 Community.
 
-Every later change is measured against this. Anything green here has to stay green.
+Every later change was measured against this. Anything green here had to stay green.
 
 ## Build
 
@@ -77,8 +83,8 @@ expectation was written once and never updated.
 Fix belongs in the bug-fix PR: delete the conditionals and assert the single value the code
 produces, so the suite stops depending on build configuration.
 
-## What this means for the plan
+## What this meant for the plan (resolved)
 
-The regression baseline is "203 pass in Debug, 201 pass plus 2 stale in Release", not "all green".
-PR0 has to reach 203/203 in both configurations, with the two fixstar expectations corrected and
-their conditionals removed.
+The regression baseline was "203 pass in Debug, 201 pass plus 2 stale in Release", not "all green".
+PR #4 (`fix/known-library-bugs`) reached 203/203 in both configurations, with the two fixstar
+expectations corrected and their conditionals removed.

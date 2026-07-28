@@ -5,7 +5,16 @@
     <AssemblyName>SwissEphNet</AssemblyName>
     <RootNamespace>SwissEphNet</RootNamespace>
     <PackageId>SwissEphNet</PackageId>
-    <Version>2.8.0.2</Version>
+    <!--
+      Version scheme: upstream Swiss Ephemeris version + port revision, e.g.
+      2.8.x tracks Swiss Ephemeris C 2.08 with x as this port's own revision
+      counter. This is not published to nuget.org: 2.8.0.2 already is, and
+      the library no longer ships net40/netstandard1.0, so it would not be a
+      drop-in replacement for that package anyway. Distribution is
+      source-only (clone/build/reference) until the 2.10.03 port lands. Do
+      not bump this to a 2.10.x version before that port actually happens.
+    -->
+    <Version>2.8.1.0</Version>
     <Authors>Yan Grenier, Timothy van der Ham</Authors>
     <Company>Yan Grenier</Company>
     <Product>SwissEphNet</Product>
@@ -16,7 +25,28 @@
     <RepositoryUrl>https://github.com/Tim81/SwissEphNet</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>Swiss Ephemeris</PackageTags>
-    <PackageReleaseNotes>2.8.0.2:
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>2.8.1.0 (not published to nuget.org; source-only distribution):
+- Retarget the library to netstandard2.0;net8.0;net10.0, dropping net40 and netstandard1.0.
+- Relicense from GPL-2.0-or-later to the Swiss Ephemeris 2.10.3 dual license: AGPL-3.0-or-later
+  or a Swiss Ephemeris Professional License from Astrodienst. See LICENSE and NOTICE.
+- Fix SwissEph.DIR_GLUE: was hardcoded to '\\' on every platform, now '/' per the upstream C
+  source. Asteroid file names passed to OnLoadFile change accordingly, e.g. "ast4/se04179.se1"
+  instead of "ast4\se04179.se1".
+- Fix SwissEph.DefaultEncoding: was falling back to UTF-8 silently whenever Windows-1252 could
+  not be resolved (missing System.Text.Encoding.CodePages reference); UTF-8 is now the explicit,
+  deliberate default, matching the actual encoding of the ephemeris data files.
+  You can still override it via the static SwissEphNet.SwissEph.DefaultEncoding property.
+- Fix C.strcmp/strncmp/strstr/strchr: were culture-sensitive (string.Compare/IndexOf), now
+  ordinal, matching C's byte-wise semantics. Affects fixed-star name search/sort under
+  non-invariant cultures.
+- Several additional port bug fixes with no signature change: swe_fixstar multi-word star names
+  and an off-by-one in search-name formatting, a missing ref-parameter mutation and missing guard
+  in the heliacal Moon branch, swe_set_astro_models throwing on short input, C.atoi sign handling,
+  CPointer&lt;T&gt;.operator != always returning false, and a netstandard2.0-only infinite
+  recursion in a string-extension method. See NOTICE and docs/known-issues.md for details.
+
+2.8.0.2:
 - Fix the #41 issue
 
 2.8.0.1:
@@ -41,7 +71,7 @@
 2.6.0.18:
 - Update the code to the Swiss Ephemeris 2.06.00 version.
 </PackageReleaseNotes>
-    <NeutralLanguage>Anglais</NeutralLanguage>
+    <NeutralLanguage>en</NeutralLanguage>
     <!--
       Deliberately PackageLicenseFile, not PackageLicenseExpression. NuGet only
       accepts OSI/FSF-approved SPDX identifiers in PackageLicenseExpression, and
@@ -73,6 +103,10 @@
       <PackagePath></PackagePath>
     </None>
     <None Include="..\NOTICE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="..\README.md">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>

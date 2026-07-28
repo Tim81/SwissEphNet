@@ -8,11 +8,13 @@ using Xunit;
 namespace SwissEphNet.Tests
 {
     /// <summary>
-    /// Regression tests for four transliteration-fidelity defects found by an
+    /// Regression tests for five transliteration-fidelity defects found by an
     /// audit comparing every string operation and array allocation in
-    /// SwissEphNet/CPort against the C it was ported from. Each defect is
-    /// documented at its fix site with the C file/line it diverged from; see
-    /// also docs/known-issues.md.
+    /// SwissEphNet/CPort against the C it was ported from (Defects 1, 2, 3,
+    /// 3b and 4 below; a sixth test, TestHousesArmc_SunshineSystem, covers a
+    /// separate Tier 2 culture-dispatch bug found the same way, not counted
+    /// among these five). Each defect is documented at its fix site with the
+    /// C file/line it diverged from; see also docs/known-issues.md.
     /// </summary>
     public class TransliterationFidelityTest
     {

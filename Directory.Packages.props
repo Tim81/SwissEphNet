@@ -6,7 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Test infrastructure shared by both test projects. -->
+    <!-- Test infrastructure shared by all three test projects (Tests/SwissEphNet.Tests,
+         Tests/NetStandard20Smoke.Tests, Tools/BaselineVerify.Tests). -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
 
     <!--
