@@ -394,8 +394,31 @@ all byte-for-byte identical to the baseline anyway, fails the run --
 that are actively differing, which is the opposite of what this baseline
 freeze is for. Fixing the array size turns all 375 into real Gauquelin
 house-position values, confirmed row by row: every one of the 375 changed
-rows is `HP|G|*` and every one was `EXCEPTION` before the fix, nothing else
-moved.
+rows is `HP|G|*` and every one was `EXCEPTION` before the fix.
+
+It also changes **160 `GQ|*` rows** in `Tests/baseline/baseline-gauquelin.tsv`,
+which reach the identical code through `swe_gauquelin_sector`
+(`SwissEphNet/CPort/SweCL.cs`) rather than through `swe_house_pos` directly.
+That area did not exist when this issue was first written; it was added later
+as new coverage, and this fix is the first behaviour change it caught. So the
+total is 535 rows across two areas, not 375 across one. An earlier revision of
+this paragraph said "nothing else moved", which was true of the corpus as it
+stood when written and false by the time the fix landed.
+
+The `HP|G|*` values were afterwards checked against Astrodienst's own 2.10.03
+libswe (the `pyswisseph` 2.10.3.2 wheel bundles it) and are **bit-exact**, not
+merely within tolerance, across both the normal and the circumpolar
+(Otto Ludwig) branches. The 160 `GQ|*` rows agree to 8.14e-09 sectors, roughly
+0.0003 arcsec; since the shared `'G'` path is bit-identical, that residual comes
+from the ephemeris chain ahead of it (delta T, obliquity, nutation, sidereal
+time) and is 2.08-versus-2.10.03 drift rather than anything this fix introduced.
+
+Note the range boundary: `hpos = xp[0] / 10.0 + 1` is usually described as
+`[1, 37)`, but six frozen rows are exactly `37.0` -- `HP|G|90|-80|90|{-5,0,5}`
+and `HP|G|270|80|270|{-5,0,5}`, all circumpolar cases where `xp[0]` lands on
+exactly 0 so `360 - 0 = 360`. Upstream C returns `37.0` for all six as well, so
+the closed interval `[1, 37]` is the correct contract. Do not "tighten" any
+assertion to the half-open form; it would fail on real upstream behaviour.
 
 ## swe_houses/swe_houses_armc/swe_house_pos/swe_house_name: hsys narrowed to char (caused conformance suite 6.6 to be misclassified)
 

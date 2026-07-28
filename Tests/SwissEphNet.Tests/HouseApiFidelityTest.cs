@@ -314,8 +314,15 @@ namespace SwissEphNet.Tests
                 var ex = Record.Exception(() => hpos = swe.swe_house_pos(armc, geolat, eps, 'G', xpin, ref serr));
 
                 Assert.Null(ex);
-                // Gauquelin sectors: hpos = xp[0] / 10.0 + 1, xp[0] in [0, 360), so
-                // hpos is documented to lie in [1, 37).
+                // Gauquelin sectors: hpos = xp[0] / 10.0 + 1. The interval is [1, 37]
+                // closed, not [1, 37): in the circumpolar (Otto Ludwig) branch xp[0] can
+                // land on exactly 0, which the code carries as 360 - 0 = 360, giving
+                // hpos = 37.0 exactly. Six such rows are frozen in the baseline
+                // (HP|G|90|-80|90|* and HP|G|270|80|270|*), and upstream C returns 37.0
+                // for all six, so this is the real contract rather than a rounding
+                // artifact. Assert.InRange is inclusive and therefore already correct --
+                // do not "tighten" it to exclude 37.0, which would fail on upstream
+                // behaviour.
                 Assert.InRange(hpos, 1.0, 37.0);
             }
         }
