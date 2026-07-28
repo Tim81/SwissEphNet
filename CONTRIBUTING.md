@@ -128,10 +128,41 @@ git submodule init
 git clone --filter=blob:none --no-checkout --sparse `
     https://github.com/aloistr/swisseph.git external/swisseph
 cd external/swisseph
-git sparse-checkout set --no-cone /*.c /*.h /Makefile /LICENSE /setest/*
+git sparse-checkout set --no-cone /*.c /*.h /Makefile /LICENSE /setest/* /seleapsec.txt `
+    /ephe/seas_12.se1 /ephe/semo_12.se1 /ephe/sepl_12.se1 `
+    /ephe/seas_18.se1 /ephe/semo_18.se1 /ephe/sepl_18.se1 `
+    /ephe/sefstars.txt /ephe/seorbel.txt
 git checkout v2.10.3final
 cd ../..
 git submodule absorbgitdirs external/swisseph
+```
+
+The eight `ephe/` patterns are not optional. `Tests/conformance/required-ephemeris-files.tsv`
+declares exactly that set, and `EphemerisManifest.AssertMatches()` runs inside the conformance
+runner and fails loudly if the checkout does not match it -- in **both** directions, so a
+missing file and an extra one are equally loud. Omitting them gives a checkout that builds and
+passes the baseline gate but cannot run `Tests/SwissEphNet.Conformance.Tests` at all.
+
+That file is the authoritative list; this recipe and `.github/workflows/conformance.yml` both
+have to agree with it. If you change what the project declares as its data set, change the
+manifest and then make these two follow, not the other way round.
+
+Extra files matter as much as missing ones because the known-fail list is generated against
+this set. A checkout carrying the full 158-file `ephe/` tree produces a list that passes
+locally and is wrong for everyone else; that happened once and is why the assertion exists.
+
+Run that command from **PowerShell**, not Git Bash. MSYS rewrites arguments that look like
+absolute Unix paths, so `git sparse-checkout set ... /Makefile /LICENSE ...` under Git Bash
+silently becomes `C:/Program Files/Git/Makefile` and the pattern set is wrong with no error.
+If you must use a POSIX shell, prefix the command with `MSYS_NO_PATHCONV=1`, or write the
+patterns straight into the submodule's `info/sparse-checkout` (note that after
+`absorbgitdirs` that file lives under `.git/modules/external/swisseph/info/`, not
+`external/swisseph/.git/info/`).
+
+To check an existing checkout rather than rebuilding it:
+
+```powershell
+Get-Content (git -C external/swisseph rev-parse --git-dir)/info/sparse-checkout
 ```
 
 `git submodule update --init external/swisseph` alone still works and lands at the same commit
