@@ -22,13 +22,14 @@ internal static class Suite06Houses
         //
         // How many of those 37 slots t.exp actually recorded (and so how many
         // this run compares) is derived from the data itself -- whether
-        // "cusps[13]" is present -- rather than from ihsy=='G': at least one
-        // recorded iteration (a failure case, rc=-1, in the polar circle)
-        // has ihsy='G' yet only 13 cusps were written, so the reference
-        // tool's own CHECK_DD(cusps,37)-vs-13 branch does not purely track
-        // the ihsy character the way check_swehouses_results' source alone
-        // would suggest. Deriving the count from what is actually present
-        // matches every iteration by construction.
+        // "cusps[13]" is present -- rather than assumed from ihsy. Verified
+        // against the full corpus: "cusps[13]" never appears in t.exp (the
+        // highest recorded index across every iteration, every house system
+        // including Gauquelin 'G', is cusps[12], 13 values total), so this
+        // always resolves to 13 today. The check is kept data-driven rather
+        // than hardcoded to 13 so that a future corpus revision recording
+        // more cusps for some house system is picked up automatically instead
+        // of silently under-comparing.
         var cuspCount = f.Contains("cusps[13]") ? 37 : 13;
 
         switch (testCaseId)
@@ -96,43 +97,44 @@ internal static class Suite06Houses
             }
 
             case 6:
-                // swe_house_pos(armc, geolat, eps, ihsy, xpin, serr) is also
-                // called with the raw int (suite_06_houses.c:58), but unlike
-                // swe_house_name it is not a simple lookup: the reference C's
-                // swe_house_pos performs an early toupper()+comparison against
-                // the *untruncated* hsys (falling through to a default branch
-                // for our garbage-encoded values, exactly as in 6.5), and then
-                // -- for the actual position computation -- calls
-                // swe_houses_armc(armc, geolat, eps, hsys, ...) passing that
-                // *same* still-untruncated hsys, which only becomes truncated
-                // to a char deep inside swe_houses_armc's own CalcH call
-                // (swehouse.c:659). One C variable therefore serves two
-                // different effective values at two points in the reference
-                // call: raw at the early check, truncated at the inner one.
+            {
+                // swe_house_pos(armc, geolat, eps, ihsy, xpin, serr) is called with the raw,
+                // untruncated ihsy in the reference C (suite_06_houses.c:58). Previously
+                // classified Unreproducible because SwissEphNet's swe_house_pos took only a
+                // single `char hsys` parameter, so a value outside char range could not be
+                // constructed to reproduce the reference C's split behavior: an early
+                // toupper()/switch in swe_house_pos itself compares the *untruncated* hsys
+                // (falling through to the simplified-interpolation default for garbage-encoded
+                // values, exactly as in 6.5's swe_house_name), while the inner
+                // swe_houses_armc(armc, geolat, eps, hsys, ...) call it delegates to only
+                // truncates to 8 bits deep inside its own CalcH (swehouse.c:659/2011/2019).
                 //
-                // SwissEphNet's swe_house_pos takes a single `char hsys`
-                // parameter. Whatever we pass arrives already-narrowed at
-                // *both* points inside the port with no distinction --
-                // passing the decoded/truncated char reproduces the inner
-                // CalcH-equivalent behavior but not the early fall-through;
-                // passing the raw value cast to char (as in 6.5) reproduces
-                // the early fall-through but does not truncate for the inner
-                // computation (C#'s (char) is a 16-bit reinterpretation, not
-                // C's 8-bit-truncating one, so a further internal cast inside
-                // the port does not recover the low byte either way). No
-                // single argument reproduces the reference behavior for every
-                // iteration. This is a structural C-vs-C# representational
-                // gap, not a bug in the port or in this harness: classified
-                // Unreproducible rather than dispatched with a guessed
-                // argument that would make some iterations pass for the
-                // wrong reason (as the pre-fix harness did for ~621 of them,
-                // at suite 6's loose tolerance).
-                return DispatchOutcome.Unreproducible(
-                    "swe_house_pos is called with a raw (untruncated) ihsy in the reference C, which affects an early " +
-                    "toupper()/switch check differently from the truncated value used by the inner swe_houses_armc/CalcH " +
-                    "computation it delegates to. SwissEphNet's swe_house_pos takes one `char hsys` parameter that both " +
-                    "reads see identically, so no single argument reproduces both reference code paths. See suite_06_houses.c:58, " +
-                    "external/swisseph/swehouse.c's swe_house_pos and swe_houses_armc.");
+                // The port's `int hsys` overload of swe_house_pos (SwissEphNet/SwissEph.swephexp.h.cs,
+                // matching swephexp.h:832) now reproduces this exactly: it performs the same
+                // early ToUpperAsciiHsys(hsys) on the untruncated int
+                // (SwissEphNet/CPort/SweHouse.cs:2011) and then calls the int overload of
+                // swe_houses_armc with that same untruncated value, which truncates internally
+                // via CalcH -- the same one-variable-two-effective-values behavior as the C.
+                // Passing the raw (undecoded) ihsy here, not HouseSystemCodec's truncated
+                // `hsys`, is what makes this reproducible.
+                var xx = new double[6];
+                string serr = "";
+                swe.swe_calc(jdUt, SwissEph.SE_ECL_NUT, 0, xx, ref serr);
+                var eps = xx[0];
+                // suite_06_houses.c:56 multiplies swe_sidtime by 15 (hours -> degrees) here,
+                // unlike testcase 4's armc (suite_06_houses.c:42, no *15) -- reproduced as-is,
+                // not normalized against testcase 4, since t.exp recorded this asymmetry.
+                var armc = swe.swe_degnorm(swe.swe_sidtime(jdUt) * 15 + geolon);
+                serr = "";
+                swe.swe_calc(jdUt, SwissEph.SE_SUN, 0, xx, ref serr);
+                var rawIhsy = f.GetInt("ihsy");
+                var hp = swe.swe_house_pos(armc, geolat, eps, rawIhsy, xx, ref serr);
+                var ctx6 = new CheckContext(f, precision);
+                ctx6.CheckD("armc", armc);
+                ctx6.CheckD("xx[0]", xx[0]);
+                ctx6.CheckD("hp", hp);
+                return DispatchOutcome.FromMismatches(ctx6.Mismatches);
+            }
 
             case 7:
             {
