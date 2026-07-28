@@ -21,6 +21,13 @@ public static class Areas
         ("coord", CoordHelpers.AddRows),
         ("format", FormatHelpers.AddRows),
         ("misc", Misc.AddRows),
+        ("pheno-ast", PhenoAst.AddRows),
+        ("eclipse", Eclipse.AddRows),
+        ("risetrans", RiseTrans.AddRows),
+        ("atmo", Atmo.AddRows),
+        ("orbit", Orbit.AddRows),
+        ("gauquelin", Gauquelin.AddRows),
+        ("astromodels", AstroModels.AddRows),
     ];
 
     /// <summary>Runs one area's generator and returns its rows, sorted deterministically.</summary>
