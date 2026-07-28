@@ -20,10 +20,25 @@ Usage:
     python scripts/validate-pyswisseph.py [--ephe PATH] [--tolerance FLOAT]
 
 Requires: pyswisseph (pip install pyswisseph) and external/swisseph checked
-out with at least the core ephemeris files (see README.md's "Correctness
-oracle" section) -- SEFLG_JPLEPH iterations are skipped and reported
-separately since this repo does not ship a JPL DE file either for the port's
-own conformance tests or for this script.
+out with *exactly* the declared core ephemeris files
+(Tests/conformance/required-ephemeris-files.tsv -- the same set
+EphemerisManifest asserts for the conformance oracle itself), not a full,
+non-sparse submodule checkout: extra era files change which iterations get
+compared here the same way they change known-fail.tsv, since a "file not
+found" exception this script treats as a skip does not happen if the file
+happens to be present. SEFLG_JPLEPH iterations are always skipped and
+reported separately, since this repo does not ship a JPL DE file either way.
+
+Last verified against the declared 8-file core set: suite 6 testcase 1
+(swe_houses) 3384/3384 agree (100%, unaffected by ephemeris data -- houses
+need none); suite 1 testcase 1 (swe_calc) 124/228 agree (54.4%; 195
+iterations skipped corpus-wide, 33 of those specifically for a supplementary
+asteroid/moon file the core set does not ship); 3508/3612 combined (97.12%).
+An earlier run of this same script against a contaminated, non-sparse
+checkout (158 ephe files) reported different skip/compared counts (fewer
+skipped, since more files happened to be on disk) but the same 54.4%
+agreement rate among what was actually compared -- the disagreement finding
+below held even before this was caught, only the skip accounting was wrong.
 """
 
 from __future__ import annotations
