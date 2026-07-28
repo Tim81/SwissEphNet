@@ -199,7 +199,15 @@ function Get-Hunks {
                 continue
             }
             if ($null -eq $current) { continue }
-            if ($line.StartsWith('+++') -or $line.StartsWith('---')) { continue }
+            # No `--- a/file` / `+++ b/file` skip here, deliberately. Those headers precede the
+            # first @@, so the line above has already skipped them while $current is null. A
+            # skip at this point can therefore only ever fire *inside* a hunk, where the only
+            # things matching are real source lines: a deleted line whose own text starts with
+            # `--`, or an added one starting with `++`. A column-0 `----------------` separator
+            # comment is ordinary C, and the check silently removed it from both the rendered
+            # body and the +/- counts, so the hunk read as "nothing changed here" with a
+            # citation vouching for it. Verified by deletion: output is byte-identical across
+            # all 31 files with the check gone, because it never had a header to catch.
             if ($line.StartsWith('+')) {
                 $current.Lines.Add([pscustomobject]@{ Type = 'add'; Text = $line.Substring(1) })
             }
@@ -253,16 +261,20 @@ function Test-LicenseHunk {
     param($Hunk)
     # Only the add/del lines decide license-noise classification -- a retained context line
     # must never make a license hunk look like real code (it has no codeVetoRegex hit to give)
-    # and must never veto a genuine license hunk either (it has no licenseRegex hit to give). A
-    # hunk made entirely of context is not a real diff hunk (git never emits one), so this only
-    # ever filters the classification input, not the pass/fail default below.
+    # and must never veto a genuine license hunk either (it has no licenseRegex hit to give).
     $changeLines = @($Hunk.Lines | Where-Object { $_.Type -ne 'context' })
-    # A hunk with no changed lines cannot be licence noise, because there is nothing to
-    # classify. Falling through the loop would return $true and drop it. git does not emit
-    # such a hunk from `diff --no-index --unified=3` on two text files, so this is unreachable
-    # today, but the default belongs on the keeping side: in a tool whose whole purpose is to
-    # stop losing lines quietly, an unforeseen input should survive into the output where a
-    # human sees it, not vanish into a counter.
+    # A hunk with no changed lines cannot be license noise, because there is nothing to
+    # classify; falling through the loop would return $true and drop it.
+    #
+    # An earlier version of this comment called that unreachable, on the grounds that git does
+    # not emit a change-line-free hunk from `diff --no-index --unified=3` on two text files.
+    # The claim about git is true and the inference was wrong: what reaches here is the
+    # *parser's* output, not git's. While Get-Hunks carried a `--`/`++` skip, a hunk whose
+    # every changed line began with those characters arrived here empty and was dropped
+    # silently. That skip is gone, so the route is closed at its source -- but the guard stays,
+    # because the default belongs on the keeping side. In a tool whose whole purpose is to stop
+    # losing lines quietly, an input nobody anticipated should surface to a human rather than
+    # vanish into a counter.
     if ($changeLines.Count -eq 0) { return $false }
     foreach ($line in $changeLines) {
         if ($line.Text -match $codeVetoRegex) { return $false }
@@ -324,8 +336,16 @@ function Invoke-FileDelta {
     }
 
     $tmp = [System.IO.Path]::GetTempPath()
-    $tmpOld = Join-Path $tmp "gen-delta-old-$Name"
-    $tmpNew = Join-Path $tmp "gen-delta-new-$Name"
+    # Per-invocation suffix, not a fixed name. These land in the shared system temp
+    # directory, and this repo routinely has dozens of git worktrees active at once. Two
+    # concurrent runs asking about the same filename used to overwrite each other's inputs:
+    # one interleaving crashes loudly, but the other returns a plausible, wrong diff at
+    # exit 0 -- one worktree's question answered with another's content. Silently producing
+    # a wrong work queue is the single failure this tool exists to prevent, so it must not
+    # be reachable by running the tool twice.
+    $runId = [System.Guid]::NewGuid().ToString('N').Substring(0, 12)
+    $tmpOld = Join-Path $tmp "gen-delta-old-$runId-$Name"
+    $tmpNew = Join-Path $tmp "gen-delta-new-$runId-$Name"
     Write-NormalizedTemp -Path $oldPath -TempPath $tmpOld
     Write-NormalizedTemp -Path $newPath -TempPath $tmpNew
 
@@ -341,8 +361,8 @@ function Invoke-FileDelta {
     $strippedMinus = 0
     $isHeader = $Name.EndsWith('.h')
     if ($isHeader -and -not $NoCommentStrip) {
-        $tmpOldStripped = Join-Path $tmp "gen-delta-old-stripped-$Name"
-        $tmpNewStripped = Join-Path $tmp "gen-delta-new-stripped-$Name"
+        $tmpOldStripped = Join-Path $tmp "gen-delta-old-stripped-$runId-$Name"
+        $tmpNewStripped = Join-Path $tmp "gen-delta-new-stripped-$runId-$Name"
         Strip-CComments -Path $oldPath -TempPath $tmpOldStripped
         Strip-CComments -Path $newPath -TempPath $tmpNewStripped
         $strippedDiff = Get-Diff -OldPath $tmpOldStripped -NewPath $tmpNewStripped
