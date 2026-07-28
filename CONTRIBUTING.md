@@ -53,6 +53,34 @@ Any CI job or pre-commit hook that runs `dotnet format` must use this
 exclusion. A format check without it will eventually "fix" these files and
 quietly break the correspondence with upstream.
 
+The nested `.editorconfig` files under those paths pin `trim_trailing_whitespace`
+and `insert_final_newline`, and that part works. They deliberately do **not** pin
+`csharp_new_line_before_open_brace`, because `.editorconfig` has no value meaning
+"preserve": `none` is as strong an instruction as `all`, merely pointing the other
+way. These files mix Allman and K&R exactly as the C does, so pinning `none`
+reverses the rewrite instead of preventing it, and measurably widens it -- with
+`none` set, an unexcluded `dotnet format whitespace` run took
+`Programs/SweTest/Program.cs` from 8 lines touched to 1,518.
+
+So the real guard is `scripts/verify-freeze.ps1`, which runs in CI on every push
+and pull request. It records a structural fingerprint of each frozen path (file
+count, total lines, K&R `) {` count, trailing-whitespace lines) in
+`scripts/freeze-manifest.tsv` and fails when any of them moves, regardless of what
+caused it. It is not a fidelity check -- whether a hunk matches the C it cites is a
+review judgement -- it answers only "did anyone reformat".
+
+When you legitimately change a frozen file, a fidelity fix correcting a divergence
+from the C or the 2.10.03 re-transliteration itself, these counts will move. That
+is expected. Regenerate the manifest and commit it **in the same commit** as the
+change:
+
+```powershell
+pwsh scripts/verify-freeze.ps1 -Update
+```
+
+Committing it separately, or in a commit that touches nothing else, defeats the
+point: the new counts should be reviewed alongside the change that caused them.
+
 ## Porting upstream changes
 
 When updating to a newer Swiss Ephemeris release, diff the new upstream C

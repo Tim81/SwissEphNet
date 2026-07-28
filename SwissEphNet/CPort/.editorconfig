@@ -24,12 +24,20 @@
 # reflows every K&R `) {` to Allman style (1,065 measured), silently destroying the
 # line-by-line correspondence with the C source that this whole file exists to preserve.
 # CONTRIBUTING.md's `--exclude` flag is the primary defense, but it depends on whoever runs
-# `dotnet format` remembering to pass it; these options make the freeze hold even if they
-# don't, by pinning the two settings that actually fired and the one most likely to next
-# (K&R brace placement is exactly the transliterated C style, not just this repo's default).
+# `dotnet format` remembering to pass it; the two options below make those two settings hold
+# even if they don't. Measured: they do hold (1,335 trailing-whitespace lines survive a run).
 trim_trailing_whitespace = false
 insert_final_newline = false
-csharp_new_line_before_open_brace = none
+
+# NOT pinned here: csharp_new_line_before_open_brace. There is no .editorconfig value meaning
+# "preserve" -- `none` is as strong an instruction as `all`, just pointing the other way. This
+# file mixes Allman and K&R exactly as the C does, so pinning `none` does not stop the rewrite,
+# it reverses it, and measurably widens the damage: with `none` set, an unexcluded
+# `dotnet format whitespace` run touched 16 files here (+1,950/-2,962) against 12 files
+# (+2,819/-1,465) when inheriting the root's `all`, and took Programs/SweTest/Program.cs from
+# 8 lines touched to 1,518. Neither value preserves anything.
+# The real guard is scripts/verify-freeze.ps1, which runs in CI and fails on any reformatting
+# of the frozen paths regardless of which tool did it.
 
 dotnet_analyzer_diagnostic.severity = none
 

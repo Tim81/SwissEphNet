@@ -75,9 +75,28 @@ jobs:
           name: test-results-${{ matrix.os }}-${{ matrix.configuration }}
           path: TestResults/*.trx
 
-  # No `dotnet format --verify-no-changes` job yet: the pre-existing SweWin
-  # WinForms code (never previously run through dotnet format) has formatting
-  # debt unrelated to this change, and gating every PR on fixing it is a
-  # separate piece of work. Whoever adds that job must run it as
+  # The transliteration freeze is enforced here, not by .editorconfig. The nested
+  # .editorconfig files pin trim_trailing_whitespace and insert_final_newline, which
+  # holds, but there is no .editorconfig value meaning "preserve brace placement" --
+  # `none` is as strong an instruction as `all`, just pointing the other way, and
+  # pinning it was measured to widen the damage rather than prevent it. So a check
+  # that looks at the files themselves is the only real guard, and it catches a
+  # reformatting regardless of which tool caused it.
+  verify-freeze:
+    name: Transliteration freeze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify frozen paths were not reformatted
+        shell: pwsh
+        run: pwsh scripts/verify-freeze.ps1
+
+  # Still no general `dotnet format --verify-no-changes` job: the pre-existing SweWin
+  # WinForms code (never previously run through dotnet format) has formatting debt
+  # unrelated to any current change, and gating every PR on fixing it is a separate
+  # piece of work. verify-freeze above covers the part that actually matters, since
+  # the frozen transliterations are the only files where formatting is load-bearing.
+  # Whoever adds the general job must run it as
   # `dotnet format SwissEphNet.sln --verify-no-changes --exclude SwissEphNet/CPort/ --exclude Programs/SweTest/Program.cs --exclude Programs/SweMini/Program.cs`
   # -- see CONTRIBUTING.md for why all three exclusions are mandatory.
