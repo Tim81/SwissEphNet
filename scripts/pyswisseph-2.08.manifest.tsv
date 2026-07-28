@@ -1,0 +1,45 @@
+# Manifest of libswe/ as vendored inside the PyPI pyswisseph 2.08.00-1 sdist.
+# https://files.pythonhosted.org/packages/8d/63/a0373099b5e888a2ad42d3f1668893e42afb4655dbc5ba06e0b615005eb4/pyswisseph-2.08.00-1.tar.gz
+# sdist sha256: 6b4818c0224d309c0b01f3c52df2432900dddcde345364408d99eafc9cdd1e71
+#
+# This is the 2.08 baseline scripts/fetch-2.08-baseline.ps1 downloads and checks against this
+# file. It is NOT the v2.08.00a git tag in aloistr/swisseph -- that tag is an incomplete
+# snapshot (no swecl.c, swehouse.c or swehel.c at all, and a truncated swephexp.h at 14 KB
+# against the real 38,410 bytes recorded below). Diffing against it silently produces a wrong
+# work queue for three of the five files the 2.10.03 port touches. See CONTRIBUTING.md.
+#
+# Checked by scripts/fetch-2.08-baseline.ps1. Regenerate only if the pinned sdist itself changes
+# (it should not: PyPI release files are immutable), never to paper over a verification failure.
+#
+# path	sha256	bytes	lines
+CMakeLists.txt	916e1e3094b8ca29f01f176048498b3656d160190142a25d59a8e3091b7a3bf8	874	52
+LICENSE	1a1054adbafbf3ec049a634124cb968ff08e1b43ec5bd071ccabcef6e881a1f0	2514	54
+Makefile	bcb0c5089e49a490a5ca57eb0973be50fba24d417ee1323298ffffeddd82cd91	2006	60
+sedeltat.txt.inactive	6e0f312c64c1f6f95e5fd03b4ee50b845b7751e14bbdaf4f3dbaaa1d7a2ac3cf	477	13
+sefstars.txt	9c0ddea28a1f512ae0047d53db03773feca9d0617b5f09b3fc876dd3aa88545b	133142	1579
+seleapsec.txt	fe4414ca92dccccb1be6e16a4ffff7195e484fc33a39acea3151ccd04729216f	282	6
+seorbel.txt	2407c53aaf57d99e2db2aaaa71a237da5f038d0bac4beb4e9e816cac1f3d79b4	5367	87
+swecl.c	6b61a3850020e482b8294ab98dc4600c060dc1a1ae9b5654af232078f9ae7aa4	221667	6338
+swedate.c	514e832c68cdd050a76684e251d0d67fe957336647712fec9854513c4c2c070e	20193	590
+swedate.h	4f980ee880e57c80406853c8fa12d1adebfa7211097e4b17ecfe7fdfdee0771d	3293	82
+swedll.h	d301a188eab22768adfcfbc1dc9cde577acc837b04f7c2abc3c2fccef503ee6d	15915	376
+swehel.c	38e7d45159c2867ee7ee2030132da7d7e8a15f4c766e7d1bc67cebf93082257f	123155	3519
+swehouse.c	994ee20c9e82cfa327e4114396705ff9a6c8e36dcaf9cb1bc1efa596b608f5c5	94080	2706
+swehouse.h	993788809c9395a95d8afc2913cde45b429067eb3858a5951a7638315b86be95	3422	87
+swejpl.c	3a5efa35ebcd3b7d317f5c337d9a981fe074328f187be93ff79ef5b91c4ae995	33580	953
+swejpl.h	374f192e42ac9f2d983630d40fb2fe8df4804882d3804888e948088905d2e99a	4093	104
+swemini.c	bda8fe4f2410421a828419d5eb9423f211182ffc3731ad4dc172bdafa69641f7	4831	132
+swemmoon.c	afa044e9e2a6b13dd44b4d0e28600d8ee32da4c82497e17c57cd2947ef599859	61490	1931
+swemplan.c	4766e2221a02557fca892d9fa17ee9fa6deb1bee405f5987c5e30edeb8293c04	27982	968
+swemptab.h	8ba3783058919d151c005f2e501e5e9b7b0c123b5f24aa2083e9ecca0b3cdc01	312086	10641
+swenut2000a.h	9fab09bacba7915c8c05e8e9e6927aee9fe89fc3ba3831c00147809c6f7ea8a7	68589	2820
+sweodef.h	adcd56bce673394506738555c76eff4f7813592c73c9c6e728211ca65866ab7a	10833	342
+swepcalc.c	a26533c206b434e57f9702aa620528218aa5e3164eec86fa9a006b30de7966e2	18895	583
+swepcalc.h	0ce2ccb1dd546d0a1835c64cc74d6771c21d728c11e554cabb7f0c0b2c5ac6c0	14589	438
+swepdate.c	33974f81455611adf7d44e21805bf738240a4de2b32c4aff5c34a3321a840f20	9249	222
+sweph.c	badc239066bc4e4b70569db4cf3a49dcb0059606c57a5eab28b7c70d3d096323	264470	7902
+sweph.h	9ddc35acd1092f33a50817699478ddcdfe80f93c157ab61bb91886dcee0f4fdf	26626	672
+swephexp.h	21e387499399f4adee914ad5f746c41102f7dc34efb907de9e1a5d8d1e7d140d	38410	984
+swephlib.c	0b21ed2288e798045d08d754c6401aecf4143b40424610401387b4ceb0f3b22b	159187	4481
+swephlib.h	af61e69482d76401db54e6e5caed57b1cc53799e942467554df239450cb1925a	7933	192
+swetest.c	6fffa96b0ba533dd9c2934eeee29e3ffd8162b76db9074d84f5999e939112b36	134436	3865

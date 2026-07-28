@@ -177,3 +177,8 @@ FakesAssemblies/
 /README.min.html
 /release-bin
 /binaries
+
+# scripts/fetch-2.08-baseline.ps1 output. Downloaded and verified against
+# scripts/pyswisseph-2.08.manifest.tsv on demand; never committed.
+/external/pyswisseph-2.08/
+/external/.pyswisseph-2.08-download/
