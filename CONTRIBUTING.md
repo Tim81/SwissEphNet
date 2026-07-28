@@ -285,3 +285,91 @@ is no separate CLA to sign. Contributions must be your own work, or work you
 have the right to submit under these terms. Do not remove or reduce the
 per-file attribution to Yan Grenier (the original C-to-C# port, 2014-2019)
 that many files under `SwissEphNet/CPort/` carry in their header comment.
+
+## Correctness oracle known-fail list
+
+`Tests/SwissEphNet.Conformance.Tests` checks the port against Astrodienst's
+own 2.10.03 reference values (`external/swisseph/setest/t.exp`), not against
+the port's own prior output -- see "Correctness oracle" in `README.md`.
+`Tests/conformance/known-fail.tsv` is the work queue: every iteration the port
+is currently known not to match, by category. The gate passes only when the
+file and the port's actual behavior agree exactly (no new failure, no known
+failure whose category drifted, nothing newly passing left un-pruned, no row
+left over for an iteration that no longer exists).
+
+**The invariant:** rows may be *removed* freely -- that is a porting PR making
+progress, and needs no special justification beyond the PR itself making the
+port more correct. *Adding* a row (a regression, or newly covering an
+iteration) needs a written reason and a reviewer, because a known-fail row is
+silent by design: once it is in the file, a matching failure never shows up
+again as a gate failure, so nothing else will catch a bad addition. This is
+why `/Tests/conformance/` has a `CODEOWNERS` entry.
+
+The only supported way to touch `known-fail.tsv` is `scripts/regenerate-known-fail.ps1`,
+in one of two modes:
+
+- `-PruneOnly`: removes rows that now pass; refuses to run at all (non-zero
+  exit, no file changes) if the current run would add a row or change an
+  existing row's category. This is the mode to reach for after a porting PR --
+  it mechanically cannot smuggle in an unreviewed new failure, so it needs no
+  `-Reason`.
+- Default (full regenerate, `-Reason "..."` required): overwrites the file
+  wholesale, so it *can* add or recategorize rows. This is both the only way
+  to legitimately record a regression or newly-covered iteration, and the
+  gate's own bypass -- someone could use it to make a red gate green by
+  writing the failure into the list instead of fixing it. Prefer `-PruneOnly`
+  whenever all you actually did was remove rows.
+
+Either mode appends a dated log entry to `Tests/conformance/regenerations.log`
+so the history of *why* the file changed survives independently of the diff
+itself. That entry cites a PR number (`-PR`), not a commit SHA: PRs in this
+repo are squash-merged, so a SHA captured while the branch is still open (the
+only time this script can run, since the commit carrying the change does not
+exist yet) always names the *parent* of that commit, not the change itself,
+and even a SHA captured correctly would stop existing once the PR merges. A
+PR number does not have either problem. If you do not know the PR number yet,
+leave it blank and fill in the logged line by hand once you do, before the PR
+merges.
+
+Never hand-edit `known-fail.tsv` and never add a row to make a failing
+`dotnet test Tests/SwissEphNet.Conformance.Tests` go green without first
+understanding whether the new failure is a regression in the port, or a
+defect in the harness itself (see `ConformanceRunner.Run`'s completeness
+guard -- it exists specifically to keep a harness bug from silently
+generating a wrong verdict in either direction). `UNREPRODUCIBLE` is the
+category for a structural C-vs-C# gap that makes the reference call
+impossible to construct at all (as opposed to constructible but merely
+wrong); see "Correctness oracle" in `README.md` for what it means for the
+pass-rate arithmetic when a testcase carries it.
+
+### The two gates disagree on purpose, not by accident
+
+The characterization baseline (`scripts/verify-baseline.ps1`) and this
+correctness oracle look, from a CI notification, like the same kind of thing:
+both run the library against a reference and report PASS/FAIL. Their
+*expected* results are opposites. The baseline expects **zero** diffs --
+anything else means a change altered something it should not have. This
+oracle expects **most iterations to fail** -- the port is at 2.08, the corpus
+is Astrodienst's own 2.10.03 reference values, and a two-major-version gap
+does not close by wishing. A red oracle run is not evidence anything is
+broken; a green one (all 12,757 passing with an empty `known-fail.tsv`) would
+mean the port is at parity with 2.10.03, which is the multi-PR goal this whole
+mechanism exists to track progress toward, not today's state. See "Reporting
+by testcase" below for how to read a run without it looking alarming.
+
+### Reporting by testcase
+
+12,757 individual iteration results is not something a contributor can read.
+`ConformanceReport.FormatByTestCase()` (wired into
+`scripts/regenerate-known-fail.ps1` and `Tools/ConformanceKnownFailGen`)
+groups by the 60 (suite, testcase) pairs instead and splits them into two
+lists: **actionable** (at least one `VALUE-MISMATCH`/`ERROR` -- the actual
+porting work queue) and **parked** (every non-passing iteration in that
+testcase is `NOT-IMPLEMENTED`, `DATA-MISSING`, or `UNREPRODUCIBLE` -- blocked
+on something other than the port's logic: a 2.10-only API the port doesn't
+have yet, a data file this repo doesn't ship, or a structural gap). As of this
+writing that split is 33 actionable / 27 parked out of 60. A porting PR should
+be shrinking the actionable list's mismatch/error counts, or moving a testcase
+from actionable to fully passing -- not touching the parked list, which
+changes only when a 2.10 API gets implemented or a data-file constraint is
+lifted.

@@ -5,7 +5,8 @@
       "Programs\\SweMini\\SweMini.csproj",
       "Programs\\SweTest\\SweTest.csproj",
       "SwissEphNet\\SwissEphNet.csproj",
-      "Tests\\SwissEphNet.Tests\\SwissEphNet.Tests.csproj"
+      "Tests\\SwissEphNet.Tests\\SwissEphNet.Tests.csproj",
+      "Tests\\SwissEphNet.Conformance.Tests\\SwissEphNet.Conformance.Tests.csproj"
     ]
   }
 }

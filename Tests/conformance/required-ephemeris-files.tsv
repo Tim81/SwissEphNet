@@ -1,0 +1,22 @@
+# The exact set of files RepoLocator.EpheDir must contain for the conformance oracle to run
+# against reproducible data. Read by EphemerisManifest and asserted by ConformanceRunner.Run
+# before anything is dispatched.
+#
+# This is the declared "core set" .github/workflows/conformance.yml's sparse-checkout step
+# fetches (~4.2 MB) -- see README.md's "Correctness oracle" section and CONTRIBUTING.md's
+# "The upstream C is vendored at external/swisseph" for the sparse-checkout recipe that
+# produces exactly this set from a fresh clone. Extra files are as much a problem as missing
+# ones: a plain, non-sparse `git submodule update --init external/swisseph` pulls every era
+# file (378 MB), and several iterations (suite 5 testcase 3 among them) only pass because a
+# file this repo does not declare happens to be present -- generating a known-fail.tsv that
+# looks right locally and is wrong for CI and every other contributor. One file per line, no
+# path prefix (relative to ephe/), '#' starts a comment.
+
+seas_12.se1
+seas_18.se1
+sefstars.txt
+semo_12.se1
+semo_18.se1
+seorbel.txt
+sepl_12.se1
+sepl_18.se1

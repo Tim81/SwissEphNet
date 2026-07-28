@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    This project is the external correctness oracle: it checks the port's output
+    against Astrodienst's own reference values (external/swisseph submodule,
+    setest/t.exp), not against the port's own prior output (that is what
+    Tests/baseline does). See README.md, "Correctness oracle" section.
+
+    It is deliberately separate from Tests/SwissEphNet.Tests: 12,757 iterations
+    must not be in the fast unit-test loop. dotnet-claude-kit:testing calls for
+    xunit v3; this repo's own precedent for a self-executing xunit v3 console
+    test project is Tools/BaselineVerify.Tests, so this project follows the same
+    shape (OutputType Exe + xunit.v3), not the xunit v2 style of
+    Tests/SwissEphNet.Tests.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>SwissEphNet.Conformance.Tests</RootNamespace>
+    <AssemblyName>SwissEphNet.Conformance.Tests</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\SwissEphNet\SwissEphNet.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\conformance\known-fail.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>conformance\known-fail.tsv</Link>
+    </None>
+    <None Include="..\conformance\required-ephemeris-files.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>conformance\required-ephemeris-files.tsv</Link>
+    </None>
+  </ItemGroup>
+
+</Project>

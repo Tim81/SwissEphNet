@@ -182,6 +182,101 @@ for what it covers and `scripts/verify-baseline.ps1` to check current code again
 The baseline is Windows-specific by design; see that file's "Platform lock" section.
 Numerical-stability findings turned up while building it are in `docs/known-issues.md`.
 
+The characterization baseline proves *self-consistency*: a change did not alter
+anything it wasn't supposed to. It cannot prove *correctness*, because it is
+generated from the port's own output. That is what the correctness oracle below
+is for.
+
+# Correctness oracle
+
+`Tests/SwissEphNet.Conformance.Tests` checks the port's output against
+Astrodienst's own reference values, not against the port's own prior output.
+The reference corpus is Swiss Ephemeris **2.10.03**'s `setest` test suite
+(12,757 iterations, ~321K asserted values across 10 functional areas); the
+port is currently at **2.08**, so most iterations fail today, and that is the
+expected starting state -- the known-fail list is the work queue for the
+port. Each porting PR should remove entries from it; any entry that reappears
+is a regression.
+
+- `external/swisseph` -- a git submodule, sparse-checked-out, pinned to tag
+  `v2.10.3final`. It serves two purposes:
+  1. **The reference corpus** for the conformance oracle: `setest/t.exp`
+     (expected values) and `setest/t.fix` (tolerances), plus the core `.se1`
+     ephemeris files, `sefstars.txt`, `seorbel.txt`, and `seleapsec.txt` that
+     the SWIEPH/analytic iterations need to run.
+  2. **The C source to diff the port against**, file by file, as porting work
+     from 2.08 to 2.10.03 proceeds (`*.c`, `*.h`, `Makefile`, `LICENSE`).
+
+  Initialize it with `git submodule update --init external/swisseph` (~25 MB;
+  it is sparse-checked-out, not the ~444 MB full checkout).
+
+- `Tests/conformance/known-fail.tsv` -- one row per iteration currently known
+  to fail, with a category (`NOT-IMPLEMENTED`, `VALUE-MISMATCH`,
+  `DATA-MISSING`, `ERROR`, or `UNREPRODUCIBLE`) and a short reason. The
+  conformance run **fails** unless the port's actual behavior matches this
+  file exactly: any iteration failing that isn't on the list (a regression),
+  any listed row recorded under a category the port no longer matches
+  (category drift -- still failing, but not the same failure), any listed row
+  that now passes (progress left un-pruned), and any row for an iteration no
+  longer in the corpus (stale) are all gate failures. There is no "reports
+  without failing" case -- the file and the port's behavior must agree, in
+  both directions, for the gate to pass.
+
+  - `NOT-IMPLEMENTED`: the port is at 2.08 and doesn't have this 2.10-only API
+    yet. `DATA-MISSING`: a required data file (a JPL DE ephemeris, `ephe/sat/`)
+    isn't shipped by this repo. `ERROR`: the dispatch threw. `VALUE-MISMATCH`:
+    the port ran and produced an answer that doesn't match the reference
+    within `t.fix` tolerance -- this and `ERROR` are the actionable
+    categories, the actual porting work queue. `UNREPRODUCIBLE`: a structural
+    C-vs-C# representational gap makes the reference call impossible to
+    construct at all, as opposed to constructible but wrong -- distinct from
+    the other three, and excluded from the pass-rate denominator the same way
+    they are (see `ConformanceReport.SuiteSummary.PassRate`'s doc comment).
+    Currently 0 across the whole corpus (suite 6 testcase 6, the one place
+    that used to carry all of it, became reproducible once the port's five
+    house entry points gained faithful `int hsys` overloads -- see
+    `Suite06Houses.Dispatch`'s remarks on testcase 6 for the mechanics).
+
+  See "Reporting by testcase" in `CONTRIBUTING.md` for how to read a run
+  (60 testcases, split into actionable vs. parked) instead of 12,757
+  individual rows, and "The two gates disagree on purpose, not by accident"
+  for why this gate failing constantly is expected and the characterization
+  baseline above failing at all is not -- they are not the same kind of
+  red.
+
+- Two data sources this repo does not ship are skipped by default and
+  reported as `DATA-MISSING`, not run: `SEFLG_JPLEPH` iterations need a
+  multi-hundred-MB JPL DE file (opt in with `SWISSEPH_CONFORMANCE_INCLUDE_JPL=1`
+  and `SWISSEPH_CONFORMANCE_JPL_FILE=<path>`), and planetary-moon bodies
+  (`ipl` 9000-9999) need `ephe/sat/` at ~227 MB (opt in with
+  `SWISSEPH_CONFORMANCE_INCLUDE_MOONS=1` and that directory populated).
+
+- A separate workflow, not folded into `ci.yml`'s fast job:
+  `.github/workflows/conformance.yml` runs on a schedule, on demand, and on
+  pull requests that touch `SwissEphNet/**` or the oracle itself -- gated by
+  `paths`, so it does not run on every PR the way `ci.yml` does. It earns that
+  spot on the PR path on cost, not by default: dispatching all 12,757
+  iterations is ~2s in-process (measured, Release build,
+  `Tools/ConformanceKnownFailGen`), and `dotnet test
+  Tests/SwissEphNet.Conformance.Tests` end-to-end (both TFMs, including test
+  host startup) is ~8s. The submodule checkout is the only real cost and is
+  sparse (~25 MB, not the full ~444 MB `git submodule update --init` would
+  pull) and cached on the pinned commit SHA.
+
+- Regenerating `Tests/conformance/known-fail.tsv` is
+  `scripts/regenerate-known-fail.ps1 -PruneOnly` to remove newly-passing rows
+  (the common case after a porting PR; refuses to run if it would add or
+  recategorize a row instead) or `-Reason "..." [-PR N]` for a full
+  regenerate that can also add rows -- see "Correctness oracle known-fail
+  list" in `CONTRIBUTING.md` for the invariant it enforces (rows may be
+  removed freely; adding one needs a written reason and review).
+
+**Licensing note:** vendoring Swiss Ephemeris 2.10.x source is consistent with
+the AGPL-3.0 relicensing Astrodienst has planned for that line, but that
+relicensing has **not** happened in this repo yet -- `LICENSE` here is still
+GPL-2. The license itself is unchanged by the submodule; a separate PR should
+land that relicensing before or alongside any further 2.10.03 porting work.
+
 # Firsts steps
 
 Our first step is to convert the C source code to C#, and provide some conversions from C like string format.
