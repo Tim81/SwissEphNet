@@ -101,6 +101,121 @@ source" apart from "deliberate platform difference" (a parallel site
 transliterated correctly elsewhere in the same file is strong evidence of the
 former).
 
+**Every porting PR must cite the C hunk range it implements** (e.g.
+`sweph.c:2310-2358`), against the upstream C described below, so a reviewer
+can check the C# against the exact hunk without having to reconstruct the diff
+themselves. `.github/pull_request_template.md` has a required field for this.
+A PR that changes a frozen file with no hunk citation should not be merged.
+
+### The upstream C is vendored at `external/swisseph`
+
+`external/swisseph` is a git submodule of `https://github.com/aloistr/swisseph`,
+pinned to tag `v2.10.3final` -- the upstream C this port is being upgraded to.
+It is sparse-checked-out to keep it small: only `*.c`, `*.h`, `Makefile`,
+`LICENSE` and `setest/` (the reference test corpus `Tests/SwissEphNet.Conformance.Tests`
+is built against) are pulled. `ephe/` (the ephemeris data files) is deliberately
+excluded -- it is 378 MB across 259 files and nothing in this repo needs it.
+
+To initialize it:
+
+```powershell
+git submodule update --init external/swisseph
+```
+
+If a from-scratch, disk-conscious checkout matters (CI, a fresh clone), do the
+sparse setup before the first checkout rather than after, so the partial clone
+never fetches blobs for the excluded paths in the first place:
+
+```powershell
+git submodule init
+git clone --filter=blob:none --no-checkout --sparse `
+    https://github.com/aloistr/swisseph.git external/swisseph
+cd external/swisseph
+git sparse-checkout set --no-cone /*.c /*.h /Makefile /LICENSE /setest/*
+git checkout v2.10.3final
+cd ../..
+git submodule absorbgitdirs external/swisseph
+```
+
+(`git submodule update --init` alone still works and lands at the same commit;
+it is simpler to type but checks out every file at HEAD once before any sparse
+pattern narrows the working tree, which briefly touches all of `ephe/` if you
+care about that during the clone.)
+
+CI jobs that do not read `external/swisseph` should not pay for it: `actions/checkout@v4`
+does not fetch submodules by default, and none of the jobs in `.github/workflows/ci.yml`
+or `.github/workflows/baseline.yml` need to -- they build, test and freeze-check the
+.NET solution, none of which reads the vendored C. Only add `submodules: true` (or
+`recursive`) to a checkout step if a future job actually invokes `scripts/gen-delta.ps1`
+or otherwise reads `external/swisseph` in CI.
+
+### The 2.08 baseline trap
+
+Porting to 2.10.03 means diffing it against 2.08, the C version this port
+currently tracks. **Do not diff against the `v2.08.00a` tag in `aloistr/swisseph`.**
+That tag is an incomplete snapshot of the 2.08 release: it is missing `swecl.c`,
+`swehouse.c` and `swehel.c` entirely, and its `swephexp.h` is truncated (about
+14 KB against the real 38,410 bytes). Diffing against it silently produces a
+wrong work queue for three of the five files the 2.10.03 port touches -- those
+three files simply do not appear in the diff at all, and nothing about a
+missing file from a git tag looks like an error.
+
+The correct 2.08 baseline is the **PyPI `pyswisseph 2.08.00-1` sdist**, which
+vendors the complete, unmodified 2.08 tree under `libswe/`. Verified byte
+sizes: `swecl.c` 221,667 B, `swehouse.c` 94,080 B, `swehel.c` 123,155 B,
+`swephexp.h` 38,410 B, 24 `.c`/`.h` files present (31 files total, including
+the data files and `Makefile`).
+
+`scripts/fetch-2.08-baseline.ps1` downloads that sdist, verifies its own
+sha256, extracts `libswe/`, and checks every file it contains against
+`scripts/pyswisseph-2.08.manifest.tsv` (sha256, byte size, line count per
+file). It fails loudly on any mismatch rather than proceeding with an
+unverified baseline. Nothing it downloads is committed -- the output directory
+(`external/pyswisseph-2.08/`) is gitignored; only the script and the manifest
+are tracked. Run it with:
+
+```powershell
+pwsh scripts/fetch-2.08-baseline.ps1
+```
+
+This is a structural guard, not a convention: the script has exactly one 2.08
+input (the PyPI URL above) and no parameter or code path that can reach the
+`v2.08.00a` git tag instead.
+
+### Generating a per-file delta
+
+`scripts/gen-delta.ps1` diffs a file between the 2.08 baseline (fetched above)
+and the pinned 2.10.03 submodule:
+
+```powershell
+pwsh scripts/gen-delta.ps1 -File sweph.c
+pwsh scripts/gen-delta.ps1               # every file present on both sides
+```
+
+Like the fetch script, it has no parameter that accepts a different 2.08
+source -- the 2.08 side is always `external/pyswisseph-2.08/`, the 2.10.3 side
+is always `external/swisseph/`.
+
+Two filters make the output usable instead of just noisy:
+
+* **License-noise filter**, on by default. Astrodienst's GPL-2 -> AGPL-3
+  relicensing touches every file with the same header rewrite (copyright
+  year, "GNU public license" -> "GNU Affero General Public License", the
+  license URL, and the surrounding blank-line churn). A hunk is dropped from
+  the report, and counted separately, only when every one of its changed
+  lines matches that known rewrite -- a hunk that mixes a license-text change
+  with a real code change is left in. Pass `-IncludeLicenseHunks` to see it
+  anyway.
+* **Comments-stripped variant for headers.** A raw diff of a `.h` file
+  over-counts: header files are mostly doc comments, and unlike the `.c`
+  files (where the license block is usually its own isolated hunk), a
+  header's license-comment edits often sit close enough to a real
+  `#define`/prototype change to land in the same hunk. Stripping `/* ... */`
+  comments from both sides before diffing isolates the actual code delta.
+  `sweph.h` is +277/-100 raw but about 70 lines of real code change once
+  comments are stripped -- reported alongside the raw count, not instead of
+  it.
+
 ## The analyzer carve-out (fixed in PR #4)
 
 `SwissEphNet/CPort/.editorconfig` re-enables five analyzer rules --
