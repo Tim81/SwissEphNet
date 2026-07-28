@@ -82,7 +82,7 @@ namespace SwissEphNet.Tests
                 // fields: differentiation noise" (numerical differentiation
                 // amplifying ULP-level position differences between
                 // platforms), just larger in magnitude for this particular
-                // star/quantity; it is not related to any of PR1's five
+                // star/quantity; it is not related to any of PR #4's six
                 // bugs. 4 decimal places keeps this assertion meaningful
                 // while tolerating that divergence.
                 Assert.Equal(0.015543, xx[5], 4);

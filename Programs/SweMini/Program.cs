@@ -27,6 +27,8 @@
   Authors: Dieter Koch and Alois Treindl, Astrodienst Zurich
 
 **************************************************************/
+/* The code of sample program swemini.c is in the public domain. (But not the
+   code of the library functions called by it.) */
 using System;
 using System.Collections.Generic;
 using System.Linq;

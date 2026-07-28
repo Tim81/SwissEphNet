@@ -146,7 +146,7 @@ same way you would explain any other reviewed code change. If you cannot
 explain a FAIL row before regenerating, you are not ready to regenerate it --
 go find out why it FAILs first.
 
-This PR (`fix/known-library-bugs`, the `DIR_GLUE` mis-transliteration fix; see
+PR #4 (`fix/known-library-bugs`, the `DIR_GLUE` mis-transliteration fix; see
 `docs/known-issues.md`) is the worked example: fixing `CPort/Sweph.cs:2634` and
 `SwissEph.DIR_GLUE` changed a `serr` diagnostic string's path separator from
 `[ephe]\` to `[ephe]/` in exactly 207 rows (192 `ayanamsa`, 15 `datetime`), and
@@ -259,10 +259,21 @@ to Windows.** It is not portable to Linux/macOS by construction, and that is a
 choice, not an oversight -- see the measurements below for why.
 
 A full Windows-vs-Linux comparison (same source, same commit, `.NET SDK 10.0.302`
-both sides, Linux via `mcr.microsoft.com/dotnet/sdk:10.0` on Ubuntu 24.04) found:
+both sides, Linux via `mcr.microsoft.com/dotnet/sdk:10.0` on Ubuntu 24.04) found
+the numbers below, against the matrix as it stood at the time of that comparison
+(3,443,058 numeric fields). The matrix has since widened: the committed baseline
+now has 3,453,972 total fields, 3,426,469 of which parse as numbers -- about
+10,900 more numeric fields than this comparison covered. The percentages and the
+per-field findings below (the `'Y'` and `'i'` house-system bugs, the SPEED
+differentiation noise) are not invalidated by that -- they describe fields still
+present in the current matrix -- but the absolute counts are scoped to the
+smaller, earlier matrix and have not been re-measured against the current one.
+Re-running this comparison against the current matrix, on Linux, would be needed
+to get current absolute counts; see "Verifying current code against the
+baseline" above for how to run a report-only pass yourself.
 
-- **3,443,058** numeric fields compared; **47,052** (1.37%) differ at all between
-  platforms.
+- **3,443,058** numeric fields compared (at the time of this comparison); **47,052**
+  (1.37%) differ at all between platforms.
 - Of those 47,052, only **108** are genuine angle-wraparound (raw difference > 180
   degrees, i.e. one side normalized to 0 and the other to something just under 360)
   -- and the wraparound allowance resolves all 108 of them, exactly. (An earlier

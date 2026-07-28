@@ -1,7 +1,8 @@
 # SwissEphNet
 
-This project is an Astrodienst Swiss Ephemeris (http://www.astro.com/swisseph/) .Net portage from 
-C (version 2.06) to C# in a PCL/.Net Core project for cross platform usage.
+This project is an Astrodienst Swiss Ephemeris (http://www.astro.com/swisseph/) .Net portage from
+C (currently tracking version 2.08; the 2.10.03 port has not started) to C#, targeting
+netstandard2.0, .NET 8 and .NET 10 for cross platform usage.
 
 ## About this repository
 
@@ -33,15 +34,11 @@ Swiss Ephemeris, and therefore this library, is dual-licensed. You must choose o
 See [`LICENSE`](LICENSE) for the full license conditions, [`agpl-3.0.txt`](agpl-3.0.txt) for the
 AGPL text, and [`NOTICE`](NOTICE) for attribution.
 
-Since version 2.6.0.21, the nuget package includes 2 versions:
-- .Net 4.0
-- .Net Standard 1.0
+The library targets 3 frameworks: `netstandard2.0`, `net8.0` and `net10.0`. It is not currently
+published as a NuGet package (see the versioning note in `SwissEphNet.csproj`); build it from
+source or reference the project directly.
 
-The programs SweMini and SweTest are availables in 2 versions:
-- .Net 4.0
-- .Net Core App 1.0
-
-These programs are available in the "binary.zip" of [each release](https://github.com/ygrenier/SwissEphNet/releases).
+The programs SweMini and SweTest target `net10.0`.
 
 ## Samples
 
@@ -94,11 +91,12 @@ continue to exist in parallel :
 
 # Usage
 
-Now SwissEphNet is available as a [Nuget package](https://www.nuget.org/packages/SwissEphNet): `Install-Package SwissEphNet`
+This fork is not currently published to NuGet (see the versioning note in `SwissEphNet.csproj`).
+An older release of the upstream project is available as a
+[Nuget package](https://www.nuget.org/packages/SwissEphNet), but it predates this fork's retarget
+and bug fixes. Build from source or reference `SwissEphNet/SwissEphNet.csproj` directly.
 
-Or you can download the binaries in [the last release](https://github.com/ygrenier/SwissEphNet/releases/latest).
-
-SwissEphNet is a Portable Class Library with support for .Net 4+, Silverlight 5, Windows Phone 8, Windows Store apps, Xamarin.Android and Xamarin.iOS.
+SwissEphNet targets `netstandard2.0`, `net8.0` and `net10.0`.
 
 ## Create an instance
 
@@ -112,7 +110,7 @@ using (var sweph = new SwissEphNet.SwissEph()) {
 
 ## Loading files
 
-SwissEphNet is a Portable Classe Library and we don't have file access.
+SwissEphNet does not access the file system directly.
 
 As Swiss Ephemeris use some data files, an event exists for loading the files required.
 
@@ -127,13 +125,17 @@ using (var sweph = new SwissEphNet.SwissEph()) {
 
 For more information [read this page](https://github.com/ygrenier/SwissEphNet/wiki/Loading-files).
 
-# Continuous Integration in AppVeyor
+# Continuous Integration
 
-The library is built and tested continuously with [AppVeyor CI](https://ci.appveyor.com/project/ygrenier/swissephnet).
+This fork replaced the upstream project's AppVeyor CI with GitHub Actions; see
+`.github/workflows/`.
 
-Current build status of the branch ```master``` : [![Build status](https://ci.appveyor.com/api/projects/status/srgd3dqui7f4uvq5/branch/master)](https://ci.appveyor.com/project/ygrenier/swissephnet/branch/master)
+# Contributing
 
-Beware the build version number in AppVeyor is not the same than the published library.
+Before touching `SwissEphNet/CPort/`, `Programs/SweTest/Program.cs` or `Programs/SweMini/Program.cs`,
+read `CONTRIBUTING.md`. Those files are deliberate, line-by-line transliterations of the Swiss
+Ephemeris C source and must never be reformatted or restructured; that correspondence is what
+makes each upstream Swiss Ephemeris upgrade tractable.
 
 # Characterization baseline
 

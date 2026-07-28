@@ -50,8 +50,9 @@ also stops the platforms from diverging (worth checking, not assumed).
 At `eps=0` with `hsys` in `{P, G, J, Z, 0}` (648 rows each, 3,240 rows total),
 `swe_houses_armc` returns `retc = 0` (success) while several cusp fields are `NaN`
 -- 39,312 `NaN` fields across those 3,240 rows. Example: `H|0|0|-10|0` (hsys `'0'`,
-an invalid letter that falls through to the Placidus default) has cusp[3] and
-cusp[4] both `NaN`, `retc` still `0`.
+an invalid letter that falls through to the Placidus default) has cusp[2],
+cusp[3], cusp[5], cusp[6], cusp[8], cusp[9], cusp[11], and cusp[12] all `NaN`,
+`retc` still `0`.
 
 The `NaN` itself is plausible: `eps=0` is a genuinely degenerate obliquity for
 several house systems (Placidus's iterative solution and Gauquelin's sector
@@ -234,6 +235,71 @@ eight fields describe the reference-mode run and are kept verbatim (the
 assembly-identity check depends on that), and this deviation -- 207 rows, the
 `serr` path separator, this DIR_GLUE fix -- is recorded as entry 1.
 
+## netstandard2.0-only infinite recursion in StringExtensions.Contains
+
+`SwissEphNet/Extensions/StringExtensions.cs`'s `Contains(this string, char)`
+and `Contains(this string, char[])` extension methods called `s.Contains(c)`
+internally. On `net8.0`/`net10.0` that binds to the real BCL
+`string.Contains(char)` instance method. `netstandard2.0`'s `System.String`
+has no `Contains(char)` overload at all (only `Contains(string)`), so on that
+target the call cannot bind to any instance method and falls back to binding
+to the extension method itself -- unbounded recursion, an uncatchable
+`StackOverflowException` that terminates the process. Reachable from
+`SwemPlan.cs` (the `seorbel.txt` reader), `C.printf.cs`'s format-flag
+parsing, `C.scanf.cs`'s scanset parsing, and `SwephLib.cs`
+(`swe_get_astro_models`, a public API entry point). Nothing caught this
+because `Tests/SwissEphNet.Tests` targets `net8.0;net10.0` only: a
+`ProjectReference` always resolves the newest compatible asset from a
+multi-targeted project, so the `netstandard2.0` build had been compiled and
+shipped but never actually executed by anything.
+
+Fixed by reverting both `Contains` overloads to `s.Contains(c.ToString())`
+(the one `Contains` overload that exists on every target framework, already
+ordinal by definition) and `C.printf.cs`'s flag parsing to
+`flags.IndexOf(ch) >= 0` (also on every TFM, also already ordinal). Verified
+end to end: temporarily reintroducing `s.Contains(c)` reproduces the
+hang/crash under the added `Tests/NetStandard20Smoke.Tests` project (a
+`net48` project, which is the one host that resolves a multi-targeted
+`ProjectReference` down to the `netstandard2.0` asset); reverting to
+`s.Contains(c.ToString())` makes all of that project's tests pass again in
+under half a second. `Tests/NetStandard20Smoke.Tests` now runs on every
+change (`dotnet test Tests/NetStandard20Smoke.Tests -c Release`, Windows
+only, `net48` cannot build or run elsewhere), closing the gap.
+
+## Five transliteration-fidelity defects found by a targeted string/array audit
+
+An audit of every string operation and array allocation in
+`SwissEphNet/CPort` against the C it was ported from found five further
+defects, each with its own regression test in
+`Tests/SwissEphNet.Tests/TransliterationFidelityTest.cs` (Defects 1, 2, 3, 3b
+and 4 in that file's comments, which cite the exact C file/line each one
+diverged from) plus a sixth, separately-numbered "Tier 2" test for an
+unrelated culture-dispatch bug in `SweHouse.cs`'s house-system `'i'`
+dispatch:
+
+- **Defect 1** (`sweph.c:7386-7387`): `swi_fixstar_load_record` used
+  `Trim(' ')` where the C strips every internal space from the candidate star
+  name, leaving multi-word names (e.g. "Galactic Center") unable to match a
+  search key that had already had its own spaces removed.
+- **Defect 2** (`sweph.c:5996-5997`): `fixstar_format_search_name` lowercased
+  `sstar.Substring(0, p - 1)` instead of `Substring(0, p)`, dropping the
+  character immediately before the comma in "Name,Bayer"-form search
+  strings -- since `swe_fixstar` rewrites its `ref` string to that form on
+  return, a call-again-with-the-same-variable loop silently matched the wrong
+  star on the second call.
+- **Defect 3 and 3b** (`swehel.c:1443-1449`): `tolower_string_star` computed a
+  lower-cased value but never assigned it back to its `ref string`
+  parameter, so `swe_vis_limit_mag`'s Moon special-case
+  (`ObjectName.StartsWith("moon")`) never matched a capitalized "Moon"; a
+  related missing `p > 0` guard threw `ArgumentOutOfRangeException` instead
+  of leaving a comma-first string untouched.
+- **Defect 4** (`swephlib.c:4052,4058`): `swe_set_astro_models` used
+  `Substring(0, 20)`, which throws on any input under 20 characters
+  (including empty/null, which the C explicitly handles), and `"s + 2"`
+  string concatenation where the C does pointer arithmetic (skip 2 bytes),
+  which silently always returned 0 from `C.atof` and selected the current
+  library version instead of the one actually requested.
+
 ## swe_fixstar_ut distance speed: larger cross-platform differentiation noise
 
 `Test_swe_fixstar_ut` (Aldebaran, MOSEPH) pins `xx[5]` (distance speed) to
@@ -245,19 +311,23 @@ below. It is the same category of finding (numerical differentiation of a
 finite difference amplifying a tiny cross-platform difference in the
 underlying position), just amplified further here, plausibly because `xx[5]`
 divides a distance difference by a very small `dt`: found while confirming
-PR1's fixed-star bug fixes on Linux (see PR1's `known-library-bugs` work),
-not something PR1 introduced or is in scope to fix, since it is not related
+PR #4's (`fix/known-library-bugs`) fixed-star bug fixes on Linux, not
+something PR #4 introduced or is in scope to fix, since it is not related
 to any of that PR's bugs (Windows-1252/UTF-8 decoding, culture-sensitive
 string comparison, `atoi` sign handling, `CPointer<T>.operator !=`, `DIR_GLUE`,
 or the fixed-star `bsearch` comparator).
 
 **Confirmed against the base branch, not assumed:** re-ran this exact test on
-the unmodified `release/2.10.03` branch (a `git worktree` checkout, the
-`WindowsOnlyFact` skip removed only in that throwaway copy, no other change),
-in the same Linux container. It fails identically: `Expected: 0.015543
-... Actual: 0.015532000000000001 (rounded from 0.015532476471018478)`,
-byte-for-byte the same numbers PR1's branch produces. This rules out any of
-PR1's own changes as the cause -- the divergence predates all of them.
+the unmodified `release/2.10.03` branch (a `git worktree` checkout, with the
+non-Windows fixed-star skip that was in place on that base branch at the
+time -- the custom `WindowsOnlyFactAttribute`, added to skip known
+Windows-1252/culture-sensitivity failures on Linux, since removed for good
+once the UTF-8 encoding and ordinal-comparison fixes landed in PR #4 --
+lifted only in that throwaway copy, no other change), in the same Linux
+container. It fails identically: `Expected: 0.015543 ... Actual:
+0.015532000000000001 (rounded from 0.015532476471018478)`, byte-for-byte the
+same numbers PR #4's branch produces. This rules out any of PR #4's own
+changes as the cause -- the divergence predates all of them.
 `Test_swe_fixstar_ut`'s assertion on `xx[5]` was loosened from 6 to 4 decimal
 places to accommodate it, rather than pinning a platform-specific value or
 skipping the assertion.
@@ -290,8 +360,13 @@ case it becomes relevant when porting the 2.10.03 SweHouse delta.
 
 Full numbers, the tolerance-level cost table, and the reasoning for locking the
 gate to Windows instead of loosening the shipped tolerance, are in
-`Tools/BaselineGen/README.md` under "Platform lock". Summary: of 3,443,058 numeric
-fields compared, 47,052 differ at all between Windows and Linux. Of those, only
+`Tools/BaselineGen/README.md` under "Platform lock". Summary, measured against
+the matrix as it stood when this comparison was run (3,443,058 numeric fields;
+the committed baseline has since widened to 3,453,972 total fields, 3,426,469
+of which parse as numbers, about 10,900 more numeric fields than this
+comparison covered -- see `Tools/BaselineGen/README.md` for the re-scoping
+and why the two counts differ): of the 3,443,058 numeric fields compared,
+47,052 differ at all between Windows and Linux. Of those, only
 108 are genuine angle-wraparound (raw difference > 180 degrees) and the
 wraparound fix (`Comparer.EffectiveAbsoluteDiff`) resolves all 108 of them
 exactly; 3,346 fields are still beyond the shipped `1e-12`/`1e-13` tolerance. The
