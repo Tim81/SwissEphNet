@@ -41,8 +41,16 @@
       Text="BaselineVerify must never build with UseReferencePackage=true. It exists to compare current in-repo code against the frozen reference; if it built against the reference package, it would compare that package against a baseline generated from itself and pass no matter what changed. Remove -p:UseReferencePackage=true from the command line." />
   </Target>
 
+  <!--
+    Lives at Tests/baseline/waivers.tsv, not alongside this project, so a change to it is swept
+    up by scripts/verify-baseline-log.ps1's Tests/baseline/*.tsv filter: the same append-only
+    "## Local regenerations" log guard that already covers every golden baseline-*.tsv file (see
+    that file's own header comment for why). Linked into the output directory under its bare
+    name so Program.cs's runtime lookup (Path.Combine(AppContext.BaseDirectory, "waivers.tsv"))
+    does not need to know the source lives one level up and one directory over.
+  -->
   <ItemGroup>
-    <None Update="waivers.tsv">
+    <None Include="..\..\Tests\baseline\waivers.tsv" Link="waivers.tsv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

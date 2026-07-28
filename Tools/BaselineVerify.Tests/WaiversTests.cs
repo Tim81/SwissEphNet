@@ -161,6 +161,33 @@ public class WaiversTests
     }
 
     [Fact]
+    public void CompileGlob_IsTheSameCompilerLoadUses()
+    {
+        // Waivers.CompileGlob is what BaselineVerify's --diff-scope mode calls to
+        // validate -ExpectedScope globs (scripts/regenerate-baseline.ps1). It must
+        // apply exactly the rules Load() applies to Tests/baseline/waivers.tsv -- this is the
+        // "do not write a second glob implementation" guarantee, exercised directly.
+        var pattern = Waivers.CompileGlob("H|**", "--expected-scope", "-ExpectedScope glob");
+        Assert.Matches(pattern, "H|A|23.4392911|-89|0");
+        Assert.DoesNotMatch(pattern, "HP|G|0|-45|0|-5");
+    }
+
+    [Fact]
+    public void CompileGlob_RejectsCatchAllRegardlessOfCallerLabel()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() => Waivers.CompileGlob("*", "--expected-scope", "-ExpectedScope glob"));
+        Assert.Contains("-ExpectedScope glob", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("catch-all", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CompileGlob_RejectsWildcardBeforeFirstPipeRegardlessOfCallerLabel()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() => Waivers.CompileGlob("H**", "--expected-scope", "-ExpectedScope glob"));
+        Assert.Contains("wildcard before its first '|'", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void MatchAll_FieldLocalStarDoesNotCrossPipes()
     {
         var path = WriteWaiversFile("H|*\t123\treason\n");

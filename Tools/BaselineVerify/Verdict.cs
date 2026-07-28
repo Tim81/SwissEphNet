@@ -123,6 +123,28 @@ internal static class Verdict
             .ToList();
     }
 
+    /// <summary>
+    /// Every area must have a committed expected row count in Tests/baseline/row-counts.tsv
+    /// (see RowCounts.cs). Missing entirely is its own failure, distinct from a mismatch,
+    /// so a reviewer immediately knows whether the manifest was never written for this area
+    /// (e.g. a newly added area that forgot to register it) versus written and then violated.
+    /// </summary>
+    public static AreaVerdict MissingRowCountEntry(string area) =>
+        AreaVerdict.Fail(
+            $"no entry for '{area}' in Tests/baseline/row-counts.tsv. Every area needs a committed " +
+            "expected row count so a silently truncated or narrowed baseline file cannot pass as long " +
+            "as FAIL/ONLY-LOCAL/ONLY-REFERENCE all read zero. scripts/regenerate-baseline.ps1 writes this " +
+            "file's entries in the same pass as the TSVs; run it (with a correct -ExpectedScope) rather " +
+            "than editing row-counts.tsv by hand.");
+
+    public static AreaVerdict RowCountMismatch(string area, int expected, int actual) =>
+        AreaVerdict.Fail(
+            $"row count {actual} does not match the {expected} committed in Tests/baseline/row-counts.tsv. " +
+            "A deliberate row-count change (a widened sweep, a new house system, a new area) must go " +
+            "through scripts/regenerate-baseline.ps1, which rewrites the TSV and this manifest together, " +
+            "under -ExpectedScope. If this change was not deliberate, the baseline file was edited, " +
+            "truncated, or regenerated outside that path.");
+
     public static WaiverVerdict ForWaiver(Waiver waiver, WaiverStats stats)
     {
         if (stats.Matched == 0)

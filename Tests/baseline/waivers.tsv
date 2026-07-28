@@ -1,0 +1,25 @@
+# Case-ID waivers for BaselineVerify.
+#
+# Lives in Tests/baseline/, not Tools/BaselineVerify/, deliberately: scripts/verify-baseline-log.ps1
+# filters on Tests/baseline/*.tsv to require a "## Local regenerations" log entry (in
+# Tests/baseline/baseline-*.env.txt) for any committed change under this directory, and a waiver
+# is exactly the kind of change that needs the same append-only, reviewed record -- it excuses
+# real differences from the frozen reference just as surely as a -FromLocal regeneration does,
+# and previously could be added or edited with no forced record at all. There is no
+# regenerate-baseline.ps1 mode that writes a waiver, so add the log entry by hand (same as a
+# reference-mode version bump already requires) describing which waiver changed and why; see
+# Tools/BaselineGen/README.md.
+#
+# Format: <glob>\t<PR-number>\t<reason>
+# All three fields are required and non-empty; a malformed line is a hard load-time
+# error, not a silent skip. See Tools/BaselineVerify/Waivers.cs for glob syntax ('*' is
+# field-local, '**' crosses fields) and why "*"/"**" and anything matching the synthetic
+# probe case id are rejected outright.
+#
+# Every waiver is checked for staleness at the end of a run: if it matched zero rows,
+# or every row it matched was byte-for-byte identical anyway, the run fails. A waiver
+# that isn't earning its keep is worse than no waiver: it's coverage nobody is
+# looking at. Add a waiver in the same PR that needs it, and delete it in the PR that
+# makes it unnecessary -- do not leave it behind "just in case".
+#
+# No entries at the moment: intentionally empty.

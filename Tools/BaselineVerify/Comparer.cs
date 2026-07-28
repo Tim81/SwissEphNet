@@ -61,7 +61,7 @@ internal sealed class CompareResult
 ///
 /// A case id can match more than one waiver (e.g. a broad area waiver and a narrower
 /// one nested inside it); every matching waiver gets credit, not just the first one
-/// found, so waiver semantics do not silently depend on line order in waivers.tsv.
+/// found, so waiver semantics do not silently depend on line order in Tests/baseline/waivers.tsv.
 /// </summary>
 internal static class Comparer
 {
@@ -92,7 +92,8 @@ internal static class Comparer
         IReadOnlyList<string> referenceRows,
         IReadOnlyList<Waiver> waivers,
         Dictionary<Waiver, WaiverStats> waiverStats,
-        string areaName)
+        string areaName,
+        List<string>? fullFieldDump = null)
     {
         var local = Index(localRows, $"{areaName} (local run)");
         var reference = Index(referenceRows, $"{areaName} (committed baseline)");
@@ -118,6 +119,7 @@ internal static class Comparer
             {
                 result.OnlyReference++;
                 result.FailureDetails.Add($"{caseId}: present in committed baseline, missing from current local run (not waivable)");
+                fullFieldDump?.Add($"{areaName}\t{caseId}: present in committed baseline, missing from current local run (not waivable)");
                 continue;
             }
 
@@ -125,10 +127,19 @@ internal static class Comparer
             {
                 result.OnlyLocal++;
                 result.FailureDetails.Add($"{caseId}: present in current local run, missing from committed baseline (not waivable)");
+                fullFieldDump?.Add($"{areaName}\t{caseId}: present in current local run, missing from committed baseline (not waivable)");
                 continue;
             }
 
             var (outcome, detail) = CompareFields(caseId, localFields!, referenceFields!);
+
+            if (fullFieldDump is not null && outcome != FieldOutcome.Exact)
+            {
+                foreach (var line in DescribeAllFieldDifferences(caseId, localFields!, referenceFields!))
+                {
+                    fullFieldDump.Add($"{areaName}\t{line}");
+                }
+            }
             var matchingWaivers = Waivers.MatchAll(waivers, caseId);
 
             if (matchingWaivers.Count > 0)
@@ -218,6 +229,47 @@ internal static class Comparer
         }
 
         return (allExact ? FieldOutcome.Exact : FieldOutcome.ToleranceOk, null);
+    }
+
+    /// <summary>
+    /// Every differing field on a row, not just the first (which is all
+    /// <see cref="CompareFields"/> reports, since it returns as soon as it finds a
+    /// field beyond tolerance -- a FAIL row with three divergent fields shows only
+    /// one of them today). Used by BaselineVerify's <c>--dump-failures</c> mode,
+    /// which needs the complete picture to confirm a change (or a deviation-note
+    /// claim) touched only the fields it says it did; see the 207-row DIR_GLUE
+    /// review in Tools/BaselineGen/README.md, which had to do this by hand because
+    /// nothing in the tool did it for them.
+    /// </summary>
+    internal static IEnumerable<string> DescribeAllFieldDifferences(string caseId, string[] local, string[] reference)
+    {
+        if (local.Length != reference.Length)
+        {
+            yield return $"{caseId}: field count differs (local {local.Length} value fields, reference {reference.Length} value fields)";
+            yield break;
+        }
+
+        for (var i = 0; i < local.Length; i++)
+        {
+            var l = local[i];
+            var r = reference[i];
+            if (string.Equals(l, r, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var location = $"array index {i}, raw column {i + 2}";
+
+            if (TryParseDouble(l, out var lv) && TryParseDouble(r, out var rv))
+            {
+                var tag = WithinTolerance(lv, rv) ? "within tolerance" : "BEYOND TOLERANCE";
+                yield return $"{caseId}: {location} {tag} (local={l}, reference={r})";
+            }
+            else
+            {
+                yield return $"{caseId}: {location} exact-match mismatch (local=\"{l}\", reference=\"{r}\")";
+            }
+        }
     }
 
     // Internal (not private): DivergenceReport reuses this so the "what does the

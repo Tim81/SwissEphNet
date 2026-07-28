@@ -20,7 +20,7 @@
 
     Exit code is 0 only if every area, for every TFM, passes (exact match, within
     tolerance, or within the angle-wraparound allowance -- see Comparer.cs) after
-    applying Tools/BaselineVerify/waivers.tsv.
+    applying Tests/baseline/waivers.tsv.
 
     The baseline was generated on Windows and this gate is locked to Windows; see
     Tools/BaselineGen/README.md for the measured cross-platform divergence and why

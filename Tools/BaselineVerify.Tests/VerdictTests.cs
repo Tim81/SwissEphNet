@@ -146,6 +146,24 @@ public class VerdictTests
         Assert.Equal(["baseline-calc.tsv"], orphans);
     }
 
+    [Fact]
+    public void MissingRowCountEntry_Fails()
+    {
+        var verdict = Verdict.MissingRowCountEntry("calc");
+        Assert.False(verdict.Passed);
+        Assert.Contains("calc", verdict.Reasons[0]);
+        Assert.Contains("row-counts.tsv", verdict.Reasons[0]);
+    }
+
+    [Fact]
+    public void RowCountMismatch_Fails()
+    {
+        var verdict = Verdict.RowCountMismatch("calc", expected: 12608, actual: 1);
+        Assert.False(verdict.Passed);
+        Assert.Contains("12608", verdict.Reasons[0]);
+        Assert.Contains("1", verdict.Reasons[0]);
+    }
+
     private static Waiver MakeWaiver(string glob = "A|*")
     {
         var path = Path.Combine(Path.GetTempPath(), $"waiver-{Guid.NewGuid():N}.tsv");

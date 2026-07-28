@@ -44,11 +44,39 @@
     (what a reviewer needs to understand the deviation without re-deriving it),
     appended to the sidecar's "Local regenerations" log along with the current
     commit hash and UTC date. Not valid without -FromLocal.
+
+.PARAMETER ExpectedScope
+    Required, always (both modes). One or more case-id globs (Tools/BaselineVerify/Waivers.cs
+    syntax: '*' matches within one pipe-delimited field, '**' crosses fields, e.g. "H|J|**" to
+    scope an entire area) describing every case id this regeneration is expected to add,
+    remove, or change.
+
+    Accepts either real multiple values (-ExpectedScope 'H|**','C|**', or repeated -ExpectedScope
+    from a caller that supports it) or a single comma-joined string (-ExpectedScope 'H|**,C|**')
+    -- both are normalized to the same list below. This matters because invoking a script
+    parameter from outside a live PowerShell session (a CI YAML step, a non-PowerShell shell)
+    delivers whatever the caller's own argv splitting produced, and "one value per flag" is the
+    only form every such caller can produce reliably; comma-splitting internally means neither
+    form silently drops a glob.
+
+    Before anything under Tests/baseline/ is touched, this script runs
+    Tools/BaselineVerify's --diff-scope mode across every area, comparing the currently
+    committed baseline (old) against the freshly generated run (new). If any added, removed,
+    or changed case id in any area fails to match at least one -ExpectedScope glob, the
+    regeneration is refused outright and the offending case ids are printed -- nothing is
+    written. This exists because "diff it yourself and confirm every changed row is explained"
+    (the instruction this script used to give and still gives below) cannot actually be
+    followed by someone using this script's own console output as their guide: a corrupted
+    constant can move thousands of rows by less than the comparison tolerance, failing only
+    one area in scripts/verify-baseline.ps1 while -FromLocal's diff is silently much wider than
+    that. -ExpectedScope turns "read the full diff yourself" into "read the one line this tool
+    already proved true" -- see Tools/BaselineVerify/Program.cs's RunDiffScopeMode.
 #>
 
 param(
     [switch]$FromLocal,
-    [string]$DeviationNote
+    [string]$DeviationNote,
+    [string[]]$ExpectedScope
 )
 
 $ErrorActionPreference = 'Stop'
@@ -59,6 +87,30 @@ if ($FromLocal -and [string]::IsNullOrWhiteSpace($DeviationNote)) {
 }
 if (-not $FromLocal -and $DeviationNote) {
     Write-Error "-DeviationNote only applies together with -FromLocal."
+    exit 1
+}
+if (-not $ExpectedScope -or $ExpectedScope.Count -eq 0) {
+    Write-Error @"
+-ExpectedScope is required (both modes): one or more case-id globs describing every case id
+this regeneration is expected to add, remove, or change (Tools/BaselineVerify/Waivers.cs glob
+syntax -- '*' is field-local, '**' crosses fields, e.g. -ExpectedScope 'H|J|**'). Nothing is
+regenerated until every changed/added/removed case id in every area is proven to match at
+least one of these globs. If you cannot state the scope of the change before regenerating,
+you are not ready to regenerate -- go find out why the gate failed first (see
+Tools/BaselineGen/README.md).
+"@
+    exit 1
+}
+# Manual validation (not [Parameter(Mandatory)]) deliberately: a missing mandatory parameter
+# makes PowerShell prompt interactively, which would hang a CI run instead of failing it.
+
+# Normalize: split every element on ',' too, so both '-ExpectedScope a,b' (one argv value, the
+# only form some external callers can produce) and '-ExpectedScope a,b' (true multi-value
+# array, when this script is invoked from within another PowerShell session) end up as the
+# same flat list. No glob in this DSL ever legitimately contains a literal comma.
+$ExpectedScope = @($ExpectedScope | ForEach-Object { $_ -split ',' } | Where-Object { $_.Length -gt 0 })
+if ($ExpectedScope.Count -eq 0) {
+    Write-Error "-ExpectedScope resolved to zero non-empty globs after normalization."
     exit 1
 }
 
@@ -122,6 +174,57 @@ if ($mismatch) {
 
 Write-Host "Reproducible: run A and run B are byte-identical."
 
+# -ExpectedScope gate. Diffs the currently committed baseline ("old") against the freshly
+# generated, already reproducibility-checked run ("new", $runA) across every area, by case id.
+# Refuses -- prints offenders, writes nothing -- if any added/removed/changed case id in any
+# area is not covered by at least one -ExpectedScope glob. See Tools/BaselineVerify/Program.cs,
+# RunDiffScopeMode, and Tools/BaselineVerify/Waivers.cs (CompileGlob) for the glob rules this
+# reuses rather than reimplementing.
+Write-Host ""
+Write-Host "Checking regeneration scope against -ExpectedScope ($($ExpectedScope -join ', '))..."
+$verifyProject = Join-Path $repoRoot 'Tools\BaselineVerify\BaselineVerify.csproj'
+dotnet build $verifyProject -c Release -f net10.0
+if ($LASTEXITCODE -ne 0) {
+    Remove-Item $runA, $runB -Recurse -Force -ErrorAction SilentlyContinue
+    exit $LASTEXITCODE
+}
+
+$scopeArgs = @('run', '--project', $verifyProject, '-c', 'Release', '-f', 'net10.0', '--no-build', '--',
+    '--diff-scope', $baselineDir, $runA, '--expected-scope') + $ExpectedScope
+$scopeOutput = & dotnet @scopeArgs 2>&1
+$scopeExitCode = $LASTEXITCODE
+$scopeOutput | ForEach-Object { Write-Host $_ }
+
+if ($scopeExitCode -ne 0) {
+    Remove-Item $runA, $runB -Recurse -Force -ErrorAction SilentlyContinue
+    Write-Error @"
+Regeneration touched case id(s) outside -ExpectedScope ($($ExpectedScope -join ', ')) -- see the
+OFFENDER lines above. Not touching Tests/baseline/. Either -ExpectedScope is too narrow for a
+change you understand and intend (widen it to cover exactly what should have moved, no more),
+or the code changed something you did not expect and have not yet explained -- in that case
+stop here and find out why before regenerating anything.
+"@
+    exit 1
+}
+
+$changedAreaSummaries = @()
+$newRowCountsByArea = @{}
+foreach ($line in $scopeOutput) {
+    if ($line -match '^CHANGED-AREA (.+)$') {
+        $changedAreaSummaries += $Matches[1]
+    }
+    elseif ($line -match '^ROWCOUNT\s+(\S+)\t(\d+)$') {
+        $newRowCountsByArea[$Matches[1]] = [int]$Matches[2]
+    }
+}
+if ($changedAreaSummaries.Count -eq 0) {
+    Write-Host "Scope check: SCOPE-OK, no area's case ids changed, were added, or were removed."
+}
+else {
+    Write-Host "Scope check: SCOPE-OK, within -ExpectedScope --"
+    $changedAreaSummaries | ForEach-Object { Write-Host "  $_" }
+}
+
 try {
     Write-Host "Copying run A's *.tsv files into $baselineDir"
     New-Item -ItemType Directory -Force -Path $baselineDir | Out-Null
@@ -134,6 +237,41 @@ try {
     # knows about), silently keeping stale data around indefinitely.
     Get-ChildItem $baselineDir -Filter 'baseline-*.tsv' -ErrorAction SilentlyContinue | Remove-Item -Force
     Copy-Item (Join-Path $runA 'baseline-*.tsv') $baselineDir
+
+    # Rewrite the row-count manifest (Tests/baseline/row-counts.tsv, checked by
+    # Tools/BaselineVerify/RowCounts.cs) wholesale from this run's counts, same as the TSVs
+    # themselves -- an area removed from Areas.All must not leave a stale entry behind, any
+    # more than it should leave a stale baseline-<name>.tsv behind. Counts come from the
+    # --diff-scope run above (ROWCOUNT lines), which counted by case id via Comparer.Index --
+    # the same definition of "how many rows does this area have" the gate itself uses.
+    $rowCountsPath = Join-Path $baselineDir 'row-counts.tsv'
+    $rowCountsLines = @(
+        '# Committed expected row count (case id count) per area, checked by BaselineVerify'
+        '# (Tools/BaselineVerify/RowCounts.cs, Tools/BaselineVerify/Program.cs) so a baseline file'
+        '# silently reduced -- to zero, or just narrowed -- cannot pass as PASS while'
+        '# FAIL/ONLY-LOCAL/ONLY-REFERENCE all read zero.'
+        '#'
+        '# Rewritten by scripts/regenerate-baseline.ps1 in the same pass as the TSVs it describes,'
+        '# gated behind -ExpectedScope. Do not edit by hand; a hand edit with no matching'
+        '# baseline-*.tsv change (or vice versa) is exactly the drift this file exists to catch.'
+        '#'
+        '# Format: <area>\t<count>'
+    )
+    foreach ($area in ($newRowCountsByArea.Keys | Sort-Object)) {
+        $rowCountsLines += "$area`t$($newRowCountsByArea[$area])"
+    }
+    Set-Content -Path $rowCountsPath -Value (($rowCountsLines -join "`n") + "`n") -NoNewline -Encoding utf8NoBOM
+    Write-Host "Wrote $($newRowCountsByArea.Count) area row count(s) to $rowCountsPath."
+
+    # Per-area changed/added/removed counts (from the -ExpectedScope check above) and each
+    # freshly copied TSV's SHA-256, for the log entry below -- this is what lets a reviewer
+    # read one line instead of the full diff (see -ExpectedScope's doc comment above).
+    $areaHashLines = @()
+    foreach ($tsv in (Get-ChildItem $baselineDir -Filter 'baseline-*.tsv' | Sort-Object Name)) {
+        $hash = (Get-FileHash $tsv.FullName -Algorithm SHA256).Hash
+        $areaHashLines += "$($tsv.Name)=$hash"
+    }
+    $scopeSummaryText = if ($changedAreaSummaries.Count -eq 0) { 'no area rows changed' } else { $changedAreaSummaries -join '; ' }
 
     if (-not $FromLocal) {
         # Reference mode: the sidecar's eight identity fields are a full,
@@ -165,6 +303,9 @@ try {
             Set-Content -Path $newSidecar -Value ($newContent + "`n`n" + $preservedLog + "`n") -NoNewline -Encoding utf8NoBOM
             Write-Host "Preserved the previous sidecar's 'Local regenerations' history across this reference-mode regeneration."
         }
+        Write-Host "Scope check ($($ExpectedScope -join ', ')): $scopeSummaryText"
+        $areaHashLines | ForEach-Object { Write-Host "  SHA256 $_" }
+        Write-Host "Reference-mode regeneration does not append a 'Local regenerations' entry automatically -- add one by hand describing the version bump (see Tools/BaselineGen/README.md), using the scope/SHA-256 lines above."
         Write-Host "Done. Review the diff in $baselineDir (git diff --stat Tests/baseline) and commit if it looks right."
     }
     else {
@@ -193,11 +334,15 @@ try {
         if (-not $commit) { $commit = '(uncommitted)' } else { $commit = $commit.Trim() }
         $date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
 
+        $scopeDetailLines = @("   Scope check ($($ExpectedScope -join ', ')): $scopeSummaryText")
+        foreach ($h in $areaHashLines) { $scopeDetailLines += "   SHA256 $h" }
+        $scopeDetailText = $scopeDetailLines -join "`n"
+
         $marker = '## Local regenerations'
         if ($existingContent -match [regex]::Escape($marker)) {
             $existingEntries = [regex]::Matches($existingContent, '(?m)^\d+\. ')
             $entryNumber = $existingEntries.Count + 1
-            $newEntry = "$entryNumber. $commit ($date): $DeviationNote"
+            $newEntry = "$entryNumber. $commit ($date): $DeviationNote`n$scopeDetailText"
             $updatedContent = $existingContent.TrimEnd() + "`n$newEntry`n"
         }
         else {
@@ -222,7 +367,7 @@ most recent last. Never add an entry here to make a failing gate pass without
 first understanding why it failed -- see Tools/BaselineGen/README.md, "Local
 mode -- when it is legitimate."
 "@
-            $newEntry = "1. $commit ($date): $DeviationNote"
+            $newEntry = "1. $commit ($date): $DeviationNote`n$scopeDetailText"
             $updatedContent = $existingContent.TrimEnd() + $header.TrimEnd() + "`n`n$newEntry`n"
         }
 
