@@ -59,7 +59,27 @@ jobs:
             # actions/checkout with fetch-depth 0 only fetches full history of the ref
             # being built, not other branches' tips, so those have to be fetched
             # explicitly before merge-base can see them.
+            # A force-push needs the same treatment for a different reason:
+            # github.event.before names the pre-push tip of the branch, and a rebase or
+            # amend orphans that commit. GitHub still reports it, but it is not
+            # reachable from any ref, so fetch-depth 0 does not bring it into the clone
+            # and the log check cannot diff against it. That is a real, recurring case
+            # rather than an edge one: every rebase of a long-running branch onto a
+            # moved integration branch hits it, and the port will do that repeatedly.
+            #
+            # Failing closed there is the safe direction, but it is still a false
+            # failure, and a gate that cries wolf on ordinary rebases is a gate people
+            # learn to wave through. Resolve the fork point instead, which is the same
+            # question the first-push case asks: what did this branch add relative to
+            # what the remote already had.
+            need_forkpoint=0
             if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+              need_forkpoint=1
+            elif ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+              echo "Base ref $base is not reachable (force-push or rebase); resolving the fork point instead."
+              need_forkpoint=1
+            fi
+            if [ "$need_forkpoint" = "1" ]; then
               git fetch --quiet origin '+refs/heads/*:refs/remotes/origin/*' --prune
               best=""
               for candidate in $(git for-each-ref --format='%(objectname)' refs/remotes/origin/); do
