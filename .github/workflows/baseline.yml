@@ -35,75 +35,38 @@ jobs:
           # commit present locally to diff against.
           fetch-depth: 0
 
-      - name: Determine base ref for baseline-log check
-        id: base-ref
+      # The base for the log check is resolved by scripts/resolve-log-base.ps1, which
+      # carries a -SelfTest mode covering every rule it implements. That is deliberate:
+      # this resolver was inline bash before, went untested, and shipped two defects in a
+      # row -- the second of which silently disabled the check entirely by resolving the
+      # base to HEAD, producing an empty diff window and an unconditional pass.
+      - name: Fetch the integration refs the base resolver needs
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            base="${{ github.event.pull_request.base.sha }}"
-          else
-            base="${{ github.event.before }}"
-            # github.event.before is all-zeros for the first push of a new branch --
-            # nothing to diff against *on this ref*, but falling back to the repo's
-            # literal root commit was its own bypass: the sidecar-regenerations log
-            # accumulated over the repo's entire history sits between the root commit
-            # and here, so "count at root -> count now" is a large, unconditional gain
-            # that has nothing to do with whether *this push*'s own commits added an
-            # entry. That made every first push of every new branch a free pass,
-            # silently -- this workflow's pull_request leg still catches the same PR
-            # later, so it read as a decorative gap rather than a wrong verdict, but it
-            # is still wrong on its own terms.
-            #
-            # The actual base for "what did this push add" is the fork point: the
-            # nearest commit this branch shares with anything already on the remote.
-            # actions/checkout with fetch-depth 0 only fetches full history of the ref
-            # being built, not other branches' tips, so those have to be fetched
-            # explicitly before merge-base can see them.
-            # A force-push needs the same treatment for a different reason:
-            # github.event.before names the pre-push tip of the branch, and a rebase or
-            # amend orphans that commit. GitHub still reports it, but it is not
-            # reachable from any ref, so fetch-depth 0 does not bring it into the clone
-            # and the log check cannot diff against it. That is a real, recurring case
-            # rather than an edge one: every rebase of a long-running branch onto a
-            # moved integration branch hits it, and the port will do that repeatedly.
-            #
-            # Failing closed there is the safe direction, but it is still a false
-            # failure, and a gate that cries wolf on ordinary rebases is a gate people
-            # learn to wave through. Resolve the fork point instead, which is the same
-            # question the first-push case asks: what did this branch add relative to
-            # what the remote already had.
-            need_forkpoint=0
-            if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
-              need_forkpoint=1
-            elif ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
-              echo "Base ref $base is not reachable (force-push or rebase); resolving the fork point instead."
-              need_forkpoint=1
-            fi
-            if [ "$need_forkpoint" = "1" ]; then
-              git fetch --quiet origin '+refs/heads/*:refs/remotes/origin/*' --prune
-              best=""
-              for candidate in $(git for-each-ref --format='%(objectname)' refs/remotes/origin/); do
-                mb=$(git merge-base HEAD "$candidate" 2>/dev/null) || continue
-                if [ -z "$best" ]; then
-                  best="$mb"
-                elif git merge-base --is-ancestor "$best" "$mb" 2>/dev/null; then
-                  # $mb is a descendant of (more recent than) $best -- prefer it, the
-                  # closest shared ancestor found so far across every known branch.
-                  best="$mb"
-                fi
-              done
-              if [ -n "$best" ]; then
-                base="$best"
-              else
-                # No other branch to compare against at all (e.g. the very first
-                # commit in the repository's entire history) -- genuinely nothing to
-                # diff, not a bypass. This is the one case the root-commit fallback
-                # was actually correct for.
-                base=$(git rev-list --max-parents=0 HEAD | tail -n1)
-              fi
-            fi
-          fi
-          echo "sha=$base" >> "$GITHUB_OUTPUT"
+          # Explicit, non-globbing. The previous resolver fetched every remote head and
+          # took the most recent merge-base across all of them, which is maximally
+          # permissive: it resolved to HEAD (the branch's own ref is already at HEAD after
+          # a push), and even excluding that, any backup or stacked branch at or above the
+          # offending commit would move the base past it.
+          git fetch --quiet origin \
+            "+refs/heads/release/2.10.03:refs/remotes/origin/release/2.10.03" \
+            "+refs/heads/main:refs/remotes/origin/main" || true
+
+      - name: Verify the base resolver itself
+        shell: pwsh
+        run: pwsh scripts/resolve-log-base.ps1 -SelfTest
+
+      - name: Determine base ref for baseline-log check
+        id: base-ref
+        shell: pwsh
+        run: |
+          $base = pwsh scripts/resolve-log-base.ps1 `
+            -EventName '${{ github.event_name }}' `
+            -BeforeSha '${{ github.event.before }}' `
+            -PrBaseSha '${{ github.event.pull_request.base.sha }}'
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          "sha=$base" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Resolved baseline-log base: $base"
 
       - name: Verify baseline changes are logged
         shell: pwsh
