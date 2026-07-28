@@ -156,7 +156,12 @@ $licenseRegex = ($licensePatterns | ForEach-Object { "($_)" }) -join '|'
 
 function Get-NormalizedLines {
     param([string] $Path)
-    $text = [System.IO.File]::ReadAllText($Path)
+    # Strict UTF-8, not the default replacement-char decoder. ReadAllText(path) maps every
+    # invalid byte to U+FFFD, so two DIFFERENT invalid bytes at the same offset decode
+    # identically, the normalised temp files match, and a real difference vanishes with the
+    # file reported as unchanged at exit 0. Every file on both sides decodes strictly today;
+    # a Latin-1 byte in a future upstream comment should be a loud failure, not a silent one.
+    $text = [System.IO.File]::ReadAllText($Path, [System.Text.UTF8Encoding]::new($false, $true))
     $text = $text -replace "`r`n", "`n" -replace "`r", "`n"
     return $text -split "`n"
 }
@@ -169,7 +174,7 @@ function Write-NormalizedTemp {
 
 function Strip-CComments {
     param([string] $Path, [string] $TempPath)
-    $text = [System.IO.File]::ReadAllText($Path)
+    $text = [System.IO.File]::ReadAllText($Path, [System.Text.UTF8Encoding]::new($false, $true))
     $text = $text -replace "`r`n", "`n" -replace "`r", "`n"
     $stripped = [System.Text.RegularExpressions.Regex]::Replace(
         $text, '/\*.*?\*/', '', [System.Text.RegularExpressions.RegexOptions]::Singleline)
@@ -308,6 +313,14 @@ function Get-Diff {
         throw "git diff --no-index failed comparing '$OldPath' and '$NewPath' (exit $exitCode): $stderrText"
     }
 
+    # A binary verdict is exit 1 with NON-EMPTY stdout ("Binary files a and b differ"),
+    # so it clears the guard above, produces no @@ header, and the whole file's delta is
+    # reported as zero at exit 0. The guard above assumes a real diff always carries a
+    # hunk header once files differ; this is the case that breaks that assumption.
+    if ($diffText -match '(?m)^Binary files .* differ$') {
+        throw "git treated the pair as binary, so no line-level diff exists: '$OldPath' vs '$NewPath'. If this is a text file, its encoding or a NUL byte is the reason."
+    }
+
     return $diffText
 }
 
@@ -320,6 +333,16 @@ function Invoke-FileDelta {
     $hasOld = Test-Path -LiteralPath $oldPath -PathType Leaf
     $hasNew = Test-Path -LiteralPath $newPath -PathType Leaf
 
+    if (-not $hasOld -and -not $hasNew) {
+        # Ordering matters: testing -not $hasNew first would report a mistyped name as
+        # "pyswisseph-only", asserting upstream deleted a file that never existed. That is a
+        # wrong work-queue signal at exit 0, the exact class this script exists to prevent.
+        return [pscustomobject]@{
+            File = $Name; Status = 'NOT FOUND on either side'
+            RawHunks = 0; FilteredHunks = 0; LicenseHunks = 0
+            RawPlus = 0; RawMinus = 0; StrippedPlus = 0; StrippedMinus = 0
+        }
+    }
     if (-not $hasNew) {
         return [pscustomobject]@{
             File = $Name; Status = 'pyswisseph-only (no 2.10.3 counterpart)'
@@ -354,8 +377,15 @@ function Invoke-FileDelta {
     $licenseHunks = @($rawHunks | Where-Object { Test-LicenseHunk -Hunk $_ })
     $filteredHunks = @($rawHunks | Where-Object { -not (Test-LicenseHunk -Hunk $_) })
 
-    $rawPlus = @($diffText -split "`n" | Where-Object { $_.StartsWith('+') -and -not $_.StartsWith('+++') }).Count
-    $rawMinus = @($diffText -split "`n" | Where-Object { $_.StartsWith('-') -and -not $_.StartsWith('---') }).Count
+    # Counted off $rawHunks, not off raw $diffText. Re-scanning the text needs a
+    # `-not StartsWith('+++')` guard to skip git's file headers, and that guard
+    # over-matches any source line whose own text starts with ++ or -- : the exact
+    # defect removed from Get-Hunks. Leaving it here meant the body and the count
+    # beneath it were derived from different data and could disagree, a hunk showing
+    # two deletions above a summary saying -1. Deriving both from the parsed lines
+    # makes that disagreement structurally impossible, not merely absent today.
+    $rawPlus = @($rawHunks | ForEach-Object { $_.Lines } | Where-Object { $_.Type -eq 'add' }).Count
+    $rawMinus = @($rawHunks | ForEach-Object { $_.Lines } | Where-Object { $_.Type -eq 'del' }).Count
 
     $strippedPlus = 0
     $strippedMinus = 0
@@ -366,8 +396,9 @@ function Invoke-FileDelta {
         Strip-CComments -Path $oldPath -TempPath $tmpOldStripped
         Strip-CComments -Path $newPath -TempPath $tmpNewStripped
         $strippedDiff = Get-Diff -OldPath $tmpOldStripped -NewPath $tmpNewStripped
-        $strippedPlus = @($strippedDiff -split "`n" | Where-Object { $_.StartsWith('+') -and -not $_.StartsWith('+++') }).Count
-        $strippedMinus = @($strippedDiff -split "`n" | Where-Object { $_.StartsWith('-') -and -not $_.StartsWith('---') }).Count
+        $strippedHunks = Get-Hunks -DiffText $strippedDiff
+        $strippedPlus = @($strippedHunks | ForEach-Object { $_.Lines } | Where-Object { $_.Type -eq 'add' }).Count
+        $strippedMinus = @($strippedHunks | ForEach-Object { $_.Lines } | Where-Object { $_.Type -eq 'del' }).Count
         Remove-Item -LiteralPath $tmpOldStripped, $tmpNewStripped -ErrorAction SilentlyContinue
     }
 
