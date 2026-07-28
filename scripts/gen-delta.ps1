@@ -179,6 +179,12 @@ function Strip-CComments {
 
 function Get-Hunks {
     param([string] $DiffText)
+    # Each hunk is a { Header; Lines } object rather than a flat list of changed lines. Header
+    # keeps the raw '@@ -a,b +c,d @@ ...' text -- the only place the file's line numbers survive
+    # -- and Lines keeps every context/add/del line inside the hunk, each tagged with its Type
+    # so a hunk reads as a hunk (see CONTRIBUTING.md's citation requirement and the splicing bug
+    # this replaces). The Type tag, not the leading character, is what Test-LicenseHunk filters
+    # on below, so a context line can never be mistaken for a change line by that classifier.
     $hunks = [System.Collections.Generic.List[object]]::new()
     if ($DiffText) {
         $lines = $DiffText -split "`n"
@@ -186,14 +192,25 @@ function Get-Hunks {
         foreach ($line in $lines) {
             if ($line.StartsWith('@@')) {
                 if ($current) { $hunks.Add($current) }
-                $current = [System.Collections.Generic.List[string]]::new()
+                $current = [pscustomobject]@{
+                    Header = $line
+                    Lines  = [System.Collections.Generic.List[object]]::new()
+                }
                 continue
             }
-            if ($null -ne $current -and ($line.StartsWith('+') -or $line.StartsWith('-'))) {
-                if (-not ($line.StartsWith('+++') -or $line.StartsWith('---'))) {
-                    $current.Add($line)
-                }
+            if ($null -eq $current) { continue }
+            if ($line.StartsWith('+++') -or $line.StartsWith('---')) { continue }
+            if ($line.StartsWith('+')) {
+                $current.Lines.Add([pscustomobject]@{ Type = 'add'; Text = $line.Substring(1) })
             }
+            elseif ($line.StartsWith('-')) {
+                $current.Lines.Add([pscustomobject]@{ Type = 'del'; Text = $line.Substring(1) })
+            }
+            elseif ($line.StartsWith(' ')) {
+                $current.Lines.Add([pscustomobject]@{ Type = 'context'; Text = $line.Substring(1) })
+            }
+            # Anything else here ('\ No newline at end of file', a stray blank split artifact) is
+            # diff metadata, not a source line -- same as before, it is not stored.
         }
         if ($current) { $hunks.Add($current) }
     }
@@ -224,11 +241,16 @@ function Get-Hunks {
 $codeVetoRegex = '#\s*(define|include|if|ifdef|ifndef|else|elif|endif|undef|pragma)\b|;'
 
 function Test-LicenseHunk {
-    param($HunkLines)
-    foreach ($line in $HunkLines) {
-        $content = $line.Substring(1)
-        if ($content -match $codeVetoRegex) { return $false }
-        if ($content -notmatch $licenseRegex) { return $false }
+    param($Hunk)
+    # Only the add/del lines decide license-noise classification -- a retained context line
+    # must never make a license hunk look like real code (it has no codeVetoRegex hit to give)
+    # and must never veto a genuine license hunk either (it has no licenseRegex hit to give). A
+    # hunk made entirely of context is not a real diff hunk (git never emits one), so this only
+    # ever filters the classification input, not the pass/fail default below.
+    $changeLines = @($Hunk.Lines | Where-Object { $_.Type -ne 'context' })
+    foreach ($line in $changeLines) {
+        if ($line.Text -match $codeVetoRegex) { return $false }
+        if ($line.Text -notmatch $licenseRegex) { return $false }
     }
     return $true
 }
@@ -293,8 +315,8 @@ function Invoke-FileDelta {
 
     $diffText = Get-Diff -OldPath $tmpOld -NewPath $tmpNew
     $rawHunks = Get-Hunks -DiffText $diffText
-    $licenseHunks = @($rawHunks | Where-Object { Test-LicenseHunk -HunkLines $_ })
-    $filteredHunks = @($rawHunks | Where-Object { -not (Test-LicenseHunk -HunkLines $_) })
+    $licenseHunks = @($rawHunks | Where-Object { Test-LicenseHunk -Hunk $_ })
+    $filteredHunks = @($rawHunks | Where-Object { -not (Test-LicenseHunk -Hunk $_) })
 
     $rawPlus = @($diffText -split "`n" | Where-Object { $_.StartsWith('+') -and -not $_.StartsWith('+++') }).Count
     $rawMinus = @($diffText -split "`n" | Where-Object { $_.StartsWith('-') -and -not $_.StartsWith('---') }).Count
@@ -331,6 +353,31 @@ function Invoke-FileDelta {
     }
 }
 
+# The '+' side of a hunk header ('@@ -a,b +c,d @@ ...') gives the line range in the 2.10.3 file --
+# the side CONTRIBUTING.md's required citation (e.g. 'sweph.c:2310-2358') actually names. A count
+# of 1 is written by git as '+c' with no ',d' at all, so that case defaults to a one-line range.
+function Get-HunkNewRange {
+    param([string] $Header)
+    if ($Header -match '\+(\d+)(?:,(\d+))?') {
+        $start = [int]$Matches[1]
+        $count = if ($Matches[2]) { [int]$Matches[2] } else { 1 }
+        if ($count -le 0) { return "$start" }
+        return "$start-$($start + $count - 1)"
+    }
+    return $null
+}
+
+function Write-Hunk {
+    param($Hunk, [string] $FileName)
+    $range = Get-HunkNewRange -Header $Hunk.Header
+    $citation = if ($range) { "$($FileName):$range" } else { '(no line range)' }
+    Write-Output "# $citation -- $($Hunk.Header)"
+    foreach ($entry in $Hunk.Lines) {
+        $prefix = switch ($entry.Type) { 'add' { '+' } 'del' { '-' } default { ' ' } }
+        Write-Output "$prefix$($entry.Text)"
+    }
+}
+
 # --- Single-file mode: print the (filtered, unless -IncludeLicenseHunks) diff plus a summary ---
 
 if ($File) {
@@ -351,18 +398,19 @@ if ($File) {
         foreach ($hunk in $result.LicenseLines) {
             $i++
             Write-Output "--- dropped (license-noise) hunk $i ---"
-            foreach ($line in $hunk) { Write-Output $line }
+            Write-Hunk -Hunk $hunk -FileName $result.File
             Write-Output ''
         }
     }
     else {
-        # Reconstruct a diff body containing only the non-license hunks' changed lines. This is
-        # a reviewer-facing listing of changed lines per hunk, not a byte-identical re-diff.
+        # Reconstruct a diff body containing the non-license hunks in full -- header, context and
+        # changed lines -- so a hunk reads as a hunk instead of a bag of spliced +/- lines. This is
+        # a reviewer-facing listing, not a byte-identical re-diff.
         $i = 0
         foreach ($hunk in $result.FilteredLines) {
             $i++
             Write-Output "--- hunk $i ---"
-            foreach ($line in $hunk) { Write-Output $line }
+            Write-Hunk -Hunk $hunk -FileName $result.File
             Write-Output ''
         }
     }
