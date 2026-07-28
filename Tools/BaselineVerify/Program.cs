@@ -71,6 +71,17 @@ if (CheckAssemblyIdentity(baselineDir))
 }
 
 Console.WriteLine();
+var presentFileNames = Directory.EnumerateFiles(baselineDir).Select(Path.GetFileName).OfType<string>();
+var orphanedBaselineFiles = Verdict.FindOrphanedBaselineFiles(presentFileNames, Areas.All.Select(static a => a.Name));
+foreach (var orphan in orphanedBaselineFiles)
+{
+    var orphanPath = Path.Combine(baselineDir, orphan);
+    var verdict = Verdict.OrphanedBaselineFile(orphanPath);
+    Console.WriteLine($"{"FAIL",-6} {orphan,-14} -- {verdict.Reasons[0]}");
+    overallExitCode = 1;
+}
+
+Console.WriteLine();
 var header = $"{"STATUS",-6} {"AREA",-14} {"TOTAL",7} {"LOCAL-LN",8} {"REF-LN",7} {"EXACT",7} {"TOL-OK",7} {"FAIL",6} {"WAIVED",7} {"ONLY-LOCAL",10} {"ONLY-REF",9}";
 Console.WriteLine(header);
 Console.WriteLine(new string('-', header.Length));

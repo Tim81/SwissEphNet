@@ -94,6 +94,35 @@ internal static class Verdict
     public static AreaVerdict MissingBaselineFile(string path) =>
         AreaVerdict.Fail($"no committed baseline file at {path}");
 
+    public static AreaVerdict OrphanedBaselineFile(string path) =>
+        AreaVerdict.Fail(
+            $"{path} does not correspond to any area in Tools/BaselineMatrix/Areas.cs's Areas.All. " +
+            "Either the area was renamed/removed and this file was left behind (delete it), or it is a " +
+            "new area that still needs registering in Areas.All.");
+
+    /// <summary>
+    /// Given every file name actually present in the baseline directory (not pre-filtered --
+    /// this includes the *.env.txt sidecar and anything else that happens to live there) and
+    /// the area names BaselineMatrix currently knows about, returns the baseline-*.tsv file
+    /// names with no corresponding area, sorted for stable output.
+    ///
+    /// Only names matching the baseline-*.tsv shape are ever candidates: this check exists to
+    /// catch a *.tsv file abandoned by a removed/renamed Areas.All entry (see
+    /// scripts/regenerate-baseline.ps1's own version of this same check, which is where this
+    /// gap was first identified and closed on the generator side), not to police every file
+    /// that happens to live in Tests/baseline/ -- the sidecar and any other legitimate
+    /// non-tsv metadata file are silently ignored, not flagged.
+    /// </summary>
+    public static IReadOnlyList<string> FindOrphanedBaselineFiles(IEnumerable<string> presentFileNames, IEnumerable<string> knownAreaNames)
+    {
+        var known = knownAreaNames.Select(static n => $"baseline-{n}.tsv").ToHashSet(StringComparer.Ordinal);
+        return presentFileNames
+            .Where(static f => f.StartsWith("baseline-", StringComparison.Ordinal) && f.EndsWith(".tsv", StringComparison.Ordinal))
+            .Where(f => !known.Contains(f))
+            .OrderBy(static f => f, StringComparer.Ordinal)
+            .ToList();
+    }
+
     public static WaiverVerdict ForWaiver(Waiver waiver, WaiverStats stats)
     {
         if (stats.Matched == 0)
