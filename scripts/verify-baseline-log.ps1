@@ -81,9 +81,18 @@ function Get-LogEntryCount {
 # throwing) is treated as "0 prior entries" rather than a hard failure, since there is
 # nothing to compare the log against; the count-increased check below still applies against
 # that baseline of zero.
-$baseContent = git -C $repoRoot show "${BaseRef}:${sidecarRelPath}" 2>$null
+#
+# PowerShell captures external-command output as a string array (one element per
+# line), and passing that straight to Get-LogEntryCount's [string] parameter
+# coerces it via $OFS space-joining, which silently discards every line break --
+# the (?m)^ anchors below would then only ever match at the very start of the
+# whole blob. -join "`n" restores real newlines before the regex ever sees it.
+$baseContentLines = git -C $repoRoot show "${BaseRef}:${sidecarRelPath}" 2>$null
 if ($LASTEXITCODE -ne 0) {
     $baseContent = ''
+}
+else {
+    $baseContent = $baseContentLines -join "`n"
 }
 $headContent = Get-Content -Raw -Path $sidecars[0].FullName
 
