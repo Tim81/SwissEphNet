@@ -116,15 +116,12 @@ It is sparse-checked-out to keep it small: only `*.c`, `*.h`, `Makefile`,
 is built against) are pulled. `ephe/` (the ephemeris data files) is deliberately
 excluded -- it is 378 MB across 259 files and nothing in this repo needs it.
 
-To initialize it:
-
-```powershell
-git submodule update --init external/swisseph
-```
-
-If a from-scratch, disk-conscious checkout matters (CI, a fresh clone), do the
-sparse setup before the first checkout rather than after, so the partial clone
-never fetches blobs for the excluded paths in the first place:
+To initialize it, do the sparse setup before the first checkout, so the partial clone never
+fetches blobs for the excluded paths in the first place -- this is the primary recipe, not a
+disk-conscious alternative for CI only. Measured: `git submodule update --init` (below) lands at
+the same commit but pulls the entire `aloistr/swisseph` history and every path, `ephe/` included
+-- 427 MB of working tree plus 918 MB of git objects in a from-scratch checkout, not the 15 MB /
+2.3 MB this sparse recipe gives:
 
 ```powershell
 git submodule init
@@ -137,10 +134,11 @@ cd ../..
 git submodule absorbgitdirs external/swisseph
 ```
 
-(`git submodule update --init` alone still works and lands at the same commit;
-it is simpler to type but checks out every file at HEAD once before any sparse
-pattern narrows the working tree, which briefly touches all of `ephe/` if you
-care about that during the clone.)
+`git submodule update --init external/swisseph` alone still works and lands at the same commit
+-- it is simpler to type -- but it is not a "briefly touches `ephe/`" cost that goes away once
+the checkout finishes: without the sparse patterns above, `ephe/` (and every other excluded
+path) stays checked out on disk permanently, for as long as the submodule is initialized this
+way. Only use it if disk footprint genuinely does not matter for your checkout.
 
 CI jobs that do not read `external/swisseph` should not pay for it: `actions/checkout@v4`
 does not fetch submodules by default, and none of the jobs in `.github/workflows/ci.yml`

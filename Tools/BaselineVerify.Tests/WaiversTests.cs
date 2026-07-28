@@ -239,6 +239,23 @@ public class WaiversTests
     }
 
     [Fact]
+    public void CompileGlob_AllWildcardsAfterARealAreaPrefix_MatchesEveryRowInThatAreaAndIsAccepted()
+    {
+        // "H|**" is documented (Waivers' own class doc, Tools/BaselineGen/README.md) as the
+        // correct way to waive an entire area -- so a glob whose leading segment is a real,
+        // literal area prefix followed by nothing but wildcards is *intended* to match every
+        // row in that area, and CompileGlob must accept it. The synthetic-probe backstop
+        // cannot and must not reject this: every probe id begins "ZZZ_WAIVER_PROBE", so only a
+        // glob whose literal leading segment is exactly that reserved text could ever match one
+        // -- a glob prefixed with a real area name like "GQ" or "H" never touches the probe ids
+        // at all, matching or not. See CompileGlob's summary for what the backstop actually
+        // guards (the reserved namespace itself), not general over-breadth.
+        var pattern = Waivers.CompileGlob("GQ|*|*|*|*|*", "test", "waiver glob");
+        Assert.Matches(pattern, "GQ|A|1|2|3|4");
+        Assert.Matches(pattern, "GQ|Z|9|9|9|9");
+    }
+
+    [Fact]
     public void MatchAll_DoesNotSweepInUnrelatedAreasSharingAPrefixLetter()
     {
         var path = WriteWaiversFile("H|**\t123\treason\n");

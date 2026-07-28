@@ -47,17 +47,25 @@
 
 .PARAMETER ExpectedScope
     Required, always (both modes). One or more case-id globs (Tools/BaselineVerify/Waivers.cs
-    syntax: '*' matches within one pipe-delimited field, '**' crosses fields, e.g. "H|J|**" to
-    scope an entire area) describing every case id this regeneration is expected to add,
-    remove, or change.
+    syntax: '*' matches within one pipe-delimited field, '**' crosses fields, e.g. "H|**" to
+    scope an entire area, or "H|J|**" to scope only house system J within it) describing every
+    case id this regeneration is expected to add, remove, or change.
 
-    Accepts either real multiple values (-ExpectedScope 'H|**','C|**', or repeated -ExpectedScope
-    from a caller that supports it) or a single comma-joined string (-ExpectedScope 'H|**,C|**')
-    -- both are normalized to the same list below. This matters because invoking a script
-    parameter from outside a live PowerShell session (a CI YAML step, a non-PowerShell shell)
-    delivers whatever the caller's own argv splitting produced, and "one value per flag" is the
-    only form every such caller can produce reliably; comma-splitting internally means neither
-    form silently drops a glob.
+    Accepts either real multiple values (-ExpectedScope 'H|**','C|**' -- PowerShell's own argv
+    splitting turns that into a true two-element array before this script ever sees it, whether
+    invoked from a live PowerShell session or via `pwsh -File ... -ExpectedScope 'A|**','B|**'`
+    from another shell, since that comma is parsed by PowerShell's own command-line parser, not
+    by this script) or repeated -ExpectedScope flags, for a caller that supports that instead.
+
+    A single packed string uses ';', not ',', to separate multiple globs (e.g.
+    -ExpectedScope 'H|**;C|**'): 2,782 of 106,095 real case ids (as of this writing, across
+    gauquelin, pheno, calc, risetrans, eclipse, coord and pheno-ast) contain a literal comma, so
+    splitting on ',' would cut a single legitimate glob in half whenever it happened to quote
+    one of those ids, with no way to tell that apart from a caller that actually meant two
+    globs joined by a comma -- both produce one argv value containing a comma and nothing else
+    distinguishes them. No case id in the current matrix contains a literal ';', so splitting on
+    that instead is unambiguous today; if that ever stops being true, this normalization would
+    need to change again, the same way the comma one did.
 
     Before anything under Tests/baseline/ is touched, this script runs
     Tools/BaselineVerify's --diff-scope mode across every area, comparing the currently
@@ -93,7 +101,8 @@ if (-not $ExpectedScope -or $ExpectedScope.Count -eq 0) {
     Write-Error @"
 -ExpectedScope is required (both modes): one or more case-id globs describing every case id
 this regeneration is expected to add, remove, or change (Tools/BaselineVerify/Waivers.cs glob
-syntax -- '*' is field-local, '**' crosses fields, e.g. -ExpectedScope 'H|J|**'). Nothing is
+syntax -- '*' is field-local, '**' crosses fields, e.g. -ExpectedScope 'H|**' to scope an
+entire area, or 'H|J|**' to scope only house system J within it). Nothing is
 regenerated until every changed/added/removed case id in every area is proven to match at
 least one of these globs. If you cannot state the scope of the change before regenerating,
 you are not ready to regenerate -- go find out why the gate failed first (see
@@ -104,13 +113,46 @@ Tools/BaselineGen/README.md).
 # Manual validation (not [Parameter(Mandatory)]) deliberately: a missing mandatory parameter
 # makes PowerShell prompt interactively, which would hang a CI run instead of failing it.
 
-# Normalize: split every element on ',' too, so both '-ExpectedScope a,b' (one argv value, the
-# only form some external callers can produce) and '-ExpectedScope a,b' (true multi-value
-# array, when this script is invoked from within another PowerShell session) end up as the
-# same flat list. No glob in this DSL ever legitimately contains a literal comma.
-$ExpectedScope = @($ExpectedScope | ForEach-Object { $_ -split ',' } | Where-Object { $_.Length -gt 0 })
+# Normalize: split every element on ';' too, so a single packed argv value
+# (-ExpectedScope 'H|**;C|**', the only form some external, non-PowerShell callers can produce)
+# and a true multi-value array (-ExpectedScope 'H|**','C|**', already split into separate
+# elements by PowerShell's own argv parsing before this script runs) end up as the same flat
+# list. This used to split on ',' instead, which is wrong: a real case id can, and 2,782 of
+# 106,095 in the current matrix do, contain a literal comma (see the -ExpectedScope parameter
+# help above), so splitting on ',' would silently cut such a glob in half with no way to tell
+# that apart from a caller that actually meant two comma-joined globs -- both look like one
+# argv value containing a comma. ';' does not appear in any current case id, so splitting on
+# it is unambiguous; see the parameter help for what to do if that ever changes.
+$ExpectedScope = @($ExpectedScope | ForEach-Object { $_ -split ';' } | Where-Object { $_.Length -gt 0 })
 if ($ExpectedScope.Count -eq 0) {
     Write-Error "-ExpectedScope resolved to zero non-empty globs after normalization."
+    exit 1
+}
+
+# PowerShell mangles a comma-separated array literal at the native-command boundary: calling
+# `pwsh -File regenerate-baseline.ps1 -ExpectedScope 'A|**','B|**'` as an external command (as
+# opposed to invoking this script directly, e.g. `& ./regenerate-baseline.ps1 ...`, where the
+# comma IS parsed into a real two-element array before this script ever runs) does not deliver
+# two clean strings -- it delivers ONE string containing the literal source text, quotes and
+# all: "'A|**','B|**'". No real glob ever contains a single quote (verified against every
+# current case id and every Tests/baseline/waivers.tsv glob), so any post-split element that
+# does is almost certainly this exact mis-invocation, not a caller's real intent -- reject it
+# with a specific, actionable message instead of silently trying to use literal quote
+# characters as part of a glob (which would fail closed anyway, since nothing would ever match
+# it, but with a confusing "SCOPE-VIOLATION" instead of an explanation of why).
+$quotedLooking = $ExpectedScope | Where-Object { $_.Contains("'") }
+if ($quotedLooking) {
+    Write-Error @"
+-ExpectedScope contains a literal single-quote character: $($quotedLooking -join ', ')
+
+This is almost always PowerShell mangling a comma-separated array literal at the
+native-command boundary -- calling `pwsh -File regenerate-baseline.ps1 -ExpectedScope
+'A|**','B|**'` from within another PowerShell session passes the literal source text
+"'A|**','B|**'" (quotes included) as a single argument, not a two-element array. Either invoke
+this script directly (`& ./scripts/regenerate-baseline.ps1 -ExpectedScope 'A|**','B|**'`,
+where PowerShell parses the comma as a real array before the script runs), or pass a single
+';'-separated string instead (`-ExpectedScope 'A|**;B|**'`).
+"@
     exit 1
 }
 

@@ -37,7 +37,14 @@
     names exactly one file.
 
 .PARAMETER IncludeLicenseHunks
-    Do not filter out the GPL-2 -> AGPL-3 header rewrite hunks.
+    Do not filter out the GPL-2 -> AGPL-3 header rewrite hunks -- prints the RAW, unfiltered
+    diff (every hunk, license noise included), the same as if the filter did not exist.
+
+.PARAMETER ShowDroppedLicenseHunks
+    Print exactly the hunks the license-noise filter dropped (and nothing else), so a reviewer
+    can audit what was excluded instead of trusting only the license-noise count. Different
+    from -IncludeLicenseHunks, which prints everything unfiltered; this prints only what was
+    filtered out.
 
 .PARAMETER NoCommentStrip
     Skip the comments-stripped variant even for header files.
@@ -46,6 +53,7 @@
 param(
     [string] $File,
     [switch] $IncludeLicenseHunks,
+    [switch] $ShowDroppedLicenseHunks,
     [switch] $NoCommentStrip
 )
 
@@ -59,10 +67,30 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 # the pinned submodule checkout. Neither is ever a git tag reference.
 $baselineDir = Join-Path $repoRoot 'external/pyswisseph-2.08'
 $submoduleDir = Join-Path $repoRoot 'external/swisseph'
+$manifestPath = Join-Path $PSScriptRoot 'pyswisseph-2.08.manifest.tsv'
+
+# "Is a directory containing at least one file" only proves something was fetched once; it
+# says nothing about whether it still matches scripts/pyswisseph-2.08.manifest.tsv as it
+# stands today. fetch-2.08-baseline.ps1 writes a stamp (the manifest's own sha256) only after
+# every file passes verification against that same manifest; requiring the stamp to match the
+# CURRENT manifest re-couples "verified" to "about to be consumed" without re-hashing all 31
+# files on every gen-delta.ps1 invocation. A manifest that changed since the directory was
+# last fetched (e.g. rows quietly removed) is treated the same as "never fetched".
+function Test-BaselineVerified {
+    param([string] $BaselineDir, [string] $ManifestPath)
+    $stampPath = Join-Path $BaselineDir '.manifest-sha256'
+    if (-not (Test-Path -LiteralPath $stampPath -PathType Leaf) -or -not (Test-Path -LiteralPath $ManifestPath -PathType Leaf)) {
+        return $false
+    }
+    $stamped = (Get-Content -LiteralPath $stampPath -Raw).Trim()
+    $current = (Get-FileHash -LiteralPath $ManifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    return $stamped -eq $current
+}
 
 if (-not (Test-Path -LiteralPath $baselineDir -PathType Container) -or
-    -not (Get-ChildItem -LiteralPath $baselineDir -File -ErrorAction SilentlyContinue)) {
-    Write-Host "2.08 baseline not found at $baselineDir -- fetching it."
+    -not (Get-ChildItem -LiteralPath $baselineDir -File -ErrorAction SilentlyContinue) -or
+    -not (Test-BaselineVerified -BaselineDir $baselineDir -ManifestPath $manifestPath)) {
+    Write-Host "2.08 baseline not found or not verified against the current manifest at $baselineDir -- fetching it."
     & (Join-Path $PSScriptRoot 'fetch-2.08-baseline.ps1')
     if ($LASTEXITCODE -ne 0) {
         Write-Host 'FAIL: could not prepare the 2.08 baseline.'
@@ -76,6 +104,35 @@ if (-not (Test-Path -LiteralPath $submoduleDir -PathType Container) -or
     Write-Host 'Run: git submodule update --init external/swisseph'
     exit 1
 }
+
+# "Has at least one .c file" also passes for a submodule checked out at the wrong commit --
+# in particular the aloistr/swisseph `v2.08.00a` tag, an incomplete snapshot missing
+# swecl.c/swehouse.c/swehel.c entirely and truncating swephexp.h, but which still contains
+# plenty of *other* .c files and so clears that bar easily. `git -C $repoRoot rev-parse
+# HEAD:external/swisseph` reads the commit the superproject's own tree pins the submodule to
+# (the gitlink) -- not a second hardcoded copy of the pinned SHA -- and this asserts the
+# actual checkout matches it exactly.
+$expectedSubmoduleCommit = & git -C $repoRoot rev-parse 'HEAD:external/swisseph' 2>$null
+if ($LASTEXITCODE -ne 0 -or -not $expectedSubmoduleCommit) {
+    Write-Host "FAIL: could not resolve the pinned commit for external/swisseph from the superproject's tree (git rev-parse HEAD:external/swisseph)."
+    exit 1
+}
+$expectedSubmoduleCommit = $expectedSubmoduleCommit.Trim()
+
+$actualSubmoduleCommit = & git -C $submoduleDir rev-parse HEAD 2>$null
+if ($LASTEXITCODE -ne 0 -or -not $actualSubmoduleCommit) {
+    Write-Host "FAIL: could not resolve external/swisseph's currently checked-out commit (git -C external/swisseph rev-parse HEAD). Is it a valid git checkout?"
+    exit 1
+}
+$actualSubmoduleCommit = $actualSubmoduleCommit.Trim()
+
+if ($actualSubmoduleCommit -ne $expectedSubmoduleCommit) {
+    Write-Host "FAIL: external/swisseph is checked out at $actualSubmoduleCommit, but the superproject pins it at $expectedSubmoduleCommit."
+    Write-Host 'This is exactly the failure mode this script exists to prevent: a checkout of the wrong commit (e.g. the aloistr/swisseph v2.08.00a tag, an incomplete snapshot missing swecl.c/swehouse.c/swehel.c entirely) passes the "has some .c files" check above and silently produces a wrong work queue.'
+    Write-Host "Run: git -C external/swisseph fetch origin && git -C external/swisseph checkout $expectedSubmoduleCommit"
+    exit 1
+}
+Write-Host "PASS: external/swisseph is checked out at the pinned commit ($expectedSubmoduleCommit)."
 
 # Known GPL-2 -> AGPL-3 header-rewrite phrases. A hunk is license noise only if every one of its
 # changed (+/-) lines matches at least one of these -- a hunk that mixes a license-text change
@@ -122,30 +179,55 @@ function Strip-CComments {
 
 function Get-Hunks {
     param([string] $DiffText)
-    if (-not $DiffText) { return @() }
-    $lines = $DiffText -split "`n"
     $hunks = [System.Collections.Generic.List[object]]::new()
-    $current = $null
-    foreach ($line in $lines) {
-        if ($line.StartsWith('@@')) {
-            if ($current) { $hunks.Add($current) }
-            $current = [System.Collections.Generic.List[string]]::new()
-            continue
-        }
-        if ($null -ne $current -and ($line.StartsWith('+') -or $line.StartsWith('-'))) {
-            if (-not ($line.StartsWith('+++') -or $line.StartsWith('---'))) {
-                $current.Add($line)
+    if ($DiffText) {
+        $lines = $DiffText -split "`n"
+        $current = $null
+        foreach ($line in $lines) {
+            if ($line.StartsWith('@@')) {
+                if ($current) { $hunks.Add($current) }
+                $current = [System.Collections.Generic.List[string]]::new()
+                continue
+            }
+            if ($null -ne $current -and ($line.StartsWith('+') -or $line.StartsWith('-'))) {
+                if (-not ($line.StartsWith('+++') -or $line.StartsWith('---'))) {
+                    $current.Add($line)
+                }
             }
         }
+        if ($current) { $hunks.Add($current) }
     }
-    if ($current) { $hunks.Add($current) }
-    return $hunks
+    # Write-Output -NoEnumerate, not a plain `return $hunks`: a List[object] with zero
+    # elements, returned normally, is enumerated by PowerShell's output pipeline into zero
+    # emitted objects -- the caller's `$rawHunks = Invoke-...` then binds to $null, not an
+    # empty collection, and every later `$rawHunks.Count` throws under Set-StrictMode
+    # ("cannot call a method on a null-valued expression" / "property 'Count' cannot be
+    # found"). Confirmed live: two files identical after CRLF/LF normalization (e.g.
+    # seleapsec.txt, LF on the 2.08 side vs CRLF in the submodule) produce an empty diff and
+    # crash all-files mode entirely on exactly this. -NoEnumerate always passes the List
+    # itself through as one object, empty or not.
+    Write-Output -NoEnumerate $hunks
 }
+
+# A line that would otherwise match one of the license phrases above (in particular the two
+# bare URL substrings, 'gpl-2\.0\.html' / 'agpl-3\.0\.html', which say nothing about WHERE on
+# the line they appear) must never be treated as license noise if it also looks like real code.
+# The concrete failure this guards: a hunk line like
+#   -#define NDIURN 1 /* ...gpl-2.0.html */
+#   +#define NDIURN 2 /* ...agpl-3.0.html */
+# carries a real value change (1 -> 2) riding along with the relicensing URL rewrite that
+# genuinely does touch every file -- the URL substring matching is not wrong to have, but
+# letting it swallow a line with a preprocessor directive or a statement on it is. The
+# multi-line block-comment header itself (the common, legitimate case this filter exists for)
+# is prose with no preprocessor directives or statement terminators on any of its lines, so this
+# veto does not affect it.
+$codeVetoRegex = '#\s*(define|include|if|ifdef|ifndef|else|elif|endif|undef|pragma)\b|;'
 
 function Test-LicenseHunk {
     param($HunkLines)
     foreach ($line in $HunkLines) {
         $content = $line.Substring(1)
+        if ($content -match $codeVetoRegex) { return $false }
         if ($content -notmatch $licenseRegex) { return $false }
     }
     return $true
@@ -153,8 +235,30 @@ function Test-LicenseHunk {
 
 function Get-Diff {
     param([string] $OldPath, [string] $NewPath)
-    $diff = & git -C $repoRoot diff --no-index --no-color --unified=3 -- $OldPath $NewPath 2>$null
-    return ($diff -join "`n")
+    # `git diff --no-index` uses exit 1 for two different situations: "differences found"
+    # (unified diff written to stdout) and "trouble reading one of the paths" (stdout is
+    # empty, the message goes to stderr only). Exit 0 always means "no differences", with
+    # empty stdout -- which is exactly the same *stdout* a path error produces. Silently
+    # discarding stderr (as this used to do with `2>$null`) made those two cases
+    # indistinguishable: Get-Hunks then treats a git failure exactly like "no changes",
+    # which is precisely the failure mode this script exists to avoid (see the synopsis).
+    # A real diff always has at least a hunk header once files differ, so exit 1 with
+    # empty stdout can only be the error case, never a legitimate empty diff.
+    $stderrCapture = [System.Collections.Generic.List[string]]::new()
+    $diffLines = & git -C $repoRoot diff --no-index --no-color --unified=3 -- $OldPath $NewPath 2>&1 |
+        ForEach-Object {
+            if ($_ -is [System.Management.Automation.ErrorRecord]) { $stderrCapture.Add($_.ToString()) }
+            else { $_ }
+        }
+    $exitCode = $LASTEXITCODE
+    $diffText = ($diffLines -join "`n")
+
+    if ($exitCode -gt 1 -or ($exitCode -eq 1 -and -not $diffText)) {
+        $stderrText = ($stderrCapture -join "`n")
+        throw "git diff --no-index failed comparing '$OldPath' and '$NewPath' (exit $exitCode): $stderrText"
+    }
+
+    return $diffText
 }
 
 function Invoke-FileDelta {
@@ -223,6 +327,7 @@ function Invoke-FileDelta {
         StrippedMinus = $strippedMinus
         DiffText      = $diffText
         FilteredLines = $filteredHunks
+        LicenseLines  = $licenseHunks
     }
 }
 
@@ -237,6 +342,18 @@ if ($File) {
 
     if ($IncludeLicenseHunks) {
         Write-Output $result.DiffText
+    }
+    elseif ($ShowDroppedLicenseHunks) {
+        # The dropped set itself, not the raw diff and not the kept hunks -- this is what makes
+        # a dropped hunk auditable instead of just a count. If this is empty, the file's
+        # license-noise count above is necessarily zero too.
+        $i = 0
+        foreach ($hunk in $result.LicenseLines) {
+            $i++
+            Write-Output "--- dropped (license-noise) hunk $i ---"
+            foreach ($line in $hunk) { Write-Output $line }
+            Write-Output ''
+        }
     }
     else {
         # Reconstruct a diff body containing only the non-license hunks' changed lines. This is

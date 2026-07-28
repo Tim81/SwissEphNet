@@ -62,6 +62,20 @@ if (-not $ManifestPath) {
     $ManifestPath = Join-Path $PSScriptRoot 'pyswisseph-2.08.manifest.tsv'
 }
 
+# -OutputDir is recursively deleted further down (to guarantee a clean extraction, not a
+# merge with whatever was there before). Refuse to do that to anything outside external/ --
+# there is no legitimate reason for -OutputDir to point elsewhere, and without this check a
+# typo or a bad caller could silently wipe an unrelated directory.
+$externalRoot = [System.IO.Path]::GetFullPath((Join-Path $repoRoot 'external'))
+$resolvedOutputDir = [System.IO.Path]::GetFullPath($OutputDir)
+$externalRootWithSeparator = $externalRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+if ($resolvedOutputDir -ne $externalRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) -and
+    -not $resolvedOutputDir.StartsWith($externalRootWithSeparator, [StringComparison]::OrdinalIgnoreCase)) {
+    Write-Host "FAIL: -OutputDir '$OutputDir' resolves to '$resolvedOutputDir', which is not under '$externalRoot'."
+    Write-Host "Refusing to recursively delete a directory outside external/."
+    exit 1
+}
+
 function Get-Sha256Hex {
     param([string] $Path)
     (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -84,6 +98,23 @@ foreach ($line in [System.IO.File]::ReadAllLines($ManifestPath)) {
 }
 if ($expected.Count -eq 0) {
     Write-Host "FAIL: manifest at $ManifestPath has no rows."
+    exit 1
+}
+
+# CONTRIBUTING.md, "The 2.08 baseline trap", documents these exact totals (31 files, 24
+# .c/.h). Asserting them here, not just trusting whatever rows happen to be in the file,
+# closes the same failure mode fetch-2.08-baseline.ps1 exists to prevent: a manifest with
+# the swecl.c/swehouse.c/swehel.c rows quietly removed reproduces the v2.08.00a bug (three
+# files silently missing from the diff) while every remaining row still verifies and this
+# script still exits 0.
+if ($expected.Count -ne 31) {
+    Write-Host "FAIL: manifest at $ManifestPath has $($expected.Count) row(s), expected the documented 31 (CONTRIBUTING.md, 'The 2.08 baseline trap')."
+    Write-Host "A manifest silently missing rows (e.g. swecl.c/swehouse.c/swehel.c) reproduces the v2.08.00a failure mode -- files silently absent from the work queue -- while still exiting 0 otherwise."
+    exit 1
+}
+$manifestCOrHCount = @($expected.Keys | Where-Object { $_ -like '*.c' -or $_ -like '*.h' }).Count
+if ($manifestCOrHCount -ne 24) {
+    Write-Host "FAIL: manifest at $ManifestPath has $manifestCOrHCount .c/.h row(s), expected the documented 24 (CONTRIBUTING.md, 'The 2.08 baseline trap')."
     exit 1
 }
 
@@ -130,8 +161,14 @@ New-Item -ItemType Directory -Force -Path $extractDir | Out-Null
 # real (bsdtar) one Windows ships in System32 -- and MSYS tar reads a `C:\...` path as an
 # old-style `host:path` remote spec, not a local file. Prefer the System32 one explicitly
 # when it exists; fall back to whatever `tar` resolves to elsewhere (Linux, macOS).
-$systemTar = Join-Path $env:SystemRoot 'System32/tar.exe'
-$tarExe = if (Test-Path -LiteralPath $systemTar) { $systemTar } else { 'tar' }
+#
+# $env:SystemRoot is unset off Windows, and Join-Path with a null/empty -Path throws a
+# terminating parameter-binding error -- before ever reaching the Test-Path fallback below.
+# Gate the whole System32 lookup on $IsWindows (only defined and true on Windows in
+# PowerShell 7+) as well as $env:SystemRoot being non-empty, so Linux/macOS fall straight
+# through to the plain 'tar' on PATH instead of crashing here.
+$systemTar = if ($IsWindows -and $env:SystemRoot) { Join-Path $env:SystemRoot 'System32/tar.exe' } else { $null }
+$tarExe = if ($systemTar -and (Test-Path -LiteralPath $systemTar)) { $systemTar } else { 'tar' }
 
 & $tarExe -xzf $tarPath -C $extractDir
 if ($LASTEXITCODE -ne 0) {
@@ -142,6 +179,22 @@ if ($LASTEXITCODE -ne 0) {
 $libsweDir = Join-Path $extractDir "$SdistRootDir/libswe"
 if (-not (Test-Path -LiteralPath $libsweDir -PathType Container)) {
     Write-Host "FAIL: $libsweDir not found inside the sdist. Layout may have changed upstream."
+    exit 1
+}
+
+# The copy loop below only ever walks $expected.Keys (the manifest's own rows), so a file
+# present in libswe/ but absent from the manifest would previously be silently skipped and
+# never mentioned anywhere -- the manifest, not libswe/, would quietly become the source of
+# truth for what "the 2.08 baseline" contains. Check the other direction explicitly. The
+# sdist's libswe/ carries two packaging artifacts that are never meant to be part of the
+# tracked baseline (a stray `.git` file -- a gitlink pointer, not a real directory here -- and
+# `.gitignore`); those are expected and not reported. Anything else unlisted is not.
+$libsweFileNames = @(Get-ChildItem -LiteralPath $libsweDir -File | ForEach-Object { $_.Name })
+$knownNonManifestFiles = @('.git', '.gitignore')
+$unlistedInManifest = @($libsweFileNames | Where-Object { -not $expected.ContainsKey($_) -and $_ -notin $knownNonManifestFiles })
+if ($unlistedInManifest.Count -gt 0) {
+    Write-Host "FAIL: libswe/ in the sdist contains file(s) not listed in $ManifestPath and not a known packaging artifact -- the manifest is stale or incomplete:"
+    $unlistedInManifest | Sort-Object | ForEach-Object { Write-Host "  $_" }
     exit 1
 }
 
@@ -170,7 +223,12 @@ foreach ($name in ($expected.Keys | Sort-Object)) {
 
     $bytes = (Get-Item -LiteralPath $path).Length
     $text = [System.IO.File]::ReadAllText($path)
-    $lines = ($text.ToCharArray() | Where-Object { $_ -eq "`n" }).Count
+    # Was ($text.ToCharArray() | Where-Object { $_ -eq "`n" }).Count: under Set-StrictMode
+    # (which this script sets -- see the top), a file with no `n` at all makes the pipeline
+    # emit zero matches, so the result is $null, and $null.Count throws instead of being 0.
+    # It also pushes every character of a file up to ~1.6 MB through Where-Object one at a
+    # time. Counting via string length arithmetic is both StrictMode-safe and avoids that.
+    $lines = $text.Length - $text.Replace("`n", '').Length
     $sha = Get-Sha256Hex -Path $path
 
     if ($bytes -ne $want.Bytes) {
@@ -199,4 +257,13 @@ if ($failed) {
 
 Write-Host "PASS: $($expected.Count) files verified against the manifest."
 Write-Host "2.08 baseline ready at $OutputDir"
+
+# Stamp: records the manifest's own sha256 alongside the verified output, so a consumer
+# (scripts/gen-delta.ps1) can tell "this directory was produced by a run of this script that
+# passed verification against the CURRENT manifest" apart from "a directory that merely has
+# files in it" -- without re-hashing all 31 files on every invocation. gen-delta.ps1 treats a
+# missing or mismatched stamp the same as a missing directory and re-invokes this script.
+$stampPath = Join-Path $OutputDir '.manifest-sha256'
+Set-Content -LiteralPath $stampPath -Value (Get-Sha256Hex -Path $ManifestPath) -NoNewline -Encoding ascii
+
 exit 0
