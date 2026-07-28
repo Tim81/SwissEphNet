@@ -19,7 +19,7 @@
     real bug the matrix happens to exercise). It must never be used to make a
     failing scripts/verify-baseline.ps1 run go green by changing the baseline
     instead of understanding why it failed -- see Tools/BaselineGen/README.md,
-    "When local-mode regeneration is legitimate," before using this.
+    "Local mode -- when it is legitimate," before using this.
 
     Both modes generate twice into separate temp directories and diff them for
     byte-for-byte reproducibility before touching anything under Tests/baseline/.
@@ -54,7 +54,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 if ($FromLocal -and [string]::IsNullOrWhiteSpace($DeviationNote)) {
-    Write-Error "-FromLocal requires -DeviationNote describing the deliberate, reviewed behavior change (see Tools/BaselineGen/README.md, 'When local-mode regeneration is legitimate')."
+    Write-Error "-FromLocal requires -DeviationNote describing the deliberate, reviewed behavior change (see Tools/BaselineGen/README.md, 'Local mode -- when it is legitimate')."
     exit 1
 }
 if (-not $FromLocal -and $DeviationNote) {
@@ -219,8 +219,8 @@ Since the fields above no longer describe every row in
 Tests/baseline/baseline-*.tsv, this append-only log records each deliberate,
 reviewed local-mode regeneration (scripts/regenerate-baseline.ps1 -FromLocal),
 most recent last. Never add an entry here to make a failing gate pass without
-first understanding why it failed -- see Tools/BaselineGen/README.md, "When
-local-mode regeneration is legitimate."
+first understanding why it failed -- see Tools/BaselineGen/README.md, "Local
+mode -- when it is legitimate."
 "@
             $newEntry = "1. $commit ($date): $DeviationNote"
             $updatedContent = $existingContent.TrimEnd() + $header.TrimEnd() + "`n`n$newEntry`n"

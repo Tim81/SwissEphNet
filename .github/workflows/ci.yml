@@ -59,6 +59,15 @@ jobs:
       - name: Test
         run: dotnet test Tests/SwissEphNet.Tests/SwissEphNet.Tests.csproj -c ${{ matrix.configuration }} --no-build --logger trx --results-directory TestResults
 
+      # net48, so Windows only (same reasoning as the SweWin build step above).
+      # Exercises the netstandard2.0 asset, which nothing else here runs -- see the
+      # comment atop Tests/NetStandard20Smoke.Tests/NetStandard20Smoke.Tests.csproj.
+      # Already built by the full-solution build above (this project is part of
+      # SwissEphNet.sln, not SwissEphNet.CrossPlatform.slnf), hence --no-build.
+      - name: Test (netstandard2.0 smoke)
+        if: runner.os == 'Windows'
+        run: dotnet test Tests/NetStandard20Smoke.Tests/NetStandard20Smoke.Tests.csproj -c ${{ matrix.configuration }} --no-build --logger trx --results-directory TestResults
+
       - name: Publish test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -70,5 +79,5 @@ jobs:
   # WinForms code (never previously run through dotnet format) has formatting
   # debt unrelated to this change, and gating every PR on fixing it is a
   # separate piece of work. Whoever adds that job must run it as
-  # `dotnet format SwissEphNet.sln --verify-no-changes --exclude SwissEphNet/CPort/`
-  # -- see CONTRIBUTING.md for why the exclusion is mandatory.
+  # `dotnet format SwissEphNet.sln --verify-no-changes --exclude SwissEphNet/CPort/ --exclude Programs/SweTest/Program.cs --exclude Programs/SweMini/Program.cs`
+  # -- see CONTRIBUTING.md for why all three exclusions are mandatory.

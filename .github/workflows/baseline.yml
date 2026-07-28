@@ -28,6 +28,33 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history, not the default shallow clone: verify-baseline-log.ps1 (below)
+          # diffs HEAD against the PR base / previous push commit to decide whether
+          # Tests/baseline/*.tsv changed, and a shallow checkout may not even have that
+          # commit present locally to diff against.
+          fetch-depth: 0
+
+      - name: Determine base ref for baseline-log check
+        id: base-ref
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+          else
+            base="${{ github.event.before }}"
+            # github.event.before is all-zeros for the first push of a new branch (nothing
+            # to diff against) -- fall back to the repo's root commit so the check still
+            # runs against full history instead of silently no-opping.
+            if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+              base=$(git rev-list --max-parents=0 HEAD | tail -n1)
+            fi
+          fi
+          echo "sha=$base" >> "$GITHUB_OUTPUT"
+
+      - name: Verify baseline changes are logged
+        shell: pwsh
+        run: pwsh scripts/verify-baseline-log.ps1 -BaseRef '${{ steps.base-ref.outputs.sha }}'
 
       - uses: actions/setup-dotnet@v4
         with:

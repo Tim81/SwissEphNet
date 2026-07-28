@@ -38,6 +38,21 @@
     <Nullable>disable</Nullable>
     <!-- Packing happens explicitly (dotnet pack), not as a side effect of building. -->
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <!--
+      The SDK only enables .NET analyzers (CA*) by default for TargetFramework >= net5.0,
+      so netstandard2.0 (the TFM the widest range of consumers actually resolve, and the
+      one NetStandard20Smoke.Tests exists specifically because nothing else exercises it)
+      never saw them without this. That is not a theoretical gap: the five culture-sensitive
+      rules the root .editorconfig deliberately enables (CA1304/1305/1307/1309/1310) are what
+      caught the real C.strcmp bug, and analyzer coverage that skips the least-tested shipped
+      asset defeats the point of having them. Forcing this on for every TFM does not affect
+      SwissEphNet/CPort/, Programs/SweTest/Program.cs or Programs/SweMini/Program.cs: their
+      own nested .editorconfig files already silence every analyzer diagnostic except the
+      handful deliberately left on (see CONTRIBUTING.md and those files' comments), so this
+      only surfaces warnings there, never fails a build, and the formatting freeze is
+      untouched either way.
+    -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
   </PropertyGroup>
 
   <!--

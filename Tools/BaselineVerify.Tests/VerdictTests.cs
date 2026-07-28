@@ -91,6 +91,61 @@ public class VerdictTests
         Assert.Contains(@"some\path.tsv", verdict.Reasons[0]);
     }
 
+    [Fact]
+    public void OrphanedBaselineFile_Fails()
+    {
+        var verdict = Verdict.OrphanedBaselineFile(@"some\baseline-retired-area.tsv");
+        Assert.False(verdict.Passed);
+        Assert.Contains(@"some\baseline-retired-area.tsv", verdict.Reasons[0]);
+    }
+
+    [Fact]
+    public void FindOrphanedBaselineFiles_FileWithNoMatchingArea_IsReported()
+    {
+        // Simulates deleting "calc" from Areas.cs while baseline-calc.tsv is still on disk --
+        // the exact hole this check exists to close (see BaselineVerify's Program.cs).
+        var present = new[] { "baseline-calc.tsv", "baseline-retired-area.tsv" };
+        var knownAreas = new[] { "calc" };
+
+        var orphans = Verdict.FindOrphanedBaselineFiles(present, knownAreas);
+
+        Assert.Equal(["baseline-retired-area.tsv"], orphans);
+    }
+
+    [Fact]
+    public void FindOrphanedBaselineFiles_KnownAreaFile_IsNotReported()
+    {
+        var present = new[] { "baseline-calc.tsv" };
+        var knownAreas = new[] { "calc" };
+
+        var orphans = Verdict.FindOrphanedBaselineFiles(present, knownAreas);
+
+        Assert.Empty(orphans);
+    }
+
+    [Fact]
+    public void FindOrphanedBaselineFiles_SidecarEnvFile_IsNotReported()
+    {
+        // The sidecar (baseline-<ReferenceVersion>.env.txt) legitimately lives alongside
+        // the area files but is not itself an area's baseline -- it must never be flagged.
+        var present = new[] { "baseline-calc.tsv", "baseline-2.8.0.2.env.txt" };
+        var knownAreas = new[] { "calc" };
+
+        var orphans = Verdict.FindOrphanedBaselineFiles(present, knownAreas);
+
+        Assert.Empty(orphans);
+    }
+
+    [Fact]
+    public void FindOrphanedBaselineFiles_NoAreasKnown_AllTsvFilesReported()
+    {
+        var present = new[] { "baseline-calc.tsv", "baseline-2.8.0.2.env.txt" };
+
+        var orphans = Verdict.FindOrphanedBaselineFiles(present, []);
+
+        Assert.Equal(["baseline-calc.tsv"], orphans);
+    }
+
     private static Waiver MakeWaiver(string glob = "A|*")
     {
         var path = Path.Combine(Path.GetTempPath(), $"waiver-{Guid.NewGuid():N}.tsv");
