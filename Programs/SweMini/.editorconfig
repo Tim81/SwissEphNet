@@ -23,6 +23,20 @@
 # Directory.Build.props, not repeated here.
 
 [*.cs]
+# `dotnet_analyzer_diagnostic.severity = none` below silences analyzer DIAGNOSTICS, but
+# `dotnet format whitespace` (and `dotnet format style`) reformats code based on FORMATTING
+# OPTIONS, which severities do not touch at all -- an unexcluded `dotnet format whitespace`
+# run against this repo strips every trailing-whitespace line here (7 measured) and reflows
+# every K&R `) {` to Allman style, silently destroying the line-by-line correspondence with
+# swemini.c that this file exists to preserve. CONTRIBUTING.md's `--exclude` flag is the
+# primary defense, but it depends on whoever runs `dotnet format` remembering to pass it;
+# these options make the freeze hold even if they don't, by pinning the two settings that
+# actually fired and the one most likely to next (K&R brace placement is exactly the
+# transliterated C style, not just this repo's default).
+trim_trailing_whitespace = false
+insert_final_newline = false
+csharp_new_line_before_open_brace = none
+
 dotnet_analyzer_diagnostic.severity = none
 
 # Culture-sensitive string/number operations -- these are what surfaced the
