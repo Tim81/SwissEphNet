@@ -9,6 +9,18 @@
     in setest/t.exp against the current SwissEphNet build and writes one row
     per non-passing iteration.
 
+    Every regeneration runs Tests/SwissEphNet.Conformance.Tests/Dispatch/EphemerisManifest's
+    check first (via ConformanceRunner.Run, shared with the actual test run): if the resolved
+    ephemeris directory does not contain exactly the files
+    Tests/conformance/required-ephemeris-files.tsv declares -- no fewer, no more -- this
+    script refuses outright before touching known-fail.tsv. A full, non-sparse
+    'git submodule update --init external/swisseph' (378 MB, every era file) is the most
+    likely way to trip this: some iterations only pass because of a file the manifest does
+    not declare, so regenerating against that tree produces a list that looks right locally
+    and is wrong for CI and everyone else. Each log entry below also records how many
+    ephemeris files were present, for the same reason the PR-number convention exists: a
+    future reader needs to know what this list was generated against, not just when.
+
     Two modes:
 
     Default (full regenerate): overwrites known-fail.tsv wholesale with
@@ -92,6 +104,25 @@ function Get-RowCount {
     return (Get-Content $Path | Measure-Object -Line).Lines - 1 # minus header
 }
 
+function Get-EpheDescription {
+    # Records which ephemeris data set this regeneration ran against, in the log entry
+    # itself -- see Tests/SwissEphNet.Conformance.Tests/Dispatch/EphemerisManifest.cs's
+    # remarks for why this matters: a full, non-sparse submodule checkout (378 MB, every
+    # era file) silently changes some iterations' outcome relative to the declared ~4.2 MB
+    # core set, so "the list was generated against the core set" is provenance a future
+    # reader needs, not an implementation detail. ConformanceRunner.Run already refused
+    # (before this function is ever called) if EpheDir did not match the manifest exactly,
+    # so by the time a log entry is written, it is always describing the declared set --
+    # this just names the count for a reader who has not read that source.
+    $epheDir = $env:SWISSEPH_CONFORMANCE_EPHE
+    if (-not $epheDir) { $epheDir = Join-Path $repoRoot 'external\swisseph\ephe' }
+    $count = 0
+    if (Test-Path $epheDir) {
+        $count = (Get-ChildItem -Path $epheDir -File | Measure-Object).Count
+    }
+    return "ephe: $count files matching Tests/conformance/required-ephemeris-files.tsv"
+}
+
 function Read-KnownFailTable {
     # Keyed by "suite`ttestcase`titeration" -> category. Plain tab-split, not
     # Import-Csv: the "reason" column can itself contain characters Import-Csv
@@ -166,7 +197,8 @@ if ($PruneOnly) {
         $date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
         $prCitation = if ($PR) { "PR #$PR" } else { "(no PR yet -- fill in `"PR #N`" before merging, per CONTRIBUTING.md)" }
         $reasonText = if ($Reason) { $Reason } else { "Pruned $removed newly-passing row(s); no reason required for a pure removal." }
-        $logEntry = "$date $prCitation ($beforeCount -> $afterCount, $removed fewer rows): $reasonText"
+        $epheDescription = Get-EpheDescription
+        $logEntry = "$date $prCitation ($beforeCount -> $afterCount, $removed fewer rows) [$epheDescription]: $reasonText"
         Add-Content -Path $logPath -Value $logEntry -Encoding utf8NoBOM
 
         Write-Host ""
@@ -199,8 +231,9 @@ else { "$delta more rows" }
 
 $date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
 $prCitation = if ($PR) { "PR #$PR" } else { "(no PR yet -- fill in `"PR #N`" before merging, per CONTRIBUTING.md)" }
+$epheDescription = Get-EpheDescription
 
-$logEntry = "$date $prCitation ($beforeCount -> $afterCount, $deltaDescription): $Reason"
+$logEntry = "$date $prCitation ($beforeCount -> $afterCount, $deltaDescription) [$epheDescription]: $Reason"
 Add-Content -Path $logPath -Value $logEntry -Encoding utf8NoBOM
 
 Write-Host ""

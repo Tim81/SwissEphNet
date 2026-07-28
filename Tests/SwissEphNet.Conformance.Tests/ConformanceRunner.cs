@@ -31,6 +31,13 @@ public static class ConformanceRunner
 
     public static (ExpDocument Document, IReadOnlyList<IterationResult> Iterations) Run()
     {
+        // Fail fast, and loudly, before dispatching a single iteration, if the resolved
+        // EpheDir does not contain exactly the declared core set -- see EphemerisManifest's
+        // remarks. Running against undeclared data (missing OR extra) produces a
+        // known-fail.tsv nobody else can reproduce, which is exactly how suite 5 testcase 3
+        // iteration 6 ended up wrongly pruned once already.
+        EphemerisManifest.AssertMatches();
+
         var expPath = Path.Combine(RepoLocator.SetestDir, "t.exp");
         var fixPath = Path.Combine(RepoLocator.SetestDir, "t.fix");
 

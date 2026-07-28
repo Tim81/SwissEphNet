@@ -42,6 +42,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>conformance\known-fail.tsv</Link>
     </None>
+    <None Include="..\conformance\required-ephemeris-files.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>conformance\required-ephemeris-files.tsv</Link>
+    </None>
   </ItemGroup>
 
 </Project>

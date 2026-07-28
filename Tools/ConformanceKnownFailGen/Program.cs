@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using SwissEphNet.Conformance.Tests;
+using SwissEphNet.Conformance.Tests.Corpus;
 using SwissEphNet.Conformance.Tests.Dispatch;
 using SwissEphNet.Conformance.Tests.KnownFail;
 
@@ -8,7 +9,22 @@ var outputPath = args.Length > 0 ? args[0] : "known-fail.tsv";
 
 Console.WriteLine("Running the full conformance corpus (this dispatches all 12,757 iterations)...");
 var startedAt = DateTime.UtcNow;
-var (doc, results) = ConformanceRunner.Run();
+ExpDocument doc;
+System.Collections.Generic.IReadOnlyList<IterationResult> results;
+try
+{
+    (doc, results) = ConformanceRunner.Run();
+}
+catch (InvalidOperationException ex) when (ex.Message.Contains("does not match the declared ephemeris file set"))
+{
+    // EphemerisManifest.AssertMatches -- refuse outright rather than regenerate against
+    // undeclared data (see that class's remarks). A clean message here, not a raw stack
+    // trace: this is an expected, actionable refusal, not a bug in the generator.
+    Console.Error.WriteLine();
+    Console.Error.WriteLine(ex.Message);
+    return 1;
+}
+
 var elapsed = DateTime.UtcNow - startedAt;
 
 Console.WriteLine($"Done in {elapsed.TotalSeconds:F1}s. suites={doc.TestSuites.Count} testcases={doc.TotalTestCaseCount} " +
