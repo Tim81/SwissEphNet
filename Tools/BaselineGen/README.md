@@ -190,6 +190,35 @@ oversight -- renaming would decouple the filename from the
 version-bump-safety property `SidecarFileName` exists to guarantee, for a
 cosmetic gain the file's own content already delivers.
 
+**Two different kinds of reference now live in this one file, area by area.**
+`Tests/baseline/baseline-2.8.0.2.env.txt` has a "## Area provenance" table
+naming, for every area, one of two kinds:
+
+- `package-2.8.0.2`: this area's committed content is confirmed
+  byte-identical to the original 2.8.0.2 reference-mode run. It proves
+  **"unchanged since 2.08"** -- a real oracle, since the reference package
+  predates any local code this repo has since patched and cannot have been
+  produced by whatever is under test.
+- `local-<short-sha>`: this area's committed content was last produced by
+  `-FromLocal` at the given commit. It proves only **"unchanged since the day
+  it was written"** -- a regression net against future drift, not an oracle
+  against 2.08 behavior, because local code authored the content in the
+  first place. Any bug already present in local code on that day is baked
+  into the "golden" file right along with everything else, undetectably.
+
+`pheno-ast`, `eclipse`, `risetrans`, `atmo`, `orbit`, `gauquelin` and
+`astromodels` are `local-<sha>` for a structural reason, not a convenience
+one: none of the functions they cover (`swe_pheno` for the six asteroids,
+the eclipse/occultation `_where`/`_how`/`_when_*` family, `swe_rise_trans[_true_hor]`,
+`swe_refrac[_extended]`/`swe_set_lapse_rate`, `swe_get_orbital_elements`/
+`swe_orbit_max_min_true_distance`, `swe_gauquelin_sector`, or
+`swe_set_astro_models`/`swe_get_astro_models`/`swe_set_interpolate_nut`) were
+exercised by the matrix when it only targeted the 2.8.0.2 package, so there
+is no reference-mode run of them to be byte-identical *to*. Regenerating
+these seven in reference mode is not an option later, either, the way it
+would be for a genuinely untouched area -- they simply did not exist as
+areas at 2.8.0.2. Local mode was the only way to seed them at all.
+
 ## Verifying current code against the baseline
 
 ```powershell
@@ -387,6 +416,13 @@ each area covers. Areas and their files:
 | coord | `CoordHelpers.cs` | `swe_cotrans[_sp]`, `swe_azalt[_rev]` |
 | format | `FormatHelpers.cs` | `swe_split_deg`, `swe_cs2*str`, norm/midpoint helpers, and their radian/centisecond siblings (`swe_radnorm`, `swe_difrad2n`, `swe_difcsn`, `swe_difcs2n`, `swe_csroundsec`, `swe_d2l`, `swe_day_of_week`) |
 | misc | `Misc.cs` | `swe_get_planet_name`, `swe_version` |
+| pheno-ast | `PhenoAst.cs` | `swe_pheno[_ut]` for the six asteroids `pheno.cs`'s `Grids.CalcPlanets` sweep never reaches (Chiron, Pholus, Ceres, Pallas, Juno, Vesta) |
+| eclipse | `Eclipse.cs` | `swe_sol_eclipse_where/how/when_glob/when_loc`, `swe_lun_eclipse_how/when/when_loc`, `swe_lun_occult_where/when_glob/when_loc` |
+| risetrans | `RiseTrans.cs` | `swe_rise_trans`, `swe_rise_trans_true_hor` across `SE_CALC_RISE/SET/MTRANSIT/ITRANSIT` and the `SE_BIT_*` rise/set bit flags |
+| atmo | `Atmo.cs` | `swe_refrac`, `swe_refrac_extended` (both directions), `swe_set_lapse_rate` |
+| orbit | `Orbit.cs` | `swe_get_orbital_elements`, `swe_orbit_max_min_true_distance` |
+| gauquelin | `Gauquelin.cs` | `swe_gauquelin_sector` (imeth 0/1 hit a known undersized-array bug in `swe_house_pos` for hsys `'G'` -- see the file's doc comment) |
+| astromodels | `AstroModels.cs` | `swe_set_astro_models`/`swe_get_astro_models` across the `SEMOD_PREC_*`/`SEMOD_NUT_*`/`SEMOD_DELTAT_*`/`SEMOD_JPLHOR*` families and the `"SE<version>"` bundle form, plus `swe_set_interpolate_nut` |
 
 Every row uses a brand new `SwissEph` instance, with one deliberate, explicitly-named
 exception: `Houses.AddStatefulPairRows` shares a single instance across two ordered
