@@ -23,11 +23,35 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
+  # ubuntu-24.04-arm, not macos-latest. The third leg exists for the architecture,
+  # not the operating system: windows-latest and ubuntu-latest are both x64, so
+  # without it nothing here ever builds or runs this library on arm64 -- and "pure
+  # managed, runs anywhere .NET runs" (iOS, Apple Silicon, arm servers, WASM) is the
+  # whole reason this port exists rather than a P/Invoke wrapper.
+  #
+  # macos-latest did provide that (it is macos-26-arm64), but it was the expensive
+  # way to buy it: 10x the Actions minute multiplier if this repo ever stops being
+  # public, and materially worse queue times even while it is free -- a macOS job on
+  # this repo has sat pending for tens of minutes and once hung for 15 before a
+  # re-run passed the same commit in 42 seconds. ubuntu-24.04-arm gives the same
+  # arm64 coverage at the 1x Linux rate and schedules like the other Linux jobs.
+  #
+  # What that trades away is Apple's libSystem, which is a real difference from
+  # glibc for a numerical library. Nothing currently measures it: this job runs the
+  # same 248 unit tests as the x64 Linux job, asserting to roughly six decimals, so
+  # it would catch gross breakage and not the ULP-level divergence that actually
+  # separates platforms. The gate that *does* measure that (scripts/verify-baseline.ps1)
+  # is deliberately Windows-locked, with Linux x64 tracked report-only in
+  # baseline.yml because 47,052 of 3.45M fields genuinely diverge between them.
+  # arm64 is a third platform nobody has measured, and docs/known-issues.md already
+  # anticipates arm-specific divergence (plain char is unsigned by default there).
+  # Adding an arm64 report-only baseline job is the follow-up that would make this
+  # leg earn its keep; until then it is a build-and-unit-test smoke check.
   build-and-test:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, ubuntu-24.04-arm]
         configuration: [Debug, Release]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
