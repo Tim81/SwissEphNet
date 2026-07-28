@@ -825,27 +825,99 @@ namespace SwissEphNet
          * exports from swehouse.c 
          ****************************/
 
+        /// <summary>
+        /// Computes house cusps and the related points (Ascendant, MC, ...) for a date and
+        /// geographic position. Compatibility overload: widens to the <c>int</c> overload,
+        /// which is the signature upstream declares. A <c>char</c> above U+00FF resolves by
+        /// its low byte, matching an 8-bit C <c>char</c>.
+        /// </summary>
         public int swe_houses(double tjd_ut, double geolat, double geolon, char hsys, double[] cusps, double[] ascmc)
         {
             return SweHouse.swe_houses(tjd_ut, geolat, geolon, hsys, cusps, ascmc);
         }
 
+        /// <summary>
+        /// Computes house cusps and the related points (Ascendant, MC, ...) for a date and
+        /// geographic position. Matches upstream <c>swephexp.h:812</c>, which declares
+        /// <c>int hsys</c>; prefer this overload in new code.
+        /// </summary>
+        public int swe_houses(double tjd_ut, double geolat, double geolon, int hsys, double[] cusps, double[] ascmc)
+        {
+            return SweHouse.swe_houses(tjd_ut, geolat, geolon, hsys, cusps, ascmc);
+        }
+
+        /// <summary>
+        /// Computes house cusps with additional flags (sidereal modes, radians, ...).
+        /// Compatibility overload: widens to the <c>int</c> overload, which is the signature
+        /// upstream declares. A <c>char</c> above U+00FF resolves by its low byte.
+        /// </summary>
         public int swe_houses_ex(double tjd_ut, Int32 iflag, double geolat, double geolon, char hsys, CPointer<double> hcusps, CPointer<double> ascmc)
         {
             return SweHouse.swe_houses_ex(tjd_ut, iflag, geolat, geolon, hsys, hcusps, ascmc);
         }
 
+        /// <summary>
+        /// Computes house cusps with additional flags (sidereal modes, radians, ...).
+        /// Matches upstream <c>swephexp.h:816</c>, which declares <c>int hsys</c>; prefer
+        /// this overload in new code.
+        /// </summary>
+        public int swe_houses_ex(double tjd_ut, Int32 iflag, double geolat, double geolon, int hsys, CPointer<double> hcusps, CPointer<double> ascmc)
+        {
+            return SweHouse.swe_houses_ex(tjd_ut, iflag, geolat, geolon, hsys, hcusps, ascmc);
+        }
+
+        /// <summary>
+        /// Computes house cusps directly from ARMC, geographic latitude and the obliquity of
+        /// the ecliptic, requiring no ephemeris data. Compatibility overload: widens to the
+        /// <c>int</c> overload. A <c>char</c> above U+00FF resolves by its low byte.
+        /// </summary>
         public int swe_houses_armc(double armc, double geolat, double eps, char hsys, double[] cusps, double[] ascmc)
         {
             return SweHouse.swe_houses_armc(armc, geolat, eps, hsys, cusps, ascmc);
         }
 
+        /// <summary>
+        /// Computes house cusps directly from ARMC, geographic latitude and the obliquity of
+        /// the ecliptic, requiring no ephemeris data. Matches upstream <c>swephexp.h:824</c>,
+        /// which declares <c>int hsys</c>; prefer this overload in new code.
+        /// </summary>
+        public int swe_houses_armc(double armc, double geolat, double eps, int hsys, double[] cusps, double[] ascmc)
+        {
+            return SweHouse.swe_houses_armc(armc, geolat, eps, hsys, cusps, ascmc);
+        }
+
+        /// <summary>
+        /// Returns the house position of a given body position. Compatibility overload:
+        /// widens to the <c>int</c> overload, which is the signature upstream declares.
+        /// </summary>
         public double swe_house_pos(double armc, double geolat, double eps, char hsys, double[] xpin, ref string serr)
         {
             return SweHouse.swe_house_pos(armc, geolat, eps, hsys, xpin, ref serr);
         }
 
+        /// <summary>
+        /// Returns the house position of a given body position. Matches upstream
+        /// <c>swephexp.h:832</c>, which declares <c>int hsys</c>; prefer this overload in new
+        /// code. An <c>hsys</c> that matches no house-system letter falls through to the
+        /// simplified interpolation algorithm, as in C.
+        /// </summary>
+        public double swe_house_pos(double armc, double geolat, double eps, int hsys, double[] xpin, ref string serr)
+        {
+            return SweHouse.swe_house_pos(armc, geolat, eps, hsys, xpin, ref serr);
+        }
+
+        /// <summary>
+        /// Returns the name of a house system. Compatibility overload: widens to the
+        /// <c>int</c> overload. Both compare the raw value, so neither narrows.
+        /// </summary>
         public string swe_house_name(char hsys) { return SweHouse.swe_house_name(hsys); }
+
+        /// <summary>
+        /// Returns the name of a house system, or <c>"Placidus"</c> for any value that
+        /// matches no house-system letter. Matches upstream <c>swephexp.h:835</c>, which
+        /// declares <c>int hsys</c>; prefer this overload in new code.
+        /// </summary>
+        public string swe_house_name(int hsys) { return SweHouse.swe_house_name(hsys); }
 
         /**************************** 
          * exports from swecl.c 

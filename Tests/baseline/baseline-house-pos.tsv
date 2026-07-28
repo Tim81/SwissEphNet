@@ -2651,381 +2651,381 @@ HP|F|90|80|270|5	4
 HP|F|90|80|90|-5	10	
 HP|F|90|80|90|0	10	
 HP|F|90|80|90|5	10	
-HP|G|0|-45|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-45|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-45|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-45|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-45|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-45|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-45|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-45|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-45|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-45|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-45|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-45|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-45|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-45|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-45|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-80|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-80|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-80|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-80|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-80|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-80|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-80|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-80|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-80|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-80|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-80|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-80|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-80|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-80|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|-80|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|0|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|0|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|0|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|0|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|0|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|0|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|0|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|0|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|0|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|0|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|0|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|0|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|0|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|0|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|0|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|45|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|45|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|45|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|45|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|45|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|45|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|45|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|45|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|45|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|45|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|45|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|45|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|45|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|45|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|45|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|80|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|80|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|80|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|80|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|80|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|80|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|80|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|80|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|80|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|80|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|80|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|80|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|80|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|80|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|0|80|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-45|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-45|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-45|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-45|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-45|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-45|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-45|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-45|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-45|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-45|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-45|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-45|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-45|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-45|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-45|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-80|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-80|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-80|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-80|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-80|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-80|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-80|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-80|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-80|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-80|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-80|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-80|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-80|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-80|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|-80|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|0|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|0|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|0|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|0|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|0|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|0|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|0|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|0|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|0|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|0|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|0|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|0|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|0|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|0|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|0|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|45|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|45|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|45|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|45|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|45|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|45|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|45|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|45|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|45|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|45|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|45|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|45|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|45|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|45|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|45|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|80|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|80|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|80|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|80|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|80|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|80|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|80|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|80|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|80|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|80|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|80|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|80|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|80|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|80|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|180|80|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-45|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-45|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-45|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-45|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-45|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-45|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-45|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-45|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-45|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-45|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-45|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-45|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-45|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-45|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-45|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-80|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-80|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-80|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-80|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-80|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-80|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-80|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-80|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-80|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-80|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-80|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-80|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-80|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-80|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|-80|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|0|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|0|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|0|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|0|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|0|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|0|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|0|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|0|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|0|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|0|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|0|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|0|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|0|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|0|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|0|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|45|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|45|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|45|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|45|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|45|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|45|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|45|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|45|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|45|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|45|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|45|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|45|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|45|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|45|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|45|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|80|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|80|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|80|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|80|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|80|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|80|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|80|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|80|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|80|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|80|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|80|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|80|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|80|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|80|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|270|80|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-45|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-45|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-45|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-45|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-45|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-45|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-45|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-45|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-45|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-45|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-45|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-45|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-45|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-45|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-45|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-80|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-80|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-80|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-80|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-80|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-80|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-80|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-80|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-80|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-80|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-80|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-80|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-80|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-80|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|-80|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|0|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|0|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|0|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|0|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|0|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|0|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|0|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|0|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|0|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|0|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|0|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|0|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|0|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|0|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|0|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|45|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|45|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|45|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|45|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|45|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|45|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|45|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|45|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|45|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|45|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|45|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|45|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|45|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|45|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|45|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|80|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|80|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|80|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|80|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|80|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|80|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|80|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|80|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|80|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|80|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|80|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|80|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|80|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|80|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|37.5|80|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-45|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-45|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-45|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-45|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-45|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-45|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-45|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-45|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-45|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-45|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-45|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-45|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-45|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-45|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-45|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-80|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-80|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-80|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-80|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-80|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-80|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-80|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-80|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-80|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-80|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-80|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-80|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-80|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-80|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|-80|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|0|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|0|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|0|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|0|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|0|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|0|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|0|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|0|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|0|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|0|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|0|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|0|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|0|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|0|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|0|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|45|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|45|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|45|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|45|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|45|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|45|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|45|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|45|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|45|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|45|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|45|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|45|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|45|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|45|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|45|90|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|80|0|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|80|0|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|80|0|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|80|123.456|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|80|123.456|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|80|123.456|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|80|180|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|80|180|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|80|180|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|80|270|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|80|270|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|80|270|5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|80|90|-5	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|80|90|0	EXCEPTION	IndexOutOfRangeException	
-HP|G|90|80|90|5	EXCEPTION	IndexOutOfRangeException	
+HP|G|0|-45|0|-5	9.81037975433676	
+HP|G|0|-45|0|0	10	
+HP|G|0|-45|0|5	10.210053523141436	
+HP|G|0|-45|123.456|-5	32.751535920537705	
+HP|G|0|-45|123.456|0	32.413671870383055	
+HP|G|0|-45|123.456|5	32.08255879235951	
+HP|G|0|-45|180|-5	28.210053523141436	
+HP|G|0|-45|180|0	27.999999972222223	
+HP|G|0|-45|180|5	27.810379754336765	
+HP|G|0|-45|270|-5	16.59654392786364	
+HP|G|0|-45|270|0	17.001272217742223	
+HP|G|0|-45|270|5	17.398859057397086	
+HP|G|0|-45|90|-5	35.39885905739709	
+HP|G|0|-45|90|0	35.001272217742226	
+HP|G|0|-45|90|5	34.596543927863635	
+HP|G|0|-80|0|-5	9.846762276083444	
+HP|G|0|-80|0|0	9.999999972222223	
+HP|G|0|-80|0|5	10.285015514100564	
+HP|G|0|-80|123.456|-5	30.771866909100243	Otto Ludwig procedure within circumpolar regions.
+HP|G|0|-80|123.456|0	30.711905374399965	Otto Ludwig procedure within circumpolar regions.
+HP|G|0|-80|123.456|5	30.648244222384697	Otto Ludwig procedure within circumpolar regions.
+HP|G|0|-80|180|-5	28.285015514100564	
+HP|G|0|-80|180|0	27.999999972222223	
+HP|G|0|-80|180|5	27.84676227608345	
+HP|G|0|-80|270|-5	14.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|0|-80|270|0	14.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|0|-80|270|5	14.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|0|-80|90|-5	32.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|0|-80|90|0	32.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|0|-80|90|5	32.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|0|0|0|-5	9.80068541519218	
+HP|G|0|0|0|0	10	
+HP|G|0|0|0|5	10.199314529252268	
+HP|G|0|0|123.456|-5	33.543733790422706	
+HP|G|0|0|123.456|0	33.42381072102215	
+HP|G|0|0|123.456|5	33.29648841699162	
+HP|G|0|0|180|-5	28.19931452925227	
+HP|G|0|0|180|0	27.999999972222223	
+HP|G|0|0|180|5	27.800685415192184	
+HP|G|0|0|270|-5	18.99999997222222	
+HP|G|0|0|270|0	18.99999997222222	
+HP|G|0|0|270|5	18.99999997222222	
+HP|G|0|0|90|-5	36.99999997222223	
+HP|G|0|0|90|0	1	
+HP|G|0|0|90|5	36.99999997222223	
+HP|G|0|45|0|-5	9.78994642130301	
+HP|G|0|45|0|0	10	
+HP|G|0|45|0|5	10.189620190107684	
+HP|G|0|45|123.456|-5	34.65294296503525	
+HP|G|0|45|123.456|0	35.0335503296521	
+HP|G|0|45|123.456|5	35.537825233789555	
+HP|G|0|45|180|-5	28.189620190107682	
+HP|G|0|45|180|0	27.999999972222223	
+HP|G|0|45|180|5	27.789946421303018	
+HP|G|0|45|270|-5	21.403456016580805	
+HP|G|0|45|270|0	20.99872772670222	
+HP|G|0|45|270|5	20.601140887047357	
+HP|G|0|45|90|-5	2.6011408870473587	
+HP|G|0|45|90|0	2.998727726702225	
+HP|G|0|45|90|5	3.4034560165808103	
+HP|G|0|80|0|-5	9.714984430343884	
+HP|G|0|80|0|0	9.999999972222223	
+HP|G|0|80|0|5	10.153237668361005	
+HP|G|0|80|123.456|-5	3.7718669091002424	Otto Ludwig procedure within circumpolar regions.
+HP|G|0|80|123.456|0	3.711905374399964	Otto Ludwig procedure within circumpolar regions.
+HP|G|0|80|123.456|5	3.6482442223846987	Otto Ludwig procedure within circumpolar regions.
+HP|G|0|80|180|-5	28.153237668360998	
+HP|G|0|80|180|0	27.999999972222223	
+HP|G|0|80|180|5	27.714984430343897	
+HP|G|0|80|270|-5	23.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|0|80|270|0	23.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|0|80|270|5	23.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|0|80|90|-5	5.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|0|80|90|0	5.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|0|80|90|5	5.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|180|-45|0|-5	27.78994642130301	
+HP|G|180|-45|0|0	27.999999972222223	
+HP|G|180|-45|0|5	28.189620190107682	
+HP|G|180|-45|123.456|-5	16.652942965035255	
+HP|G|180|-45|123.456|0	17.033550329652098	
+HP|G|180|-45|123.456|5	17.537825233789555	
+HP|G|180|-45|180|-5	10.189620190107684	
+HP|G|180|-45|180|0	10	
+HP|G|180|-45|180|5	9.789946421303018	
+HP|G|180|-45|270|-5	3.4034560165808103	
+HP|G|180|-45|270|0	2.998727726702225	
+HP|G|180|-45|270|5	2.6011408870473587	
+HP|G|180|-45|90|-5	20.601140887047357	
+HP|G|180|-45|90|0	20.99872772670222	
+HP|G|180|-45|90|5	21.403456016580805	
+HP|G|180|-80|0|-5	27.714984430343883	
+HP|G|180|-80|0|0	27.999999972222223	
+HP|G|180|-80|0|5	28.153237668360998	
+HP|G|180|-80|123.456|-5	21.771866909100243	Otto Ludwig procedure within circumpolar regions.
+HP|G|180|-80|123.456|0	21.711905374399965	Otto Ludwig procedure within circumpolar regions.
+HP|G|180|-80|123.456|5	21.648244222384697	Otto Ludwig procedure within circumpolar regions.
+HP|G|180|-80|180|-5	10.153237668361005	
+HP|G|180|-80|180|0	9.999999972222223	
+HP|G|180|-80|180|5	9.71498443034389	
+HP|G|180|-80|270|-5	5.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|180|-80|270|0	5.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|180|-80|270|5	5.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|180|-80|90|-5	23.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|180|-80|90|0	23.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|180|-80|90|5	23.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|180|0|0|-5	27.80068541519218	
+HP|G|180|0|0|0	27.999999972222223	
+HP|G|180|0|0|5	28.19931452925227	
+HP|G|180|0|123.456|-5	15.543733790422703	
+HP|G|180|0|123.456|0	15.423810721022154	
+HP|G|180|0|123.456|5	15.296488416991618	
+HP|G|180|0|180|-5	10.199314529252268	
+HP|G|180|0|180|0	10	
+HP|G|180|0|180|5	9.800685415192186	
+HP|G|180|0|270|-5	36.99999997222223	
+HP|G|180|0|270|0	1	
+HP|G|180|0|270|5	36.99999997222223	
+HP|G|180|0|90|-5	18.99999997222222	
+HP|G|180|0|90|0	18.99999997222222	
+HP|G|180|0|90|5	18.99999997222222	
+HP|G|180|45|0|-5	27.810379754336758	
+HP|G|180|45|0|0	27.999999972222223	
+HP|G|180|45|0|5	28.210053523141436	
+HP|G|180|45|123.456|-5	14.7515359205377	
+HP|G|180|45|123.456|0	14.413671870383055	
+HP|G|180|45|123.456|5	14.08255879235951	
+HP|G|180|45|180|-5	10.210053523141436	
+HP|G|180|45|180|0	10	
+HP|G|180|45|180|5	9.810379754336765	
+HP|G|180|45|270|-5	34.596543927863635	
+HP|G|180|45|270|0	35.001272217742226	
+HP|G|180|45|270|5	35.39885905739709	
+HP|G|180|45|90|-5	17.398859057397086	
+HP|G|180|45|90|0	17.001272217742223	
+HP|G|180|45|90|5	16.59654392786364	
+HP|G|180|80|0|-5	27.846762276083446	
+HP|G|180|80|0|0	27.999999972222223	
+HP|G|180|80|0|5	28.285015514100564	
+HP|G|180|80|123.456|-5	12.771866909100243	Otto Ludwig procedure within circumpolar regions.
+HP|G|180|80|123.456|0	12.711905374399965	Otto Ludwig procedure within circumpolar regions.
+HP|G|180|80|123.456|5	12.6482442223847	Otto Ludwig procedure within circumpolar regions.
+HP|G|180|80|180|-5	10.285015514100564	
+HP|G|180|80|180|0	9.999999972222223	
+HP|G|180|80|180|5	9.84676227608345	
+HP|G|180|80|270|-5	32.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|180|80|270|0	32.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|180|80|270|5	32.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|180|80|90|-5	14.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|180|80|90|0	14.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|180|80|90|5	14.5	Otto Ludwig procedure within circumpolar regions.
+HP|G|270|-45|0|-5	1.2481252637532294	
+HP|G|270|-45|0|0	1	
+HP|G|270|-45|0|5	36.751874680691216	
+HP|G|270|-45|123.456|-5	25.03763317245796	
+HP|G|270|-45|123.456|0	25.089845704022697	
+HP|G|270|-45|123.456|5	25.14531541603882	
+HP|G|270|-45|180|-5	18.751874680691216	
+HP|G|270|-45|180|0	18.99999997222222	
+HP|G|270|-45|180|5	19.24812526375323	
+HP|G|270|-45|270|-5	9.999999972222223	
+HP|G|270|-45|270|0	10	
+HP|G|270|-45|270|5	9.999999972222223	
+HP|G|270|-45|90|-5	27.999999972222223	
+HP|G|270|-45|90|0	27.999999972222223	
+HP|G|270|-45|90|5	27.999999972222223	
+HP|G|270|-80|0|-5	2.927351642964891	
+HP|G|270|-80|0|0	36.99999997222223	
+HP|G|270|-80|0|5	35.07264830147955	
+HP|G|270|-80|123.456|-5	26.271866909100243	Otto Ludwig procedure within circumpolar regions.
+HP|G|270|-80|123.456|0	26.211905374399965	Otto Ludwig procedure within circumpolar regions.
+HP|G|270|-80|123.456|5	26.148244222384697	Otto Ludwig procedure within circumpolar regions.
+HP|G|270|-80|180|-5	17.072648301479557	
+HP|G|270|-80|180|0	18.99999997222222	
+HP|G|270|-80|180|5	20.927351642964894	
+HP|G|270|-80|270|-5	10	Otto Ludwig procedure within circumpolar regions.
+HP|G|270|-80|270|0	10	Otto Ludwig procedure within circumpolar regions.
+HP|G|270|-80|270|5	10	Otto Ludwig procedure within circumpolar regions.
+HP|G|270|-80|90|-5	28	Otto Ludwig procedure within circumpolar regions.
+HP|G|270|-80|90|0	28	Otto Ludwig procedure within circumpolar regions.
+HP|G|270|-80|90|5	28	Otto Ludwig procedure within circumpolar regions.
+HP|G|270|0|0|-5	36.80068541519218	
+HP|G|270|0|0|0	1	
+HP|G|270|0|0|5	1.1993145292522684	
+HP|G|270|0|123.456|-5	24.54373379042271	
+HP|G|270|0|123.456|0	24.423810721022154	
+HP|G|270|0|123.456|5	24.29648841699162	
+HP|G|270|0|180|-5	19.199314529252266	
+HP|G|270|0|180|0	18.99999997222222	
+HP|G|270|0|180|5	18.80068541519218	
+HP|G|270|0|270|-5	9.999999972222223	
+HP|G|270|0|270|0	10	
+HP|G|270|0|270|5	9.999999972222223	
+HP|G|270|0|90|-5	27.999999972222223	
+HP|G|270|0|90|0	27.999999972222223	
+HP|G|270|0|90|5	27.999999972222223	
+HP|G|270|45|0|-5	36.37263424492029	
+HP|G|270|45|0|0	1	
+HP|G|270|45|0|5	1.6273656995241539	
+HP|G|270|45|123.456|-5	23.852192261828982	
+HP|G|270|45|123.456|0	23.362429018703875	
+HP|G|270|45|123.456|5	22.72925818761719	
+HP|G|270|45|180|-5	19.62736569952415	
+HP|G|270|45|180|0	18.99999997222222	
+HP|G|270|45|180|5	18.372634244920295	
+HP|G|270|45|270|-5	9.999999972222223	
+HP|G|270|45|270|0	10	
+HP|G|270|45|270|5	9.999999972222223	
+HP|G|270|45|90|-5	27.999999972222223	
+HP|G|270|45|90|0	27.999999972222223	
+HP|G|270|45|90|5	27.999999972222223	
+HP|G|270|80|0|-5	34.766172909202	
+HP|G|270|80|0|0	36.99999997222223	
+HP|G|270|80|0|5	3.2338270352424443	
+HP|G|270|80|123.456|-5	17.271866909100243	Otto Ludwig procedure within circumpolar regions.
+HP|G|270|80|123.456|0	17.211905374399965	Otto Ludwig procedure within circumpolar regions.
+HP|G|270|80|123.456|5	17.148244222384697	Otto Ludwig procedure within circumpolar regions.
+HP|G|270|80|180|-5	21.233827035242445	
+HP|G|270|80|180|0	18.99999997222222	
+HP|G|270|80|180|5	16.766172909201998	
+HP|G|270|80|270|-5	37	Otto Ludwig procedure within circumpolar regions.
+HP|G|270|80|270|0	37	Otto Ludwig procedure within circumpolar regions.
+HP|G|270|80|270|5	37	Otto Ludwig procedure within circumpolar regions.
+HP|G|270|80|90|-5	19	Otto Ludwig procedure within circumpolar regions.
+HP|G|270|80|90|0	19	Otto Ludwig procedure within circumpolar regions.
+HP|G|270|80|90|5	19	Otto Ludwig procedure within circumpolar regions.
+HP|G|37.5|-45|0|-5	13.377985792079897	
+HP|G|37.5|-45|0|0	13.749999972222222	
+HP|G|37.5|-45|0|5	14.162102122523489	
+HP|G|37.5|-45|123.456|-5	35.965662065570925	
+HP|G|37.5|-45|123.456|0	35.46526610636654	
+HP|G|37.5|-45|123.456|5	34.973076865826464	
+HP|G|37.5|-45|180|-5	32.16210212252349	
+HP|G|37.5|-45|180|0	31.749999972222223	
+HP|G|37.5|-45|180|5	31.377985792079905	
+HP|G|37.5|-45|270|-5	19.740727450430004	
+HP|G|37.5|-45|270|0	20.652403293209282	
+HP|G|37.5|-45|270|5	21.300120975719555	
+HP|G|37.5|-45|90|-5	3.300120975719557	
+HP|G|37.5|-45|90|0	2.6524032932092836	
+HP|G|37.5|-45|90|5	1.7407274504300063	
+HP|G|37.5|-80|0|-5	12.72985003988284	
+HP|G|37.5|-80|0|0	13.749999972222222	
+HP|G|37.5|-80|0|5	15.647435088314921	
+HP|G|37.5|-80|123.456|-5	32.64686690910024	Otto Ludwig procedure within circumpolar regions.
+HP|G|37.5|-80|123.456|0	32.58690537439996	Otto Ludwig procedure within circumpolar regions.
+HP|G|37.5|-80|123.456|5	32.5232442223847	Otto Ludwig procedure within circumpolar regions.
+HP|G|37.5|-80|180|-5	33.64743508831492	
+HP|G|37.5|-80|180|0	31.74999997222222	
+HP|G|37.5|-80|180|5	30.72985003988284	
+HP|G|37.5|-80|270|-5	16.375	Otto Ludwig procedure within circumpolar regions.
+HP|G|37.5|-80|270|0	16.375	Otto Ludwig procedure within circumpolar regions.
+HP|G|37.5|-80|270|5	16.375	Otto Ludwig procedure within circumpolar regions.
+HP|G|37.5|-80|90|-5	34.375	Otto Ludwig procedure within circumpolar regions.
+HP|G|37.5|-80|90|0	34.375	Otto Ludwig procedure within circumpolar regions.
+HP|G|37.5|-80|90|5	34.375	Otto Ludwig procedure within circumpolar regions.
+HP|G|37.5|0|0|-5	13.550685415192177	
+HP|G|37.5|0|0|0	13.749999972222222	
+HP|G|37.5|0|0|5	13.949314529252266	
+HP|G|37.5|0|123.456|-5	1.2937337904227093	
+HP|G|37.5|0|123.456|0	1.1738107210221471	
+HP|G|37.5|0|123.456|5	1.0464884169916275	
+HP|G|37.5|0|180|-5	31.94931452925227	
+HP|G|37.5|0|180|0	31.749999972222223	
+HP|G|37.5|0|180|5	31.550685415192184	
+HP|G|37.5|0|270|-5	22.74999997222222	
+HP|G|37.5|0|270|0	22.74999997222222	
+HP|G|37.5|0|270|5	22.74999997222222	
+HP|G|37.5|0|90|-5	4.749999972222224	
+HP|G|37.5|0|90|0	4.749999972222224	
+HP|G|37.5|0|90|5	4.749999972222224	
+HP|G|37.5|45|0|-5	13.741995020685067	
+HP|G|37.5|45|0|0	13.749999972222222	
+HP|G|37.5|45|0|5	13.757226227850822	
+HP|G|37.5|45|123.456|-5	2.5378565694114514	
+HP|G|37.5|45|123.456|0	2.8176137736458147	
+HP|G|37.5|45|123.456|5	3.0985901131850824	
+HP|G|37.5|45|180|-5	31.757226227850822	
+HP|G|37.5|45|180|0	31.749999972222223	
+HP|G|37.5|45|180|5	31.741995020685074	
+HP|G|37.5|45|270|-5	24.15201599809806	
+HP|G|37.5|45|270|0	23.915924495668886	
+HP|G|37.5|45|270|5	23.683998839203547	
+HP|G|37.5|45|90|-5	5.683998839203554	
+HP|G|37.5|45|90|0	5.9159244956688894	
+HP|G|37.5|45|90|5	6.152015998098068	
+HP|G|37.5|80|0|-5	15.077404004558241	
+HP|G|37.5|80|0|0	13.749999972222222	
+HP|G|37.5|80|0|5	13.0363254321604	
+HP|G|37.5|80|123.456|-5	5.646866909100242	Otto Ludwig procedure within circumpolar regions.
+HP|G|37.5|80|123.456|0	5.586905374399964	Otto Ludwig procedure within circumpolar regions.
+HP|G|37.5|80|123.456|5	5.523244222384699	Otto Ludwig procedure within circumpolar regions.
+HP|G|37.5|80|180|-5	31.036325432160396	
+HP|G|37.5|80|180|0	31.749999972222223	
+HP|G|37.5|80|180|5	33.077404004558254	
+HP|G|37.5|80|270|-5	25.375	Otto Ludwig procedure within circumpolar regions.
+HP|G|37.5|80|270|0	25.375	Otto Ludwig procedure within circumpolar regions.
+HP|G|37.5|80|270|5	25.375	Otto Ludwig procedure within circumpolar regions.
+HP|G|37.5|80|90|-5	7.375	Otto Ludwig procedure within circumpolar regions.
+HP|G|37.5|80|90|0	7.375	Otto Ludwig procedure within circumpolar regions.
+HP|G|37.5|80|90|5	7.375	Otto Ludwig procedure within circumpolar regions.
+HP|G|90|-45|0|-5	18.37263424492029	
+HP|G|90|-45|0|0	18.99999997222222	
+HP|G|90|-45|0|5	19.62736569952415	
+HP|G|90|-45|123.456|-5	5.8521922618289866	
+HP|G|90|-45|123.456|0	5.3624290187038754	
+HP|G|90|-45|123.456|5	4.7292581876172	
+HP|G|90|-45|180|-5	1.6273656995241539	
+HP|G|90|-45|180|0	1	
+HP|G|90|-45|180|5	36.37263424492029	
+HP|G|90|-45|270|-5	27.999999972222223	
+HP|G|90|-45|270|0	27.999999972222223	
+HP|G|90|-45|270|5	27.999999972222223	
+HP|G|90|-45|90|-5	9.999999972222223	
+HP|G|90|-45|90|0	10	
+HP|G|90|-45|90|5	9.999999972222223	
+HP|G|90|-80|0|-5	16.766172909201998	
+HP|G|90|-80|0|0	18.99999997222222	
+HP|G|90|-80|0|5	21.23382703524245	
+HP|G|90|-80|123.456|-5	35.27186690910024	Otto Ludwig procedure within circumpolar regions.
+HP|G|90|-80|123.456|0	35.21190537439996	Otto Ludwig procedure within circumpolar regions.
+HP|G|90|-80|123.456|5	35.1482442223847	Otto Ludwig procedure within circumpolar regions.
+HP|G|90|-80|180|-5	3.2338270352424443	
+HP|G|90|-80|180|0	36.99999997222222	
+HP|G|90|-80|180|5	34.766172909202005	
+HP|G|90|-80|270|-5	19	Otto Ludwig procedure within circumpolar regions.
+HP|G|90|-80|270|0	19	Otto Ludwig procedure within circumpolar regions.
+HP|G|90|-80|270|5	19	Otto Ludwig procedure within circumpolar regions.
+HP|G|90|-80|90|-5	37	Otto Ludwig procedure within circumpolar regions.
+HP|G|90|-80|90|0	37	Otto Ludwig procedure within circumpolar regions.
+HP|G|90|-80|90|5	37	Otto Ludwig procedure within circumpolar regions.
+HP|G|90|0|0|-5	18.800685415192177	
+HP|G|90|0|0|0	18.99999997222222	
+HP|G|90|0|0|5	19.199314529252266	
+HP|G|90|0|123.456|-5	6.543733790422709	
+HP|G|90|0|123.456|0	6.423810721022153	
+HP|G|90|0|123.456|5	6.296488416991627	
+HP|G|90|0|180|-5	1.1993145292522684	
+HP|G|90|0|180|0	1	
+HP|G|90|0|180|5	36.800685415192184	
+HP|G|90|0|270|-5	27.999999972222223	
+HP|G|90|0|270|0	27.999999972222223	
+HP|G|90|0|270|5	27.999999972222223	
+HP|G|90|0|90|-5	9.999999972222223	
+HP|G|90|0|90|0	10	
+HP|G|90|0|90|5	9.999999972222223	
+HP|G|90|45|0|-5	19.248125263753227	
+HP|G|90|45|0|0	18.99999997222222	
+HP|G|90|45|0|5	18.751874680691216	
+HP|G|90|45|123.456|-5	7.037633172457964	
+HP|G|90|45|123.456|0	7.089845704022696	
+HP|G|90|45|123.456|5	7.145315416038824	
+HP|G|90|45|180|-5	36.751874680691216	
+HP|G|90|45|180|0	1	
+HP|G|90|45|180|5	1.248125263753235	
+HP|G|90|45|270|-5	27.999999972222223	
+HP|G|90|45|270|0	27.999999972222223	
+HP|G|90|45|270|5	27.999999972222223	
+HP|G|90|45|90|-5	9.999999972222223	
+HP|G|90|45|90|0	10	
+HP|G|90|45|90|5	9.999999972222223	
+HP|G|90|80|0|-5	20.92735164296489	
+HP|G|90|80|0|0	18.99999997222222	
+HP|G|90|80|0|5	17.072648301479553	
+HP|G|90|80|123.456|-5	8.271866909100243	Otto Ludwig procedure within circumpolar regions.
+HP|G|90|80|123.456|0	8.211905374399965	Otto Ludwig procedure within circumpolar regions.
+HP|G|90|80|123.456|5	8.1482442223847	Otto Ludwig procedure within circumpolar regions.
+HP|G|90|80|180|-5	35.07264830147956	
+HP|G|90|80|180|0	36.99999997222223	
+HP|G|90|80|180|5	2.9273516429648963	
+HP|G|90|80|270|-5	28	Otto Ludwig procedure within circumpolar regions.
+HP|G|90|80|270|0	28	Otto Ludwig procedure within circumpolar regions.
+HP|G|90|80|270|5	28	Otto Ludwig procedure within circumpolar regions.
+HP|G|90|80|90|-5	10	Otto Ludwig procedure within circumpolar regions.
+HP|G|90|80|90|0	10	Otto Ludwig procedure within circumpolar regions.
+HP|G|90|80|90|5	10	Otto Ludwig procedure within circumpolar regions.
 HP|H|0|-45|0|-5	3.897898235367587	
 HP|H|0|-45|0|0	10	
 HP|H|0|-45|0|5	4.086951245752408	

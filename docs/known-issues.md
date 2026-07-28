@@ -356,6 +356,157 @@ computation path (declination/ascensional-difference trig for Sunshine houses)
 that is evidently more sensitive to it than most. Not chased further; flagged in
 case it becomes relevant when porting the 2.10.03 SweHouse delta.
 
+## hcusp[36] fixed: swe_house_pos was faithful to 2.08, not to 2.10.03
+
+`swe_house_pos` (`SwissEphNet/CPort/SweHouse.cs`) declared `double[] hcusp = new
+double[36]`. `swe_houses_armc` writes `cusp[36]` when `hsys` is `'G'`
+(Gauquelin, `ito = 36`), which needs an array of length 37 -- indices `0..36`
+inclusive -- so every `swe_house_pos` call with `hsys = 'G'` threw
+`IndexOutOfRangeException`, and so did every caller that reaches the same code
+path indirectly, including `swe_gauquelin_sector` (`SwissEphNet/CPort/SweCL.cs`).
+
+This was not a mis-transliteration against the C version this port was tracking:
+upstream C **2.08** also declares `double hcusp[36]` at the equivalent site in
+`swehouse.c`, so the port was faithful to its source at the time. Upstream
+**2.10.03** `swehouse.c:2224` changed the declaration to `double hcusp[37]` --
+a real bug fix on Astrodienst's side, not a porting error on this side. Fixed
+here (`SwissEphNet/CPort/SweHouse.cs`, the `hcusp` declaration in
+`swe_house_pos`, now `new double[37]`) ahead of the full
+2.10.03 `swehouse.c` re-transliteration, because the port is heading there
+regardless and the conformance oracle already caught the live crash. **Do not
+reapply this change when `swehouse.c` is re-transliterated for 2.10.03** -- the
+array size will already match upstream at that point, and re-diffing the
+upstream 2.08-to-2.10.03 change against an already-2.10.03-shaped line would be
+a no-op at best and a miscount at worst.
+
+Baseline effect: 375 `HP|G|*` rows in `Tests/baseline/baseline-house-pos.tsv`
+were frozen as `EXCEPTION IndexOutOfRangeException`. This is freezing a
+known-bad result in the committed baseline, not the waiver mechanism
+(`Tools/BaselineVerify/waivers.tsv`) -- the two are different things.
+Freezing keeps a row in the comparison, with its known-bad value as the
+expected value, so any change to it (a fix, or a regression) is caught and
+must be reviewed. Waiving a row removes it from comparison entirely, which
+would have hidden these 375 rows rather than recorded them. The waiver
+mechanism was correctly not used here, and should not be: every waiver is
+staleness-checked (a waiver that matches zero rows, or whose matched rows are
+all byte-for-byte identical to the baseline anyway, fails the run --
+`Tools/BaselineVerify/waivers.tsv`), so a waiver only ever suppresses rows
+that are actively differing, which is the opposite of what this baseline
+freeze is for. Fixing the array size turns all 375 into real Gauquelin
+house-position values, confirmed row by row: every one of the 375 changed
+rows is `HP|G|*` and every one was `EXCEPTION` before the fix.
+
+It also changes **160 `GQ|*` rows** in `Tests/baseline/baseline-gauquelin.tsv`,
+which reach the identical code through `swe_gauquelin_sector`
+(`SwissEphNet/CPort/SweCL.cs`) rather than through `swe_house_pos` directly.
+That area did not exist when this issue was first written; it was added later
+as new coverage, and this fix is the first behaviour change it caught. So the
+total is 535 rows across two areas, not 375 across one. An earlier revision of
+this paragraph said "nothing else moved", which was true of the corpus as it
+stood when written and false by the time the fix landed.
+
+The `HP|G|*` values were afterwards checked against Astrodienst's own 2.10.03
+libswe (the `pyswisseph` 2.10.3.2 wheel bundles it) and are **bit-exact**, not
+merely within tolerance, across both the normal and the circumpolar
+(Otto Ludwig) branches. The 160 `GQ|*` rows agree to 8.14e-09 sectors, roughly
+0.0003 arcsec; since the shared `'G'` path is bit-identical, that residual comes
+from the ephemeris chain ahead of it (delta T, obliquity, nutation, sidereal
+time) and is 2.08-versus-2.10.03 drift rather than anything this fix introduced.
+
+Note the range boundary: `hpos = xp[0] / 10.0 + 1` is usually described as
+`[1, 37)`, but six frozen rows are exactly `37.0` -- `HP|G|90|-80|90|{-5,0,5}`
+and `HP|G|270|80|270|{-5,0,5}`, all circumpolar cases where `xp[0]` lands on
+exactly 0 so `360 - 0 = 360`. Upstream C returns `37.0` for all six as well, so
+the closed interval `[1, 37]` is the correct contract. Do not "tighten" any
+assertion to the half-open form; it would fail on real upstream behaviour.
+
+## swe_houses/swe_houses_armc/swe_house_pos/swe_house_name: hsys narrowed to char (caused conformance suite 6.6 to be misclassified)
+
+`swephexp.h:812-835` declares **`int hsys`** on all seven house entry points:
+`swe_houses` (812), `swe_houses_ex` (816), `swe_houses_ex2` (820),
+`swe_houses_armc` (824), `swe_houses_armc_ex2` (828), `swe_house_pos` (832),
+and `swe_house_name` (835). Five of those seven are ported here; the port had
+narrowed all five of them to `char hsys` (`SwissEphNet/CPort/SweHouse.cs`,
+plus the internal `sidereal_houses_ecl_t0` / `sidereal_houses_ssypl` /
+`sidereal_houses_trad` helpers, which the port's own commented-out C
+signatures directly above them already showed as `int hsys`). `swe_houses_ex2`
+and `swe_houses_armc_ex2` are **unported 2.10 features** (they add per-cusp
+speed output and an explicit `serr` out-parameter that the ported API surface
+does not have yet) -- their absence here is not a missed narrowing, it is
+scope this branch does not touch. When they land, they must be declared
+`int hsys` from the start, matching upstream; there is no `char`-only
+predecessor to widen.
+
+This is not merely a style narrowing. Internally, C truncates `hsys` to a
+`char` only once, at the `CalcH` call inside `swe_houses_armc`
+(`swehouse.c:661`, `CalcH(..., (char)hsys, ...)`), an 8-bit cast. The *outer*
+functions -- `swe_house_name` (`swehouse.c:830`) and `swe_house_pos`
+(`swehouse.c:2231`) -- compare the **raw, untruncated** int, via
+`toupper()`, and fall through to their `default:` branch when it does not
+match a house-system letter. A `char`-typed parameter cannot express that
+distinction: every caller effectively already truncated before the port ever
+saw the value, so out-of-range `int` inputs -- reproducible only by calling
+through a signature the port did not offer -- could never be exercised.
+
+This is exactly why conformance suite 6.6 (house-name/house-pos behavior for
+out-of-range `hsys` values) was misclassified as unreproducible: the test
+cases in that suite call `swe_house_name`/`swe_house_pos` with `hsys` values
+outside `char` range specifically to exercise the raw-int-vs-truncated-char
+split, and there was no way to construct that call against a `char`-only
+signature.
+
+Fixed by adding `int`-taking overloads matching upstream's signatures
+(`SwissEphNet/SwissEph.swephexp.h.cs` on the public surface,
+`SwissEphNet/CPort/SweHouse.cs` for the transliterated implementation), while
+keeping the existing `char`-taking overloads as thin delegates (widening
+`char` to `int`). This is behavior-preserving only for `char <= U+00FF`
+(Latin-1): every existing caller passing an ASCII/Latin-1 `char` is
+unaffected. For a `char` above `U+00FF`, routing it through the `int` path
+now applies the same narrowing the `int` path applies at the `CalcH` call
+inside `swe_houses_armc` (`swehouse.c:661`), which the old `char`-only
+implementation did not apply -- measured, `(char)331` (low byte `0x4B` =
+`'K'`) resolved to Placidus before this branch and to Koch after. This is a
+behavior change for that narrow input range, and it is a change *toward*
+C-faithfulness, not away from it: a C `char` is 8 bits, so a C caller could
+never produce a value like 331 in a `char` variable in the first place, while
+C#'s `char` (a 16-bit UTF-16 code unit) can; the widened path now resolves it
+the way C would resolve its low byte.
+
+The faithful truncation at the `CalcH` call site in `swe_houses_armc`
+(`SwissEphNet/CPort/SweHouse.cs`, citing `swehouse.c:661`) is reproduced as
+`(sbyte)hsys`, not `(char)(hsys & 0xFF)`: plain `char` is signed on the
+reference platforms this port is verified against (x86-64 Windows and x86-64
+Linux), so `(char)hsys` in C narrows to a *signed* 8-bit value,
+and unlike `& 0xFF`, C#'s `(sbyte)` cast on an `int` reproduces that sign --
+which matters observably, since `CalcH`'s lower-case-letter fold branches on
+that sign -- pinned by
+`TestHousesArmc_LowByte0x89_ResolvesToPlacidusNotSunshine` in
+`Tests/SwissEphNet.Tests/HouseApiFidelityTest.cs`. Confirmed:
+`swe_house_name(65611)` (`0x1004B`, low byte `'K'`) returns `"Placidus"`
+(falls to `default:`, matching the raw-int comparison, not the low byte)
+while `swe_house_name('P')` still returns `"Placidus"` and
+`swe_house_name('K')` still returns `"Koch"`; `swe_houses_armc(..., 65611,
+...)` produces cusps identical to an explicit `hsys = 'K'` call, confirming
+the internal signed-8-bit narrowing resolves the correct house system even
+though the outer comparisons never match a named letter. Out-of-range `int`
+values (negative, or `> 65535`) no longer throw at any entry point --
+formatting sites that render `hsys` into a diagnostic message narrow it first
+rather than passing the raw `int` to a `%c`-style formatter.
+
+Note that plain `char` signedness is implementation-defined in C, and is
+**unsigned** by default on ARM and PowerPC Linux. Upstream C built there would
+resolve a low byte of `0x89` to Sunshine where x86-64 resolves it to Placidus.
+The port pins the x86-64 behaviour deliberately, since that is what the
+conformance corpus and every reference run here are generated on. If an arm64
+conformance runner is ever added, a divergence confined to low bytes `>= 0x80`
+is this, not a regression.
+
+Baseline effect: none. The characterization matrix only ever calls through the
+pre-existing `char`-typed API (there is no way to construct an out-of-range
+`int` call against a `char` parameter), and the new `char` overloads are
+behavior-preserving delegates, so `scripts/verify-baseline.ps1` shows zero
+change in the `houses`/`houses-armc` areas from this fix.
+
 ## Cross-platform divergence: measured, and why the gate is platform-locked
 
 Full numbers, the tolerance-level cost table, and the reasoning for locking the
