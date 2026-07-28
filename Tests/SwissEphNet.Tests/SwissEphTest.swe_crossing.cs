@@ -145,7 +145,12 @@ namespace SwissEphNet.Tests
             using (var swe = new SwissEph()) {
                 double tjd = swe.swe_julday(2000, 1, 1, 0, SwissEph.SE_GREG_CAL);
                 double jd_cross = 0;
-                String serr = "";
+                // Deliberately null, not "". The C guards this diagnostic with
+                // `if (serr != NULL)`, meaning "did the caller supply a buffer". Translated
+                // literally to `ref string serr` that becomes "is a message already present",
+                // which is false here and drops the message. Seeding serr with "" would hide
+                // that, and null is what 30 call sites in this repo actually pass.
+                String serr = null;
 
                 Int32 rc = swe.swe_helio_cross(SwissEph.SE_SUN, 0, tjd, SwissEph.SEFLG_MOSEPH, 1, ref jd_cross, ref serr);
 

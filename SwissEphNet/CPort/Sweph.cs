@@ -9177,7 +9177,13 @@ namespace SwissEphNet.CPort
             {
                 string snam = null;
                 swe_get_planet_name(ipl, ref snam);
-                if (serr != null) serr = sprintf("swe_helio_cross: not possible for object %d = %s", ipl, snam);
+                // sweph.c:8545 guards this with `if (serr != NULL)`, which asks whether the
+                // caller supplied a buffer. `ref string serr` is always a valid destination,
+                // so the same guard here would instead ask whether a message is already
+                // present -- false on a clean call, silently dropping the diagnostic exactly
+                // when the caller has none. Assign unconditionally, as the four equivalent
+                // swe_fixstar sites already do (sweph.c:6694/6706/6719/6740).
+                serr = sprintf("swe_helio_cross: not possible for object %d = %s", ipl, snam);
                 return ERR;
             }
             if (swe_calc(jd_et, ipl, flag, x, ref serr) < 0)
@@ -9230,7 +9236,13 @@ namespace SwissEphNet.CPort
             {
                 string snam = null;
                 swe_get_planet_name(ipl, ref snam);
-                if (serr != null) serr = sprintf("swe_helio_cross: not possible for object %d = %s", ipl, snam);
+                // sweph.c:8545 guards this with `if (serr != NULL)`, which asks whether the
+                // caller supplied a buffer. `ref string serr` is always a valid destination,
+                // so the same guard here would instead ask whether a message is already
+                // present -- false on a clean call, silently dropping the diagnostic exactly
+                // when the caller has none. Assign unconditionally, as the four equivalent
+                // swe_fixstar sites already do (sweph.c:6694/6706/6719/6740).
+                serr = sprintf("swe_helio_cross: not possible for object %d = %s", ipl, snam);
                 return ERR;
             }
             if (swe_calc_ut(jd_ut, ipl, flag, x, ref serr) < 0)
