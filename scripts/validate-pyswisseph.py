@@ -284,8 +284,9 @@ def main() -> int:
             print(f"  Of {len(with_magnitude)} with a measurable magnitude: {within_1e5} within 1e-5, "
                   f"{within_1e4} within 1e-4, worst={worst:.3e}. All this small and this consistent points at a "
                   f"systematic source (a different default ephemeris file/era selection, or the pyswisseph build's "
-                  f"own libm/toolchain), not a random defect -- see README/CLAUDE.md's own note that 92.7% of a "
-                  f"much larger Windows-vs-Linux sample absorbs into tolerance the same way.")
+                  f"own libm/toolchain), not a random defect -- see docs/known-issues.md's \"Cross-platform "
+                  f"divergence\" section for a much larger sample (3.4M fields, Windows vs Linux) showing the same "
+                  f"shape: most differences are small and tolerance absorbs the large majority of them.")
         for r in disagreed[:30]:
             print(f"  {r.key}: {r.detail}")
         if len(disagreed) > 30:
