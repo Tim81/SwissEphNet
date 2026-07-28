@@ -379,27 +379,45 @@ upstream 2.08-to-2.10.03 change against an already-2.10.03-shaped line would be
 a no-op at best and a miscount at worst.
 
 Baseline effect: 375 `HP|G|*` rows in `Tests/baseline/baseline-house-pos.tsv`
-were frozen as `EXCEPTION IndexOutOfRangeException` (the waiver mechanism
-`docs/known-issues.md`'s characterization baseline exists for -- freezing a
-known-bad result rather than working around it). Fixing the array size turns
-all 375 into real Gauquelin house-position values, confirmed row by row: every
-one of the 375 changed rows is `HP|G|*` and every one was `EXCEPTION` before
-the fix, nothing else moved.
+were frozen as `EXCEPTION IndexOutOfRangeException`. This is freezing a
+known-bad result in the committed baseline, not the waiver mechanism
+(`Tools/BaselineVerify/waivers.tsv`) -- the two are different things.
+Freezing keeps a row in the comparison, with its known-bad value as the
+expected value, so any change to it (a fix, or a regression) is caught and
+must be reviewed. Waiving a row removes it from comparison entirely, which
+would have hidden these 375 rows rather than recorded them. The waiver
+mechanism was correctly not used here, and should not be: every waiver is
+staleness-checked (a waiver that matches zero rows, or whose matched rows are
+all byte-for-byte identical to the baseline anyway, fails the run --
+`Tools/BaselineVerify/waivers.tsv`), so a waiver only ever suppresses rows
+that are actively differing, which is the opposite of what this baseline
+freeze is for. Fixing the array size turns all 375 into real Gauquelin
+house-position values, confirmed row by row: every one of the 375 changed
+rows is `HP|G|*` and every one was `EXCEPTION` before the fix, nothing else
+moved.
 
 ## swe_houses/swe_houses_armc/swe_house_pos/swe_house_name: hsys narrowed to char (caused conformance suite 6.6 to be misclassified)
 
-`external/swisseph/swephexp.h:812-835` declares **`int hsys`** on every house
-entry point (`swe_houses`, `swe_houses_ex`, `swe_houses_armc`, `swe_house_pos`,
-`swe_house_name`). The port had narrowed all of them to `char hsys`
-(`SwissEphNet/CPort/SweHouse.cs`, plus the internal `sidereal_houses_ecl_t0` /
-`sidereal_houses_ssypl` / `sidereal_houses_trad` helpers, which the port's own
-commented-out C signatures directly above them already showed as `int hsys`).
+`swephexp.h:812-835` declares **`int hsys`** on all seven house entry points:
+`swe_houses` (812), `swe_houses_ex` (816), `swe_houses_ex2` (820),
+`swe_houses_armc` (824), `swe_houses_armc_ex2` (828), `swe_house_pos` (832),
+and `swe_house_name` (835). Five of those seven are ported here; the port had
+narrowed all five of them to `char hsys` (`SwissEphNet/CPort/SweHouse.cs`,
+plus the internal `sidereal_houses_ecl_t0` / `sidereal_houses_ssypl` /
+`sidereal_houses_trad` helpers, which the port's own commented-out C
+signatures directly above them already showed as `int hsys`). `swe_houses_ex2`
+and `swe_houses_armc_ex2` are **unported 2.10 features** (they add per-cusp
+speed output and an explicit `serr` out-parameter that the ported API surface
+does not have yet) -- their absence here is not a missed narrowing, it is
+scope this branch does not touch. When they land, they must be declared
+`int hsys` from the start, matching upstream; there is no `char`-only
+predecessor to widen.
 
 This is not merely a style narrowing. Internally, C truncates `hsys` to a
 `char` only once, at the `CalcH` call inside `swe_houses_armc`
 (`swehouse.c:661`, `CalcH(..., (char)hsys, ...)`), an 8-bit cast. The *outer*
 functions -- `swe_house_name` (`swehouse.c:829`) and `swe_house_pos`
-(`swehouse.c:2233`/`:2835`) -- compare the **raw, untruncated** int, via
+(`swehouse.c:2231`/`:2835`) -- compare the **raw, untruncated** int, via
 `toupper()`, and fall through to their `default:` branch when it does not
 match a house-system letter. A `char`-typed parameter cannot express that
 distinction: every caller effectively already truncated before the port ever
@@ -417,18 +435,36 @@ Fixed by adding `int`-taking overloads matching upstream's signatures
 (`SwissEphNet/SwissEph.swephexp.h.cs` on the public surface,
 `SwissEphNet/CPort/SweHouse.cs` for the transliterated implementation), while
 keeping the existing `char`-taking overloads as thin delegates (widening
-`char` to `int`, no truncation, so every existing caller is unaffected). The
-faithful 8-bit truncation is reproduced explicitly as `(char)(hsys & 0xFF)` at
-the `CalcH` call site in `swe_houses_armc` (`SwissEphNet/CPort/SweHouse.cs`,
-citing `swehouse.c:661`), since C#'s `(char)` cast on an `int` does not
-truncate to 8 bits the way C's does (C# `char` is a 16-bit UTF-16 code unit,
-not an 8-bit C `char`). Confirmed: `swe_house_name(32592)` returns
-`"Placidus"` (falls to `default:`, matching the raw-int comparison) while
-`swe_house_name('P')` still returns `"Placidus"` and `swe_house_name('K')`
-still returns `"Koch"`; `swe_houses_armc(..., 32592, ...)` produces cusps
-identical to an explicit `hsys = 'P'` call (32592 & 0xFF == `'P'`), confirming
-the internal 8-bit truncation resolves the correct house system even though
-the outer comparisons never match a named letter.
+`char` to `int`). This is behavior-preserving only for `char <= U+00FF`
+(Latin-1): every existing caller passing an ASCII/Latin-1 `char` is
+unaffected. For a `char` above `U+00FF`, routing it through the `int` path
+now applies the same narrowing the `int` path applies at the `CalcH` call
+inside `swe_houses_armc` (`swehouse.c:661`), which the old `char`-only
+implementation did not apply -- measured, `(char)331` (low byte `0x4B` =
+`'K'`) resolved to Placidus before this branch and to Koch after. This is a
+behavior change for that narrow input range, and it is a change *toward*
+C-faithfulness, not away from it: a C `char` is 8 bits, so a C caller could
+never produce a value like 331 in a `char` variable in the first place, while
+C#'s `char` (a 16-bit UTF-16 code unit) can; the widened path now resolves it
+the way C would resolve its low byte.
+
+The faithful truncation at the `CalcH` call site in `swe_houses_armc`
+(`SwissEphNet/CPort/SweHouse.cs`, citing `swehouse.c:661`) is reproduced as
+`(sbyte)hsys`, not `(char)(hsys & 0xFF)`: C's `char` is signed on both
+reference platforms, so `(char)hsys` in C narrows to a *signed* 8-bit value,
+and unlike `& 0xFF`, C#'s `(sbyte)` cast on an `int` reproduces that sign --
+which matters observably, since `CalcH`'s lower-case-letter fold branches on
+that sign (see the review findings for the `0x89`-low-byte case). Confirmed:
+`swe_house_name(65611)` (`0x1004B`, low byte `'K'`) returns `"Placidus"`
+(falls to `default:`, matching the raw-int comparison, not the low byte)
+while `swe_house_name('P')` still returns `"Placidus"` and
+`swe_house_name('K')` still returns `"Koch"`; `swe_houses_armc(..., 65611,
+...)` produces cusps identical to an explicit `hsys = 'K'` call, confirming
+the internal signed-8-bit narrowing resolves the correct house system even
+though the outer comparisons never match a named letter. Out-of-range `int`
+values (negative, or `> 65535`) no longer throw at any entry point --
+formatting sites that render `hsys` into a diagnostic message narrow it first
+rather than passing the raw `int` to a `%c`-style formatter.
 
 Baseline effect: none. The characterization matrix only ever calls through the
 pre-existing `char`-typed API (there is no way to construct an out-of-range

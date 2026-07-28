@@ -51,6 +51,38 @@ For working with the async context read the [this paragraph](https://github.com/
 
 # Breaking changes
 
+## V:2.8.0.2
+
+`swe_houses`, `swe_houses_ex`, `swe_houses_armc`, `swe_house_pos`, and `swe_house_name`
+each gained an `int hsys` overload alongside the existing `char hsys` overload, to match
+upstream `swephexp.h`, which has always declared `hsys` as `int`. Binary compatibility is
+preserved: existing compiled consumers (anything built against a prior version of this
+library) keep working unchanged, since the original `char` overloads are still present
+with the same signatures.
+
+Source-level and reflection-based consumers can be affected:
+
+- **Reflection by name** (`Type.GetMethod("swe_house_name")` with no parameter-type
+  array, or any binder that resolves by name alone -- this affects Python.NET, some
+  PowerShell cmdlet-binding paths, and dependency-injection or serializer conventions
+  that enumerate methods by name) now throws `AmbiguousMatchException` for these five
+  methods, because there are two overloads where there used to be one. Pass an explicit
+  parameter-type array to `GetMethod` (or the equivalent for your binder) to select the
+  overload you want.
+- **`var f = swe.swe_house_name;`** (or any bare method-group assignment to `var` for one
+  of the five widened methods) no longer compiles under C# 10+ natural-type inference:
+  the compiler cannot pick between the two overloads and reports `CS8917`. Declare an
+  explicit delegate type instead, e.g. `Func<char, string> f = swe.swe_house_name;`.
+- **A `char` above `U+00FF`** passed to any of the five `char` overloads now takes its
+  low byte when resolving the house system, matching what a genuine 8-bit C `char` would
+  resolve to, rather than being widened untruncated as before. This only affects callers
+  passing a `char` outside the Latin-1 range, which was never a valid house-system letter
+  either way; see `docs/known-issues.md` for the measured before/after.
+- **`swe_house_pos` with `hsys = 'G'`** (Gauquelin sectors) no longer throws
+  `IndexOutOfRangeException` -- an internal cusp array was undersized relative to
+  upstream 2.10.03. If your code wraps that call in a guard specifically to catch this
+  exception, that guard is now dead code and can be removed.
+
 ## V:2.6.0.21
 
 Since .NETStandard are supported, this library is not compiled on PCL version. Only
