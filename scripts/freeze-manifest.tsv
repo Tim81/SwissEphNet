@@ -3,6 +3,6 @@
 # Update this ONLY alongside an intended change to a frozen file, so
 # the new counts are reviewed with the change that caused them.
 path	files	lines	kr_braces	trailing_ws
-SwissEphNet/CPort	16	45897	1135	1335
+SwissEphNet/CPort	16	46004	1140	1335
 Programs/SweTest/Program.cs	1	4602	60	75
 Programs/SweMini/Program.cs	1	188	2	7
