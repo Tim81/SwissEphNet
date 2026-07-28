@@ -1,23 +1,29 @@
 name: Conformance oracle
 
-# On pull_request (gated by paths -- only when the port or the oracle itself
-# actually changed) as well as on a schedule and on demand. Whether it belongs
-# on the PR path at all came down to cost: a full run dispatches all 12,757
-# iterations in-process in ~2s (measured locally, Tools/ConformanceKnownFailGen,
-# Release build) and `dotnet test` end-to-end (both TFMs, including host
-# startup) in ~8s -- see README.md's "Correctness oracle" section for the
-# measurement. That is cheap enough that not running it at review time (the
-# primary evidence for whether a porting PR actually helped) would have been
-# the wrong tradeoff, not a necessary one. The submodule checkout below is the
-# only real cost, and is sparse + cached for exactly that reason.
+# On every pull_request, unfiltered, as well as on a schedule and on demand --
+# no `paths:` gate. An earlier version of this workflow restricted the
+# pull_request trigger to SwissEphNet/**, the conformance test project and
+# Tests/conformance/**, but that allowlist could never be complete: it missed
+# global.json and Directory.Build.props (either can change what gets built or
+# how, with no path under those globs touched) and, worse, external/swisseph
+# itself -- a submodule gitlink bump (the whole point of which is "the
+# reference values this gate checks against just changed") would not have
+# matched any of those globs and would have silently skipped the one run that
+# most needed to happen. Neither ci.yml nor baseline.yml in this repo filters
+# by paths at all; this workflow now matches that rather than maintaining a
+# second, incomplete allowlist. Whether it belongs on the PR path at all came
+# down to cost, not scope: a full run dispatches all 12,757 iterations
+# in-process in ~2s (measured locally, Tools/ConformanceKnownFailGen, Release
+# build) and `dotnet test` end-to-end (both TFMs, including host startup) in
+# ~8s -- see README.md's "Correctness oracle" section for the measurement.
+# That is cheap enough that not running it at review time (the primary
+# evidence for whether a porting PR actually helped) would have been the
+# wrong tradeoff, not a necessary one. The submodule checkout below is the
+# only real cost, and is sparse + cached (on the pinned commit SHA, so a
+# gitlink bump both triggers the run and correctly misses the cache) for
+# exactly that reason.
 on:
   pull_request:
-    paths:
-      - "SwissEphNet/**"
-      - "Tests/SwissEphNet.Conformance.Tests/**"
-      - "Tests/conformance/**"
-      - "Tools/ConformanceKnownFailGen/**"
-      - ".github/workflows/conformance.yml"
   schedule:
     - cron: "17 4 * * 1" # Mondays, 04:17 UTC
   workflow_dispatch:
@@ -35,6 +41,27 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+
+      # The cache key below and the checkout step's $pinnedSha are both a
+      # hardcoded literal, deliberately (see that step's comment) -- which
+      # means nothing stops them from going stale relative to the gitlink
+      # this repo's tree actually records if external/swisseph is ever bumped
+      # without also updating these two occurrences. Assert that now, before
+      # either one is used: a mismatch here would otherwise silently build
+      # and test against a submodule commit that isn't the one the tree
+      # declares (a checkout of the *old* pin succeeds without error; it is
+      # just testing against the wrong reference values).
+      - name: Assert the pinned submodule SHA matches the gitlink
+        shell: pwsh
+        run: |
+          $pinnedSha = "af9823fe7b06ffefe3d3968fdc5680be8b5eec5f"
+          $line = git ls-tree HEAD external/swisseph
+          $actual = ($line -split '\s+')[2]
+          if ($actual -ne $pinnedSha) {
+            Write-Error "external/swisseph's gitlink is $actual but this workflow is hardcoded to $pinnedSha (cache key and checkout step). Update both occurrences in .github/workflows/conformance.yml to match the bump."
+            exit 1
+          }
+          Write-Host "OK: external/swisseph's gitlink ($actual) matches this workflow's pinned SHA."
 
       # Reproduces the same sparse, partial checkout used locally (see
       # README.md's "Correctness oracle" section) instead of a plain

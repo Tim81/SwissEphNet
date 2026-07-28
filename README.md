@@ -212,10 +212,37 @@ is a regression.
 
 - `Tests/conformance/known-fail.tsv` -- one row per iteration currently known
   to fail, with a category (`NOT-IMPLEMENTED`, `VALUE-MISMATCH`,
-  `DATA-MISSING`, or `ERROR`) and a short reason. The conformance run passes
-  if the set of failures is a subset of this list, fails if any iteration
-  fails that isn't on it (a regression), and reports -- without failing -- any
-  listed iteration that now passes (progress; remove that row).
+  `DATA-MISSING`, `ERROR`, or `UNREPRODUCIBLE`) and a short reason. The
+  conformance run **fails** unless the port's actual behavior matches this
+  file exactly: any iteration failing that isn't on the list (a regression),
+  any listed row recorded under a category the port no longer matches
+  (category drift -- still failing, but not the same failure), any listed row
+  that now passes (progress left un-pruned), and any row for an iteration no
+  longer in the corpus (stale) are all gate failures. There is no "reports
+  without failing" case -- the file and the port's behavior must agree, in
+  both directions, for the gate to pass.
+
+  - `NOT-IMPLEMENTED`: the port is at 2.08 and doesn't have this 2.10-only API
+    yet. `DATA-MISSING`: a required data file (a JPL DE ephemeris, `ephe/sat/`)
+    isn't shipped by this repo. `ERROR`: the dispatch threw. `VALUE-MISMATCH`:
+    the port ran and produced an answer that doesn't match the reference
+    within `t.fix` tolerance -- this and `ERROR` are the actionable
+    categories, the actual porting work queue. `UNREPRODUCIBLE`: a structural
+    C-vs-C# representational gap makes the reference call impossible to
+    construct at all, as opposed to constructible but wrong -- distinct from
+    the other three, and excluded from the pass-rate denominator the same way
+    they are (see `ConformanceReport.SuiteSummary.PassRate`'s doc comment).
+    Currently 0 across the whole corpus (suite 6 testcase 6, the one place
+    that used to carry all of it, became reproducible once the port's five
+    house entry points gained faithful `int hsys` overloads -- see
+    `Suite06Houses.Dispatch`'s remarks on testcase 6 for the mechanics).
+
+  See "Reporting by testcase" in `CONTRIBUTING.md` for how to read a run
+  (60 testcases, split into actionable vs. parked) instead of 12,757
+  individual rows, and "The two gates disagree on purpose, not by accident"
+  for why this gate failing constantly is expected and the characterization
+  baseline above failing at all is not -- they are not the same kind of
+  red.
 
 - Two data sources this repo does not ship are skipped by default and
   reported as `DATA-MISSING`, not run: `SEFLG_JPLEPH` iterations need a
@@ -237,9 +264,12 @@ is a regression.
   pull) and cached on the pinned commit SHA.
 
 - Regenerating `Tests/conformance/known-fail.tsv` is
-  `scripts/regenerate-known-fail.ps1 -Reason "..."` -- see "Correctness oracle
-  known-fail list" in `CONTRIBUTING.md` for the invariant it enforces (rows
-  may be removed freely; adding one needs a written reason and review).
+  `scripts/regenerate-known-fail.ps1 -PruneOnly` to remove newly-passing rows
+  (the common case after a porting PR; refuses to run if it would add or
+  recategorize a row instead) or `-Reason "..." [-PR N]` for a full
+  regenerate that can also add rows -- see "Correctness oracle known-fail
+  list" in `CONTRIBUTING.md` for the invariant it enforces (rows may be
+  removed freely; adding one needs a written reason and review).
 
 **Licensing note:** vendoring Swiss Ephemeris 2.10.x source is consistent with
 the AGPL-3.0 relicensing Astrodienst has planned for that line, but that

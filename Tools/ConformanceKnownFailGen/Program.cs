@@ -48,6 +48,9 @@ var knownFailByKey = entries.ToDictionary(e => e.Key);
 var report = ConformanceReport.Build(results, knownFailByKey);
 Console.WriteLine(report.FormatSummary());
 
+Console.WriteLine();
+Console.WriteLine(report.FormatByTestCase());
+
 return 0;
 
 // Strips reasons of anything that ties them to whoever's machine generated
