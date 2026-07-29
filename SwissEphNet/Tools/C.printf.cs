@@ -465,7 +465,12 @@ namespace SwissEphNet
                     case 's':   // string
                         w = (o ?? String.Empty).ToString();
                         if (fieldPrecision >= 0)
-                            w = w.Substring(0, fieldPrecision);
+                            // C's precision on %s is a MAXIMUM field width, never a minimum: printf("%.8s", "Sun-Moo")
+                            // prints Sun-Moo. Substring(0, fieldPrecision) throws when the argument is shorter,
+                            // which made every %.Ns with a short argument an ArgumentOutOfRangeException rather
+                            // than a shorter string. Programs/SweTest/Program.cs:2355 hit this on every run:
+                            // line 2343 can only produce 7 characters or fewer, so its %.8s always threw.
+                            w = w.Substring(0, Math.Min(fieldPrecision, w.Length));
 
                         if (fieldLength != int.MinValue)
                             if (flagLeft2Right)

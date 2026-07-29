@@ -933,5 +933,24 @@ namespace SwissEphNet.Tests
         //}
         //#endregion
         #endregion
-    }
+    
+        /// <summary>
+        /// C's precision on %s is a maximum field width, never a minimum: printf("%.8s", "Sun-Moo")
+        /// prints Sun-Moo. The port used Substring(0, precision) unconditionally, so any argument
+        /// shorter than the precision threw ArgumentOutOfRangeException instead of printing
+        /// unchanged. Programs/SweTest/Program.cs:2355 hit it on every run, because line 2343
+        /// cannot produce more than 7 characters and its format is %.8s -- SweTest crashed for
+        /// the whole -hor output mode. Upstream 2.10.03 keeps all these sites and adds %-15.15s,
+        /// so this had to be right before swetest.c could be ported.
+        /// </summary>
+        [Theory]
+        [InlineData("%.8s", "Sun-Moo", "Sun-Moo")]     // shorter than precision: unchanged
+        [InlineData("%.8s", "Sun-Moon-X", "Sun-Moon")] // longer: truncated
+        [InlineData("%.8s", "", "")]                   // empty
+        [InlineData("%.3s", "ab", "ab")]
+        [InlineData("%.0s", "abc", "")]                // zero precision: empty, not a throw
+        public void PrecisionOnStringIsAMaximumNotAMinimum(string format, string arg, string expected) {
+            Assert.Equal(expected, C.sprintf(format, arg));
+        }
+}
 }
