@@ -27,13 +27,17 @@ public static class EphemerisFileResolver
     /// Wires the file handler and establishes the ephemeris path, in that order.
     /// </summary>
     /// <remarks>
-    /// The order matters and used to be the other way round. swe_set_ephe_path is not a
-    /// setter: sweph.c:8843-8850 closes every open file, then eagerly calls
-    /// swe_calc(J2000, SE_MOON, SEFLG_SWIEPH|...) and, if the lunar file opened, pins
-    /// tidal acceleration from that file's DE number via swi_set_tid_acc. With the handler
-    /// attached afterwards, that eager open had no way to reach a file, fptr stayed null,
-    /// and tid_acc was never pinned -- so it was instead resolved lazily by whichever
-    /// iteration first happened to open the Moon, making Delta T depend on iteration order.
+    /// The order used to be the other way round. swe_set_ephe_path is not a setter:
+    /// sweph.c:1315-1352 closes every open file (swi_close_keep_topo_etc, :1323), then
+    /// eagerly calls swe_calc(J2000, SE_MOON, SEFLG_SWIEPH|...) at :1347 and, if the lunar
+    /// file opened, pins tidal acceleration from that file's DE number via swi_set_tid_acc
+    /// at :1349. With the handler attached afterwards, that eager open could not reach a
+    /// file, fptr stayed null, and tid_acc was never pinned there.
+    ///
+    /// Measured, this half of the change moves no iteration on its own -- the per-suite
+    /// reset in ConformanceRunner is what fixes the 110 rows, and it fixes them with either
+    /// attach order. The order is corrected because the sequence should mean what it says,
+    /// not because it was the defect.
     /// </remarks>
     public static void Attach(SwissEph swe)
     {
@@ -57,14 +61,22 @@ public static class EphemerisFileResolver
     }
 
     /// <summary>
-    /// The equivalent of setest's suite-scope swe_set_ephe_path(NULL), which every suite
-    /// file issues (suite_01_calc.c does it once per testcase, suite_04 through suite_10
-    /// once per suite; suite_03_misc.c never does). Passing the resolved directory rather
-    /// than null is deliberate: null resolves to the compile-time SE_EPHE_PATH, which is
-    /// where Astrodienst's own full ephemeris lived when t.exp was generated and is not a
-    /// meaningful location here. What has to match is the reset -- closing every open file
-    /// and re-pinning tid_acc from the lunar file -- not the string.
+    /// The equivalent of setest's swe_set_ephe_path(NULL). Every suite file issues one at
+    /// suite scope except suite_03_misc.c, which issues none; suite_01_calc.c and
+    /// suite_02_fixstar.c additionally repeat it inside some testcase bodies, which run per
+    /// iteration. ConformanceRunner has the exact placement.
     /// </summary>
+    /// <remarks>
+    /// Passing the resolved directory rather than null is deliberate, and null would be
+    /// wrong here rather than merely different. This port does not read $SE_EPHE_PATH
+    /// (CPort/Sweph.cs, commented out) and defines SE_EPHE_PATH as the placeholder
+    /// "[ephe]" (SwissEph.swephexp.h.cs), so null would set swed.ephepath to a location
+    /// holding nothing, the eager lunar open would find no file, and tid_acc would never
+    /// pin -- reintroducing what this is meant to avoid. t.exp was generated with
+    /// SE_EPHE_PATH pointing at Astrodienst's real files, so a real directory is the closer
+    /// reproduction. It cannot mask a failure either: it only makes files reachable, and
+    /// exactly which files are reachable is asserted by EphemerisManifest.
+    /// </remarks>
     public static void ResetEphePath(SwissEph swe)
     {
         swe.swe_set_ephe_path(RepoLocator.EpheDir);

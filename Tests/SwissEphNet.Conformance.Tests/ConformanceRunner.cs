@@ -53,13 +53,35 @@ public static class ConformanceRunner
         foreach (var suite in doc.TestSuites)
         {
             // SUITE SETUP: every setest suite file except suite_03_misc.c issues
-            // swe_set_ephe_path(NULL) at suite scope. That call is not a setter --
-            // sweph.c:8843-8850 closes all open files and then re-pins tidal acceleration
-            // from the lunar file's DE number. Skipping it let tid_acc be decided by
-            // whichever iteration first opened the Moon, so Delta T, and everything
-            // derived from it, depended on iteration order rather than on the inputs.
+            // swe_set_ephe_path(NULL) at suite scope. TESTSUITE emits the suite body once
+            // (testsuite.m4), so it runs once per suite, not per testcase.
+            //
+            // This is the half of the ephemeris-state fix that actually moves results, and
+            // what it recovers from is state left behind by an *earlier suite*, not lazily
+            // resolved tid_acc. Measured: with no reset, 360 of suite 6 testcase 3's 1080
+            // iterations differ depending on whether the corpus runs whole or that suite
+            // runs alone, by up to 30 degrees; with it, none do. The predecessor that
+            // poisons them is suite 2 -- after its fixed-star work, SE_SIDM_TRUE_CITRA
+            // could no longer resolve Spica, so swi_get_ayanamsa_ex returned ERR with an
+            // ayanamsa of zero and the cusps came out tropical, about 24 degrees off.
+            //
+            // The underlying port defect there is fixed separately (CFile.Seek left EOF
+            // set, so C.rewind could not re-read the star catalogue) and is covered by
+            // tests in Tests/SwissEphNet.Tests rather than by this corpus, which was only
+            // catching it by accident.
             if (suite.Id != 3)
             {
+                // suite_06_houses.c:9 precedes its reset with swe_close(), which clears
+                // strictly more than swi_close_keep_topo_etc does -- topocentric and
+                // sidereal state, ayana_is_set, geopos_is_set, last_epheflag, dpsi/deps and
+                // the loaded fixed-star array. Measured as inert for every one of that
+                // suite's iterations, but mirrored so the sequence matches the reference
+                // rather than relying on it staying inert.
+                if (suite.Id == 6)
+                {
+                    swe.swe_close();
+                }
+
                 EphemerisFileResolver.ResetEphePath(swe);
             }
 
@@ -71,11 +93,14 @@ public static class ConformanceRunner
 
                 foreach (var iteration in testCase.Iterations)
                 {
-                    // Some testcases repeat the call in their own body. TESTCASE(n,...)
-                    // expands to a function run once per iteration (testsuite_facade.h:9),
-                    // so those are per-iteration resets, not per-testcase ones:
-                    // suite_01_calc.c:31,40,50 (testcases 2,3,4) and
-                    // suite_02_fixstar.c:50,62,76,89 (testcases 4,5,6,7).
+                    // Some testcases repeat the call in their own body. The testcase body is
+                    // driven by a do { ... } while (has_more_iterations(ctx)) loop
+                    // (testsuite.m4:52-68), so those are per-iteration resets, not
+                    // per-testcase ones: suite_01_calc.c:31,40,50 (testcases 2,3,4) and
+                    // suite_02_fixstar.c:50,62,76,89 (testcases 4,5,6,7). Read the m4, not
+                    // testsuite_facade.h -- that header says at line 1 that it holds
+                    // provisional definitions only so the C reads as complete in an IDE,
+                    // and its TESTCASE carries no loop.
                     if ((suite.Id == 1 && testCase.Id is 2 or 3 or 4) ||
                         (suite.Id == 2 && testCase.Id is 4 or 5 or 6 or 7))
                     {
