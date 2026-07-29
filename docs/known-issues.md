@@ -671,3 +671,19 @@ keeping the test preserves the C's behaviour in the one case where it decides an
 measured identical at the point of use in the working and failing cases. The correct
 diagnosis is the `free_planets` object-replacement entry above. The log is append-only, so
 the correction is recorded here rather than by editing it.
+
+## SE_VERSION stays at "2.08" until the port actually is 2.10.03
+
+`sweph.h`'s `SE_VERSION` goes `"2.08"` -> `"2.10.03"` in the header delta, and the
+constants stage deliberately does not take that line. Everything else in that delta is
+data or a declaration; this one is a claim the library makes about itself through
+`swe_version()`, and it would be false while `sweph.c`, `swecl.c`, `swehouse.c` and
+`swetest.c` are still 2.08. The known-fail list is the standing evidence of that.
+
+It is behaviourally inert either way, which is worth knowing before someone assumes the
+deferral is load-bearing. `swe_set_astro_models` parses it (`SwephLib.cs`, from
+`swephlib.c:4205`) and branches on 2.06 / 2.01 / 2.00 / 1.80 / 1.78; `atof("2.08")` and
+`atof("2.10.03")` both land in the first branch and select `AMODELS_SE_2_06`.
+
+Take it in the release stage, together with the assembly version. `TransliterationFidelityTest`
+also asserts the current value and moves with it.

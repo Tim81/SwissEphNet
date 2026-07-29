@@ -212,6 +212,7 @@ namespace SwissEphNet.CPort
         public const int SEI_FILE_MAIN_AST = 2;
         public const int SEI_FILE_ANY_AST = 3;
         public const int SEI_FILE_FIXSTAR = 4;
+        public const int SEI_FILE_PLMOON = 5;
 
         //#if 0
         //#define SEI_FILE_TEST_ENDIAN     (97L * 65536L + 98L * 256L + 99L) /*abc*/
