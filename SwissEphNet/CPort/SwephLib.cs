@@ -2645,8 +2645,13 @@ namespace SwissEphNet.CPort
                 if ((epheflag & SwissEph.SEFLG_SWIEPH) != 0) denum = swed.fidat[Sweph.SEI_FILE_MOON].sweph_denum;
                 if (SE.Sweph.swi_init_swed_if_start() == 1 && 0==(epheflag & SwissEph.SEFLG_MOSEPH))
                 {
-                    if (serr != null)
-                        serr = "Please call swe_set_ephe_path() or swe_set_jplfile() before calling swe_deltat_ex()";
+                    /* swephlib.c:2567 guards this with `if (serr != NULL)`, which asks whether
+                     * the caller supplied a buffer. A `ref string` always supplies one, so the
+                     * literal `serr != null` asked instead whether a message was already
+                     * present and dropped this one for every caller starting from null --
+                     * which is what all of them do. Same correction as the two swe_helio_cross
+                     * sites. */
+                    serr = "Please call swe_set_ephe_path() or swe_set_jplfile() before calling swe_deltat_ex()";
                     String sdummy = null;
                     retc = swi_set_tid_acc(tjd, epheflag, denum, ref  sdummy);  /* _set_ saves tid_acc in swed */
                 }
