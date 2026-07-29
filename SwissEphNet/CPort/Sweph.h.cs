@@ -100,6 +100,10 @@ namespace SwissEphNet.CPort
         /// 1900 January 0.5
         /// </summary>
         public const double J1900 = 2415020.0;
+        /// <summary>
+        /// 1850 January 16:53
+        /// </summary>
+        public const double B1850 = 2396758.2035810;
 
         public const int MPC_CERES = 1;
         public const int MPC_PALLAS = 2;
