@@ -3271,6 +3271,60 @@ namespace SwissEphNet.CPort
             return retval;
         }
 
+        /*
+         * Function calculates a correction for ayanamsha if the ayanamsha was
+         * defined using a different precession model than our standard one.
+         * This allows us to use this ayanamsha with our standard precession
+         * model and still remain very accurate in ephemeris positions.
+         * It has the effect that ayanamsha values change depending on the precession
+         * model used, but sidereal planetary positions remain the same.
+         *
+         * For this function to work correctly, our standard precession model 
+         * must be relative to J2000. Any future precession model should not
+         * use a different starting epoch.
+         */
+        int get_aya_correction(int iflag, out double corr, ref string serr) {
+            double[] x = new double[6]; double eps, t0;
+            sid_data sip = swed.sidd;
+            int prec_model = swed.astro_models[SwissEph.SE_MODEL_PREC_LONGTERM];
+            int prec_model_short = swed.astro_models[SwissEph.SE_MODEL_PREC_SHORTTERM];
+            int prec_offset = 0;
+            int sid_mode = sip.sid_mode;
+            sid_mode %= SwissEph.SE_SIDBITS;
+            corr = 0;
+            if (sip.t0 == J2000)
+                return 0;
+            if ((sip.sid_mode & SwissEph.SE_SIDBIT_NO_PREC_OFFSET) != 0)
+                return 0;
+            if (sid_mode < SwissEph.SE_NSIDM_PREDEF)
+                prec_offset = ayanamsa[sid_mode].prec_offset;
+            if (prec_offset < 0) prec_offset = 0;
+            if (prec_model == prec_offset)
+                return 0;
+            t0 = sip.t0;
+            if (sip.t0_is_UT)
+                t0 += SE.swe_deltat_ex(t0, iflag, ref serr);
+            /* vernal point (tjd), cartesian */
+            x[0] = 1;
+            x[1] = x[2] = 0;
+            SE.SwephLib.swi_precess(x, t0, 0, J_TO_J2000);
+            swed.astro_models[SwissEph.SE_MODEL_PREC_LONGTERM] = prec_offset;
+            swed.astro_models[SwissEph.SE_MODEL_PREC_SHORTTERM] = prec_offset;
+            SE.SwephLib.swi_precess(x, t0, 0, J2000_TO_J);
+            swed.astro_models[SwissEph.SE_MODEL_PREC_LONGTERM] = prec_model;
+            swed.astro_models[SwissEph.SE_MODEL_PREC_SHORTTERM] = prec_model_short;
+            /* to ecliptic */
+            eps = SE.SwephLib.swi_epsiln(t0, 0);
+            SE.SwephLib.swi_coortrf(x, x, eps);
+            /* to polar */
+            SE.SwephLib.swi_cartpol(x, x);
+            /* get ayanamsa */
+            corr = x[0] * SwissEph.RADTODEG;
+            if (corr > 350 /*correct!*/) corr -= 360; // a signed value near 0
+            //fprintf(stderr, "corr=%f\n", *corr * 3600.0);
+            return SwissEph.OK;
+        }
+
         public Int32 swi_get_ayanamsa_ex(double tjd_et, Int32 iflag, out double daya, ref string serr)
         {
             double[] x = new double[6]; double eps, t0;
