@@ -643,28 +643,26 @@ regenerated under `-ExpectedScope 'NA|**','NAUT|**'` with a deviation note. Neit
 from the swephlib port -- both are present verbatim in `main` -- but they are fixed here
 because the port is what made them reachable.
 
-## Inverted `serr != NULL` guards: swept, but not exhaustively
+## Inverted `serr != NULL` guards: swept
 
 C writes `if (serr != NULL) strcpy(serr, "...")`, asking whether the caller supplied a
 buffer. A C# `ref string` always supplies one, so the literal `if (serr != null)` asks
 instead whether a message is *already present* -- false for every caller that starts from
 `null`, which is all of them -- and the message is silently dropped.
 
-Corrected so far: two `swe_helio_cross` sites, `calc_deltat`, `swi_get_ayanamsa_ex`,
+Corrected: two `swe_helio_cross` sites, `calc_deltat`, `swi_get_ayanamsa_ex`,
 `swe_fixstar`/`swe_fixstar_ut`, the star-file-damaged message, `swe_sol_eclipse_how`'s
-out-of-range message, and `swi_mean_node`'s out-of-range append.
+out-of-range message, `swi_mean_node`'s out-of-range append, and all thirteen
+Moshier-fallback sites.
 
-**Still outstanding**, and deliberately so: roughly ten Moshier-fallback sites in
-`CPort/Sweph.cs` (`sweph.c:690, 707, 790, 1091, 1132, 1590, 1614, 1631, 1649, 1728`, and
-others) append a `"using Moshier eph.; "` note. They are not uniform -- some assign, some
-append, some are already unconditional, and `sweph.c:1630` additionally carries
-`strlen(serr) + 30 < AS_MAXCH`, a fixed-buffer guard the port commented out because a C#
-string has no such limit.
-
-Changing one of ten would leave the file less consistent than it is now, and this family
-sits directly on the ephemeris-fallback path, so unlike the guards above it will move
-`serr` in results the corpus compares. It wants its own pass with a before/after
-measurement, not a drive-by.
+The Moshier family was the awkward one. `sweph.c` uses a single form at every site --
+`if (serr != NULL && strlen(serr) + 30 < AS_MAXCH) strcat(serr, "...")` -- and the port
+had four different renderings, none equivalent to it. Two **assigned** where the C appends,
+so the "using Moshier eph." note overwrote the diagnostic explaining why the fallback
+happened; a missing `seplm24.se1` reported only the note, not the missing file. One carried
+the inverted guard and emitted nothing. None reproduced the buffer-space test, which is now
+written `(serr == null ? 0 : serr.Length) + 30 < 256` -- a C# string has no such limit, but
+keeping the test preserves the C's behaviour in the one case where it decides anything.
 
 ## The 7.2.x diagnosis in regenerations.log is superseded
 

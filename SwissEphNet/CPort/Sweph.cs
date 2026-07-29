@@ -768,7 +768,8 @@ namespace SwissEphNet.CPort
                             if (tjd > MOSHLUEPH_START && tjd < MOSHLUEPH_END)
                             {
                                 iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_MOSEPH;
-                                serr += " \nusing Moshier Eph; ";
+                                if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                    serr += " \nusing Moshier Eph; ";
                                 goto moshier_moon;
                             }
                             else
@@ -797,7 +798,8 @@ namespace SwissEphNet.CPort
                             if (tjd > MOSHLUEPH_START && tjd < MOSHLUEPH_END)
                             {
                                 iflag = (iflag & ~SwissEph.SEFLG_SWIEPH) | SwissEph.SEFLG_MOSEPH;
-                                serr = " \nusing Moshier eph.; ";
+                                if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                    serr += " \nusing Moshier eph.; ";
                                 goto moshier_moon;
                             }
                             else
@@ -1228,7 +1230,8 @@ namespace SwissEphNet.CPort
                     {
                         iflag = (iflag & ~SwissEph.SEFLG_EPHMASK) | SwissEph.SEFLG_MOSEPH;
                         epheflag = SwissEph.SEFLG_MOSEPH;
-                        serr += "\nusing Moshier eph.; ";
+                        if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                            serr += "\nusing Moshier eph.; ";
                         goto do_asteroid;
                     }
                     else
@@ -1283,7 +1286,8 @@ namespace SwissEphNet.CPort
                     {
                         iflag = (iflag & ~SwissEph.SEFLG_EPHMASK) | SwissEph.SEFLG_MOSEPH;
                         epheflag = SwissEph.SEFLG_MOSEPH;
-                        serr += "\nusing Moshier eph.; ";
+                        if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                            serr += "\nusing Moshier eph.; ";
                         goto do_fict_plan;
                     }
                     else
@@ -1771,7 +1775,8 @@ namespace SwissEphNet.CPort
                         if (tjd > MOSHPLEPH_START && tjd < MOSHPLEPH_END)
                         {
                             iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_MOSEPH;
-                            serr += " \nusing Moshier Eph; ";
+                            if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                serr += " \nusing Moshier Eph; ";
                             goto moshier_planet;
                         }
                         else
@@ -1796,7 +1801,8 @@ namespace SwissEphNet.CPort
                         if (tjd > MOSHPLEPH_START && tjd < MOSHPLEPH_END)
                         {
                             iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_MOSEPH;
-                            serr += " \nusing Moshier Eph; ";
+                            if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                serr += " \nusing Moshier Eph; ";
                             goto moshier_planet;
                         }
                         else
@@ -1815,7 +1821,8 @@ namespace SwissEphNet.CPort
                         if (tjd > MOSHPLEPH_START && tjd < MOSHPLEPH_END)
                         {
                             iflag = (iflag & ~SwissEph.SEFLG_SWIEPH) | SwissEph.SEFLG_MOSEPH;
-                            serr += " \nusing Moshier eph.; ";
+                            if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                serr += " \nusing Moshier eph.; ";
                             goto moshier_planet;
                         }
                         else
@@ -1834,7 +1841,8 @@ namespace SwissEphNet.CPort
                         if (tjd > MOSHPLEPH_START && tjd < MOSHPLEPH_END)
                         {
                             iflag = (iflag & ~SwissEph.SEFLG_SWIEPH) | SwissEph.SEFLG_MOSEPH;
-                            serr += " \nusing Moshier eph.; ";
+                            if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                serr += " \nusing Moshier eph.; ";
                             goto moshier_planet;
                         }
                         else
@@ -1920,7 +1928,7 @@ namespace SwissEphNet.CPort
                         {
                             iflag = (iflag & ~SwissEph.SEFLG_SWIEPH) | SwissEph.SEFLG_MOSEPH;
                             //if (serr != NULL && strlen(serr) + 30 < AS_MAXCH)
-                            if (serr != null)
+                            if ((serr == null ? 0 : serr.Length) + 30 < 256)
                                 serr += " \nusing Moshier eph.; ";
                             goto moshier_planet;
                         }
@@ -2112,7 +2120,8 @@ namespace SwissEphNet.CPort
                     /* if moon file doesn't exist, take moshier moon */
                     if (swed.fidat[SEI_FILE_MOON].fptr == null)
                     {
-                        serr = " \nusing Moshier eph. for moon; ";
+                        if ((serr == null ? 0 : serr.Length) + 35 < 256)
+                            serr += " \nusing Moshier eph. for moon; ";
                         retc = SE.SwemMoon.swi_moshmoon(tjd, do_save, xpm, ref serr);
                         if (retc != OK)
                             return (retc);
@@ -5753,7 +5762,8 @@ namespace SwissEphNet.CPort
                                 iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_MOSEPH;
                                 epheflag = SwissEph.SEFLG_MOSEPH;
                                 //if (serr != NULL && strlen(serr) + 30 < AS_MAXCH)
-                                serr += " \nusing Moshier Eph; ";
+                                if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                    serr += " \nusing Moshier Eph; ";
                                 break;
                             }
                             else
@@ -5794,7 +5804,8 @@ namespace SwissEphNet.CPort
                                 iflag = (iflag & ~SwissEph.SEFLG_SWIEPH) | SwissEph.SEFLG_MOSEPH;
                                 epheflag = SwissEph.SEFLG_MOSEPH;
                                 //if (serr != NULL && strlen(serr) + 30 < AS_MAXCH)
-                                serr += " \nusing Moshier eph.; ";
+                                if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                    serr += " \nusing Moshier eph.; ";
                                 break;
                             }
                             else
