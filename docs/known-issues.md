@@ -590,3 +590,51 @@ beyond that horizon.
 Recorded rather than changed: forcing 32-bit truncation would make the C#
 match one platform's C and stop matching the other two, for inputs no caller
 can supply.
+
+## swe_nod_aps after swe_close: free_planets replaces objects where the C memsets
+
+The nine `7.2.x` conformance rows (`swe_nod_aps_ut`, ~1.9e-6 degrees off) are not an
+ephemeris-vintage issue and not a 2.08/2.10 mismatch -- `swe_nod_aps` is byte-identical
+between the two C versions. They are a port defect, diagnosed as follows.
+
+**Reproduction.** With a fixed `tjd_et`, so Delta T is out of the picture:
+
+| sequence | port | libswe 2.10.03 |
+|---|---|---|
+| `set_ephe_path` | 76.65098418723707 | 76.65098420609208 |
+| `set_ephe_path`, `swe_close` | **76.65098234128769** | 76.65098420609208 |
+| `swe_close`, then any `swe_calc` | 76.65098418723707 | 76.65098420609208 |
+
+Any `swe_calc` before `swe_nod_aps` restores it -- the Sun works as well as the Moon, so
+2.08's deleted lunar `swi_get_tid_acc` probe was incidental, not special.
+
+**Mechanism.** `swe_set_ephe_path` sets `swed.last_epheflag = 2` (`sweph.c:1346`) and
+`swe_close` clears it. On the first `swe_calc` after a close, `last_epheflag != epheflag`
+(`sweph.c:386`), so `free_planets()` runs -- and it runs *inside* `swe_nod_aps`, partway
+through its own computation. `swe_nod_aps` already knows `swe_calc` clobbers the save area
+(there is a comment and a restoring `swe_calc` for exactly that), but the C survives it and
+the port does not.
+
+The difference is aliasing. C's `free_planets` does
+`memset(&swed.pldat[i], 0, sizeof(struct plan_data))`, zeroing **in place**: any pointer
+already taken into that array still refers to the same, now-zeroed, storage. The port does
+`swed.pldat[i] = new plan_data()`, **replacing** the object, so a reference captured earlier
+keeps pointing at the old one with stale contents. `swe_calc` has the same shape at
+`Sweph.cs`'s `swed.fidat[i] = new file_data()` against the C's `memset` at `sweph.c:397`.
+
+Confirmed: replacing those three assignments in `free_planets` with an in-place field zero
+makes the closed case return 76.65098418723707 -- exactly the open case, and matching libswe
+to the port's usual 1.9e-8.
+
+**Why the fix is not simply that.** A blunt reflection-based in-place zero fixes the nine
+`7.2.x` rows and regresses eleven others, including the six `7.2.1`/`7.2.3`/`7.2.19`/
+`7.2.21`/`7.2.25`/`7.2.27` rows the swephlib port corrected (they fall back to 344.63 where
+189.21 is expected). So it clears more than the C's `memset` does, or clears something whose
+storage the C keeps. The real fix has to reproduce `memset` field by field for `plan_data`,
+`save_positions` and `file_data`, checking which members are inline arrays in the C (zeroed,
+storage kept) versus pointers (freed and nulled) -- and the same audit applies anywhere else
+the port replaces an object where the C memsets.
+
+Not attempted here: it is a `CPort` change with real blast radius in both directions, it
+wants its own before/after measurement against the conformance corpus, and it is independent
+of the swephlib port.
