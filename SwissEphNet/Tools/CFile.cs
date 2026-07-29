@@ -72,9 +72,22 @@ namespace SwissEphNet
         /// <summary>
         /// Seek the file
         /// </summary>
+        /// <remarks>
+        /// Clears EOF, as C's fseek and rewind both do ("A successful call to the fseek
+        /// function clears the end-of-file indicator", C99 7.19.9.2). Without that, EOF was
+        /// sticky: Read sets it on the first byte past the end and ReadLine short-circuits to
+        /// null while it is set, so a seek back to the start returned nothing.
+        ///
+        /// That made C.rewind a no-op on any stream already read to the end, and
+        /// load_all_fixed_stars always reads sefstars.txt to the end -- so one swe_fixstar2
+        /// call permanently disabled swe_fixstar on the same SwissEph instance. Sidereal modes
+        /// that resolve a star, SE_SIDM_TRUE_CITRA among them, then got ERR and an ayanamsa of
+        /// zero, which silently yields tropical positions rather than an error.
+        /// </remarks>
         public long Seek(long offset, SeekOrigin origin) {
             if (_Stream == null) return -1;
             _Stream.Seek(offset, origin);
+            EOF = false;
             return 0;
         }
 

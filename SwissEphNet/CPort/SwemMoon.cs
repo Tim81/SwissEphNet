@@ -1521,11 +1521,9 @@ namespace SwissEphNet.CPort
             T4 = T2 * T2;
             /* with elements from swi_moshmoon2(), which are fitted to jpl-ephemeris */
             if (J < Sweph.MOSHNDEPH_START || J > Sweph.MOSHNDEPH_END) {
-                if (serr != null) {
-                    s = C.sprintf("jd %f outside mean node range %.2f .. %.2f ",
-                          J, Sweph.MOSHNDEPH_START, Sweph.MOSHNDEPH_END);
-                    serr += s;
-                }
+                s = C.sprintf("jd %f outside mean node range %.2f .. %.2f ",
+                      J, Sweph.MOSHNDEPH_START, Sweph.MOSHNDEPH_END);
+                serr += s;
                 return SwissEph.ERR;
             }
             mean_elements();

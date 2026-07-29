@@ -938,6 +938,9 @@ namespace SwissEphNet.CPort
                 eps = (((1.813e-3 * T - 5.9e-4) * T - 46.84024) * T + 84381.406) * SwissEph.DEGTORAD / 3600;
             } else if (prec_model_short == SwissEph.SEMOD_PREC_IAU_2006 && Math.Abs(T) <= PREC_IAU_2006_CTIES) {
                 eps = (((((-4.34e-8 * T - 5.76e-7) * T + 2.0034e-3) * T - 1.831e-4) * T - 46.836769) * T + 84381.406) * SwissEph.DEGTORAD / 3600.0;
+            } else if (prec_model == SwissEph.SEMOD_PREC_NEWCOMB) {
+                double Tn = (J - 2396758.0) / 36525.0;
+                eps = (0.0017 * Tn * Tn * Tn - 0.0085 * Tn * Tn - 46.837 * Tn + 84451.68) * SwissEph.DEGTORAD / 3600.0;
             } else if (prec_model == SwissEph.SEMOD_PREC_IAU_2006) {
                 eps = (((((-4.34e-8 * T - 5.76e-7) * T + 2.0034e-3) * T - 1.831e-4) * T - 46.836769) * T + 84381.406) * SwissEph.DEGTORAD / 3600.0;
             } else if (prec_model == SwissEph.SEMOD_PREC_BRETAGNON_2003) {
@@ -1049,6 +1052,12 @@ namespace SwissEphNet.CPort
                 Z = ((0.017998 * T + 0.30188) * T + 2306.2181) * T * SwissEph.DEGTORAD / 3600;
                 z = ((0.018203 * T + 1.09468) * T + 2306.2181) * T * SwissEph.DEGTORAD / 3600;
                 TH = ((-0.041833 * T - 0.42665) * T + 2004.3109) * T * SwissEph.DEGTORAD / 3600;
+                /*
+                 * precession relative to ecliptic of start epoch is:
+                 * pn = (5029.0966 + 2.22226*T-0.000042*T*T) * t + (1.11161-0.000127*T) * t * t - 0.000113*t*t*t;
+                 * with: t = (tstart - tdate) / 36525.0
+                 *       T = (tstart - J2000) / 36525.0
+                 */
             }
             else if (prec_method == SwissEph.SEMOD_PREC_IAU_2000)
             {
@@ -1071,6 +1080,83 @@ namespace SwissEphNet.CPort
                 z = ((((((-0.00000000005 * T - 0.0000002486) * T - 0.000028276) * T + 0.01826676) * T + 1.0956768) * T + 2306.076070) * T - 2.72767) * SwissEph.DEGTORAD / 3600;
                 TH = ((((((0.000000000009 * T + 0.00000000036) * T - 0.0000001127) * T - 0.000007291) * T - 0.04182364) * T - 0.4266980) * T + 2004.190936) * T * SwissEph.DEGTORAD / 3600;
             }
+            //#if 0
+            //  } else if (prec_method == SEMOD_PREC_NEWCOMB) {
+            //    double t1 = (J2000 - 2415020.3135) / 36524.2199;
+            //    double T = (J - J2000) / 36524.2199;
+            //    double T2 = T * T; double T3 = T2 * T;
+            //    Z = (2304.250 + 1.396 * t1) * T + 0.302 * T2 + 0.0179 * T3;
+            //    z = (2304.250 + 1.396 * t1) * T + 1.093 * T2 + 0.0192 * T3;
+            //    TH =(2004.682 - 0.853 * t1) * T - 0.426 * T2 - 0.0416 * T3;
+            //    Z *= (DEGTORAD/3600.0);
+            //    z *= (DEGTORAD/3600.0);
+            //    TH *= (DEGTORAD/3600.0);
+            //#endif
+            //#if 0
+            //  // from Newcomb, "Compendium" (1906), pp. 245f., relative to 1850
+            ///* } else if (prec_method == SEMOD_PREC_NEWCOMB) {
+            //    double cties = 36524.2198782; // trop. centuries
+            //    double T = (J - B1850) / cties;
+            //    double T2 = T * T; double T3 = T2 * T;
+            //    double Z1 = 2303.56;
+            //    Z = 2303.56 * T + 0.3023 * T2 + 0.018 * T3;
+            //    z = 2303.55 * T + 1.094 * T2 + 0.018 * T3;
+            //    TH = 2005.11 * T - 0.43 * T2 - 0.041 * T3;
+            //    Z *= (DEGTORAD/3600.0);
+            //    z *= (DEGTORAD/3600.0);
+            //    TH *= (DEGTORAD/3600.0);
+            //*/
+            //#endif
+            //#if 0
+            //  // Newcomb from Expl. supp. 61 pg. 38
+            //  // "Andoyar (Woolard and Clemence) expressions":
+            //  } else if (prec_method == SEMOD_PREC_NEWCOMB) {
+            //    double mills = 365242.198782; // trop. millennia
+            //    double t1 = (J2000 - B1850) / mills;
+            //    double t2 = (J - B1850) / mills;
+            //    double T = t2 - t1;
+            //    double T2 = T * T; double T3 = T2 * T;
+            //    double Z1 = 23035.545 + 139.720 * t1 + 0.060 * t1 * t1;
+            //    Z = Z1 * T + (30.240 - 0.270 * t1) * T2 + 17.995 * T3;
+            //    z = Z1 * T + (109.480 - 0.390 * t1) * T2 + 18.325 * T3;
+            //    TH = (20051.12 - 85.29 * t1 - 0.37 * t1 * t1) * T + (-42.65 - 0.37 * t1) * T2 - 41.80 * T3;
+            //    Z *= (DEGTORAD/3600.0);
+            //    z *= (DEGTORAD/3600.0);
+            //    TH *= (DEGTORAD/3600.0);
+            //#endif
+            else if (prec_method == SwissEph.SEMOD_PREC_NEWCOMB)
+            {
+                // Newcomb according to Kinoshita 1975, very close to ExplSuppl/Andoyer;
+                // one additional digit.
+                double mills = 365242.198782; // trop. millennia
+                double t1 = (Sweph.J2000 - Sweph.B1850) / mills;
+                double t2 = (J - Sweph.B1850) / mills;
+                double Tnewc = t2 - t1;
+                double T2newc = Tnewc * Tnewc; double T3newc = T2newc * Tnewc;
+                double Z1 = 23035.5548 + 139.720 * t1 + 0.069 * t1 * t1;
+                Z = Z1 * Tnewc + (30.242 - 0.269 * t1) * T2newc + 17.996 * T3newc;
+                z = Z1 * Tnewc + (109.478 - 0.387 * t1) * T2newc + 18.324 * T3newc;
+                TH = (20051.125 - 85.294 * t1 - 0.365 * t1 * t1) * Tnewc + (-42.647 - 0.365 * t1) * T2newc - 41.802 * T3newc;
+                Z *= (SwissEph.DEGTORAD / 3600.0);
+                z *= (SwissEph.DEGTORAD / 3600.0);
+                TH *= (SwissEph.DEGTORAD / 3600.0);
+            }
+            //#if 0
+            //  // from Lieske, "Expressions for the Precession Quantities..." (1967), p. 20
+            //  } else if (prec_method == SEMOD_PREC_NEWCOMB) {
+            //    double cties = 36524.2198782; // trop. centuries
+            //    double t1 = (J2000 - J1900) / cties;
+            //    double t2 = (J - J1900) / cties;
+            //    double T = t2 - t1;
+            //    double T2 = T * T; double T3 = T2 * T;
+            //    double Z1 = 2304.253 + 1.3972 * t1 + 0.000125 * t1 * t1;
+            //    Z = Z1 * T + (0.3023 - 0.000211 * t1) * T2 + 0.0180 * T3;
+            //    z = Z1 * T + (1.0949 - 0.00046 * t1) * T2 + 0.0183 * T3;
+            //    TH = (2004.684 - 0.8532 * t1 - 0.000317 * t1 * t1) * T + (-0.4266 - 0.00032 * t1) * T2 - 0.0418 * T3;
+            //    Z *= (DEGTORAD/3600.0);
+            //    z *= (DEGTORAD/3600.0);
+            //    TH *= (DEGTORAD/3600.0);
+            //#endif
             else
             {
                 return 0;
@@ -1372,6 +1458,10 @@ namespace SwissEphNet.CPort
             {
                 return precess_1(R, J, direction, SwissEph.SEMOD_PREC_BRETAGNON_2003);
             }
+            else if (prec_model == SwissEph.SEMOD_PREC_NEWCOMB)
+            {
+                return precess_1(R, J, direction, SwissEph.SEMOD_PREC_NEWCOMB);
+            }
             else if (prec_model == SwissEph.SEMOD_PREC_LASKAR_1986)
             {
                 return precess_2(R, J, iflag, direction, SwissEph.SEMOD_PREC_LASKAR_1986);
@@ -1562,6 +1652,7 @@ namespace SwissEphNet.CPort
          2, 0, 0, 2, 0,     1,  0,    0,  0,
          0, 0, 2, 4, 2,    -1,  0,    0,  0,
          0, 1, 0, 1, 0,     1,  0,    0,  0,
+        //#if 1
         /*#if NUT_CORR_1987  switch is handled in function calc_nutation_iau1980() */
         /* corrections to IAU 1980 nutation series by Herring 1987
          *             in 0.00001" !!!
@@ -1575,6 +1666,7 @@ namespace SwissEphNet.CPort
          102, 1, 0, 0, 0,  61, 0, -24, 0,
          102, 0, 2,-2, 2,-118, 0, -47, 0,
         /*#endif*/
+        //#endif
          Sweph.ENDMARK,
         };
 
@@ -1908,6 +2000,63 @@ namespace SwissEphNet.CPort
             return 0;
         }
 
+        /* an incomplete implementation of nutation Woolard 1953 */
+        int calc_nutation_woolard(double J, CPointer<double> nutlo) {
+            double deps, dpsi;
+            double ls, ld;	/* sun's mean longitude, moon's mean longitude */
+            double ms, md;	/* sun's mean anomaly, moon's mean anomaly */
+            double nm;	/* longitude of moon's ascending node */
+            double t, t2;	/* number of Julian centuries of 36525 days since
+			   * Jan 0.5 1900.
+			   */
+            double tls, tnm, tld;	/* twice above */
+            double a, b;	/* temps */
+            double mjd = J - Sweph.J1900;
+            t = mjd / 36525.0;
+            t2 = t * t;
+            a = 100.0021358 * t;
+            b = 360.0 * (a - (long) a);
+            ls = 279.697 + .000303 * t2 + b;
+            a = 1336.855231 * t;
+            b = 360.0 * (a - (long) a);
+            ld = 270.434 - .001133 * t2 + b;
+            a = 99.99736056000026 * t;
+            b = 360.0 * (a - (long) a);
+            ms = 358.476 - .00015 * t2 + b;
+            a = 13255523.59 * t;
+            b = 360.0 * (a - (long) a);
+            md = 296.105 + .009192 * t2 + b;
+            a = 5.372616667 * t;
+            b = 360.0 * (a - (long) a);
+            nm = 259.183 + .002078 * t2 - b;
+            /* convert to radian forms for use with trig functions.
+             */
+            tls = 2 * ls * SwissEph.DEGTORAD;
+            nm = nm * SwissEph.DEGTORAD;
+            tnm = 2 * nm;
+            ms = ms * SwissEph.DEGTORAD;
+            tld = 2 * ld * SwissEph.DEGTORAD;
+            md = md * SwissEph.DEGTORAD;
+            /* find delta psi and eps, in arcseconds.
+             */
+            dpsi = (-17.2327 - .01737 * t) * Math.Sin(nm) + (-1.2729 - .00013 * t) * Math.Sin(tls)
+                 + .2088 * Math.Sin(tnm) - .2037 * Math.Sin(tld) + (.1261 - .00031 * t) * Math.Sin(ms)
+                 + .0675 * Math.Sin(md) - (.0497 - .00012 * t) * Math.Sin(tls + ms)
+                 - .0342 * Math.Sin(tld - nm) - .0261 * Math.Sin(tld + md) + .0214 * Math.Sin(tls - ms)
+                 - .0149 * Math.Sin(tls - tld + md) + .0124 * Math.Sin(tls - nm) + .0114 * Math.Sin(tld - md);
+            deps = (9.21 + .00091 * t) * Math.Cos(nm) + (.5522 - .00029 * t) * Math.Cos(tls)
+                 - .0904 * Math.Cos(tnm) + .0884 * Math.Cos(tld) + .0216 * Math.Cos(tls + ms)
+                 + .0183 * Math.Cos(tld - nm) + .0113 * Math.Cos(tld + md) - .0093 * Math.Cos(tls - ms)
+                 - .0066 * Math.Cos(tls - nm);
+            /* convert to radians.
+             */
+            dpsi = dpsi / 3600.0 * SwissEph.DEGTORAD;
+            deps = deps / 3600.0 * SwissEph.DEGTORAD;
+            nutlo[1] = deps;
+            nutlo[0] = dpsi;
+            return SwissEph.OK;
+        }
+
         double bessel(CPointer<double> v, int n, double t) {
             int i, iy, k;
             double ans, p, B; double[] d = new double[6];
@@ -2018,6 +2167,10 @@ namespace SwissEphNet.CPort
                     nutlo[0] += -41.7750 / 3600.0 / 1000.0 * SwissEph.DEGTORAD;
                     nutlo[1] += -6.8192 / 3600.0 / 1000.0 * SwissEph.DEGTORAD;
                 }
+            }
+            else if (nut_model == SwissEph.SEMOD_NUT_WOOLARD)
+            {
+                calc_nutation_woolard(J, nutlo);
             }
             return SwissEph.OK;
         }
@@ -2339,7 +2492,7 @@ namespace SwissEphNet.CPort
          * the macros TABEND and TABSIZ !
          */
         const int TABSTART = 1620;
-        const int TABEND = 2027;
+        const int TABEND = 2028;
         const int TABSIZ = (TABEND - TABSTART + 1);
         /* we make the table greater for additional values read from external file */
         const int TABSIZ_SPACE = (TABSIZ + 100);
@@ -2403,9 +2556,11 @@ namespace SwissEphNet.CPort
             63.8285, 64.0908, 64.2998, 64.4734, 64.5736, 64.6876, 64.8452, 65.1464, 65.4574, 65.7768,
             /* 2010.0 - 2018.0 */
             66.0699, 66.3246, 66.6030, 66.9069, 67.2810, 67.6439, 68.1024, 68.5927, 68.9676, 69.2202,
-            /* Extrapolated values: 
-             * 2020 - 2027 */
-            69.4456, 70.00,   70.50,   71.00,   71.50,   72.00,   72.50,   73.00,
+            /* 2020.0 - 2023.0        */
+            69.3612, 69.3593, 69.2945, 69.1833,
+            /* Extrapolated values:
+             * 2024 - 2028 */
+                                                 69.10,   69.00,   68.90,   68.80,   68.80,
 
             // Fill with 100
             0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -2472,7 +2627,7 @@ namespace SwissEphNet.CPort
             Int32 retc;
             int deltat_model = swed.astro_models[SwissEph.SE_MODEL_DELTAT];
             double tid_acc;
-            Int32 denumret = 0;
+            Int32 denum, denumret = 0;
             Int32 epheflag, otherflag;
             //fprintf(stderr, "dmod=%f, %.f\n", (double) deltat_model, (double) SEMOD_DELTAT_DEFAULT);
             if (deltat_model == 0) deltat_model = SwissEph.SEMOD_DELTAT_DEFAULT;
@@ -2486,16 +2641,23 @@ namespace SwissEphNet.CPort
             }
             else
             {
+                denum = swed.jpldenum;
+                if ((epheflag & SwissEph.SEFLG_SWIEPH) != 0) denum = swed.fidat[Sweph.SEI_FILE_MOON].sweph_denum;
                 if (SE.Sweph.swi_init_swed_if_start() == 1 && 0==(epheflag & SwissEph.SEFLG_MOSEPH))
                 {
-                    if (serr != null)
-                        serr = "Please call swe_set_ephe_path() or swe_set_jplfile() before calling swe_deltat_ex()";
+                    /* swephlib.c:2567 guards this with `if (serr != NULL)`, which asks whether
+                     * the caller supplied a buffer. A `ref string` always supplies one, so the
+                     * literal `serr != null` asked instead whether a message was already
+                     * present and dropped this one for every caller starting from null --
+                     * which is what all of them do. Same correction as the two swe_helio_cross
+                     * sites. */
+                    serr = "Please call swe_set_ephe_path() or swe_set_jplfile() before calling swe_deltat_ex()";
                     String sdummy = null;
-                    retc = swi_set_tid_acc(tjd, epheflag, 0, ref  sdummy);  /* _set_ saves tid_acc in swed */
+                    retc = swi_set_tid_acc(tjd, epheflag, denum, ref  sdummy);  /* _set_ saves tid_acc in swed */
                 }
                 else
                 {
-                    retc = swi_set_tid_acc(tjd, epheflag, 0, ref serr);  /* _set_ saves tid_acc in swed */
+                    retc = swi_set_tid_acc(tjd, epheflag, denum, ref serr);  /* _set_ saves tid_acc in swed */
                 }
                 tid_acc = swed.tid_acc;
             }
@@ -3050,9 +3212,9 @@ namespace SwissEphNet.CPort
                     //while (strchr(" \t", *sp) != NULL && *sp != '\0')
                     //    sp++;	/* was *sp++  fixed by Alois 2-jul-2003 */
                     //if (*sp == '#' || *sp == '\n')
-                    if (String.IsNullOrEmpty(sp) || sp.StartsWith("#"))
+                    if (String.IsNullOrEmpty(sp) || sp[0] == '#')
                         continue;
-                    year = int.Parse(s.Substring(0, 4));
+                    year = int.Parse(s.Substring(0, 4), CultureInfo.InvariantCulture);
                     tab_index = year - TABSTART;
                     /* table space is limited. no error msg, if exceeded */
                     if (tab_index >= TABSIZ_SPACE)
@@ -3148,7 +3310,6 @@ namespace SwissEphNet.CPort
 
         Int32 swi_get_tid_acc(double tjd_ut, Int32 iflag, Int32 denum, ref Int32 denumret, out double tid_acc, ref string serr)
         {
-            double[] xx = new double[6]; double tjd_et;
             iflag &= SEFLG_EPHMASK;
             if (swed.is_tid_acc_manual)
             {
@@ -3169,40 +3330,13 @@ namespace SwissEphNet.CPort
                     {
                         denum = swed.jpldenum;
                     }
-                    else
-                    {
-                        tjd_et = tjd_ut; /* + swe_deltat_ex(tjd_ut, 0, NULL); we do not add 
-                                                  delta t, because it would result in a recursive 
-                                                  call of swi_set_tid_acc() */
-                        iflag = SwissEph.SEFLG_JPLEPH | SwissEph.SEFLG_J2000 | SwissEph.SEFLG_TRUEPOS | SwissEph.SEFLG_ICRS | SwissEph.SEFLG_BARYCTR;
-                        iflag = SE.swe_calc(tjd_et, SwissEph.SE_JUPITER, iflag, xx, ref serr);
-                        if (swed.jpl_file_is_open && (iflag & SwissEph.SEFLG_JPLEPH) != 0)
-                        {
-                            denum = swed.jpldenum;
-                        }
-                    }
                 }
                 /* SEFLG_SWIEPH wanted or SEFLG_JPLEPH failed: */
-                if (denum == 0)
+                if ((iflag & SwissEph.SEFLG_SWIEPH) != 0)
                 {
-                    tjd_et = tjd_ut; /* + swe_deltat_ex(tjd_ut, 0, NULL); we do not add 
-                                              delta t, because it would result in a recursive 
-                                              call of swi_set_tid_acc() */
-                    if (swed.fidat[Sweph.SEI_FILE_MOON].fptr == null ||
-                        tjd_et < swed.fidat[Sweph.SEI_FILE_MOON].tfstart + 1 ||
-                    tjd_et > swed.fidat[Sweph.SEI_FILE_MOON].tfend - 1)
-                    {
-                        iflag = SwissEph.SEFLG_SWIEPH | SwissEph.SEFLG_J2000 | SwissEph.SEFLG_TRUEPOS | SwissEph.SEFLG_ICRS;
-                        iflag = SE.swe_calc(tjd_et, SwissEph.SE_MOON, iflag, xx, ref serr);
-                    }
                     if (swed.fidat[Sweph.SEI_FILE_MOON].fptr != null)
                     {
                         denum = swed.fidat[Sweph.SEI_FILE_MOON].sweph_denum;
-                        /* Moon ephemeris file is not available, default to Moshier ephemeris */
-                    }
-                    else
-                    {
-                        denum = 404; /* DE number of Moshier ephemeris */
                     }
                 }
             }
@@ -3217,6 +3351,8 @@ namespace SwissEphNet.CPort
                 case 422: tid_acc = SwissEph.SE_TIDAL_DE422; break;
                 case 430: tid_acc = SwissEph.SE_TIDAL_DE430; break;
                 case 431: tid_acc = SwissEph.SE_TIDAL_DE431; break;
+                case 440: tid_acc = SwissEph.SE_TIDAL_DE441; break;
+                case 441: tid_acc = SwissEph.SE_TIDAL_DE441; break;
                 default: denum = SwissEph.SE_DE_NUMBER; tid_acc = SwissEph.SE_TIDAL_DEFAULT; break;
             }
             denumret = denum;
@@ -3638,12 +3774,16 @@ namespace SwissEphNet.CPort
                 case Sweph.SEI_PHOLUS:
                     fname = "seas";
                     break;
-                default: 	/* asteroid */
-                    sform = "ast%d%sse%05d.%s";
-                    if (ipli - SwissEph.SE_AST_OFFSET > 99999)
-                        sform = "ast%d%ss%06d.%s";
-                    fname = C.sprintf(sform, (ipli - SwissEph.SE_AST_OFFSET) / 1000, SwissEph.DIR_GLUE, ipli - SwissEph.SE_AST_OFFSET, Sweph.SE_FILE_SUFFIX);
-                    return;	/* asteroids: only one file 3000 bc - 3000 ad */
+                default: 	/* asteroid or planetary moon */
+                    if (ipli > SwissEph.SE_PLMOON_OFFSET && ipli < SwissEph.SE_AST_OFFSET) {
+                        fname = C.sprintf("sat%ssepm%d.%s", SwissEph.DIR_GLUE, ipli, Sweph.SE_FILE_SUFFIX);
+                    } else {
+                        sform = "ast%d%sse%05d.%s";
+                        if (ipli - SwissEph.SE_AST_OFFSET > 99999)
+                            sform = "ast%d%ss%06d.%s";
+                        fname = C.sprintf(sform, (ipli - SwissEph.SE_AST_OFFSET) / 1000, SwissEph.DIR_GLUE, ipli - SwissEph.SE_AST_OFFSET, Sweph.SE_FILE_SUFFIX);
+                    }
+                    return;	/* asteroids or planetary moons: only one file 3000 bc - 3000 ad */
                 /* break; */
             }
             /* century of tjd */
@@ -3799,11 +3939,11 @@ namespace SwissEphNet.CPort
         const UInt32 CRC32_POLY = 0x04c11db7;     /* AUTODIN II, Ethernet, & FDDI */
 
         void init_crc32() {
-            Int32 i, j;
-            UInt32 c;
+            Int32 j;
+            UInt32 c, i;
             crc32_table = new UInt32[256];
             for (i = 0; i < 256; ++i) {
-                for (c = (UInt32)(i << 24), j = 8; j > 0; --j)
+                for (c = i << 24, j = 8; j > 0; --j)
                     c = (c & 0x80000000) != 0 ? (c << 1) ^ CRC32_POLY : (c << 1);
                 crc32_table[i] = c;
             }
@@ -3983,11 +4123,11 @@ namespace SwissEphNet.CPort
          * decimal degrees in zodiac to nakshatra position, deg, min, sec *
          * for definition of input see function swe_split_deg().
          * output:
-         * ideg 	degrees, 
-         * imin 	minutes, 
-         * isec 	seconds, 
-         * dsecfr	fraction of seconds 
-         * inak	nakshatra number; 
+         * ideg 	degrees,
+         * imin 	minutes, (zero if rounding to degree)
+         * isec 	seconds, (zero if rounding to minute)
+         * dsecfr	fraction of seconds (zero if rounding used)
+         * inak	nakshatra number;
          ******************************************************************/
         void split_deg_nakshatra(double ddeg, Int32 roundflag, out Int32 ideg, out Int32 imin, out Int32 isec, out double dsecfr, out Int32 inak)
         {
@@ -4031,6 +4171,14 @@ namespace SwissEphNet.CPort
             {
                 dsecfr = ddeg * 3600 - isec;
             }
+            else
+            {
+                dsecfr = 0;
+            }
+            if ((roundflag & SwissEph.SE_SPLIT_DEG_ROUND_DEG) != 0)
+                imin = 0;
+            if ((roundflag & (SwissEph.SE_SPLIT_DEG_ROUND_DEG | SwissEph.SE_SPLIT_DEG_ROUND_MIN)) != 0)
+                isec = 0;
         }  /* end split_deg_nakshtra */
 
         /************************************************************
@@ -4054,13 +4202,13 @@ namespace SwissEphNet.CPort
                                                * e.g. 10.9999999 will be rounded
                                * to 10d59'59" (or 10d59' or 10d) * 
          * output:
-         *  ideg 	degrees, 
-         *  imin 	minutes, 
-         *  isec 	seconds, 
-         *  dsecfr	fraction of seconds 
-         *  isgn	zodiac sign number; 
+         *  ideg 	degrees,
+         *  imin 	minutes, (zero if rounding to degree)
+         *  isec 	seconds, (zero if rounding to minute or degree)
+         *  dsecfr	fraction of seconds (zero if rounding used)
+         *  isgn	zodiac sign number;
          *              or +/- sign
-         *  
+         *
          *********************************************************/
         public void swe_split_deg(double ddeg, Int32 roundflag, out Int32 ideg, out Int32 imin, out Int32 isec, out double dsecfr, out Int32 isgn) {
             double dadd = 0; dsecfr = 0;
@@ -4100,7 +4248,13 @@ namespace SwissEphNet.CPort
             isec = (Int32)(ddeg * 3600);
             if (0 == (roundflag & (SwissEph.SE_SPLIT_DEG_ROUND_DEG | SwissEph.SE_SPLIT_DEG_ROUND_MIN | SwissEph.SE_SPLIT_DEG_ROUND_SEC))) {
                 dsecfr = ddeg * 3600 - isec;
+            } else {
+                dsecfr = 0;
             }
+            if ((roundflag & SwissEph.SE_SPLIT_DEG_ROUND_DEG) != 0)
+                imin = 0;
+            if ((roundflag & (SwissEph.SE_SPLIT_DEG_ROUND_DEG | SwissEph.SE_SPLIT_DEG_ROUND_MIN)) != 0)
+                isec = 0;
         }  /* end split_deg */
 
         public double swi_kepler(double E, double M, double ecce) {
@@ -4208,11 +4362,14 @@ namespace SwissEphNet.CPort
         P7 SEMOD_PREC_BRETAGNON_2003
         P8 SEMOD_PREC_IAU_2006
         P9 SEMOD_PREC_VONDRAK_2011
+        P10 SEMOD_PREC_OWEN_1990
+        P11 SEMOD_PREC_NEWCOMB
 
         N1 SEMOD_NUT_IAU_1980
         N2 SEMOD_NUT_IAU_CORR_1987
         N3 SEMOD_NUT_IAU_2000A
         N4 SEMOD_NUT_IAU_2000B
+        N5 SEMOD_NUT_WOOLARD
 
         B1 SEMOD_BIAS_NONE
         B2 SEMOD_BIAS_IAU2000
@@ -4239,15 +4396,15 @@ namespace SwissEphNet.CPort
             //char s[30], *sp;
             string s;
             SE.Sweph.swi_init_swed_if_start();
-            if (!string.IsNullOrEmpty(samod) && char.IsDigit(samod[0]))
+            if (!string.IsNullOrEmpty(samod) && samod[0] >= '0' && samod[0] <= '9')
             {
                 set_astro_models(samod);
             }
-            else if (string.IsNullOrEmpty(samod) || samod.StartsWith("SE"))
+            else if (string.IsNullOrEmpty(samod) || samod.StartsWith("SE", StringComparison.Ordinal))
             {
                 //strncpy(s, samod, 20);
                 //s[20] = '\0';
-                // swephlib.c:4052: strncpy copies up to 20 bytes and null-pads if
+                // swephlib.c:4199: strncpy copies up to 20 bytes and null-pads if
                 // samod is shorter; Substring(0, 20) instead threw whenever samod
                 // (including "" or null) was under 20 chars, which is always in
                 // practice. Pad to 20 first so the fixed-offset IndexOf/atof calls
@@ -4263,7 +4420,7 @@ namespace SwissEphNet.CPort
                 //    swi_strcpy(sp, sp + 1);
                 sp = s.IndexOf('b', 5);
                 if (sp >= 0) s = s.Remove(sp, 1);
-                // swephlib.c:4058: atof(s + 2) is pointer arithmetic (skip 2 bytes);
+                // swephlib.c:4205: atof(s + 2) is pointer arithmetic (skip 2 bytes);
                 // "s + 2" in C# is string concatenation ("SE2.05.01" + 2 ->
                 // "SE2.05.012"), so C.atof saw the leading 'S' and returned 0,
                 // silently falling through to the current version.
@@ -4366,6 +4523,9 @@ namespace SwissEphNet.CPort
                 case SwissEph.SEMOD_PREC_OWEN_1990:
                     s = "Owen 1990";
                     break;
+                case SwissEph.SEMOD_PREC_NEWCOMB:
+                    s = "Newcomb 1895";
+                    break;
                 case SwissEph.SEMOD_PREC_VONDRAK_2011:
                     s = "Vondrák 2011";
                     break;
@@ -4415,6 +4575,9 @@ namespace SwissEphNet.CPort
                 nutmod = SwissEph.SEMOD_NUT_DEFAULT;
             switch (nutmod)
             {
+                case SwissEph.SEMOD_NUT_WOOLARD:
+                    s = "Woolard 1953";
+                    break;
                 case SwissEph.SEMOD_NUT_IAU_1980:
                     s = "IAU 1980 (Wahr)";
                     break;
@@ -4519,21 +4682,29 @@ namespace SwissEphNet.CPort
                 switch (i)
                 {
                     case SwissEph.SE_MODEL_PREC_LONGTERM:
-                        if (imod == SwissEph.SEMOD_PREC_DEFAULT) imod = 0; break;
+                        if (imod == SwissEph.SEMOD_PREC_DEFAULT) imod = 0;
+                        break;
                     case SwissEph.SE_MODEL_PREC_SHORTTERM:
-                        if (imod == SwissEph.SEMOD_PREC_DEFAULT_SHORT) imod = 0; break;
+                        if (imod == SwissEph.SEMOD_PREC_DEFAULT_SHORT) imod = 0;
+                        break;
                     case SwissEph.SE_MODEL_NUT:
-                        if (imod == SwissEph.SEMOD_NUT_DEFAULT) imod = 0; break;
+                        if (imod == SwissEph.SEMOD_NUT_DEFAULT) imod = 0;
+                        break;
                     case SwissEph.SE_MODEL_SIDT:
-                        if (imod == SwissEph.SEMOD_SIDT_DEFAULT) imod = 0; break;
+                        if (imod == SwissEph.SEMOD_SIDT_DEFAULT) imod = 0;
+                        break;
                     case SwissEph.SE_MODEL_BIAS:
-                        if (imod == SwissEph.SEMOD_BIAS_DEFAULT) imod = 0; break;
+                        if (imod == SwissEph.SEMOD_BIAS_DEFAULT) imod = 0;
+                        break;
                     case SwissEph.SE_MODEL_JPLHOR_MODE:
-                        if (imod == SwissEph.SEMOD_JPLHOR_DEFAULT) imod = 0; break;
+                        if (imod == SwissEph.SEMOD_JPLHOR_DEFAULT) imod = 0;
+                        break;
                     case SwissEph.SE_MODEL_JPLHORA_MODE:
-                        if (imod == SwissEph.SEMOD_JPLHORA_DEFAULT) imod = 0; break;
+                        if (imod == SwissEph.SEMOD_JPLHORA_DEFAULT) imod = 0;
+                        break;
                     case SwissEph.SE_MODEL_DELTAT:
-                        if (imod == SwissEph.SEMOD_DELTAT_DEFAULT) imod = 0; break;
+                        if (imod == SwissEph.SEMOD_DELTAT_DEFAULT) imod = 0;
+                        break;
                 }
                 samod0 += C.sprintf("%d,", imod);
             }

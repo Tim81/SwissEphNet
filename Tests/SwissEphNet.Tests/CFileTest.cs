@@ -601,5 +601,34 @@ namespace SwissEphNet.Tests
 
         }
 
+        // C99 7.19.9.2: "A successful call to the fseek function clears the end-of-file
+        // indicator". EOF used to be sticky here, so a seek back to the start returned
+        // nothing and C.rewind became a no-op on any stream already read to the end.
+        [Fact]
+        public void TestSeekClearsEndOfFile() {
+            using (var stream = BuildStream("alpha\nbeta\ngamma\n"))
+            using (var cfile = new CFile(stream)) {
+                while (cfile.ReadLine() != null) { }
+                Assert.True(cfile.EOF);
+
+                Assert.Equal(0, cfile.Seek(0, SeekOrigin.Begin));
+
+                Assert.False(cfile.EOF);
+                Assert.Equal("alpha", cfile.ReadLine());
+            }
+        }
+
+        [Fact]
+        public void TestRewindAfterReadingToEndRereadsFromStart() {
+            using (var stream = BuildStream("first\nsecond\n"))
+            using (var cfile = new CFile(stream)) {
+                while (cfile.ReadLine() != null) { }
+
+                C.rewind(cfile);
+
+                Assert.Equal("first", cfile.ReadLine());
+            }
+        }
+
     }
 }

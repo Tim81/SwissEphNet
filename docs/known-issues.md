@@ -559,3 +559,115 @@ enough surface area to want under its own review, separate from the oracle
 this branch adds. Fix it (`new double[37]`, matching upstream) as its own
 reviewed PR, then remove the corresponding `known-fail.tsv` rows and drop this
 entry.
+
+## swi_strnlen outlives its deletion in swephlib.c, deliberately
+
+2.10.03 removes `swi_strnlen` from `swephlib.c`, and the swephlib port keeps it
+(`CPort/SwephLib.cs`). That is intentional, not an oversight: `sweph.c` is still
+at 2.08 in this repo and `CPort/Sweph.cs` still calls it. Deleting it with the
+swephlib port would not compile.
+
+It comes out with the `sweph.c` port, along with its last caller. Anyone diffing
+`SwephLib.cs` against 2.10.03 before then will find one function the C no longer
+has, and this is why.
+
+Its body is also not what the C's was -- it returns the whole length rather than
+`min(strlen, n)`, ignoring `n` entirely. That predates the 2.10.03 work and is
+moot once the function goes, so it is recorded rather than fixed.
+
+## calc_nutation_woolard: C# long is 64-bit, MSVC's is 32-bit
+
+`calc_nutation_woolard` casts to `long` when reducing an angle. In C# that is
+`Int64`; under MSVC, which is the compiler behind the reference values this
+repo's gates are locked to, `long` is 32 bits. The two diverge once the value
+exceeds 2^31, i.e. `|J - J1900| > 5.92e6` days.
+
+DE431 reaches about 5.58e6 days, so the divergence is outside the range any
+ephemeris file can address and is unreachable in practice. The port matches
+gcc and clang, where `long` is 64-bit, and differs from the Windows C only
+beyond that horizon.
+
+Recorded rather than changed: forcing 32-bit truncation would make the C#
+match one platform's C and stop matching the other two, for inputs no caller
+can supply.
+
+## swe_nod_aps after swe_close: free_planets replaces objects where the C memsets
+
+The nine `7.2.x` conformance rows (`swe_nod_aps_ut`, ~1.9e-6 degrees off) are not an
+ephemeris-vintage issue and not a 2.08/2.10 mismatch -- `swe_nod_aps` is byte-identical
+between the two C versions. They are a port defect, diagnosed as follows.
+
+**Reproduction.** With a fixed `tjd_et`, so Delta T is out of the picture:
+
+| sequence | port | libswe 2.10.03 |
+|---|---|---|
+| `set_ephe_path` | 76.65098418723707 | 76.65098420609208 |
+| `set_ephe_path`, `swe_close` | **76.65098234128769** | 76.65098420609208 |
+| `swe_close`, then any `swe_calc` | 76.65098418723707 | 76.65098420609208 |
+
+Any `swe_calc` before `swe_nod_aps` restores it -- the Sun works as well as the Moon, so
+2.08's deleted lunar `swi_get_tid_acc` probe was incidental, not special.
+
+**Mechanism.** `swe_set_ephe_path` sets `swed.last_epheflag = 2` (`sweph.c:1346`) and
+`swe_close` clears it. On the first `swe_calc` after a close, `last_epheflag != epheflag`
+(`sweph.c:386`), so `free_planets()` runs -- and it runs *inside* `swe_nod_aps`, partway
+through its own computation. `swe_nod_aps` already knows `swe_calc` clobbers the save area
+(there is a comment and a restoring `swe_calc` for exactly that), but the C survives it and
+the port does not.
+
+The difference is aliasing. C's `free_planets` does
+`memset(&swed.pldat[i], 0, sizeof(struct plan_data))`, zeroing **in place**: any pointer
+already taken into that array still refers to the same, now-zeroed, storage. The port does
+`swed.pldat[i] = new plan_data()`, **replacing** the object, so a reference captured earlier
+keeps pointing at the old one with stale contents. `swe_calc` has the same shape at
+`Sweph.cs`'s `swed.fidat[i] = new file_data()` against the C's `memset` at `sweph.c:397`.
+
+Confirmed: replacing those three assignments in `free_planets` with an in-place field zero
+makes the closed case return 76.65098418723707 -- exactly the open case, and matching libswe
+to the port's usual 1.9e-8.
+
+**Why the blunt version regressed eleven rows.** It was not over-clearing anything. A
+*second* defect sat in `swe_nod_aps` and the two had been cancelling each other out.
+`swecl.c:5414` is `if (iflag & (SEFLG_HELCTR | SEFLG_BARYCTR))`, and the port wrote
+`!= Sweph.B1950` -- comparing an int mask against `2433282.42345905`, so always true. The
+geocentric arms below it were unreachable and `xobs` stayed zero, so the `xear` added at
+`swecl.c:5470` was never subtracted back out. That came out right only because `xear`
+aliased an orphaned, all-zero array left by the object replacement. Fix `free_planets`
+alone and the cancellation breaks: geocentric Moon nodes come out barycentric, 344.63
+instead of 189.21. The identical block 100 lines further down was always correct as
+`!= 0`, which is the intent proof.
+
+**Both are now fixed.** Together they make 43 conformance rows pass with zero
+regressions, and move the characterization baseline in `nodaps` only (156 of 360 rows),
+regenerated under `-ExpectedScope 'NA|**','NAUT|**'` with a deviation note. Neither came
+from the swephlib port -- both are present verbatim in `main` -- but they are fixed here
+because the port is what made them reachable.
+
+## Inverted `serr != NULL` guards: swept
+
+C writes `if (serr != NULL) strcpy(serr, "...")`, asking whether the caller supplied a
+buffer. A C# `ref string` always supplies one, so the literal `if (serr != null)` asks
+instead whether a message is *already present* -- false for every caller that starts from
+`null`, which is all of them -- and the message is silently dropped.
+
+Corrected: two `swe_helio_cross` sites, `calc_deltat`, `swi_get_ayanamsa_ex`,
+`swe_fixstar`/`swe_fixstar_ut`, the star-file-damaged message, `swe_sol_eclipse_how`'s
+out-of-range message, `swi_mean_node`'s out-of-range append, and all thirteen
+Moshier-fallback sites.
+
+The Moshier family was the awkward one. `sweph.c` uses a single form at every site --
+`if (serr != NULL && strlen(serr) + 30 < AS_MAXCH) strcat(serr, "...")` -- and the port
+had four different renderings, none equivalent to it. Two **assigned** where the C appends,
+so the "using Moshier eph." note overwrote the diagnostic explaining why the fallback
+happened; a missing `seplm24.se1` reported only the note, not the missing file. One carried
+the inverted guard and emitted nothing. None reproduced the buffer-space test, which is now
+written `(serr == null ? 0 : serr.Length) + 30 < 256` -- a C# string has no such limit, but
+keeping the test preserves the C's behaviour in the one case where it decides anything.
+
+## The 7.2.x diagnosis in regenerations.log is superseded
+
+`Tests/conformance/regenerations.log` attributes the nine `7.2.x` rows to a stale
+`swed.oec`/`swed.nut` read by `swe_nod_aps`'s mean-node path. That was wrong: both were
+measured identical at the point of use in the working and failing cases. The correct
+diagnosis is the `free_planets` object-replacement entry above. The log is append-only, so
+the correction is recorded here rather than by editing it.

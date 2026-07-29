@@ -951,8 +951,7 @@ namespace SwissEphNet.CPort
                 attr[i] = 0;
             if (geopos[2] < Sweph.SEI_ECL_GEOALT_MIN || geopos[2] > Sweph.SEI_ECL_GEOALT_MAX)
             {
-                if (serr != null)
-                    serr = C.sprintf("location for eclipses must be between %.0f and %.0f m above sea", Sweph.SEI_ECL_GEOALT_MIN, Sweph.SEI_ECL_GEOALT_MAX);
+                serr = C.sprintf("location for eclipses must be between %.0f and %.0f m above sea", Sweph.SEI_ECL_GEOALT_MIN, Sweph.SEI_ECL_GEOALT_MAX);
                 return Sweph.ERR;
             }
             ifl &= SEFLG_EPHMASK;
@@ -5408,7 +5407,7 @@ namespace SwissEphNet.CPort
                 for (i = 0; i <= 5; i++)
                     xobs[i] = 0;
             }
-            if ((iflag & (SwissEph.SEFLG_HELCTR | SwissEph.SEFLG_BARYCTR)) != Sweph.B1950) {
+            if ((iflag & (SwissEph.SEFLG_HELCTR | SwissEph.SEFLG_BARYCTR)) != 0) {
                 if ((iflag & SwissEph.SEFLG_HELCTR) != 0 && 0 == (iflag & SwissEph.SEFLG_MOSEPH))
                     for (i = 0; i <= 5; i++)
                         xobs[i] = xsun[i];

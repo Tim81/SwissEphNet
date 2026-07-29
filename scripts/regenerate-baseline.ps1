@@ -1,4 +1,4 @@
-#Requires -Version 7
+﻿#Requires -Version 7
 <#
 .SYNOPSIS
     Regenerates Tests/baseline/ from BaselineGen, in reference mode (default) or
@@ -382,8 +382,13 @@ try {
         $refVersionMatch = [regex]::Match($existingContent, '(?m)^SwissEphAssemblyVersion=(.+)$')
         $refVersion = if ($refVersionMatch.Success) { $refVersionMatch.Groups[1].Value.Trim() } else { '(unknown)' }
 
+        # HEAD here is the commit this regeneration ran *against*, which is necessarily
+        # the parent of the one that will carry the regenerated files -- they cannot be
+        # committed before they are produced. Recorded bare, it read as "the commit that
+        # made this change" and was corrected by hand twice (notes 8 and 9), so label it
+        # for what it is instead.
         $commit = (& git -C $repoRoot rev-parse --short HEAD 2>$null)
-        if (-not $commit) { $commit = '(uncommitted)' } else { $commit = $commit.Trim() }
+        if (-not $commit) { $commit = '(uncommitted)' } else { $commit = "after $($commit.Trim())" }
         $date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
 
         $scopeDetailLines = @("   Scope check ($($ExpectedScope -join ', ')): $scopeSummaryText")

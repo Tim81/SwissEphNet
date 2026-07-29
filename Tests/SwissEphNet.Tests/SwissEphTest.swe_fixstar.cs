@@ -113,6 +113,44 @@ namespace SwissEphNet.Tests
             }
         }
 
+        // swe_fixstar2 reads sefstars.txt to the end, which used to leave CFile's EOF flag
+        // set for good: Seek did not clear it, so C.rewind became a no-op and every later
+        // lookup on the same instance failed with "star ... not found". The real C clears
+        // the end-of-file indicator on fseek/rewind (C99 7.19.9.2), so it has no such
+        // limitation. This is the user-visible half of the CFile.Seek fix.
+        [Fact]
+        public void Test_swe_fixstar_AfterFixstar2ReadsWholeFile()
+        {
+            using (var swe = new SwissEph())
+            {
+                swe.OnLoadFile += (s, e) =>
+                {
+                    if (string.Equals(e.FileName, "[ephe]/sefstars.txt", StringComparison.OrdinalIgnoreCase))
+                    {
+                        e.File = ResourceFileHelpers.OpenResourceFile("sefstars.txt");
+                    }
+                };
+
+                // Mirrors the sequence the conformance corpus runs: a path is established
+                // first, so swed.fidat is initialized before either lookup.
+                swe.swe_set_ephe_path("[ephe]");
+
+                double tjd = swe.swe_julday(1974, 8, 16, 0.5, SwissEph.SE_GREG_CAL);
+                double[] xx = new double[6]; String serr = null;
+
+                // Loads the whole catalogue, reaching end of file.
+                String probe = "aldebaran";
+                swe.swe_fixstar2(ref probe, tjd, SwissEph.SEFLG_MOSEPH, xx, ref serr);
+
+                String name = "aldebaran";
+                int iflag = swe.swe_fixstar(ref name, tjd, SwissEph.SEFLG_MOSEPH, xx, ref serr);
+
+                Assert.NotEqual(SwissEph.ERR, iflag);
+                Assert.Null(serr);
+                Assert.Equal("Aldebaran,alTau", name);
+            }
+        }
+
     }
 
 }

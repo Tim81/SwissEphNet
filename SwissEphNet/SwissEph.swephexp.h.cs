@@ -144,6 +144,7 @@ namespace SwissEphNet
 
         public const int SE_NPLANETS = 23;
 
+        public const int SE_PLMOON_OFFSET = 9000;
         public const int SE_AST_OFFSET = 10000;
         public const int SE_VARUNA = (SE_AST_OFFSET + 20000);
 
@@ -482,7 +483,8 @@ namespace SwissEphNet
         public const double SE_TIDAL_DE421 = (-25.85);   /* JPL Interoffice Memorandum 14-mar-2008 on DE421 Lunar Orbit */
         public const double SE_TIDAL_DE422 = (-25.85);   /* JPL Interoffice Memorandum 14-mar-2008 on DE421 (sic!) Lunar Orbit */
         public const double SE_TIDAL_DE430 = (-25.82);   /* JPL Interoffice Memorandum 9-jul-2013 on DE430 Lunar Orbit */
-        public const double SE_TIDAL_DE431 = (-25.80);   /* IPN Progress Report 42-196 â€¢ February 15, 2014, p. 15; was (-25.82) in V. 2.00.00 */
+        public const double SE_TIDAL_DE431 = (-25.80);   /* IPN Progress Report 42-196 • February 15, 2014, p. 15; was (-25.82) in V. 2.00.00 */
+        public const double SE_TIDAL_DE441 = (-25.936);   /* unpublished value, from email by Jon Giorgini to DK on 11 Apr 2021 */
         public const double SE_TIDAL_26 = (-26.0);
         public const double SE_TIDAL_STEPHENSON_2016 = (-25.85);
         public const double SE_TIDAL_DEFAULT = SE_TIDAL_DE431;
@@ -505,7 +507,7 @@ namespace SwissEphNet
         public const int NSE_MODELS = 8;
 
         /* precession models */
-        public const int SEMOD_NPREC = 10;
+        public const int SEMOD_NPREC = 11;
         public const int SEMOD_PREC_IAU_1976 = 1;
         public const int SEMOD_PREC_LASKAR_1986 = 2;
         public const int SEMOD_PREC_WILL_EPS_LASK = 3;
@@ -516,20 +518,22 @@ namespace SwissEphNet
         public const int SEMOD_PREC_IAU_2006 = 8;
         public const int SEMOD_PREC_VONDRAK_2011 = 9;
         public const int SEMOD_PREC_OWEN_1990 = 10;
+        public const int SEMOD_PREC_NEWCOMB = 11;
         public const int SEMOD_PREC_DEFAULT = SEMOD_PREC_VONDRAK_2011;
-        /* SE versions before 1.70 used IAU 1976 precession for 
-         * a limited time range of 2 centuries in combination with 
+        /* SE versions before 1.70 used IAU 1976 precession for
+         * a limited time range of 2 centuries in combination with
          * the long-term precession Simon 1994.
          */
         public const int SEMOD_PREC_DEFAULT_SHORT = SEMOD_PREC_VONDRAK_2011;
 
         /* nutation models */
-        public const int SEMOD_NNUT = 4;
+        public const int SEMOD_NNUT = 5;
         public const int SEMOD_NUT_IAU_1980 = 1;
-        public const int SEMOD_NUT_IAU_CORR_1987 = 2; /* Herring's (1987) corrections to IAU 1980 
+        public const int SEMOD_NUT_IAU_CORR_1987 = 2; /* Herring's (1987) corrections to IAU 1980
                             * nutation series. AA (1996) neglects them.*/
         public const int SEMOD_NUT_IAU_2000A = 3; /* very time consuming ! */
         public const int SEMOD_NUT_IAU_2000B = 4; /* fast, but precision of milli-arcsec */
+        public const int SEMOD_NUT_WOOLARD = 5;
         public const int SEMOD_NUT_DEFAULT = SEMOD_NUT_IAU_2000B;  /* fast, but precision of milli-arcsec */
 
         /* methods for sidereal time */

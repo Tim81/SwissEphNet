@@ -476,7 +476,7 @@ namespace SwissEphNet.CPort
                             //fclose(swed.fidat[i].fptr);
                             swed.fidat[i].fptr.Dispose();
                         //memset((void *) &swed.fidat[i], 0, sizeof(struct file_data));
-                        swed.fidat[i] = new file_data();
+                        swed.fidat[i].Clear();
                     }
                     swed.last_epheflag = epheflag;
                 }
@@ -768,7 +768,8 @@ namespace SwissEphNet.CPort
                             if (tjd > MOSHLUEPH_START && tjd < MOSHLUEPH_END)
                             {
                                 iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_MOSEPH;
-                                serr += " \nusing Moshier Eph; ";
+                                if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                    serr += " \nusing Moshier Eph; ";
                                 goto moshier_moon;
                             }
                             else
@@ -797,7 +798,8 @@ namespace SwissEphNet.CPort
                             if (tjd > MOSHLUEPH_START && tjd < MOSHLUEPH_END)
                             {
                                 iflag = (iflag & ~SwissEph.SEFLG_SWIEPH) | SwissEph.SEFLG_MOSEPH;
-                                serr = " \nusing Moshier eph.; ";
+                                if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                    serr += " \nusing Moshier eph.; ";
                                 goto moshier_moon;
                             }
                             else
@@ -1228,7 +1230,8 @@ namespace SwissEphNet.CPort
                     {
                         iflag = (iflag & ~SwissEph.SEFLG_EPHMASK) | SwissEph.SEFLG_MOSEPH;
                         epheflag = SwissEph.SEFLG_MOSEPH;
-                        serr += "\nusing Moshier eph.; ";
+                        if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                            serr += "\nusing Moshier eph.; ";
                         goto do_asteroid;
                     }
                     else
@@ -1283,7 +1286,8 @@ namespace SwissEphNet.CPort
                     {
                         iflag = (iflag & ~SwissEph.SEFLG_EPHMASK) | SwissEph.SEFLG_MOSEPH;
                         epheflag = SwissEph.SEFLG_MOSEPH;
-                        serr += "\nusing Moshier eph.; ";
+                        if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                            serr += "\nusing Moshier eph.; ";
                         goto do_fict_plan;
                     }
                     else
@@ -1324,17 +1328,17 @@ namespace SwissEphNet.CPort
                 {
                     swed.pldat[i].refep = null;
                 }
-                swed.pldat[i] = new plan_data();
+                swed.pldat[i].Clear();
             }
             for (i = 0; i <= SwissEph.SE_NPLANETS; i++) /* "<=" is correct! see decl. */
-                swed.savedat[i] = new save_positions();
+                swed.savedat[i].Clear();
             /* clear node data space */
             for (i = 0; i < Sweph.SEI_NNODE_ETC; i++)
             {
                 //#if 0
                 //    memset((void *) &swed.nddat[i], 0, sizeof(struct node_data));
                 //#else
-                swed.nddat[i] = new plan_data();
+                swed.nddat[i].Clear();
                 //#endif
             }
         }
@@ -1367,7 +1371,7 @@ namespace SwissEphNet.CPort
             {
                 if (swed.fidat[i].fptr != null)
                     swed.fidat[i].fptr.Dispose();
-                swed.fidat[i] = new file_data();
+                swed.fidat[i].Clear();
             }
             free_planets();
             swed.oec = new epsilon();
@@ -1402,12 +1406,16 @@ namespace SwissEphNet.CPort
             /* close SWISSEPH files */
             for (i = 0; i < SEI_NEPHFILES; i++)
             {
-                if (swed.fidat[i]?.fptr != null)
+                if (swed.fidat[i].fptr != null)
                     swed.fidat[i].fptr.Dispose();
-                swed.fidat[i] = new file_data();
+                swed.fidat[i].Clear();
             }
             free_planets();
             swed.Reset(false);
+            /* sweph.c:1248 memsets astro_models here. Reset(false) does not touch it --
+             * it is inside the `full` arm -- so a model set before swe_close survived it,
+             * where the C clears it. swi_close_keep_topo_etc already clears it. */
+            Array.Clear(swed.astro_models, 0, swed.astro_models.Length);
             /* close JPL file */
             SE.SweJPL.swi_close_jpl_file();
             swed.jpl_file_is_open = false;
@@ -1767,7 +1775,8 @@ namespace SwissEphNet.CPort
                         if (tjd > MOSHPLEPH_START && tjd < MOSHPLEPH_END)
                         {
                             iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_MOSEPH;
-                            serr += " \nusing Moshier Eph; ";
+                            if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                serr += " \nusing Moshier Eph; ";
                             goto moshier_planet;
                         }
                         else
@@ -1792,7 +1801,8 @@ namespace SwissEphNet.CPort
                         if (tjd > MOSHPLEPH_START && tjd < MOSHPLEPH_END)
                         {
                             iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_MOSEPH;
-                            serr += " \nusing Moshier Eph; ";
+                            if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                serr += " \nusing Moshier Eph; ";
                             goto moshier_planet;
                         }
                         else
@@ -1811,7 +1821,8 @@ namespace SwissEphNet.CPort
                         if (tjd > MOSHPLEPH_START && tjd < MOSHPLEPH_END)
                         {
                             iflag = (iflag & ~SwissEph.SEFLG_SWIEPH) | SwissEph.SEFLG_MOSEPH;
-                            serr += " \nusing Moshier eph.; ";
+                            if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                serr += " \nusing Moshier eph.; ";
                             goto moshier_planet;
                         }
                         else
@@ -1830,7 +1841,8 @@ namespace SwissEphNet.CPort
                         if (tjd > MOSHPLEPH_START && tjd < MOSHPLEPH_END)
                         {
                             iflag = (iflag & ~SwissEph.SEFLG_SWIEPH) | SwissEph.SEFLG_MOSEPH;
-                            serr += " \nusing Moshier eph.; ";
+                            if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                serr += " \nusing Moshier eph.; ";
                             goto moshier_planet;
                         }
                         else
@@ -1916,7 +1928,7 @@ namespace SwissEphNet.CPort
                         {
                             iflag = (iflag & ~SwissEph.SEFLG_SWIEPH) | SwissEph.SEFLG_MOSEPH;
                             //if (serr != NULL && strlen(serr) + 30 < AS_MAXCH)
-                            if (serr != null)
+                            if ((serr == null ? 0 : serr.Length) + 30 < 256)
                                 serr += " \nusing Moshier eph.; ";
                             goto moshier_planet;
                         }
@@ -2108,7 +2120,8 @@ namespace SwissEphNet.CPort
                     /* if moon file doesn't exist, take moshier moon */
                     if (swed.fidat[SEI_FILE_MOON].fptr == null)
                     {
-                        serr = " \nusing Moshier eph. for moon; ";
+                        if ((serr == null ? 0 : serr.Length) + 35 < 256)
+                            serr += " \nusing Moshier eph. for moon; ";
                         retc = SE.SwemMoon.swi_moshmoon(tjd, do_save, xpm, ref serr);
                         if (retc != OK)
                             return (retc);
@@ -3293,8 +3306,7 @@ namespace SwissEphNet.CPort
                 || sip.sid_mode == SwissEph.SE_SIDM_GALCENT_MULA_WILHELM
                 || sip.sid_mode == SwissEph.SE_SIDM_GALEQU_IAU1958
                 || sip.sid_mode == SwissEph.SE_SIDM_GALEQU_TRUE
-                || sip.sid_mode == SwissEph.SE_SIDM_GALEQU_MULA)
-                && serr != null)
+                || sip.sid_mode == SwissEph.SE_SIDM_GALEQU_MULA))
             {
                 serr = "Please call swe_set_ephe_path() or swe_set_jplfile() before calling swe_get_ayanamsa_ex()";
             }
@@ -5750,7 +5762,8 @@ namespace SwissEphNet.CPort
                                 iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_MOSEPH;
                                 epheflag = SwissEph.SEFLG_MOSEPH;
                                 //if (serr != NULL && strlen(serr) + 30 < AS_MAXCH)
-                                serr += " \nusing Moshier Eph; ";
+                                if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                    serr += " \nusing Moshier Eph; ";
                                 break;
                             }
                             else
@@ -5791,7 +5804,8 @@ namespace SwissEphNet.CPort
                                 iflag = (iflag & ~SwissEph.SEFLG_SWIEPH) | SwissEph.SEFLG_MOSEPH;
                                 epheflag = SwissEph.SEFLG_MOSEPH;
                                 //if (serr != NULL && strlen(serr) + 30 < AS_MAXCH)
-                                serr += " \nusing Moshier eph.; ";
+                                if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                    serr += " \nusing Moshier eph.; ";
                                 break;
                             }
                             else
@@ -7054,7 +7068,7 @@ namespace SwissEphNet.CPort
                         //fclose(swed.fidat[i].fptr);
                         swed.fidat[i].fptr.Dispose();
                     //memset((void*)&swed.fidat[i], 0, sizeof(struct file_data));
-                    swed.fidat[i] = null;
+                    swed.fidat[i].Clear();
                 }
                 swed.last_epheflag = epheflag;
             }
@@ -8251,10 +8265,7 @@ namespace SwissEphNet.CPort
                 // invalid line without comma
                 if ((sp = strchr(s, ',')) == -1)
                 {
-                    if (serr != null)
-                    {
-                        sprintf(serr, "star file %s damaged at line %d", SwissEph.SE_STARFILE, fline);
-                    }
+                    sprintf(serr, "star file %s damaged at line %d", SwissEph.SE_STARFILE, fline);
                     return ERR;
                 }
                 // search string is Bayer or Flamsteed designation
@@ -8367,7 +8378,7 @@ namespace SwissEphNet.CPort
             //  *serr = '\0';
             iflag = plaus_iflag(iflag, -1, tjd, out serr);
             epheflag = iflag & SwissEph.SEFLG_EPHMASK;
-            if (swi_init_swed_if_start() == 1 && (epheflag & SwissEph.SEFLG_MOSEPH) == 0 && serr != null)
+            if (swi_init_swed_if_start() == 1 && (epheflag & SwissEph.SEFLG_MOSEPH) == 0)
             {
                 strcpy(out serr, "Please call swe_set_ephe_path() or swe_set_jplfile() before calling swe_fixstar() or swe_fixstar_ut()");
             }
@@ -8385,7 +8396,7 @@ namespace SwissEphNet.CPort
                     if (swed.fidat[i].fptr != null)
                         fclose(swed.fidat[i].fptr);
                     //memset((void *) &swed.fidat[i], 0, sizeof(struct file_data));
-                    swed.fidat[i].fptr = null;
+                    swed.fidat[i].Clear();
                 }
                 swed.last_epheflag = epheflag;
             }
@@ -9236,7 +9247,7 @@ namespace SwissEphNet.CPort
             {
                 string snam = null;
                 swe_get_planet_name(ipl, ref snam);
-                // sweph.c:8545 guards this with `if (serr != NULL)`, which asks whether the
+                // sweph.c:8591 guards this with `if (serr != NULL)`, which asks whether the
                 // caller supplied a buffer. `ref string serr` is always a valid destination,
                 // so the same guard here would instead ask whether a message is already
                 // present -- false on a clean call, silently dropping the diagnostic exactly
