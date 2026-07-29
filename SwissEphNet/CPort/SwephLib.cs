@@ -4396,11 +4396,11 @@ namespace SwissEphNet.CPort
             //char s[30], *sp;
             string s;
             SE.Sweph.swi_init_swed_if_start();
-            if (!string.IsNullOrEmpty(samod) && char.IsDigit(samod[0]))
+            if (!string.IsNullOrEmpty(samod) && samod[0] >= '0' && samod[0] <= '9')
             {
                 set_astro_models(samod);
             }
-            else if (string.IsNullOrEmpty(samod) || samod.StartsWith("SE"))
+            else if (string.IsNullOrEmpty(samod) || samod.StartsWith("SE", StringComparison.Ordinal))
             {
                 //strncpy(s, samod, 20);
                 //s[20] = '\0';
