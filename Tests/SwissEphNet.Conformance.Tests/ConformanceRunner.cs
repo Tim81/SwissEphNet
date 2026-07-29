@@ -52,6 +52,17 @@ public static class ConformanceRunner
 
         foreach (var suite in doc.TestSuites)
         {
+            // SUITE SETUP: every setest suite file except suite_03_misc.c issues
+            // swe_set_ephe_path(NULL) at suite scope. That call is not a setter --
+            // sweph.c:8843-8850 closes all open files and then re-pins tidal acceleration
+            // from the lunar file's DE number. Skipping it let tid_acc be decided by
+            // whichever iteration first opened the Moon, so Delta T, and everything
+            // derived from it, depended on iteration order rather than on the inputs.
+            if (suite.Id != 3)
+            {
+                EphemerisFileResolver.ResetEphePath(swe);
+            }
+
             foreach (var testCase in suite.TestCases)
             {
                 var precision = precisionTable.TryGetValue((suite.Id, testCase.Id), out var p)
@@ -60,6 +71,17 @@ public static class ConformanceRunner
 
                 foreach (var iteration in testCase.Iterations)
                 {
+                    // Some testcases repeat the call in their own body. TESTCASE(n,...)
+                    // expands to a function run once per iteration (testsuite_facade.h:9),
+                    // so those are per-iteration resets, not per-testcase ones:
+                    // suite_01_calc.c:31,40,50 (testcases 2,3,4) and
+                    // suite_02_fixstar.c:50,62,76,89 (testcases 4,5,6,7).
+                    if ((suite.Id == 1 && testCase.Id is 2 or 3 or 4) ||
+                        (suite.Id == 2 && testCase.Id is 4 or 5 or 6 or 7))
+                    {
+                        EphemerisFileResolver.ResetEphePath(swe);
+                    }
+
                     var key = new IterationKey(suite.Id, testCase.Id, iteration.Id);
                     DispatchOutcome outcome;
                     try

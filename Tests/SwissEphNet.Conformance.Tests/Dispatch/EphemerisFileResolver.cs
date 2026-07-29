@@ -23,14 +23,20 @@ public static class EphemerisFileResolver
     public static readonly bool IncludeMoons =
         Environment.GetEnvironmentVariable("SWISSEPH_CONFORMANCE_INCLUDE_MOONS") == "1";
 
+    /// <summary>
+    /// Wires the file handler and establishes the ephemeris path, in that order.
+    /// </summary>
+    /// <remarks>
+    /// The order matters and used to be the other way round. swe_set_ephe_path is not a
+    /// setter: sweph.c:8843-8850 closes every open file, then eagerly calls
+    /// swe_calc(J2000, SE_MOON, SEFLG_SWIEPH|...) and, if the lunar file opened, pins
+    /// tidal acceleration from that file's DE number via swi_set_tid_acc. With the handler
+    /// attached afterwards, that eager open had no way to reach a file, fptr stayed null,
+    /// and tid_acc was never pinned -- so it was instead resolved lazily by whichever
+    /// iteration first happened to open the Moon, making Delta T depend on iteration order.
+    /// </remarks>
     public static void Attach(SwissEph swe)
     {
-        swe.swe_set_ephe_path(RepoLocator.EpheDir);
-        if (!string.IsNullOrEmpty(JplFilePath))
-        {
-            swe.swe_set_jpl_file(Path.GetFileName(JplFilePath));
-        }
-
         swe.OnLoadFile += (_, e) =>
         {
             var candidate = e.FileName;
@@ -41,6 +47,27 @@ public static class EphemerisFileResolver
 
             e.File = File.Exists(candidate) ? File.OpenRead(candidate) : null;
         };
+
+        if (!string.IsNullOrEmpty(JplFilePath))
+        {
+            swe.swe_set_jpl_file(Path.GetFileName(JplFilePath));
+        }
+
+        ResetEphePath(swe);
+    }
+
+    /// <summary>
+    /// The equivalent of setest's suite-scope swe_set_ephe_path(NULL), which every suite
+    /// file issues (suite_01_calc.c does it once per testcase, suite_04 through suite_10
+    /// once per suite; suite_03_misc.c never does). Passing the resolved directory rather
+    /// than null is deliberate: null resolves to the compile-time SE_EPHE_PATH, which is
+    /// where Astrodienst's own full ephemeris lived when t.exp was generated and is not a
+    /// meaningful location here. What has to match is the reset -- closing every open file
+    /// and re-pinning tid_acc from the lunar file -- not the string.
+    /// </summary>
+    public static void ResetEphePath(SwissEph swe)
+    {
+        swe.swe_set_ephe_path(RepoLocator.EpheDir);
     }
 
     /// <summary>SEFLG_JPLEPH set and we have nowhere to get a multi-hundred-MB DE file from.</summary>
