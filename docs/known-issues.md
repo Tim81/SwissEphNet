@@ -559,3 +559,34 @@ enough surface area to want under its own review, separate from the oracle
 this branch adds. Fix it (`new double[37]`, matching upstream) as its own
 reviewed PR, then remove the corresponding `known-fail.tsv` rows and drop this
 entry.
+
+## swi_strnlen outlives its deletion in swephlib.c, deliberately
+
+2.10.03 removes `swi_strnlen` from `swephlib.c`, and the swephlib port keeps it
+(`CPort/SwephLib.cs`). That is intentional, not an oversight: `sweph.c` is still
+at 2.08 in this repo and `CPort/Sweph.cs` still calls it. Deleting it with the
+swephlib port would not compile.
+
+It comes out with the `sweph.c` port, along with its last caller. Anyone diffing
+`SwephLib.cs` against 2.10.03 before then will find one function the C no longer
+has, and this is why.
+
+Its body is also not what the C's was -- it returns the whole length rather than
+`min(strlen, n)`, ignoring `n` entirely. That predates the 2.10.03 work and is
+moot once the function goes, so it is recorded rather than fixed.
+
+## calc_nutation_woolard: C# long is 64-bit, MSVC's is 32-bit
+
+`calc_nutation_woolard` casts to `long` when reducing an angle. In C# that is
+`Int64`; under MSVC, which is the compiler behind the reference values this
+repo's gates are locked to, `long` is 32 bits. The two diverge once the value
+exceeds 2^31, i.e. `|J - J1900| > 5.92e6` days.
+
+DE431 reaches about 5.58e6 days, so the divergence is outside the range any
+ephemeris file can address and is unreachable in practice. The port matches
+gcc and clang, where `long` is 64-bit, and differs from the Windows C only
+beyond that horizon.
+
+Recorded rather than changed: forcing 32-bit truncation would make the C#
+match one platform's C and stop matching the other two, for inputs no caller
+can supply.
