@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using SwissEphNet;
 
@@ -28,7 +28,7 @@ public static class EphemerisFileResolver
     /// </summary>
     /// <remarks>
     /// The order used to be the other way round. swe_set_ephe_path is not a setter:
-    /// sweph.c:1315-1352 closes every open file (swi_close_keep_topo_etc, :1323), then
+    /// sweph.c:1315-1350 closes every open file (swi_close_keep_topo_etc, :1323), then
     /// eagerly calls swe_calc(J2000, SE_MOON, SEFLG_SWIEPH|...) at :1347 and, if the lunar
     /// file opened, pins tidal acceleration from that file's DE number via swi_set_tid_acc
     /// at :1349. With the handler attached afterwards, that eager open could not reach a

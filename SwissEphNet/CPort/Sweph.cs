@@ -9247,7 +9247,7 @@ namespace SwissEphNet.CPort
             {
                 string snam = null;
                 swe_get_planet_name(ipl, ref snam);
-                // sweph.c:8545 guards this with `if (serr != NULL)`, which asks whether the
+                // sweph.c:8591 guards this with `if (serr != NULL)`, which asks whether the
                 // caller supplied a buffer. `ref string serr` is always a valid destination,
                 // so the same guard here would instead ask whether a message is already
                 // present -- false on a clean call, silently dropping the diagnostic exactly

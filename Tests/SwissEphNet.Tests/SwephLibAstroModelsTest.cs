@@ -42,7 +42,7 @@ namespace SwissEphNet.Tests
         [Fact]
         public void EpsilnNewcombMatchesIndependentFormula()
         {
-            // swephlib.c:921-929: eps = (0.0017*Tn^3 - 0.0085*Tn^2 - 46.837*Tn
+            // swephlib.c:925-926: eps = (0.0017*Tn^3 - 0.0085*Tn^2 - 46.837*Tn
             // + 84451.68) * DEGTORAD/3600, Tn = (J - 2396758.0)/36525.0.
             // J = J1900 (2415020.0). Reference computed independently in
             // Python: eps = 0.40931975631180173 rad.
@@ -85,7 +85,7 @@ namespace SwissEphNet.Tests
         [Fact]
         public void NutationWoolardMatchesIndependentFormula()
         {
-            // swephlib.c:1943-2006, calc_nutation_woolard. J = J2000
+            // swephlib.c:1947-2002, calc_nutation_woolard. J = J2000
             // (2451545.0). Reference computed independently in Python from the
             // same formula: dpsi = -6.770664474640127e-05 rad,
             // deps = -2.7937263692685556e-05 rad.
