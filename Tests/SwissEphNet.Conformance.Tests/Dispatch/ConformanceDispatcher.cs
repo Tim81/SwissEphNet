@@ -58,7 +58,7 @@ public sealed class ConformanceDispatcher
             7 => Suite07Apsides.Dispatch(swe, testCase.Id, iteration, precision),
             8 => _suite08.Dispatch(swe, testCase.Id, iteration, precision),
             9 => Suite09Rise.Dispatch(swe, testCase.Id, iteration, precision),
-            10 => Suite10Solcross.Dispatch(testCase.Id, iteration),
+            10 => Suite10Solcross.Dispatch(swe, testCase.Id, iteration, precision),
             _ => DispatchOutcome.Error($"Unknown suite id {suite.Id}."),
         };
     }
@@ -82,9 +82,6 @@ public sealed class ConformanceDispatcher
                 return true;
             case (6, 9):
                 reason = "swe_houses_armc_ex2 is not implemented in SwissEphNet (port is at 2.08; added in 2.10).";
-                return true;
-            case (10, _):
-                reason = "the swe_solcross/swe_mooncross/swe_helio_cross family is not implemented in SwissEphNet (port is at 2.08; added in 2.10).";
                 return true;
             default:
                 reason = "";
