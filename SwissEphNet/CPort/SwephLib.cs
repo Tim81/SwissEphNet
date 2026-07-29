@@ -3298,7 +3298,12 @@ namespace SwissEphNet.CPort
             swi_coortrf(xs, xs, xobl[1] * SwissEph.DEGTORAD);
             swi_cartpol(xs, xs);
             xs[0] *= SwissEph.RADTODEG;
-            dhour = (tjd_ut - 0.5 % 1.0) * 360;
+            // swephlib.c:3314 is `fmod(tjd_ut - 0.5, 1) * 360`. C# binds % tighter than -,
+            // so `tjd_ut - 0.5 % 1.0` parsed as `tjd_ut - (0.5 % 1.0)` = `tjd_ut - 0.5`:
+            // the fmod was gone and dhour carried the whole Julian day rather than its
+            // fractional part. The discarded integer part is a whole multiple of 360, so the
+            // normalized result survives, but the magnitude difference costs low bits.
+            dhour = ((tjd_ut - 0.5) % 1.0) * 360;
             /* mean to true (if nut != 0) */ 
             if (eps == 0)
                 xs[0] += xobl[2] * Math.Cos(xobl[0] * SwissEph.DEGTORAD);
