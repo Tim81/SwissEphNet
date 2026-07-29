@@ -638,3 +638,34 @@ the port replaces an object where the C memsets.
 Not attempted here: it is a `CPort` change with real blast radius in both directions, it
 wants its own before/after measurement against the conformance corpus, and it is independent
 of the swephlib port.
+
+## Inverted `serr != NULL` guards: swept, but not exhaustively
+
+C writes `if (serr != NULL) strcpy(serr, "...")`, asking whether the caller supplied a
+buffer. A C# `ref string` always supplies one, so the literal `if (serr != null)` asks
+instead whether a message is *already present* -- false for every caller that starts from
+`null`, which is all of them -- and the message is silently dropped.
+
+Corrected so far: two `swe_helio_cross` sites, `calc_deltat`, `swi_get_ayanamsa_ex`,
+`swe_fixstar`/`swe_fixstar_ut`, the star-file-damaged message, `swe_sol_eclipse_how`'s
+out-of-range message, and `swi_mean_node`'s out-of-range append.
+
+**Still outstanding**, and deliberately so: roughly ten Moshier-fallback sites in
+`CPort/Sweph.cs` (`sweph.c:690, 707, 790, 1091, 1132, 1590, 1614, 1631, 1649, 1728`, and
+others) append a `"using Moshier eph.; "` note. They are not uniform -- some assign, some
+append, some are already unconditional, and `sweph.c:1630` additionally carries
+`strlen(serr) + 30 < AS_MAXCH`, a fixed-buffer guard the port commented out because a C#
+string has no such limit.
+
+Changing one of ten would leave the file less consistent than it is now, and this family
+sits directly on the ephemeris-fallback path, so unlike the guards above it will move
+`serr` in results the corpus compares. It wants its own pass with a before/after
+measurement, not a drive-by.
+
+## The 7.2.x diagnosis in regenerations.log is superseded
+
+`Tests/conformance/regenerations.log` attributes the nine `7.2.x` rows to a stale
+`swed.oec`/`swed.nut` read by `swe_nod_aps`'s mean-node path. That was wrong: both were
+measured identical at the point of use in the working and failing cases. The correct
+diagnosis is the `free_planets` object-replacement entry above. The log is append-only, so
+the correction is recorded here rather than by editing it.
