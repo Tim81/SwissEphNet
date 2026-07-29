@@ -1,0 +1,30 @@
+# Hunks gen-delta.ps1 renders per file, after the licence filter. Pinned so a dropped
+# hunk cannot pass as a smaller total. Regenerate with:
+#     scripts/verify-gen-delta.ps1 -UpdateExpected
+# and only when the delta legitimately changed -- a submodule bump or a licence-filter
+# change. A count that moves on its own is a defect in gen-delta.ps1, not a stale pin.
+# file	hunks
+LICENSE	1
+Makefile	2
+seleapsec.txt	0
+swecl.c	29
+swedate.c	1
+swedate.h	1
+swedll.h	5
+swehel.c	18
+swehouse.c	56
+swehouse.h	1
+swejpl.c	2
+swejpl.h	0
+swemini.c	2
+swemmoon.c	6
+swemplan.c	0
+swemptab.h	0
+swenut2000a.h	0
+sweodef.h	5
+sweph.c	125
+sweph.h	4
+swephexp.h	14
+swephlib.c	29
+swephlib.h	3
+swetest.c	99
