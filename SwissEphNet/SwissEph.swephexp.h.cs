@@ -288,10 +288,14 @@ namespace SwissEphNet
         public const int SE_SIDM_GALCENT_COCHRANE = 40;
         public const int SE_SIDM_GALEQU_FIORENZA = 41;
         public const int SE_SIDM_VALENS_MOON = 42;
+        public const int SE_SIDM_LAHIRI_1940 = 43;
+        public const int SE_SIDM_LAHIRI_VP285 = 44;
+        public const int SE_SIDM_KRISHNAMURTI_VP291 = 45;
+        public const int SE_SIDM_LAHIRI_ICRC = 46;
         ////#define SE_SIDM_MANJULA         43
         public const int SE_SIDM_USER = 255; /* user-defined ayanamsha, t0 is TT */
 
-        public const int SE_NSIDM_PREDEF = 43;
+        public const int SE_NSIDM_PREDEF = 47;
 
         /* used for swe_nod_aps(): */
         public const int SE_NODBIT_MEAN = 1;   /* mean nodes/apsides */
