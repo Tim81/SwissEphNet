@@ -225,6 +225,17 @@ Like the fetch script, it has no parameter that accepts a different 2.08
 source -- the 2.08 side is always `external/pyswisseph-2.08/`, the 2.10.3 side
 is always `external/swisseph/`.
 
+Each printed hunk keeps its context lines alongside the `+`/`-` lines, and is
+labelled with the file/line-range citation this document requires (derived
+from the hunk's `@@` header), e.g. `# sweph.c:8039-8615 -- @@ -7865,38
++8039,577 @@ ...`. A porter can paste that citation straight into the PR
+template instead of reconstructing it from a bare diff. Keeping context also
+means a single unchanged line between two edits no longer reads as one
+contiguous change -- a real gap in an earlier version of this script once
+rendered `swe_helio_cross`'s `if (swe_calc(...) < 0)` with no visible body,
+because the `return ERR;` on the next line was context and got silently
+dropped.
+
 Two filters make the output usable instead of just noisy:
 
 * **License-noise filter**, on by default. Astrodienst's GPL-2 -> AGPL-3

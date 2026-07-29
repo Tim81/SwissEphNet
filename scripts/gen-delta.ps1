@@ -156,7 +156,12 @@ $licenseRegex = ($licensePatterns | ForEach-Object { "($_)" }) -join '|'
 
 function Get-NormalizedLines {
     param([string] $Path)
-    $text = [System.IO.File]::ReadAllText($Path)
+    # Strict UTF-8, not the default replacement-char decoder. ReadAllText(path) maps every
+    # invalid byte to U+FFFD, so two DIFFERENT invalid bytes at the same offset decode
+    # identically, the normalised temp files match, and a real difference vanishes with the
+    # file reported as unchanged at exit 0. Every file on both sides decodes strictly today;
+    # a Latin-1 byte in a future upstream comment should be a loud failure, not a silent one.
+    $text = [System.IO.File]::ReadAllText($Path, [System.Text.UTF8Encoding]::new($false, $true))
     $text = $text -replace "`r`n", "`n" -replace "`r", "`n"
     return $text -split "`n"
 }
@@ -169,7 +174,7 @@ function Write-NormalizedTemp {
 
 function Strip-CComments {
     param([string] $Path, [string] $TempPath)
-    $text = [System.IO.File]::ReadAllText($Path)
+    $text = [System.IO.File]::ReadAllText($Path, [System.Text.UTF8Encoding]::new($false, $true))
     $text = $text -replace "`r`n", "`n" -replace "`r", "`n"
     $stripped = [System.Text.RegularExpressions.Regex]::Replace(
         $text, '/\*.*?\*/', '', [System.Text.RegularExpressions.RegexOptions]::Singleline)
@@ -179,6 +184,12 @@ function Strip-CComments {
 
 function Get-Hunks {
     param([string] $DiffText)
+    # Each hunk is a { Header; Lines } object rather than a flat list of changed lines. Header
+    # keeps the raw '@@ -a,b +c,d @@ ...' text -- the only place the file's line numbers survive
+    # -- and Lines keeps every context/add/del line inside the hunk, each tagged with its Type
+    # so a hunk reads as a hunk (see CONTRIBUTING.md's citation requirement and the splicing bug
+    # this replaces). The Type tag, not the leading character, is what Test-LicenseHunk filters
+    # on below, so a context line can never be mistaken for a change line by that classifier.
     $hunks = [System.Collections.Generic.List[object]]::new()
     if ($DiffText) {
         $lines = $DiffText -split "`n"
@@ -186,14 +197,33 @@ function Get-Hunks {
         foreach ($line in $lines) {
             if ($line.StartsWith('@@')) {
                 if ($current) { $hunks.Add($current) }
-                $current = [System.Collections.Generic.List[string]]::new()
+                $current = [pscustomobject]@{
+                    Header = $line
+                    Lines  = [System.Collections.Generic.List[object]]::new()
+                }
                 continue
             }
-            if ($null -ne $current -and ($line.StartsWith('+') -or $line.StartsWith('-'))) {
-                if (-not ($line.StartsWith('+++') -or $line.StartsWith('---'))) {
-                    $current.Add($line)
-                }
+            if ($null -eq $current) { continue }
+            # No `--- a/file` / `+++ b/file` skip here, deliberately. Those headers precede the
+            # first @@, so the line above has already skipped them while $current is null. A
+            # skip at this point can therefore only ever fire *inside* a hunk, where the only
+            # things matching are real source lines: a deleted line whose own text starts with
+            # `--`, or an added one starting with `++`. A column-0 `----------------` separator
+            # comment is ordinary C, and the check silently removed it from both the rendered
+            # body and the +/- counts, so the hunk read as "nothing changed here" with a
+            # citation vouching for it. Verified by deletion: output is byte-identical across
+            # all 31 files with the check gone, because it never had a header to catch.
+            if ($line.StartsWith('+')) {
+                $current.Lines.Add([pscustomobject]@{ Type = 'add'; Text = $line.Substring(1) })
             }
+            elseif ($line.StartsWith('-')) {
+                $current.Lines.Add([pscustomobject]@{ Type = 'del'; Text = $line.Substring(1) })
+            }
+            elseif ($line.StartsWith(' ')) {
+                $current.Lines.Add([pscustomobject]@{ Type = 'context'; Text = $line.Substring(1) })
+            }
+            # Anything else here ('\ No newline at end of file', a stray blank split artifact) is
+            # diff metadata, not a source line -- same as before, it is not stored.
         }
         if ($current) { $hunks.Add($current) }
     }
@@ -221,14 +251,39 @@ function Get-Hunks {
 # multi-line block-comment header itself (the common, legitimate case this filter exists for)
 # is prose with no preprocessor directives or statement terminators on any of its lines, so this
 # veto does not affect it.
-$codeVetoRegex = '#\s*(define|include|if|ifdef|ifndef|else|elif|endif|undef|pragma)\b|;'
+#
+# The double quote is in the veto for a case the directive/semicolon pair does not cover: a
+# licence URL rewritten inside a string literal. Such a line carries neither a preprocessor
+# directive nor a statement terminator, so without this it matches the licence patterns, the
+# hunk classifies as noise, and a real source change disappears with nothing printed but a
+# count. No occurrence exists in 2.10.3 -- every gpl-2.0.html/agpl-3.0.html sits in a block
+# comment -- so this is a guard against a future upstream release, not a live defect. It costs
+# nothing to carry: none of the 241 changed lines currently classified as licence noise
+# contains a double quote, so the 450/47/403 split is unaffected.
+$codeVetoRegex = '#\s*(define|include|if|ifdef|ifndef|else|elif|endif|undef|pragma)\b|;|"'
 
 function Test-LicenseHunk {
-    param($HunkLines)
-    foreach ($line in $HunkLines) {
-        $content = $line.Substring(1)
-        if ($content -match $codeVetoRegex) { return $false }
-        if ($content -notmatch $licenseRegex) { return $false }
+    param($Hunk)
+    # Only the add/del lines decide license-noise classification -- a retained context line
+    # must never make a license hunk look like real code (it has no codeVetoRegex hit to give)
+    # and must never veto a genuine license hunk either (it has no licenseRegex hit to give).
+    $changeLines = @($Hunk.Lines | Where-Object { $_.Type -ne 'context' })
+    # A hunk with no changed lines cannot be license noise, because there is nothing to
+    # classify; falling through the loop would return $true and drop it.
+    #
+    # An earlier version of this comment called that unreachable, on the grounds that git does
+    # not emit a change-line-free hunk from `diff --no-index --unified=3` on two text files.
+    # The claim about git is true and the inference was wrong: what reaches here is the
+    # *parser's* output, not git's. While Get-Hunks carried a `--`/`++` skip, a hunk whose
+    # every changed line began with those characters arrived here empty and was dropped
+    # silently. That skip is gone, so the route is closed at its source -- but the guard stays,
+    # because the default belongs on the keeping side. In a tool whose whole purpose is to stop
+    # losing lines quietly, an input nobody anticipated should surface to a human rather than
+    # vanish into a counter.
+    if ($changeLines.Count -eq 0) { return $false }
+    foreach ($line in $changeLines) {
+        if ($line.Text -match $codeVetoRegex) { return $false }
+        if ($line.Text -notmatch $licenseRegex) { return $false }
     }
     return $true
 }
@@ -258,6 +313,14 @@ function Get-Diff {
         throw "git diff --no-index failed comparing '$OldPath' and '$NewPath' (exit $exitCode): $stderrText"
     }
 
+    # A binary verdict is exit 1 with NON-EMPTY stdout ("Binary files a and b differ"),
+    # so it clears the guard above, produces no @@ header, and the whole file's delta is
+    # reported as zero at exit 0. The guard above assumes a real diff always carries a
+    # hunk header once files differ; this is the case that breaks that assumption.
+    if ($diffText -match '(?m)^Binary files .* differ$') {
+        throw "git treated the pair as binary, so no line-level diff exists: '$OldPath' vs '$NewPath'. If this is a text file, its encoding or a NUL byte is the reason."
+    }
+
     return $diffText
 }
 
@@ -270,6 +333,16 @@ function Invoke-FileDelta {
     $hasOld = Test-Path -LiteralPath $oldPath -PathType Leaf
     $hasNew = Test-Path -LiteralPath $newPath -PathType Leaf
 
+    if (-not $hasOld -and -not $hasNew) {
+        # Ordering matters: testing -not $hasNew first would report a mistyped name as
+        # "pyswisseph-only", asserting upstream deleted a file that never existed. That is a
+        # wrong work-queue signal at exit 0, the exact class this script exists to prevent.
+        return [pscustomobject]@{
+            File = $Name; Status = 'NOT FOUND on either side'
+            RawHunks = 0; FilteredHunks = 0; LicenseHunks = 0
+            RawPlus = 0; RawMinus = 0; StrippedPlus = 0; StrippedMinus = 0
+        }
+    }
     if (-not $hasNew) {
         return [pscustomobject]@{
             File = $Name; Status = 'pyswisseph-only (no 2.10.3 counterpart)'
@@ -286,30 +359,46 @@ function Invoke-FileDelta {
     }
 
     $tmp = [System.IO.Path]::GetTempPath()
-    $tmpOld = Join-Path $tmp "gen-delta-old-$Name"
-    $tmpNew = Join-Path $tmp "gen-delta-new-$Name"
+    # Per-invocation suffix, not a fixed name. These land in the shared system temp
+    # directory, and this repo routinely has dozens of git worktrees active at once. Two
+    # concurrent runs asking about the same filename used to overwrite each other's inputs:
+    # one interleaving crashes loudly, but the other returns a plausible, wrong diff at
+    # exit 0 -- one worktree's question answered with another's content. Silently producing
+    # a wrong work queue is the single failure this tool exists to prevent, so it must not
+    # be reachable by running the tool twice.
+    $runId = [System.Guid]::NewGuid().ToString('N').Substring(0, 12)
+    $tmpOld = Join-Path $tmp "gen-delta-old-$runId-$Name"
+    $tmpNew = Join-Path $tmp "gen-delta-new-$runId-$Name"
     Write-NormalizedTemp -Path $oldPath -TempPath $tmpOld
     Write-NormalizedTemp -Path $newPath -TempPath $tmpNew
 
     $diffText = Get-Diff -OldPath $tmpOld -NewPath $tmpNew
     $rawHunks = Get-Hunks -DiffText $diffText
-    $licenseHunks = @($rawHunks | Where-Object { Test-LicenseHunk -HunkLines $_ })
-    $filteredHunks = @($rawHunks | Where-Object { -not (Test-LicenseHunk -HunkLines $_) })
+    $licenseHunks = @($rawHunks | Where-Object { Test-LicenseHunk -Hunk $_ })
+    $filteredHunks = @($rawHunks | Where-Object { -not (Test-LicenseHunk -Hunk $_) })
 
-    $rawPlus = @($diffText -split "`n" | Where-Object { $_.StartsWith('+') -and -not $_.StartsWith('+++') }).Count
-    $rawMinus = @($diffText -split "`n" | Where-Object { $_.StartsWith('-') -and -not $_.StartsWith('---') }).Count
+    # Counted off $rawHunks, not off raw $diffText. Re-scanning the text needs a
+    # `-not StartsWith('+++')` guard to skip git's file headers, and that guard
+    # over-matches any source line whose own text starts with ++ or -- : the exact
+    # defect removed from Get-Hunks. Leaving it here meant the body and the count
+    # beneath it were derived from different data and could disagree, a hunk showing
+    # two deletions above a summary saying -1. Deriving both from the parsed lines
+    # makes that disagreement structurally impossible, not merely absent today.
+    $rawPlus = @($rawHunks | ForEach-Object { $_.Lines } | Where-Object { $_.Type -eq 'add' }).Count
+    $rawMinus = @($rawHunks | ForEach-Object { $_.Lines } | Where-Object { $_.Type -eq 'del' }).Count
 
     $strippedPlus = 0
     $strippedMinus = 0
     $isHeader = $Name.EndsWith('.h')
     if ($isHeader -and -not $NoCommentStrip) {
-        $tmpOldStripped = Join-Path $tmp "gen-delta-old-stripped-$Name"
-        $tmpNewStripped = Join-Path $tmp "gen-delta-new-stripped-$Name"
+        $tmpOldStripped = Join-Path $tmp "gen-delta-old-stripped-$runId-$Name"
+        $tmpNewStripped = Join-Path $tmp "gen-delta-new-stripped-$runId-$Name"
         Strip-CComments -Path $oldPath -TempPath $tmpOldStripped
         Strip-CComments -Path $newPath -TempPath $tmpNewStripped
         $strippedDiff = Get-Diff -OldPath $tmpOldStripped -NewPath $tmpNewStripped
-        $strippedPlus = @($strippedDiff -split "`n" | Where-Object { $_.StartsWith('+') -and -not $_.StartsWith('+++') }).Count
-        $strippedMinus = @($strippedDiff -split "`n" | Where-Object { $_.StartsWith('-') -and -not $_.StartsWith('---') }).Count
+        $strippedHunks = Get-Hunks -DiffText $strippedDiff
+        $strippedPlus = @($strippedHunks | ForEach-Object { $_.Lines } | Where-Object { $_.Type -eq 'add' }).Count
+        $strippedMinus = @($strippedHunks | ForEach-Object { $_.Lines } | Where-Object { $_.Type -eq 'del' }).Count
         Remove-Item -LiteralPath $tmpOldStripped, $tmpNewStripped -ErrorAction SilentlyContinue
     }
 
@@ -328,6 +417,31 @@ function Invoke-FileDelta {
         DiffText      = $diffText
         FilteredLines = $filteredHunks
         LicenseLines  = $licenseHunks
+    }
+}
+
+# The '+' side of a hunk header ('@@ -a,b +c,d @@ ...') gives the line range in the 2.10.3 file --
+# the side CONTRIBUTING.md's required citation (e.g. 'sweph.c:2310-2358') actually names. A count
+# of 1 is written by git as '+c' with no ',d' at all, so that case defaults to a one-line range.
+function Get-HunkNewRange {
+    param([string] $Header)
+    if ($Header -match '\+(\d+)(?:,(\d+))?') {
+        $start = [int]$Matches[1]
+        $count = if ($Matches[2]) { [int]$Matches[2] } else { 1 }
+        if ($count -le 0) { return "$start" }
+        return "$start-$($start + $count - 1)"
+    }
+    return $null
+}
+
+function Write-Hunk {
+    param($Hunk, [string] $FileName)
+    $range = Get-HunkNewRange -Header $Hunk.Header
+    $citation = if ($range) { "$($FileName):$range" } else { '(no line range)' }
+    Write-Output "# $citation -- $($Hunk.Header)"
+    foreach ($entry in $Hunk.Lines) {
+        $prefix = switch ($entry.Type) { 'add' { '+' } 'del' { '-' } default { ' ' } }
+        Write-Output "$prefix$($entry.Text)"
     }
 }
 
@@ -351,18 +465,19 @@ if ($File) {
         foreach ($hunk in $result.LicenseLines) {
             $i++
             Write-Output "--- dropped (license-noise) hunk $i ---"
-            foreach ($line in $hunk) { Write-Output $line }
+            Write-Hunk -Hunk $hunk -FileName $result.File
             Write-Output ''
         }
     }
     else {
-        # Reconstruct a diff body containing only the non-license hunks' changed lines. This is
-        # a reviewer-facing listing of changed lines per hunk, not a byte-identical re-diff.
+        # Reconstruct a diff body containing the non-license hunks in full -- header, context and
+        # changed lines -- so a hunk reads as a hunk instead of a bag of spliced +/- lines. This is
+        # a reviewer-facing listing, not a byte-identical re-diff.
         $i = 0
         foreach ($hunk in $result.FilteredLines) {
             $i++
             Write-Output "--- hunk $i ---"
-            foreach ($line in $hunk) { Write-Output $line }
+            Write-Hunk -Hunk $hunk -FileName $result.File
             Write-Output ''
         }
     }
