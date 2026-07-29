@@ -77,7 +77,12 @@ function Get-FrozenFile {
         # across platforms today only because every frozen filename is ASCII alphanumeric; a
         # name with punctuation, or two differing only in case, would order differently on
         # Windows and Linux and move the hash without any content changing.
-        $found = @(Get-ChildItem -LiteralPath $full -Recurse -File)
+        # -Force, or dotfiles are invisible on Linux. PowerShell treats a leading-dot name as
+        # hidden on Unix but not on Windows, so without it CPort/.editorconfig is counted here
+        # and not on the CI runner: the manifest generated on Windows reported 17 files and the
+        # ubuntu job read 16 from the same commit. That would make the hash platform-dependent,
+        # which is the one property the line-ending normalization above exists to preserve.
+        $found = @(Get-ChildItem -LiteralPath $full -Recurse -File -Force)
         $keys = [string[]] ($found | ForEach-Object { $_.FullName })
         $items = [object[]] $found
         [System.Array]::Sort($keys, $items, [System.StringComparer]::Ordinal)
