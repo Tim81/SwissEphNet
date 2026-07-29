@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Reflection;
 using Xunit;
 
@@ -60,7 +60,8 @@ namespace SwissEphNet.Tests
         [Fact]
         public void PrecessNewcombRotatesUnitVectorToIndependentlyComputedResult()
         {
-            // swephlib.c:1053-1135 (the #if 1 "Kinoshita 1975" branch): applied
+            // swephlib.c:1100-1116 (the #if 1 "Kinoshita 1975" branch, inside the
+            // wider 1033-1135 Newcomb region whose other variants are #if 0): applied
             // to R = [1, 0, 0] at J = J1900, direction = -1 (From J2000.0 to
             // J). Reference Z/z/TH and the resulting rotation were computed
             // independently in Python from the same formula:

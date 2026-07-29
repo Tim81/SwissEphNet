@@ -52,12 +52,28 @@ public static class EphemerisFileResolver
             e.File = File.Exists(candidate) ? File.OpenRead(candidate) : null;
         };
 
-        if (!string.IsNullOrEmpty(JplFilePath))
-        {
-            swe.swe_set_jpl_file(Path.GetFileName(JplFilePath));
-        }
-
         ResetEphePath(swe);
+        SetJplFile(swe);
+    }
+
+    /// <summary>
+    /// The equivalent of setest's suite-scope swe_set_jpl_file("de431.eph"), issued by
+    /// suite_01_calc.c:11 and suite_10_solcross.c:11 immediately after their path reset.
+    /// </summary>
+    /// <remarks>
+    /// Named rather than skipped even when no DE file is available, because the call has a
+    /// side effect independent of whether the file exists: sweph.c:1481 routes it through
+    /// swi_close_keep_topo_etc, which memsets swed.fidat (sweph.c:1205) and therefore
+    /// clears fidat[SEI_FILE_MOON].sweph_denum -- the field calc_deltat reads at
+    /// swephlib.c:2565 to resolve tid_acc. Skipping it left those suites holding the DE
+    /// number that swe_set_ephe_path's eager lunar open had just established, where setest
+    /// enters them with it cleared.
+    /// </remarks>
+    public static void SetJplFile(SwissEph swe)
+    {
+        swe.swe_set_jpl_file(string.IsNullOrEmpty(JplFilePath)
+            ? "de431.eph"
+            : Path.GetFileName(JplFilePath));
     }
 
     /// <summary>

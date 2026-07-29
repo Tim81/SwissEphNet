@@ -83,6 +83,18 @@ public static class ConformanceRunner
                 }
 
                 EphemerisFileResolver.ResetEphePath(swe);
+
+                // suite_01_calc.c:11 and suite_10_solcross.c:11 follow the reset with
+                // swe_set_jpl_file("de431.eph"). That is not inert either: sweph.c:1481
+                // routes it through swi_close_keep_topo_etc, which memsets swed.fidat
+                // (sweph.c:1205) and so zeroes fidat[SEI_FILE_MOON].sweph_denum -- exactly
+                // the field calc_deltat reads at swephlib.c:2565. Without it those two
+                // suites started with the DE number still set by swe_set_ephe_path's eager
+                // lunar open, where setest starts with it cleared.
+                if (suite.Id is 1 or 10)
+                {
+                    EphemerisFileResolver.SetJplFile(swe);
+                }
             }
 
             foreach (var testCase in suite.TestCases)
