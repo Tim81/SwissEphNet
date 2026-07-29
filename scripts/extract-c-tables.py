@@ -123,3 +123,66 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+def _mask_comments(text):
+    """Return a list flagging, per character, whether it sits inside a C comment."""
+    flags = [False] * len(text)
+    i, n = 0, len(text)
+    while i < n:
+        if text.startswith('/*', i):
+            end = text.find('*/', i + 2)
+            end = n if end < 0 else end + 2
+            for k in range(i, end):
+                flags[k] = True
+            i = end
+        elif text.startswith('//', i):
+            end = text.find('\n', i)
+            end = n if end < 0 else end
+            for k in range(i, end):
+                flags[k] = True
+            i = end
+        else:
+            i += 1
+    return flags
+
+
+def emit_ayanamsa_csharp(body):
+    """Rewrite the C initializer body as C#, keeping every comment where it stands.
+
+    Only braces outside comments are treated as rows, which is what makes this safe on a
+    table whose comments contain literal initialiser syntax.
+    """
+    flags = _mask_comments(body)
+    out = []
+    i, n = 0, len(body)
+    rows = 0
+    while i < n:
+        if body[i] == '{' and not flags[i]:
+            depth, j = 0, i
+            while j < n:
+                if not flags[j]:
+                    if body[j] == '{':
+                        depth += 1
+                    elif body[j] == '}':
+                        depth -= 1
+                        if depth == 0:
+                            break
+                j += 1
+            inner = body[i + 1:j]
+            fields = [f.strip() for f in inner.split(',')]
+            if len(fields) != 4:
+                raise SystemExit('row %d has %d fields: %r' % (rows, len(fields), fields))
+            t0, ayan, is_ut, prec = fields
+            is_ut = {'TRUE': 'true', 'FALSE': 'false'}[is_ut]
+            # SEMOD_* live on the SwissEph class in this port; J1900/J2000/B1950 are
+            # members of Sweph, which is where this table sits, so they stay bare.
+            prec = re.sub(r'SEMOD_[A-Z0-9_]+', lambda mm: 'SwissEph.' + mm.group(0), prec)
+            out.append('new aya_init{t0=%s, ayan_t0=%s, t0_is_UT=%s, prec_offset=%s}'
+                       % (t0, ayan, is_ut, prec))
+            rows += 1
+            i = j + 1
+        else:
+            out.append(body[i])
+            i += 1
+    return ''.join(out), rows
