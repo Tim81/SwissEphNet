@@ -2,7 +2,7 @@
 # Checked by scripts/verify-freeze.ps1; regenerate with -Update.
 # Update this ONLY alongside an intended change to a frozen file, so
 # the new counts are reviewed with the change that caused them.
-path	files	lines	kr_braces	trailing_ws
-SwissEphNet/CPort	16	46372	1140	1335
-Programs/SweTest/Program.cs	1	4602	60	75
-Programs/SweMini/Program.cs	1	188	2	7
+path	files	lines	kr_braces	trailing_ws	sha256
+SwissEphNet/CPort	17	46448	1141	1335	6FDC206F4F5995BFC2C48EA909B40BFF1B20D55DC61F56C3E02AAFAA28A092E4
+Programs/SweTest/Program.cs	1	4602	60	75	BA08F72E48ED4B6F64A92349566D7B368426CBD211782456869421C6EBD0256B
+Programs/SweMini/Program.cs	1	188	2	7	86F058293B3FBB30DAA54255C65CBC7AC0862EE70C357899639E0A8A5C2FEEC3

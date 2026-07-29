@@ -63,11 +63,25 @@ reverses the rewrite instead of preventing it, and measurably widens it -- with
 `Programs/SweTest/Program.cs` from 8 lines touched to 1,518.
 
 So the real guard is `scripts/verify-freeze.ps1`, which runs in CI on every push
-and pull request. It records a structural fingerprint of each frozen path (file
-count, total lines, K&R `) {` count, trailing-whitespace lines) in
-`scripts/freeze-manifest.tsv` and fails when any of them moves, regardless of what
-caused it. It is not a fidelity check -- whether a hunk matches the C it cites is a
-review judgement -- it answers only "did anyone reformat".
+and pull request. It records a SHA-256 over each frozen path's normalized content in
+`scripts/freeze-manifest.tsv`, alongside four counts (file count, total lines, K&R
+`) {` count, trailing-whitespace lines), and fails when any of them moves.
+
+The hash is the check; the counts say what kind of change happened. Earlier versions
+carried only the counts, and that was not enough: re-indenting a file moves none of
+them. Measured, doubling the indentation of `SweDate.cs` rewrites 568 of its 612 lines
+and leaves the four counts byte-identical, so the gate passed on a file where every
+content line had changed. Indentation normalization is the bulk of what
+`dotnet format whitespace` does, which is the exact tool this check exists to catch.
+
+It is not a fidelity check -- whether a hunk matches the C it cites is a review
+judgement -- it answers only "did anyone reformat".
+
+Two blind spots are accepted deliberately. Line endings are normalized before hashing,
+which is what lets the Linux CI job compare against a Windows-generated manifest, so a
+pure CRLF/LF change is invisible. A byte-order mark is stripped on read, so adding or
+removing one is invisible. Both are pinned by the root `.editorconfig` (`end_of_line`,
+`charset`) and neither can occur without a real reformat also moving the hash.
 
 When you legitimately change a frozen file, a fidelity fix correcting a divergence
 from the C or the 2.10.03 re-transliteration itself, these counts will move. That
