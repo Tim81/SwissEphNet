@@ -3212,9 +3212,9 @@ namespace SwissEphNet.CPort
                     //while (strchr(" \t", *sp) != NULL && *sp != '\0')
                     //    sp++;	/* was *sp++  fixed by Alois 2-jul-2003 */
                     //if (*sp == '#' || *sp == '\n')
-                    if (String.IsNullOrEmpty(sp) || sp.StartsWith("#"))
+                    if (String.IsNullOrEmpty(sp) || sp[0] == '#')
                         continue;
-                    year = int.Parse(s.Substring(0, 4));
+                    year = int.Parse(s.Substring(0, 4), CultureInfo.InvariantCulture);
                     tab_index = year - TABSTART;
                     /* table space is limited. no error msg, if exceeded */
                     if (tab_index >= TABSIZ_SPACE)
@@ -4404,7 +4404,7 @@ namespace SwissEphNet.CPort
             {
                 //strncpy(s, samod, 20);
                 //s[20] = '\0';
-                // swephlib.c:4052: strncpy copies up to 20 bytes and null-pads if
+                // swephlib.c:4199: strncpy copies up to 20 bytes and null-pads if
                 // samod is shorter; Substring(0, 20) instead threw whenever samod
                 // (including "" or null) was under 20 chars, which is always in
                 // practice. Pad to 20 first so the fixed-offset IndexOf/atof calls
@@ -4420,7 +4420,7 @@ namespace SwissEphNet.CPort
                 //    swi_strcpy(sp, sp + 1);
                 sp = s.IndexOf('b', 5);
                 if (sp >= 0) s = s.Remove(sp, 1);
-                // swephlib.c:4058: atof(s + 2) is pointer arithmetic (skip 2 bytes);
+                // swephlib.c:4205: atof(s + 2) is pointer arithmetic (skip 2 bytes);
                 // "s + 2" in C# is string concatenation ("SE2.05.01" + 2 ->
                 // "SE2.05.012"), so C.atof saw the leading 'S' and returned 0,
                 // silently falling through to the current version.

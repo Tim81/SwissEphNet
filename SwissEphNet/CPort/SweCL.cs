@@ -951,8 +951,7 @@ namespace SwissEphNet.CPort
                 attr[i] = 0;
             if (geopos[2] < Sweph.SEI_ECL_GEOALT_MIN || geopos[2] > Sweph.SEI_ECL_GEOALT_MAX)
             {
-                if (serr != null)
-                    serr = C.sprintf("location for eclipses must be between %.0f and %.0f m above sea", Sweph.SEI_ECL_GEOALT_MIN, Sweph.SEI_ECL_GEOALT_MAX);
+                serr = C.sprintf("location for eclipses must be between %.0f and %.0f m above sea", Sweph.SEI_ECL_GEOALT_MIN, Sweph.SEI_ECL_GEOALT_MAX);
                 return Sweph.ERR;
             }
             ifl &= SEFLG_EPHMASK;

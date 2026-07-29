@@ -3293,8 +3293,7 @@ namespace SwissEphNet.CPort
                 || sip.sid_mode == SwissEph.SE_SIDM_GALCENT_MULA_WILHELM
                 || sip.sid_mode == SwissEph.SE_SIDM_GALEQU_IAU1958
                 || sip.sid_mode == SwissEph.SE_SIDM_GALEQU_TRUE
-                || sip.sid_mode == SwissEph.SE_SIDM_GALEQU_MULA)
-                && serr != null)
+                || sip.sid_mode == SwissEph.SE_SIDM_GALEQU_MULA))
             {
                 serr = "Please call swe_set_ephe_path() or swe_set_jplfile() before calling swe_get_ayanamsa_ex()";
             }
@@ -8251,10 +8250,7 @@ namespace SwissEphNet.CPort
                 // invalid line without comma
                 if ((sp = strchr(s, ',')) == -1)
                 {
-                    if (serr != null)
-                    {
-                        sprintf(serr, "star file %s damaged at line %d", SwissEph.SE_STARFILE, fline);
-                    }
+                    sprintf(serr, "star file %s damaged at line %d", SwissEph.SE_STARFILE, fline);
                     return ERR;
                 }
                 // search string is Bayer or Flamsteed designation
@@ -8367,7 +8363,7 @@ namespace SwissEphNet.CPort
             //  *serr = '\0';
             iflag = plaus_iflag(iflag, -1, tjd, out serr);
             epheflag = iflag & SwissEph.SEFLG_EPHMASK;
-            if (swi_init_swed_if_start() == 1 && (epheflag & SwissEph.SEFLG_MOSEPH) == 0 && serr != null)
+            if (swi_init_swed_if_start() == 1 && (epheflag & SwissEph.SEFLG_MOSEPH) == 0)
             {
                 strcpy(out serr, "Please call swe_set_ephe_path() or swe_set_jplfile() before calling swe_fixstar() or swe_fixstar_ut()");
             }
