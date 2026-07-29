@@ -67,8 +67,21 @@ function Get-FrozenFile {
 
     $full = Join-Path $repoRoot $RelativePath
     if (Test-Path -LiteralPath $full -PathType Container) {
-        Get-ChildItem -LiteralPath $full -Filter '*.cs' -Recurse -File |
-            Sort-Object -Property FullName
+        # Every file, not just *.cs. The only non-.cs file under a frozen path today is
+        # CPort/.editorconfig, and leaving it out meant the hash could not see it being
+        # edited -- so replacing it with the csharp_new_line_before_open_brace pin that
+        # measurably widens dotnet format's damage returned PASS. That silently disarms
+        # one of the two defenses the freeze rests on.
+        # Ordinal sort, not Sort-Object. Sort-Object is culture-aware and case-insensitive even
+        # with -CaseSensitive, so its order depends on ICU vs NLS vs invariant mode. It agrees
+        # across platforms today only because every frozen filename is ASCII alphanumeric; a
+        # name with punctuation, or two differing only in case, would order differently on
+        # Windows and Linux and move the hash without any content changing.
+        $found = @(Get-ChildItem -LiteralPath $full -Recurse -File)
+        $keys = [string[]] ($found | ForEach-Object { $_.FullName })
+        $items = [object[]] $found
+        [System.Array]::Sort($keys, $items, [System.StringComparer]::Ordinal)
+        $items
     }
     elseif (Test-Path -LiteralPath $full -PathType Leaf) {
         Get-Item -LiteralPath $full
