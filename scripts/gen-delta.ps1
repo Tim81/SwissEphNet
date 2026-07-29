@@ -57,6 +57,15 @@ param(
     [switch] $NoCommentStrip
 )
 
+# -File is a bare filename, never a path. It flows unvalidated into Join-Path for both
+# source trees and for the temp names, and Windows strips trailing dots from the
+# composed component, so `../../README.md` escapes the gen-delta-* namespace and writes
+# a real file outside it -- a silent destructive side effect in a read-only tool.
+if ($File -and ($File.Contains('/') -or $File.Contains('\') -or $File.Contains('..'))) {
+    Write-Host "FAIL: -File takes a bare file name such as sweph.c, not a path. Got: $File"
+    exit 2
+}
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -451,6 +460,10 @@ if ($File) {
     $result = Invoke-FileDelta -Name $File
     if ($result.Status -ne 'ok') {
         Write-Host "$($result.File): $($result.Status)"
+        # A name found on neither side is an error, not a status: it means the caller asked
+        # about a file that does not exist, and exiting 0 lets a typo read as success to
+        # anything scripting this. The two legitimate one-sided statuses stay at 0.
+        if ($result.Status -eq 'NOT FOUND on either side') { exit 2 }
         exit 0
     }
 
