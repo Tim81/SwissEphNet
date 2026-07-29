@@ -476,7 +476,7 @@ namespace SwissEphNet.CPort
                             //fclose(swed.fidat[i].fptr);
                             swed.fidat[i].fptr.Dispose();
                         //memset((void *) &swed.fidat[i], 0, sizeof(struct file_data));
-                        swed.fidat[i] = new file_data();
+                        swed.fidat[i].Clear();
                     }
                     swed.last_epheflag = epheflag;
                 }
@@ -1324,17 +1324,17 @@ namespace SwissEphNet.CPort
                 {
                     swed.pldat[i].refep = null;
                 }
-                swed.pldat[i] = new plan_data();
+                swed.pldat[i].Clear();
             }
             for (i = 0; i <= SwissEph.SE_NPLANETS; i++) /* "<=" is correct! see decl. */
-                swed.savedat[i] = new save_positions();
+                swed.savedat[i].Clear();
             /* clear node data space */
             for (i = 0; i < Sweph.SEI_NNODE_ETC; i++)
             {
                 //#if 0
                 //    memset((void *) &swed.nddat[i], 0, sizeof(struct node_data));
                 //#else
-                swed.nddat[i] = new plan_data();
+                swed.nddat[i].Clear();
                 //#endif
             }
         }
@@ -1367,7 +1367,7 @@ namespace SwissEphNet.CPort
             {
                 if (swed.fidat[i].fptr != null)
                     swed.fidat[i].fptr.Dispose();
-                swed.fidat[i] = new file_data();
+                swed.fidat[i].Clear();
             }
             free_planets();
             swed.oec = new epsilon();
@@ -1402,12 +1402,16 @@ namespace SwissEphNet.CPort
             /* close SWISSEPH files */
             for (i = 0; i < SEI_NEPHFILES; i++)
             {
-                if (swed.fidat[i]?.fptr != null)
+                if (swed.fidat[i].fptr != null)
                     swed.fidat[i].fptr.Dispose();
-                swed.fidat[i] = new file_data();
+                swed.fidat[i].Clear();
             }
             free_planets();
             swed.Reset(false);
+            /* sweph.c:1248 memsets astro_models here. Reset(false) does not touch it --
+             * it is inside the `full` arm -- so a model set before swe_close survived it,
+             * where the C clears it. swi_close_keep_topo_etc already clears it. */
+            Array.Clear(swed.astro_models, 0, swed.astro_models.Length);
             /* close JPL file */
             SE.SweJPL.swi_close_jpl_file();
             swed.jpl_file_is_open = false;
@@ -7053,7 +7057,7 @@ namespace SwissEphNet.CPort
                         //fclose(swed.fidat[i].fptr);
                         swed.fidat[i].fptr.Dispose();
                     //memset((void*)&swed.fidat[i], 0, sizeof(struct file_data));
-                    swed.fidat[i] = null;
+                    swed.fidat[i].Clear();
                 }
                 swed.last_epheflag = epheflag;
             }
@@ -8381,7 +8385,7 @@ namespace SwissEphNet.CPort
                     if (swed.fidat[i].fptr != null)
                         fclose(swed.fidat[i].fptr);
                     //memset((void *) &swed.fidat[i], 0, sizeof(struct file_data));
-                    swed.fidat[i].fptr = null;
+                    swed.fidat[i].Clear();
                 }
                 swed.last_epheflag = epheflag;
             }

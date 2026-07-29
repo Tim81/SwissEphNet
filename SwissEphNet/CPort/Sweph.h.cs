@@ -540,7 +540,18 @@ namespace SwissEphNet.CPort
             public Int32 iflg; 		/* byte reorder flag and little/bigendian flag */
             public short npl;		/* how many planets in file */
             public int[] ipl = new int[SEI_FILE_NMAXPLAN];	/* planet numbers */
-        }
+        
+            /// <summary>Zero every member in place, as C's
+            /// memset(&swed.fidat[i], 0, sizeof(struct file_data)) does (sweph.c:397).
+            /// fnam and astnam are inline char buffers in the C; null is this port's
+            /// equivalent of the zeroed buffer. ipl is an inline array, so its contents
+            /// are zeroed and the array object is kept.</summary>
+            public void Clear() {
+                fnam = null; fversion = 0; astnam = null; sweph_denum = 0;
+                fptr = null; tfstart = 0; tfend = 0; iflg = 0; npl = 0;
+                Array.Clear(ipl, 0, ipl.Length);
+            }
+}
 
         public struct gen_const
         {
@@ -568,7 +579,16 @@ namespace SwissEphNet.CPort
              * 6 doubles each for position and speed coordinates.
              */
             public double[] xsaves { get; private set; }
-        };
+        
+            /// <summary>Zero every member in place, as C's
+            /// memset(&swed.savedat[i], 0, sizeof(struct save_positions)) does
+            /// (sweph.c:1172). xsaves is an inline array in the C, not a pointer, so its
+            /// contents are zeroed and the array object is kept.</summary>
+            public void Clear() {
+                ipl = 0; tsave = 0; iflgsave = 0;
+                Array.Clear(xsaves, 0, xsaves.Length);
+            }
+};
 
         public class node_data
         {
@@ -785,7 +805,26 @@ namespace SwissEphNet.CPort
              * xreturn+12	equatorial polar coordinates
              * xreturn+18	equatorial cartesian coordinates
              */
-        }
+        
+            /// <summary>Zero every member in place, as C's
+            /// memset(&swed.pldat[i], 0, sizeof(struct plan_data)) does (sweph.c:1169).
+            /// Assigning a fresh object instead would leave any reference already taken
+            /// -- swe_nod_aps holds pedp.x and psbdp.x across a nested swe_calc -- pointing
+            /// at the old one. refep and segp are the C's pointers, free()d then nulled;
+            /// x and xreturn are inline arrays, so their contents are zeroed and the array
+            /// object is kept.</summary>
+            public void Clear() {
+                ibdy = 0; iflg = 0; ncoe = 0; lndx0 = 0; nndx = 0;
+                tfstart = 0; tfend = 0; dseg = 0; telem = 0;
+                prot = 0; qrot = 0; dprot = 0; dqrot = 0;
+                rmax = 0; peri = 0; dperi = 0;
+                refep = null; segp = null;
+                tseg0 = 0; tseg1 = 0;
+                neval = 0; teval = 0; iephe = 0; xflgs = 0;
+                Array.Clear(x, 0, x.Length);
+                Array.Clear(xreturn, 0, xreturn.Length);
+            }
+}
 
     }
 

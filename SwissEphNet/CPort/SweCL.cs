@@ -5407,7 +5407,7 @@ namespace SwissEphNet.CPort
                 for (i = 0; i <= 5; i++)
                     xobs[i] = 0;
             }
-            if ((iflag & (SwissEph.SEFLG_HELCTR | SwissEph.SEFLG_BARYCTR)) != Sweph.B1950) {
+            if ((iflag & (SwissEph.SEFLG_HELCTR | SwissEph.SEFLG_BARYCTR)) != 0) {
                 if ((iflag & SwissEph.SEFLG_HELCTR) != 0 && 0 == (iflag & SwissEph.SEFLG_MOSEPH))
                     for (i = 0; i <= 5; i++)
                         xobs[i] = xsun[i];
