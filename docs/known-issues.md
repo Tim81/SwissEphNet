@@ -626,18 +626,22 @@ Confirmed: replacing those three assignments in `free_planets` with an in-place 
 makes the closed case return 76.65098418723707 -- exactly the open case, and matching libswe
 to the port's usual 1.9e-8.
 
-**Why the fix is not simply that.** A blunt reflection-based in-place zero fixes the nine
-`7.2.x` rows and regresses eleven others, including the six `7.2.1`/`7.2.3`/`7.2.19`/
-`7.2.21`/`7.2.25`/`7.2.27` rows the swephlib port corrected (they fall back to 344.63 where
-189.21 is expected). So it clears more than the C's `memset` does, or clears something whose
-storage the C keeps. The real fix has to reproduce `memset` field by field for `plan_data`,
-`save_positions` and `file_data`, checking which members are inline arrays in the C (zeroed,
-storage kept) versus pointers (freed and nulled) -- and the same audit applies anywhere else
-the port replaces an object where the C memsets.
+**Why the blunt version regressed eleven rows.** It was not over-clearing anything. A
+*second* defect sat in `swe_nod_aps` and the two had been cancelling each other out.
+`swecl.c:5414` is `if (iflag & (SEFLG_HELCTR | SEFLG_BARYCTR))`, and the port wrote
+`!= Sweph.B1950` -- comparing an int mask against `2433282.42345905`, so always true. The
+geocentric arms below it were unreachable and `xobs` stayed zero, so the `xear` added at
+`swecl.c:5470` was never subtracted back out. That came out right only because `xear`
+aliased an orphaned, all-zero array left by the object replacement. Fix `free_planets`
+alone and the cancellation breaks: geocentric Moon nodes come out barycentric, 344.63
+instead of 189.21. The identical block 100 lines further down was always correct as
+`!= 0`, which is the intent proof.
 
-Not attempted here: it is a `CPort` change with real blast radius in both directions, it
-wants its own before/after measurement against the conformance corpus, and it is independent
-of the swephlib port.
+**Both are now fixed.** Together they make 43 conformance rows pass with zero
+regressions, and move the characterization baseline in `nodaps` only (156 of 360 rows),
+regenerated under `-ExpectedScope 'NA|**','NAUT|**'` with a deviation note. Neither came
+from the swephlib port -- both are present verbatim in `main` -- but they are fixed here
+because the port is what made them reachable.
 
 ## Inverted `serr != NULL` guards: swept, but not exhaustively
 
