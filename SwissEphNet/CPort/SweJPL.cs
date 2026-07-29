@@ -283,8 +283,12 @@ namespace SwissEphNet.CPort
              * ipt[i+1]: number of coefficients (interpolation order - 1)
              * ipt[i+2]: number of intervals in segment */
             //fread((void *) &js.eh_ipt[0], sizeof(int32), 36, js.jplfptr);
-            js.jplfptr.ReadInt32s(js.eh_ipt, 0, 36);
-            nrd = js.eh_ipt.Length;
+            // swejpl.c:256 is `nrd = fread(&js->eh_ipt[0], sizeof(int32), 36, js->jplfptr)`,
+            // so nrd is the number of ITEMS READ and the check below is a short-read guard.
+            // Taking eh_ipt.Length instead makes nrd the ARRAY SIZE, which is 39 (line 102),
+            // so `nrd != 36` was always true and every JPL open returned NOT_AVAILABLE.
+            // SEFLG_JPLEPH could not work at all. ReadInt32s already returns the count.
+            nrd = js.jplfptr.ReadInt32s(js.eh_ipt, 0, 36);
             if (nrd != 36) return Sweph.NOT_AVAILABLE;
             if (js.do_reorder)
                 //reorder((char *) &js.eh_ipt[0], sizeof(int32), 36);
@@ -755,8 +759,9 @@ namespace SwissEphNet.CPort
                  * ipt[i+1]: number of coefficients (interpolation order - 1)
                  * ipt[i+2]: number of intervals in segment */
                 //fread((void *) &ipt[0], sizeof(int32), 36, js.jplfptr);
-                js.jplfptr.ReadInt32s(ipt, 0, 36);
-                nrd = ipt.Length;
+                // swejpl.c:786, same shape as the read above. ipt aliases js.eh_ipt (line 700),
+                // which is 39 long, so this had the identical always-fails defect.
+                nrd = js.jplfptr.ReadInt32s(ipt, 0, 36);
                 if (nrd != 36) return Sweph.NOT_AVAILABLE;
                 if (js.do_reorder)
                     //reorder((char *) &ipt[0], sizeof(int32), 36);
