@@ -243,6 +243,14 @@ namespace SwissEphNet
         public const int SE_SIDBIT_SSY_PLANE = 512;
         /* with user-defined ayanamsha, t0 is UT */
         public const int SE_SIDBIT_USER_UT = 1024;
+        /* ayanamsha measured on ecliptic of date;
+         * see commentaries in sweph.c:swi_get_ayanamsa_ex(). */
+        public const int SE_SIDBIT_ECL_DATE = 2048;
+        /* test feature: don't apply constant offset to ayanamsha 
+         * see commentary above sweph.c:get_aya_correction() */
+        public const int SE_SIDBIT_NO_PREC_OFFSET = 4096;
+        /* test feature: calculate ayanamsha using its original precession model */
+        public const int SE_SIDBIT_PREC_ORIG = 8192;
 
         /* sidereal modes (ayanamsas) */
         public const int SE_SIDM_FAGAN_BRADLEY = 0;
