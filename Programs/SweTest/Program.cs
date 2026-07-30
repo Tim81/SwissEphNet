@@ -833,7 +833,7 @@ namespace SweTest
                         {
                             //strncpy(stimein, argv[i] + 4, 30);
                             //stimein[30] = '\0';
-                            stimein = argv[i].Substring(4, 30);
+                            C.strncpy(out stimein, argv[i].Substring(4), 30);
                         }
                     }
                     else if (argv[i].StartsWith("-ut"))
@@ -875,13 +875,13 @@ namespace SweTest
                     else if (argv[i].StartsWith("-ay"))
                     {
                         do_ayanamsa = true;
-                        sid_mode = int.Parse(argv[i] + 3);
+                        sid_mode = int.Parse(argv[i].Substring(3));
                         //sweph.swe_set_sid_mode(sid_mode, 0, 0);
                     }
                     else if (argv[i].StartsWith("-sidt0"))
                     {
                         iflag |= SwissEph.SEFLG_SIDEREAL;
-                        sid_mode = int.Parse(argv[i] + 6);
+                        sid_mode = int.Parse(argv[i].Substring(6));
                         if (sid_mode == 0)
                             sid_mode = SwissEph.SE_SIDM_FAGAN_BRADLEY;
                         sid_mode |= SwissEph.SE_SIDBIT_ECL_T0;
@@ -890,7 +890,7 @@ namespace SweTest
                     else if (argv[i].StartsWith("-sidsp"))
                     {
                         iflag |= SwissEph.SEFLG_SIDEREAL;
-                        sid_mode = int.Parse(argv[i] + 6);
+                        sid_mode = int.Parse(argv[i].Substring(6));
                         if (sid_mode == 0)
                             sid_mode = SwissEph.SE_SIDM_FAGAN_BRADLEY;
                         sid_mode |= SwissEph.SE_SIDBIT_SSY_PLANE;
@@ -916,7 +916,7 @@ namespace SweTest
                     else if (argv[i].StartsWith("-sid"))
                     {
                         iflag |= SwissEph.SEFLG_SIDEREAL;
-                        sid_mode = int.Parse(argv[i] + 4);
+                        sid_mode = int.Parse(argv[i].Substring(4));
                         //if (sid_mode > 0)
                         //    sweph.swe_set_sid_mode(sid_mode, 0, 0);
                     }
@@ -930,7 +930,7 @@ namespace SweTest
                     }
                     else if (argv[i].StartsWith("-j"))
                     {
-                        begindate = argv[i] + 1;
+                        begindate = argv[i].Substring(1);
                     }
                     else if (argv[i].StartsWith("-ejpl"))
                     {
@@ -961,7 +961,7 @@ namespace SweTest
                     }
                     else if (argv[i].StartsWith("-helflag"))
                     {
-                        helflag = int.Parse(argv[i] + 8);
+                        helflag = int.Parse(argv[i].Substring(8));
                         if (helflag >= SwissEph.SE_HELFLAG_AV)
                             hel_using_AV = true;
                     }
@@ -978,9 +978,8 @@ namespace SweTest
                         sout = String.Empty;
                         sp = argv[i].Substring(6);
                         if (sp.StartsWith("[")) sp = sp.Substring(1);
-                        C.sscanf(sp, "%lf,%lf,%c", ref top_long, ref top_lat, ref sout);
+                        C.sscanf(sp, "%lf,%lf,%c", ref top_long, ref top_lat, ref ihsy);
                         top_elev = 0;
-                        if (!String.IsNullOrEmpty(sout)) ihsy = sout[0];
                         do_houses = true;
                         have_geopos = true;
                     }
@@ -1159,13 +1158,13 @@ namespace SweTest
                     }
                     else if (argv[i].StartsWith("-amod"))
                     {
-                        astro_models = argv[i] + 5;
+                        astro_models = argv[i].Substring(5);
                         do_set_astro_models = true;
                         /* undocumented test feature */
                     }
                     else if (argv[i].StartsWith("-tidacc"))
                     {
-                        tid_acc = C.atof(argv[i] + 7);
+                        tid_acc = C.atof(argv[i].Substring(7));
                     }
                     else if (argv[i].StartsWith("-hev"))
                     {

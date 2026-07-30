@@ -1,10 +1,5 @@
 case_id	category	reason
-CRASH_MISC|AY	CRASH	.NET crashed, C did not: Unhandled exception. System.FormatException: The input string '-ay13' was not in a correct format.
-CRASH_MISC|HELFLAG	CRASH	.NET crashed, C did not: Unhandled exception. System.FormatException: The input string '-helflag18' was not in a correct format.
-CRASH_MISC|J	CRASH	.NET crashed, C did not: Unhandled exception. System.FormatException: The input string '-j2451545.01' was not in a correct format.
-CRASH_MISC|SID	CRASH	.NET crashed, C did not: Unhandled exception. System.FormatException: The input string '-sid14' was not in a correct format.
-CRASH_MISC|SIDSP	CRASH	.NET crashed, C did not: Unhandled exception. System.FormatException: The input string '-sidsp16' was not in a correct format.
-CRASH_MISC|SIDT0	CRASH	.NET crashed, C did not: Unhandled exception. System.FormatException: The input string '-sidt016' was not in a correct format.
+CRASH_MISC|AY	OUTPUT-DIFFERS	line 1: c="Ayanamsha Lahiri   23.8532035" net="Ayanamsha         23.8532035"
 DATE_FORMATS|NEGATIVE_YEAR	OUTPUT-DIFFERS	line 3: c="warning: SwissEph file 'seplm06.se1' not found in PATH 'C:\Users\Timothy\source\repos\SwissEphNet\external\swisseph\ephe..." net="warning: SwissEph file 'seplm06.se1' not found in PATH 'C:\Users\Timothy\source\repos\SwissEphNet\external\swisseph\ephe..."
 DATE_FORMATS|OUT_OF_RANGE_PAST	OUTPUT-DIFFERS	line 1: c="error: SwissEph file 'seplm42.se1' not found in PATH 'C:\Users\Timothy\source\repos\SwissEphNet\external\swisseph\ephe\'" net="error: SwissEph file 'seplm42.se1' not found in PATH 'C:\Users\Timothy\source\repos\SwissEphNet\external\swisseph\ephe/'"
 DIFF|d1	OUTPUT-DIFFERS	line 1: c="Sun-Moo  62.5741167" net="Sun-Moo  62.5741175"
@@ -54,12 +49,7 @@ FMT_MULTI|6	OUTPUT-DIFFERS	line 2: c="Moon             123.9796771  303.9796771 
 HEADER_BLOCK|1.1.2000	OUTPUT-DIFFERS	line 2: c="date (dmy) 1.1.2000 greg.   0:00:00 TT		version 2.10.03" net="date (dmy) 1.1.2000 greg.   0:00:00 TT		version 2.08"
 HEADER_BLOCK|1.1.2100	OUTPUT-DIFFERS	line 2: c="date (dmy) 1.1.2100 greg.   0:00:00 TT		version 2.10.03" net="date (dmy) 1.1.2100 greg.   0:00:00 TT		version 2.08"
 HEADER_BLOCK|4.10.1582	OUTPUT-DIFFERS	line 2: c="date (dmy) 4.10.1582 jul.   0:00:00 TT		version 2.10.03" net="date (dmy) 4.10.1582 jul.   0:00:00 TT		version 2.08"
-HOUSES_CRASH|1	CRASH	.NET crashed, C did not: Unhandled exception. System.InvalidCastException: Unable to cast object of type 'System.Char' to type 'System.String'.
-HOUSES_CRASH|2	CRASH	.NET crashed, C did not: Unhandled exception. System.InvalidCastException: Unable to cast object of type 'System.Char' to type 'System.String'.
-HOUSES_CRASH|3	CRASH	.NET crashed, C did not: Unhandled exception. System.InvalidCastException: Unable to cast object of type 'System.Char' to type 'System.String'.
-HOUSES_CRASH|4	CRASH	.NET crashed, C did not: Unhandled exception. System.InvalidCastException: Unable to cast object of type 'System.Char' to type 'System.String'.
 MISC_FLAGS|ROUNDMIN	OUTPUT-DIFFERS	line 1: c="Sun              279.86" net="Sun              279.8584613"
-MISC_FLAGS|TIME_UTC	CRASH	.NET crashed, C did not: Unhandled exception. System.ArgumentOutOfRangeException: Index and length must refer to a location within the string. (Parameter 'length')
 ORBEL|1	OUTPUT-DIFFERS	line 1: c="Moon             217.2843446" net="Moon             217.2843438"
 ORBEL|4	OUTPUT-DIFFERS	line 12: c="time pericenter  	2451508.063063 25.11.1999,  13:30:48.7" net="time pericenter  	2451508.063063 25.11.1999, 13:30:48.7074"
 PLANETS_MOSEPH|1.1.1900|d|EMOS	OUTPUT-DIFFERS	line 1: c="Sun              280° 9'12.1890    0° 0' 0.2067    0.983266267    1° 1'11.4515" net="Sun             280° 9'12.1890   0° 0' 0.2067    0.983266267   1° 1'11.4515"

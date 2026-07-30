@@ -34,7 +34,36 @@
     real vs 280.3681666 Moshier-fallback at JD 2451545.0). This script asserts the eight-file set
     Tests/conformance/required-ephemeris-files.tsv declares is present in external/swisseph/ephe --
     the same manifest scripts/run-oracle-dump.ps1 and Tools/CReference/build-c.ps1 check -- before
-    running a single case, and points both binaries at that directory with -edir.
+    running a single case, and points both binaries at that directory with -edir. Two things make
+    that assertion trustworthy rather than decorative:
+
+    First, -edir is always an absolute, resolved path (Resolve-EpheDir below), whether $EpheDir came
+    from the default or a caller's override. Astrodienst's swetest reads a relative -edir correctly;
+    Programs/SweTest/Program.cs's sweph_OnLoadFile handler does not (it is a frozen transliteration,
+    out of scope to fix here -- see CONTRIBUTING.md). e.FileName there is already the full path
+    swi_fopen built from ephepath plus the file name, and the handler then runs it through
+    Path.Combine(ephepath, e.FileName) a second time. Path.Combine only discards the first argument
+    when the second is rooted, which a relative ephepath makes it not. Confirmed by hand before this
+    comment was written: -b1.1.2000 -p0 -fPl -eswe against a relative -edir prints "using Moshier
+    eph." and Sun 279.8584626 on the .NET side while the C reference, same relative -edir, reads the
+    real file and prints 279.8584613 -- the same value both sides give with an absolute -edir.
+    Passing a relative directory here would silently compare a real-ephemeris C run against a
+    Moshier-fallback .NET run on every row.
+
+    Second, Test-RequiredFileMissReported below scans both binaries' output for "SwissEph file 'X'
+    not found" naming one of the eight required, just-confirmed-present files, and aborts the whole
+    run the moment it sees one -- that combination is only possible when a binary failed to read a
+    file this script already proved was on disk, i.e. a path-resolution defect, not a data gap. It
+    does not fire on a missing file outside the required set (an extended-range file like
+    seplm06.se1, or an unshipped asteroid file): both binaries fall back to Moshier there for a real,
+    shared reason -- the declared ephemeris set genuinely does not cover it -- and print matching
+    values (confirmed: -b1.1.-100 gives Sun 277.7544113 on both sides, "using Moshier eph." visible
+    on both, not a divergence to hide). Asserting file presence alone (the previous form of this
+    guard) caught neither failure mode: presence says nothing about whether the file was actually
+    read. $EpheDir's default already happened to resolve absolute before this change (it is built
+    from $repoRoot, itself a Resolve-Path result), so re-running the existing grid against it does
+    not, by itself, turn up rows that were secretly reading Moshier -- the exposure was a caller
+    passing -EpheDir a relative path, which nothing here checked or corrected.
 
 .PARAMETER Regenerate
     Rewrites Tests/swetest/known-diff.tsv from the current comparison run and appends a dated entry
@@ -63,7 +92,10 @@
     Defaults to external/.c-reference/swetest.exe (Tools/CReference/build-c.ps1's output).
 
 .PARAMETER EpheDir
-    Defaults to external/swisseph/ephe. Passed to both binaries as -edir.
+    Defaults to external/swisseph/ephe. Resolved to an absolute path (Resolve-EpheDir) before
+    being passed to either binary as -edir, whether it came from this default or an override --
+    see "NEITHER BINARY IS BUILT SILENTLY WRONG" above for why a relative directory would be a
+    silent Moshier-fallback defect on the .NET side.
 #>
 [CmdletBinding()]
 param(
@@ -186,9 +218,29 @@ function Read-KnownDiff {
 }
 
 # ---------------------------------------------------------------------------------------
+# -edir must be absolute. Programs/SweTest/Program.cs's sweph_OnLoadFile (a frozen
+# transliteration -- see this script's own .DESCRIPTION, "NEITHER BINARY IS BUILT SILENTLY WRONG")
+# double-combines a relative ephepath and misses every file, falling back to Moshier instead of
+# failing. Astrodienst's swetest has no such bug, so a relative -edir would compare a real-
+# ephemeris C run against a Moshier-fallback .NET run without either binary raising an error.
+# Applied to $EpheDir unconditionally, whether it came from the default or -EpheDir override, so
+# a caller cannot reintroduce the relative case by supplying their own path.
+# ---------------------------------------------------------------------------------------
+
+function Resolve-EpheDir {
+    param([string] $Path)
+    if (-not (Test-Path -LiteralPath $Path -PathType Container)) {
+        Fail "$Path does not exist. Run the sparse-checkout recipe in CONTRIBUTING.md's `"The upstream C is vendored at external/swisseph`" section."
+    }
+    return (Resolve-Path -LiteralPath $Path).Path
+}
+
+# ---------------------------------------------------------------------------------------
 # Ephemeris manifest -- same two-way check as scripts/run-oracle-dump.ps1's
 # Assert-EphemerisManifest, reimplemented here for the same reason that script gives for its own
-# copy: no other shared dependency justifies referencing it instead.
+# copy: no other shared dependency justifies referencing it instead. Returns the required-file
+# list on success so the caller can reuse it for Test-RequiredFileMissReported below, rather than
+# re-reading $ManifestPath a second time.
 # ---------------------------------------------------------------------------------------
 
 function Assert-EphemerisManifest {
@@ -217,7 +269,7 @@ function Assert-EphemerisManifest {
     $extra = @($present.Keys | Where-Object { -not $requiredSet.ContainsKey($_.ToLowerInvariant()) } | Sort-Object)
     if ($missing.Count -eq 0 -and $extra.Count -eq 0) {
         Write-Host "PASS: $EpheDirPath matches the declared ephemeris file set ($($required.Count) file(s))." -ForegroundColor Green
-        return
+        return $required
     }
     $message = "$EpheDirPath does not match the declared ephemeris file set ($ManifestPath).`n"
     if ($missing.Count -gt 0) { $message += "Missing ($($missing.Count)): $($missing -join ', ')`n" }
@@ -273,6 +325,32 @@ function Format-ArgvEchoLine {
         $result[0] = '<swetest-executable-path>' + $result[0].Substring($Matches[0].Length)
     }
     return $result
+}
+
+# ---------------------------------------------------------------------------------------
+# The Moshier-fallback guard. Assert-EphemerisManifest already proved every file in
+# $RequiredFiles is on disk in $EpheDir before the first case ran, so a "SwissEph file 'X' not
+# found" line naming one of those files during an actual run cannot be a data gap -- it can only
+# mean the binary that printed it failed to read a file this script already confirmed was there,
+# the path-resolution defect this guard exists to catch (see this script's own .DESCRIPTION).
+# Deliberately does not fire on a missing file outside $RequiredFiles (an extended-range file
+# like seplm06.se1, or an unshipped asteroid file): both binaries fall back to Moshier there for a
+# real, shared reason, and print matching values -- recording that as a normal diff, the way
+# DATE_FORMATS|NEGATIVE_YEAR and STAR_ASTEROID_MISSING already do, is correct, not a gap in the
+# guard.
+# ---------------------------------------------------------------------------------------
+
+function Test-RequiredFileMissReported {
+    param([string[]] $Lines, [System.Collections.Generic.HashSet[string]] $RequiredFiles)
+    foreach ($line in $Lines) {
+        if ($line -match "SwissEph file '([^']+)' not found") {
+            $missingFile = $Matches[1].ToLowerInvariant()
+            if ($RequiredFiles.Contains($missingFile)) {
+                return $Matches[1]
+            }
+        }
+    }
+    return $null
 }
 
 # ---------------------------------------------------------------------------------------
@@ -373,6 +451,11 @@ function Compare-Case {
 # =========================================================================================
 $exitCode = 0
 try {
+    # Resolved to an absolute path before anything else runs, whether $EpheDir came from the
+    # default above or a caller's -EpheDir override -- see Resolve-EpheDir's own comment for why a
+    # relative -edir is a silent Moshier-fallback defect on the .NET side and not on the C side.
+    $EpheDir = Resolve-EpheDir -Path $EpheDir
+
     Write-Host "Grid:          $GridPath"
     Write-Host "C reference:   $CExePath"
     Write-Host "Ephemeris dir: $EpheDir"
@@ -384,7 +467,9 @@ try {
     }
 
     $requiredFilesManifest = Join-Path $repoRoot 'Tests/conformance/required-ephemeris-files.tsv'
-    Assert-EphemerisManifest -ManifestPath $requiredFilesManifest -EpheDirPath $EpheDir
+    $requiredFiles = Assert-EphemerisManifest -ManifestPath $requiredFilesManifest -EpheDirPath $EpheDir
+    $requiredFilesSet = [System.Collections.Generic.HashSet[string]]::new()
+    foreach ($f in $requiredFiles) { [void]$requiredFilesSet.Add($f.ToLowerInvariant()) }
 
     $grid = Read-ArgsGrid -Path $GridPath
     Write-Host "Grid rows:     $($grid.Count)"
@@ -413,6 +498,26 @@ try {
 
         $cResult = Invoke-SwetestCase -ExePath $CExePath -ArgsStr $row.Args -EpheDirPath $EpheDir
         $netResult = Invoke-SwetestCase -ExePath $netExePath -ArgsStr $row.Args -EpheDirPath $EpheDir
+
+        # Guard scoped to rows that actually asked for the real ephemeris (-eswe). -emos rows
+        # (PLANETS_MOSEPH) are exempt on purpose: swetest.c's asteroid lookup ignores -edir under
+        # -emos and probes its own compiled-in default path instead, a real, symmetric-on-neither-
+        # side C quirk unrelated to this defect -- confirmed by hand, -pp -emos at 1.1.1900: the C
+        # reference reports seas_18.se1 "not found in PATH '\sweph\ephe\'" (its own hardcoded
+        # default, not $EpheDir) and zeroes the six asteroid bodies, while Programs/SweTest reads
+        # them via -edir and returns real values. That is a genuine C-vs-port difference for
+        # known-diff.tsv to carry as OUTPUT-DIFFERS, not a sign either binary mishandled $EpheDir.
+        if ($row.Args -match '-eswe') {
+            $cMiss = Test-RequiredFileMissReported -Lines $cResult.Lines -RequiredFiles $requiredFilesSet
+            if ($cMiss) {
+                Fail "$($row.CaseId): C reference reported required file '$cMiss' not found under $EpheDir, which Assert-EphemerisManifest already confirmed is present. -eswe was requested and the run degraded to Moshier instead of failing outright -- that is a harness defect, not a case result to record."
+            }
+            $netMiss = Test-RequiredFileMissReported -Lines $netResult.Lines -RequiredFiles $requiredFilesSet
+            if ($netMiss) {
+                Fail "$($row.CaseId): .NET reported required file '$netMiss' not found under $EpheDir, which Assert-EphemerisManifest already confirmed is present. -eswe was requested and the run degraded to Moshier instead of failing outright -- that is a harness defect, not a case result to record."
+            }
+        }
+
         $diff = Compare-Case -CResult $cResult -NetResult $netResult
 
         if (-not $categoryTally.ContainsKey($row.Category)) {
