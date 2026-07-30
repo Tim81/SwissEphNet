@@ -1513,15 +1513,6 @@ namespace SwissEphNet.CPort
             //  } else {
             //    strcpy(s, SE_EPHE_PATH);
             //  }
-            ///*
-            //#if MSDOS
-            //  if (strchr(s, '/') != NULL)
-            //    strcpy(s, SE_EPHE_PATH);
-            //#else
-            //  if (strchr(s, '\\') != NULL)
-            //    strcpy(s, SE_EPHE_PATH);
-            //#endif
-            //*/
             s = !String.IsNullOrWhiteSpace(path) ? path : SwissEph.SE_EPHE_PATH;
             i = s.Length;
             //  if (*(s + i - 1) != *DIR_GLUE && *s != '\0')
@@ -2693,11 +2684,19 @@ namespace SwissEphNet.CPort
             if ((iflag & SwissEph.SEFLG_JPLEPH) != 0)
             {
                 if (swed.jpldenum > 0)
+                {
                     return swed.jpldenum;
+                }
                 else
+                {
                     return SwissEph.SE_DE_NUMBER;
+                }
             }
             if (ipli > SwissEph.SE_AST_OFFSET)
+            {
+                fdp = swed.fidat[SEI_FILE_ANY_AST];
+            }
+            else if (ipli > SwissEph.SE_PLMOON_OFFSET)
             {
                 fdp = swed.fidat[SEI_FILE_ANY_AST];
             }
@@ -2721,9 +2720,13 @@ namespace SwissEphNet.CPort
             if (fdp != null)
             {
                 if (fdp.sweph_denum != 0)
+                {
                     return fdp.sweph_denum;
+                }
                 else
+                {
                     return SwissEph.SE_DE_NUMBER;
+                }
             }
             return SwissEph.SE_DE_NUMBER;
         }
@@ -5011,13 +5014,6 @@ namespace SwissEphNet.CPort
                     }
                 }
             }
-            //#if 0
-            //  if (ipli == SEI_SUNBARY) {
-            //    printf("%d, %x\n", fpos, fpos);
-            //    for (i = 0; i < pdp.ncoe; i++)
-            //      printf("%e, %e, %e\n", pdp.segp[i], pdp.segp[i+pdp.ncoe], pdp.segp[i+2*pdp.ncoe]);
-            //  }
-            //#endif
             return (OK);
         return_error_gns:
             fdp.fptr.Dispose();
@@ -5050,7 +5046,8 @@ namespace SwissEphNet.CPort
             double[] doubles = new double[20];
             plan_data pdp;
             file_data fdp = swed.fidat[ifno];
-            string serr_file_damage = "Ephemeris file %s is damaged (0). ";
+            string serr_file_damage = "Ephemeris file %s is damaged (0%s). ";
+            string smsg = "";
             int nbytes_ipl = 2;
             fp = fdp.fptr;
             /************************************* 
@@ -5064,10 +5061,12 @@ namespace SwissEphNet.CPort
             //sp = s;
             //while (isdigit((int)*sp) == 0 && *sp != '\0')
             //    sp++;
-            //if (*sp == '\0')
-            //    goto file_damage;
             var match = Regex.Match(sp, @"^.+(\d+)$");
-            if (!match.Success) goto file_damage;
+            if (!match.Success)
+            {
+                smsg = "a";
+                goto file_damage;
+            }
             /* version unused so far */
             // sweph.c:4400 is `fdp->fversion = atoi(sp);`, which cannot throw.
             fdp.fversion = C.atoi(match.Groups[1].Value);
@@ -5076,7 +5075,10 @@ namespace SwissEphNet.CPort
              *************************************/
             s = fp.ReadLine().Trim();
             if (String.IsNullOrEmpty(s))
+            {
+                smsg = "b";
                 goto file_damage;
+            }
             /* file name, without path */
             sp = fdp.fnam;
             if (sp.LastIndexOf(SwissEph.DIR_GLUE) > 0)
@@ -5096,7 +5098,10 @@ namespace SwissEphNet.CPort
             //    goto file_damage;
             s = fp.ReadLine();
             if (String.IsNullOrEmpty(s))
+            {
+                smsg = "c";
                 goto file_damage;
+            }
             /**************************************** 
              * orbital elements, if single asteroid *
              ****************************************/
@@ -5104,14 +5109,17 @@ namespace SwissEphNet.CPort
             {
                 s = fp.ReadLine();
                 if (String.IsNullOrEmpty(s))
+                {
+                    smsg = "d";
                     goto file_damage;
+                }
                 spi = 0;
                 /* MPC number and name; will be analyzed below:
                  * search "asteroid name" */
                 //sp = s.TrimStart();
                 spi = s.IndexOfFirstNot(" 0123456789".ToCharArray());
                 i = spi;
-                sastnam = s.Substring(spi, lastnam + i);
+                sastnam = s.Substring(0, lastnam + i);	// fixed 19-nov-19
                 /* save elements, they are required for swe_plan_pheno() */
                 swed.astelem = s;
                 /* required for magnitude */
@@ -5130,29 +5138,15 @@ namespace SwissEphNet.CPort
                     /* estimate the diameter from magnitude; assume albedo = 0.15 */
                     swed.ast_diam = 1329 / Math.Sqrt(0.15) * Math.Pow(10, -0.2 * swed.ast_H);
                 }
-                //#if 0
-                //    i = 5;
-                //    while (*(sp+i) != ' ')
-                //      i++;
-                //    j = i - 5;
-                //    strncpy(sastnam, sp, lastnam+i);
-                //    *(sastnam+lastnam+i) = 0;
-                //    /* save elements, they are required for swe_plan_pheno() */
-                //    strcpy(swed.astelem, s);
-                //    /* required for magnitude */
-                //    swed.ast_G = atof(sp + 40 + j);
-                //    swed.ast_H = atof(sp + 46 + j);
-                //    /* diameter in kilometers, not always given: */
-                //    strncpy(s2, sp+56+j, 7);
-                //    *(s2 + 7) = '\0';
-                //    swed.ast_diam = atof(s2);
-                //#endif
             }
             /************************************* 
-             * one int32 for test of byte order   * 
+             * one int32 for test of byte order   *
              *************************************/
             if (!fp.Read(ref testendian))
+            {
+                smsg = "e";
                 goto file_damage;
+            }
             /* is byte order correct?            */
             if (testendian == SEI_FILE_TEST_ENDIAN)
             {
@@ -5167,10 +5161,12 @@ namespace SwissEphNet.CPort
                 //    *(sp + i) = *(c + 3 - i);
                 lng = SE.SweJPL.reorder(testendian);
                 if (lng != SEI_FILE_TEST_ENDIAN)
+                {
+                    smsg = "f";
                     goto file_damage;
-                /* printf("%d  %x\n", lng, lng);*/
+                }
             }
-            /* is file bigendian or littlendian? 
+            /* is file bigendian or littlendian?
              * test first byte of test integer, which is highest if bigendian */
             //c = (char*)&testendian;
             //c2 = SEI_FILE_TEST_ENDIAN / 16777216L;
@@ -5185,7 +5181,7 @@ namespace SwissEphNet.CPort
                 fendian = SEI_FILE_LITENDIAN;
             fdp.iflg = (Int32)freord | fendian;
             /************************************* 
-             * length of file correct?           * 
+             * length of file correct?           *
              *************************************/
             retc = do_fread(ref lng, 4, 1, 4, ref fp, SEI_CURR_FPOS, freord,
                 fendian, ifno, ref serr);
@@ -5193,10 +5189,16 @@ namespace SwissEphNet.CPort
                 goto return_error;
             fpos = (int)fp.Position;
             if (fp.Seek(0L, SeekOrigin.End) != 0)
+            {
+                smsg = "g";
                 goto file_damage;
+            }
             flen = (int)fp.Position;
             if (lng != flen)
+            {
+                smsg = "h";
                 goto file_damage;
+            }
             /********************************************************** 
              * DE number of JPL ephemeris which this file is based on * 
              **********************************************************/
@@ -5228,7 +5230,10 @@ namespace SwissEphNet.CPort
                 nplan %= 256;
             }
             if (nplan < 1 || nplan > 20)
+            {
+                smsg = "i";
                 goto file_damage;
+            }
             fdp.npl = nplan;
             /* which ones?                       */
             retc = do_fread(fdp.ipl, nbytes_ipl, (int)nplan, sizeof(int), ref fp, SEI_CURR_FPOS,
@@ -5254,21 +5259,28 @@ namespace SwissEphNet.CPort
                 // the whole field to parse, so a catalogue field like "1234A"
                 // gave 0 instead of the 1234 atol(sastno) returns.
                 i = C.atoi(sastno);
-                if (i == fdp.ipl[0] - SwissEph.SE_AST_OFFSET)
+                if (i == fdp.ipl[0] - SwissEph.SE_AST_OFFSET
+                    || i == fdp.ipl[0]) // planetary moon
                 {
                     /* element record is from bowell database */
                     fdp.astnam = sastnam.Substring(j + 1, lastnam);
                     //fdp.astnam[lastnam] = '\0';
                     /* overread old ast. name field */
                     if (!fp.ReadString(ref s, 30))
+                    {
+                        smsg = "j";
                         goto file_damage;
+                    }
                 }
                 else
                 {
                     /* older elements record structure: the name
                      * is taken from old name field */
                     if (!fp.ReadString(ref fdp.astnam, 30))
+                    {
+                        smsg = "k";
                         goto file_damage;
+                    }
                 }
                 /* in worst case strlen of not null terminated area! */
                 //i = (int) fdp.astnam.Length - 1;
@@ -5282,6 +5294,9 @@ namespace SwissEphNet.CPort
                 i = fdp.astnam.IndexOf('\0');
                 if (i >= 0) fdp.astnam = fdp.astnam.Substring(0, i);
                 fdp.astnam = fdp.astnam.TrimEnd(' ', '\0');
+                i = fdp.astnam.IndexOf("  ", StringComparison.Ordinal);
+                if (i >= 0)
+                    fdp.astnam = fdp.astnam.Substring(0, i);
             }
             /************************************* 
              * check CRC                         * 
@@ -5299,11 +5314,16 @@ namespace SwissEphNet.CPort
             //    goto file_damage;
             byte[] crcBuff = new byte[fpos];
             if (fp.Read(crcBuff, 0, fpos) != fpos)
+            {
+                smsg = "m";
                 goto file_damage;
+            }
             //#if 1
             if (SE.SwephLib.swi_crc32(crcBuff, (int)fpos) != ulng)
+            {
+                smsg = "n";
                 goto file_damage;
-            /*printf("crc %d %d\n", ulng2, ulng);*/
+            }
             //#endif
             fp.Seek(fpos + 4, SeekOrigin.Begin);
             /************************************* 
@@ -5328,6 +5348,8 @@ namespace SwissEphNet.CPort
                 /* get SEI_ planet number */
                 ipli = fdp.ipl[kpl];
                 if (ipli >= SwissEph.SE_AST_OFFSET)
+                    pdp = swed.pldat[SEI_ANYBODY];
+                else if (ipli >= SwissEph.SE_PLMOON_OFFSET)
                     pdp = swed.pldat[SEI_ANYBODY];
                 else
                     pdp = swed.pldat[ipli];
@@ -5354,6 +5376,12 @@ namespace SwissEphNet.CPort
                 if (retc != OK)
                     goto return_error;
                 pdp.rmax = lng / 1000.0;
+                // planet's center of body, e.g. 9599 for Jupiter or Mars moons
+                if (ipli >= SwissEph.SE_PLMOON_OFFSET && ipli < SwissEph.SE_AST_OFFSET)
+                {
+                    if ((ipli % 100) == 99 || (ipli - 9000) / 100 == SwissEph.SE_MARS)
+                        pdp.rmax = lng / 1000000.0;
+                }
                 /* start and end epoch of planetary ephemeris,   */
                 /* segment length, and orbital elements          */
                 retc = do_fread(doubles, 8, 10, 8, ref fp, SEI_CURR_FPOS, freord,
@@ -5401,8 +5429,8 @@ namespace SwissEphNet.CPort
         file_damage:
             //if (serr != null) {
             //*serr = '\0';
-            //if (strlen(serr_file_damage) + strlen(fdp.fnam) < AS_MAXCH) {
-            serr = C.sprintf(serr_file_damage, fdp.fnam);
+            //if (strlen(serr_file_damage) + strlen(fdp.fnam) + strlen(smsg) < AS_MAXCH) {
+            serr = C.sprintf(serr_file_damage, fdp.fnam, smsg);
         //}
         //}
         return_error:
@@ -5465,13 +5493,19 @@ namespace SwissEphNet.CPort
                     for (j = size - 1; j >= 0; j--)
                     {
                         if (freord != 0)
+                        {
                             k = size - j - 1;
+                        }
                         else
+                        {
                             k = j;
+                        }
                         if (size != corrsize)
+                        {
                             if ((fendian == SEI_FILE_BIGENDIAN && 0 == freord) ||
                                 (fendian == SEI_FILE_LITENDIAN && freord != 0))
                                 k += corrsize - size;
+                        }
                         targ[i * corrsize + k] = space[i * size + j];
                     }
                 }
@@ -5564,8 +5598,10 @@ namespace SwissEphNet.CPort
             double xrot, yrot, zrot;
             CPointer<double> chcfx, chcfy, chcfz;
             CPointer<double> refepx, refepy;
-            double seps2000 = swed.oec2000.seps;
-            double ceps2000 = swed.oec2000.ceps;
+            // epsilon as used in chopt.c
+            // double eps2000 = 0.409092804;       	// eps 2000 in radians
+            double seps2000 = 0.39777715572793088;  	// sin(eps2000)
+            double ceps2000 = 0.91748206215761929;	// cos(eps2000)
             plan_data pdp = swed.pldat[ipli];
             int nco = pdp.ncoe;
             t = pdp.tseg0 + pdp.dseg / 2;
