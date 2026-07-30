@@ -955,7 +955,13 @@ namespace SwissEphNet.CPort
                             fac *= tt[0];
                         else
                         {
-                            if (!int.TryParse(sp, out i)) i = 0;
+                            // swemplan.c:955 is `else if ((i = atoi(sp)) <= 4 && i >= 0)`.
+                            // atoi(sp) takes the leading integer prefix of the whole
+                            // remaining string; int.TryParse required the whole string
+                            // to be numeric, so "2*T2 + 3*T3" (sp beyond the consumed
+                            // "T") parsed as 0 instead of 2, picking the wrong power
+                            // of time (tt[0] instead of tt[2]).
+                            i = C.atoi(sp);
                             if (i <= 4 && i >= 0)
                                 fac *= tt[i];
                         }

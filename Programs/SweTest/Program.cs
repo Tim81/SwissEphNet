@@ -875,13 +875,13 @@ namespace SweTest
                     else if (argv[i].StartsWith("-ay"))
                     {
                         do_ayanamsa = true;
-                        sid_mode = int.Parse(argv[i].Substring(3));
+                        sid_mode = C.atoi(argv[i].Substring(3));
                         //sweph.swe_set_sid_mode(sid_mode, 0, 0);
                     }
                     else if (argv[i].StartsWith("-sidt0"))
                     {
                         iflag |= SwissEph.SEFLG_SIDEREAL;
-                        sid_mode = int.Parse(argv[i].Substring(6));
+                        sid_mode = C.atoi(argv[i].Substring(6));
                         if (sid_mode == 0)
                             sid_mode = SwissEph.SE_SIDM_FAGAN_BRADLEY;
                         sid_mode |= SwissEph.SE_SIDBIT_ECL_T0;
@@ -890,7 +890,7 @@ namespace SweTest
                     else if (argv[i].StartsWith("-sidsp"))
                     {
                         iflag |= SwissEph.SEFLG_SIDEREAL;
-                        sid_mode = int.Parse(argv[i].Substring(6));
+                        sid_mode = C.atoi(argv[i].Substring(6));
                         if (sid_mode == 0)
                             sid_mode = SwissEph.SE_SIDM_FAGAN_BRADLEY;
                         sid_mode |= SwissEph.SE_SIDBIT_SSY_PLANE;
@@ -916,7 +916,7 @@ namespace SweTest
                     else if (argv[i].StartsWith("-sid"))
                     {
                         iflag |= SwissEph.SEFLG_SIDEREAL;
-                        sid_mode = int.Parse(argv[i].Substring(4));
+                        sid_mode = C.atoi(argv[i].Substring(4));
                         //if (sid_mode > 0)
                         //    sweph.swe_set_sid_mode(sid_mode, 0, 0);
                     }
@@ -961,7 +961,7 @@ namespace SweTest
                     }
                     else if (argv[i].StartsWith("-helflag"))
                     {
-                        helflag = int.Parse(argv[i].Substring(8));
+                        helflag = C.atoi(argv[i].Substring(8));
                         if (helflag >= SwissEph.SE_HELFLAG_AV)
                             hel_using_AV = true;
                     }
@@ -988,7 +988,7 @@ namespace SweTest
                         ihsy = argv[i].Length > 4 ? argv[i][4] : '\0';
                         if (ihsy == '\0') ihsy = 'P';
                         if (argv[i].Length > 5)
-                            hpos_meth = int.Parse(argv[i].Substring(5));
+                            hpos_meth = C.atoi(argv[i].Substring(5));
                         have_geopos = true;
                     }
                     else if (argv[i].StartsWith("-topo"))
@@ -1258,13 +1258,13 @@ namespace SweTest
                     }
                     else if (argv[i].StartsWith("-n"))
                     {
-                        nstep = int.Parse(argv[i].Substring(2));
+                        nstep = C.atoi(argv[i].Substring(2));
                         if (nstep == 0)
                             nstep = 20;
                     }
                     else if (argv[i].StartsWith("-i"))
                     {
-                        iflag_f = int.Parse(argv[i].Substring(2));
+                        iflag_f = C.atoi(argv[i].Substring(2));
                         if ((iflag_f & SwissEph.SEFLG_XYZ) != 0)
                             fmt = "PX";
                     }
@@ -1274,7 +1274,7 @@ namespace SweTest
                     }
                     else if (argv[i].StartsWith("-s"))
                     {
-                        tstep = double.Parse(argv[i].Substring(2));
+                        tstep = C.atof(argv[i].Substring(2));
                         //if (*(argv[i] + strlen(argv[i]) - 1) == 'm')
                         //    step_in_minutes = TRUE;
                         //if (*(argv[i] + strlen(argv[i]) - 1) == 's')
@@ -1563,14 +1563,14 @@ namespace SweTest
                     }
                     else if (sp.StartsWith("+"))
                     {
-                        n = int.Parse(sp);
+                        n = C.atoi(sp);
                         if (n == 0) n = 1;
                         tjd += n;
                         sweph.swe_revjul(tjd, gregflag, ref jyear, ref jmon, ref jday, ref jut);
                     }
                     else if (sp.StartsWith("-"))
                     {
-                        n = int.Parse(sp);
+                        n = C.atoi(sp);
                         if (n == 0) n = -1;
                         tjd += n;
                         sweph.swe_revjul(tjd, gregflag, ref jyear, ref jmon, ref jday, ref jut);
@@ -1829,9 +1829,9 @@ namespace SweTest
                             if (psp == 'f')
                                 ipl = SwissEph.SE_FIXSTAR;
                             else if (psp == 's')
-                                ipl = int.Parse(sastno) + 10000;
+                                ipl = C.atoi(sastno) + 10000;
                             else if (psp == 'z')
-                                ipl = int.Parse(shyp) + SwissEph.SE_FICT_OFFSET_1;
+                                ipl = C.atoi(shyp) + SwissEph.SE_FICT_OFFSET_1;
                             if ((iflag & SwissEph.SEFLG_HELCTR) != 0)
                             {
                                 if (ipl == SwissEph.SE_SUN
@@ -3874,7 +3874,7 @@ namespace SweTest
                         C.strcpy(out stim, hms(jut, BIT_LZEROES));
                         //while (*stim == ' ') our_strcpy(stim, stim + 1);
                         stim = stim.TrimStart();
-                        if (stim.StartsWith("0")) our_strcpy(out stim, stim + 1);
+                        if (stim.StartsWith("0")) our_strcpy(out stim, stim.Substring(1));
                         snat = C.sprintf("Solar Eclipse %s,%s,e,%d,%d,%d,%s,h0e,%cnu,%d,Location of Maximum,,%s,%s,u,0,0,0", saros, styp, jday, jmon, jyear, stim, cal, iflg, slon, slat);
                         sout = C.sprintf("<a href='https://www.astro.com/cgi/chart.cgi?muasp=1;nhor=1;act=chmnat;nd1=%s;rs=1;iseclipse=1;topo=1' target='eclipse'>chart link</a>\n\n", snat);
                         do_printf(sout);

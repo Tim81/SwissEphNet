@@ -26,6 +26,26 @@ namespace SwissEphNet.Tests
         }
 
         [Fact]
+        public void TestAtofOverflowReturnsInfinity()
+        {
+            // C's strtod (atof is defined in terms of it) returns HUGE_VAL,
+            // i.e. infinity, on overflow -- never a smaller finite number.
+            // netstandard2.0/net48's double.TryParse returns false for an
+            // overflowing literal instead of true-with-Infinity the way
+            // net8.0/net10.0's does; left unguarded, the longest-parseable-
+            // prefix loop then backs "1e999" off to "1e99" (a finite, wrong,
+            // and plausible-looking result) instead of matching HUGE_VAL. See
+            // Tests/NetStandard20Smoke.Tests for the net462/net48 run of this
+            // same assertion, which is where that divergence actually shows.
+            Assert.Equal(double.PositiveInfinity, C.atof("1e999"));
+            Assert.Equal(double.NegativeInfinity, C.atof("-1e999"));
+            // Still malformed, not merely overflowing: the backoff loop must
+            // still find "2.10" as the longest valid prefix, not treat the
+            // second decimal point as evidence of overflow.
+            Assert.Equal(2.10, C.atof("2.10.03"));
+        }
+
+        [Fact]
         public void TestAtoi() {
             Assert.Equal(0, C.atoi(null));
             Assert.Equal(0, C.atoi(""));

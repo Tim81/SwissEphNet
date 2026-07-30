@@ -90,6 +90,8 @@ namespace SwissEphNet.CPort
         const double MILLIARCSEC = (1.0 / 3600000.0);
         const double SOLAR_YEAR = 365.24219893;
         const double ARMCS = ((SOLAR_YEAR + 1) / SOLAR_YEAR * 360);
+        // swehouse.c:890
+        //#define DEBUG_PLAC_ITER 1
         // swehouse.c:891
         const double VERY_SMALL_PLAC_ITER = (1.0 / 360000.0);
 
@@ -838,6 +840,14 @@ namespace SwissEphNet.CPort
                 rm1 = CalcH(armc - darmc, geolat, eps, unchecked((sbyte)hsys), hm1);
                 rp1 = CalcH(armc + darmc, geolat, eps, unchecked((sbyte)hsys), hp1);
                 if (rp1 >= 0 && rm1 >= 0) {
+                    // houses is a class (SweHouse.h.cs:85), so hp1 = h / hm1 = h below are
+                    // reference assignments -- hp1 and hm1 come to alias h, where
+                    // swehouse.c:712,715 assigns a struct and so copies it. That is safe as
+                    // written: nothing writes to h, hm1 or hp1 between these assignments and
+                    // the swe_difdeg2n loop below that reads hp1.cusp/hm1.cusp, so the
+                    // aliased and the copied values read identically here. A later edit that
+                    // mutates hp1 or hm1 after this branch would silently corrupt h through
+                    // the alias.
                     if (Math.Abs(SE.swe_difdeg2n(hp1.ac, h.ac)) > 90) {
                         hp1 = h;	// use only upper interval
                         dt = dt / 2;
@@ -1506,6 +1516,7 @@ namespace SwissEphNet.CPort
                     hsp.cusp[12] = SE.swe_degnorm(hsp.mc + acmc / 3 * 2);
                     if (hsp.do_hspeed) {
                         double q1_speed = hsp.ac_speed - hsp.mc_speed;	// rate of growth of quadrant 1
+                        // double q4_speed = hsp.mc_speed - hsp.ac_speed;	// rate of growth of quadrant 4
                         hsp.cusp_speed[1] = hsp.ac_speed;  // may have been destroyed if defaulting from Gauquelin
                         hsp.cusp_speed[10] = hsp.mc_speed; // dito
                         hsp.cusp_speed[2] = hsp.ac_speed - q1_speed / 3;
@@ -1652,7 +1663,6 @@ namespace SwissEphNet.CPort
                     {
                         /* within polar circle we swap AC/DC if AC is on wrong side */
                         hsp.ac = SE.swe_degnorm(hsp.ac + 180);
-                        hsp.cusp[1] = hsp.ac;
                     }
                     hsp.cusp[1] = SE.swe_degnorm(hsp.ac - 15);
                     for (i = 2; i <= 12; i++)
@@ -1861,6 +1871,9 @@ namespace SwissEphNet.CPort
                                     break;
                                 cuspsv = hsp.cusp[ih];
                             }
+                            //#ifdef DEBUG_PLAC_ITER
+                            //fprintf(stderr, "h=%d, niter=%d\n", ih, i);
+                            //#endif
                             if (i >= niter_max) {
                                 retc = SwissEph.ERR;
                                 hsy = 'O';
@@ -1900,6 +1913,9 @@ namespace SwissEphNet.CPort
                                     break;
                                 cuspsv = hsp.cusp[ih];
                             }
+                            //#ifdef DEBUG_PLAC_ITER
+                            //fprintf(stderr, "h=%d, niter=%d\n", ih, i);
+                            //#endif
                             if (i >= niter_max) {
                                 retc = SwissEph.ERR;
                                 hsy = 'O';
@@ -2062,6 +2078,9 @@ namespace SwissEphNet.CPort
                             goto porphyry;
                         }
                         if (hsp.do_hspeed) hsp.cusp_speed[ih] = AscDash(rectasc, f, sine, cose);
+                        //#ifdef DEBUG_PLAC_ITER
+                        //fprintf(stderr, "h=%d, niter=%d\n", ih, i);
+                        //#endif
                     }
                     /* ************  house 12 ******************** */
                     rectasc = SE.swe_degnorm(60 + th);
@@ -2095,6 +2114,9 @@ namespace SwissEphNet.CPort
                             goto porphyry;
                         }
                         if (hsp.do_hspeed) hsp.cusp_speed[ih] = AscDash(rectasc, f, sine, cose);
+                        //#ifdef DEBUG_PLAC_ITER
+                        //fprintf(stderr, "h=%d, niter=%d\n", ih, i);
+                        //#endif
                     }
                     /* ************  house  2 ******************** */
                     rectasc = SE.swe_degnorm(120 + th);
@@ -2128,6 +2150,9 @@ namespace SwissEphNet.CPort
                             goto porphyry;
                         }
                         if (hsp.do_hspeed) hsp.cusp_speed[ih] = AscDash(rectasc, f, sine, cose);
+                        //#ifdef DEBUG_PLAC_ITER
+                        //fprintf(stderr, "h=%d, niter=%d\n", ih, i);
+                        //#endif
                     }
                     /* ************  house  3 ******************** */
                     rectasc = SE.swe_degnorm(150 + th);
@@ -2161,6 +2186,9 @@ namespace SwissEphNet.CPort
                             goto porphyry;
                         }
                         if (hsp.do_hspeed) hsp.cusp_speed[ih] = AscDash(rectasc, f, sine, cose);
+                        //#ifdef DEBUG_PLAC_ITER
+                        //fprintf(stderr, "h=%d, niter=%d\n", ih, i);
+                        //#endif
                     }
                     break;
             } /* end switch */
@@ -2235,7 +2263,12 @@ namespace SwissEphNet.CPort
             return retc;
         } /* procedure houses */
 
-        /******************************/
+        /*****
+         * oblique triangle formed by: great circle with pole height f, ecliptic and equator,
+         * x = intersection equator - great circle, measured along equator.
+         * return crossing of ecliptic with great circle.
+         * Prepare quadrants before doing the work in Asc2.
+         */
         double Asc1(double x1, double f, double sine, double cose)
         {
             int n;

@@ -85,5 +85,22 @@ namespace SwissEphNet.NetStandard20Smoke.Tests
             C.sscanf("abcabc123", "%[abc]", ref result);
             Assert.Equal("abcabc", result);
         }
+
+        [Fact]
+        public void CAtof_Overflow_ReturnsInfinity()
+        {
+            // C.cs's atof: on this TFM, double.TryParse returns false for an
+            // overflowing literal like "1e999" instead of true-with-Infinity
+            // (net8.0/net10.0's behavior). Unguarded, the longest-parseable-
+            // prefix backoff loop then found "1e99" -- a finite, wrong,
+            // plausible-looking number -- instead of the double.PositiveInfinity
+            // C's strtod (HUGE_VAL) returns on overflow. This is the TFM where
+            // that divergence actually showed; see Tests/SwissEphNet.Tests'
+            // CTest.TestAtofOverflowReturnsInfinity for the same assertion on
+            // net8.0/net10.0, where it already passed before the fix.
+            Assert.Equal(double.PositiveInfinity, C.atof("1e999"));
+            Assert.Equal(double.NegativeInfinity, C.atof("-1e999"));
+            Assert.Equal(2.10, C.atof("2.10.03"));
+        }
     }
 }

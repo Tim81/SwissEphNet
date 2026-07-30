@@ -34,12 +34,37 @@ namespace SwissEphNet
                 s = s.Substring(0, i);
             /* Longest parseable prefix, as strtod takes it. */
             for (int len = s.Length; len > 0; len--) {
+                string candidate = s.Substring(0, len);
                 double result;
-                if (double.TryParse(s.Substring(0, len), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out result))
+                if (double.TryParse(candidate, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out result))
                     return result;
+                // strtod returns HUGE_VAL (infinity) on overflow, never a
+                // smaller finite number. double.TryParse agrees on net8.0/
+                // net10.0 -- it succeeds on the first iteration above,
+                // returning double.PositiveInfinity/NegativeInfinity -- but
+                // on netstandard2.0/net48 it returns false for an overflowing
+                // literal instead. Left unguarded, this loop then backs off
+                // one character at a time until it finds a shorter substring
+                // that parses as a finite value ("1e999" -> "1e99" -> 1E+99),
+                // trading an overflow for a plausible-looking but wrong
+                // finite number. Catch that only on the first (full-length)
+                // iteration, before any backing off has happened: if the
+                // whole candidate is already syntactically a complete float
+                // literal and still failed to parse, that failure can only be
+                // overflow, not a malformed string like "2.10.03" that still
+                // needs the backoff loop to find its longest valid prefix.
+                if (len == s.Length && IsWellFormedFloatLiteral(candidate))
+                    return candidate.StartsWith("-", StringComparison.Ordinal) ? double.NegativeInfinity : double.PositiveInfinity;
             }
             return 0;
         }
+
+        static readonly System.Text.RegularExpressions.Regex wellFormedFloatLiteral =
+            new System.Text.RegularExpressions.Regex(
+                @"^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$",
+                System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        static bool IsWellFormedFloatLiteral(string s) => wellFormedFloatLiteral.IsMatch(s);
 
         /// <summary>
         /// 

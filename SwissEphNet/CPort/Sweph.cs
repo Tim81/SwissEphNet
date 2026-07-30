@@ -5249,11 +5249,11 @@ namespace SwissEphNet.CPort
                     j++;
                 sastno = sastnam.Substring(0, j);
                 //sastno[j] = '\0';
-                long l;
-                if (!long.TryParse(sastno, out l))
-                    i = 0;
-                else
-                    i = (int)l;
+                // sweph.c:4573 is `i = (int) atol(sastno);`. atol(sastno) takes
+                // the leading integer prefix of the field; long.TryParse required
+                // the whole field to parse, so a catalogue field like "1234A"
+                // gave 0 instead of the 1234 atol(sastno) returns.
+                i = C.atoi(sastno);
                 if (i == fdp.ipl[0] - SwissEph.SE_AST_OFFSET)
                 {
                     /* element record is from bowell database */

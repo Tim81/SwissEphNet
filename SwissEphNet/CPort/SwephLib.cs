@@ -3216,8 +3216,11 @@ namespace SwissEphNet.CPort
                         continue;
                     // swephlib.c:2957 is `year = atoi(s);`, which returns 0 for an
                     // unparseable line instead of throwing; int.Parse threw on any
-                    // non-numeric header/comment line reaching this point.
-                    year = C.atoi(s.Substring(0, 4));
+                    // non-numeric header/comment line reaching this point. C.atoi
+                    // takes the leading digits of the whole line, matching atoi(s);
+                    // a fixed Substring(0, 4) throws when the line is under 4 chars,
+                    // which atoi(s) does not.
+                    year = C.atoi(s);
                     tab_index = year - TABSTART;
                     /* table space is limited. no error msg, if exceeded */
                     if (tab_index >= TABSIZ_SPACE)
