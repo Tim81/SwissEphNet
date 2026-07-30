@@ -19,6 +19,14 @@
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageVersion Include="xunit" Version="2.9.3" />
+
+    <!--
+      Tests/NetStandard20Smoke.Tests only: supplies the net462 reference assemblies for
+      machines that do not have that targeting pack installed locally. Build-time-only,
+      PrivateAssets="all" in the csproj, never a dependency of the shipped SwissEphNet
+      library.
+    -->
+    <PackageVersion Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" />
   </ItemGroup>
 
 </Project>

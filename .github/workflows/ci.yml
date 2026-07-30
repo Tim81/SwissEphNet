@@ -83,9 +83,10 @@ jobs:
       - name: Test
         run: dotnet test Tests/SwissEphNet.Tests/SwissEphNet.Tests.csproj -c ${{ matrix.configuration }} --no-build --logger trx --results-directory TestResults
 
-      # net48, so Windows only (same reasoning as the SweWin build step above).
-      # Exercises the netstandard2.0 asset, which nothing else here runs -- see the
-      # comment atop Tests/NetStandard20Smoke.Tests/NetStandard20Smoke.Tests.csproj.
+      # net462 and net48, so Windows only (same reasoning as the SweWin build step
+      # above). Exercises the netstandard2.0 asset, which nothing else here runs --
+      # see the comment atop Tests/NetStandard20Smoke.Tests/NetStandard20Smoke.Tests.csproj.
+      # dotnet test with no --framework runs both TFMs from this one invocation.
       # Already built by the full-solution build above (this project is part of
       # SwissEphNet.sln, not SwissEphNet.CrossPlatform.slnf), hence --no-build.
       - name: Test (netstandard2.0 smoke)
