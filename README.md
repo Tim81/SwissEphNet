@@ -1,8 +1,12 @@
 # SwissEphNet
 
 This project is an Astrodienst Swiss Ephemeris (http://www.astro.com/swisseph/) .Net portage from
-C (currently tracking version 2.08; the 2.10.03 port has not started) to C#, targeting
-netstandard2.0, .NET 8 and .NET 10 for cross platform usage.
+C to C#, targeting netstandard2.0, .NET 8 and .NET 10 for cross platform usage. `SE_VERSION` still
+reports `"2.08"`, deliberately: the upgrade to 2.10.03 is underway file by file. `swephlib.c`, the
+2.10.03 ayanamsa and `pla_diam` tables, the header and constants stage, the eight crossing
+functions, and the ayanamsha machinery (`get_aya_correction`, `prec_offset`) are ported.
+`sweph.c`, `swecl.c`, `swehouse.c`, and `swetest.c` are not; see `docs/sweph-c-stages.md` for how
+the remaining `sweph.c` work divides.
 
 ## About this repository
 
