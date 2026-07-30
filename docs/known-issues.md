@@ -63,6 +63,20 @@ unusable. This is a real behavior worth freezing and worth a second look during 
 2.10.03 port: does the C source treat `eps=0` as an error case anywhere, and if so,
 does that error surface through `retc` there but not here?
 
+**Answered: yes, and the port swallows it.** Measured against MSVC-built 2.10.03 C
+by the bit-exact comparison harness (`scripts/verify-oracle.ps1`): 176 of the
+14,220 analytic-grid rows return a different `retc`, and every one is
+`swe_houses_armc` at `eps=0` -- 88 with `hsys = 'G'`, 88 with `hsys = 'P'`. The C
+returns `ERR` (-1); the port returns `OK` (0). The 176 case ids are recorded in
+`Tests/oracle/known-diff.tsv` under category `RETC`, so the swehouse.c port has the
+exact inputs that prove it rather than a description of them.
+
+Two things this does not yet say. It covers `'G'` and `'P'` only, because those are
+the house systems the analytic grid crosses with `eps=0`; `{J, Z, 0}` from the
+paragraph above are untested against the C so far. And it does not say where in
+`swehouse.c` the error originates, only that it reaches `retc`. Both are for the
+swehouse.c port to settle.
+
 ## swe_houses_armc, hsys 'i' (Makransky Sunshine houses): cusp = 360.0, missing normalization
 
 280 fields, all at `eps=0, geolat=0`, e.g. `H|i|0|0|30` gives cusp[3] = `360`;
@@ -733,3 +747,29 @@ cost is that `swe_set_sid_mode`'s copy-mutate-write-back would need revisiting, 
 class its intermediate writes would become visible to anything reading `swed.sidd`
 concurrently. Worth doing as its own change with its own measurement, not folded into a
 porting stage.
+
+## swe_calc's serr differs for SE_INTP_APOG outside the Moshier range
+
+Found by the bit-exact comparison harness, which compares the error string as well as the
+numbers. 40 of the 14,220 analytic-grid rows agree on every value and on `retc`, and differ
+only in `serr`. All 40 are `ipl = 13` (`SE_INTP_APOG`) at Julian days outside the interpolated
+range, through both `swe_calc` and `swe_calc_ut`.
+
+| | message |
+|---|---|
+| C 2.10.03 | `jd 500000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 ` |
+| this port | `Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5` |
+
+Both strings exist in both C versions and in the port: the first is `swemmoon.c:883`
+(`SwemMoon.cs:912`), the second is `sweph.c:982` and `:1006` (`Sweph.cs:1097` and `:1124`).
+Neither side is missing a message. They disagree about which check runs first, or about which
+one gets to write `serr` last, so the port reports the apsides restriction where the C reports
+the underlying Moshier range failure.
+
+This is the same family as the inverted `serr != NULL` guards swept earlier in this file: the
+numbers were never wrong, only the diagnostic, which is why nothing caught it until something
+compared the strings. The characterization baseline does not exercise `serr` for these rows and
+the conformance corpus has no iteration at these Julian days.
+
+The 40 case ids are in `Tests/oracle/known-diff.tsv` under category `SERR`. Fix belongs with
+the `sweph.c` port, since that is where the ordering is decided.
