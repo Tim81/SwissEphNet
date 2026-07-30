@@ -18,14 +18,26 @@ namespace SwissEphNet
         /// <summary>
         /// 
         /// </summary>
+        /// <remarks>
+        /// C's strtod, which atof is defined in terms of, converts the *longest initial
+        /// subsequence that has the expected form* and stops there. Narrowing to the first
+        /// character outside fchars is not the same thing, because '.' is in that set: the
+        /// whole of "2.10.03" survived the narrowing, TryParse then rejected it, and the
+        /// result was 0 where C gives 2.10. That reached swe_set_astro_models, whose version
+        /// branch (swephlib.c:4207) selects a different model bundle and a different tidal
+        /// acceleration for 0 than for 2.10.
+        /// </remarks>
         public static double atof(string s) {
             s = (s ?? string.Empty).Trim();
             int i = s.IndexOfFirstNot(fchars);
             if (i >= 0)
                 s = s.Substring(0, i);
-            double result = 0;
-            if (double.TryParse(s, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out result))
-                return result;
+            /* Longest parseable prefix, as strtod takes it. */
+            for (int len = s.Length; len > 0; len--) {
+                double result;
+                if (double.TryParse(s.Substring(0, len), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out result))
+                    return result;
+            }
             return 0;
         }
 

@@ -86,17 +86,30 @@ namespace SwissEphNet.CPort
         {
             public houses() {
                 cusp = new double[37];
+                cusp_speed = new double[37];
                 serr = string.Empty;
             }
             public double[] cusp;
+            public double[] cusp_speed;
             public double ac;
+            public double ac_speed;	// speed of ac
             public double mc;
+            public double mc_speed;	// speed of mc
+            public double armc_speed;	// speed of armc
             public double vertex;
+            public double vertex_speed;	// speed of vertex
             public double equasc;
+            public double equasc_speed;	// speed
             public double coasc1;
+            public double coasc1_speed;	// speed
             public double coasc2;
+            public double coasc2_speed;	// speed
             public double polasc;
+            public double polasc_speed;	// speed
             public double sundec;   // declination of Sun for Sunshine houses
+            public bool do_speed;
+            public bool do_hspeed;
+            public bool do_interpol;
             public string serr;
         }
 

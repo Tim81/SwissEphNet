@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using Xunit;
@@ -58,32 +58,36 @@ namespace SwissEphNet.Tests
     {
         // pla_diam[] is indexed by planet number for these bodies -- see
         // Sweph.h.cs's pla_diam initializer and swe_pheno's `dd = Sweph.pla_diam[ipl]`.
-        public static IEnumerable<object[]> AsteroidBodiesWithZeroDiameterAt208()
+        // Expected attr[3] (apparent diameter of disk, in degrees) at 2.10.03's pla_diam[]
+        // values. Derived from libswe 2.10.03 itself (pyswisseph 2.10.3.2) at the same jd
+        // and flags this test uses, not from this port's own output, so the assertion is
+        // against the reference rather than against ourselves.
+        //
+        // All six bodies now have a diameter. Chiron and Pholus were 0.0 at 2.08, which is
+        // what the deleted zero-diameter theories pinned; 2.10.03 gives them 271370 m and
+        // 290000 m, so attr[3] is small but nonzero and there is no longer any body in this
+        // set whose apparent diameter is zero.
+        //
+        // swe_pheno and swe_pheno_ut differ slightly for the same nominal date because
+        // swe_pheno_ut treats tjd as UT and adds delta T before calling swe_pheno.
+        public static IEnumerable<object[]> AsteroidBodiesForPheno()
         {
-            yield return new object[] { SwissEph.SE_CHIRON, "Chiron" };
-            yield return new object[] { SwissEph.SE_PHOLUS, "Pholus" };
+            yield return new object[] { SwissEph.SE_CHIRON, "Chiron", 5.754055783607351E-06 };
+            yield return new object[] { SwissEph.SE_PHOLUS, "Pholus", 5.222978703825473E-06 };
+            yield return new object[] { SwissEph.SE_CERES, "Ceres", 0.00017743935901133728 };
+            yield return new object[] { SwissEph.SE_PALLAS, "Pallas", 7.962465673159846E-05 };
+            yield return new object[] { SwissEph.SE_JUNO, "Juno", 6.572201190153193E-05 };
+            yield return new object[] { SwissEph.SE_VESTA, "Vesta", 8.47332971098369E-05 };
         }
 
-        // Expected attr[3] values (apparent diameter of disk, in degrees), pinned
-        // from an actual run of this test against seas_18.se1 with pla_diam[] at
-        // its current (port 2.08) values. swe_pheno and swe_pheno_ut give
-        // slightly different values for the same nominal date, because
-        // swe_pheno_ut treats tjd_ut as UT and adds delta T internally before
-        // calling swe_pheno with the resulting ET jd.
-        public static IEnumerable<object[]> AsteroidBodiesWithNonZeroDiameterAt208ForPheno()
+        public static IEnumerable<object[]> AsteroidBodiesForPhenoUt()
         {
-            yield return new object[] { SwissEph.SE_CERES, "Ceres", 0.00017245277280960968 };
-            yield return new object[] { SwissEph.SE_PALLAS, "Pallas", 7.6410450404817862E-05 };
-            yield return new object[] { SwissEph.SE_JUNO, "Juno", 6.5030133919340833E-05 };
-            yield return new object[] { SwissEph.SE_VESTA, "Vesta", 8.0798214411929842E-05 };
-        }
-
-        public static IEnumerable<object[]> AsteroidBodiesWithNonZeroDiameterAt208ForPhenoUt()
-        {
-            yield return new object[] { SwissEph.SE_CERES, "Ceres", 0.00017245295476092759 };
-            yield return new object[] { SwissEph.SE_PALLAS, "Pallas", 7.6410374539874547E-05 };
-            yield return new object[] { SwissEph.SE_JUNO, "Juno", 6.5030313175367223E-05 };
-            yield return new object[] { SwissEph.SE_VESTA, "Vesta", 8.0798039304210556E-05 };
+            yield return new object[] { SwissEph.SE_CHIRON, "Chiron", 5.754058300036313E-06 };
+            yield return new object[] { SwissEph.SE_PHOLUS, "Pholus", 5.222979514275479E-06 };
+            yield return new object[] { SwissEph.SE_CERES, "Ceres", 0.0001774395462238981 };
+            yield return new object[] { SwissEph.SE_PALLAS, "Pallas", 7.962457767539558E-05 };
+            yield return new object[] { SwissEph.SE_JUNO, "Juno", 6.57221930647249E-05 };
+            yield return new object[] { SwissEph.SE_VESTA, "Vesta", 8.47331134739173E-05 };
         }
 
         static void SubscribeSeasFixture(SwissEph swe)
@@ -103,29 +107,8 @@ namespace SwissEphNet.Tests
         }
 
         [Theory]
-        [MemberData(nameof(AsteroidBodiesWithZeroDiameterAt208))]
-        public void TestPhenoApparentDiameterIsZeroForBodiesWithNoPla208Diameter(int ipl, string name)
-        {
-            // Arrange
-            using (var swe = new SwissEph())
-            {
-                SubscribeSeasFixture(swe);
-                double tjd = swe.swe_julday(1974, 8, 16, 0.5, SwissEph.SE_GREG_CAL);
-                double[] attr = new double[20];
-                string serr = null;
-
-                // Act
-                int res = swe.swe_pheno(tjd, ipl, SwissEph.SEFLG_MOSEPH, attr, ref serr);
-
-                // Assert
-                Assert.False(res == SwissEph.ERR, $"{name}: {serr}");
-                Assert.Equal(0.0, attr[3]);
-            }
-        }
-
-        [Theory]
-        [MemberData(nameof(AsteroidBodiesWithNonZeroDiameterAt208ForPheno))]
-        public void TestPhenoApparentDiameterMatchesPla208Diameter(int ipl, string name, double expectedApparentDiameterDegrees)
+        [MemberData(nameof(AsteroidBodiesForPheno))]
+        public void TestPhenoApparentDiameterMatchesPlaDiam(int ipl, string name, double expectedApparentDiameterDegrees)
         {
             // Arrange
             using (var swe = new SwissEph())
@@ -145,29 +128,8 @@ namespace SwissEphNet.Tests
         }
 
         [Theory]
-        [MemberData(nameof(AsteroidBodiesWithZeroDiameterAt208))]
-        public void TestPhenoUtApparentDiameterIsZeroForBodiesWithNoPla208Diameter(int ipl, string name)
-        {
-            // Arrange
-            using (var swe = new SwissEph())
-            {
-                SubscribeSeasFixture(swe);
-                double tjd_ut = swe.swe_julday(1974, 8, 16, 0.5, SwissEph.SE_GREG_CAL);
-                double[] attr = new double[20];
-                string serr = null;
-
-                // Act
-                int res = swe.swe_pheno_ut(tjd_ut, ipl, SwissEph.SEFLG_MOSEPH, attr, ref serr);
-
-                // Assert
-                Assert.False(res == SwissEph.ERR, $"{name}: {serr}");
-                Assert.Equal(0.0, attr[3]);
-            }
-        }
-
-        [Theory]
-        [MemberData(nameof(AsteroidBodiesWithNonZeroDiameterAt208ForPhenoUt))]
-        public void TestPhenoUtApparentDiameterMatchesPla208Diameter(int ipl, string name, double expectedApparentDiameterDegrees)
+        [MemberData(nameof(AsteroidBodiesForPhenoUt))]
+        public void TestPhenoUtApparentDiameterMatchesPlaDiam(int ipl, string name, double expectedApparentDiameterDegrees)
         {
             // Arrange
             using (var swe = new SwissEph())

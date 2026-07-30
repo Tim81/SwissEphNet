@@ -229,12 +229,17 @@ namespace SwissEphNet
         public const int SEFLG_TOPOCTR = (32 * 1024);    /* topocentric position */
         public const int SEFLG_ORBEL_AA = SEFLG_TOPOCTR; /* used for Astronomical Almanac mode in 
                                               * calculation of Kepler elipses */
+        public const int SEFLG_TROPICAL = (0);          /* tropical position (default) */
         public const int SEFLG_SIDEREAL = (64 * 1024);    /* sidereal position */
         public const int SEFLG_ICRS = (128 * 1024);   /* ICRS (DE406 reference frame) */
         public const int SEFLG_DPSIDEPS_1980 = (256 * 1024); /* reproduce JPL Horizons 
                                                                 1962 - today to 0.002 arcsec. */
         public const int SEFLG_JPLHOR = SEFLG_DPSIDEPS_1980;
         public const int SEFLG_JPLHOR_APPROX = (512 * 1024);   /* approximate JPL Horizons 1962 - today */
+        public const int SEFLG_CENTER_BODY = (1024 * 1024);  /* calculate position of center of body (COB)
+                                                        of planet, not barycenter of its system */
+        public const int SEFLG_TEST_PLMOON = (2 * 1024 * 1024 | SEFLG_J2000 | SEFLG_ICRS | SEFLG_HELCTR | SEFLG_TRUEPOS);  /* test raw data in files sepm9* */
+
 
         public const int SE_SIDBITS = 256;
         /* for projection onto ecliptic of t0 */
@@ -243,6 +248,14 @@ namespace SwissEphNet
         public const int SE_SIDBIT_SSY_PLANE = 512;
         /* with user-defined ayanamsha, t0 is UT */
         public const int SE_SIDBIT_USER_UT = 1024;
+        /* ayanamsha measured on ecliptic of date;
+         * see commentaries in sweph.c:swi_get_ayanamsa_ex(). */
+        public const int SE_SIDBIT_ECL_DATE = 2048;
+        /* test feature: don't apply constant offset to ayanamsha 
+         * see commentary above sweph.c:get_aya_correction() */
+        public const int SE_SIDBIT_NO_PREC_OFFSET = 4096;
+        /* test feature: calculate ayanamsha using its original precession model */
+        public const int SE_SIDBIT_PREC_ORIG = 8192;
 
         /* sidereal modes (ayanamsas) */
         public const int SE_SIDM_FAGAN_BRADLEY = 0;
@@ -288,10 +301,14 @@ namespace SwissEphNet
         public const int SE_SIDM_GALCENT_COCHRANE = 40;
         public const int SE_SIDM_GALEQU_FIORENZA = 41;
         public const int SE_SIDM_VALENS_MOON = 42;
+        public const int SE_SIDM_LAHIRI_1940 = 43;
+        public const int SE_SIDM_LAHIRI_VP285 = 44;
+        public const int SE_SIDM_KRISHNAMURTI_VP291 = 45;
+        public const int SE_SIDM_LAHIRI_ICRC = 46;
         ////#define SE_SIDM_MANJULA         43
         public const int SE_SIDM_USER = 255; /* user-defined ayanamsha, t0 is TT */
 
-        public const int SE_NSIDM_PREDEF = 43;
+        public const int SE_NSIDM_PREDEF = 47;
 
         /* used for swe_nod_aps(): */
         public const int SE_NODBIT_MEAN = 1;   /* mean nodes/apsides */
@@ -316,6 +333,8 @@ namespace SwissEphNet
         public const int SE_ECL_ANNULAR = 8;
         public const int SE_ECL_PARTIAL = 16;
         public const int SE_ECL_ANNULAR_TOTAL = 32;
+        public const int SE_ECL_HYBRID = 32;  // = annular-total
+
         public const int SE_ECL_PENUMBRAL = 64;
         public const int SE_ECL_ALLTYPES_SOLAR = (SE_ECL_CENTRAL | SE_ECL_NONCENTRAL | SE_ECL_TOTAL | SE_ECL_ANNULAR | SE_ECL_PARTIAL | SE_ECL_ANNULAR_TOTAL);
         public const int SE_ECL_ALLTYPES_LUNAR = (SE_ECL_TOTAL | SE_ECL_PARTIAL | SE_ECL_PENUMBRAL);
