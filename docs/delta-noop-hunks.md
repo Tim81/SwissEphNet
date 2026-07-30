@@ -101,3 +101,22 @@ Every count above matches `scripts/gen-delta-hunk-counts.tsv` and passes
 `pwsh scripts/verify-gen-delta.ps1`; none of the pinned totals needed correcting. Each hunk listed
 here was read individually against `external/swisseph` at `v2.10.3final`, not assumed from the
 original summary this document verifies.
+
+## swecl.c: two of its 29 hunks are formatting
+
+The rest of `swecl.c` was ported in phase 3. Two hunks carry no C# counterpart, recorded here so
+the file's hunk accounting adds up without re-deriving it:
+
+- **`if( (inalt + refr < dip) )` becomes `if (inalt + refr < dip)`** -- a space after `if` and a
+  redundant inner paren. The port already reads `if ((inalt + refr < dip))` at `SweCL.cs:3142`
+  with the same redundant paren; same-shape porting would drop it, and it changes nothing either
+  way.
+- **`nazalt++;` reindented.**
+
+One further shape divergence in the same file is deliberate and is not a no-op, so it is recorded
+here rather than left to be rediscovered: 2.10.03 promotes two commented-out `fprintf(stderr, ...)`
+calls to live `if (0) fprintf(...)` statements. The port keeps them as comments. Both are no-ops in
+any build, and this port has no `fprintf(stderr)` equivalent to call, so writing `if (false)` would
+add unreachable code for no gain -- and `CPort/.editorconfig` keeps CS0162 enabled. The parallel
+case at hunk 22, `if (0)` becoming `if ((0))`, genuinely was a no-op because the port already had
+`if (false)` there.

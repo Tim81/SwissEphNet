@@ -91,6 +91,22 @@ Source-level and reflection-based consumers can be affected:
   `IndexOutOfRangeException` -- an internal cusp array was undersized relative to
   upstream 2.10.03. If your code wraps that call in a guard specifically to catch this
   exception, that guard is now dead code and can be removed.
+- **Eclipse magnitude and obscuration are a hundred times smaller.** `attr[0]` and
+  `attr[2]` from `swe_sol_eclipse_how`, and from the `attr` array `swe_sol_eclipse_where`
+  and `swe_lun_occult_where` fill, are now fractions rather than percentages: an eclipse
+  that reported `100` reports `1`. This is upstream's change at `swecl.c:1067-1087`, not
+  this port's, and it is silent -- the call still succeeds, the array is still the same
+  length, and only the value moves. Any caller formatting these as a percentage needs to
+  multiply by 100, and any threshold comparison against a number above 1 will now never
+  fire. `attr[1]` and `attr[3]` onward are unaffected.
+- **Planetary magnitudes changed.** `swe_pheno` and `swe_pheno_ut` return a different
+  `attr[4]` for the Moon and for Mercury through Neptune. Upstream replaced the Hilton
+  2005 model with Mallama 2018, and added a separate lunar model that switches formula
+  past a phase angle of 147.1385465 degrees. Not an API change and not a defect fix on
+  this side: the numbers differ because the underlying model does. Apparent diameter,
+  phase angle and the rest of `attr` are unchanged, which
+  `Tests/SwissEphNet.Tests/PlaDiamCoverageTest.cs` pins for the six bodies with their own
+  diameter entry.
 
 ## V:2.6.0.21
 
