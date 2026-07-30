@@ -3815,7 +3815,8 @@ namespace SwissEphNet.CPort
          */
         const double EULER = 2.718281828459;
         const int NMAG_ELEM = (SwissEph.SE_VESTA + 1);
-//#define MAG_HILTON_2005
+//#define MAG_MALLAMA_2018  1
+//#define MAG_MOON_VREIJS   1
         /* Magnitudes according to:
          * - "Explanatory Supplement to the Astronomical Almanac" 1986.
          * Magnitudes for Mercury and Venus:
@@ -3859,9 +3860,8 @@ namespace SwissEphNet.CPort
         public Int32 swe_pheno(double tjd, Int32 ipl, Int32 iflag, double[] attr, ref string serr) {
             int i;
             double[] xx = new double[6], xx2 = new double[6], xxs = new double[6], lbr = new double[6], lbr2 = new double[6]; double dt = 0, dd;
-            double i100;
             double fac;
-            double T, inx, om, sinB, u1, u2, du;
+            double T, inx, om, sinB;
             double ph1, ph2; double[] me = new double[2];
             Int32 iflagp, epheflag, retflag, epheflag2;
             string serr2 = string.Empty;
@@ -3964,64 +3964,138 @@ namespace SwissEphNet.CPort
                     fac *= fac;
                     attr[4] = mag_elem[ipl, 0] - 2.5 * Math.Log10(fac);
                 } else if (ipl == SwissEph.SE_MOON) {
-                    /* formula according to Allen, C.W., 1976, Astrophysical Quantities */
-                    /*attr[4] = -21.62 + 5 * log10(384410497.8 / EARTH_RADIUS) / log10(10) + 0.026 * Math.Abs(attr[0]) + 0.000000004 * pow(attr[0], 4);*/
-                    //attr[4] = -21.62 + 5 * Math.Log10(lbr[2] * Sweph.AUNIT / Sweph.EARTH_RADIUS) / Math.Log10(10) + 0.026 * Math.Abs(attr[0]) + 0.000000004 * Math.Pow(attr[0], 4);
-                    attr[4] = -21.62 + 5 * Math.Log10(lbr[2] * Sweph.AUNIT / Sweph.EARTH_RADIUS) + 0.026 * Math.Abs(attr[0]) + 0.000000004 * Math.Pow(attr[0], 4);
-                    //#if 0
-                    //      /* ratio apparent diameter : average diameter */
-                    //      fac = attr[3] / (asin(pla_diam[SE_MOON] / 2.0 / 384400000.0) * 2 * SwissEph.RADTODEG);
-                    //      /* distance sun - moon */
-                    //      for (i = 0; i < 3; i++)
-                    //        xxs[i] -= xx[i];
-                    //      dsm =Math.Sqrt(square_sum(xxs));
-                    //      /* account for phase and distance of moon: */
-                    //      fac *= fac * attr[1];
-                    //      /* account for distance of sun from moon: */
-                    //      fac *= dsm * dsm;
-                    //      attr[4] = mag_elem[ipl,0] - 2.5 * log10(fac);
-                    //#endif
-                    /*printf("1 = %f, 2 = %f\n", mag, mag2);*/
-                }
-                else if (ipl == SwissEph.SE_SATURN) {
-                    /* rings are considered according to Meeus, p. 301ff. (German version 329ff.) */
+//#if MAG_MOON_VREIJS
+                    // double a=Math.Abs(attr[0]);
+                    double a = attr[0];
+                    if (a <= 147.1385465) {
+                        /* formula according to Allen, C.W., 1976, Astrophysical Quantities */
+                        attr[4] = -21.62 + 0.026 * Math.Abs(a) + 0.000000004 * Math.Pow(a, 4);
+                        attr[4] += 5 * Math.Log10(lbr[2] * lbr2[2] * Sweph.AUNIT / Sweph.EARTH_RADIUS);
+                    } else {
+                        /* using the cube phase angle proposed by Samaha (Samaha, A.E.; Asaad,
+                           A. S. and Mikhail, J. S. (1969).
+                           Visibility of the New Moon, Bulletin of Observatory Helwan, 84), and VR
+                           adjusted the stitch phase (align Allen's and Samaha's magnitude)
+                           of 147.14degrees.
+                        */
+                        attr[4] = -4.5444 - (2.5 * Math.Log10(Math.Pow(180 - a, 3)));
+                        attr[4] += 5 * Math.Log10(lbr[2] * lbr2[2] * Sweph.AUNIT / Sweph.EARTH_RADIUS);
+                    }
+//#else
+                    ///* formula according to Allen, C.W., 1976, Astrophysical Quantities */
+                    //attr[4] = -21.62 + 5 * Math.Log10(lbr[2] * lbr2[2] * Sweph.AUNIT / Sweph.EARTH_RADIUS) + 0.026 * Math.Abs(attr[0]) + 0.000000004 * Math.Pow(attr[0], 4);
+//#endif
+//#if MAG_MALLAMA_2018
+                    // see: A. Mallama, J.Hilton,
+                    // "ComputingApparentPlanetaryMagnitudesforTheAstronomicalAlmanac" (2018)
+                    // https://arxiv.org/ftp/arxiv/papers/1808/1808.01973.pdf
+                } else if (ipl == SwissEph.SE_MERCURY) {
+                    double a = attr[0];
+                    double a2 = a * a; double a3 = a2 * a; double a4 = a3 * a; double a5 = a4 * a; double a6 = a5 * a;
+                    attr[4] = -0.613 + a * 6.3280E-02 - a2 * 1.6336E-03 + a3 * 3.3644E-05 - a4 * 3.4265E-07 + a5 * 1.6893E-09 - a6 * 3.0334E-12;
+                    attr[4] += 5 * Math.Log10(lbr2[2] * lbr[2]);
+                } else if (ipl == SwissEph.SE_VENUS) {
+                    double a = attr[0];
+                    double a2 = a * a; double a3 = a2 * a; double a4 = a3 * a;
+                    if (a <= 163.7)
+                        attr[4] = -4.384 - a * 1.044E-03 + a2 * 3.687E-04 - a3 * 2.814E-06 + a4 * 8.938E-09;
+                    else
+                        attr[4] = 236.05828 - a * 2.81914E+00 + a2 * 8.39034E-03;
+                    attr[4] += 5 * Math.Log10(lbr2[2] * lbr[2]);
+                    if (attr[0] > 179.0)
+                        serr2 = C.sprintf("magnitude value for Venus at phase angle i=%.1f is bad; formula is valid only for i < 179.0", attr[0]);
+                } else if (ipl == SwissEph.SE_MARS) {
+                    double a = attr[0];
+                    double a2 = a * a;
+                    /* With the following formulae, the terms +L(λe)+L(LS) have been omitted.
+                     * They are "the magnitude corrections for the longitude of the sub-Earth
+                     * meridian of the illuminated disk and the longitude of the vernal
+                     * equinox,respectively".
+                     * The apparent magnitude of Mars changes considerably within hours,
+                     * depending on the surface that is seen.
+                     * Note that the maximum phase angle of mars as seen from earth is
+                     * about 45°.
+                     * The deviation of this simplified solution from Horizons is
+                     * smaller than 0.1m.
+                     */
+                    if (a <= 50.0)
+                        attr[4] = -1.601 + a * 0.02267 - a2 * 0.0001302;
+                    else  // irrelevant to earth-centered observation
+                        attr[4] = -0.367 - a * 0.02573 + a2 * 0.0003445;
+                    attr[4] += 5 * Math.Log10(lbr2[2] * lbr[2]);
+                } else if (ipl == SwissEph.SE_JUPITER) {
+                    /* the phase angle of Jupiter never exceeds 12°. */
+                    double a = attr[0];
+                    double a2 = a * a;
+                    attr[4] = -9.395 - a * 3.7E-04 + a2 * 6.16E-04;
+                    attr[4] += 5 * Math.Log10(lbr2[2] * lbr[2]);
+                } else if (ipl == SwissEph.SE_SATURN) {
+                    double a = attr[0];
+                    double sinB2;
                     T = (tjd - dt - Sweph.J2000) / 36525.0;
                     inx = (28.075216 - 0.012998 * T + 0.000004 * T * T) * SwissEph.DEGTORAD;
                     om = (169.508470 + 1.394681 * T + 0.000412 * T * T) * SwissEph.DEGTORAD;
-                    sinB = Math.Abs(Math.Sin(inx) * Math.Cos(lbr[1] * SwissEph.DEGTORAD)
+                    // B is "mean tilt of the ring plane to the Earth and Sun (If the Earth
+                    // and Sun are on opposite sides of the ring plane B = 0)" according to Hilton:
+                    // https://syrte.obspm.fr/astro/journees2019/journees_pdf/SessionV_1/HiltonStewart_final.pdf
+                    // Mallama does not provide B. We derive it from
+                    // Meeus, p. 301ff. (German version 329ff.)
+                    // There are small differences from Horizons < 0.02m.
+                    sinB = (Math.Sin(inx) * Math.Cos(lbr[1] * SwissEph.DEGTORAD)
                                   * Math.Sin(lbr[0] * SwissEph.DEGTORAD - om)
                                   - Math.Cos(inx) * Math.Sin(lbr[1] * SwissEph.DEGTORAD));
-                    u1 = Math.Atan2(Math.Sin(inx) * Math.Tan(lbr2[1] * SwissEph.DEGTORAD)
-                                           + Math.Cos(inx) * Math.Sin(lbr2[0] * SwissEph.DEGTORAD - om),
-                                      Math.Cos(lbr2[0] * SwissEph.DEGTORAD - om)) * SwissEph.RADTODEG;
-                    u2 = Math.Atan2(Math.Sin(inx) * Math.Tan(lbr[1] * SwissEph.DEGTORAD)
-                                           + Math.Cos(inx) * Math.Sin(lbr[0] * SwissEph.DEGTORAD - om),
-                                      Math.Cos(lbr[0] * SwissEph.DEGTORAD - om)) * SwissEph.RADTODEG;
-                    du = SE.swe_degnorm(u1 - u2);
-                    if (du > 10)
-                        du = 360 - du;
-                    attr[4] = 5 * Math.Log10(lbr2[2] * lbr[2])
-                                + mag_elem[ipl, 1] * sinB
-                                + mag_elem[ipl, 2] * sinB * sinB
-                                + mag_elem[ipl, 3] * du
-                                + mag_elem[ipl, 0];
-//#ifdef MAG_HILTON_2005
-                } else if (ipl == SwissEph.SE_MERCURY) {
-                    /* valid range is actually 2.1° < i < 169.5° */
-                    i100 = attr[0] / 100.0;
-                    attr[4] = -0.60 + 4.98 * i100 - 4.88 * i100 * i100 + 3.02 * i100 * i100 * i100;
+                    sinB2 = (Math.Sin(inx) * Math.Cos(lbr2[1] * SwissEph.DEGTORAD)
+                                  * Math.Sin(lbr2[0] * SwissEph.DEGTORAD - om)
+                                  - Math.Cos(inx) * Math.Sin(lbr2[1] * SwissEph.DEGTORAD));
+                    sinB = Math.Abs(Math.Sin((Math.Asin(sinB) + Math.Asin(sinB2)) / 2.0));/**/
+                    attr[4] = -8.914 - 1.825 * sinB + 0.026 * a - 0.378 * sinB * Math.Pow(2.7182818, -2.25 * a);
                     attr[4] += 5 * Math.Log10(lbr2[2] * lbr[2]);
-                    if (attr[0] < 2.1 || attr[0] > 169.5)
-                        serr2 = C.sprintf("magnitude value for Mercury at phase angle i=%.1f is bad; formula is valid only for 2.1 < i < 169.5", attr[0]);
-                } else if (ipl == SwissEph.SE_VENUS) {
-                    i100 = attr[0] / 100.0;
-                    if (attr[0] < 163.6) /* actual valid range is 2.2° < i < 163.6° */
-                        attr[4] = -4.47 + 1.03 * i100 + 0.57 * i100 * i100 + 0.13 * i100 * i100 * i100;
-                    else /* actual valid range is 163.6° < i < 170.2° */
-                        attr[4] = 0.98 - 1.02 * i100;
+                } else if (ipl == SwissEph.SE_URANUS) {
+                    // This is a simplified solution ignoring the term depending on
+                    // sub-Earth latitude. The difference from Horizons is +-0.03m.
+                    double a = attr[0];
+                    double a2 = a * a;
+                    double fi_ = 0; // sub-Earth latitude in deg; ignored here
+                    attr[4] = -7.110 - 8.4E-04 * fi_ + a * 6.587E-3 + a2 * 1.045E-4;
                     attr[4] += 5 * Math.Log10(lbr2[2] * lbr[2]);
-                    if (attr[0] < 2.2 || attr[0] > 170.2)
-                        serr2 = C.sprintf("magnitude value for Venus at phase angle i=%.1f is bad; formula is valid only for 2.2 < i < 170.2", attr[0]);
+                    // instead of the term with fi_, we do subtract the 0.05m.
+                    // the remaining error is +-0.03m
+                    attr[4] -= 0.05;
+                } else if (ipl == SwissEph.SE_NEPTUNE) {
+                    if (tjd < 2444239.5) {
+                        attr[4] = -6.89;
+                    } else if (tjd <= 2451544.5) {
+                        attr[4] = -6.89 - 0.0055 * (tjd - 2444239.5) / 365.25;
+                        // Mallama has 0.0054, but that would make the curve discontinuos
+                        // Nevertheless, JPL Horizons has 0.0054 and the discontinuity
+                    } else {
+                        attr[4] = -7.00;
+                    }
+                    attr[4] += 5 * Math.Log10(lbr2[2] * lbr[2]);
+//#else
+                    //} else if (ipl == SE_SATURN) {
+                    //  double u1, u2, du;
+                    //  /* rings are considered according to Meeus, p. 301ff. (German version 329ff.) */
+                    //  T = (tjd - dt - J2000) / 36525.0;
+                    //  in = (28.075216 - 0.012998 * T + 0.000004 * T * T) * DEGTORAD;
+                    //  om = (169.508470 + 1.394681 * T + 0.000412 * T * T) * DEGTORAD;
+                    //  sinB = fabs(sin(in) * cos(lbr[1] * DEGTORAD)
+                    //                * sin(lbr[0] * DEGTORAD - om)
+                    //                - cos(in) * sin(lbr[1] * DEGTORAD));
+                    //  u1 = atan2(sin(in) * tan(lbr2[1] * DEGTORAD)
+                    //                         + cos(in) * sin(lbr2[0] * DEGTORAD - om),
+                    //                    cos(lbr2[0] * DEGTORAD - om)) * RADTODEG;
+                    //  u2 = atan2(sin(in) * tan(lbr[1] * DEGTORAD)
+                    //                         + cos(in) * sin(lbr[0] * DEGTORAD - om),
+                    //                    cos(lbr[0] * DEGTORAD - om)) * RADTODEG;
+                    //  du = swe_degnorm(u1 - u2);
+                    //  if (du > 10)
+                    //    du = 360 - du;
+                    //  attr[4] = 5 * log10(lbr2[2] * lbr[2])
+                    //              + mag_elem[ipl][1] * sinB
+                    //              + mag_elem[ipl][2] * sinB * sinB
+                    //              + mag_elem[ipl][3] * du
+                    //              + mag_elem[ipl][0];
 //#endif
                 } else if (ipl < SwissEph.SE_CHIRON) {
                     attr[4] = 5 * Math.Log10(lbr2[2] * lbr[2])
@@ -4031,11 +4105,11 @@ namespace SwissEphNet.CPort
                               + mag_elem[ipl, 0];
                 }
                 else if (ipl < NMAG_ELEM || ipl > SwissEph.SE_AST_OFFSET)
-                { /* asteroids */
+                { /* other planets, asteroids */
                     ph1 = Math.Pow(EULER, -3.33 * Math.Pow(Math.Tan(attr[0] * SwissEph.DEGTORAD / 2), 0.63));
                     ph2 = Math.Pow(EULER, -1.87 * Math.Pow(Math.Tan(attr[0] * SwissEph.DEGTORAD / 2), 1.22));
                     if (ipl < NMAG_ELEM)
-                    {    /* main asteroids */
+                    {    /* other planets, main asteroids */
                         me[0] = mag_elem[ipl, 0];
                         me[1] = mag_elem[ipl, 1];
                     }
