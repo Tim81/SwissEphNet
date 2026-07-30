@@ -30,17 +30,24 @@
 
     Before comparing anything, this script checks external/.c-reference/oracle-provenance.tsv
     (written by scripts/run-oracle-dump.ps1) against what is on disk now: the two grids' current
-    content, sedump.exe and sedump-2.08.exe as they currently sit on disk, and SwissEphNet.dll as
-    a fresh build of current source now produces it (not the copy scripts/run-oracle-dump.ps1
-    left behind, which does not change just because the source did -- rehashing that file as-is
-    would never catch the scenario this check exists for: edit SwissEphNet/CPort/, then run this
-    gate without re-running scripts/run-oracle-dump.ps1 first). Any mismatch is a hard failure
-    naming exactly what changed, before this script builds or runs anything else: comparing
-    dumps that no longer reflect the current grids or the current port is not a check worth
-    running, and reporting PASS on it would be worse than not checking at all. This script never
-    repairs the mismatch itself -- see scripts/run-oracle-dump.ps1. Skipped when
+    content, sedump.exe and sedump-2.08.exe as they currently sit on disk, and the port's own
+    source under SwissEphNet/ -- every *.cs file plus SwissEphNet.csproj, excluding bin/ and
+    obj/ -- rehashed the same way scripts/run-oracle-dump.ps1 hashed it. Recomputing that hash at
+    verify time is what catches the scenario this check exists for: edit SwissEphNet/CPort/, then
+    run this gate without re-running scripts/run-oracle-dump.ps1 first. Any mismatch is a hard
+    failure naming exactly what changed, before this script builds or runs anything else:
+    comparing dumps that no longer reflect the current grids or the current port is not a check
+    worth running, and reporting PASS on it would be worse than not checking at all. This script
+    never repairs the mismatch itself -- see scripts/run-oracle-dump.ps1. Skipped when
     -CDumpPath/-NetDumpPath/-KnownDiffPath point this script at non-default files, since the
     provenance sidecar only describes scripts/run-oracle-dump.ps1's own default outputs.
+
+    Hashing source, rather than building SwissEphNet.csproj and hashing the resulting DLL, means
+    this check needs no build of its own. An earlier version did build here, purely to hash the
+    DLL it produced -- but that DLL embeds the current git commit (SourceLink, turned on under CI
+    by Directory.Build.props), so its hash changed on every commit regardless of whether
+    SwissEphNet/ itself changed. A documentation-only commit was enough to fail this check even
+    though the dumps still matched the code that produced them.
 
 .PARAMETER Grid
     'Analytic', 'Files' or 'Both' (default). 'Both' runs the check for each grid in turn and
@@ -153,14 +160,57 @@ function Invoke-GridVerify {
 
 # ---------------------------------------------------------------------------------------
 # Stale-dump check -- see this script's own STALE-DUMP CHECK header section. Kept here rather
-# than delegated to Tools/OracleVerify, which never opens a grid file or the built library at
-# all; this is orchestration (hashing files, rebuilding SwissEphNet.csproj to check it), the same
-# kind of work scripts/run-oracle-dump.ps1 already does for the C side.
+# than delegated to Tools/OracleVerify, which never opens a grid file or reads SwissEphNet/'s
+# source at all; this is orchestration (hashing files), the same kind of work
+# scripts/run-oracle-dump.ps1 already does for the C side.
 # ---------------------------------------------------------------------------------------
 
 function Get-Sha256Hex {
     param([string] $Path)
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
+# Fingerprints the port's own source (every *.cs under SwissEphNet/ plus
+# SwissEphNet/SwissEphNet.csproj, excluding bin/ and obj/) -- see the STALE-DUMP CHECK header
+# section above for why. Kept as its own copy here, matching how this script already keeps its
+# own copies of Get-Sha256Hex and the rest of the toolchain code above instead of dot-sourcing
+# scripts/run-oracle-dump.ps1. Modeled on scripts/verify-freeze.ps1's Get-Fingerprint:
+# -LiteralPath and -Force (this repo has SwissEphNet/[Events].cs; square brackets are wildcards
+# under -Path, and a -Force-less enumeration hides dotfiles on Unix but not Windows), an ordinal
+# sort of repo-relative paths so the order never depends on culture, hashing the path alongside
+# the content so moving code between files counts as a change, and line-ending normalization so a
+# CRLF/LF difference between checkouts does not read as a source change. Must produce the exact
+# same hash as scripts/run-oracle-dump.ps1's copy for the same tree, or every run would show a
+# false mismatch.
+function Get-PortSourceHash {
+    param([string] $RepoRoot)
+
+    $srcDir = Join-Path $RepoRoot 'SwissEphNet'
+    $csprojPath = Join-Path $srcDir 'SwissEphNet.csproj'
+    if (-not (Test-Path -LiteralPath $csprojPath -PathType Leaf)) {
+        throw "SwissEphNet.csproj not found at $csprojPath."
+    }
+
+    $allFiles = @(Get-ChildItem -LiteralPath $srcDir -Recurse -File -Force)
+    $csFiles = @($allFiles | Where-Object {
+        $_.Extension -eq '.cs' -and $_.FullName -notmatch '[\\/](bin|obj)[\\/]'
+    })
+    $files = [object[]] (@($csFiles) + @(Get-Item -LiteralPath $csprojPath))
+
+    $keys = [string[]] ($files | ForEach-Object { $_.FullName.Substring($RepoRoot.Length).Replace([char]92, [char]47) })
+    [System.Array]::Sort($keys, $files, [System.StringComparer]::Ordinal)
+
+    $contents = [System.Collections.Generic.List[string]]::new()
+    for ($i = 0; $i -lt $files.Count; $i++) {
+        $text = [System.IO.File]::ReadAllText($files[$i].FullName)
+        $normalized = ($text -split "`r`n|`n|`r") -join "`n"
+        [void]$contents.Add($keys[$i])
+        [void]$contents.Add($normalized)
+    }
+
+    return [System.BitConverter]::ToString(
+        [System.Security.Cryptography.SHA256]::HashData(
+            [System.Text.Encoding]::UTF8.GetBytes(($contents -join "`n")))).Replace('-', '').ToLowerInvariant()
 }
 
 function Read-Provenance {
@@ -189,7 +239,7 @@ function Read-Provenance {
         $rows[$parts[0]] = [pscustomobject]@{ Path = $parts[1]; Sha256 = $parts[2] }
     }
 
-    $required = @('grid_analytic', 'grid_files', 'swisseph_net_dll', 'sedump_exe', 'sedump_208_exe')
+    $required = @('grid_analytic', 'grid_files', 'swisseph_net_source', 'sedump_exe', 'sedump_208_exe')
     $missingRows = @($required | Where-Object { -not $rows.ContainsKey($_) })
     if ($missingRows.Count -gt 0) {
         throw "$Path is missing required row(s): $($missingRows -join ', '). Re-run: pwsh scripts/run-oracle-dump.ps1"
@@ -224,47 +274,13 @@ function Get-ProvenanceMismatches {
     Test-RecordedFile -Key 'sedump_exe' -Description 'sedump.exe (2.10.03, Tools/CReference/sedump.c)'
     Test-RecordedFile -Key 'sedump_208_exe' -Description 'sedump-2.08.exe'
 
-    # swisseph_net_dll is checked against a *fresh build* of current source rather than the
-    # recorded path's current bytes -- see this script's STALE-DUMP CHECK header section for why: that
-    # path only changes when scripts/run-oracle-dump.ps1 (or a manual rebuild pointed at it)
-    # runs again, so rehashing it as-is would never catch a CPort/ edit that has not been
-    # rebuilt into a dump yet, which is exactly the scenario this check exists for. Building
-    # here adds no new dependency this script does not already have: it builds
-    # Tools/OracleVerify below regardless.
-    $recordedDll = $Rows['swisseph_net_dll']
-    $scratchDir = Join-Path ([System.IO.Path]::GetTempPath()) "oracle-verify-dll-check-$([guid]::NewGuid())"
-    try {
-        $swissEphNetProj = Join-Path $RepoRoot 'SwissEphNet/SwissEphNet.csproj'
-        Write-Host 'Building SwissEphNet/SwissEphNet.csproj (net10.0, Release) to check its current hash...'
-        # -p:ContinuousIntegrationBuild=true, matching scripts/run-oracle-dump.ps1's own build of
-        # the same project (as a dependency of Tools/OracleDump) -- without it, two builds of
-        # byte-identical source hash differently just for having run at different times/paths
-        # (measured: same unchanged source, ~4454d459... without the flag on one run,
-        # ~7c3ba954... consistently with it, on this machine), which would make this check refuse
-        # forever even right after a clean scripts/run-oracle-dump.ps1 run. Both sides of the
-        # comparison need the same flag for the hashes to mean anything.
-        $buildOutput = & dotnet build $swissEphNetProj -c Release -f net10.0 -o $scratchDir --nologo -v minimal -p:ContinuousIntegrationBuild=true 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            $buildOutput | Write-Host
-            $mismatches.Add('SwissEphNet/SwissEphNet.csproj failed to build while checking provenance -- cannot tell whether SwissEphNet.dll is still what the dumps were generated from.')
-        }
-        else {
-            $freshDllPath = Join-Path $scratchDir 'SwissEphNet.dll'
-            if (-not (Test-Path -LiteralPath $freshDllPath -PathType Leaf)) {
-                $mismatches.Add("dotnet build reported success but $freshDllPath does not exist -- cannot check SwissEphNet.dll's provenance.")
-            }
-            else {
-                $currentDllSha = Get-Sha256Hex -Path $freshDllPath
-                if ($currentDllSha -ne $recordedDll.Sha256) {
-                    $mismatches.Add("SwissEphNet.dll changed since the dumps were generated: recorded $($recordedDll.Sha256) (from $($recordedDll.Path)), a fresh build of current source now hashes to $currentDllSha.")
-                }
-            }
-        }
-    }
-    finally {
-        if (Test-Path -LiteralPath $scratchDir) {
-            Remove-Item -LiteralPath $scratchDir -Recurse -Force -ErrorAction SilentlyContinue
-        }
+    # swisseph_net_source is rehashed straight from the tree with Get-PortSourceHash -- see this
+    # script's STALE-DUMP CHECK header section for why that makes this comparison mean something
+    # on every commit.
+    $recordedSource = $Rows['swisseph_net_source']
+    $currentSourceSha = Get-PortSourceHash -RepoRoot $RepoRoot
+    if ($currentSourceSha -ne $recordedSource.Sha256) {
+        $mismatches.Add("The port source under SwissEphNet/ changed since the dumps were generated: recorded $($recordedSource.Sha256), now $currentSourceSha.")
     }
 
     # The leading comma matters: PowerShell enumerates an IEnumerable placed on the output
@@ -301,7 +317,7 @@ try {
             Write-Host ''
             throw 'Run: pwsh scripts/run-oracle-dump.ps1, then re-run this gate.'
         }
-        Write-Host 'PASS: grids, SwissEphNet.dll and the sedump executables all still match the recorded provenance.' -ForegroundColor Green
+        Write-Host 'PASS: grids, the port source and the sedump executables all still match the recorded provenance.' -ForegroundColor Green
         Write-Host ''
     }
 
