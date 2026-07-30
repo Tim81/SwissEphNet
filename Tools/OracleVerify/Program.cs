@@ -275,17 +275,16 @@ static string BuildReason(RowOutcome outcome)
     return string.Join("; ", parts);
 }
 
-// "unrelated" for a distance above UlpMath.UnrelatedThreshold: see that constant's remarks for
-// why a totalOrder bit distance that large no longer means "the same value, off by a rounding
-// error" -- reporting it as a ULP count would claim a precision the comparison does not have.
+// "unrelated" for a pair more than UlpMath.UnrelatedRelativeThreshold apart, relative to the
+// larger of the two: see that constant's remarks for why a totalOrder bit distance does not, on
+// its own, tell "the same value, off by a rounding error" apart from "a different value that
+// happens to share a binade" -- reporting the latter as a ULP count would claim a precision the
+// comparison does not have.
 static string DescribeField(FieldDiff diff)
 {
-    var tag = diff.Ulp switch
-    {
-        UlpMath.CategoricalDistance => "categorical",
-        > UlpMath.UnrelatedThreshold => "unrelated",
-        _ => $"ulp={diff.Ulp.ToString(CultureInfo.InvariantCulture)}",
-    };
+    var tag = diff.Ulp == UlpMath.CategoricalDistance ? "categorical"
+        : UlpMath.IsUnrelated(diff.CValue, diff.NetValue) ? "unrelated"
+        : $"ulp={diff.Ulp.ToString(CultureInfo.InvariantCulture)}";
     return $"{diff.Label}: c={FormatValue(diff.CValue)}, net={FormatValue(diff.NetValue)} ({tag})";
 }
 

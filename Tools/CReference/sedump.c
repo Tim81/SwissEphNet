@@ -37,15 +37,28 @@
  *
  * FRESH LIBRARY STATE PER ROW
  *
- * swe_houses_armc keeps a hidden C static (saved_sundec) that changes hsys 'I'/'i' results
- * depending on what a PRIOR call computed (see Tools/BaselineGen/Program.cs's header and
- * SwissEphNet/CPort/SweHouse.cs). Every grid-files.tsv row additionally depends on which segment
- * of which file is currently cached (free_planets, the fidat table) -- both are exactly the kind
- * of state a "fresh instance per row" harness exists to neutralize. swe_close() resets all of it,
- * so it runs before every row here, not just once at the end -- getting this wrong would make
- * this driver disagree with Tools/OracleDump/Program.cs (which constructs a fresh SwissEph
- * instance, and for grid-files.tsv rows, a fresh OnLoadFile attachment, per row) for a reason
- * that has nothing to do with the port being compared.
+ * swe_houses_armc_ex2 keeps a hidden C static, saved_sundec (external/swisseph/swehouse.c:636),
+ * that changes hsys 'I'/'i' results depending on what a PRIOR call computed (see
+ * Tools/BaselineGen/Program.cs's header and SwissEphNet/CPort/SweHouse.cs). swe_close() does not
+ * touch it and cannot: saved_sundec is a function-local static; swe_close() only resets fields of
+ * swed. That does not currently bite: both drivers zero-initialize
+ * ascmc, so ascmc[9] == 0 on every row, and swe_houses_armc_ex2's hsys 'I' branch only ever reads
+ * saved_sundec when ascmc[9] == 99 (Astrodienst's documented "no Sun declination supplied"
+ * signal) -- with ascmc[9] == 0, the function always takes the branch that WRITES saved_sundec,
+ * never the one that reads a value carried over from a prior row. Every hsys 'I'/'i' row grid-
+ * files.tsv contains (792 of them) takes the write branch, so this driver's C state and the
+ * .NET side's per-instance state (saved_sundec is an instance field there, never shared across
+ * calls) stay observably equivalent despite the difference in how each implements "fresh".
+ * A future grid row that sets ascmc[9] = 99 on purpose would change that: it would make the C
+ * side read whatever a prior row last wrote to saved_sundec, carrying state this driver has no
+ * way to reset between rows, while the .NET side started that row with a clean instance -- the
+ * two sides would disagree for a reason that has nothing to do with the port being compared.
+ * Every grid-files.tsv row additionally depends on which segment of which file is currently
+ * cached (free_planets, the fidat table); swe_close() does reset that (it is swed state), so it
+ * runs before every row here, not just once at the end -- getting this wrong would make this
+ * driver disagree with Tools/OracleDump/Program.cs (which constructs a fresh SwissEph instance,
+ * and for grid-files.tsv rows, a fresh OnLoadFile attachment, per row) for a reason that has
+ * nothing to do with the port being compared.
  *
  * OUTPUT COLUMN LAYOUT
  *

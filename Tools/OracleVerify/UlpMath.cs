@@ -28,23 +28,33 @@ internal static class UlpMath
     public const ulong CategoricalDistance = ulong.MaxValue;
 
     /// <summary>
-    /// Above this many representable-double steps, a totalOrder distance is reported as
-    /// "unrelated" rather than as a ULP count -- see <c>Program.DescribeField</c>. 2^52 is the
-    /// number of distinct mantissa bit patterns in one binade: two finite doubles less than 2^52
-    /// apart in totalOrder order differ by less than one full doubling of magnitude (still
-    /// plausibly "the same quantity, off in the last few digits" territory), while two doubles
-    /// further apart than that differ in order of magnitude, not in precision, and calling the
-    /// distance between them a ULP count implies a level of numerical closeness that is not
-    /// there.
+    /// Above this fraction of the larger operand's magnitude, two doubles are reported as
+    /// "unrelated" rather than as a ULP count -- see <c>Program.DescribeField</c>. Relative, not
+    /// a fixed ULP count, because a totalOrder ULP distance is itself magnitude-dependent: one
+    /// binade (a value doubling) is exactly 2^52 ULPs everywhere, so whether a given ULP count
+    /// means "a small fraction of a doubling" or "most of one" depends entirely on how wide the
+    /// binade the two values sit in happens to be. A fixed absolute cutoff (this used to be
+    /// <c>1UL &lt;&lt; 52</c>) reads correctly only for comparisons that never approach a full
+    /// doubling on their own, which held for the analytic grid's planet positions and house
+    /// cusps (0-360 degrees, AU-scale distances) but not for the files grid's fixed-star
+    /// proper-motion speeds, which run 0.001-0.08 degrees/day: two such speeds can disagree by
+    /// most of their own value and still land inside one binade, so a pair 61% apart
+    /// (FIXSTAR|Galactic Center|2195878|SPEED, c=0.033861348059854635, net=0.054671738039122175)
+    /// produced a totalOrder distance of 2,999,093,265,794,048 (~2^51.4) -- under the old 2^52
+    /// cutoff, so it printed as a bare ULP count, claiming a closeness the two values do not
+    /// have.
     ///
-    /// Measured against the current known-diff.tsv: every distance that reflects a genuine
-    /// near-value rounding difference tops out at 195,911,459,571,320 (~2^47.5), and every
-    /// distance that reflects two unrelated finite values (e.g. a cusp read as 0 instead of 270)
-    /// starts at 4,457,293,557,087,583,675 (~2^62). The two clusters are about four orders of
-    /// magnitude apart with nothing in between, and 2^52 sits in that gap with headroom on both
-    /// sides, so the threshold does not need to be exact to separate them correctly.
+    /// Measured against the current known-diff.tsv and known-diff-files.tsv: every pair this
+    /// comparer calls the same quantity (a numeric max_ulp is recorded) differs by at most 0.94%
+    /// of its own magnitude (HOUSES|G|66|-118.24|1533333.3333333335,
+    /// c=73.37399496883465, net=74.07304714772509); every pair it now calls two different
+    /// quantities differs by at least 1.37% (FIXSTARUT|Spica|2382332|SPEED,
+    /// c=0.01222197902731036, net=0.012392236699196889). 1% sits in that gap. Unlike the old
+    /// ULP-count gap, this one is not an artefact of the grids' own value ranges: it is a
+    /// statement about relative closeness, so it reads the same way whether the pair being
+    /// compared is a fixed-star speed near 0.03 or a planet longitude near 300.
     /// </summary>
-    public const ulong UnrelatedThreshold = 1UL << 52;
+    public const double UnrelatedRelativeThreshold = 0.01;
 
     public static ulong Distance(double a, double b)
     {
@@ -64,6 +74,38 @@ internal static class UlpMath
         var keyA = OrderedKey(a);
         var keyB = OrderedKey(b);
         return keyA > keyB ? keyA - keyB : keyB - keyA;
+    }
+
+    /// <summary>
+    /// True when <paramref name="a"/> and <paramref name="b"/> differ by more than
+    /// <see cref="UnrelatedRelativeThreshold"/> of the larger operand's magnitude -- see that
+    /// constant's remarks for why "unrelated" checks this rather than a ULP count. Always false
+    /// for an exactly-equal pair and for a pair involving NaN: a NaN-involved pair is
+    /// <see cref="CategoricalDistance"/>'s job, a different axis ("not comparable" rather than
+    /// "comparable and far apart").
+    /// </summary>
+    public static bool IsUnrelated(double a, double b)
+    {
+        if (a.Equals(b))
+        {
+            return false;
+        }
+
+        if (double.IsNaN(a) || double.IsNaN(b))
+        {
+            return false;
+        }
+
+        var scale = Math.Max(Math.Abs(a), Math.Abs(b));
+        if (scale == 0.0)
+        {
+            // a.Equals(b) above already covers both being zero; scale can only be 0.0 here if
+            // that check somehow let a -0.0/+0.0 pair through, which it does not -- kept as a
+            // guard against a division by zero rather than as a reachable branch.
+            return false;
+        }
+
+        return Math.Abs(a - b) > UnrelatedRelativeThreshold * scale;
     }
 
     private static ulong OrderedKey(double value)

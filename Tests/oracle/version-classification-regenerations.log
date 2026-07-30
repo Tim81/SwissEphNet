@@ -4,3 +4,5 @@
 2026-07-30 (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) (2024 -> 2051 case(s), 2051 classification(s) changed): Rename classification categories to describe the observation, not infer a cause
 2026-07-30 (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) (13851 -> 13851 case(s), 0 classification(s) changed): Verify regeneration is byte-identical
 2026-07-30 (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) (2051 -> 2051 case(s), 0 classification(s) changed): Verify regeneration is byte-identical
+2026-07-30 (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) (13851 -> 13851 case(s), 0 classification(s) changed): Refresh (unrelated)/(ulp=N) tags after UlpMath.UnrelatedThreshold's relative-magnitude fix; no gate reads this file.
+2026-07-30 (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) (2051 -> 2051 case(s), 0 classification(s) changed): Refresh (unrelated)/(ulp=N) tags after UlpMath.UnrelatedThreshold's relative-magnitude fix; no gate reads this file.

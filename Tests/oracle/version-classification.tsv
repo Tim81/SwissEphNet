@@ -11750,7 +11750,7 @@ HOUSES|G|-60|139.6917|1000000	TRACKS-2.08	MATCH	22 field(s) differ, worst cusp[3
 HOUSES|G|-60|139.6917|1533333.3333333335	TRACKS-2.08	MATCH	26 field(s) differ, worst cusp[25] (ulp=2979000472)	26 field(s) differ, worst cusp[25] (ulp=2979000472)
 HOUSES|G|-60|139.6917|2066666.6666666667	TRACKS-2.08	MATCH	24 field(s) differ, worst cusp[34] (ulp=7126405411)	24 field(s) differ, worst cusp[34] (ulp=7126405411)
 HOUSES|G|-60|139.6917|2600000	TRACKS-2.08	MATCH	18 field(s) differ, worst cusp[23] (ulp=711650472)	18 field(s) differ, worst cusp[23] (ulp=711650472)
-HOUSES|G|-66|-118.24|1000000	TRACKS-2.08	MATCH	30 field(s) differ, worst cusp[2] (ulp=195911459571320)	30 field(s) differ, worst cusp[2] (ulp=195911459571320)
+HOUSES|G|-66|-118.24|1000000	TRACKS-2.08	MATCH	30 field(s) differ, worst cusp[2] (unrelated)	30 field(s) differ, worst cusp[2] (unrelated)
 HOUSES|G|-66|-118.24|1533333.3333333335	TRACKS-2.08	MATCH	24 field(s) differ, worst cusp[31] (ulp=309443540881)	24 field(s) differ, worst cusp[31] (ulp=309443540881)
 HOUSES|G|-66|-118.24|2066666.6666666667	TRACKS-2.08	MATCH	32 field(s) differ, worst cusp[21] (ulp=21422917422744)	32 field(s) differ, worst cusp[21] (ulp=21422917422744)
 HOUSES|G|-66|-118.24|2600000	TRACKS-2.08	MATCH	24 field(s) differ, worst cusp[33] (ulp=263746612135)	24 field(s) differ, worst cusp[33] (ulp=263746612135)

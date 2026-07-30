@@ -38,6 +38,16 @@
     driver silently truncating its own run without saying anything at all about whether the
     sides agree on any individual value.
 
+    PROVENANCE
+
+    A successful run also writes external/.c-reference/oracle-provenance.tsv, recording the
+    SHA-256 of both grids, of the SwissEphNet.dll that produced dump-net{,-files}.tsv, and of
+    the sedump.exe/sedump-2.08.exe that produced the two C dumps. scripts/verify-oracle.ps1 reads
+    that file and refuses to report PASS when any of those inputs no longer matches what is on
+    disk (or, for SwissEphNet.dll, what a fresh build of current source produces) -- without it,
+    the gate could compare two dumps that no longer reflect either the current grids or the
+    current port, and PASS anyway. See that script for the check itself.
+
     THE EPHEMERIS FILE SET IS PART OF THE CONTRACT
 
     Before running grid-files.tsv, this script asserts that -EpheDir contains exactly the files
@@ -192,6 +202,13 @@ function Get-FileLineCount {
     return $count
 }
 
+# Used to build the provenance sidecar this script writes on success -- see PROVENANCE in the
+# header comment and scripts/verify-oracle.ps1, which reads what this writes.
+function Get-Sha256Hex {
+    param([string] $Path)
+    return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
 # Two-way check (missing AND extra), matching
 # Tests/SwissEphNet.Conformance.Tests/Dispatch/EphemerisManifest.cs's EphemerisManifestResult --
 # see this script's .DESCRIPTION for why an extra file is as much a problem as a missing one.
@@ -308,7 +325,15 @@ try {
     $netBuildDir = Join-Path $OutputDir 'oracle-dump-net'
     $csprojPath = Join-Path $repoRoot 'Tools/OracleDump/OracleDump.csproj'
     Write-Host 'Building Tools/OracleDump...'
-    $buildOutput = & dotnet build $csprojPath -c Release -o $netBuildDir --nologo -v minimal 2>&1
+    # -p:ContinuousIntegrationBuild=true even for this local build: without it, the SwissEphNet.dll
+    # this produces (hashed into the provenance sidecar below) embeds this machine's absolute
+    # source paths, which makes two otherwise-identical builds of unchanged source hash
+    # differently depending on where/when they ran -- measured, see scripts/verify-oracle.ps1's
+    # own comment on its matching build call. Both sides of the provenance comparison need this
+    # flag for the same reason; Directory.Build.props's own remarks on why it is not the
+    # unconditional default (a worse local debugging experience) do not apply here, since this
+    # build's only purpose is to run OracleDump.exe and be hashed, never to be debugged.
+    $buildOutput = & dotnet build $csprojPath -c Release -o $netBuildDir --nologo -v minimal -p:ContinuousIntegrationBuild=true 2>&1
     if ($LASTEXITCODE -ne 0) {
         $buildOutput | Write-Host
         Fail 'dotnet build Tools/OracleDump failed.'
@@ -316,6 +341,13 @@ try {
     $oracleDumpExe = Join-Path $netBuildDir 'OracleDump.exe'
     if (-not (Test-Path -LiteralPath $oracleDumpExe -PathType Leaf)) {
         Fail "dotnet build reported success but $oracleDumpExe does not exist. Is this running on Windows (the apphost .exe is Windows-only)?"
+    }
+    # The actual SwissEphNet.dll OracleDump.exe just loaded, copied here by the build above as
+    # OracleDump's own project reference output -- recorded in the provenance sidecar below so
+    # scripts/verify-oracle.ps1 can tell whether the port has moved since this run.
+    $netDllPath = Join-Path $netBuildDir 'SwissEphNet.dll'
+    if (-not (Test-Path -LiteralPath $netDllPath -PathType Leaf)) {
+        Fail "dotnet build reported success but $netDllPath does not exist alongside $oracleDumpExe."
     }
 
     # ---------------------------------------------------------------------------------------
@@ -422,6 +454,37 @@ try {
         Fail "sedump-2.08.exe wrote $c208FilesRowCount row(s) to $c208FilesOutputPath but the files grid has $expectedFilesRows data row(s). A driver that silently emits fewer (or more) rows than the grid must not read as a pass."
     }
 
+    # ---------------------------------------------------------------------------------------
+    # Provenance sidecar -- written only once every row-count guard above has passed, so a run
+    # that fails never leaves behind a sidecar claiming a dump it did not finish producing. See
+    # this script's own PROVENANCE header section and scripts/verify-oracle.ps1, which reads this
+    # file and refuses PASS when any recorded hash no longer matches what is on disk now.
+    # ---------------------------------------------------------------------------------------
+
+    # Each row is built as a single joined string here, rather than as a three-element array
+    # literal joined afterwards: PowerShell unrolls (flattens) an array literal that sits as one
+    # element of an outer @(...), so the array-then-join shape would silently flatten all five
+    # rows into one 15-element list before the join ever ran, splitting every field onto its own
+    # line.
+    $provenanceHeader = @('name', 'path', 'sha256') -join "`t"
+    $provenanceRows = @(
+        (@('grid_analytic', $GridPath, (Get-Sha256Hex -Path $GridPath)) -join "`t")
+        (@('grid_files', $FilesGridPath, (Get-Sha256Hex -Path $FilesGridPath)) -join "`t")
+        (@('swisseph_net_dll', $netDllPath, (Get-Sha256Hex -Path $netDllPath)) -join "`t")
+        (@('sedump_exe', $sedumpExe, (Get-Sha256Hex -Path $sedumpExe)) -join "`t")
+        (@('sedump_208_exe', $Sedump208Path, (Get-Sha256Hex -Path $Sedump208Path)) -join "`t")
+    )
+    $provenanceLines = @(
+        '# Written by scripts/run-oracle-dump.ps1 on a successful run. scripts/verify-oracle.ps1'
+        '# reads this and refuses to report PASS when any row no longer matches what is on disk'
+        '# now -- swisseph_net_dll is checked against a fresh build of current source rather than'
+        '# the file at the recorded path, since that path only changes when this script (or a'
+        '# manual rebuild pointed at it) runs again; see verify-oracle.ps1 for why that distinction'
+        '# matters.'
+    ) + $provenanceHeader + $provenanceRows
+    $provenancePath = Join-Path $OutputDir 'oracle-provenance.tsv'
+    [System.IO.File]::WriteAllText($provenancePath, ($provenanceLines -join "`n") + "`n")
+
     Write-Host ''
     Write-Host "PASS: every driver wrote $expectedAnalyticRows analytic-grid row(s) and $expectedFilesRows files-grid row(s), matching their grids." -ForegroundColor Green
     Write-Host "  $cOutputPath"
@@ -430,6 +493,7 @@ try {
     Write-Host "  $cFilesOutputPath"
     Write-Host "  $c208FilesOutputPath"
     Write-Host "  $netFilesOutputPath"
+    Write-Host "  $provenancePath"
 }
 catch {
     Write-Host "FAIL: $($_.Exception.Message)" -ForegroundColor Red

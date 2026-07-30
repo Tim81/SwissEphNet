@@ -173,12 +173,9 @@ internal static class ThreeWayClassifier
         if (outcome.FieldDiffs.Count > 0)
         {
             var worst = outcome.FieldDiffs.OrderByDescending(f => f.Ulp).ThenBy(f => f.Index).First();
-            var tag = worst.Ulp switch
-            {
-                UlpMath.CategoricalDistance => "categorical",
-                > UlpMath.UnrelatedThreshold => "unrelated",
-                _ => $"ulp={worst.Ulp.ToString(CultureInfo.InvariantCulture)}",
-            };
+            var tag = worst.Ulp == UlpMath.CategoricalDistance ? "categorical"
+                : UlpMath.IsUnrelated(worst.CValue, worst.NetValue) ? "unrelated"
+                : $"ulp={worst.Ulp.ToString(CultureInfo.InvariantCulture)}";
             parts.Add($"{outcome.FieldDiffs.Count.ToString(CultureInfo.InvariantCulture)} field(s) differ, worst {worst.Label} ({tag})");
         }
 
