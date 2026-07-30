@@ -710,3 +710,26 @@ Still absent, with their implementations: `swe_calc_pctr` (`swephexp.h:413`) and
 `swe_get_current_file_data` (`:447`). `swe_houses_ex2`, `swe_houses_armc_ex2` and the
 `int hsys` / `const char *` signature changes are recorded further up this file.
 
+
+
+## sid_data is a struct, so `sip = swed.sidd` copies where the C aliases
+
+The C writes `struct sid_data *sip = &swed.sidd;` and reads through the pointer, so it sees
+any later mutation of `swed.sidd`. `sid_data` is a **struct** in this port
+(`CPort/Sweph.h.cs`), so `sid_data sip = swed.sidd;` takes a snapshot. Eight sites use that
+form: five in `CPort/Sweph.cs` and three in `CPort/SweHouse.cs`.
+
+Most are harmless because nothing mutates `swed.sidd` between the copy and the reads, and
+`swe_set_sid_mode` works because it deliberately copies, mutates and writes back.
+
+One was not harmless and is fixed: `swi_get_ayanamsa_ex` took its copy before the
+`SE_SIDM_FAGAN_BRADLEY` fallback ran, so with no prior `swe_set_sid_mode` it read
+pre-fallback state and returned 92.525 where the C returns 24.754 -- 67.8 degrees out. It
+now re-reads `swed.sidd` after the fallback.
+
+The remaining seven are unaudited. The general fix would be to make `sid_data` a class so
+the assignment aliases as the C's pointer does, which would cover all of them at once; the
+cost is that `swe_set_sid_mode`'s copy-mutate-write-back would need revisiting, since with a
+class its intermediate writes would become visible to anything reading `swed.sidd`
+concurrently. Worth doing as its own change with its own measurement, not folded into a
+porting stage.
