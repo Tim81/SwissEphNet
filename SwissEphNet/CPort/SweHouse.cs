@@ -88,6 +88,8 @@ namespace SwissEphNet.CPort
         Sweph.swe_data swed => SE.Sweph.swed;
 
         const double MILLIARCSEC = (1.0 / 3600000.0);
+        const double SOLAR_YEAR = 365.24219893;
+        const double ARMCS = ((SOLAR_YEAR + 1) / SOLAR_YEAR * 360);
 
         // swephexp.h:812-835 declares int hsys on every house entry point. C's toupper()
         // macro, invoked on the raw, untruncated int by swe_house_name (swehouse.c:830) and
@@ -99,6 +101,7 @@ namespace SwissEphNet.CPort
         static int ToUpperAsciiHsys(int hsys) => (hsys >= 'a' && hsys <= 'z') ? hsys - 32 : hsys;
 
         //static double Asc1(double, double, double, double);
+        //static double AscDash(double, double, double, double);
         //static double Asc2(double, double, double, double);
         //static int CalcH(
         //    double th, double fi, double ekl, char hsy, 
@@ -1754,9 +1757,6 @@ namespace SwissEphNet.CPort
                 hsp.coasc2 = Asc1(th + 90, -90 - fi, sine, cose);
             /* "polar ascendant" M. Munkasey */
             hsp.polasc = Asc1(th - 90, fi, sine, cose);
-//#if 0
-//  test_Asc1();
-//#endif
             return retc;
         } /* procedure houses */
 
@@ -1795,89 +1795,21 @@ namespace SwissEphNet.CPort
             return ass;
         }  /* Asc1 */
 
-        #if _0
-        /******************************/
-        static double Asc1_old(double x1, double f, double sine, double cose) 
-        { 
-          int n;
-          double ass;
-          if (f == -90) f += VERY_SMALL / 1000;        // avoid exact pole 90, as tan() goes infinite
-          if (f == 90) f -= VERY_SMALL / 1000;
-          x1 = swe_degnorm(x1);
-          n  = (int) ((x1 / 90) + 1);
-          if (n == 1)
-            ass = ( Asc2(x1, f, sine, cose));
-          else if (n == 2) 
-            ass = (180 - Asc2(180 - x1, - f, sine, cose));
-          else if (n == 3)
-            ass = (180 + Asc2(x1 - 180, - f, sine, cose));
-          else
-            ass = (360 - Asc2(360- x1,  f, sine, cose));
-          ass = swe_degnorm(ass);
-          if (fabs(ass - 90) < VERY_SMALL)	/* rounding, e.g.: if */
-	        ass = 90;				/* fi = 0 & st = 0, ac = 89.999... */
-          if (fabs(ass - 180) < VERY_SMALL)
-            ass = 180;
-          if (fabs(ass - 270) < VERY_SMALL)	/* rounding, e.g.: if */
-            ass = 270;				/* fi = 0 & st = 0, ac = 89.999... */
-          if (fabs(ass - 360) < VERY_SMALL)
-            ass = 0;
-          return ass;
-        }  /* Asc1 */
-
-        /******************************/
-        static double Asc1_old_old (double x1, double f, double sine, double cose) 
-        {
-            int n;
-            double ass;
-            x1 = SE.swe_degnorm(x1);
-            n = (int)((x1 / 90) + 1);
-            if (n == 1)
-                ass = (Asc2(x1, f, sine, cose));
-            else if (n == 2)
-                ass = (180 - Asc2(180 - x1, -f, sine, cose));
-            else if (n == 3)
-                ass = (180 + Asc2(x1 - 180, -f, sine, cose));
-            else
-                ass = (360 - Asc2(360 - x1, f, sine, cose));
-            ass = SE.swe_degnorm(ass);
-            if (Math.Abs(ass - 90) < VERY_SMALL)	/* rounding, e.g.: if */
-                ass = 90;				/* fi = 0 & st = 0, ac = 89.999... */
-            if (Math.Abs(ass - 180) < VERY_SMALL)
-                ass = 180;
-            if (Math.Abs(ass - 270) < VERY_SMALL)	/* rounding, e.g.: if */
-                ass = 270;				/* fi = 0 & st = 0, ac = 89.999... */
-            if (Math.Abs(ass - 360) < VERY_SMALL)
-                ass = 0;
-            return ass;
-        }  /* Asc1 */
-
-        static void test_Asc1()
-        {
-          double armc, dlat, eps = 23.44, asc1, asc1_old, sine, cose;
-          sine = sind(eps);
-          cose = cosd(eps);
-          fprintf(stderr, "Test Asc1() <-> Asc1_old()\n");
-          for (dlat = -90; dlat <= 90; dlat++) {
-            for (armc = 0; armc <= 360; armc++) {
-              asc1 = Asc1(armc, dlat, sine, cose);
-              asc1_old = Asc1_old_old(armc, dlat, sine, cose);
-              if (asc1 != asc1_old)
-                fprintf(stderr, "armc=%f, lat=%f, Asc1: %.16f <-> Asc1_old: %.16f\n", armc, dlat, asc1, asc1_old);
-            }
-          }
-
-        }
-        #endif
-
         /*
          * x in range 0..90
          * f in range -90 .. +90
          * sine, cose around e=23°
+         * oblique triangle formed by: great circle with pole height f, ecliptic and equator,
+         * In case of ascendant, the great circle is the horizon, which has pole height latitude.
+         * x = intersection equator - great circle, measured along equator.
+         * return crossing of ecliptic with great circle.
          */
-        double Asc2(double x, double f, double sine, double cose) 
+        double Asc2(double x, double f, double sine, double cose)
         {
             double ass, sinx;
+            // from https://en.wikipedia.org/wiki/Spherical_trigonometry CT5
+            // cot c sin a = cot C sin B + cos a cos B, with B = ecl, a = x, C = 90 +f
+            // cot 90 + f = - tan f
             ass = -tand(f) * sine + cose * cosd(x);
             if (Math.Abs(ass) < VERY_SMALL)
                 ass = 0;
@@ -1895,12 +1827,31 @@ namespace SwissEphNet.CPort
                 else
                     ass = 90;
             } else {
+                // resolve ass = sin x cot c; cot c = ass / sini x; tan c = sin x / ass
                 ass = atand(sinx / ass);
             }
             if (ass < 0)
                 ass = 180 + ass;
             return (ass);
         } /* Asc2 */
+
+        // derivative of Asc1, computes speed
+        // code contributed by Graham Dawson
+        double AscDash(double x, double f, double sine, double cose)
+        {
+            double cosx = cosd(x);
+            double sinx = sind(x);
+            double sinx2 = sinx * sinx;
+            double c = cose * cosx - tand(f) * sine;
+            double d = sinx2 + c * c;
+            double dudt;
+            if (d > VERY_SMALL) {
+                dudt = (cosx * c + cose * sinx2) / d;
+            } else {
+                dudt = 0.0; //  When we are on axis of ecliptic
+            }
+            return dudt * ARMCS;	// 360.985647366;
+        }
 
         double armc_to_mc(double armc, double eps)
         {
