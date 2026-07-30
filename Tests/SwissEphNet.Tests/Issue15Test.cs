@@ -30,74 +30,65 @@ namespace SwissEphNet.Tests
                 Assert.Equal(2451910.500742, te, delta);
 
                 // SE_SIDM_LAHIRI is one of the four ayanamsa[] rows whose value changed in
-                // 2.10.03: its ayan_t0 correction went from -0.004660222 to -0.004658035
-                // (sweph.h), and the row also gained prec_offset = SEMOD_PREC_IAU_1976.
+                // 2.10.03, and its row also carries prec_offset = SEMOD_PREC_IAU_1976.
                 //
-                // Three values are worth keeping straight here. At 2.08 the ayanamsa was
-                // 23.871032. With the new table it is 23.871035. The underlying shift is
-                // +0.000002187 deg, the ayan_t0 change on its own (0.004660222 - 0.004658035),
-                // measured constant across every AY|1|* baseline row; the 0.000003 above is
-                // just the gap between two 6-decimal-rounded assertions. Genuine libswe
-                // 2.10.03 reports 23.871071.
+                // These are libswe 2.10.03 values, verified against pyswisseph 2.10.3.2 at
+                // this jd and these flags: all twelve agree to within 5e-7.
                 //
-                // The remaining 0.000036 is get_aya_correction, which applies prec_offset
-                // and lives in swi_get_ayanamsa_ex in sweph.c -- not yet ported. So these
-                // expectations are deliberately this stage output rather than the
-                // reference: the table is in place, the machinery that reads its fourth
-                // field is not. They should move again, to the libswe values, when the
-                // ayanamsha stage lands, and if they do not, that stage is incomplete.
-                //
-                // Nine of the eleven longitudes below move -0.000002; Sun and Neptune show
-                // -0.000003 as a rounding artifact. The sign follows from
-                // sidereal = tropical - ayanamsa.
+                // They arrived in two steps. Porting the table alone moved the ayanamsa
+                // 23.871032 -> 23.871035 -- an underlying +0.000002187 deg, the ayan_t0 change
+                // on its own (0.004660222 - 0.004658035) -- and the constants
+                // stage pinned that intermediate value while recording that it should move
+                // again. Porting get_aya_correction, which reads prec_offset, supplies the
+                // remaining 0.000036 and lands on the reference.
                 sweph.swe_set_sid_mode(SwissEph.SE_SIDM_LAHIRI, 0, 0);
                 double ayanamsa = sweph.swe_get_ayanamsa(te);
 
-                Assert.Equal(23.871035, ayanamsa, delta);
+                Assert.Equal(23.871071, ayanamsa, delta);
 
                 iflgret = sweph.swe_calc(te, SwissEph.SE_SUN, iflag, x2, ref serr);
                 Assert.Equal(iflgret, iflag);
-                Assert.Equal(256.766842, x2[0], delta);
+                Assert.Equal(256.766806, x2[0], delta);
 
                 iflgret = sweph.swe_calc(te, SwissEph.SE_MOON, iflag, x2, ref serr);
                 Assert.Equal(iflgret, iflag);
-                Assert.Equal(324.839236, x2[0], delta);
+                Assert.Equal(324.839200, x2[0], delta);
 
                 iflgret = sweph.swe_calc(te, SwissEph.SE_MERCURY, iflag, x2, ref serr);
                 Assert.Equal(iflgret, iflag);
-                Assert.Equal(260.404947, x2[0], delta);
+                Assert.Equal(260.404911, x2[0], delta);
 
                 iflgret = sweph.swe_calc(te, SwissEph.SE_VENUS, iflag, x2, ref serr);
                 Assert.Equal(iflgret, iflag);
-                Assert.Equal(303.100187, x2[0], delta);
+                Assert.Equal(303.100151, x2[0], delta);
 
                 iflgret = sweph.swe_calc(te, SwissEph.SE_MARS, iflag, x2, ref serr);
                 Assert.Equal(iflgret, iflag);
-                Assert.Equal(191.071248, x2[0], delta);
+                Assert.Equal(191.071212, x2[0], delta);
 
                 iflgret = sweph.swe_calc(te, SwissEph.SE_JUPITER, iflag, x2, ref serr);
                 Assert.Equal(iflgret, iflag);
-                Assert.Equal(38.323486, x2[0], delta);
+                Assert.Equal(38.323450, x2[0], delta);
 
                 iflgret = sweph.swe_calc(te, SwissEph.SE_SATURN, iflag, x2, ref serr);
                 Assert.Equal(iflgret, iflag);
-                Assert.Equal(30.724494, x2[0], delta);
+                Assert.Equal(30.724458, x2[0], delta);
 
                 iflgret = sweph.swe_calc(te, SwissEph.SE_URANUS, iflag, x2, ref serr);
                 Assert.Equal(iflgret, iflag);
-                Assert.Equal(294.783508, x2[0], delta);
+                Assert.Equal(294.783472, x2[0], delta);
 
                 iflgret = sweph.swe_calc(te, SwissEph.SE_NEPTUNE, iflag, x2, ref serr);
                 Assert.Equal(iflgret, iflag);
-                Assert.Equal(281.460640, x2[0], delta);
+                Assert.Equal(281.460604, x2[0], delta);
 
                 iflgret = sweph.swe_calc(te, SwissEph.SE_PLUTO, iflag, x2, ref serr);
                 Assert.Equal(iflgret, iflag);
-                Assert.Equal(229.901524, x2[0], delta);
+                Assert.Equal(229.901488, x2[0], delta);
 
                 iflgret = sweph.swe_calc(te, SwissEph.SE_MEAN_NODE, iflag, x2, ref serr);
                 Assert.Equal(iflgret, iflag);
-                Assert.Equal(81.818880, x2[0], delta);
+                Assert.Equal(81.818844, x2[0], delta);
             }
 
         }
