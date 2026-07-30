@@ -818,3 +818,45 @@ which belongs with the version bump the package is already going to take; and th
 harness and the bit-exact comparison drivers are all `OnLoadFile` consumers, so changing it
 mid-port would rebuild the instruments while they are being used to decide whether the port is
 correct.
+
+## Pointer arithmetic as string concatenation: Defect 4's class survives in SweTest
+
+Defect 4 above records `swe_set_astro_models` writing `"s + 2"` where the C does pointer
+arithmetic on `s`, so the C# appended the character `2` instead of skipping two bytes. That audit
+swept `SwissEphNet/CPort`. `Programs/SweTest/Program.cs` is a separate frozen path and was not
+covered, and the same class is still there.
+
+Found by the swetest text-diff harness (`scripts/verify-swetest-diff.ps1`), which crashes the
+port on six command-line options the C accepts. `-sid1` reports it plainly:
+
+```
+System.FormatException: The input string '-sid14' was not in a correct format.
+```
+
+The C is `atoi(argv[i] + 4)`: skip `-sid`, parse `1`. The port is `int.Parse(argv[i] + 4)`, which
+concatenates and parses `-sid14`.
+
+Eight live sites share the shape, at `Program.cs` lines 878, 884, 893, 919, 933, 964, 1162 and
+1168. Six throw (`-sid`, `-ay`, `-sidt0`, `-sidsp`, `-helflag`, `-j`). The other two are worse for
+not throwing:
+
+- `1168`, `C.atof(argv[i] + 7)` for `-tidacc`. `C.atof` takes the longest parseable prefix, so a
+  concatenated string that starts with `-t` yields `0` rather than an error, and the run silently
+  uses a default tidal acceleration. This is visible in the harness as a numeric drift, not as a
+  failure.
+- `1162`, `astro_models = argv[i] + 5`, which assigns the whole option string with a digit
+  appended instead of the model name.
+
+Four further sites at 834, 847, 940 and 949 are commented-out C, kept for reference; they are the
+same pattern and are the ones to check first if that code is ever restored.
+
+Two crashes in the same harness are a different cause and are recorded here so they are not
+mistaken for this class. `-house` throws `InvalidCastException` out of `C.sscanf` on a `%c` read
+into a `string`, which makes swetest's main house-cusp entry point unusable in the port. `-utc`
+throws `ArgumentOutOfRangeException` from a `Substring(4, 30)` where the C uses a bounded
+`strncpy` that stops at the end of the string.
+
+**None of this is 2.10.03 work.** All of it is present in the port as it stands, against the 2.08
+it currently tracks, so it can be fixed without waiting for the swetest.c re-transliteration.
+Fixing it in `Programs/SweTest/Program.cs` is a freeze-permitted correction of a divergence from
+the C, the same standing as the six that have already landed: cite the C file and line.
