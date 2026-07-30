@@ -1,0 +1,351 @@
+name: Oracle build gates
+
+# Four scripts build Astrodienst's C with MSVC and compare it against something else: .NET
+# (scripts/verify-crt-parity.ps1), pyswisseph (scripts/validate-c-reference.ps1), this port
+# (scripts/run-oracle-dump.ps1 + scripts/verify-oracle.ps1), and Programs/SweTest's own text
+# output (scripts/verify-swetest-diff.ps1). None of them run anywhere in CI before this file --
+# Tools/CReference/build-c.ps1 and scripts/validate-c-reference.ps1 each say so in their own
+# .NOTES section, written when nothing here exercised them. This workflow is what makes that
+# statement go stale.
+#
+# The submodule checkout below (sparse, cached on the pinned commit SHA) is copied from
+# .github/workflows/conformance.yml rather than rebuilt from scratch, cache key included, so a
+# job in either file restores the same cache entry and one clone serves both files.
+#
+# Two of the four jobs compare something built on the runner against something else also built
+# or installed on the runner (MSVC C against .NET; MSVC C against pyswisseph), so a disagreement
+# means the same thing on any machine that runs this file and gates the same way conformance.yml
+# and baseline.yml's Windows leg do. The other two compare the runner's MSVC C against
+# Tests/oracle/known-diff*.tsv and Tests/swetest/known-diff.tsv, lists generated once by a
+# specific compiler (external/.c-reference/toolchain.txt records which one). A different MSVC
+# minor version on a future windows-latest image can move the C side's printed digits without
+# the port changing at all, and that must not fail a PR -- see baseline.yml's own
+# verify-baseline-linux job for the precedent: report the drift, do not gate on it. Each job
+# below says which kind it is and why.
+on:
+  pull_request:
+  schedule:
+    - cron: "42 4 * * 1" # Mondays, 04:42 UTC -- offset from conformance.yml's 04:17 so the two do not start in the same minute
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Gate. Compares MSVC C against .NET, both built on this runner in this run -- see
+  # scripts/verify-crt-parity.ps1's own .DESCRIPTION for what it checks; a FAIL here means the
+  # bit-exact oracle's own premise has broken, independent of anything sweph.c does. Needs no
+  # submodule checkout at all: Tools/CReference/crt-parity.c is a fixed, self-contained value
+  # table and opens no swisseph header.
+  crt-parity:
+    name: "Gate: MSVC C and .NET agree on CRT math (crt-parity)"
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Verify CRT parity
+        shell: pwsh
+        run: pwsh scripts/verify-crt-parity.ps1
+
+  # Gate. Compares Tools/CReference/build-c.ps1's MSVC build against pyswisseph 2.10.03, both
+  # resolved on this runner in this run -- see scripts/validate-c-reference.ps1's own
+  # .DESCRIPTION for what "independent" does and does not mean here (same upstream C, different
+  # build configuration). A FAIL means the local MSVC build is wrong, which every other job below
+  # depends on, so this is worth knowing before trusting any of them.
+  c-reference-validate:
+    name: "Gate: MSVC C reference build agrees with pyswisseph 2.10.03"
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same assertion as conformance.yml's own copy: the cache key and the checkout step below
+      # both carry the pinned SHA as a literal, so a submodule bump that forgets to update either
+      # occurrence would otherwise build against a commit the tree no longer declares. Keep this
+      # SHA, the cache key below, and conformance.yml's own copies of both in sync by hand.
+      - name: Assert the pinned submodule SHA matches the gitlink
+        shell: pwsh
+        run: |
+          $pinnedSha = "af9823fe7b06ffefe3d3968fdc5680be8b5eec5f"
+          $line = git ls-tree HEAD external/swisseph
+          $actual = ($line -split '\s+')[2]
+          if ($actual -ne $pinnedSha) {
+            Write-Error "external/swisseph's gitlink is $actual but this job is hardcoded to $pinnedSha. Update this occurrence and every other one listed in this file's own header comment."
+            exit 1
+          }
+          Write-Host "OK: external/swisseph's gitlink ($actual) matches this job's pinned SHA."
+
+      - name: Cache external/swisseph submodule
+        id: submodule-cache
+        uses: actions/cache@v4
+        with:
+          path: external/swisseph
+          key: swisseph-submodule-af9823fe7b06ffefe3d3968fdc5680be8b5eec5f
+
+      - name: Checkout external/swisseph submodule (sparse, ~25 MB)
+        if: steps.submodule-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $pinnedSha = "af9823fe7b06ffefe3d3968fdc5680be8b5eec5f"
+          git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
+          Push-Location external/swisseph
+          git config core.autocrlf false
+          git sparse-checkout init --no-cone
+          @(
+            '/*.c'
+            '/*.h'
+            '/Makefile'
+            '/LICENSE'
+            '/setest/*'
+            '/ephe/seas_12.se1'
+            '/ephe/semo_12.se1'
+            '/ephe/sepl_12.se1'
+            '/ephe/seas_18.se1'
+            '/ephe/semo_18.se1'
+            '/ephe/sepl_18.se1'
+            '/ephe/sefstars.txt'
+            '/ephe/seorbel.txt'
+            '/seleapsec.txt'
+          ) | Set-Content .git/info/sparse-checkout
+          git checkout $pinnedSha
+          Pop-Location
+
+      # Tools/CReference/build-c.ps1 refuses to build the 2.08 library without this directory
+      # already stamped as verified -- see that script's Test-Pyswisseph208Verified. Cached on
+      # the script and manifest content: neither the sdist URL nor the pinned sha256 nor the
+      # manifest rows change without one of those two files changing too, so this key only misses
+      # when the 2.08 baseline itself would actually change.
+      - name: Cache external/pyswisseph-2.08 (2.08 C baseline)
+        id: pyswisseph208-cache
+        uses: actions/cache@v4
+        with:
+          path: external/pyswisseph-2.08
+          key: pyswisseph-208-${{ hashFiles('scripts/fetch-2.08-baseline.ps1', 'scripts/pyswisseph-2.08.manifest.tsv') }}
+
+      - name: Fetch 2.08 C baseline (pyswisseph sdist, hash-verified)
+        if: steps.pyswisseph208-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: pwsh scripts/fetch-2.08-baseline.ps1
+
+      # windows-latest carries Visual Studio 2022 with the C++ toolset preinstalled, which is
+      # what Tools/CReference/build-c.ps1's Get-VcVarsPath (vswhere-based) expects to find --
+      # this is the same discovery scripts/verify-crt-parity.ps1's own copy uses, and it has not
+      # previously run on an actual GitHub-hosted runner, only against a local Visual Studio
+      # install. A FAIL naming a missing vswhere.exe or C++ component here means that assumption
+      # did not hold; do not paper over it with a manual toolset install without first checking
+      # what actually broke.
+      - name: Build C reference (MSVC, 2.10.03 and 2.08)
+        shell: pwsh
+        run: pwsh Tools/CReference/build-c.ps1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      # Pinned to the exact version verified locally to report swe.version == '2.10.03' (the
+      # PyPI package version and the C library's own version string are numbered independently --
+      # scripts/validate-c-reference.ps1's own version check reads swe.version at runtime rather
+      # than trusting this pin). PyPI ships no Windows wheel for this package, so this compiles a
+      # small C extension against the C++ toolset the previous step already confirmed is present.
+      - name: Install pyswisseph 2.10.3.2
+        shell: pwsh
+        run: python -m pip install pyswisseph==2.10.3.2
+
+      - name: Validate C reference build against pyswisseph 2.10.03
+        shell: pwsh
+        run: pwsh scripts/validate-c-reference.ps1
+
+  # Report only. run-oracle-dump.ps1 builds and runs both C drivers (2.10.03 and 2.08, the "both
+  # submodule trees" this job needs) and the .NET driver, and its own row-count guards stay a
+  # hard failure here -- a driver silently truncating its own output is a real defect regardless
+  # of which MSVC produced it. Only the verify-oracle.ps1 step, the one that reads
+  # Tests/oracle/known-diff*.tsv, is allowed to go red without failing the job: those files
+  # record ULP distances and categorical mismatches captured from one specific compiler, and a
+  # future windows-latest MSVC update can shift a comparison value's last few bits with no change
+  # to sweph.c or this port. continue-on-error applies at the job level here, matching
+  # baseline.yml's verify-baseline-linux precedent -- that job puts its own gate unit tests under
+  # the same job-level flag as its platform-sensitive comparison, as a backstop against an
+  # unrelated break in the earlier steps rather than because the report step itself is expected
+  # to fail.
+  oracle-dump:
+    name: "Report: port vs 2.10.03 C reference (oracle dump, toolchain-sensitive)"
+    runs-on: windows-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assert the pinned submodule SHA matches the gitlink
+        shell: pwsh
+        run: |
+          $pinnedSha = "af9823fe7b06ffefe3d3968fdc5680be8b5eec5f"
+          $line = git ls-tree HEAD external/swisseph
+          $actual = ($line -split '\s+')[2]
+          if ($actual -ne $pinnedSha) {
+            Write-Error "external/swisseph's gitlink is $actual but this job is hardcoded to $pinnedSha. Update this occurrence and every other one listed in this file's own header comment."
+            exit 1
+          }
+          Write-Host "OK: external/swisseph's gitlink ($actual) matches this job's pinned SHA."
+
+      - name: Cache external/swisseph submodule
+        id: submodule-cache
+        uses: actions/cache@v4
+        with:
+          path: external/swisseph
+          key: swisseph-submodule-af9823fe7b06ffefe3d3968fdc5680be8b5eec5f
+
+      - name: Checkout external/swisseph submodule (sparse, ~25 MB)
+        if: steps.submodule-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $pinnedSha = "af9823fe7b06ffefe3d3968fdc5680be8b5eec5f"
+          git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
+          Push-Location external/swisseph
+          git config core.autocrlf false
+          git sparse-checkout init --no-cone
+          @(
+            '/*.c'
+            '/*.h'
+            '/Makefile'
+            '/LICENSE'
+            '/setest/*'
+            '/ephe/seas_12.se1'
+            '/ephe/semo_12.se1'
+            '/ephe/sepl_12.se1'
+            '/ephe/seas_18.se1'
+            '/ephe/semo_18.se1'
+            '/ephe/sepl_18.se1'
+            '/ephe/sefstars.txt'
+            '/ephe/seorbel.txt'
+            '/seleapsec.txt'
+          ) | Set-Content .git/info/sparse-checkout
+          git checkout $pinnedSha
+          Pop-Location
+
+      - name: Cache external/pyswisseph-2.08 (2.08 C baseline)
+        id: pyswisseph208-cache
+        uses: actions/cache@v4
+        with:
+          path: external/pyswisseph-2.08
+          key: pyswisseph-208-${{ hashFiles('scripts/fetch-2.08-baseline.ps1', 'scripts/pyswisseph-2.08.manifest.tsv') }}
+
+      - name: Fetch 2.08 C baseline (pyswisseph sdist, hash-verified)
+        if: steps.pyswisseph208-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: pwsh scripts/fetch-2.08-baseline.ps1
+
+      - name: Build C reference (MSVC, 2.10.03 and 2.08)
+        shell: pwsh
+        run: pwsh Tools/CReference/build-c.ps1
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Run oracle dump (build C and .NET drivers, replay both grids)
+        shell: pwsh
+        run: pwsh scripts/run-oracle-dump.ps1
+
+      - name: Compare port vs 2.10.03 C reference against known-diff.tsv
+        shell: pwsh
+        run: pwsh scripts/verify-oracle.ps1
+
+  # Report only, same reasoning as oracle-dump above: scripts/verify-swetest-diff.ps1 gates
+  # against Tests/swetest/known-diff.tsv, generated by one specific MSVC. Unlike oracle-dump,
+  # the build step and the toolchain-sensitive comparison are one script call here (it builds
+  # Programs/SweTest, runs the args grid through both binaries, and gates in a single pass), so
+  # continue-on-error has to cover the whole job rather than a later step alone. That is a
+  # smaller gap than it looks: Programs/SweTest already builds as part of SwissEphNet.sln in
+  # ci.yml's build-and-test job on every push and pull request, so a genuine build break there
+  # still fails a job elsewhere in this repo -- this workflow is not the only thing standing
+  # between a broken SweTest build and a merged PR.
+  swetest-diff:
+    name: "Report: port vs 2.10.03 C reference (SweTest text diff, toolchain-sensitive)"
+    runs-on: windows-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assert the pinned submodule SHA matches the gitlink
+        shell: pwsh
+        run: |
+          $pinnedSha = "af9823fe7b06ffefe3d3968fdc5680be8b5eec5f"
+          $line = git ls-tree HEAD external/swisseph
+          $actual = ($line -split '\s+')[2]
+          if ($actual -ne $pinnedSha) {
+            Write-Error "external/swisseph's gitlink is $actual but this job is hardcoded to $pinnedSha. Update this occurrence and every other one listed in this file's own header comment."
+            exit 1
+          }
+          Write-Host "OK: external/swisseph's gitlink ($actual) matches this job's pinned SHA."
+
+      - name: Cache external/swisseph submodule
+        id: submodule-cache
+        uses: actions/cache@v4
+        with:
+          path: external/swisseph
+          key: swisseph-submodule-af9823fe7b06ffefe3d3968fdc5680be8b5eec5f
+
+      - name: Checkout external/swisseph submodule (sparse, ~25 MB)
+        if: steps.submodule-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $pinnedSha = "af9823fe7b06ffefe3d3968fdc5680be8b5eec5f"
+          git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
+          Push-Location external/swisseph
+          git config core.autocrlf false
+          git sparse-checkout init --no-cone
+          @(
+            '/*.c'
+            '/*.h'
+            '/Makefile'
+            '/LICENSE'
+            '/setest/*'
+            '/ephe/seas_12.se1'
+            '/ephe/semo_12.se1'
+            '/ephe/sepl_12.se1'
+            '/ephe/seas_18.se1'
+            '/ephe/semo_18.se1'
+            '/ephe/sepl_18.se1'
+            '/ephe/sefstars.txt'
+            '/ephe/seorbel.txt'
+            '/seleapsec.txt'
+          ) | Set-Content .git/info/sparse-checkout
+          git checkout $pinnedSha
+          Pop-Location
+
+      - name: Cache external/pyswisseph-2.08 (2.08 C baseline)
+        id: pyswisseph208-cache
+        uses: actions/cache@v4
+        with:
+          path: external/pyswisseph-2.08
+          key: pyswisseph-208-${{ hashFiles('scripts/fetch-2.08-baseline.ps1', 'scripts/pyswisseph-2.08.manifest.tsv') }}
+
+      - name: Fetch 2.08 C baseline (pyswisseph sdist, hash-verified)
+        if: steps.pyswisseph208-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: pwsh scripts/fetch-2.08-baseline.ps1
+
+      # build-c.ps1 always builds both libraries, so swetest.exe is not available without the
+      # 2.08 tree present too, even though this job's own comparison never touches it -- see
+      # Tools/CReference/build-c.ps1's own .DESCRIPTION.
+      - name: Build C reference (MSVC, 2.10.03 and 2.08)
+        shell: pwsh
+        run: pwsh Tools/CReference/build-c.ps1
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Compare Programs/SweTest vs 2.10.03 C reference against known-diff.tsv
+        shell: pwsh
+        run: pwsh scripts/verify-swetest-diff.ps1
