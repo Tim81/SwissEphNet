@@ -347,7 +347,10 @@ namespace SwissEphNet.CPort
                 return SwissEph.SE_NEPTUNE;
             if (s.StartsWith("moon"))
                 return SwissEph.SE_MOON;
-            if ((ipl = int.Parse(s)) > 0) {
+            // swehel.c:328 is `if ((ipl = atoi(s)) > 0)`, which returns 0 for an object
+            // name that is not a recognized planet and not a bare catalog number
+            // (e.g. "regulus"), instead of throwing.
+            if ((ipl = C.atoi(s)) > 0) {
                 ipl += SwissEph.SE_AST_OFFSET;
                 return ipl;
             }

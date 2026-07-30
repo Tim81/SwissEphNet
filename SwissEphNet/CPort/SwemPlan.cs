@@ -802,7 +802,8 @@ namespace SwissEphNet.CPort
                         serr = C.sprintf("%s invalid epoch", serri);
                         return SwissEph.ERR;
                     } else
-                        tjd0 = double.Parse(sp, CultureInfo.InvariantCulture);
+                        // swemplan.c:785 is `*tjd0 = atof(sp);`, which cannot throw.
+                        tjd0 = C.atof(sp);
                     tt = tjd - tjd0;
                     //    }
                     /* equinox */
@@ -821,7 +822,8 @@ namespace SwissEphNet.CPort
                         serr = C.sprintf("%s invalid equinox", serri);
                         return SwissEph.ERR;
                     } else
-                        tequ = double.Parse(sp, CultureInfo.InvariantCulture);
+                        // swemplan.c:809 is `*tequ = atof(sp);`, which cannot throw.
+                        tequ = C.atof(sp);
                     //    }
                     /* mean anomaly t0 */
                     //    if (mano != NULL) {
@@ -961,7 +963,10 @@ namespace SwissEphNet.CPort
                         /* a number */
                         int cnt = sp.IndexOfFirstNot('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.');
                         String sval = cnt < 0 ? sp : sp.Substring(0, cnt);
-                        var val = double.Parse(sval, CultureInfo.InvariantCulture);
+                        // swemplan.c:959-960 is `if (atof(sp) != 0 || *sp == '0') fac *= atof(sp);`,
+                        // two atof(sp) calls on the same input; neither can throw. The port
+                        // already collapses them into one C.atof call reused for both checks.
+                        var val = C.atof(sval);
                         if (val != 0 || sp.StartsWith("0"))
                             fac *= val;
                     }

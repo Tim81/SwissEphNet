@@ -2848,40 +2848,40 @@ CU|13|2600000|SPEED_EQUATORIAL	2308	250.73520494134988	-17.536463310228964	0.002
 CU|13|2600000|SPEED_XYZ	4356	-0.0008700636431213169	-0.0026156838888240796	0.0002231429288833203	-8.014459736250623E-05	2.2527513752403517E-05	-2.368994214539162E-06	
 CU|13|2600000|TRUEPOS	1556	251.60115524835254	4.627931970648134	0.002765611273488381	0	0	0	
 CU|13|2600000|XYZ	4100	-0.0008700636431213169	-0.0026156838888240796	0.0002231429288833203	0	0	0	
-CU|13|3000000|0	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
+CU|13|3000000|0	-1	0	0	0	0	0	0	jd 3000000.085307 outside Moshier's Moon range 625000.50 .. 2818000.50 
 CU|13|3000000|BARYCTR	-1	0	0	0	0	0	0	barycentric Moshier positions are not supported.
-CU|13|3000000|EQUATORIAL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
+CU|13|3000000|EQUATORIAL	-1	0	0	0	0	0	0	jd 3000000.085307 outside Moshier's Moon range 625000.50 .. 2818000.50 
 CU|13|3000000|HELCTR	1548	0	0	0	0	0	0	
 CU|13|3000000|HELCTR_SPEED	1804	0	0	0	0	0	0	
-CU|13|3000000|J2000	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|3000000|J2000_EQUATORIAL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|3000000|NOABERR	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|3000000|NOGDEFL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|3000000|NONUT	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|3000000|RADIANS	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|3000000|SIDEREAL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|3000000|SPEED	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|3000000|SPEED_EQUATORIAL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|3000000|SPEED_XYZ	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|3000000|TRUEPOS	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|3000000|XYZ	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|500000|0	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
+CU|13|3000000|J2000	-1	0	0	0	0	0	0	jd 3000000.085307 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|3000000|J2000_EQUATORIAL	-1	0	0	0	0	0	0	jd 3000000.085307 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|3000000|NOABERR	-1	0	0	0	0	0	0	jd 3000000.085307 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|3000000|NOGDEFL	-1	0	0	0	0	0	0	jd 3000000.085307 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|3000000|NONUT	-1	0	0	0	0	0	0	jd 3000000.085307 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|3000000|RADIANS	-1	0	0	0	0	0	0	jd 3000000.085307 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|3000000|SIDEREAL	-1	0	0	0	0	0	0	jd 3000000.085307 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|3000000|SPEED	-1	0	0	0	0	0	0	jd 2999999.985307 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|3000000|SPEED_EQUATORIAL	-1	0	0	0	0	0	0	jd 2999999.985307 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|3000000|SPEED_XYZ	-1	0	0	0	0	0	0	jd 2999999.985307 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|3000000|TRUEPOS	-1	0	0	0	0	0	0	jd 3000000.085307 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|3000000|XYZ	-1	0	0	0	0	0	0	jd 3000000.085307 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|500000|0	-1	0	0	0	0	0	0	jd 500000.990941 outside Moshier's Moon range 625000.50 .. 2818000.50 
 CU|13|500000|BARYCTR	-1	0	0	0	0	0	0	barycentric Moshier positions are not supported.
-CU|13|500000|EQUATORIAL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
+CU|13|500000|EQUATORIAL	-1	0	0	0	0	0	0	jd 500000.990941 outside Moshier's Moon range 625000.50 .. 2818000.50 
 CU|13|500000|HELCTR	1548	0	0	0	0	0	0	
 CU|13|500000|HELCTR_SPEED	1804	0	0	0	0	0	0	
-CU|13|500000|J2000	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|500000|J2000_EQUATORIAL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|500000|NOABERR	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|500000|NOGDEFL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|500000|NONUT	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|500000|RADIANS	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|500000|SIDEREAL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|500000|SPEED	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|500000|SPEED_EQUATORIAL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|500000|SPEED_XYZ	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|500000|TRUEPOS	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-CU|13|500000|XYZ	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
+CU|13|500000|J2000	-1	0	0	0	0	0	0	jd 500000.990941 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|500000|J2000_EQUATORIAL	-1	0	0	0	0	0	0	jd 500000.990941 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|500000|NOABERR	-1	0	0	0	0	0	0	jd 500000.990941 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|500000|NOGDEFL	-1	0	0	0	0	0	0	jd 500000.990941 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|500000|NONUT	-1	0	0	0	0	0	0	jd 500000.990941 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|500000|RADIANS	-1	0	0	0	0	0	0	jd 500000.990941 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|500000|SIDEREAL	-1	0	0	0	0	0	0	jd 500000.990941 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|500000|SPEED	-1	0	0	0	0	0	0	jd 500000.890941 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|500000|SPEED_EQUATORIAL	-1	0	0	0	0	0	0	jd 500000.890941 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|500000|SPEED_XYZ	-1	0	0	0	0	0	0	jd 500000.890941 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|500000|TRUEPOS	-1	0	0	0	0	0	0	jd 500000.990941 outside Moshier's Moon range 625000.50 .. 2818000.50 
+CU|13|500000|XYZ	-1	0	0	0	0	0	0	jd 500000.990941 outside Moshier's Moon range 625000.50 .. 2818000.50 
 CU|14|1000000|0	4	0	0	0	0	0	0	
 CU|14|1000000|BARYCTR	-1	0	0	0	0	0	0	barycentric Moshier positions are not supported.
 CU|14|1000000|EQUATORIAL	2052	0	0	0	0	0	0	
@@ -8832,40 +8832,40 @@ C|13|2600000|SPEED_EQUATORIAL	2308	250.74638922132561	-17.537528309398127	0.0027
 C|13|2600000|SPEED_XYZ	4356	-0.0008695652357798848	-0.0026158236769650302	0.0002231576383877377	-8.013206384842396E-05	2.2459643001502584E-05	-2.3644800287930345E-06	
 C|13|2600000|TRUEPOS	1556	251.61190224807416	4.62827687612508	0.0027655879193796335	0	0	0	
 C|13|2600000|XYZ	4100	-0.0008695652357798848	-0.0026158236769650302	0.0002231576383877377	0	0	0	
-C|13|3000000|0	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
+C|13|3000000|0	-1	0	0	0	0	0	0	jd 3000000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
 C|13|3000000|BARYCTR	-1	0	0	0	0	0	0	barycentric Moshier positions are not supported.
-C|13|3000000|EQUATORIAL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
+C|13|3000000|EQUATORIAL	-1	0	0	0	0	0	0	jd 3000000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
 C|13|3000000|HELCTR	1548	0	0	0	0	0	0	
 C|13|3000000|HELCTR_SPEED	1804	0	0	0	0	0	0	
-C|13|3000000|J2000	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|3000000|J2000_EQUATORIAL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|3000000|NOABERR	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|3000000|NOGDEFL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|3000000|NONUT	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|3000000|RADIANS	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|3000000|SIDEREAL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|3000000|SPEED	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|3000000|SPEED_EQUATORIAL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|3000000|SPEED_XYZ	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|3000000|TRUEPOS	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|3000000|XYZ	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|500000|0	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
+C|13|3000000|J2000	-1	0	0	0	0	0	0	jd 3000000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|3000000|J2000_EQUATORIAL	-1	0	0	0	0	0	0	jd 3000000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|3000000|NOABERR	-1	0	0	0	0	0	0	jd 3000000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|3000000|NOGDEFL	-1	0	0	0	0	0	0	jd 3000000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|3000000|NONUT	-1	0	0	0	0	0	0	jd 3000000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|3000000|RADIANS	-1	0	0	0	0	0	0	jd 3000000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|3000000|SIDEREAL	-1	0	0	0	0	0	0	jd 3000000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|3000000|SPEED	-1	0	0	0	0	0	0	jd 2999999.900000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|3000000|SPEED_EQUATORIAL	-1	0	0	0	0	0	0	jd 2999999.900000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|3000000|SPEED_XYZ	-1	0	0	0	0	0	0	jd 2999999.900000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|3000000|TRUEPOS	-1	0	0	0	0	0	0	jd 3000000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|3000000|XYZ	-1	0	0	0	0	0	0	jd 3000000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|500000|0	-1	0	0	0	0	0	0	jd 500000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
 C|13|500000|BARYCTR	-1	0	0	0	0	0	0	barycentric Moshier positions are not supported.
-C|13|500000|EQUATORIAL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
+C|13|500000|EQUATORIAL	-1	0	0	0	0	0	0	jd 500000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
 C|13|500000|HELCTR	1548	0	0	0	0	0	0	
 C|13|500000|HELCTR_SPEED	1804	0	0	0	0	0	0	
-C|13|500000|J2000	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|500000|J2000_EQUATORIAL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|500000|NOABERR	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|500000|NOGDEFL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|500000|NONUT	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|500000|RADIANS	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|500000|SIDEREAL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|500000|SPEED	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|500000|SPEED_EQUATORIAL	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|500000|SPEED_XYZ	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|500000|TRUEPOS	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
-C|13|500000|XYZ	-1	0	0	0	0	0	0	Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5
+C|13|500000|J2000	-1	0	0	0	0	0	0	jd 500000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|500000|J2000_EQUATORIAL	-1	0	0	0	0	0	0	jd 500000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|500000|NOABERR	-1	0	0	0	0	0	0	jd 500000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|500000|NOGDEFL	-1	0	0	0	0	0	0	jd 500000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|500000|NONUT	-1	0	0	0	0	0	0	jd 500000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|500000|RADIANS	-1	0	0	0	0	0	0	jd 500000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|500000|SIDEREAL	-1	0	0	0	0	0	0	jd 500000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|500000|SPEED	-1	0	0	0	0	0	0	jd 499999.900000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|500000|SPEED_EQUATORIAL	-1	0	0	0	0	0	0	jd 499999.900000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|500000|SPEED_XYZ	-1	0	0	0	0	0	0	jd 499999.900000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|500000|TRUEPOS	-1	0	0	0	0	0	0	jd 500000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
+C|13|500000|XYZ	-1	0	0	0	0	0	0	jd 500000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 
 C|14|1000000|0	4	0	0	0	0	0	0	
 C|14|1000000|BARYCTR	-1	0	0	0	0	0	0	barycentric Moshier positions are not supported.
 C|14|1000000|EQUATORIAL	2052	0	0	0	0	0	0	

@@ -353,7 +353,8 @@ namespace SwissEphNet.CPort
                 while ((s = fp.ReadLine()) != null) {
                     s = s.TrimStart(' ', '\t');
                     if (String.IsNullOrEmpty(s) || s.StartsWith("#")) continue;
-                    ndat = int.Parse(s);
+                    // swedate.c:334 is `ndat = atoi(s);`, which cannot throw.
+                    ndat = C.atoi(s);
                     if (ndat <= ndat_last)
                         continue;
                     /* table space is limited. no error msg, if exceeded */

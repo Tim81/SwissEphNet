@@ -769,31 +769,37 @@ class its intermediate writes would become visible to anything reading `swed.sid
 concurrently. Worth doing as its own change with its own measurement, not folded into a
 porting stage.
 
-## swe_calc's serr differs for SE_INTP_APOG outside the Moshier range
+## swe_calc's serr for ipl 13: a range gate the C does not have there
+
+Fixed. Recorded because the first diagnosis was wrong in a way worth not repeating.
 
 Found by the bit-exact comparison harness, which compares the error string as well as the
-numbers. 40 of the 14,220 analytic-grid rows agree on every value and on `retc`, and differ
-only in `serr`. All 40 are `ipl = 13` (`SE_INTP_APOG`) at Julian days outside the interpolated
-range, through both `swe_calc` and `swe_calc_ut`.
+numbers: 40 of the 14,220 analytic-grid rows agreed on every value and on `retc` and differed
+only in `serr`, all at `ipl = 13` through both `swe_calc` and `swe_calc_ut`.
 
 | | message |
 |---|---|
-| C 2.10.03 | `jd 500000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 ` |
-| this port | `Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5` |
+| C | `jd 500000.000000 outside Moshier's Moon range 625000.50 .. 2818000.50 ` |
+| the port | `Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5` |
 
-Both strings exist in both C versions and in the port: the first is `swemmoon.c:883`
-(`SwemMoon.cs:912`), the second is `sweph.c:982` and `:1006` (`Sweph.cs:1097` and `:1124`).
-Neither side is missing a message. They disagree about which check runs first, or about which
-one gets to write `serr` last, so the port reports the apsides restriction where the C reports
-the underlying Moshier range failure.
+The first reading was that both messages are legitimate and the two sides disagree about which
+check runs first. That was wrong. `ipl = 13` is `SE_OSCU_APOG`, the osculating apogee;
+`SE_INTP_APOG` is 21. The C's `SE_OSCU_APOG` case (`sweph.c` 2.08:945-957, 2.10.03:955-966) has
+no Julian-day gate at all. It calls `lunar_osc_elem`, which reaches `swi_moshmoon`, and
+`swemmoon.c:883` is what emits the range message. The gate carrying "Interpolated apsides are
+restricted" belongs only to the `SE_INTP_APOG` and `SE_INTP_PERG` cases further down.
 
-This is the same family as the inverted `serr != NULL` guards swept earlier in this file: the
-numbers were never wrong, only the diagnostic, which is why nothing caught it until something
-compared the strings. The characterization baseline does not exercise `serr` for these rows and
-the conformance corpus has no iteration at these Julian days.
+The port had that gate copied into its `SE_OSCU_APOG` branch as well: eight lines with no
+counterpart in the C, at either version. Deleting them lets `swi_moshmoon` own the message, as
+the C does. Both C versions emit identical text here, so this was never upgrade work.
 
-The 40 case ids are in `Tests/oracle/known-diff.tsv` under category `SERR`. Fix belongs with
-the `sweph.c` port, since that is where the ordering is decided.
+Baseline effect: 56 rows per TFM in the `calc` area, all `ipl = 13`, all the `serr` column, no
+numeric field and no other area. Regenerated under `-ExpectedScope 'C|13|**;CU|13|**'` as
+deviation 15.
+
+The lesson is the diagnosis, not the fix. Two plausible messages in two places invited an
+ordering explanation, and the constant that names which branch runs settles it in one line. Read
+the C before proposing a mechanism for what the C does.
 
 ## OnLoadFile: multicast leaks a stream, and a missing handler is indistinguishable from a missing file
 

@@ -1090,14 +1090,14 @@ namespace SwissEphNet.CPort
                         x[i] = 0;
                     return iflag;
                 }
-                if (tjd < MOSHLUEPH_START || tjd > MOSHLUEPH_END)
-                {
-                    for (i = 0; i < 24; i++)
-                        x[i] = 0;
-                    serr = C.sprintf("Interpolated apsides are restricted to JD %8.1f - JD %8.1f",
-                            MOSHLUEPH_START, MOSHLUEPH_END);
-                    return ERR;
-                }
+                // sweph.c:955-966 (2.08: 945-957) has no JD-range gate in the
+                // SE_OSCU_APOG branch -- that gate belongs only to the
+                // SE_INTP_APOG/SE_INTP_PERG branches further down, which this
+                // block duplicated. With it here, an out-of-Moshier-range JD
+                // returned "Interpolated apsides are restricted to JD ..."
+                // instead of letting lunar_osc_elem (and, inside it,
+                // swi_moshmoon) report "outside Moshier's Moon range", which is
+                // what the C actually emits for ipl = SE_OSCU_APOG.
                 ndp = swed.nddat[SEI_OSCU_APOG];
                 xp = ndp.xreturn;
                 retc = lunar_osc_elem(tjd, SEI_OSCU_APOG, iflag, ref serr);
@@ -1597,9 +1597,12 @@ namespace SwissEphNet.CPort
             while ((s = fp.ReadLine()) != null)
             {
                 cpos = s.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                if ((iyear = int.Parse(cpos[0])) == 0)
+                // sweph.c:1421-1423 uses atoi(cpos[0])/atoi(cpos[3]), which return 0 for
+                // an unparseable field instead of throwing; the eop file's own header
+                // lines rely on atoi(cpos[0]) == 0 to fall through the `continue` above.
+                if ((iyear = atoi(cpos[0])) == 0)
                     continue;
-                mjd = int.Parse(cpos[3]);
+                mjd = atoi(cpos[3]);
                 /* is file in one-day steps? */
                 if (mjdsv > 0 && mjd - mjdsv != 1)
                 {
@@ -1610,8 +1613,9 @@ namespace SwissEphNet.CPort
                 }
                 if (n == 0)
                     swed.eop_tjd_beg = mjd + TJDOFS;
-                swed.dpsi[n] = double.Parse(cpos[8], CultureInfo.InvariantCulture);
-                swed.deps[n] = double.Parse(cpos[9], CultureInfo.InvariantCulture);
+                // sweph.c:1433-1434 uses atof(cpos[8])/atof(cpos[9]), which cannot throw.
+                swed.dpsi[n] = atof(cpos[8]);
+                swed.deps[n] = atof(cpos[9]);
                 /*    fprintf(stderr, "n=%d, tjd=%f, dpsi=%f, deps=%f\n", n, mjd + 2400000.5, swed.dpsi[n] * 1000, swed.deps[n] * 1000);exit(0);*/
                 n++;
                 mjdsv = mjd;
@@ -5065,7 +5069,8 @@ namespace SwissEphNet.CPort
             var match = Regex.Match(sp, @"^.+(\d+)$");
             if (!match.Success) goto file_damage;
             /* version unused so far */
-            fdp.fversion = int.Parse(match.Groups[1].Value);
+            // sweph.c:4400 is `fdp->fversion = atoi(sp);`, which cannot throw.
+            fdp.fversion = C.atoi(match.Groups[1].Value);
             /************************************* 
              * correct file name?                *
              *************************************/
@@ -7958,7 +7963,11 @@ namespace SwissEphNet.CPort
                                     /* catalog number of body of current line */
                                     int spi = sp.IndexOfFirstNot('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
                                     if (spi < 0) continue;
-                                    iplf = int.Parse(sp.Substring(0, spi));
+                                    // sweph.c:6920 is `iplf = atoi(sp);`; when the line
+                                    // does not start with a digit, spi is 0 and the
+                                    // substring is empty, which int.Parse throws on where
+                                    // atoi silently returns 0.
+                                    iplf = C.atoi(sp.Substring(0, spi));
                                     if (ipli != iplf)
                                         continue;
                                     sp = sp.Substring(spi);

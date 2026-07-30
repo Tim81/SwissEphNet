@@ -3214,7 +3214,10 @@ namespace SwissEphNet.CPort
                     //if (*sp == '#' || *sp == '\n')
                     if (String.IsNullOrEmpty(sp) || sp[0] == '#')
                         continue;
-                    year = int.Parse(s.Substring(0, 4), CultureInfo.InvariantCulture);
+                    // swephlib.c:2957 is `year = atoi(s);`, which returns 0 for an
+                    // unparseable line instead of throwing; int.Parse threw on any
+                    // non-numeric header/comment line reaching this point.
+                    year = C.atoi(s.Substring(0, 4));
                     tab_index = year - TABSTART;
                     /* table space is limited. no error msg, if exceeded */
                     if (tab_index >= TABSIZ_SPACE)
@@ -3223,7 +3226,8 @@ namespace SwissEphNet.CPort
                     //while (strchr(" \t", *sp) != NULL && *sp != '\0')
                     //    sp++;	/* was *sp++  fixed by Alois 2-jul-2003 */
                     /*dt[tab_index] = (short) (atof(sp) * 100 + 0.5);*/
-                    dt[tab_index] = double.Parse(sp, CultureInfo.InvariantCulture);
+                    // swephlib.c:2966 is `dt[tab_index] = atof(sp);`, which cannot throw.
+                    dt[tab_index] = C.atof(sp);
                 }
                 fp.Dispose();
             }
