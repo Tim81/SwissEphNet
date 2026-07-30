@@ -3208,7 +3208,8 @@ namespace SwissEphNet.CPort
                       || sid_mode == SwissEph.SE_SIDM_GALALIGN_MARDYKS
                       )
                 {
-                    sip.sid_mode &= ~SwissEph.SE_SIDBIT_SSY_PLANE;
+                    //sip.sid_mode &= ~SwissEph.SE_SIDBIT_SSY_PLANE;
+                    sip.sid_mode = sid_mode;
                     sip.sid_mode |= SwissEph.SE_SIDBIT_ECL_T0;
                 }
                 if (sid_mode == SwissEph.SE_SIDM_TRUE_CITRA
@@ -3223,8 +3224,11 @@ namespace SwissEphNet.CPort
                     || sid_mode == SwissEph.SE_SIDM_GALEQU_IAU1958
                     || sid_mode == SwissEph.SE_SIDM_GALEQU_TRUE
                     || sid_mode == SwissEph.SE_SIDM_GALEQU_MULA
-                    )
-                    sip.sid_mode &= ~(SwissEph.SE_SIDBIT_ECL_T0 | SwissEph.SE_SIDBIT_SSY_PLANE | SwissEph.SE_SIDBIT_USER_UT);
+                    ) {
+                    //sip.sid_mode &= ~(SwissEph.SE_SIDBIT_ECL_T0 | SwissEph.SE_SIDBIT_SSY_PLANE | SwissEph.SE_SIDBIT_USER_UT);
+                    sip.sid_mode = sid_mode;
+                }
+                // make sure that sid_mode is either SE_SIDM_USER or < SE_NSIDM_PREDEF
                 if (sid_mode >= SwissEph.SE_NSIDM_PREDEF && sid_mode != SwissEph.SE_SIDM_USER)
                     sip.sid_mode = sid_mode = SwissEph.SE_SIDM_FAGAN_BRADLEY;
                 swed.ayana_is_set = true;
@@ -3247,6 +3251,22 @@ namespace SwissEphNet.CPort
             {
                 swed.sidd = sip;
             }
+            // test feature: ayanamsha using its original precession model
+            if (sid_mode < SwissEph.SE_NSIDM_PREDEF && (sip.sid_mode & SwissEph.SE_SIDBIT_PREC_ORIG) != 0 && ayanamsa[sid_mode].prec_offset > 0) {
+                swed.astro_models[SwissEph.SE_MODEL_PREC_LONGTERM] = ayanamsa[sid_mode].prec_offset;
+                swed.astro_models[SwissEph.SE_MODEL_PREC_SHORTTERM] = ayanamsa[sid_mode].prec_offset;
+                // add a corresponding nutation model
+                switch (ayanamsa[sid_mode].prec_offset) {
+                    case SwissEph.SEMOD_PREC_NEWCOMB:
+                        swed.astro_models[SwissEph.SE_MODEL_NUT] = SwissEph.SEMOD_NUT_WOOLARD;
+                        break;
+                    case SwissEph.SEMOD_PREC_IAU_1976:
+                        swed.astro_models[SwissEph.SE_MODEL_NUT] = SwissEph.SEMOD_NUT_IAU_1980;
+                        break;
+                    default:
+                        break;
+                }
+            }
             swi_force_app_pos_etc();
         }
 
@@ -3267,6 +3287,7 @@ namespace SwissEphNet.CPort
                     SE.SwephLib.swi_nutation(tjd_et, iflag, nutp.nutlo);
                 }
                 daya += nutp.nutlo[0] * SwissEph.RADTODEG;
+                retval &= (~SwissEph.SEFLG_NONUT); // must remove flag which was added internally in swi_get_ayanamsa_ex()
             }
             return retval;
         }
@@ -3327,16 +3348,18 @@ namespace SwissEphNet.CPort
 
         public Int32 swi_get_ayanamsa_ex(double tjd_et, Int32 iflag, out double daya, ref string serr)
         {
-            double[] x = new double[6]; double eps, t0;
+            double[] x = new double[6]; double eps, t0, corr;
             sid_data sip = swed.sidd;
             string star = string.Empty; //string sdummy = null;
             Int32 epheflag, otherflag, retflag, iflag_true, iflag_galequ;
+            int sid_mode = sip.sid_mode;
             iflag = plaus_iflag(iflag, -1, tjd_et, out serr);
             epheflag = iflag & SwissEph.SEFLG_EPHMASK;
             otherflag = iflag & ~SwissEph.SEFLG_EPHMASK;
             daya = 0.0;
             iflag &= SwissEph.SEFLG_EPHMASK;
             iflag |= SwissEph.SEFLG_NONUT;
+            sid_mode %= SwissEph.SE_SIDBITS;
             /* ayanamshas based on the intersection point of galactic equator and
              * ecliptic always need SEFLG_TRUEPOS, because position of galactic
              * pole is required without aberration or light deflection */
@@ -3353,24 +3376,24 @@ namespace SwissEphNet.CPort
             /* warning, if swe_set_ephe_path() or swe_set_jplfile() was not called yet,
              * although ephemeris files are required */
             if (swi_init_swed_if_start() == 1 && 0 == (epheflag & SwissEph.SEFLG_MOSEPH)
-               && (sip.sid_mode == SwissEph.SE_SIDM_TRUE_CITRA
-                || sip.sid_mode == SwissEph.SE_SIDM_TRUE_REVATI
-                || sip.sid_mode == SwissEph.SE_SIDM_TRUE_PUSHYA
+               && (sid_mode == SwissEph.SE_SIDM_TRUE_CITRA
+                || sid_mode == SwissEph.SE_SIDM_TRUE_REVATI
+                || sid_mode == SwissEph.SE_SIDM_TRUE_PUSHYA
                 || sip.sid_mode == SwissEph.SE_SIDM_TRUE_SHEORAN
-                || sip.sid_mode == SwissEph.SE_SIDM_TRUE_MULA
-                || sip.sid_mode == SwissEph.SE_SIDM_GALCENT_0SAG
-                || sip.sid_mode == SwissEph.SE_SIDM_GALCENT_COCHRANE
-                || sip.sid_mode == SwissEph.SE_SIDM_GALCENT_RGILBRAND
-                || sip.sid_mode == SwissEph.SE_SIDM_GALCENT_MULA_WILHELM
-                || sip.sid_mode == SwissEph.SE_SIDM_GALEQU_IAU1958
-                || sip.sid_mode == SwissEph.SE_SIDM_GALEQU_TRUE
-                || sip.sid_mode == SwissEph.SE_SIDM_GALEQU_MULA))
+                || sid_mode == SwissEph.SE_SIDM_TRUE_MULA
+                || sid_mode == SwissEph.SE_SIDM_GALCENT_0SAG
+                || sid_mode == SwissEph.SE_SIDM_GALCENT_COCHRANE
+                || sid_mode == SwissEph.SE_SIDM_GALCENT_RGILBRAND
+                || sid_mode == SwissEph.SE_SIDM_GALCENT_MULA_WILHELM
+                || sid_mode == SwissEph.SE_SIDM_GALEQU_IAU1958
+                || sid_mode == SwissEph.SE_SIDM_GALEQU_TRUE
+                || sid_mode == SwissEph.SE_SIDM_GALEQU_MULA))
             {
                 serr = "Please call swe_set_ephe_path() or swe_set_jplfile() before calling swe_get_ayanamsa_ex()";
             }
             if (!swed.ayana_is_set)
                 swe_set_sid_mode(SwissEph.SE_SIDM_FAGAN_BRADLEY, 0, 0);
-            if (sip.sid_mode == SwissEph.SE_SIDM_TRUE_CITRA)
+            if (sid_mode == SwissEph.SE_SIDM_TRUE_CITRA)
             {
                 star = "Spica"; /* Citra */
                 if ((retflag = swe_fixstar(ref star, tjd_et, iflag_true, x, ref serr)) == ERR)
@@ -3381,7 +3404,7 @@ namespace SwissEphNet.CPort
                 daya = SE.swe_degnorm(x[0] - 180);
                 return (retflag & SwissEph.SEFLG_EPHMASK);
             }
-            if (sip.sid_mode == SwissEph.SE_SIDM_TRUE_REVATI)
+            if (sid_mode == SwissEph.SE_SIDM_TRUE_REVATI)
             {
                 star = ",zePsc"; /* Revati */
                 if ((retflag = swe_fixstar(ref star, tjd_et, iflag_true, x, ref serr)) == ERR)
@@ -3389,7 +3412,7 @@ namespace SwissEphNet.CPort
                 daya = SE.swe_degnorm(x[0] - 359.8333333333);
                 return (retflag & SwissEph.SEFLG_EPHMASK);
             }
-            if (sip.sid_mode == SwissEph.SE_SIDM_TRUE_PUSHYA)
+            if (sid_mode == SwissEph.SE_SIDM_TRUE_PUSHYA)
             {
                 star = ",deCnc"; /* Pushya = Asellus Australis */
                 if ((retflag = swe_fixstar(ref star, tjd_et, iflag_true, x, ref serr)) == ERR)
@@ -3397,7 +3420,7 @@ namespace SwissEphNet.CPort
                 daya = SE.swe_degnorm(x[0] - 106);
                 return (retflag & SwissEph.SEFLG_EPHMASK);
             }
-            if (sip.sid_mode == SwissEph.SE_SIDM_TRUE_SHEORAN)
+            if (sid_mode == SwissEph.SE_SIDM_TRUE_SHEORAN)
             {
                 star = ",deCnc"; /* Asellus Australis */
                 if ((retflag = swe_fixstar(ref star, tjd_et, iflag_true, x, ref serr)) == ERR)
@@ -3405,7 +3428,7 @@ namespace SwissEphNet.CPort
                 daya = SE.swe_degnorm(x[0] - 103.49264221625);
                 return (retflag & SwissEph.SEFLG_EPHMASK);
             }
-            if (sip.sid_mode == SwissEph.SE_SIDM_TRUE_MULA)
+            if (sid_mode == SwissEph.SE_SIDM_TRUE_MULA)
             {
                 star = ",laSco"; /* Mula = lambda Scorpionis */
                 if ((retflag = swe_fixstar(ref star, tjd_et, iflag_true, x, ref serr)) == ERR)
@@ -3413,7 +3436,7 @@ namespace SwissEphNet.CPort
                 daya = SE.swe_degnorm(x[0] - 240);
                 return (retflag & SwissEph.SEFLG_EPHMASK);
             }
-            if (sip.sid_mode == SwissEph.SE_SIDM_GALCENT_0SAG)
+            if (sid_mode == SwissEph.SE_SIDM_GALCENT_0SAG)
             {
                 star = ",SgrA*"; /* Galactic Centre */
                 if ((retflag = swe_fixstar(ref star, tjd_et, iflag_true, x, ref serr)) == ERR)
@@ -3422,7 +3445,7 @@ namespace SwissEphNet.CPort
                 return (retflag & SwissEph.SEFLG_EPHMASK);
                 /*return swe_degnorm(x[0] - 359.83333333334);*/
             }
-            if (sip.sid_mode == SwissEph.SE_SIDM_GALCENT_COCHRANE)
+            if (sid_mode == SwissEph.SE_SIDM_GALCENT_COCHRANE)
             {
                 star = ",SgrA*"; /* Galactic Centre */
                 if ((retflag = swe_fixstar(ref star, tjd_et, iflag_true, x, ref serr)) == ERR)
@@ -3431,7 +3454,7 @@ namespace SwissEphNet.CPort
                 return (retflag & SwissEph.SEFLG_EPHMASK);
                 /*return swe_degnorm(x[0] - 359.83333333334);*/
             }
-            if (sip.sid_mode == SwissEph.SE_SIDM_GALCENT_RGILBRAND)
+            if (sid_mode == SwissEph.SE_SIDM_GALCENT_RGILBRAND)
             {
                 star = ",SgrA*"; /* Galactic Centre */
                 if ((retflag = swe_fixstar(ref star, tjd_et, iflag_true, x, ref serr)) == ERR)
@@ -3440,7 +3463,7 @@ namespace SwissEphNet.CPort
                 return (retflag & SwissEph.SEFLG_EPHMASK);
                 /*return swe_degnorm(x[0] - 359.83333333334);*/
             }
-            if (sip.sid_mode == SwissEph.SE_SIDM_GALCENT_MULA_WILHELM)
+            if (sid_mode == SwissEph.SE_SIDM_GALCENT_MULA_WILHELM)
             {
                 star = ",SgrA*"; /* Galactic Centre */
                 /* right ascension in polar projection onto the ecliptic, 
@@ -3453,7 +3476,7 @@ namespace SwissEphNet.CPort
                 return (retflag & SwissEph.SEFLG_EPHMASK);
                 /*return swe_degnorm(x[0] - 359.83333333334);*/
             }
-            if (sip.sid_mode == SwissEph.SE_SIDM_GALEQU_IAU1958)
+            if (sid_mode == SwissEph.SE_SIDM_GALEQU_IAU1958)
             {
                 star = ",GP1958"; /* Galactic Pole IAU 1958 */
                 if ((retflag = swe_fixstar(ref star, tjd_et, iflag_galequ, x, ref serr)) == ERR)
@@ -3461,7 +3484,7 @@ namespace SwissEphNet.CPort
                 daya = SE.swe_degnorm(x[0] - 150);
                 return (retflag & SwissEph.SEFLG_EPHMASK);
             }
-            if (sip.sid_mode == SwissEph.SE_SIDM_GALEQU_TRUE)
+            if (sid_mode == SwissEph.SE_SIDM_GALEQU_TRUE)
             {
                 star = ",GPol"; /* Galactic Pole modern, true */
                 if ((retflag = swe_fixstar(ref star, tjd_et, iflag_galequ, x, ref serr)) == ERR)
@@ -3469,7 +3492,7 @@ namespace SwissEphNet.CPort
                 daya = SE.swe_degnorm(x[0] - 150);
                 return (retflag & SwissEph.SEFLG_EPHMASK);
             }
-            if (sip.sid_mode == SwissEph.SE_SIDM_GALEQU_MULA)
+            if (sid_mode == SwissEph.SE_SIDM_GALEQU_MULA)
             {
                 star = ",GPol"; /* Galactic Pole modern, true */
                 if ((retflag = swe_fixstar(ref star, tjd_et, iflag_galequ, x, ref serr)) == ERR)
@@ -3477,26 +3500,70 @@ namespace SwissEphNet.CPort
                 daya = SE.swe_degnorm(x[0] - 150 - 6.6666666667);
                 return (retflag & SwissEph.SEFLG_EPHMASK);
             }
-            /* vernal point (tjd), cartesian */
-            x[0] = 1;
-            x[1] = x[2] = 0;
-            /* to J2000 */
-            if (tjd_et != J2000)
-                SE.SwephLib.swi_precess(x, tjd_et, 0, J_TO_J2000);
-            /* to t0 */
-            t0 = sip.t0;
-            if (sip.t0_is_UT)
-                t0 += SE.swe_deltat_ex(t0, iflag, ref serr);
-            SE.SwephLib.swi_precess(x, t0, 0, J2000_TO_J);
-            /* to ecliptic */
-            eps = SE.SwephLib.swi_epsiln(t0, 0);
-            SE.SwephLib.swi_coortrf(x, x, eps);
-            /* to polar */
-            SE.SwephLib.swi_cartpol(x, x);
-            /* subtract initial value of ayanamsa */
-            x[0] = x[0] * SwissEph.RADTODEG - sip.ayan_t0;
+            if (0 == (sip.sid_mode & SwissEph.SE_SIDBIT_ECL_DATE)) {
+                // Now calculate precession for ayanamsha. 
+                // The following is the original method implemented in 1999 and
+                // still used as our default method, although it is not logical.
+                // Precession is measured on the ecliptic of the start epoch t0 (ayan_t0),
+                // then the initial value of ayanamsha is added.
+                // The procedure is as follows: The vernal point of the end epoch tjd_et
+                // is precessed to t0. Ayanamsha is the resulting longitude of that
+                // point at t0 plus the initial value.
+                // This method is not really consistent because later this ayanamsha,
+                // which is based on the ecliptic t0, will be applied to planetary
+                // positions relative to the ecliptic of date.
+                //
+                /* vernal point (tjd), cartesian */
+                x[0] = 1;
+                x[1] = x[2] = x[3] = x[4] = x[5] = 0;
+                /* to J2000 */
+                if (tjd_et != J2000)
+                    SE.SwephLib.swi_precess(x, tjd_et, 0, J_TO_J2000);
+                /* to t0 */
+                t0 = sip.t0;
+                if (sip.t0_is_UT)
+                    t0 += SE.swe_deltat_ex(t0, iflag, ref serr);
+                SE.SwephLib.swi_precess(x, t0, 0, J2000_TO_J);
+                /* to ecliptic t0 */
+                eps = SE.SwephLib.swi_epsiln(t0, 0);
+                SE.SwephLib.swi_coortrf(x, x, eps);
+                /* to polar */
+                SE.SwephLib.swi_cartpol(x, x);
+                /* subtract initial value of ayanamsa */
+                x[0] = -x[0] * SwissEph.RADTODEG + sip.ayan_t0;
+            } else {
+                // Alternative method, more consistent, programmed on 15 may 2020.
+                // The ayanamsha is measured on the ecliptic of date. This is more
+                // correct because the ayanamsha will be applied to planetary positions
+                // relative to the ecliptic of date.
+                //
+                // at t0, we have ayanamsha sip->ayan_t0
+                x[0] = SE.swe_degnorm(sip.ayan_t0) * SwissEph.DEGTORAD;
+                x[1] = 0; x[2] = 1;
+                // get epsilon for t0
+                t0 = sip.t0;
+                if (sip.t0_is_UT)
+                    t0 += SE.swe_deltat_ex(t0, iflag, ref serr);
+                eps = SE.SwephLib.swi_epsiln(t0, 0);
+                // to polar equatorial relative to equinox t0
+                SE.SwephLib.swi_polcart(x, x);
+                SE.SwephLib.swi_coortrf(x, x, -eps);
+                // precess to J2000
+                if (t0 != J2000)
+                    SE.SwephLib.swi_precess(x, t0, 0, J_TO_J2000);
+                // precess to date
+                SE.SwephLib.swi_precess(x, tjd_et, 0, J2000_TO_J);
+                // epsilon of date
+                eps = SE.SwephLib.swi_epsiln(tjd_et, 0);
+                // to polar
+                SE.SwephLib.swi_coortrf(x, x, eps);
+                SE.SwephLib.swi_cartpol(x, x);
+                x[0] = SE.swe_degnorm(x[0] * SwissEph.RADTODEG);
+            }
+            get_aya_correction(iflag, out corr, ref serr);
             /* get ayanamsa */
-            daya = SE.swe_degnorm(-x[0]);
+            daya = SE.swe_degnorm(x[0] - corr);
+            //daya = swe_degnorm(x[0]);
             return iflag;
         }
 
