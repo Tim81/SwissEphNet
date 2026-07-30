@@ -1017,3 +1017,126 @@ Closing that gap means either adding `'J'` to the analytic grid, which needs the
 compute it too, or accepting transliteration review as the standard of proof for one house
 system and saying so. It is recorded here rather than left implicit because "the analytic grid
 is fully bit-exact" is otherwise easy to read as covering it.
+
+House system `'J'` is also the largest single block of house-code baseline movement with no
+oracle behind it: `Tests/baseline/baseline-2.8.0.2.env.txt` deviations 16 and 17 move 4,171 `'J'`
+rows between them (1,944 `houses-armc` + 480 `houses` + 829 `house-pos` at deviation 16, plus 918
+`house-pos` at deviation 17 -- summed per deviation the way each entry's own scope check reports
+it, not deduplicated, since the same row can be touched by both). Every one of those rows is
+frozen output checked only by re-reading the C, per the paragraph above.
+
+## Three numbers in baseline-2.8.0.2.env.txt's local-regenerations log are wrong
+
+The log is append-only, so these are corrected here rather than by editing the entries.
+
+**Deviation 18** says "737 rows in the pheno area across its six case-id prefixes." The scope
+check two lines below it, in the same entry, already gives the correct figure: "pheno: 736
+changed." 736 is right -- exactly half of the area's 1,472 rows, which is also what the landing
+commit's own message says. 737 is a transcription slip in the prose sentence, not a second
+measurement.
+
+**Deviation 17** says "919 rows in house-pos: 918 HP\|J cusp values and the single HN\|J name
+row." 918 + 1 is 919, but the entry's own scope check reports "house-pos: 918 changed" -- 918
+total, not 919. Diffing the area directly (commit `e31a9d6`, deviation 16's landing commit, against
+`2c95529`, deviation 17's) confirms the scope check: 917 `HP\|J` rows changed plus the 1 `HN\|J`
+row, 918 in total. "918 HP\|J" in the prose should read "917 HP\|J."
+
+**Deviation 16** lists three mechanisms for why house cusps move -- `niter_max`'s Placidus/Gauquelin
+fallback, the Alcabitius clamp, and house system `'J'` becoming real -- without saying that the
+second of the three moved nothing. Checked directly: every hsys `'B'` (Alcabitius) row is
+byte-identical between commit `7470527` (deviation 16's parent) and the current baseline, in
+every area that carries house-system-keyed rows -- 0 of 1,944 in `houses-armc`, 0 of 480 in
+`houses` (60 `HS\|B\|*` + 420 `HX\|B\|*`), 0 of 1,125 in `house-pos`. The clamp was ported
+faithfully (`swehouse.c:1602-1606`, `if (r > 1) r = 1; if (r < -1) r = -1;` before `acosd`) and
+changed no observable output in this baseline: every `r` the matrix's inputs produced already sat
+inside `[-1, 1]`. The other two mechanisms account for all of deviation 16's actual movement.
+
+## What the local-mode baseline regenerations have no independent check on
+
+The two verification gates section of this project's contributing notes explains that a
+`local-<sha>`-provenance baseline row proves "unchanged since the day it was written," not
+correctness against any external reference. Most of the areas seeded that way have since picked
+up at least partial corroboration -- `scripts/validate-seeded-areas.py`'s pyswisseph replay
+above, or a conformance row that started passing. Three pieces of the 2.10.03 work landed in the
+baseline with neither, and are worth naming rather than leaving to be inferred from the log.
+
+**`swe_refrac_extended` and `calc_dip`.** Deviation 19 flips a predicate (`if (trualt > dip)` to
+`if (inalt >= dip)`) and corrects a constant (`273.16` to `273.15`), moving 393 `REFX` rows in the
+`atmo` area. `swe_refrac`, `swe_refrac_extended` and `swe_set_lapse_rate` appear zero times in
+`external/swisseph/setest/t.exp` (checked directly: `grep -c` for all three names returns 0), so
+none of these functions has a conformance testcase, ever, in the corpus this port is verified
+against. `atmo` is `local-a30cb80` in the provenance table above, so it never had a package
+reference either -- it was seeded from local code from the moment it existed. A predicate flip and
+a constant change moved 393 rows with nothing in this repository that could contradict them if
+they were wrong. This is the largest wholly unverified behavior change in the 2.10.03 work so far.
+
+**`swe_rise_trans`'s `!do_fixstar` gate.** Also deviation 19: `swe_rise_trans` now routes fixed-star
+calls off the fast path that never called `swe_fixstar`. The `risetrans` area has 760 rows across
+its four case-id prefixes (`RT` 400, `RTATM` 18, `RTBIT` 162, `RTH` 180); every one of the 760 uses
+a numeric `ipl` (0-9), confirmed by listing the distinct `ipl` values under each prefix -- none is
+a star name. The only star rows anywhere in the baseline are six `GQ\|Aldebaran\|*` rows in
+`gauquelin` (`imeth` 0 through 5, not four as an earlier pass at this count said), and every one of
+those returns `SwissEph file 'sefstars.txt' not found in PATH '[ephe]'` -- the baseline harness
+never subscribes to `OnLoadFile`, so a fixed-star lookup always fails before reaching the gate at
+all. The gate has no row anywhere in the baseline that both names a star and produces a computed
+(non-error) result, so nothing here could have caught a mistake in it either way. (Deviation 19's
+four `GQ` rows that did move came from the *opposite* direction -- `swe_gauquelin_sector` reaching
+`swe_rise_trans` through `imeth` 2-5 with a fixed-star name, routed off the old path -- not from
+the gate itself computing a different fixed-star result.)
+
+**House system `'J'`.** Covered above, under "What the oracle grids do not cover in the house
+code" -- see that entry rather than duplicating it here.
+
+**The Mallama magnitudes.** Deviation 18 replaces `swe_pheno`'s Hilton 2005 magnitude model with
+Mallama 2018 (plus a Vreijsen term for the Moon), moving 736 `pheno` rows with no package
+reference (`pheno` is `mixed`, not `local`, but the magnitude model itself was never part of the
+2.8.0.2 package's own output for these flag combinations -- see the corrected provenance table
+above) and no conformance row passing on it at the time. That is no longer the whole picture.
+Checked against `Tests/conformance/known-fail.tsv`'s change at the deviation 18 and deviation 19
+landing commits: suite 9 testcase 3 (`swe_heliacal_ut`, which depends on magnitude to judge
+visibility) has five iterations, and all five improved. Iteration 7 (9.3.7) now passes outright,
+pruned from `known-fail.tsv`. Iterations 5 and 6 had been off by roughly a full day before the
+Mallama port (`xxtret[0]` differing by 0.9999 and 1.0034 days against Astrodienst's reference) and
+are now off by 1.16e-5 and 1.27e-4 days respectively -- three to five orders of magnitude closer.
+Iterations 3 and 4 each had one field resolve exactly and their remaining field's error shrink to
+roughly a fifth (from ~5.8e-5 to ~1.16e-5 days). None of this is proof the Mallama coefficients are correct
+-- a mistyped coefficient could easily still be wrong and simply less wrong than Hilton 2005 was
+for this particular date range -- but it is real, independent corroboration from Astrodienst's own
+reference values, not merely "the baseline moved."
+
+## eclipse_how's 100-to-1 change: the counter-example worth reading carefully
+
+Deviation 19 also changes `eclipse_how`'s `attr[0]`/`attr[2]` sentinel from `100` to `1`
+(`swecl.c:1067-1087`), moving 380 rows in the `eclipse` area (320 `LOW`, 60 `SEW`). Read only as
+"380 baseline rows changed," this looks like the same kind of evidence as the areas above. It
+is not, and the difference is worth spelling out because it is easy to miss.
+
+**Every one of the 380 changed rows is a non-eclipse case.** Checked directly: all 380 carry
+`serr = "no solar eclipse at tjd = ..."` -- the port asked for an eclipse on a date with none, and
+the changed field is exactly the sentinel value passed through in that failure path (confirmed
+field by field: e.g. `SEW\|1000000` reads `100` before the fix and `1` after, with every other
+field, including the `serr` text, byte-identical). **The 120 `SEH` rows -- the ones that do compute
+a real eclipse, `retc = 0` with a populated `attr[]` -- did not move at all**, confirmed by diffing
+all 120 across the same commit boundary. So the baseline's 380-row movement, on its own,
+demonstrates nothing about whether `1` or `100` is the value a real eclipse magnitude computation
+should carry. It only proves the constant embedded in one error path changed, which is true but
+uninteresting -- a caller who checks `retc` before reading `attr[]` (as the API contract requires)
+would never observe it.
+
+**The real evidence is six conformance rows in suite 8**, not the 380 baseline rows. Astrodienst's
+own reference values in `t.exp` expect `xxattr[0]`/`xxattr[2]` to be `1`; before this fix the port
+returned `100` for genuine eclipse computations, not just the error path. Diffing
+`Tests/conformance/known-fail.tsv` at the deviation 19 landing commit (`01cec05`): three
+iterations -- 8.6.2, 8.7.5, 8.7.7 -- had their *entire* mismatch resolved by this one change and
+were pruned, now fully passing. Three more -- 8.6.1, 8.7.1, 8.7.3 -- had the `xxattr[0]`/`xxattr[2]`
+component of their mismatch resolved (their reason string no longer mentions `attr[0]`/`attr[2]`
+at all) but remain in the file failing for an unrelated reason (position fields, `xxtret`/
+`xxgeopos`, off by sub-second amounts traceable to ephemeris precision, not this fix). Six rows
+show the fix taking effect against real reference values; three of them now fully pass.
+
+The lesson: when a change touches both an error-message path and a real computation path with the
+same constant, a baseline row count alone cannot tell you which one moved. Here the baseline's 380
+rows are the uninteresting half and the conformance oracle's six rows are the ones that actually
+say something about correctness. The next time a deviation entry reports "N rows moved" for a
+change like this, check what those rows' `serr`/`retc` actually say before treating the count as
+evidence of anything beyond "the constant is now embedded in the output."
