@@ -37,13 +37,23 @@ floating-point noise should; this one field does not move, which is exactly the
 signature of two platforms executing genuinely different branches rather than
 the same branch with a slightly different rounding error.
 
-**Action for the 2.10.03 port work:** when porting the SweHouse delta, check
-whether the C source clamps the argument passed to `acos`/`asin` in the APC branch
-(search for `case 'Y'` in `SwissEphNet/CPort/SweHouse.cs`), and whether upstream
-2.10.03 changed that code. This is exactly the kind of case the baseline exists to
-catch -- freeze it now, and the 2.10.03 PR's own verify run will show clearly
-whether the fix changes this cusp value on Windows (expected: yes) and whether it
-also stops the platforms from diverging (worth checking, not assumed).
+**Checked during the 2.10.03 port, and the hypothesis above is wrong.** `apc_sector`
+contains no `acos` or `asin` at all -- in either C version or in the port, which uses
+only `Atan`, `Atan2` and `Tan`. So an argument straying outside `[-1, 1]` cannot be
+the mechanism, and no amount of clamping there would change anything. 2.10.03 does
+not touch `apc_sector`; the function is byte-identical between the two versions.
+
+2.10.03 does add a clamp of exactly the suspected shape elsewhere, in Alcabitius
+(`swehouse.c:1602-1606`, `if (r > 1) r = 1; if (r < -1) r = -1;` before `acosd`),
+which is why the shape looked plausible here. The second Alcabitius site, in
+`swe_house_pos`, is still unclamped in 2.10.03 and the port follows it: a latent NaN
+whenever `|tanfi * tand(dek)| > 1`, inherited rather than introduced.
+
+A better candidate for `'Y'`, untested: the failing input is `armc=270, geolat=50,
+eps=40`, where `Math.Abs(fi) >= 90 - ekl` compares 50 against 50.0 exactly. A branch
+taken on an exact equality, followed by the `acmc < 0` sign test, would split two
+platforms without either being wrong. That is a comparison boundary rather than a
+domain overrun, and it would need a targeted measurement rather than a code read.
 
 ## swe_houses_armc reports success while emitting NaN cusps
 
@@ -83,11 +93,19 @@ returning real cusps rather than NaN. `niter_max` does not appear anywhere in
 `external/pyswisseph-2.08/swehouse.c`, and that file has three `retc = ERR` sites
 against 2.10.03's nine.
 
-So the swehouse.c port picks this up as part of the delta, and the 176 case ids in
-`Tests/oracle/known-diff.tsv` under category `RETC` are the inputs to verify it
-against. Note the rows also carry 33 to 34 cusp fields that are NaN on the port's
-side and finite on 2.10.03's, from that Porphyry fallback; the difference is not
-confined to the return code.
+**Closed.** The swehouse.c port landed `niter_max` and all 176 rows now match 2.10.03
+C bit for bit; `Tests/oracle/known-diff.tsv` is empty. The rows had also carried 33
+to 34 cusp fields that were NaN on the port's side and finite on 2.10.03's, from the
+Porphyry fallback, and those agree too.
+
+One detail in the mechanism above is imprecise and is worth correcting rather than
+leaving to mislead. 2.10.03 caps six iteration sites, not two, but only the two
+Gauquelin ones (`swehouse.c:1667`, `:1709`) set `hsy = (int) 'O'` alongside
+`retc = ERR`. The four Placidus sites (`:1865`, `:1901`, `:1937`, `:1973`) set
+`retc` alone. That asymmetry is load-bearing for Gauquelin, where the post-switch
+`hsy != 'G'` block would otherwise skip cusps 4 to 9, and a no-op for Placidus.
+Anyone reading this entry as "all six set `hsy`" would go and "fix" four sites that
+are already faithful.
 
 An earlier revision of this paragraph said the port "swallows" an error the C
 reports, which was wrong in the way that costs time: it would have sent someone to
@@ -953,3 +971,49 @@ behave completely differently, which is exactly what the table above shows. The 
 claimed the port fills `xx[3..5]` with nonzero values on non-SPEED rows where the C leaves them
 at zero; measured directly, that is 0 of 1,500 `calc`/`calc_ut` rows and is real only for two of
 the four fixed-star entry points, as recorded above.
+
+## What the oracle grids do not cover in the house code
+
+The bit-exact comparison reports 14,220 of 14,220 analytic-grid rows matching MSVC-built
+2.10.03 C. That is a real result and it is narrower than it sounds, so this records what it
+does and does not establish, to stop it being cited for things it never touched.
+
+Both replay drivers (`Tools/OracleDump/Program.cs`, `Tools/CReference/sedump.c`) call exactly
+two house functions, `swe_houses` and `swe_houses_armc`, in their **six-argument** form. That
+determines the coverage.
+
+**Genuinely covered.** Twenty-five house letters crossed with latitudes to 89 degrees and
+obliquities including 0. The `eps = 0` column is what earns the grid its keep: `tand(0)` is
+zero, the pole-height iteration cannot converge, and 2.10.03's `niter_max` cap fires. So
+`niter_max`, the Porphyry fallback, the Alcabitius clamp and the non-speed `CalcH`
+restructuring are all verified against Astrodienst's own C.
+
+**Not covered by the grid at all**, because the six-argument overloads have no such parameter
+or entry point:
+
+- every speed derivative, so `AscDash` and all nine speed fields
+- `swe_houses_ex2` and `swe_houses_armc_ex2`
+- `swe_house_pos` and `swe_house_name`
+- `serr` on any house path, including the threading added through `sidereal_houses_*`
+- house systems `'J'`, `'Z'` and `'0'`
+
+**Partly covered elsewhere.** The speed fields are exercised by conformance suite 6 testcases
+8 and 9, all 1,080 iterations of which pass against `t.exp`. But testcase 8 uses only hsys `'P'`
+and `'W'`, and testcase 9 only `'K'` and `'P'`. So `AscDash` is verified against Astrodienst for
+Placidus and Koch, and for nothing else -- not Campanus, Horizon, Regiomontanus, Topocentric,
+Savard-A, the Gauquelin per-sector speeds, or the equal-house fill loops. The `do_interpol`
+numerical-differentiation path, reached by `L Q S X M F B Y I`, has no coverage in either
+oracle, because the two systems that do carry speeds through conformance both take the analytic
+path.
+
+**House system `'J'` (Savard-A) has no external validation whatsoever.** The analytic grid
+excludes it deliberately (`gen-grid-analytic.ps1`'s house-letter list, with a comment saying
+so), and `setest/t.exp` never uses it in any suite 6 testcase -- checked by enumerating every
+`ihsy` in the corpus. Its geometry was transliterated from `swehouse.c:1176-1251` and `:2472-2535`
+and read back against the C line by line, which is the only evidence there is. The 918 `HP|J`
+and `HN|J` baseline rows froze the port's own output with no oracle behind them.
+
+Closing that gap means either adding `'J'` to the analytic grid, which needs the C reference to
+compute it too, or accepting transliteration review as the standard of proof for one house
+system and saying so. It is recorded here rather than left implicit because "the analytic grid
+is fully bit-exact" is otherwise easy to read as covering it.
