@@ -1,31 +1,36 @@
-// The .NET side of the bit-exact comparison harness's first stage. Reads
-// Tools/OracleGrid/grid-analytic.tsv (see that file's own header for the column layout, the case
-// for a shared grid, and why 'J' is absent from the house-system letters) and replays every row
-// against this port, printing each result's raw IEEE-754 bit pattern so
-// scripts/run-oracle-dump.ps1 can queue it up against Tools/CReference/sedump.c's C output for a
-// later, separate comparison pass. sedump.c's own header documents the exact output shape this
-// file mirrors.
+// The .NET side of the bit-exact comparison harness. Replays two committed grids against this
+// port, printing each result's raw IEEE-754 bit pattern so scripts/run-oracle-dump.ps1 can queue
+// it up against Tools/CReference/sedump.c's C output for a later, separate comparison pass.
+//
+//   Tools/OracleGrid/grid-analytic.tsv  -- swe_calc/swe_calc_ut (SEFLG_MOSEPH) and
+//                                          swe_houses/swe_houses_armc. Touches no ephemeris data
+//                                          file. See gen-grid-analytic.ps1's header.
+//   Tools/OracleGrid/grid-files.tsv     -- swe_calc/swe_calc_ut (SEFLG_SWIEPH), the swe_fixstar
+//                                          family, and swe_get_planet_name. Opens the shipped
+//                                          .se1/sefstars.txt files. See gen-grid-files.ps1's
+//                                          header.
+//
+// Both grids share one output shape (see sedump.c's own header for the exact layout) and are
+// dispatched on in Main below by comparing the grid's header line against
+// ExpectedHeaderAnalytic/ExpectedHeaderFiles.
 //
 // INVOCATION
 //
-//   OracleDump.exe <grid.tsv> <output.tsv>
+//   OracleDump.exe <grid.tsv> <output.tsv> [ephe-dir]
+//
+// ephe-dir is optional. grid-analytic.tsv needs it never; grid-files.tsv needs it always -- see
+// AttachEpheDir below.
 //
 // A FRESH SwissEph INSTANCE PER ROW
 //
 // swe_houses_armc carries a hidden field emulating a C static (saved_sundec) that changes hsys
 // 'I'/'i' results depending on what a PRIOR call computed on the SAME instance -- see
-// Tools/BaselineGen/Program.cs's header and SwissEphNet/CPort/SweHouse.cs. Reusing one instance
-// across rows would make this driver disagree with sedump.c (which calls swe_close() before
-// every row) for a reason that has nothing to do with the port, so a brand new SwissEph is
-// constructed for every row here too.
-//
-// OUTPUT COLUMN LAYOUT
-//
-// One line per data row, tab separated: case_id, retc, err, then every double the row's func
-// returns as a (decimal, hex) pair -- CALC/CALC_UT emit xx[0..5] (6 doubles); HOUSES/HOUSES_ARMC
-// emit cusp[0..36] then ascmc[0..9] (47 doubles), a fixed width across every house system even
-// though only cusp[1..12] (or cusp[1..36] for hsys 'G') are ever populated. See sedump.c's
-// header for why the width is fixed this way and why retc/err come before the doubles.
+// Tools/BaselineGen/Program.cs's header and SwissEphNet/CPort/SweHouse.cs. Every grid-files.tsv
+// row additionally depends on which ephemeris segment is cached on the instance that ran it.
+// Reusing one instance across rows would make this driver disagree with sedump.c (which calls
+// swe_close() before every row, and swe_set_ephe_path() again for grid-files.tsv) for a reason
+// that has nothing to do with the port, so a brand new SwissEph is constructed for every row
+// here too, and for grid-files.tsv rows, a fresh OnLoadFile attachment on that new instance.
 
 using System.Globalization;
 using SwissEphNet;
@@ -34,23 +39,30 @@ namespace OracleDump;
 
 internal static class Program
 {
-    private const int ExpectedColumns = 12;
+    private const int AnalyticColumns = 12;
+    private const int FilesColumns = 10;
     private const int CuspCount = 37; // cusp[0..36]
     private const int AscmcCount = 10; // ascmc[0..9]
 
-    private static readonly string ExpectedHeader = string.Join('\t',
+    private static readonly string ExpectedHeaderAnalytic = string.Join('\t',
         "case_id", "func", "ipl", "tjd", "iflag", "hsys", "geolon", "geolat", "height", "armc", "eps", "sid_mode");
+
+    private static readonly string ExpectedHeaderFiles = string.Join('\t',
+        "case_id", "func", "ipl", "tjd", "iflag", "star", "geolon", "geolat", "height", "sid_mode");
+
+    private enum GridMode { Analytic, Files }
 
     private static int Main(string[] args)
     {
-        if (args.Length != 2)
+        if (args.Length is not 2 and not 3)
         {
-            Console.Error.WriteLine("Usage: OracleDump <grid.tsv> <output.tsv>");
+            Console.Error.WriteLine("Usage: OracleDump <grid.tsv> <output.tsv> [ephe-dir]");
             return 1;
         }
 
         var gridPath = args[0];
         var outputPath = args[1];
+        var epheDir = args.Length == 3 ? args[2] : null;
 
         using var reader = new StreamReader(gridPath);
         using var writer = new StreamWriter(outputPath, append: false, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false))
@@ -59,6 +71,8 @@ internal static class Program
         };
 
         var headerSeen = false;
+        var mode = GridMode.Analytic;
+        var expectedColumns = AnalyticColumns;
         var rowCount = 0;
         string? line;
         while ((line = reader.ReadLine()) != null)
@@ -74,22 +88,33 @@ internal static class Program
 
             if (!headerSeen)
             {
-                if (line != ExpectedHeader)
+                if (line == ExpectedHeaderAnalytic)
+                {
+                    mode = GridMode.Analytic;
+                    expectedColumns = AnalyticColumns;
+                }
+                else if (line == ExpectedHeaderFiles)
+                {
+                    mode = GridMode.Files;
+                    expectedColumns = FilesColumns;
+                }
+                else
                 {
                     throw new InvalidDataException(
-                        $"grid header does not match what this driver expects.\nexpected: {ExpectedHeader}\ngot:      {line}");
+                        "grid header does not match either header this driver expects.\n" +
+                        $"analytic: {ExpectedHeaderAnalytic}\nfiles:    {ExpectedHeaderFiles}\ngot:      {line}");
                 }
                 headerSeen = true;
                 continue;
             }
 
             var fields = line.Split('\t');
-            if (fields.Length != ExpectedColumns)
+            if (fields.Length != expectedColumns)
             {
-                throw new InvalidDataException($"row has {fields.Length} column(s), expected {ExpectedColumns}: {line}");
+                throw new InvalidDataException($"row has {fields.Length} column(s), expected {expectedColumns}: {line}");
             }
 
-            ProcessRow(fields, writer);
+            ProcessRow(mode, fields, epheDir, writer);
             rowCount++;
         }
 
@@ -106,32 +131,82 @@ internal static class Program
         return 0;
     }
 
-    private static void ProcessRow(string[] fields, TextWriter writer)
+    private static void ProcessRow(GridMode mode, string[] fields, string? epheDir, TextWriter writer)
     {
         var caseId = fields[0];
         var func = fields[1];
 
         // Fresh library state before every row -- see this file's header comment.
         using var swe = new SwissEph();
-
-        switch (func)
+        if (epheDir != null)
         {
-            case "CALC":
-            case "CALC_UT":
-                ProcessCalc(swe, caseId, func, fields, writer);
-                break;
-            case "HOUSES":
-                ProcessHouses(swe, caseId, fields, writer);
-                break;
-            case "HOUSES_ARMC":
-                ProcessHousesArmc(swe, caseId, fields, writer);
-                break;
-            default:
-                throw new InvalidDataException($"unknown func '{func}' at case {caseId}");
+            AttachEpheDir(swe, epheDir);
+        }
+
+        if (mode == GridMode.Analytic)
+        {
+            switch (func)
+            {
+                case "CALC":
+                case "CALC_UT":
+                    ProcessCalc(swe, caseId, func, fields, sidModeIndex: 11, writer);
+                    break;
+                case "HOUSES":
+                    ProcessHouses(swe, caseId, fields, writer);
+                    break;
+                case "HOUSES_ARMC":
+                    ProcessHousesArmc(swe, caseId, fields, writer);
+                    break;
+                default:
+                    throw new InvalidDataException($"unknown func '{func}' at case {caseId}");
+            }
+        }
+        else
+        {
+            switch (func)
+            {
+                case "CALC":
+                case "CALC_UT":
+                    ProcessCalc(swe, caseId, func, fields, sidModeIndex: 9, writer);
+                    break;
+                case "FIXSTAR":
+                case "FIXSTAR_UT":
+                case "FIXSTAR2":
+                case "FIXSTAR2_UT":
+                    ProcessFixstar(swe, caseId, func, fields, writer);
+                    break;
+                case "FIXSTAR_MAG":
+                    ProcessFixstarMag(swe, caseId, fields, writer);
+                    break;
+                case "GET_PLANET_NAME":
+                    ProcessName(swe, caseId, fields, writer);
+                    break;
+                default:
+                    throw new InvalidDataException($"unknown func '{func}' at case {caseId}");
+            }
         }
     }
 
-    private static void ProcessCalc(SwissEph swe, string caseId, string func, string[] fields, TextWriter writer)
+    // Mirrors the ordering fix documented in
+    // Tests/SwissEphNet.Conformance.Tests/Dispatch/EphemerisFileResolver.cs's Attach: swe_set_ephe_path
+    // is not a setter (sweph.c:1315-1350) -- it closes every open file and eagerly calls swe_calc
+    // internally to pin tidal acceleration from the lunar file it opens, so the OnLoadFile handler
+    // has to be attached before swe_set_ephe_path runs, or that eager open silently finds nothing.
+    // This driver receives its ephemeris directory as an explicit argument rather than through
+    // RepoLocator/environment-variable resolution -- sedump.c gets the same path the same way (its
+    // own optional third argv) -- so only the ordering fix itself is reused here, not
+    // EphemerisFileResolver's test-specific JPL-file and moon-data opt-ins, which do not apply to
+    // this harness.
+    private static void AttachEpheDir(SwissEph swe, string epheDir)
+    {
+        swe.OnLoadFile += (_, e) =>
+        {
+            e.File = File.Exists(e.FileName) ? File.OpenRead(e.FileName) : null;
+        };
+        swe.swe_set_ephe_path(epheDir);
+    }
+
+    private static void ProcessCalc(SwissEph swe, string caseId, string func, string[] fields, int sidModeIndex, TextWriter writer)
     {
         var ipl = ParseInt(fields[2], caseId, "ipl");
         var tjd = ParseDouble(fields[3], caseId, "tjd");
@@ -144,9 +219,9 @@ internal static class Program
             var height = ParseDouble(fields[8], caseId, "height");
             swe.swe_set_topo(geolon, geolat, height);
         }
-        if (HasValue(fields[11]))
+        if (HasValue(fields[sidModeIndex]))
         {
-            var sidMode = ParseInt(fields[11], caseId, "sid_mode");
+            var sidMode = ParseInt(fields[sidModeIndex], caseId, "sid_mode");
             swe.swe_set_sid_mode(sidMode, 0, 0);
         }
 
@@ -165,6 +240,72 @@ internal static class Program
         {
             EmitValue(writer, xx[i]);
         }
+        writer.Write('\n');
+    }
+
+    // grid-files.tsv only: star is fields[5], iflag always carries SEFLG_SWIEPH already OR-ed in
+    // by gen-grid-files.ps1. swe_fixstar and its siblings can rewrite `star` in place with the
+    // star's canonical name; this driver does not read it back afterward, matching sedump.c's own
+    // process_fixstar.
+    private static void ProcessFixstar(SwissEph swe, string caseId, string func, string[] fields, TextWriter writer)
+    {
+        var star = fields[5];
+        var tjd = ParseDouble(fields[3], caseId, "tjd");
+        var iflag = ParseInt(fields[4], caseId, "iflag");
+
+        var xx = new double[6];
+        string? serr = null;
+        var retc = func switch
+        {
+            "FIXSTAR" => swe.swe_fixstar(ref star, tjd, iflag, xx, ref serr),
+            "FIXSTAR_UT" => swe.swe_fixstar_ut(ref star, tjd, iflag, xx, ref serr),
+            "FIXSTAR2" => swe.swe_fixstar2(ref star, tjd, iflag, xx, ref serr),
+            _ => swe.swe_fixstar2_ut(ref star, tjd, iflag, xx, ref serr),
+        };
+
+        writer.Write(caseId);
+        writer.Write('\t');
+        writer.Write(retc.ToString(CultureInfo.InvariantCulture));
+        writer.Write('\t');
+        writer.Write(EscapeErr(serr));
+        for (var i = 0; i < 6; i++)
+        {
+            EmitValue(writer, xx[i]);
+        }
+        writer.Write('\n');
+    }
+
+    // grid-files.tsv only: swe_fixstar_mag takes no date or flag, only the star search string.
+    private static void ProcessFixstarMag(SwissEph swe, string caseId, string[] fields, TextWriter writer)
+    {
+        var star = fields[5];
+        var mag = 0.0;
+        string? serr = null;
+        var retc = swe.swe_fixstar_mag(ref star, ref mag, ref serr);
+
+        writer.Write(caseId);
+        writer.Write('\t');
+        writer.Write(retc.ToString(CultureInfo.InvariantCulture));
+        writer.Write('\t');
+        writer.Write(EscapeErr(serr));
+        EmitValue(writer, mag);
+        writer.Write('\n');
+    }
+
+    // grid-files.tsv only: swe_get_planet_name returns a string, not a double -- see this file's
+    // own top-of-file comment for why that string is written into the err column instead of a
+    // value column, and gen-grid-files.ps1's header for the fuller rationale. retc is a fixed 0;
+    // the .NET API has no error code to report here either.
+    private static void ProcessName(SwissEph swe, string caseId, string[] fields, TextWriter writer)
+    {
+        var ipl = ParseInt(fields[2], caseId, "ipl");
+        var name = swe.swe_get_planet_name(ipl);
+
+        writer.Write(caseId);
+        writer.Write('\t');
+        writer.Write(0.ToString(CultureInfo.InvariantCulture));
+        writer.Write('\t');
+        writer.Write(EscapeErr(name));
         writer.Write('\n');
     }
 
