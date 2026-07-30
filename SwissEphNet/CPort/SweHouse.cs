@@ -105,34 +105,41 @@ namespace SwissEphNet.CPort
         //static double Asc1(double, double, double, double);
         //static double AscDash(double, double, double, double);
         //static double Asc2(double, double, double, double);
-        //static int CalcH(
-        //    double th, double fi, double ekl, char hsy, 
-        //    int iteration_count, struct houses *hsp );
-        //static int sidereal_houses_ecl_t0(double tjde, 
-        //                           double armc, 
-        //                           double eps, 
-        //                           double *nutlo, 
-        //                           double lat, 
-        //               int hsys, 
-        //                           double *cusp, 
-        //                           double *ascmc);
-        //static int sidereal_houses_trad(double tjde, 
-        //               int32 iflag,
-        //                           double armc, 
-        //                           double eps, 
-        //                           double nutl, 
-        //                           double lat, 
-        //               int hsys, 
-        //                           double *cusp, 
-        //                           double *ascmc);
-        //static int sidereal_houses_ssypl(double tjde, 
-        //                           double armc, 
-        //                           double eps, 
-        //                           double *nutlo, 
+        //static int CalcH(double th, double fi, double ekl, char hsy, struct houses *hsp);
+        //static int sidereal_houses_ecl_t0(double tjde,
+        //                           double armc,
+        //                           double eps,
+        //                           double *nutlo,
         //                           double lat,
-        //               int hsys, 
-        //                           double *cusp, 
-        //                           double *ascmc);
+        //               int hsys,
+        //                           double *cusp,
+        //                           double *ascmc,
+        //               double *cusp_speed,
+        //               double *ascmc_speed,
+        //               char *serr);
+        //static int sidereal_houses_trad(double tjde,
+        //               int32 iflag,
+        //                           double armc,
+        //                           double eps,
+        //                           double nutl,
+        //                           double lat,
+        //               int hsys,
+        //                           double *cusp,
+        //                           double *ascmc,
+        //               double *cusp_speed,
+        //               double *ascmc_speed,
+        //               char *serr);
+        //static int sidereal_houses_ssypl(double tjde,
+        //                           double armc,
+        //                           double eps,
+        //                           double *nutlo,
+        //                           double lat,
+        //               int hsys,
+        //                           double *cusp,
+        //                           double *ascmc,
+        //               double *cusp_speed,
+        //               double *ascmc_speed,
+        //               char *serr);
         //static int sunshine_solution_makransky(double ramc, double lat, double ecl, struct houses *hsp);
         //static int sunshine_solution_treindl(double ramc, double lat, double ecl, struct houses *hsp);
         //#if 0
@@ -188,7 +195,11 @@ namespace SwissEphNet.CPort
                 int flags = SwissEph.SEFLG_SPEED | SwissEph.SEFLG_EQUATORIAL;
                 double[] xp = new double[6];
                 int result = SE.swe_calc_ut(tjd_ut, SwissEph.SE_SUN, flags, xp, ref sdummy);
-                if (result < 0) return SwissEph.ERR;
+                if (result < 0) {
+                    // in case of failure, Porphyry houses
+                    result = swe_houses_armc_ex2(armc, geolat, eps + nutlo[1], 'O', cusp, ascmc, null, null, ref sdummy);
+                    return SwissEph.ERR;
+                }
                 ascmc[9] = xp[1];	// declination in ascmc[9];
             }
 #if TRACE
@@ -208,24 +219,11 @@ namespace SwissEphNet.CPort
             //    }
             //}
 #endif
-            retc = swe_houses_armc(armc, geolat, eps + nutlo[1], hsys, cusp, ascmc);
+            retc = swe_houses_armc_ex2(armc, geolat, eps + nutlo[1], hsys, cusp, ascmc, null, null, ref sdummy);
             return retc;
         }
 
-        /* housasp.c 
-         * cusps are returned in double cusp[13],
-         *                           or cusp[37] with house system 'G'.
-         * cusp[1...12]	houses 1 - 12
-         * additional points are returned in ascmc[10].
-         * ascmc[0] = ascendant
-         * ascmc[1] = mc
-         * ascmc[2] = armc
-         * ascmc[3] = vertex
-         * ascmc[4] = equasc		* "equatorial ascendant" *
-         * ascmc[5] = coasc1		* "co-ascendant" (W. Koch) *
-         * ascmc[6] = coasc2		* "co-ascendant" (M. Munkasey) *
-         * ascmc[7] = polasc		* "polar ascendant" (M. Munkasey) *
-         */
+        // For explanation see function swe_houses_ex2() below.
         // swephexp.h:816 declares int hsys; this char overload exists only so that
         // existing callers keep compiling and widens without truncation (see the int
         // overload below, which is the faithful transliteration).
@@ -246,12 +244,61 @@ namespace SwissEphNet.CPort
                         int hsys,
                         CPointer<double> cusp,
                         CPointer<double> ascmc) {
+            String sdummy = null;
+            return swe_houses_ex2(tjd_ut, iflag, geolat, geolon, hsys, cusp, ascmc, null, null, ref sdummy);
+        }
+
+        /*
+         * Function returns OK or ERR.
+         * cusps are returned in double cusp[13],
+         *                           or cusp[37] with house system 'G'.
+         * cusp[1...12]	  houses 1 - 12
+         * ascmc[0...10]  additional points:
+         *                ascmc[0] = ascendant
+         *                ascmc[1] = mc
+         *                ascmc[2] = armc
+         *                ascmc[3] = vertex
+         *                ascmc[4] = equasc		* "equatorial ascendant" *
+         *                ascmc[5] = coasc1		* "co-ascendant" (W. Koch) *
+         *                ascmc[6] = coasc2		* "co-ascendant" (M. Munkasey) *
+         *                ascmc[7] = polasc		* "polar ascendant" (M. Munkasey) *
+         * cusp_speed[1...12]  speeds (daily motions) of the cusps.
+         * ascmc_speed[0...10] speeds (daily motions) of the additional points.
+         * serr           error message or warning
+         */
+        // swephexp.h:820 declares int hsys; this char overload exists only so that
+        // existing callers keep compiling and widens without truncation (see the int
+        // overload below, which is the faithful transliteration).
+        public int swe_houses_ex2(double tjd_ut,
+                                        Int32 iflag,
+                        double geolat,
+                        double geolon,
+                        char hsys,
+                        CPointer<double> cusp,
+                        CPointer<double> ascmc,
+                        CPointer<double> cusp_speed,
+                        CPointer<double> ascmc_speed,
+                        ref string serr) {
+            return swe_houses_ex2(tjd_ut, iflag, geolat, geolon, (int)hsys, cusp, ascmc, cusp_speed, ascmc_speed, ref serr);
+        }
+
+        public int swe_houses_ex2(double tjd_ut,
+                                        Int32 iflag,
+                        double geolat,
+                        double geolon,
+                        int hsys,
+                        CPointer<double> cusp,
+                        CPointer<double> ascmc,
+                        CPointer<double> cusp_speed,
+                        CPointer<double> ascmc_speed,
+                        ref string serr) {
             int i, retc = 0;
             double armc, eps_mean; double[] nutlo = new double[2];
             String sdummy = null;
             double tjde = tjd_ut + SE.swe_deltat_ex(tjd_ut, iflag, ref sdummy);
             Sweph.sid_data sip = swed.sidd;
             double[] xp = new double[6];
+            int retc_makr = 0;
             int ito;
             if (ToUpperAsciiHsys(hsys) == 'G')
                 ito = 36;
@@ -295,22 +342,24 @@ namespace SwissEphNet.CPort
             if (ToUpperAsciiHsys(hsys) == 'I')
             {	// compute sun declination for sunshine houses
                 int flags = SwissEph.SEFLG_SPEED | SwissEph.SEFLG_EQUATORIAL;
-                int result = SE.swe_calc_ut(tjd_ut, SwissEph.SE_SUN, flags, xp, ref sdummy);
-                if (result < 0) return SwissEph.ERR;
+                retc_makr = SE.swe_calc_ut(tjd_ut, SwissEph.SE_SUN, flags, xp, ref sdummy);
+                if (retc_makr < 0) {
+                    // in case of failure, provide Porphyry houses
+                    hsys = (int)'O';
+                }
                 ascmc[9] = xp[1];	// declination in ascmc[9];
             }
             if ((iflag & SwissEph.SEFLG_SIDEREAL) != 0)
             {
                 if ((sip.sid_mode & SwissEph.SE_SIDBIT_ECL_T0) != 0)
-                    retc = sidereal_houses_ecl_t0(tjde, armc, eps_mean + nutlo[1], nutlo, geolat, hsys, cusp, ascmc);
+                    retc = sidereal_houses_ecl_t0(tjde, armc, eps_mean + nutlo[1], nutlo, geolat, hsys, cusp, ascmc, cusp_speed, ascmc_speed, ref serr);
                 else if ((sip.sid_mode & SwissEph.SE_SIDBIT_SSY_PLANE) != 0)
-                    retc = sidereal_houses_ssypl(tjde, armc, eps_mean + nutlo[1], nutlo, geolat, hsys, cusp, ascmc);
+                    retc = sidereal_houses_ssypl(tjde, armc, eps_mean + nutlo[1], nutlo, geolat, hsys, cusp, ascmc, cusp_speed, ascmc_speed, ref serr);
                 else
-                    retc = sidereal_houses_trad(tjde, iflag, armc, eps_mean + nutlo[1], nutlo[0], geolat, hsys, cusp, ascmc);
+                    retc = sidereal_houses_trad(tjde, iflag, armc, eps_mean + nutlo[1], nutlo[0], geolat, hsys, cusp, ascmc, cusp_speed, ascmc_speed, ref serr);
             } else {
-                retc = swe_houses_armc(armc, geolat, eps_mean + nutlo[1], hsys, cusp, ascmc);
-                // toupper (ASCII) in C; ToUpperAsciiHsys avoids tr-TR/az-Latn-AZ 'i' -> 'İ'.
-                if (ToUpperAsciiHsys(hsys) == 'I')   // compute sun declination for sunshine houses
+                retc = swe_houses_armc_ex2(armc, geolat, eps_mean + nutlo[1], hsys, cusp, ascmc, cusp_speed, ascmc_speed, ref serr);
+                if (ToUpperAsciiHsys(hsys) == 'I')
                     ascmc[9] = xp[1];	// declination in ascmc[9];
             }
             if ((iflag & SwissEph.SEFLG_RADIANS) != 0) {
@@ -319,6 +368,8 @@ namespace SwissEphNet.CPort
                 for (i = 0; i < SwissEph.SE_NASCMC; i++)
                     ascmc[i] *= SwissEph.DEGTORAD;
             }
+            if (retc_makr < 0)
+                return retc_makr;
             return retc;
         }
 
@@ -355,7 +406,10 @@ namespace SwissEphNet.CPort
                                    double lat,
                        int hsys,
                                    CPointer<double> cusp,
-                                   CPointer<double> ascmc) {
+                                   CPointer<double> ascmc,
+                       CPointer<double> cusp_speed,
+                       CPointer<double> ascmc_speed,
+                       ref string serr) {
                                        int i, j, retc = SwissEph.OK;
             double[] x = new double[6], xvpx = new double[6], x2 = new double[6], xnorm = new double[6]; double epst0;
             double rxy, rxyz, c2, epsx, sgn, fac, dvpx, dvpxe;
@@ -410,7 +464,7 @@ namespace SwissEphNet.CPort
             /* auxiliary armc */
             armcx = SE.swe_degnorm(armc - dvpx);        /* 3 */
             /* compute axes and houses: */
-            retc = swe_houses_armc(armcx, lat, epsx, hsys, cusp, ascmc);  /* 4 */
+            retc = swe_houses_armc_ex2(armcx, lat, epsx, hsys, cusp, ascmc, cusp_speed, ascmc_speed, ref serr);  /* 4 */
             /* distance between auxiliary vernal point and
              * vernal point of t0 (a section on the sidereal plane) */
             dvpxe = Math.Acos(SE.SwephLib.swi_dot_prod_unit(x, xvpx)) * SwissEph.RADTODEG;  /* 5 */
@@ -461,7 +515,10 @@ namespace SwissEphNet.CPort
                                    double lat,
                        int hsys,
                                    CPointer<double> cusp,
-                                   CPointer<double> ascmc) {
+                                   CPointer<double> ascmc,
+                       CPointer<double> cusp_speed,
+                       CPointer<double> ascmc_speed,
+                       ref string serr) {
             int i, j, retc = SwissEph.OK;
             double[] x = new double[6], x0 = new double[6], xvpx = new double[6], x2 = new double[6], xnorm = new double[6];
             double rxy, rxyz, c2, epsx, eps2000, sgn, fac, dvpx, dvpxe, x00;
@@ -519,7 +576,7 @@ namespace SwissEphNet.CPort
             /* auxiliary armc */
             armcx = SE.swe_degnorm(armc - dvpx);        /* 3 */
             /* compute axes and houses: */
-            retc = swe_houses_armc(armcx, lat, epsx, hsys, cusp, ascmc);  /* 4 */
+            retc = swe_houses_armc_ex2(armcx, lat, epsx, hsys, cusp, ascmc, cusp_speed, ascmc_speed, ref serr);  /* 4 */
             /* distance between the auxiliary vernal point at t and
              * the sidereal zero point of 2000 at t
              * (a section on the sidereal plane).
@@ -571,7 +628,10 @@ namespace SwissEphNet.CPort
                                    double lat,
                        int hsys,
                                    CPointer<double> cusp,
-                                   CPointer<double> ascmc) {
+                                   CPointer<double> ascmc,
+                       CPointer<double> cusp_speed,
+                       CPointer<double> ascmc_speed,
+                       ref string serr) {
             int i, retc = SwissEph.OK;
             double ay;
             int ito;
@@ -591,7 +651,7 @@ namespace SwissEphNet.CPort
                 ihs2 = 'E';
             //fprintf(stderr, "armc=%f\n", armc);
             //if (hsys == 'P') fprintf(stderr, "ay=%f, t=%f %c", ay, tjde, (char) hsys);
-            retc = swe_houses_armc(armc, lat, eps, ihs2, cusp, ascmc);
+            retc = swe_houses_armc_ex2(armc, lat, eps, ihs2, cusp, ascmc, cusp_speed, ascmc_speed, ref serr);
             //if (hsys == 'P') fprintf(stderr, "  h1=%f", cusp[1]);
             for (i = 1; i <= ito; i++) {
                 //cusp[i] = SE.swe_degnorm(cusp[i] - ay - nutl);
@@ -615,23 +675,7 @@ namespace SwissEphNet.CPort
         }
 
         /*static*/ double saved_sundec = 99;
-        /* 
-         * this function is required for very special computations
-         * where no date is given for house calculation,
-         * e.g. for composite charts or progressive charts.
-         * cusps are returned in double cusp[13],
-         *                           or cusp[37] with house system 'G'.
-         * cusp[1...12]	houses 1 - 12
-         * additional points are returned in ascmc[10].
-         * ascmc[0] = ascendant
-         * ascmc[1] = mc
-         * ascmc[2] = armc
-         * ascmc[3] = vertex
-         * ascmc[4] = equasc		* "equatorial ascendant" *
-         * ascmc[5] = coasc1		* "co-ascendant" (W. Koch) *
-         * ascmc[6] = coasc2		* "co-ascendant" (M. Munkasey) *
-         * ascmc[7] = polasc		* "polar ascendant" (M. Munkasey) *
-         */
+        // For explanation see function swe_houses_armc_ex2() below.
         // swephexp.h:824 declares int hsys; this char overload exists only so that
         // existing callers keep compiling and widens without truncation (see the int
         // overload below, which is the faithful transliteration).
@@ -652,8 +696,59 @@ namespace SwissEphNet.CPort
                         int hsys,
                         CPointer<double> cusp,
                         CPointer<double> ascmc) {
-            houses h = new houses();
-            int i, retc = 0;
+            string sdummy = null;
+            return swe_houses_armc_ex2(armc, geolat, eps, hsys, cusp, ascmc, null, null, ref sdummy);
+        }
+
+        /*
+         * Function returns OK or ERR.
+         * this function is required for very special computations
+         * where no date is given for house calculation,
+         * e.g. for composite charts or progressive charts.
+         * cusps are returned in double cusp[13],
+         *                           or cusp[37] with house system 'G'.
+         * cusp[1...12]	  houses 1 - 12
+         * ascmc[0...10]  additional points:
+         *                ascmc[0] = ascendant
+         *                ascmc[1] = mc
+         *                ascmc[2] = armc
+         *                ascmc[3] = vertex
+         *                ascmc[4] = equasc		* "equatorial ascendant" *
+         *                ascmc[5] = coasc1		* "co-ascendant" (W. Koch) *
+         *                ascmc[6] = coasc2		* "co-ascendant" (M. Munkasey) *
+         *                ascmc[7] = polasc		* "polar ascendant" (M. Munkasey) *
+         * cusp_speed[1...12]  speeds (daily motions) of the cusps.
+         * ascmc_speed[0...10] speeds (daily motions) of the additional points.
+         * serr           error message or warning
+         */
+        // swephexp.h:828 declares int hsys; this char overload exists only so that
+        // existing callers keep compiling and widens without truncation (see the int
+        // overload below, which is the faithful transliteration).
+        public int swe_houses_armc_ex2(
+                        double armc,
+                        double geolat,
+                        double eps,
+                        char hsys,
+                        CPointer<double> cusp,
+                        CPointer<double> ascmc,
+                        CPointer<double> cusp_speed,
+                        CPointer<double> ascmc_speed,
+                        ref string serr) {
+            return swe_houses_armc_ex2(armc, geolat, eps, (int)hsys, cusp, ascmc, cusp_speed, ascmc_speed, ref serr);
+        }
+
+        public int swe_houses_armc_ex2(
+                        double armc,
+                        double geolat,
+                        double eps,
+                        int hsys,
+                        CPointer<double> cusp,
+                        CPointer<double> ascmc,
+                        CPointer<double> cusp_speed,
+                        CPointer<double> ascmc_speed,
+                        ref string serr) {
+            houses h = new houses(), hm1 = new houses(), hp1 = new houses();
+            int i, retc = 0, rm1, rp1;
             int ito;
             //static double saved_sundec = 99; // YG: Set as field to simulate static behavior
             if (ToUpperAsciiHsys(hsys) == 'G')
@@ -661,6 +756,12 @@ namespace SwissEphNet.CPort
             else
                 ito = 12;
             armc = SE.swe_degnorm(armc);
+            h.do_speed = false;
+            h.do_hspeed = false;
+            if (!ascmc_speed.IsNull || !cusp_speed.IsNull)
+                h.do_speed = true;	// is needed if cusp_speed wanted
+            if (!cusp_speed.IsNull)
+                h.do_hspeed = true;
             // toupper (ASCII) in C; ToUpperAsciiHsys avoids tr-TR/az-Latn-AZ 'i' -> 'İ'.
             if (ToUpperAsciiHsys(hsys) ==  'I') {	// declination for sunshine houses
                 if (ascmc[9] == 99) {
@@ -669,6 +770,10 @@ namespace SwissEphNet.CPort
                 } else {
                     h.sundec = ascmc[9];
                     saved_sundec = h.sundec;
+                }
+                if (h.sundec < -24 || h.sundec > 24) {
+                    serr = "House system I (Sunshine) needs valid Sun declination in ascmc[9]";
+                    return SwissEph.ERR;
                 }
             }
             // swehouse.c:661: CalcH(..., (char)hsys, ...). Plain char is signed on the reference
@@ -679,10 +784,20 @@ namespace SwissEphNet.CPort
             // changes which branch CalcH's `hsy > 95` sign check takes -- see CalcH below).
             // Explicitly unchecked: C truncates silently, so this must not throw if the
             // project is ever built with CheckForOverflowUnderflow enabled.
-            retc = CalcH(armc, geolat, eps, unchecked((sbyte)hsys), 2, h);
+            retc = CalcH(armc, geolat, eps, unchecked((sbyte)hsys), h);
             cusp[0] = 0;
+            if (h.do_hspeed) cusp_speed[0] = 0;
+            // on failure, we only have 12 Porphyry cusps
+            if (retc < 0) {
+                ito = 12;
+                // strcpy(serr, h.serr) in C, guarded by serr != NULL; ref string is never a
+                // null pointer here, so the guard is unconditional assignment (see the same
+                // convention in swe_house_pos above).
+                serr = h.serr;
+            }
             for (i = 1; i <= ito; i++) {
                 cusp[i] = h.cusp[i];
+                if (h.do_hspeed) cusp_speed[i] = h.cusp_speed[i];
             }
             ascmc[0] = h.ac;        /* Asc */
             ascmc[1] = h.mc;        /* Mid */
@@ -697,31 +812,76 @@ namespace SwissEphNet.CPort
             // toupper (ASCII) in C; ToUpperAsciiHsys avoids tr-TR/az-Latn-AZ 'i' -> 'İ'.
             if (ToUpperAsciiHsys(hsys) == 'I')   // declination for sunshine houses
                 ascmc[9] = h.sundec;
+            if (h.do_speed && !ascmc_speed.IsNull) {
+                ascmc_speed[0] = h.ac_speed;        /* Asc */
+                ascmc_speed[1] = h.mc_speed;        /* Mid */
+                ascmc_speed[2] = h.armc_speed;
+                ascmc_speed[3] = h.vertex_speed;
+                ascmc_speed[4] = h.equasc_speed;
+                ascmc_speed[5] = h.coasc1_speed;	/* "co-ascendant" (W. Koch) */
+                ascmc_speed[6] = h.coasc2_speed;	/* "co-ascendant" (M. Munkasey) */
+                ascmc_speed[7] = h.polasc_speed;	/* "polar ascendant" (M. Munkasey) */
+                for (i = SwissEph.SE_NASCMC; i < 10; i++)
+                    ascmc_speed[i] = 0;
+            }
+            if (h.do_interpol) {	// must compute cusp_speed via interpolation
+                double dt = 1.0 / 86400;
+                double darmc = dt * ARMCS;
+                hm1.do_speed = false;
+                hm1.do_hspeed = false;
+                hp1.do_speed = false;
+                hp1.do_hspeed = false;
+                if (ToUpperAsciiHsys(hsys) ==  'I') {
+                    hm1.sundec = h.sundec;
+                    hp1.sundec = h.sundec;
+                }
+                rm1 = CalcH(armc - darmc, geolat, eps, unchecked((sbyte)hsys), hm1);
+                rp1 = CalcH(armc + darmc, geolat, eps, unchecked((sbyte)hsys), hp1);
+                if (rp1 >= 0 && rm1 >= 0) {
+                    if (Math.Abs(SE.swe_difdeg2n(hp1.ac, h.ac)) > 90) {
+                        hp1 = h;	// use only upper interval
+                        dt = dt / 2;
+                    } else if (Math.Abs(SE.swe_difdeg2n(hm1.ac, h.ac)) > 90) {
+                        hm1 = h;	// use only lower interval
+                        dt = dt / 2;
+                    }
+                    for (i = 1; i <= 12; i++) {
+                        double dx = SE.swe_difdeg2n(hp1.cusp[i], hm1.cusp[i]);
+                        cusp_speed[i] = dx / 2 / dt;
+                    }
+                }
+            }
 #if TRACE
             //swi_open_trace(NULL);
             //if (swi_trace_count <= TRACE_COUNT_MAX) {
             //  if (swi_fp_trace_c != NULL) {
-            //    fputs("\n/*SWE_HOUSES_ARMC*/\n", swi_fp_trace_c);
+            //    fputs("\n/*SWE_HOUSES_ARMC_EX2*/\n", swi_fp_trace_c);
             //    fprintf(swi_fp_trace_c, "  armc = %.9f;", armc);
             //    fprintf(swi_fp_trace_c, " geolat = %.9f;", geolat);
             //    fprintf(swi_fp_trace_c, " eps = %.9f;", eps);
             //    fprintf(swi_fp_trace_c, " hsys = %d;\n", hsys);
-            //    fprintf(swi_fp_trace_c, "  retc = swe_houses_armc(armc, geolat, eps, hsys, cusp, ascmc);\n");
-            //    fputs("  printf(\"swe_houses_armc: %f\\t%f\\t%f\\t%c\\t\\n\", ", swi_fp_trace_c);
+            //    fprintf(swi_fp_trace_c, "  retc = swe_houses_armc_ex2(armc, geolat, eps, hsys, cusp, ascmc, cusp_speed, ascmc_speed, serr);\n");
+            //    fputs("  printf(\"swe_houses_armc_ex2: %f\\t%f\\t%f\\t%c\\t\\n\", ", swi_fp_trace_c);
             //    fputs("  armc, geolat, eps, hsys);\n", swi_fp_trace_c);
             //    fputs("  printf(\"retc = %d\\n\", retc);\n", swi_fp_trace_c);
             //    fputs("  printf(\"cusp:\\n\");\n", swi_fp_trace_c);
-            //    fputs("  for (i = 0; i < 12; i++)\n", swi_fp_trace_c);
+            //    fputs("  for (i = 1; i <= 12; i++)\n", swi_fp_trace_c);
             //    fputs("    printf(\"  %d\\t%f\\n\", i, cusp[i]);\n", swi_fp_trace_c);
             //    fputs("  printf(\"ascmc:\\n\");\n", swi_fp_trace_c);
             //    fputs("  for (i = 0; i < 10; i++)\n", swi_fp_trace_c);
             //    fputs("    printf(\"  %d\\t%f\\n\", i, ascmc[i]);\n", swi_fp_trace_c);
+            //    fputs("  printf(\"cusp_speed:\\n\");\n", swi_fp_trace_c);
+            //    fputs("  for (i = 1; i <= 12; i++)\n", swi_fp_trace_c);
+            //    fputs("    printf(\"  %d\\t%f\\n\", i, cusp_speed[i]);\n", swi_fp_trace_c);
+            //    fputs("  printf(\"ascmc_speed:\\n\");\n", swi_fp_trace_c);
+            //    fputs("  for (i = 0; i < 10; i++)\n", swi_fp_trace_c);
+            //    fputs("    printf(\"  %d\\t%f\\n\", i, ascmc_speed[i]);\n", swi_fp_trace_c);
             //    fflush(swi_fp_trace_c);
             //  }
             //  if (swi_fp_trace_out != NULL) {
             // trace() routes through C.sprintf, which throws on an out-of-range hsys under
             // %c (see comment at the swe_house_pos %c sites above); narrow here too.
-            trace("swe_houses_armc: %f\t%f\t%f\t%c\t\n", armc, geolat, eps, (char)(hsys & 0xFF));
+            trace("swe_houses_armc_ex2: %f\t%f\t%f\t%c\t\n", armc, geolat, eps, (char)(hsys & 0xFF));
             trace("retc = %d\n", retc);
             trace("cusp:\n");
             for (i = 1; i <= 12; i++)
@@ -733,8 +893,8 @@ namespace SwissEphNet.CPort
             //  }
             //}
 #endif
-            //#if 0 
-            ///* for test of swe_house_pos(). 
+            //#if 0
+            ///* for test of swe_house_pos().
             // * 1st house will be 0, second 30, etc. */
             //for (i = 1; i <=12; i++) {
             //  double x[6];
@@ -832,6 +992,7 @@ namespace SwissEphNet.CPort
                 case 'H': return "horizon/azimut";
                 case 'I': return "Sunshine";
                 case 'i': return "Sunshine/alt.";
+                case 'J': return "Savard-A";
                 case 'K': return "Koch";
                 case 'L': return "Pullen SD";
                 case 'M': return "Morinus";
@@ -852,8 +1013,8 @@ namespace SwissEphNet.CPort
 
         // How to deal with Sunshine houses if the southern crossing point of Equator
         // and Ecliptic is under the horizon:
-        // We follow the proposal by Dieter Koch, who wants to keep it in alalogy with
-        // Regiomontanus, where we keep the MC above the horozon, by switching it to the noth.
+        // We follow the proposal by Dieter Koch, who wants to keep it in analogy with
+        // Regiomontanus, where we keep the MC above the horizon, by switching it to the north.
         // This results in an clockwise sequence of house cusps in the chart.
         //
         // One can argue that the MC should be kept south, even when it is under the horizon.
@@ -881,16 +1042,14 @@ namespace SwissEphNet.CPort
 
         // swehouse.c:892: static int CalcH(double th, double fi, double ekl, char hsy, ...).
         // hsy is `int` here, not `char`, so that callers can pass a C-faithful signed-8-bit
-        // narrowing (via (sbyte)) of the raw int hsys -- see swe_houses_armc above. C's char
+        // narrowing (via (sbyte)) of the raw int hsys -- see swe_houses_armc_ex2 below. C's char
         // is signed on both reference platforms, so this preserves C's sign, which the
         // `hsy > 95` check below depends on.
         // swehouse.c:892-893: 2.10.03 drops the iteration_count parameter entirely, replacing
-        // every loop it bounded with the niter_max local declared below. iteration_count is
-        // kept here, unused, so the call site in swe_houses_armc (swehouse.c:661) does not
-        // need to change as part of this slice.
+        // every loop it bounded with the niter_max local declared below.
         int CalcH(
             double th, double fi, double ekl, int hsy,
-            int iteration_count, houses hsp)
+            houses hsp)
             /* *********************************************************
              *  Arguments: th = sidereal time (angle 0..360 degrees
              *             hsy = letter code for house system;
@@ -2251,7 +2410,7 @@ namespace SwissEphNet.CPort
         // comparing it against house-system letters in the switch below, so a value outside
         // char range never matches a named branch and falls through to default: at
         // swehouse.c:2835 (the simplified interpolation algorithm), even though
-        // swe_houses_armc below still
+        // swe_houses_armc_ex2 below still
         // resolves the correct house system internally via its own 8-bit truncation
         // (swehouse.c:661).
         public double swe_house_pos(
@@ -2259,8 +2418,8 @@ namespace SwissEphNet.CPort
             double[] xp = new double[6], xeq = new double[6]; double ra, de, mdd, mdn, sad, san;
             double hpos, sinad, ad, a, admc, adp, samc, asc, mc, acmc, tant;
             //double demc;
-            double fh, ra0, tanfi, fac, dfac, tanx;
-            double[] x = new double[3], xasc = new double[3]; double raep, raaz, oblaz, xtemp; /* BK 21.02.2006 */
+            double fh, ra0, tanfi, sinfi, fac, dfac, tanx;
+            double[] x = new double[3], xasc = new double[3]; double xs1, xs2, raep, raaz, oblaz, xtemp; /* BK 21.02.2006 */
             // swehouse.c:2224 (2.10.03) declares hcusp[37]; C 2.08 declared hcusp[36], which
             // this port originally matched faithfully. swe_houses_armc below writes cusp[36]
             // for hsys == 'G' (Gauquelin), which needs length 37 -- upstream's own 2.10.03 fix
@@ -2278,12 +2437,12 @@ namespace SwissEphNet.CPort
             hsys = ToUpperAsciiHsys(hsys);
             if (true)
             {
-                /* input is a house position: no calculation is required */
+                /* input is a house cusp: no calculation is required */
                 ascmc[9] = 99;// dirty hack. Sunshine house system needs sun declination
                               // which we do not know. If it sees ascmc[9] == 99, it uses
-                              // the one is saved from last call. can lead to bugs, but can 
+                              // the one is saved from last call. can lead to bugs, but can
                               // also solve many problems.
-                if (swe_houses_armc(armc, geolat, eps, hsys, hcusp, ascmc) == Sweph.ERR)
+                if (swe_houses_armc_ex2(armc, geolat, eps, hsys, hcusp, ascmc, null, null, ref serr) == Sweph.ERR)
                 {
                     //if (serr != NULL)
                         // swehouse.c: sprintf(serr, ..., "%c", hsys) -- C's %c converts the int
@@ -2454,37 +2613,6 @@ namespace SwissEphNet.CPort
                         hpos = hpos / 30.0 + 1;
                     }
                     break;
-                //#if 0
-                //    /* old version of Koch method */
-                //    case 'K':
-                //      demc = atand(sind(armc) * tand(eps));
-                //      /* if body is within circumpolar region, error */
-                //      if (90 - Math.Abs(geolat) <= Math.Abs(de)) {
-                //        if (serr != NULL)
-                //          serr= "no Koch house position, because planet is circumpolar.";
-                //        xp[0] = 0;
-                //    hpos = 0;	/* Error */
-                //      } else if (90 - Math.Abs(geolat) <= Math.Abs(demc)) {
-                //    if (serr != NULL)
-                //      serr= "no Koch house position, because mc is circumpolar.";
-                //        xp[0] = 0;
-                //    hpos = 0;	/* Error */
-                //      } else {
-                //        admc = asind(tand(eps) * tand(geolat) * sind(armc));
-                //        adp = asind(tand(geolat) * tand(de));
-                //    samc = 90 + admc;
-                //        if (mdd >= 0) {	/* east */
-                //          xp[0] = swe_degnorm(((mdd - adp + admc) / samc - 1) * 90);
-                //    } else {
-                //      xp[0] = swe_degnorm(((mdd + 180 + adp + admc) / samc + 1) * 90);
-                //    }
-                //    /* to make sure that a call with a house cusp position returns
-                //     * a value within the house, 0.001" is added */
-                //    xp[0] = swe_degnorm(xp[0] + MILLIARCSEC);
-                //    hpos = xp[0] / 30.0 + 1;
-                //      }
-                //      break;
-                //#endif
                 /* version of Koch method: do calculations within circumpolar circle,
                  * if possible; make sure house positions 4 - 9 only appear on western
                  * hemisphere */
@@ -2506,16 +2634,9 @@ namespace SwissEphNet.CPort
                     else {
                         adp = asind(tand(geolat) * tand(de));
                     }
-                    //#if 0
-                    //      if (Math.Abs(adp) == 90)
-                    //        is_invalid = TRUE; /* omit this to use the above values */
-                    //#endif
                     admc = tand(eps) * tand(geolat) * sind(armc);
                     /* midheaven is circumpolar */
                     if (Math.Abs(admc) > 1) {
-                        //#if 0
-                        //        is_invalid = TRUE; /* omit this line to use the below values */
-                        //#endif
                         if (admc > 1)
                             admc = 1;
                         else
@@ -2557,12 +2678,76 @@ namespace SwissEphNet.CPort
                     hpos = xp[0] / 30.0 + 1;
                     break;
                 case 'C': // Campanus
+                    // we measure on equator from east point towards IC.
+                    // transformation to prime vertical, with these coordinate references
+                    // EP = 0, nadir = 90, WP = 180, Zenith = 270
                     xeq[0] = SE.swe_degnorm(mdd - 90);
                     SE.swe_cotrans(xeq, xp, -geolat);
                     /* to make sure that a call with a house cusp position returns
                      * a value within the house, 0.001" is added */
                     xp[0] = SE.swe_degnorm(xp[0] + MILLIARCSEC);
                     hpos = xp[0] / 30.0 + 1;
+                    break;
+                case 'J': // Savard-A
+                    sinfi = sind(geolat);
+                    if (Math.Abs(geolat) < VERY_SMALL) {
+                        xs2 = 1 / 3.0;
+                        xs1 = 2 / 3.0;
+                    } else {
+                        xs2 = sind(geolat / 3) / sinfi;
+                        xs1 = sind(2 * geolat / 3) / sinfi;
+                    }
+                    xs2 = asind(xs2);
+                    xs1 = asind(xs1);
+                    // xs1 and xs2 always in >= 0 < 90
+                    // house borders on prime vertical are, measured from EP downwards
+                    // h1 = 0, h4 = 90, h7 = 180, h10 = 270
+                    // h2 = xs2, h3 = xs1, h12 = 360 - xs2, h11 = 360 - xs1
+                    // h5 = h11 - 180, h6 = h12 - 180, h8 = h2 + 180, h9 = h3 + 180
+                    hcusp[1] = 0;
+                    hcusp[2] = xs2;
+                    hcusp[3] = xs1;
+                    hcusp[4] = 90;
+                    hcusp[5] = 180 - xs1;
+                    hcusp[6] = 180 - xs2;
+                    hcusp[7] = 180;
+                    hcusp[8] = 180 + xs2;
+                    hcusp[9] = 180 + xs1;
+                    hcusp[10] = 270;
+                    hcusp[11] = 360 - xs1;
+                    hcusp[12] = 360 - xs2;
+                    xeq[0] = SE.swe_degnorm(mdd - 90);
+                    SE.swe_cotrans(xeq, xp, -geolat);
+                    a = xp[0];
+                    if (SE.swe_difdeg2n(hcusp[6], hcusp[1]) > 0) {
+                        d = SE.swe_degnorm(a - hcusp[1]);
+                        for (i = 1; i <= 12; i++) {
+                            j = i + 1;
+                            if (j > 12)
+                                c2 = 360;
+                            else
+                                c2 = SE.swe_degnorm(hcusp[j] - hcusp[1]);
+                            if (d < c2) break;
+                        }
+                        c1 = SE.swe_degnorm(hcusp[i] - hcusp[1]);
+                    } else {  // houses retrograde
+                        d = SE.swe_degnorm(hcusp[1] - a);
+                        for (i = 1; i <= 12; i++) {
+                            j = i + 1;
+                            if (j > 12)
+                                c2 = 360;
+                            else
+                                c2 = SE.swe_degnorm(hcusp[1] - hcusp[j]);
+                            if (d < c2) break;
+                        }
+                        c1 = SE.swe_degnorm(hcusp[1] - hcusp[i]);
+                    }
+                    hsize = c2 - c1;
+                    if (hsize == 0) {
+                        hpos = i;
+                    } else {
+                        hpos = i + (d - c1) / hsize;
+                    }
                     break;
                 case 'U': /* Krusinski-Pisa-Goelzer */
                     if (Math.Abs(geolat) < VERY_SMALL) {	/* code below does not like geolat 0 */
@@ -2878,7 +3063,7 @@ namespace SwissEphNet.CPort
                     break;
                 default:
                     hpos = 0;
-                    if (swe_houses_armc(armc, geolat, eps, hsys, hcusp, ascmc) == SwissEph.ERR)
+                    if (swe_houses_armc_ex2(armc, geolat, eps, hsys, hcusp, ascmc, null, null, ref serr) == SwissEph.ERR)
                     {
                         //if (serr != null)
                             // swehouse.c: sprintf(serr, ..., "%c", hsys) -- see comment above.

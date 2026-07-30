@@ -152,10 +152,32 @@ internal static class Suite06Houses
             }
 
             case 8:
-                return DispatchOutcome.NotImplemented("swe_houses_ex2 is not implemented in SwissEphNet (port is at 2.08; added in 2.10).");
+            {
+                var iflag = f.GetInt("iflag");
+                var cusps = new double[37];
+                var ascmc = new double[10];
+                var cuspSpeed = new double[37];
+                var ascmcSpeed = new double[10];
+                var serr = "";
+                var rc = swe.swe_houses_ex2(jdUt, iflag, geolat, geolon, hsys, cusps, ascmc, cuspSpeed, ascmcSpeed, ref serr);
+                return CheckHousesEx2(f, precision, rc, jdUt, cusps, ascmc, cuspSpeed, ascmcSpeed, cuspCount);
+            }
 
             case 9:
-                return DispatchOutcome.NotImplemented("swe_houses_armc_ex2 is not implemented in SwissEphNet (port is at 2.08; added in 2.10).");
+            {
+                var xx = new double[6];
+                var serr = "";
+                swe.swe_calc(jdUt, SwissEph.SE_ECL_NUT, 0, xx, ref serr);
+                var eps = xx[0];
+                var armc = swe.swe_degnorm(swe.swe_sidtime(jdUt) + geolon);
+                var cusps = new double[37];
+                var ascmc = new double[10];
+                var cuspSpeed = new double[37];
+                var ascmcSpeed = new double[10];
+                serr = "";
+                var rc = swe.swe_houses_armc_ex2(armc, geolat, eps, hsys, cusps, ascmc, cuspSpeed, ascmcSpeed, ref serr);
+                return CheckHousesArmcEx2(f, precision, rc, armc, cusps, ascmc, cuspSpeed, ascmcSpeed, cuspCount);
+            }
 
             default:
                 return DispatchOutcome.Error($"Suite 6 has no testcase {testCaseId}.");
@@ -178,6 +200,35 @@ internal static class Suite06Houses
         ctx.CheckD("armc", armc);
         ctx.CheckDD("cusps", cusps[..cuspCount]);
         ctx.CheckDD("ascmc", ascmc[..6]);
+        ctx.CheckI("rc", rc);
+        return DispatchOutcome.FromMismatches(ctx.Mismatches);
+    }
+
+    // external/swisseph/setest/globals_suite.c: check_swehouses_ex2_results -- same fields as
+    // CheckHouses, plus cusp_speed/ascmc_speed. serr is not checked (globals_suite.c omits
+    // CHECK_S(serr) here, unlike testcase 7's swe_gauquelin_sector).
+    private static DispatchOutcome CheckHousesEx2(ExpFields f, Precision precision, int rc, double jdUt, double[] cusps, double[] ascmc, double[] cuspSpeed, double[] ascmcSpeed, int cuspCount)
+    {
+        var ctx = new CheckContext(f, precision);
+        ctx.CheckD("jd_ut", jdUt);
+        ctx.CheckDD("cusps", cusps[..cuspCount]);
+        ctx.CheckDD("cusp_speed", cuspSpeed[..cuspCount]);
+        ctx.CheckDD("ascmc", ascmc[..6]);
+        ctx.CheckDD("ascmc_speed", ascmcSpeed[..6]);
+        ctx.CheckI("rc", rc);
+        return DispatchOutcome.FromMismatches(ctx.Mismatches);
+    }
+
+    // external/swisseph/setest/globals_suite.c: check_swehouses_armc_ex2_results -- same fields
+    // as CheckHousesArmc, plus cusp_speed/ascmc_speed.
+    private static DispatchOutcome CheckHousesArmcEx2(ExpFields f, Precision precision, int rc, double armc, double[] cusps, double[] ascmc, double[] cuspSpeed, double[] ascmcSpeed, int cuspCount)
+    {
+        var ctx = new CheckContext(f, precision);
+        ctx.CheckD("armc", armc);
+        ctx.CheckDD("cusps", cusps[..cuspCount]);
+        ctx.CheckDD("cusp_speed", cuspSpeed[..cuspCount]);
+        ctx.CheckDD("ascmc", ascmc[..6]);
+        ctx.CheckDD("ascmc_speed", ascmcSpeed[..6]);
         ctx.CheckI("rc", rc);
         return DispatchOutcome.FromMismatches(ctx.Mismatches);
     }

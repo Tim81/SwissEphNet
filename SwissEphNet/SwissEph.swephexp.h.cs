@@ -924,6 +924,28 @@ namespace SwissEphNet
         }
 
         /// <summary>
+        /// Computes house cusps with additional flags (sidereal modes, radians, ...), together
+        /// with the daily-motion speeds of the cusps and additional points. Compatibility
+        /// overload: widens to the <c>int</c> overload, which is the signature upstream
+        /// declares. A <c>char</c> above U+00FF resolves by its low byte.
+        /// </summary>
+        public int swe_houses_ex2(double tjd_ut, Int32 iflag, double geolat, double geolon, char hsys, CPointer<double> hcusps, CPointer<double> ascmc, CPointer<double> cuspSpeed, CPointer<double> ascmcSpeed, ref string serr)
+        {
+            return SweHouse.swe_houses_ex2(tjd_ut, iflag, geolat, geolon, hsys, hcusps, ascmc, cuspSpeed, ascmcSpeed, ref serr);
+        }
+
+        /// <summary>
+        /// Computes house cusps with additional flags (sidereal modes, radians, ...), together
+        /// with the daily-motion speeds of the cusps and additional points. Matches upstream
+        /// <c>swephexp.h:820</c>, which declares <c>int hsys</c>; prefer this overload in new
+        /// code.
+        /// </summary>
+        public int swe_houses_ex2(double tjd_ut, Int32 iflag, double geolat, double geolon, int hsys, CPointer<double> hcusps, CPointer<double> ascmc, CPointer<double> cuspSpeed, CPointer<double> ascmcSpeed, ref string serr)
+        {
+            return SweHouse.swe_houses_ex2(tjd_ut, iflag, geolat, geolon, hsys, hcusps, ascmc, cuspSpeed, ascmcSpeed, ref serr);
+        }
+
+        /// <summary>
         /// Computes house cusps directly from ARMC, geographic latitude and the obliquity of
         /// the ecliptic, requiring no ephemeris data. Compatibility overload: widens to the
         /// <c>int</c> overload. A <c>char</c> above U+00FF resolves by its low byte.
@@ -941,6 +963,28 @@ namespace SwissEphNet
         public int swe_houses_armc(double armc, double geolat, double eps, int hsys, double[] cusps, double[] ascmc)
         {
             return SweHouse.swe_houses_armc(armc, geolat, eps, hsys, cusps, ascmc);
+        }
+
+        /// <summary>
+        /// Computes house cusps directly from ARMC, geographic latitude and the obliquity of
+        /// the ecliptic, requiring no ephemeris data, together with the daily-motion speeds of
+        /// the cusps and additional points. Compatibility overload: widens to the <c>int</c>
+        /// overload. A <c>char</c> above U+00FF resolves by its low byte.
+        /// </summary>
+        public int swe_houses_armc_ex2(double armc, double geolat, double eps, char hsys, CPointer<double> cusps, CPointer<double> ascmc, CPointer<double> cuspSpeed, CPointer<double> ascmcSpeed, ref string serr)
+        {
+            return SweHouse.swe_houses_armc_ex2(armc, geolat, eps, hsys, cusps, ascmc, cuspSpeed, ascmcSpeed, ref serr);
+        }
+
+        /// <summary>
+        /// Computes house cusps directly from ARMC, geographic latitude and the obliquity of
+        /// the ecliptic, requiring no ephemeris data, together with the daily-motion speeds of
+        /// the cusps and additional points. Matches upstream <c>swephexp.h:828</c>, which
+        /// declares <c>int hsys</c>; prefer this overload in new code.
+        /// </summary>
+        public int swe_houses_armc_ex2(double armc, double geolat, double eps, int hsys, CPointer<double> cusps, CPointer<double> ascmc, CPointer<double> cuspSpeed, CPointer<double> ascmcSpeed, ref string serr)
+        {
+            return SweHouse.swe_houses_armc_ex2(armc, geolat, eps, hsys, cusps, ascmc, cuspSpeed, ascmcSpeed, ref serr);
         }
 
         /// <summary>

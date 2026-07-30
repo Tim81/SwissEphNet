@@ -77,12 +77,6 @@ public sealed class ConformanceDispatcher
             case (1, 5):
                 reason = "swe_calc_pctr is not implemented in SwissEphNet (port is at 2.08; added in 2.10).";
                 return true;
-            case (6, 8):
-                reason = "swe_houses_ex2 is not implemented in SwissEphNet (port is at 2.08; added in 2.10).";
-                return true;
-            case (6, 9):
-                reason = "swe_houses_armc_ex2 is not implemented in SwissEphNet (port is at 2.08; added in 2.10).";
-                return true;
             default:
                 reason = "";
                 return false;
