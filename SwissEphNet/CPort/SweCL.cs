@@ -584,6 +584,10 @@ namespace SwissEphNet.CPort
          * attr[5]	true altitude of sun above horizon at tjd
          * attr[6]	apparent altitude of sun above horizon at tjd
          * attr[7]	angular distance of moon from sun in degrees
+         * attr[8]	magnitude acc. to NASA;
+         *              = attr[0] for partial and attr[1] for annular and total eclipses
+         * attr[9]	saros series number
+         * attr[10]	saros series member number
          *         declare as attr[20] at least !
          */
         public Int32 swe_sol_eclipse_where(
@@ -791,7 +795,7 @@ namespace SwissEphNet.CPort
                 retc |= (SwissEph.SE_ECL_PARTIAL | SwissEph.SE_ECL_NONCENTRAL);
             } else {
                 serr = C.sprintf("no solar eclipse at tjd = %f", tjd);
-                for (i = 0; i < 10; i++)
+                for (i = 0; i < 2; i++)
                     geopos[i] = 0;
                 dcore[0] = 0;
                 retc = 0;
@@ -1084,7 +1088,8 @@ namespace SwissEphNet.CPort
             if (lsun > 0) {
                 attr[0] = lsunleft / rsun / 2;
             } else {
-                attr[0] = 100;
+                //attr[0] = 100;
+                attr[0] = 1;
             }
             /*if (retc == SE_ECL_ANNULAR || retc == SE_ECL_TOTAL)
                 attr[0] = attr[1];*/
@@ -1096,7 +1101,8 @@ namespace SwissEphNet.CPort
             lmoon = rmoon;
             lctr = dctr;
             if (retc == 0 || lsun == 0) {
-                attr[2] = 100;
+                //attr[2] = 100;
+                attr[2] = 1;
             } else if (retc == SwissEph.SE_ECL_TOTAL || retc == SwissEph.SE_ECL_ANNULAR) {
                 attr[2] = lmoon * lmoon / lsun / lsun;
             } else {
@@ -2016,7 +2022,7 @@ namespace SwissEphNet.CPort
          *              SE_ECL_VISIBLE, 
          *              SE_ECL_MAX_VISIBLE, 
          *              SE_ECL_1ST_VISIBLE, SE_ECL_2ND_VISIBLE
-         *              SE_ECL_3ST_VISIBLE, SE_ECL_4ND_VISIBLE
+         *              SE_ECL_3RD_VISIBLE, SE_ECL_4TH_VISIBLE
          *
          * tret[0]	time of maximum eclipse
          * tret[1]	time of first contact
@@ -2072,7 +2078,7 @@ namespace SwissEphNet.CPort
          *              SE_ECL_VISIBLE, 
          *              SE_ECL_MAX_VISIBLE, 
          *              SE_ECL_1ST_VISIBLE, SE_ECL_2ND_VISIBLE
-         *              SE_ECL_3ST_VISIBLE, SE_ECL_4ND_VISIBLE
+         *              SE_ECL_3RD_VISIBLE, SE_ECL_4TH_VISIBLE
          *              SE_ECL_OCC_BEG_DAYLIGHT, SE_ECL_OCC_END_DAYLIGHT
          * The latter two indicate that the beginning or end of the occultation takes
          * place during the day. If Venus is occulted, it may be observable with the
@@ -2125,7 +2131,7 @@ namespace SwissEphNet.CPort
             Int32 retflag = 0, retc;
             double t, tjd, dt, dtint, K, T, T2, T3, T4, F, M, Mm;
             double tjdr = 0, tjds = 0;
-            double E, Ff, A1, Om;
+            double E, Ff; // A1, Om;
             double[] xs = new double[6], xm = new double[6], ls = new double[6], lm = new double[6], x1 = new double[6], x2 = new double[6]; double dm, ds;
             double rmoon, rsun, rsplusrm, rsminusrm;
             double[] dc = new double[3]; double dctr, dctrmin;
@@ -2171,16 +2177,14 @@ namespace SwissEphNet.CPort
                                 + 0.1017438 * T2
                                 + 0.00001239 * T3
                                 + 0.000000058 * T4);
-            Om = SE.swe_degnorm(124.7746 - 1.56375580 * K
-                                + 0.0020691 * T2
-                                + 0.00000215 * T3);
+            // Om = SE.swe_degnorm(124.7746 - 1.56375580 * K + 0.0020691 * T2 + 0.00000215 * T3);
             E = 1 - 0.002516 * T - 0.0000074 * T2;
-            A1 = SE.swe_degnorm(299.77 + 0.107408 * K - 0.009173 * T2);
+            // A1 = SE.swe_degnorm(299.77 + 0.107408 * K - 0.009173 * T2);
             M *= SwissEph.DEGTORAD;
             Mm *= SwissEph.DEGTORAD;
             F *= SwissEph.DEGTORAD;
-            Om *= SwissEph.DEGTORAD;
-            A1 *= SwissEph.DEGTORAD;
+            // Om *= SwissEph.DEGTORAD;
+            // A1 *= SwissEph.DEGTORAD;
             tjd = tjd - 0.4075 * Math.Sin(Mm)
                       + 0.1721 * E * Math.Sin(M);
             SE.swe_set_topo(geopos[0], geopos[1], geopos[2]);
@@ -3077,24 +3081,23 @@ namespace SwissEphNet.CPort
          *                      *        SE_TRUE_TO_APP
          *
          * function returns:
-         * function returns:
          * double *dret;        * array of 4 doubles; declare 20 doubles !
          * - dret[0] true altitude, if possible; otherwise input value
          * - dret[1] apparent altitude, if possible; otherwise input value
          * - dret[2] refraction
          * - dret[3] dip of the horizon
-         * 
+         *
          * The body is above the horizon if the dret[0] != dret[1]
          *
          * case 1, conversion from true altitude to apparent altitude
-         * - apparent altitude, if body appears above is observable above ideal horizon
+         * - apparent altitude, if body is observable above ideal horizon
          * - true altitude (the input value), otherwise
          *   "ideal horizon" is the horizon as seen above an ideal sphere (as seen
          *   from a plane over the ocean with a clear sky)
          * case 2, conversion from apparent altitude to true altitude
          * - the true altitude resulting from the input apparent altitude, if this value
          *   is a plausible apparent altitude, i.e. if it is a position above the ideal
-         *   horizon
+         *   horizon, taking into account the dip of the horizon
          * - the input altitude otherwise
          *
          * The body is above the horizon if the dret[0] != dret[1]
@@ -3155,6 +3158,7 @@ namespace SwissEphNet.CPort
             } else {
                 refr = calc_astronomical_refr(inalt, atpress, attemp);
                 trualt = inalt - refr;
+                //printf("inalt=%f, dip=%f\n", inalt, dip);
                 if (dret != null) {
                     if (inalt > dip) {
                         dret[0] = trualt;
@@ -3168,7 +3172,11 @@ namespace SwissEphNet.CPort
                         dret[3] = dip;
                     }
                 }
-                if (trualt > dip)
+                // Apparent altitude cannot be below dip.
+                // True altitude is only returned if apparent altitude is hgher than dip.
+                // Othwise the apparent altitude is returned.
+                //if (trualt > dip)
+                if (inalt >= dip)  // bug fix dieter, 4 feb 20
                     return trualt;
                 else
                     return inalt;
@@ -3218,10 +3226,10 @@ namespace SwissEphNet.CPort
         double calc_dip(double geoalt, double atpress, double attemp, double lapse_rate) {
             /* below formula is based on A. Thom, Megalithic lunar observations, 1973 (page 32).
             * conversion to metric has been done by
-            * V. Reijs, 2000, http://www.iol.ie/~geniet/eng/refract.htm
+            * V. Reijs, 2000, http://www.archaeocosmology.org/eng/refract.htm#Sea
             */
             double krefr = (0.0342 + lapse_rate) / (0.154 * 0.0238);
-            double d = 1 - 1.8480 * krefr * atpress / (273.16 + attemp) / (273.16 + attemp);
+            double d = 1 - 1.8480 * krefr * atpress / (273.15 + attemp) / (273.15 + attemp);
             /* return -0.03203*sqrt(geoalt)*sqrt(d); */
             /* double a = acos(1/(1+geoalt/EARTH_RADIUS));*/
             return -180.0 / Math.PI * Math.Acos(1 / (1 + geoalt / Sweph.EARTH_RADIUS)) * Math.Sqrt(d);
@@ -3537,7 +3545,7 @@ namespace SwissEphNet.CPort
              * the function lun_eclipse_how().
              */
             dtstart = 0.1;
-            if (tjd < 2000000 || tjd > 2500000)
+            if (tjd < 2100000 || tjd > 2500000)	// was tjd < 2000000 until 26-aug-22
                 dtstart = 5;
             dtdiv = 4;
             for (j = 0, dt = dtstart;
@@ -4282,7 +4290,6 @@ namespace SwissEphNet.CPort
             int i;
             double[] xx = new double[6], xaz = new double[6], xaz2 = new double[6];
             double dd, dt, refr;
-            double dtsum = 0;
             Int32 iflag = epheflag & (SwissEph.SEFLG_JPLEPH | SwissEph.SEFLG_SWIEPH | SwissEph.SEFLG_MOSEPH);
             Int32 iflagtopo = iflag | SwissEph.SEFLG_EQUATORIAL;
             double sda, armc, md, dmd, mdrise, rdi, tr, dalt;
@@ -4383,9 +4390,11 @@ namespace SwissEphNet.CPort
                 dd = (xaz2[1] - xaz[1]);
                 dalt = xaz[1] + rdi;
                 dt = dalt / dd / 1000.0;
-                if (dt > 0.1) dt = 0.1;
-                else if (dt < -0.1) dt = -0.1;
-                dtsum += dt;
+                if (dt > 0.1) {
+                    dt = 0.1;
+                } else if (dt < -0.1) {
+                    dt = -0.1;
+                }
                 if (false && Math.Abs(dt) > 5.0 / 86400.0 && nloop < 20)
                     nloop++;
                 tr -= dt;
@@ -4438,13 +4447,15 @@ namespace SwissEphNet.CPort
             ref string serr) {
             Int32 retval = 0;
             /* Simple fast algorithm for risings and settings of 
-             * - planets Sun, Moon, Mercury - Pluto + Lunar Nodes and Fixed stars
+             * - planets Sun, Moon, Mercury - Pluto + Lunar Nodes
              * Does not work well for geographic latitudes
              * > 65 N/S for the Sun
              * > 60 N/S for the Moon and the planets
              * Beyond these limits, some risings or settings may be missed.
              */
-            if (true && (rsmi & (SwissEph.SE_CALC_RISE | SwissEph.SE_CALC_SET)) != 0
+            bool do_fixstar = !String.IsNullOrEmpty(starname);
+            if (!do_fixstar
+              && (rsmi & (SwissEph.SE_CALC_RISE | SwissEph.SE_CALC_SET)) != 0
               && 0 == (rsmi & SwissEph.SE_BIT_FORCE_SLOW_METHOD)
               && 0 == (rsmi & (SwissEph.SE_BIT_CIVIL_TWILIGHT | SwissEph.SE_BIT_NAUTIC_TWILIGHT | SwissEph.SE_BIT_ASTRO_TWILIGHT))
               && (ipl >= SwissEph.SE_SUN && ipl <= SwissEph.SE_TRUE_NODE)
@@ -4485,6 +4496,11 @@ namespace SwissEphNet.CPort
             {
                 serr = C.sprintf("location for swe_rise_trans() must be between %.0f and %.0f m above sea", Sweph.SEI_ECL_GEOALT_MIN, Sweph.SEI_ECL_GEOALT_MAX);
                 return Sweph.ERR;
+            }
+            // if horhgt == -100, set horhgt = dip of horizon, i.e. refracted height
+            // of ocean if visible at horizon.
+            if (horhgt == -100) {
+                horhgt = 0.0001 + calc_dip(geopos[2], atpress, attemp, const_lapse_rate);
             }
             /*SE.SwephLib.swi_set_tid_acc(tjd_ut, epheflag, 0, ref serr);*/
             /* function calls for Pluto with asteroid number 134340
@@ -4602,9 +4618,10 @@ namespace SwissEphNet.CPort
                     for (; dt > 0.0001; dt /= 3) {
                         for (i = 0, tt = tcu - dt; i < 3; tt += dt, i++) {
                             te = tt + SE.swe_deltat_ex(tt, epheflag, ref serr);
-                            if (!do_fixstar)
+                            if (!do_fixstar) {
                                 if (SE.swe_calc(te, ipl, iflag, xc, ref serr) == SwissEph.ERR)
                                     return SwissEph.ERR;
+                            }
                             if ((rsmi & SwissEph.SE_BIT_GEOCTR_NO_ECL_LAT) != 0)
                                 xc[1] = 0;
                             ncalc++;
@@ -4745,8 +4762,8 @@ namespace SwissEphNet.CPort
                 }
                 if (t > tjd_ut) {
                     tret = t;
-                    //  fprintf(stderr, "nazalt=%d\n", nazalt);
-                    //  fprintf(stderr, "ncalc=%d\n", ncalc);
+                    //if (0)  fprintf(stderr, "nazalt=%d\n", nazalt);
+                    //if (0)  fprintf(stderr, "ncalc=%d\n", ncalc);
                     return SwissEph.OK;
                 }
             }
@@ -5867,7 +5884,7 @@ static const double Gmsm_factor_AA[] = {
             Int32 iflJ2000 = (iflag & SwissEph.SEFLG_EPHMASK) | SwissEph.SEFLG_J2000 | SwissEph.SEFLG_XYZ | SwissEph.SEFLG_TRUEPOS | SwissEph.SEFLG_NONUT | SwissEph.SEFLG_SPEED;
             Int32 iflJ2000p = (iflag & SwissEph.SEFLG_EPHMASK) | SwissEph.SEFLG_J2000 | SwissEph.SEFLG_TRUEPOS | SwissEph.SEFLG_NONUT | SwissEph.SEFLG_SPEED;
             double Gmsm = 0;
-            Int32 iflg0 = 0;
+            // Int32 iflg0 = 0;
             double fac, sgn, rxy, rxyz, c2, cosnode, sinnode;
             double incl, node, parg, peri, mlon;
             double csid, ctro, csyn, dmot, pa;
@@ -5881,8 +5898,7 @@ static const double Gmsm_factor_AA[] = {
                 serr = C.sprintf("error in swe_get_orbital_elements(): object %d not valid\n", ipl);
                 return SwissEph.ERR;
             }
-            if (ipl != SwissEph.SE_MOON)
-                iflg0 |= SwissEph.SEFLG_HELCTR;
+            // if (ipl != SwissEph.SE_MOON) iflg0 |= SwissEph.SEFLG_HELCTR;
             /* first, we need a heliocentric distance of the planet */
             if (SE.swe_calc(tjd_et, ipl, iflJ2000p, x, ref serr) == SwissEph.ERR)
                 return SwissEph.ERR;

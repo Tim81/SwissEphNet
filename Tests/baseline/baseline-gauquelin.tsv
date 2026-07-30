@@ -582,7 +582,7 @@ GQ|9|2600000|5|-118.24,34.05,100|0,0	0	34.19553543338001
 GQ|9|2600000|5|0,51.5,0|0,0	0	9.331267519170664	
 GQ|Aldebaran|1000000|0|0,51.5,0|0,0	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]'
 GQ|Aldebaran|1000000|1|0,51.5,0|0,0	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]'
-GQ|Aldebaran|1000000|2|0,51.5,0|0,0	0	10.296588752648166	
-GQ|Aldebaran|1000000|3|0,51.5,0|0,0	0	10.292623187233541	
-GQ|Aldebaran|1000000|4|0,51.5,0|0,0	0	10.294814297002375	
-GQ|Aldebaran|1000000|5|0,51.5,0|0,0	0	10.290905708714188	
+GQ|Aldebaran|1000000|2|0,51.5,0|0,0	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]'
+GQ|Aldebaran|1000000|3|0,51.5,0|0,0	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]'
+GQ|Aldebaran|1000000|4|0,51.5,0|0,0	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]'
+GQ|Aldebaran|1000000|5|0,51.5,0|0,0	-1	0	SwissEph file 'sefstars.txt' not found in PATH '[ephe]'
