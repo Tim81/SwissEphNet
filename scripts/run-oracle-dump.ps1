@@ -5,9 +5,11 @@
     writes their raw output for a later, separate comparison pass.
 
 .DESCRIPTION
-    Two grids, both replayed by the same pair of drivers (Tools/CReference/sedump.c, compiled
-    here and linked against Astrodienst's own C; Tools/OracleDump, built here, against this
-    port):
+    Two grids, each replayed by three drivers: Tools/CReference/sedump.c, compiled here and
+    linked against Astrodienst's own 2.10.03 C (the port's target); Tools/CReference/build-c.ps1's
+    prebuilt sedump-2.08.exe, linked against Astrodienst's own 2.08 C (the port's current
+    version) and compiled against 2.08's own headers -- see that script's header for why it is
+    built there, not here; and Tools/OracleDump, built here, against this port:
 
       Tools/OracleGrid/grid-analytic.tsv  -- SEFLG_MOSEPH swe_calc/swe_calc_ut plus
                                               swe_houses/swe_houses_armc. Touches no ephemeris
@@ -20,13 +22,21 @@
     Building sedump.exe needs a libswe .lib to link against. Tools/CReference/build-c.ps1
     produces one at external/.c-reference/build-2.10.03/libswe-2.10.03.lib by default, which is
     also this script's default -LibPath; run that script first if the .lib is missing, this one
-    does not build it.
+    does not build it. sedump.exe is always compiled against external/swisseph's own headers to
+    match, so -LibPath must stay pointed at a library built from that same source tree --
+    repointing it at build-2.08/libswe-2.08.lib without also repointing the header search path
+    would link a 2.10.03-header binary against 2.08 object code, exactly the mismatch
+    Tools/CReference/build-c.ps1's own header warns about. -Sedump208Path below is the supported
+    way to bring 2.08 into this comparison: a whole separate binary, built by that script against
+    2.08's own headers, not a repointed -LibPath here.
 
-    This script does not compare the two sides' output against each other -- that is
-    scripts/verify-oracle.ps1's job. It only checks that each side emitted exactly as many rows
-    as its grid contains (see the row-count guards below), which catches a driver silently
-    truncating its own run without saying anything at all about whether the two sides agree on
-    any individual value.
+    This script does not compare any of the three sides' output against each other -- that is
+    scripts/verify-oracle.ps1's job for the port against 2.10.03 C, and is a new three-way
+    classifier's job (see scripts/classify-oracle-versions.ps1) for the port against both C
+    versions plus the two C versions against each other. It only checks that each driver emitted
+    exactly as many rows as its grid contains (see the row-count guards below), which catches a
+    driver silently truncating its own run without saying anything at all about whether the
+    sides agree on any individual value.
 
     THE EPHEMERIS FILE SET IS PART OF THE CONTRACT
 
@@ -41,10 +51,17 @@
     in it ever opens a file.
 
 .PARAMETER LibPath
-    The libswe .lib sedump.exe links against. Defaults to the 2.10.03 build
-    Tools/CReference/build-c.ps1 produces. Pointing this at the 2.08 build instead isolates
-    transliteration defects from porting-queue differences -- the same distinction
-    Tools/CReference/build-c.ps1's own header draws between the two libraries it builds.
+    The libswe .lib sedump.exe links against, compiled here against external/swisseph's own
+    headers -- see the .DESCRIPTION for why this must stay a 2.10.03 library. Defaults to the
+    2.10.03 build Tools/CReference/build-c.ps1 produces.
+
+.PARAMETER Sedump208Path
+    The prebuilt sedump-2.08.exe Tools/CReference/build-c.ps1 produces, already linked against
+    libswe-2.08.lib and compiled against external/pyswisseph-2.08's own headers. Defaults to
+    sedump-2.08.exe under -OutputDir. Run that script first if it is missing; this script only
+    runs it, it does not build it (unlike sedump.exe against 2.10.03, which this script does
+    compile itself -- see the .DESCRIPTION for why the 2.08 driver's build step lives there
+    instead).
 
 .PARAMETER GridPath
     The analytic grid TSV both drivers replay. Defaults to Tools/OracleGrid/grid-analytic.tsv.
@@ -67,6 +84,7 @@
 [CmdletBinding()]
 param(
     [string] $LibPath,
+    [string] $Sedump208Path,
     [string] $GridPath,
     [string] $FilesGridPath,
     [string] $EpheDir,
@@ -86,8 +104,12 @@ if (-not $GridPath) { $GridPath = Join-Path $repoRoot 'Tools/OracleGrid/grid-ana
 if (-not $FilesGridPath) { $FilesGridPath = Join-Path $repoRoot 'Tools/OracleGrid/grid-files.tsv' }
 if (-not $EpheDir) { $EpheDir = Join-Path $repoRoot 'external/swisseph/ephe' }
 if (-not $OutputDir) { $OutputDir = Join-Path $repoRoot 'external/.c-reference' }
+# Depends on $OutputDir's own default just above -- Tools/CReference/build-c.ps1 writes
+# sedump-2.08.exe to that same directory by default.
+if (-not $Sedump208Path) { $Sedump208Path = Join-Path $OutputDir 'sedump-2.08.exe' }
 
 $LibPath = [System.IO.Path]::GetFullPath($LibPath)
+$Sedump208Path = [System.IO.Path]::GetFullPath($Sedump208Path)
 $GridPath = [System.IO.Path]::GetFullPath($GridPath)
 $FilesGridPath = [System.IO.Path]::GetFullPath($FilesGridPath)
 $EpheDir = [System.IO.Path]::GetFullPath($EpheDir)
@@ -236,6 +258,9 @@ try {
     if (-not (Test-Path -LiteralPath $LibPath -PathType Leaf)) {
         Fail "Library not found at $LibPath. Run: pwsh Tools/CReference/build-c.ps1"
     }
+    if (-not (Test-Path -LiteralPath $Sedump208Path -PathType Leaf)) {
+        Fail "sedump-2.08.exe not found at $Sedump208Path. Run: pwsh Tools/CReference/build-c.ps1"
+    }
 
     $expectedAnalyticRows = Get-GridDataRowCount -Path $GridPath
     if ($expectedAnalyticRows -eq 0) { Fail "$GridPath contains zero data rows." }
@@ -339,9 +364,35 @@ try {
     $oracleDumpFilesOutput | Write-Host
 
     # ---------------------------------------------------------------------------------------
-    # Row-count guards: neither side may have silently emitted fewer (or more) rows than its
-    # grid contains. Says nothing about whether the two sides agree on any individual value --
-    # that comparison is scripts/verify-oracle.ps1's job.
+    # 2.08 grid runs -- the prebuilt driver, not compiled by this script (see the .DESCRIPTION
+    # and -Sedump208Path). swe_close() runs at the top of every row inside sedump.c regardless of
+    # which library it is linked against, so this needs no fresh-state handling beyond what the
+    # 2.10.03 runs above already rely on.
+    # ---------------------------------------------------------------------------------------
+
+    $c208OutputPath = Join-Path $OutputDir 'dump-c-2.08.tsv'
+    Write-Host 'Running sedump-2.08.exe (analytic grid)...'
+    $sedump208Output = @(& $Sedump208Path $GridPath $c208OutputPath 2>&1)
+    if ($LASTEXITCODE -ne 0) {
+        $sedump208Output | Write-Host
+        Fail "sedump-2.08.exe exited $LASTEXITCODE on the analytic grid."
+    }
+    $sedump208Output | Write-Host
+
+    $c208FilesOutputPath = Join-Path $OutputDir 'dump-c-2.08-files.tsv'
+    Write-Host 'Running sedump-2.08.exe (files grid)...'
+    $sedump208FilesOutput = @(& $Sedump208Path $FilesGridPath $c208FilesOutputPath $EpheDir 2>&1)
+    if ($LASTEXITCODE -ne 0) {
+        $sedump208FilesOutput | Write-Host
+        Fail "sedump-2.08.exe exited $LASTEXITCODE on the files grid."
+    }
+    $sedump208FilesOutput | Write-Host
+
+    # ---------------------------------------------------------------------------------------
+    # Row-count guards: no side may have silently emitted fewer (or more) rows than its grid
+    # contains. Says nothing about whether the sides agree on any individual value -- that
+    # comparison is scripts/verify-oracle.ps1's job for the port against 2.10.03 C, and
+    # scripts/classify-oracle-versions.ps1's job for the three-way comparison against 2.08 C too.
     # ---------------------------------------------------------------------------------------
 
     $cRowCount = Get-FileLineCount -Path $cOutputPath
@@ -362,11 +413,22 @@ try {
         Fail "OracleDump.exe wrote $netFilesRowCount row(s) to $netFilesOutputPath but the files grid has $expectedFilesRows data row(s). A driver that silently emits fewer (or more) rows than the grid must not read as a pass."
     }
 
+    $c208RowCount = Get-FileLineCount -Path $c208OutputPath
+    if ($c208RowCount -ne $expectedAnalyticRows) {
+        Fail "sedump-2.08.exe wrote $c208RowCount row(s) to $c208OutputPath but the analytic grid has $expectedAnalyticRows data row(s). A driver that silently emits fewer (or more) rows than the grid must not read as a pass."
+    }
+    $c208FilesRowCount = Get-FileLineCount -Path $c208FilesOutputPath
+    if ($c208FilesRowCount -ne $expectedFilesRows) {
+        Fail "sedump-2.08.exe wrote $c208FilesRowCount row(s) to $c208FilesOutputPath but the files grid has $expectedFilesRows data row(s). A driver that silently emits fewer (or more) rows than the grid must not read as a pass."
+    }
+
     Write-Host ''
-    Write-Host "PASS: both drivers wrote $expectedAnalyticRows analytic-grid row(s) and $expectedFilesRows files-grid row(s), matching their grids." -ForegroundColor Green
+    Write-Host "PASS: every driver wrote $expectedAnalyticRows analytic-grid row(s) and $expectedFilesRows files-grid row(s), matching their grids." -ForegroundColor Green
     Write-Host "  $cOutputPath"
+    Write-Host "  $c208OutputPath"
     Write-Host "  $netOutputPath"
     Write-Host "  $cFilesOutputPath"
+    Write-Host "  $c208FilesOutputPath"
     Write-Host "  $netFilesOutputPath"
 }
 catch {

@@ -5,53 +5,122 @@
 // does not match outright must have an entry in Tests/oracle/known-diff.tsv -- see KnownDiffList.cs
 // and OracleVerifyReport.cs for the three-way check that keeps the two in sync.
 //
-// Never invoke this directly -- see scripts/verify-oracle.ps1 and scripts/regenerate-oracle-known-diff.ps1.
+// "classify" is a third, unrelated mode sharing this same entry point and dump-reading machinery:
+// it takes a 2.08 C dump as well and sorts every case_id into one of four buckets by which C
+// version(s) the port's result matches -- 2.08 (the version the port tracks), 2.10.03 (the
+// upgrade target), both or neither -- see ThreeWayClassification.cs and
+// Tests/oracle/version-classification.tsv's own header. It is not a gate: unlike "verify", it never
+// fails on what it finds, only on a structural problem with the inputs (see RunClassify).
+//
+// Never invoke this directly -- see scripts/verify-oracle.ps1, scripts/regenerate-oracle-known-diff.ps1
+// and scripts/classify-oracle-versions.ps1.
 //
 // Usage:
 //   OracleVerify verify   <c-dump.tsv> <net-dump.tsv> <known-diff.tsv>
 //   OracleVerify generate <c-dump.tsv> <net-dump.tsv> <output.tsv>
+//   OracleVerify classify <c-2.10.03-dump.tsv> <c-2.08-dump.tsv> <net-dump.tsv> <output.tsv>
 
 using System.Globalization;
 using OracleVerify;
 
 if (args.Length < 1)
 {
-    Console.Error.WriteLine("Usage: OracleVerify verify|generate <c-dump.tsv> <net-dump.tsv> <known-diff.tsv|output.tsv>");
+    Console.Error.WriteLine("Usage: OracleVerify verify|generate|classify <args...>");
     return 2;
 }
 
 var mode = args[0];
-if (args.Length != 4)
-{
-    Console.Error.WriteLine($"Usage: OracleVerify {mode} <c-dump.tsv> <net-dump.tsv> <path>");
-    return 2;
-}
-
-var cDumpPath = args[1];
-var netDumpPath = args[2];
-var thirdPath = args[3];
-
-IReadOnlyList<RowOutcome> outcomes;
-try
-{
-    outcomes = LoadAndCompare(cDumpPath, netDumpPath);
-}
-catch (Exception ex) when (ex is IOException or FormatException)
-{
-    Console.Error.WriteLine(ex.Message);
-    return 2;
-}
-
 switch (mode)
 {
     case "verify":
-        return RunVerify(outcomes, thirdPath);
     case "generate":
-        return RunGenerate(outcomes, thirdPath);
+        return RunTwoDumpMode(mode, args);
+    case "classify":
+        return RunClassify(args);
     default:
-        Console.Error.WriteLine($"Unknown mode '{mode}'. Expected 'verify' or 'generate'.");
+        Console.Error.WriteLine($"Unknown mode '{mode}'. Expected 'verify', 'generate' or 'classify'.");
         return 2;
 }
+
+// "verify" and "generate" both start from the same pairwise dump comparison; only what they do
+// with the result (RunVerify vs. RunGenerate) differs.
+static int RunTwoDumpMode(string mode, string[] args)
+{
+    if (args.Length != 4)
+    {
+        Console.Error.WriteLine($"Usage: OracleVerify {mode} <c-dump.tsv> <net-dump.tsv> <path>");
+        return 2;
+    }
+
+    var cDumpPath = args[1];
+    var netDumpPath = args[2];
+    var thirdPath = args[3];
+
+    IReadOnlyList<RowOutcome> outcomes;
+    try
+    {
+        outcomes = LoadAndCompare(cDumpPath, netDumpPath);
+    }
+    catch (Exception ex) when (ex is IOException or FormatException)
+    {
+        Console.Error.WriteLine(ex.Message);
+        return 2;
+    }
+
+    return mode == "verify" ? RunVerify(outcomes, thirdPath) : RunGenerate(outcomes, thirdPath);
+}
+
+// classify never fails on what it finds -- see this file's own top-of-file comment -- only on a
+// structural problem with the inputs (a missing dump, a row-count or case_id-set mismatch between
+// all three dumps), the same posture RunTwoDumpMode's LoadAndCompare takes for two.
+static int RunClassify(string[] args)
+{
+    if (args.Length != 5)
+    {
+        Console.Error.WriteLine("Usage: OracleVerify classify <c-2.10.03-dump.tsv> <c-2.08-dump.tsv> <net-dump.tsv> <output.tsv>");
+        return 2;
+    }
+
+    var c210DumpPath = args[1];
+    var c208DumpPath = args[2];
+    var netDumpPath = args[3];
+    var outputPath = args[4];
+
+    IReadOnlyList<ThreeWayRow> rows;
+    try
+    {
+        rows = ThreeWayClassifier.LoadAndClassify(c210DumpPath, c208DumpPath, netDumpPath);
+    }
+    catch (Exception ex) when (ex is IOException or FormatException)
+    {
+        Console.Error.WriteLine(ex.Message);
+        return 2;
+    }
+
+    ThreeWayClassificationFile.Save(outputPath, rows);
+
+    Console.WriteLine($"Classified {rows.Count} case(s), wrote {outputPath}");
+    foreach (var g in rows
+                 .GroupBy(r => r.Classification)
+                 .OrderBy(g => VersionClassificationNames.ToName(g.Key), StringComparer.Ordinal))
+    {
+        Console.WriteLine($"  {VersionClassificationNames.ToName(g.Key),-15} {g.Count(),6}  {ClassificationReading(g.Key)}");
+    }
+
+    return 0;
+}
+
+// One short reading per classification, matching ThreeWayClassification.cs's HeaderComment and
+// VersionClassification's own doc comment -- so scripts/classify-oracle-versions.ps1's console
+// output tells a reader what a count means without sending them to either place first.
+static string ClassificationReading(VersionClassification classification) => classification switch
+{
+    VersionClassification.AgreesBoth => "agrees with both C versions",
+    VersionClassification.Tracks208 => "porting work outstanding",
+    VersionClassification.Tracks210 => "already ported, ahead of 2.08",
+    VersionClassification.TracksNeither => "mixed state -- expected mid-port, not by itself a defect",
+    _ => throw new ArgumentOutOfRangeException(nameof(classification)),
+};
 
 // Loads both dumps and returns one RowOutcome per case_id, sorted by case_id for deterministic
 // output. Fails loudly (not by returning an empty/partial result) on any of: a missing dump file,

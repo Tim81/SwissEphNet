@@ -200,3 +200,13 @@ FakesAssemblies/
 # Tests/oracle/known-diff.tsv its provenance log.
 !/Tests/oracle/regenerations.log
 !/Tests/oracle/regenerations-files.log
+
+# Same for the three-way (port vs 2.08 C vs 2.10.03 C) version-classification regeneration log --
+# see scripts/classify-oracle-versions.ps1. Excluded by the blanket "*.log" rule otherwise.
+!/Tests/oracle/version-classification-regenerations.log
+
+# Provenance log for scripts/verify-swetest-diff.ps1 -Regenerate (the swetest text-diff harness'
+# known-diff list). Same reasoning as the two negations above: a regenerate can add or worsen
+# rows, so the reason for doing so has to survive in the repo, not just in a PR description.
+# Excluded by the blanket "*.log" rule otherwise.
+!/Tests/swetest/regenerations.log

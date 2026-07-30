@@ -1,0 +1,6 @@
+2026-07-30 (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) (0 -> 13824 case(s), 13824 classification(s) changed): Initial three-way classification: measure the port against both 2.08 and 2.10.03 C reference builds for the first time.
+2026-07-30 (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) (0 -> 2024 case(s), 2024 classification(s) changed): Initial three-way classification: measure the port against both 2.08 and 2.10.03 C reference builds for the first time.
+2026-07-30 (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) (13824 -> 13851 case(s), 13851 classification(s) changed): Rename classification categories to describe the observation, not infer a cause
+2026-07-30 (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) (2024 -> 2051 case(s), 2051 classification(s) changed): Rename classification categories to describe the observation, not infer a cause
+2026-07-30 (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) (13851 -> 13851 case(s), 0 classification(s) changed): Verify regeneration is byte-identical
+2026-07-30 (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) (2051 -> 2051 case(s), 0 classification(s) changed): Verify regeneration is byte-identical

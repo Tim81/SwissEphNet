@@ -4,16 +4,33 @@
     Builds Astrodienst's own C with MSVC, so the port can be compared against it.
 
 .DESCRIPTION
-    Produces four artifacts under -OutputDir:
+    Produces five artifacts under -OutputDir:
 
         build-2.10.03/libswe-2.10.03.lib   from external/swisseph            (the port's target)
         build-2.08/libswe-2.08.lib         from external/pyswisseph-2.08     (the port's current version)
         swetest.exe                        from external/swisseph/swetest.c  (linked against 2.10.03)
-        toolchain.txt                      compiler, flags and provenance the three artifacts above were built with
+        sedump-2.08.exe                    from Tools/CReference/sedump.c    (linked against 2.08)
+        toolchain.txt                      compiler, flags and provenance the four artifacts above were built with
 
     Two libraries, not one, because they answer different questions. Comparing the port
     against 2.08 C isolates transliteration defects; comparing it against 2.10.03 C is the
     porting work queue. Conflating the two is how a porting bug gets filed as version drift.
+
+    sedump-2.08.exe is the same driver scripts/run-oracle-dump.ps1 already builds against
+    libswe-2.10.03.lib, compiled here a second time against libswe-2.08.lib instead. It is built
+    here, not by run-oracle-dump.ps1, specifically so it is compiled against
+    external/pyswisseph-2.08's own swephexp.h rather than external/swisseph's -- this script
+    already has both source trees and the toolchain set up, and mixing a 2.10.03 header with the
+    2.08 library (or vice versa) is a real hazard: the struct layouts and prototypes usually
+    agree, so a mismatched pairing would still link and run, and would silently produce wrong
+    values rather than fail to build. Every function sedump.c calls (swe_calc, swe_calc_ut,
+    swe_houses, swe_houses_armc, swe_close, swe_set_ephe_path, swe_set_topo, swe_set_sid_mode,
+    swe_get_planet_name, swe_fixstar, swe_fixstar_ut, swe_fixstar2, swe_fixstar2_ut,
+    swe_fixstar_mag) is declared in external/pyswisseph-2.08/swephexp.h with the same signature it
+    has in 2.10.03, and swe_fixstar2/swe_fixstar2_ut -- the ones most likely to be 2.10-only,
+    since Astrodienst kept extending the fixed-star API across releases -- are both implemented in
+    external/pyswisseph-2.08/sweph.c, not just declared. sedump.c itself needs no change for
+    either header.
 
     The compiler identity is part of the result, not an incidental detail: reference values
     depend on it. Every run writes toolchain.txt recording the compiler and linker versions, the
@@ -579,6 +596,35 @@ try {
     $lib208 = Build-Libswe -VcVars $vcvars -SourceDir $src208 -BuildDir $build208 -LibName 'libswe-2.08.lib' -Sources $LibSources208
     Assert-NoFmaContraction -VcVars $vcvars -BuildDir $build208 -ArtifactPath $lib208
 
+    # sedump.c is this repo's own file, not upstream, so unlike swetest.c below it needs no patch
+    # for either C version -- see the header's .DESCRIPTION for why it is compiled against the
+    # 2.08 headers here rather than repointed at the 2.10.03 driver run-oracle-dump.ps1 already
+    # builds.
+    #
+    # Not FMA-checked, unlike lib208/lib210/swetest_patched.obj above and below: sedump.c parses
+    # doubles with strtod, hands them straight to whichever swe_* function the grid row names, and
+    # prints the bits that function returns -- it performs no floating-point arithmetic of its own
+    # for a contraction to apply to. Assert-NoFmaContraction's own vacuous-build guard (at least
+    # 100 multiply instructions) confirms this: sedump.obj disassembles to 0. The FMA risk this
+    # build cares about lives entirely inside libswe-2.08.lib, already checked above.
+    Write-Host 'Building sedump 2.08...'
+    $sedumpSource = Join-Path $repoRoot 'Tools/CReference/sedump.c'
+    $sedump208Obj = Join-Path $build208 'sedump.obj'
+    $compile = "cl /nologo /c /TC $commonFlags /I`"$src208`" /Fo:`"$sedump208Obj`" `"$sedumpSource`""
+    $result = Invoke-InVcEnv -VcVars $vcvars -WorkingDir $build208 -Command $compile
+    if ($result.ExitCode -ne 0) {
+        $result.Output | Write-Host
+        Fail 'Compiling sedump.c against the 2.08 headers failed.'
+    }
+
+    $sedump208Exe = Join-Path $tempRoot 'sedump-2.08.exe'
+    $link = "cl /nologo /Fe:`"$sedump208Exe`" `"$sedump208Obj`" /link `"$lib208`""
+    $result = Invoke-InVcEnv -VcVars $vcvars -WorkingDir $build208 -Command $link
+    if ($result.ExitCode -ne 0) {
+        $result.Output | Write-Host
+        Fail 'Linking sedump-2.08.exe failed.'
+    }
+
     Write-Host 'Building swetest 2.10.03...'
     $patched = Join-Path $build210 'swetest_patched.c'
     New-PatchedSwetestSource -SourcePath (Join-Path $src210 'swetest.c') -DestinationPath $patched
@@ -615,6 +661,7 @@ try {
     $lib210Sha256 = Get-Sha256Hex -Path $lib210
     $lib208Sha256 = Get-Sha256Hex -Path $lib208
     $swetestSha256 = Get-Sha256Hex -Path $swetestExe
+    $sedump208Sha256 = Get-Sha256Hex -Path $sedump208Exe
 
     $lines = @(
         "vcvars                    $vcvars"
@@ -636,6 +683,7 @@ try {
         "libswe_2_10_03_sha256     $lib210Sha256"
         "libswe_2_08_sha256        $lib208Sha256"
         "swetest_sha256            $swetestSha256"
+        "sedump_2_08_sha256        $sedump208Sha256 (Tools/CReference/sedump.c, compiled against external/pyswisseph-2.08/swephexp.h, linked against libswe-2.08.lib)"
         "built_utc                 $((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'))"
     )
     $toolchainPath = Join-Path $tempRoot 'toolchain.txt'
@@ -660,6 +708,7 @@ try {
     Write-Host "  $(Join-Path $OutputDir 'build-2.10.03/libswe-2.10.03.lib')"
     Write-Host "  $(Join-Path $OutputDir 'build-2.08/libswe-2.08.lib')"
     Write-Host "  $(Join-Path $OutputDir 'swetest.exe')"
+    Write-Host "  $(Join-Path $OutputDir 'sedump-2.08.exe')"
     Write-Host "  $(Join-Path $OutputDir 'toolchain.txt')"
 }
 catch {
