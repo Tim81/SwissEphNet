@@ -3392,7 +3392,17 @@ namespace SwissEphNet.CPort
                 serr = "Please call swe_set_ephe_path() or swe_set_jplfile() before calling swe_get_ayanamsa_ex()";
             }
             if (!swed.ayana_is_set)
+            {
                 swe_set_sid_mode(SwissEph.SE_SIDM_FAGAN_BRADLEY, 0, 0);
+                /* sweph.c:3005 holds sip as `struct sid_data *`, so the values this
+                 * fallback installs are visible through it. sid_data is a struct here,
+                 * so `sip` above is a copy taken before the call and would still hold
+                 * the pre-fallback state -- swe_get_ayanamsa_ex with no prior
+                 * swe_set_sid_mode returned 92.525 where the C returns 24.754, 67.8
+                 * degrees out. Re-read to give `sip` the pointer's semantics. */
+                sip = swed.sidd;
+                sid_mode = sip.sid_mode % SwissEph.SE_SIDBITS;
+            }
             if (sid_mode == SwissEph.SE_SIDM_TRUE_CITRA)
             {
                 star = "Spica"; /* Citra */
@@ -3636,7 +3646,8 @@ namespace SwissEphNet.CPort
          */
         public int swi_trop_ra2sid_lon(CPointer<double> xin, CPointer<double> xout, CPointer<double> xoutr, Int32 iflag)
         {
-            double[] x = new double[6];
+            double[] x = new double[6]; double corr;
+            string sdummy = null;  /* the C passes NULL for serr here */
             int i;
             sid_data sip = swed.sidd;
             epsilon oectmp = new epsilon();
@@ -3657,7 +3668,9 @@ namespace SwissEphNet.CPort
             /* to polar coordinates */
             SE.SwephLib.swi_cartpol_sp(x, x);
             /* subtract ayan_t0 */
+            get_aya_correction(iflag, out corr, ref sdummy);
             x[0] -= sip.ayan_t0 * SwissEph.DEGTORAD;
+            x[0] = SE.swe_radnorm(x[0] + corr * SwissEph.DEGTORAD);
             /* back to cartesian */
             SE.SwephLib.swi_polcart_sp(x, xout);
             return OK;
@@ -3670,7 +3683,8 @@ namespace SwissEphNet.CPort
          */
         public int swi_trop_ra2sid_lon_sosy(CPointer<double> xin, CPointer<double> xout, Int32 iflag)
         {
-            double[] x = new double[6], x0 = new double[6];
+            double[] x = new double[6], x0 = new double[6]; double corr;
+            string sdummy = null;  /* the C passes NULL for serr here */
             int i;
             sid_data sip = swed.sidd;
             epsilon oe = swed.oec2000;
@@ -3711,8 +3725,9 @@ namespace SwissEphNet.CPort
             x[0] -= x0[0];
             x[0] *= SwissEph.RADTODEG;
             /* subtract ayan_t0 */
+            get_aya_correction(iflag, out corr, ref sdummy);
             x[0] -= sip.ayan_t0;
-            x[0] = SE.swe_degnorm(x[0]) * SwissEph.DEGTORAD;
+            x[0] = SE.swe_degnorm(x[0] + corr) * SwissEph.DEGTORAD;
             /* back to cartesian */
             SE.SwephLib.swi_polcart_sp(x, xout);
             return OK;
