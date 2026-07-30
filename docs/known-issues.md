@@ -773,3 +773,48 @@ the conformance corpus has no iteration at these Julian days.
 
 The 40 case ids are in `Tests/oracle/known-diff.tsv` under category `SERR`. Fix belongs with
 the `sweph.c` port, since that is where the ordering is decided.
+
+## OnLoadFile: multicast leaks a stream, and a missing handler is indistinguishable from a missing file
+
+`SwissEph.LoadFile` (`SwissEphNet/SwissEph.cs:89`) is the only route by which the library reads
+an ephemeris file -- `swi_fopen` calls it at `CPort/Sweph.cs:2659` and nowhere else does. It
+raises the `OnLoadFile` event and takes the stream back out of a settable property on the event
+args:
+
+```csharp
+var h = OnLoadFile;
+if (h != null) {
+    var e = new LoadFileEventArgs(filename) { Encoding = DefaultEncoding };
+    h(this, e);
+    if (e.File == null) return null;
+    return new CFile(e.File, e.Encoding ?? DefaultEncoding);
+}
+return null;
+```
+
+Two defects follow from using an event for what is a request with a return value.
+
+**A second subscriber leaks a file handle.** Events are multicast by default. Every handler runs,
+each may assign `e.File`, and only the last assignment survives. `CFile` takes ownership of the
+one stream it is given and disposes it (`Tools/CFile.cs:55-59`), so any stream an earlier handler
+opened is never disposed. Nothing in the API signature suggests attaching a second handler is
+unsafe.
+
+**`null` means both "no handler attached" and "file not found".** The C treats either as a
+missing file and falls back to Moshier, so a caller who never subscribes gets answers rather than
+an error. The values are plausible and wrong: at JD 2451545.0 the Sun comes out `280.3681666`
+against `280.3681656` from the real files, a difference in the last printed digit. This was
+observed, not theorised -- `Tools/CReference/build-c.ps1`'s smoke check originally accepted any
+parseable number and passed against a nonexistent ephemeris directory for exactly this reason,
+which is why it now pins the expected value and verifies the declared file set up front.
+
+**Action for the release stage.** Replace the event with a single-valued resolver, something
+shaped like `Func<string, EphemerisFile?>`, which removes the multicast ambiguity and the leak
+with it, and give "no resolver configured" a state distinct from "file not found" so the silent
+Moshier fallback becomes catchable. Neither `SwissEph.cs` nor `[Events].cs` is inside the
+transliteration freeze, so this is allowed, and it adds no dependency. It is deferred to the
+release stage rather than done during porting for two reasons: it is a breaking public API change,
+which belongs with the version bump the package is already going to take; and the conformance
+harness and the bit-exact comparison drivers are all `OnLoadFile` consumers, so changing it
+mid-port would rebuild the instruments while they are being used to decide whether the port is
+correct.
