@@ -116,6 +116,29 @@ jobs:
         shell: pwsh
         run: pwsh scripts/verify-freeze.ps1
 
+  # SwissEphNet.csproj has no PackageReference, and the packed nuspec has an empty
+  # dependency group per target framework and no framework references -- a deliberate
+  # property (the 2.8.1.0 release dropped System.Text.Encoding.CodePages rather than
+  # keep a dependency for Windows-1252 support), not an accident. This job packs the
+  # library the way it actually ships and fails if the nuspec ever names a dependency.
+  verify-no-dependencies:
+    name: No package dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          # Both runtimes: the library multi-targets netstandard2.0;net8.0;net10.0, and
+          # packing needs the net8.0 SDK/runtime present alongside net10.0.
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Verify the packed library has no dependencies
+        shell: pwsh
+        run: pwsh scripts/verify-no-dependencies.ps1
+
   # Still no general `dotnet format --verify-no-changes` job: the pre-existing SweWin
   # WinForms code (never previously run through dotnet format) has formatting debt
   # unrelated to any current change, and gating every PR on fixing it is a separate
