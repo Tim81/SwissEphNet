@@ -42,11 +42,12 @@
     Astrodienst's own reference build is unoptimized debug code, which is not what a bit-exact
     oracle needs. /fp:precise performs no reassociation and, from Visual Studio 2022 onward,
     defaults to fp_contract(off) (earlier versions defaulted to on). Rather than trust that
-    default, the build disassembles every object file and .lib it compiles itself and fails if
-    any contains an FMA instruction, and separately compiles a probe whose codegen only matches
-    /fp:precise when reassociation is genuinely off (see Assert-NoFmaContraction and
-    Assert-FpPrecise below -- the probe was verified against this toolchain before being
-    trusted, not assumed to work).
+    default, the build disassembles libswe-2.10.03.lib, libswe-2.08.lib and swetest_patched.obj
+    and fails if any of the three contains an FMA instruction, and separately compiles a probe
+    whose codegen only matches /fp:precise when reassociation is genuinely off (see
+    Assert-NoFmaContraction and Assert-FpPrecise below -- the probe was verified against this
+    toolchain before being trusted, not assumed to work). sedump.obj and the probe object itself
+    are not scanned this way; see the comment at sedump.obj's own build step for why.
 
     The CRT is linked /MD, not /MT, because the whole point of this build is bit-exactness
     against CoreCLR, and CoreCLR's own arithmetic runs through the shared CRT. On Windows x64,
@@ -77,9 +78,12 @@
 
 .PARAMETER OutputDir
     Where to write the artifacts. Defaults to external/.c-reference, which is gitignored: these
-    are build outputs of vendored source, not source themselves. Must resolve to a path under
-    external/ -- that is the only location .gitignore excludes, and this script refuses to write
-    multi-megabyte binaries anywhere .gitignore would not catch.
+    are build outputs of vendored source, not source themselves. Must resolve to a path
+    .gitignore actually excludes -- git check-ignore is asked directly, rather than assuming
+    anything under external/ qualifies, because .gitignore excludes only three specific
+    subdirectories there (external/pyswisseph-2.08/, external/.pyswisseph-2.08-download/,
+    external/.c-reference/), not external/ itself. This script refuses to write multi-megabyte
+    binaries anywhere .gitignore would not catch.
 
 .NOTES
     setest is deliberately not built. Its Makefile needs generated_tests.c, which upstream does
@@ -112,16 +116,18 @@ $PSNativeCommandUseErrorActionPreference = $false
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..' '..')).Path
 if (-not $OutputDir) { $OutputDir = Join-Path $repoRoot 'external/.c-reference' }
 
-# Resolve to an absolute path and require it stay under external/. .gitignore only excludes
-# external/.c-reference/; a relative or arbitrary -OutputDir could otherwise land multi-megabyte
-# .lib/.exe build products somewhere git will happily track them.
-$externalRoot = [System.IO.Path]::GetFullPath((Join-Path $repoRoot 'external'))
+# Resolve to an absolute path and require .gitignore to actually exclude it. .gitignore excludes
+# three specific subdirectories under external/ (pyswisseph-2.08/, .pyswisseph-2.08-download/,
+# .c-reference/), not external/ itself, so a relative or arbitrary -OutputDir landing anywhere
+# else under external/ -- e.g. external/scratch -- would pass a plain "is it under external/"
+# check and still leave multi-megabyte .lib/.exe build products somewhere git will happily track
+# them. git check-ignore is asked directly instead of re-deriving the rule here, so this check
+# tracks .gitignore's actual content rather than a hardcoded assumption about it.
 $OutputDir = [System.IO.Path]::GetFullPath($OutputDir)
-$externalRootWithSeparator = $externalRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
-if ($OutputDir -ne $externalRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) -and
-    -not $OutputDir.StartsWith($externalRootWithSeparator, [StringComparison]::OrdinalIgnoreCase)) {
-    Write-Host "FAIL: -OutputDir resolves to '$OutputDir', which is not under '$externalRoot'." -ForegroundColor Red
-    Write-Host 'Only external/ is excluded by .gitignore; refusing to write build products elsewhere.'
+& git -C $repoRoot check-ignore --quiet -- $OutputDir
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "FAIL: -OutputDir resolves to '$OutputDir', which .gitignore does not exclude." -ForegroundColor Red
+    Write-Host '.gitignore excludes external/pyswisseph-2.08/, external/.pyswisseph-2.08-download/ and external/.c-reference/ -- not external/ itself. Refusing to write build products anywhere else.'
     exit 1
 }
 

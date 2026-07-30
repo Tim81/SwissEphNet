@@ -221,8 +221,9 @@ $HouseLetters = @(
 # past the polar circle, and that boundary itself moves with obliquity (see HouseEps below).
 $HouseGeoLats = @(-89, -80, -70, -66, -60, 0, 60, 66, 70, 80, 89)
 
-# Los Angeles, Greenwich, Tokyo: a negative, a zero and a positive longitude, none of them a
-# round number that could hide a sign or wraparound bug.
+# Los Angeles, Greenwich, Tokyo: a negative longitude, an exact zero, and a positive longitude.
+# The negative and positive values are deliberately not round numbers, so neither could hide a
+# sign or wraparound bug; Greenwich's zero is exact on purpose, to cover that boundary itself.
 $HouseGeoLons = @(-118.24, 0.0, 139.6917)
 
 $HouseJds = Get-JdSpread -Count 4 -Lo 1000000 -Hi 2600000

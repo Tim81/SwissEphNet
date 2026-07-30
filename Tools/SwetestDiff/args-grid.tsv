@@ -3,9 +3,10 @@
 # Tools/SwetestDiff/gen-args-grid.ps1 -- never hand-edit this file; a change here has to come
 # from that script, committed together with its regenerated output. See that script's own
 # .DESCRIPTION for why each category looks the way it does, including the three genuine port
-# defects (a -p body-list truncation, five "argv[i] + N" pointer-arithmetic-as-string-
-# concatenation crashes, and a -house sscanf %c crash) this grid deliberately exercises rather
-# than routes around, and why -m/-z/-f/-F are absent from FMT_LETTERS.
+# defects (a -p body-list truncation, six "argv[i] + N" pointer-arithmetic-as-string-
+# concatenation crashes -- five at int.Parse, plus -j throwing downstream in date parsing, the
+# same shape one line differently -- and a -house sscanf %c crash) this grid deliberately
+# exercises rather than routes around, and why -m/-z/-f/-F are absent from FMT_LETTERS.
 #
 # scripts/verify-swetest-diff.ps1 runs every row through both
 # external/.c-reference/swetest.exe and Programs/SweTest, appending -edir"<path>" itself -- the

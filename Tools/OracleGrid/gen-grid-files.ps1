@@ -276,10 +276,13 @@ $StarNames = @(
     'Aldebaran,alTau'
 )
 
-# Three of the ten SWIEPH dates above: one from era _12, one straddling the boundary, one from
-# era _18. Fixed-star calculation does not read a segment keyed to the target body the way
-# swe_calc does, but it still needs a file-backed Earth/Sun position for aberration and light-time
-# correction, so it is not exempt from the file layer either.
+# Three of the ten SWIEPH dates above, by index: 0 (1300, era _12), 5 (1810, era _18) and 8
+# (2300, era _18). 1810 sits right after the 1800 file boundary defined above, not on the era
+# _12 side of it -- the pair that actually straddles the boundary is index 4 (1790, era _12) and
+# index 5 (1810, era _18), and only index 5 is used here; index 4 never appears in this list.
+# Fixed-star calculation does not read a segment keyed to the target body the way swe_calc does,
+# but it still needs a file-backed Earth/Sun position for aberration and light-time correction,
+# so it is not exempt from the file layer either.
 $FixstarJds = @($CalcJdsFiles[0], $CalcJdsFiles[5], $CalcJdsFiles[8])
 
 $FixstarFlagCombos = @(
@@ -294,10 +297,11 @@ $NameBodies = 0..22
 
 # One arbitrary main-belt asteroid this repo's sparse ephemeris checkout ships no per-asteroid
 # data file for (Tests/conformance/required-ephemeris-files.tsv has no seasNNNN.se1 entries at
-# all): 10005 is 433 + SE_AST_OFFSET's neighborhood, Astraea, chosen only because it is not one
-# of the five asteroids with their own named case (Ceres/Pallas/Juno/Vesta/Chiron/Pholus already
-# covered above) and so falls into the asteroid branch's file-open attempt, exercising the
-# file-not-found path on both sides instead of a case that never touches a file.
+# all): 10005 is SE_AST_OFFSET (10000) + 5, Astraea -- not 433 Eros, which would be 10433 -- and
+# is chosen only because it is not one of the six bodies with their own named case
+# (Ceres/Pallas/Juno/Vesta/Chiron/Pholus already covered above), so it falls into the asteroid
+# branch's file-open attempt, exercising the file-not-found path on both sides instead of a case
+# that never touches a file.
 $NameAsteroidOffsetBody = 10005
 
 # ---------------------------------------------------------------------------------------

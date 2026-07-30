@@ -49,10 +49,11 @@ namespace SwissEphNet.Tests
     /// Precision: 11 decimal places on the asserted attr[3] values, the same
     /// order as the AbsoluteEpsilon (1e-12) Tools/BaselineVerify/Comparer.cs uses
     /// for the characterization gate. Loose enough to survive the platform-level
-    /// floating-point noise CLAUDE.md documents (Windows vs. Linux), tight enough
-    /// that the 2.10.03 diameter change -- Ceres 913000 -> 939400 m and similar
-    /// double-digit-percent moves for the other five bodies -- fails it by many
-    /// orders of magnitude, not by a rounding hair.
+    /// floating-point noise measured in docs/known-issues.md's "Cross-platform
+    /// divergence" section (Windows vs. Linux), tight enough that the 2.10.03
+    /// diameter change -- Ceres 913000 -> 939400 m and similar double-digit-percent
+    /// moves for the other five bodies -- fails it by many orders of magnitude, not
+    /// by a rounding hair.
     /// </summary>
     public class PlaDiamCoverageTest
     {

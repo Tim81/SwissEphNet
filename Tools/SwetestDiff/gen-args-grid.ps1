@@ -393,10 +393,11 @@ foreach ($f in $MiscFlags) {
 
 # ---------------------------------------------------------------------------------------
 # DATE_FORMATS -- date-string shapes -b itself understands (see Program.cs's date parser, not the
-# broken -j CLI flag, which CRASH_MISC covers). "-bj<jd>" is Program.cs's own smoke-test idiom
-# (Tools/CReference/build-c.ps1's Invoke-SwetestSmoke) for a Julian-day date without going through
-# the broken -j flag: "-b" is Substring-parsed correctly, and the date string that follows is then
-# recognized as starting with 'j' by the (separate, working) date-string parser.
+# broken -j CLI flag, which CRASH_MISC covers). "-bj<jd>" is the smoke-test idiom
+# Tools/CReference/build-c.ps1's Invoke-SwetestSmoke already relies on for a Julian-day date
+# without going through the broken -j flag: "-b" is Substring-parsed correctly, and the date
+# string that follows is then recognized as starting with 'j' by the (separate, working)
+# date-string parser -- in both Program.cs and the C swetest.exe Invoke-SwetestSmoke drives.
 # ---------------------------------------------------------------------------------------
 
 $DateFormatCases = @(
@@ -443,9 +444,10 @@ $headerLines = @(
     '# Tools/SwetestDiff/gen-args-grid.ps1 -- never hand-edit this file; a change here has to come'
     '# from that script, committed together with its regenerated output. See that script''s own'
     '# .DESCRIPTION for why each category looks the way it does, including the three genuine port'
-    '# defects (a -p body-list truncation, five "argv[i] + N" pointer-arithmetic-as-string-'
-    '# concatenation crashes, and a -house sscanf %c crash) this grid deliberately exercises rather'
-    '# than routes around, and why -m/-z/-f/-F are absent from FMT_LETTERS.'
+    '# defects (a -p body-list truncation, six "argv[i] + N" pointer-arithmetic-as-string-'
+    '# concatenation crashes -- five at int.Parse, plus -j throwing downstream in date parsing, the'
+    '# same shape one line differently -- and a -house sscanf %c crash) this grid deliberately'
+    '# exercises rather than routes around, and why -m/-z/-f/-F are absent from FMT_LETTERS.'
     '#'
     '# scripts/verify-swetest-diff.ps1 runs every row through both'
     '# external/.c-reference/swetest.exe and Programs/SweTest, appending -edir"<path>" itself -- the'

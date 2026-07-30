@@ -881,3 +881,69 @@ throws `ArgumentOutOfRangeException` from a `Substring(4, 30)` where the C uses 
 it currently tracks, so it can be fixed without waiting for the swetest.c re-transliteration.
 Fixing it in `Programs/SweTest/Program.cs` is a freeze-permitted correction of a divergence from
 the C, the same standing as the six that have already landed: cite the C file and line.
+
+## The file-backed grid's divergence is Earth's position
+
+`Tools/OracleGrid/grid-files.tsv` (2,024 rows) is the only grid that opens an ephemeris
+file at all -- `grid-analytic.tsv` OR-s in `SEFLG_MOSEPH` throughout, so it never reads one.
+Comparing `external/.c-reference/dump-net-files.tsv` against `dump-c-2.10.03-files.tsv` field
+by field gives, for `swe_calc`/`swe_calc_ut` (900 rows each, 1,800 total, crossing bodies 0-14
+with six iflag combinations and ten dates):
+
+| Body | PLAIN / SPEED / TOPOCTR / SIDEREAL (geocentric) | HELCTR / BARYCTR |
+|---|---|---|
+| Sun (0) | 0 / 80 | 40 / 40 |
+| Mercury..Pluto (2-9) | 0 / 640 | 320 / 320 |
+| Mean node (10) | 80 / 80 | 40 / 40 |
+| True node (11) | 0 / 80 | 40 / 40 |
+| Mean apogee (12) | 80 / 80 | 40 / 40 |
+| Osculating apogee (13) | 0 / 80 | 40 / 40 |
+| Earth (14) | 80 / 80 | 0 / 40 |
+| Moon (1) | 0 / 80 | 0 / 40 |
+
+760 of the 1,800 rows match bit for bit; 1,040 do not, and which side a body lands on is not
+random. Every heliocentric/barycentric row for Mercury through Pluto, true node and osculating
+apogee matches -- 400 rows, none of them needing anything but that body's own `sepl_*.se1`
+segment. Heliocentric and barycentric Sun match too (40 more), and mean node and mean apogee
+match under all six flags (240 more, and unsurprising: `SwephLib.cs`'s mean-node/mean-apogee
+path is a closed-form secular formula that opens no file regardless of `iflag`). Earth's own
+geocentric position matches under all four geocentric flags (80 rows) because it is the zero
+vector by definition -- `xx[0..2]` read `0000000000000000` on both sides, confirmed by reading
+the hex columns directly.
+
+Every row that needs Earth's position anywhere in the computation differs: Earth's own
+heliocentric and barycentric position (40 rows, 0 match), which needs `semo_*.se1` to split the
+Earth-Moon barycentre; the Sun's geocentric position (80 rows, 0 match), which is Earth's
+heliocentric position negated; the Moon, under every flag (120 rows, 0 match); and the
+geocentric position of every other body (800 rows across Mercury..Pluto, true node and
+osculating apogee, 0 match), because geocentric position is heliocentric position minus Earth's,
+and Earth's heliocentric position is the one thing on this list the port gets wrong. It is a
+single defect that appears once per body, because every geocentric calculation subtracts the
+same wrong vector.
+
+That reduces `read_const`, `do_fread`, `get_new_segment`, `rot_back` and the Chebyshev
+evaluation to demonstrably sound code -- 440 rows read `sepl_*.se1` for a body that is not Earth
+and match exactly, which cannot happen if any of those five were wrong. The remaining unexplained
+divergence is confined to wherever `main_planet` derives Earth's own position from the Moon
+(`SwissEphNet/CPort/Sweph.cs`'s `SEI_EARTH`/`SEI_MOON` handling), which is a far smaller place to
+look than "the file layer" suggested.
+
+**The SEFLG_SPEED zero-fill claim, checked the same way.** Of the 1,500 non-SPEED
+`swe_calc`/`swe_calc_ut` rows, 0 have the C leaving `xx[3..5]` at zero while the port fills them
+with something else -- the claim that the port does this generally does not hold anywhere in
+this grid. It does hold for fixed stars, but only two of the four entry points: of 96 non-SPEED
+fixed-star rows (24 each for `FIXSTAR`, `FIXSTAR_UT`, `FIXSTAR2`, `FIXSTAR2_UT`), all 24
+`FIXSTAR` rows and all 24 `FIXSTAR_UT` rows show the C at zero and the port nonzero; `FIXSTAR2`
+and `FIXSTAR2_UT` show it on none of their 48.
+
+An earlier pass at this grid read the 42%-match rate on `swe_calc` (380/900, same on
+`swe_calc_ut`) against the 100%-match rate on the `SEFLG_MOSEPH`-only analytic grid (2,160/2,160)
+and concluded the fault was "in the file layer", reasoning that the only variable between the
+two grids was whether a file got read. That comparison was not valid: the two grids also differ
+in which iflag combinations they cross (twelve against six) and which dates they use (JD
+500000-3000000 against calendar years 1200-2399), so "the only variable is whether it reads a
+file" was false on its face, and the 42% figure was an average across bodies and flags that
+behave completely differently, which is exactly what the table above shows. The same pass also
+claimed the port fills `xx[3..5]` with nonzero values on non-SPEED rows where the C leaves them
+at zero; measured directly, that is 0 of 1,500 `calc`/`calc_ut` rows and is real only for two of
+the four fixed-star entry points, as recorded above.
