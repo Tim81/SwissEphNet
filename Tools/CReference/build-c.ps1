@@ -124,7 +124,14 @@ if (-not $OutputDir) { $OutputDir = Join-Path $repoRoot 'external/.c-reference' 
 # them. git check-ignore is asked directly instead of re-deriving the rule here, so this check
 # tracks .gitignore's actual content rather than a hardcoded assumption about it.
 $OutputDir = [System.IO.Path]::GetFullPath($OutputDir)
-& git -C $repoRoot check-ignore --quiet -- $OutputDir
+# Probe a path *inside* the directory rather than the directory itself. The .gitignore entries
+# for these three locations end in a slash, so they match directories only, and git can only
+# apply a directory-only pattern to a path it can see is a directory. On a fresh clone the
+# output directory does not exist yet, so check-ignore reads it as a file, no pattern matches,
+# and the guard rejects its own default. That is what happened on the first CI run: all three
+# jobs that build the C reference failed here, on a checkout where external/.c-reference/ had
+# never been created. A path under the directory is unambiguous whether or not anything exists.
+& git -C $repoRoot check-ignore --quiet -- (Join-Path $OutputDir '.probe')
 if ($LASTEXITCODE -ne 0) {
     Write-Host "FAIL: -OutputDir resolves to '$OutputDir', which .gitignore does not exclude." -ForegroundColor Red
     Write-Host '.gitignore excludes external/pyswisseph-2.08/, external/.pyswisseph-2.08-download/ and external/.c-reference/ -- not external/ itself. Refusing to write build products anywhere else.'
