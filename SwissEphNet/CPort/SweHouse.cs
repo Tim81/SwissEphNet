@@ -90,6 +90,8 @@ namespace SwissEphNet.CPort
         const double MILLIARCSEC = (1.0 / 3600000.0);
         const double SOLAR_YEAR = 365.24219893;
         const double ARMCS = ((SOLAR_YEAR + 1) / SOLAR_YEAR * 360);
+        // swehouse.c:891
+        const double VERY_SMALL_PLAC_ITER = (1.0 / 360000.0);
 
         // swephexp.h:812-835 declares int hsys on every house entry point. C's toupper()
         // macro, invoked on the raw, untruncated int by swe_house_name (swehouse.c:830) and
@@ -882,6 +884,10 @@ namespace SwissEphNet.CPort
         // narrowing (via (sbyte)) of the raw int hsys -- see swe_houses_armc above. C's char
         // is signed on both reference platforms, so this preserves C's sign, which the
         // `hsy > 95` check below depends on.
+        // swehouse.c:892-893: 2.10.03 drops the iteration_count parameter entirely, replacing
+        // every loop it bounded with the niter_max local declared below. iteration_count is
+        // kept here, unused, so the call site in swe_houses_armc (swehouse.c:661) does not
+        // need to change as part of this slice.
         int CalcH(
             double th, double fi, double ekl, int hsy,
             int iteration_count, houses hsp)
@@ -898,6 +904,7 @@ namespace SwissEphNet.CPort
              *                   H  horizon / azimut
              *                   I  Sunshine solution Treindl
              *                   i  Sunshine solution Makransky
+             *                   J  Savard-A
              *                   K  Koch
              *                   L  Pullen SD "sinusoidal delta", ex Neo-Porphyry
              *                   M  Morinus
@@ -915,24 +922,25 @@ namespace SwissEphNet.CPort
              *                   Y  APC houses
              *             fi = geographic latitude
              *             ekl = obliquity of the ecliptic
-             *             iteration_count = number of iterations in
-             *             Placidus calculation; can be 1 or 2.
              * *********************************************************
              *  Koch and Placidus don't work in the polar circle.
              *  We swap MC/IC so that MC is always before AC in the zodiac
-             *  We than divide the quadrants into 3 equal parts.
+             *  We then divide the quadrants into 3 equal parts, ie apply Porphyry.
              * *********************************************************
              *  All angles are expressed in degrees.
              *  Special trigonometric functions sind, cosd etc. are
              *  implemented for arguments in degrees.
              ***********************************************************/
         {
-            double tane, tanfi, cosfi, tant, sina, cosa, th2;
-            double a, c, f, fh1, fh2, xh1, xh2, rectasc, ad3, acmc, vemc;
+            double tane, tanfi, cosfi, sinfi, tant, sina, cosa, th2;
+            double a, c, f, fh1, fh2, xh1, xh2, xs1, xs2, rectasc, ad3, acmc, vemc;
             int i, ih, ih2, retc = SwissEph.OK;
             double sine, cose;
             double[] x = new double[3]; double krHorizonLon; /* BK 14.02.2006 */
+            int niter_max = 100; // maximum iterations allowed with Placidus
+            double cuspsv;
             hsp.serr = string.Empty;
+            hsp.do_interpol = false;
             cose = cosd(ekl);
             sine = sind(ekl);
             tane = tand(ekl);
@@ -958,10 +966,25 @@ namespace SwissEphNet.CPort
                     hsp.mc = 270;
             } /*  if */
             hsp.mc = SE.swe_degnorm(hsp.mc);
-            /* ascendant */
+            if (hsp.do_speed) hsp.mc_speed = AscDash(th, 0, sine, cose);
+            // ascendant
+            // In case of ascendant, the great circle is the horizon, which has pole height latitude.
+            // intersection equator horizon is at th + 90, reactasce 90° east of meridian.
             hsp.ac = Asc1(th + 90, fi, sine, cose);
+            if (hsp.do_speed)
+                hsp.ac_speed = AscDash(th + 90, fi, sine, cose);
+            if (hsp.do_hspeed) {
+                for (i = 0; i <= 12; i++)
+                    hsp.cusp_speed[i] = 0;
+            }
+            hsp.armc_speed = ARMCS;
+            // these cusp[1] and cusp[10] values may be changed further down for some house systems
             hsp.cusp[1] = hsp.ac;
             hsp.cusp[10] = hsp.mc;
+            if (hsp.do_hspeed) {
+                hsp.cusp_speed[1] = hsp.ac_speed;
+                hsp.cusp_speed[10] = hsp.mc_speed;
+            }
             /* we respect smaller case letter for i, otherwise they are deprecated */
             // swehouse.c:989-991. hsy is now `int`; the C.sprintf %c site needs an explicit
             // (char) since C.printf.cs's IsNumericType() would otherwise route a boxed int
@@ -983,6 +1006,11 @@ namespace SwissEphNet.CPort
                     }
                     for (i = 2; i <= 12; i++)
                         hsp.cusp[i] = SE.swe_degnorm(hsp.cusp[1] + (i - 1) * 30);
+                    if (hsp.do_hspeed) {
+                        for (i = 1; i <= 12; i++) {
+                            hsp.cusp_speed[i] = hsp.ac_speed;
+                        }
+                    }
                     break;
                 case 'D':	/* equal, begin  at MC */
                     acmc = SE.swe_difdeg2n(hsp.ac, hsp.mc);
@@ -996,24 +1024,23 @@ namespace SwissEphNet.CPort
                         hsp.cusp[i] = SE.swe_degnorm(hsp.cusp[10] + (i - 10) * 30);
                     for (i = 1; i <= 9; i++)
                         hsp.cusp[i] = SE.swe_degnorm(hsp.cusp[10] + (i + 2) * 30);
-                    break;
-                case 'C': /* Campanus houses and Horizon or Azimut system */
-                case 'H':
-                    if (hsy == 'H') {
-                        if (fi > 0)
-                            fi = 90 - fi;
-                        else
-                            fi = -90 - fi;
-                        /* equator */
-                        if (Math.Abs(Math.Abs(fi) - 90) < VERY_SMALL) {
-                            if (fi < 0)
-                                fi = -90 + VERY_SMALL;
-                            else
-                                fi = 90 - VERY_SMALL;
+                    if (hsp.do_hspeed) {
+                        for (i = 1; i <= 12; i++) {
+                            hsp.cusp_speed[i] = hsp.mc_speed;
                         }
-                        th = SE.swe_degnorm(th + 180);
                     }
+                    break;
+                case 'C': // Campanus houses:
+                    // Prime vertical is divided into 3 parts of 30° each, great circles from
+                    // north point to south point go through these points and intersect ecliptic.
+                    // pole height = shortest distance of plane from North pole,
+                    // measured along declination circle.
+                    // NP = North Pole, N = north point, P11 = house 11 point in prime vertical
+                    // triangle NP - N - P11 , angle 30 at N, side fi between NP and N
+                    // sin fh1 = sin fi * sin 30°,
                     fh1 = asind(sind(fi) / 2);
+                    // triangle NP - N - P12 , angle 60 at N, side fi between NP and N
+                    // sin fh2 = sin fi * sin 60°,
                     fh2 = asind(Math.Sqrt(3.0) / 2 * sind(fi));
                     cosfi = cosd(fi);
                     if (Math.Abs(cosfi) == 0) {	/* '==' should be save! */
@@ -1022,18 +1049,29 @@ namespace SwissEphNet.CPort
                         else
                             xh1 = xh2 = 270; /* cosfi = -VERY_SMALL; */
                     } else {
+                        // triangle formed by equator, prime vertical, great circle
+                        // through P11, S and N
+                        // with right angle between prime vertical and great circle
+                        // side length xh1 on equ, 60 on prime vertical, angle fi between
+                        // tan xh1 = tan 60 / cos fi = √3 / cos fi
                         xh1 = atand(Math.Sqrt(3.0) / cosfi);
+                        // side length xh2 on equ, 30° on prime vertical, angle fi between
+                        // tan xh2 = tan 30 / cos fi = 1/√3 / cos fi
                         xh2 = atand(1 / Math.Sqrt(3.0) / cosfi);
                     }
                     hsp.cusp[11] = Asc1(th + 90 - xh1, fh1, sine, cose);
                     hsp.cusp[12] = Asc1(th + 90 - xh2, fh2, sine, cose);
-                    if (hsy == 'H')
-                        hsp.cusp[1] = Asc1(th + 90, fi, sine, cose);
                     hsp.cusp[2] = Asc1(th + 90 + xh2, fh2, sine, cose);
                     hsp.cusp[3] = Asc1(th + 90 + xh1, fh1, sine, cose);
-                    /* within polar circle, when mc sinks below horizon and 
+                    if (hsp.do_hspeed) {
+                        hsp.cusp_speed[11] = AscDash(th + 90 - xh1, fh1, sine, cose);
+                        hsp.cusp_speed[12] = AscDash(th + 90 - xh2, fh2, sine, cose);
+                        hsp.cusp_speed[2] = AscDash(th + 90 + xh2, fh2, sine, cose);
+                        hsp.cusp_speed[3] = AscDash(th + 90 + xh1, fh1, sine, cose);
+                    }
+                    /* within polar circle, when mc sinks below horizon and
                      * ascendant changes to western hemisphere, all cusps
-                     * must be added 180 degrees. 
+                     * must be added 180 degrees.
                      * houses will be in clockwise direction */
                     if (Math.Abs(fi) >= 90 - ekl) {  /* within polar circle */
                         acmc = SE.swe_difdeg2n(hsp.ac, hsp.mc);
@@ -1047,21 +1085,79 @@ namespace SwissEphNet.CPort
                             }
                         }
                     }
-                    if (hsy == 'H') {
-                        for (i = 1; i <= 3; i++)
-                            hsp.cusp[i] = SE.swe_degnorm(hsp.cusp[i] + 180);
-                        for (i = 11; i <= 12; i++)
-                            hsp.cusp[i] = SE.swe_degnorm(hsp.cusp[i] + 180);
-                        /* restore fi and th */
-                        if (fi > 0)
-                            fi = 90 - fi;
+                    break;
+                case 'H': /* Horizon or Azimut system, similar to Campanus calulation */
+                    if (fi > 0)
+                        fi = 90 - fi;
+                    else
+                        fi = -90 - fi;
+                    /* equator */
+                    if (Math.Abs(Math.Abs(fi) - 90) < VERY_SMALL) {
+                        if (fi < 0)
+                            fi = -90 + VERY_SMALL;
                         else
-                            fi = -90 - fi;
-                        th = SE.swe_degnorm(th + 180);
+                            fi = 90 - VERY_SMALL;
+                    }
+                    th = SE.swe_degnorm(th + 180);
+                    fh1 = asind(sind(fi) / 2);
+                    fh2 = asind(Math.Sqrt(3.0) / 2 * sind(fi));
+                    cosfi = cosd(fi);
+                    if (Math.Abs(cosfi) == 0) {	/* '==' should be save! */
+                        if (fi > 0)
+                            xh1 = xh2 = 90; /* cosfi = VERY_SMALL; */
+                        else
+                            xh1 = xh2 = 270; /* cosfi = -VERY_SMALL; */
+                    } else {
+                        // triangle formed by equator, prime vertical, declination circle,
+                        // with right angle between equator and declination circle:
+                        // side length xh1 on equ, 60 on prime vertical, angle fi between
+                        // tan xh1 = tan 60 / cos fi = √3 / cos fi
+                        xh1 = atand(Math.Sqrt(3.0) / cosfi);
+                        // side length xh2 on equ, 30° on prime vertical, angle fi between
+                        // tan xh2 = tan 30 / cos fi = 1/√3 / cos fi
+                        xh2 = atand(1 / Math.Sqrt(3.0) / cosfi);
+                    }
+                    hsp.cusp[11] = Asc1(th + 90 - xh1, fh1, sine, cose);
+                    hsp.cusp[12] = Asc1(th + 90 - xh2, fh2, sine, cose);
+                    hsp.cusp[1] = Asc1(th + 90, fi, sine, cose);
+                    hsp.cusp[2] = Asc1(th + 90 + xh2, fh2, sine, cose);
+                    hsp.cusp[3] = Asc1(th + 90 + xh1, fh1, sine, cose);
+                    if (hsp.do_hspeed) {
+                        hsp.cusp_speed[11] = AscDash(th + 90 - xh1, fh1, sine, cose);
+                        hsp.cusp_speed[12] = AscDash(th + 90 - xh2, fh2, sine, cose);
+                        hsp.cusp_speed[1] = AscDash(th + 90, fi, sine, cose);
+                        hsp.cusp_speed[2] = AscDash(th + 90 + xh2, fh2, sine, cose);
+                        hsp.cusp_speed[3] = AscDash(th + 90 + xh1, fh1, sine, cose);
+                    }
+                    /* within polar circle, when mc sinks below horizon and
+                     * ascendant changes to western hemisphere, all cusps
+                     * must be added 180 degrees.
+                     * houses will be in clockwise direction */
+                    if (Math.Abs(fi) >= 90 - ekl) {  /* within polar circle */
                         acmc = SE.swe_difdeg2n(hsp.ac, hsp.mc);
                         if (acmc < 0) {
                             hsp.ac = SE.swe_degnorm(hsp.ac + 180);
+                            hsp.mc = SE.swe_degnorm(hsp.mc + 180);
+                            for (i = 1; i <= 12; i++)
+                            {
+                                if (i >= 4 && i < 10) continue;
+                                hsp.cusp[i] = SE.swe_degnorm(hsp.cusp[i] + 180);
+                            }
                         }
+                    }
+                    for (i = 1; i <= 3; i++)
+                        hsp.cusp[i] = SE.swe_degnorm(hsp.cusp[i] + 180);
+                    for (i = 11; i <= 12; i++)
+                        hsp.cusp[i] = SE.swe_degnorm(hsp.cusp[i] + 180);
+                    /* restore fi and th */
+                    if (fi > 0)
+                        fi = 90 - fi;
+                    else
+                        fi = -90 - fi;
+                    th = SE.swe_degnorm(th + 180);
+                    acmc = SE.swe_difdeg2n(hsp.ac, hsp.mc);
+                    if (acmc < 0) {
+                        hsp.ac = SE.swe_degnorm(hsp.ac + 180);
                     }
                     break;
                 case 'I': /* Sunshine houses, solution Treindl */
@@ -1095,6 +1191,76 @@ namespace SwissEphNet.CPort
                         hsy = 'O';
                         goto porphyry;
                     }
+                    hsp.do_interpol = hsp.do_hspeed;
+                    break;
+                case 'J': /* Savard's supposed Albategnius houses */
+                    // house 11: latitude circle at 2/3 fi intersects prime meridian at p11.
+                    // house 12: latitude circle at fi / 3 intersects prime meridian at p12.
+                    // triangle X-p12-E formed by equator, prime vertical, declination circle,
+                    // side length xs1 or xs2 on prime vertical, 2/3 fi or fi/3  on declination circle,
+                    // angle fi between prime vertical and equator at E, right angle between equator
+                    // and declination circle.
+                    // sin b = sin B sin c, with b = 1/3 or 2/3 fi, B = fi
+                    sinfi = sind(fi);
+                    cosfi = cosd(fi);
+                    if (Math.Abs(fi) < VERY_SMALL) {
+                        xs2 = 1 / 3.0;
+                        xs1 = 2 / 3.0;
+                    } else {
+                        xs2 = sind(fi / 3) / sinfi;
+                        xs1 = sind(2 * fi / 3) / sinfi;
+                    }
+                    xs2 = asind(xs2);
+                    xs1 = asind(xs1);
+                    // now consider triangle great circle through h11, equ, prime vertical, with
+                    // right angle between prime vertical and great circle
+                    // side length xh1 on equ, xs1 on prime vertical, angle fi between
+                    // tan xh1 = tan xs1 / cos fi
+                    if (cosfi == 0) {
+                        if (fi > 0)
+                            xh1 = xh2 = 90;
+                        else
+                            xh1 = xh2 = 270;
+                    } else {
+                        xh1 = atand(tand(xs1) / cosfi);
+                        xh2 = atand(tand(xs2) / cosfi);
+                    }
+                    // Pole height:
+                    // great circle S - p11 - N has angle 90 - xs1 on North or South point,
+                    // north point to south point go through these points and intersect ecliptic.
+                    // pole height = shortest distance of plane from North pole,
+                    // measured along declination circle.
+                    // NP = North Pole, N = north point, H11 = house 11 point in prime vertical
+                    // triangle NP - N - h11 , angle xs1 at N, side fi between NP and N
+                    // sin fh1 = sin fi * sin (90 - xs1),
+                    fh1 = asind(sind(fi) * sind(90 - xs1));
+                    fh2 = asind(sind(fi) * sind(90 - xs2));
+                    hsp.cusp[12] = Asc1(th + 90 - xh2, fh2, sine, cose);
+                    hsp.cusp[11] = Asc1(th + 90 - xh1, fh1, sine, cose);
+                    hsp.cusp[2] = Asc1(th + 90 + xh2, fh2, sine, cose);
+                    hsp.cusp[3] = Asc1(th + 90 + xh1, fh1, sine, cose);
+                    if (hsp.do_hspeed) {
+                        hsp.cusp_speed[11] = AscDash(th + 90 - xh1, fh1, sine, cose);
+                        hsp.cusp_speed[12] = AscDash(th + 90 - xh2, fh2, sine, cose);
+                        hsp.cusp_speed[3] = AscDash(th + 90 + xh1, fh1, sine, cose);
+                        hsp.cusp_speed[2] = AscDash(th + 90 + xh2, fh2, sine, cose);
+                    }
+                    /* within polar circle, when mc sinks below horizon and
+                     * ascendant changes to western hemisphere, all cusps
+                     * must be added 180 degrees.
+                     * houses will be in clockwise direction */
+                    if (Math.Abs(fi) >= 90 - ekl) {  /* within polar circle */
+                        acmc = SE.swe_difdeg2n(hsp.ac, hsp.mc);
+                        if (acmc < 0) {
+                            hsp.ac = SE.swe_degnorm(hsp.ac + 180);
+                            hsp.mc = SE.swe_degnorm(hsp.mc + 180);
+                            for (i = 1; i <= 12; i++)
+                            {
+                                if (i >= 4 && i < 10) continue;
+                                hsp.cusp[i] = SE.swe_degnorm(hsp.cusp[i] + 180);
+                            }
+                        }
+                    }
                     break;
                 case 'K': /* Koch houses */
                     if (Math.Abs(fi) >= 90 - ekl) {  /* within polar circle */
@@ -1112,6 +1278,12 @@ namespace SwissEphNet.CPort
                     hsp.cusp[12] = Asc1(th + 60 - ad3, fi, sine, cose);
                     hsp.cusp[2] = Asc1(th + 120 + ad3, fi, sine, cose);
                     hsp.cusp[3] = Asc1(th + 150 + 2 * ad3, fi, sine, cose);
+                    if (hsp.do_hspeed) {
+                        hsp.cusp_speed[11] = AscDash(th + 30 - 2 * ad3, fi, sine, cose);
+                        hsp.cusp_speed[12] = AscDash(th + 60 - ad3, fi, sine, cose);
+                        hsp.cusp_speed[2] = AscDash(th + 120 + ad3, fi, sine, cose);
+                        hsp.cusp_speed[3] = AscDash(th + 150 + 2 * ad3, fi, sine, cose);
+                    }
                     break;
                 case 'L':	/* Pullen SD sinusoidal delta, ex Neo-Porphyry */
                     {
@@ -1146,6 +1318,7 @@ namespace SwissEphNet.CPort
                             hsp.cusp[3] = SE.swe_degnorm(hsp.ac + 60 + 3 * d);
                         }
                     }
+                    hsp.do_interpol = hsp.do_hspeed;
                     break;
                 case 'N':	/* whole signs, begin at 0° Aries */
                     acmc = SE.swe_difdeg2n(hsp.ac, hsp.mc);
@@ -1166,10 +1339,21 @@ namespace SwissEphNet.CPort
                         hsp.cusp[1] = hsp.ac;
                         acmc = SE.swe_difdeg2n(hsp.ac, hsp.mc);
                     }
+                    hsp.cusp[1] = hsp.ac;  // may have been destroyed if defaulting from Gauquelin
+                    hsp.cusp[10] = hsp.mc; // dito
                     hsp.cusp[2] = SE.swe_degnorm(hsp.ac + (180 - acmc) / 3);
                     hsp.cusp[3] = SE.swe_degnorm(hsp.ac + (180 - acmc) / 3 * 2);
                     hsp.cusp[11] = SE.swe_degnorm(hsp.mc + acmc / 3);
                     hsp.cusp[12] = SE.swe_degnorm(hsp.mc + acmc / 3 * 2);
+                    if (hsp.do_hspeed) {
+                        double q1_speed = hsp.ac_speed - hsp.mc_speed;	// rate of growth of quadrant 1
+                        hsp.cusp_speed[1] = hsp.ac_speed;  // may have been destroyed if defaulting from Gauquelin
+                        hsp.cusp_speed[10] = hsp.mc_speed; // dito
+                        hsp.cusp_speed[2] = hsp.ac_speed - q1_speed / 3;
+                        hsp.cusp_speed[3] = hsp.ac_speed - q1_speed / 3 * 2;
+                        hsp.cusp_speed[11] = hsp.ac_speed + q1_speed / 3;
+                        hsp.cusp_speed[12] = hsp.ac_speed + q1_speed / 3 * 2;
+                    }
                     break;
                 case 'Q':	/* Pullen sinusoidal ratio */
                     {
@@ -1221,6 +1405,7 @@ namespace SwissEphNet.CPort
                             hsp.cusp[3] = SE.swe_degnorm(hsp.cusp[2] + xr4);	// house 2 size xr^4
                         }
                     }
+                    hsp.do_interpol = hsp.do_hspeed;
                     break;
                 case 'R':	/* Regiomontanus houses */
                     fh1 = atand(tanfi * 0.5);
@@ -1229,7 +1414,13 @@ namespace SwissEphNet.CPort
                     hsp.cusp[12] = Asc1(60 + th, fh2, sine, cose);
                     hsp.cusp[2] = Asc1(120 + th, fh2, sine, cose);
                     hsp.cusp[3] = Asc1(150 + th, fh1, sine, cose);
-                    /* within polar circle, when mc sinks below horizon and 
+                    if (hsp.do_hspeed) {
+                        hsp.cusp_speed[11] = AscDash(30 + th, fh1, sine, cose);
+                        hsp.cusp_speed[12] = AscDash(60 + th, fh2, sine, cose);
+                        hsp.cusp_speed[2] = AscDash(120 + th, fh2, sine, cose);
+                        hsp.cusp_speed[3] = AscDash(150 + th, fh1, sine, cose);
+                    }
+                    /* within polar circle, when mc sinks below horizon and
                      * ascendant changes to western hemisphere, all cusps
                      * must be added 180 degrees.
                      * houses will be in clockwise direction */
@@ -1267,6 +1458,7 @@ namespace SwissEphNet.CPort
                         hsp.cusp[11] = SE.swe_degnorm(hsp.mc + s4 * 0.5);
                         hsp.cusp[12] = SE.swe_degnorm(hsp.mc + s4 * 1.5);
                     }
+                    hsp.do_interpol = hsp.do_hspeed;
                     break;
                 case 'T':	/* 'topocentric' houses */
                     fh1 = atand(tanfi / 3.0);
@@ -1275,7 +1467,13 @@ namespace SwissEphNet.CPort
                     hsp.cusp[12] = Asc1(60 + th, fh2, sine, cose);
                     hsp.cusp[2] = Asc1(120 + th, fh2, sine, cose);
                     hsp.cusp[3] = Asc1(150 + th, fh1, sine, cose);
-                    /* within polar circle, when mc sinks below horizon and 
+                    if (hsp.do_hspeed) {
+                        hsp.cusp_speed[11] = AscDash(30 + th, fh1, sine, cose);
+                        hsp.cusp_speed[12] = AscDash(60 + th, fh2, sine, cose);
+                        hsp.cusp_speed[2] = AscDash(120 + th, fh2, sine, cose);
+                        hsp.cusp_speed[3] = AscDash(150 + th, fh1, sine, cose);
+                    }
+                    /* within polar circle, when mc sinks below horizon and
                      * ascendant changes to western hemisphere, all cusps
                      * must be added 180 degrees.
                      * houses will be in clockwise direction */
@@ -1300,6 +1498,11 @@ namespace SwissEphNet.CPort
                     hsp.cusp[1] = SE.swe_degnorm(hsp.ac - 15);
                     for (i = 2; i <= 12; i++)
                         hsp.cusp[i] = SE.swe_degnorm(hsp.cusp[1] + (i - 1) * 30);
+                    if (hsp.do_hspeed) {
+                        for (i = 1; i <= 12; i++) {
+                            hsp.cusp_speed[i] = hsp.ac_speed;
+                        }
+                    }
                     break;
                 case 'W':	/* equal, whole-sign houses */
                     acmc = SE.swe_difdeg2n(hsp.ac, hsp.mc);
@@ -1343,6 +1546,7 @@ namespace SwissEphNet.CPort
                         if (acmc < 0) {
                             hsp.ac = SE.swe_degnorm(hsp.ac + 180);
                         }
+                        hsp.do_interpol = hsp.do_hspeed;
                         break;
                     }
                 case 'M': {
@@ -1367,6 +1571,7 @@ namespace SwissEphNet.CPort
                         if (acmc < 0) {
                             hsp.ac = SE.swe_degnorm(hsp.ac + 180);
                         }
+                        hsp.do_interpol = hsp.do_hspeed;
                         break;
                     }
                 case 'F': {
@@ -1412,13 +1617,13 @@ namespace SwissEphNet.CPort
                             hsp.cusp[i] = SE.swe_degnorm(hsp.cusp[i]);
                         }
                     }
+                    hsp.do_interpol = hsp.do_hspeed;
                     break; }
                 case 'B': {	/* Alcabitius */
-                        /* created by Alois 17-sep-2000, followed example in Matrix
-                           electrical library. The code reproduces the example!
-                           I think the Alcabitius code in Walter Pullen's Astrolog 5.40
-                           is wrong, because he remains in RA and forgets the transform to
-                           the ecliptic. */
+                        // created by Alois 17-sep-2000, followed example in Matrix
+                        // electrical library. The code reproduces the example!
+                        // This corresponds to Munkasey 'The Alcibitius Semiarc House System'
+                        // as described in his Astrological House Formulae'
                         double dek, r, sna, sda, sn3, sd3;
                         acmc = SE.swe_difdeg2n(hsp.ac, hsp.mc);
                         if (acmc < 0) {
@@ -1427,19 +1632,25 @@ namespace SwissEphNet.CPort
                             acmc = SE.swe_difdeg2n(hsp.ac, hsp.mc);
                         }
                         dek = asind(sind(hsp.ac) * sine);	/* declination of Ascendant */
-                        /* must treat the case fi == 90 or -90 */
+                        // triangle horizon - decl circle - equator, right angle between equ and
+                        // decl circle, angle 90 - fi between horizon and equator A, decl = a
+                        // tan a = sin b tan A, sin b = tan decl * cot (90-fi) = tan decl * tan fi
+                        // We want semidiurnal circle  90 + b; cos (90 + b) = - sin b = r = -tan decl * tan fi
+                        // sda = arccos r
+                        // case fi == 90 or -90 is dealt with at entry into function
                         r = -tanfi * tand(dek);
-                        /* must treat the case of abs(r) > 1; probably does not happen
-                         * because dek becomes smaller when fi is large, as ac is close to
-                         * zero Aries/Libra in that case.
-                         */
-                        sda = Math.Acos(r) * SwissEph.RADTODEG;	/* semidiurnal arc, measured on equator */
-                        sna = 180 - sda;		/* complement, seminocturnal arc */
+                        // must treat the case of abs(r) > 1; happens very rarely
+                        // because dek becomes smaller when fi is large, as ac is close to
+                        // zero Aries/Libra in that case.
+                        if (r > 1) r = 1;
+                        if (r < -1) r = -1;
+                        sda = acosd(r);	// semidiurnal arc, measured on equator
+                        sna = 180 - sda;	// complement, seminocturnal arc
                         sd3 = sda / 3;
                         sn3 = sna / 3;
                         rectasc = SE.swe_degnorm(th + sd3);	/* cusp 11 */
-                        /* project rectasc onto eclipitic with pole height 0, i.e. along the
-                        declination circle */
+                        // project rectasc onto eclipitic with pole height 0, i.e. along the
+                        // declination circle
                         hsp.cusp[11] = Asc1(rectasc, 0, sine, cose);
                         rectasc = SE.swe_degnorm(th + 2 * sd3);	/* cusp 12 */
                         hsp.cusp[12] = Asc1(rectasc, 0, sine, cose);
@@ -1448,14 +1659,17 @@ namespace SwissEphNet.CPort
                         rectasc = SE.swe_degnorm(th + 180 - sn3);	/* cusp 3 */
                         hsp.cusp[3] = Asc1(rectasc, 0, sine, cose);
                     }
+                    hsp.do_interpol = hsp.do_hspeed;
                     break;
                 case 'G': 	/* 36 Gauquelin sectors */
                     for (i = 1; i <= 36; i++) {
                         hsp.cusp[i] = 0;
+                        hsp.cusp_speed[i] = 0;
                     }
                     if (Math.Abs(fi) >= 90 - ekl) {  /* within polar circle */
                         retc = SwissEph.ERR;
                         hsp.serr = "within polar circle, switched to Porphyry";
+                        hsy = 'O';
                         goto porphyry;
                     }
                     /*************** forth/second quarter ***************/
@@ -1468,22 +1682,36 @@ namespace SwissEphNet.CPort
                         tant = tand(asind(sine * sind(Asc1(rectasc, fh1, sine, cose))));
                         if (Math.Abs(tant) < VERY_SMALL) {
                             hsp.cusp[ih] = rectasc;
+                            if (hsp.do_hspeed) hsp.cusp_speed[ih] = hsp.armc_speed;
                         } else {
                             /* pole height */
                             f = atand(sind(asind(tanfi * tant) * ih2 / 9) / tant);
                             hsp.cusp[ih] = Asc1(rectasc, f, sine, cose);
-                            for (i = 1; i <= iteration_count; i++) {
+                            cuspsv = 0;
+                            for (i = 1; i <= niter_max; i++) {
                                 tant = tand(asind(sine * sind(hsp.cusp[ih])));
                                 if (Math.Abs(tant) < VERY_SMALL) {
                                     hsp.cusp[ih] = rectasc;
+                                    if (hsp.do_hspeed) hsp.cusp_speed[ih] = hsp.armc_speed;
                                     break;
                                 }
                                 /* pole height */
                                 f = atand(sind(asind(tanfi * tant) * ih2 / 9) / tant);
                                 hsp.cusp[ih] = Asc1(rectasc, f, sine, cose);
+                                if (i > 1 && Math.Abs(SE.swe_difdeg2n(hsp.cusp[ih], cuspsv)) < VERY_SMALL_PLAC_ITER)
+                                    break;
+                                cuspsv = hsp.cusp[ih];
                             }
+                            if (i >= niter_max) {
+                                retc = SwissEph.ERR;
+                                hsy = 'O';
+                                hsp.serr = "very close to polar circle, switched to Porphyry";
+                                goto porphyry;
+                            }
+                            if (hsp.do_hspeed) hsp.cusp_speed[ih] = AscDash(rectasc, f, sine, cose);
                         }
                         hsp.cusp[ih + 18] = SE.swe_degnorm(hsp.cusp[ih] + 180);
+                        if (hsp.do_hspeed) hsp.cusp_speed[ih + 18] = hsp.cusp_speed[ih];
                     }
                     /*************** first/third quarter ***************/
                     for (ih = 29; ih <= 36; ih++) {
@@ -1493,27 +1721,47 @@ namespace SwissEphNet.CPort
                         tant = tand(asind(sine * sind(Asc1(rectasc, fh1, sine, cose))));
                         if (Math.Abs(tant) < VERY_SMALL) {
                             hsp.cusp[ih] = rectasc;
+                            if (hsp.do_hspeed) hsp.cusp_speed[ih] = hsp.armc_speed;
                         } else {
                             f = atand(sind(asind(tanfi * tant) * ih2 / 9) / tant);
                             /*  pole height */
                             hsp.cusp[ih] = Asc1(rectasc, f, sine, cose);
-                            for (i = 1; i <= iteration_count; i++) {
+                            cuspsv = 0;
+                            for (i = 1; i <= niter_max; i++) {
                                 tant = tand(asind(sine * sind(hsp.cusp[ih])));
                                 if (Math.Abs(tant) < VERY_SMALL) {
                                     hsp.cusp[ih] = rectasc;
+                                    if (hsp.do_hspeed) hsp.cusp_speed[ih] = hsp.armc_speed;
                                     break;
                                 }
                                 f = atand(sind(asind(tanfi * tant) * ih2 / 9) / tant);
                                 /*  pole height */
                                 hsp.cusp[ih] = Asc1(rectasc, f, sine, cose);
+                                if (i > 1 && Math.Abs(SE.swe_difdeg2n(hsp.cusp[ih], cuspsv)) < VERY_SMALL_PLAC_ITER)
+                                    break;
+                                cuspsv = hsp.cusp[ih];
                             }
+                            if (i >= niter_max) {
+                                retc = SwissEph.ERR;
+                                hsy = 'O';
+                                hsp.serr = "very close to polar circle, switched to Porphyry";
+                                goto porphyry;
+                            }
+                            if (hsp.do_hspeed) hsp.cusp_speed[ih] = AscDash(rectasc, f, sine, cose);
                         }
                         hsp.cusp[ih - 18] = SE.swe_degnorm(hsp.cusp[ih] + 180);
+                        if (hsp.do_hspeed) hsp.cusp_speed[ih - 18] = hsp.cusp_speed[ih];
                     }
                     hsp.cusp[1] = hsp.ac;
                     hsp.cusp[10] = hsp.mc;
                     hsp.cusp[19] = SE.swe_degnorm(hsp.ac + 180);
                     hsp.cusp[28] = SE.swe_degnorm(hsp.mc + 180);
+                    if (hsp.do_hspeed) {
+                        hsp.cusp_speed[1] = hsp.ac_speed;
+                        hsp.cusp_speed[10] = hsp.mc_speed;
+                        hsp.cusp_speed[19] = hsp.ac_speed;
+                        hsp.cusp_speed[28] = hsp.mc_speed;
+                    }
                     break;
                 case 'U': /* Krusinski-Pisa */
                     /*
@@ -1612,6 +1860,7 @@ namespace SwissEphNet.CPort
                                 hsp.cusp[i] = SE.swe_degnorm(hsp.cusp[i] + 180);
                         }
                     }
+                    hsp.do_interpol = hsp.do_hspeed;
                     break;
                 default:	/* Placidus houses */
                     if (Math.Abs(fi) >= 90 - ekl) {  /* within polar circle */
@@ -1625,82 +1874,134 @@ namespace SwissEphNet.CPort
                     /* ************  house 11 ******************** */
                     rectasc = SE.swe_degnorm(30 + th);
                     tant = tand(asind(sine * sind(Asc1(rectasc, fh1, sine, cose))));
+                    ih = 11;
                     if (Math.Abs(tant) < VERY_SMALL) {
-                        hsp.cusp[11] = rectasc;
+                        hsp.cusp[ih] = rectasc;
+                        if (hsp.do_hspeed) hsp.cusp_speed[ih] = hsp.armc_speed;
                     } else {
                         /* pole height */
                         f = atand(sind(asind(tanfi * tant) / 3) / tant);
-                        hsp.cusp[11] = Asc1(rectasc, f, sine, cose);
-                        for (i = 1; i <= iteration_count; i++) {
-                            tant = tand(asind(sine * sind(hsp.cusp[11])));
+                        hsp.cusp[ih] = Asc1(rectasc, f, sine, cose);
+                        cuspsv = 0;
+                        for (i = 1; i <= niter_max; i++) {
+                            tant = tand(asind(sine * sind(hsp.cusp[ih])));
                             if (Math.Abs(tant) < VERY_SMALL) {
-                                hsp.cusp[11] = rectasc;
+                                hsp.cusp[ih] = rectasc;
+                                if (hsp.do_hspeed) hsp.cusp_speed[ih] = hsp.armc_speed;
                                 break;
                             }
                             /* pole height */
                             f = atand(sind(asind(tanfi * tant) / 3) / tant);
-                            hsp.cusp[11] = Asc1(rectasc, f, sine, cose);
+                            hsp.cusp[ih] = Asc1(rectasc, f, sine, cose);
+                            if (i > 1 && Math.Abs(SE.swe_difdeg2n(hsp.cusp[ih], cuspsv)) < VERY_SMALL_PLAC_ITER)
+                                break;
+                            cuspsv = hsp.cusp[ih];
                         }
+                        if (i >= niter_max) {
+                            retc = SwissEph.ERR;
+                            hsp.serr = "very close to polar circle, switched to Porphyry";
+                            goto porphyry;
+                        }
+                        if (hsp.do_hspeed) hsp.cusp_speed[ih] = AscDash(rectasc, f, sine, cose);
                     }
                     /* ************  house 12 ******************** */
                     rectasc = SE.swe_degnorm(60 + th);
                     tant = tand(asind(sine * sind(Asc1(rectasc, fh2, sine, cose))));
+                    ih = 12;
                     if (Math.Abs(tant) < VERY_SMALL) {
-                        hsp.cusp[12] = rectasc;
+                        hsp.cusp[ih] = rectasc;
+                        if (hsp.do_hspeed) hsp.cusp_speed[ih] = hsp.armc_speed;
                     } else {
                         f = atand(sind(asind(tanfi * tant) / 1.5) / tant);
                         /*  pole height */
-                        hsp.cusp[12] = Asc1(rectasc, f, sine, cose);
-                        for (i = 1; i <= iteration_count; i++) {
-                            tant = tand(asind(sine * sind(hsp.cusp[12])));
+                        hsp.cusp[ih] = Asc1(rectasc, f, sine, cose);
+                        cuspsv = 0;
+                        for (i = 1; i <= niter_max; i++) {
+                            tant = tand(asind(sine * sind(hsp.cusp[ih])));
                             if (Math.Abs(tant) < VERY_SMALL) {
-                                hsp.cusp[12] = rectasc;
+                                hsp.cusp[ih] = rectasc;
+                                if (hsp.do_hspeed) hsp.cusp_speed[ih] = hsp.armc_speed;
                                 break;
                             }
                             f = atand(sind(asind(tanfi * tant) / 1.5) / tant);
                             /*  pole height */
-                            hsp.cusp[12] = Asc1(rectasc, f, sine, cose);
+                            hsp.cusp[ih] = Asc1(rectasc, f, sine, cose);
+                            if (i > 1 && Math.Abs(SE.swe_difdeg2n(hsp.cusp[ih], cuspsv)) < VERY_SMALL_PLAC_ITER)
+                                break;
+                            cuspsv = hsp.cusp[ih];
                         }
+                        if (i >= niter_max) {
+                            retc = SwissEph.ERR;
+                            hsp.serr = "very close to polar circle, switched to Porphyry";
+                            goto porphyry;
+                        }
+                        if (hsp.do_hspeed) hsp.cusp_speed[ih] = AscDash(rectasc, f, sine, cose);
                     }
                     /* ************  house  2 ******************** */
                     rectasc = SE.swe_degnorm(120 + th);
                     tant = tand(asind(sine * sind(Asc1(rectasc, fh2, sine, cose))));
+                    ih = 2;
                     if (Math.Abs(tant) < VERY_SMALL) {
-                        hsp.cusp[2] = rectasc;
+                        hsp.cusp[ih] = rectasc;
+                        if (hsp.do_hspeed) hsp.cusp_speed[ih] = hsp.armc_speed;
                     } else {
                         f = atand(sind(asind(tanfi * tant) / 1.5) / tant);
                         /*  pole height */
-                        hsp.cusp[2] = Asc1(rectasc, f, sine, cose);
-                        for (i = 1; i <= iteration_count; i++) {
-                            tant = tand(asind(sine * sind(hsp.cusp[2])));
+                        hsp.cusp[ih] = Asc1(rectasc, f, sine, cose);
+                        cuspsv = 0;
+                        for (i = 1; i <= niter_max; i++) {
+                            tant = tand(asind(sine * sind(hsp.cusp[ih])));
                             if (Math.Abs(tant) < VERY_SMALL) {
-                                hsp.cusp[2] = rectasc;
+                                hsp.cusp[ih] = rectasc;
+                                if (hsp.do_hspeed) hsp.cusp_speed[ih] = hsp.armc_speed;
                                 break;
                             }
                             f = atand(sind(asind(tanfi * tant) / 1.5) / tant);
                             /*  pole height */
-                            hsp.cusp[2] = Asc1(rectasc, f, sine, cose);
+                            hsp.cusp[ih] = Asc1(rectasc, f, sine, cose);
+                            if (i > 1 && Math.Abs(SE.swe_difdeg2n(hsp.cusp[ih], cuspsv)) < VERY_SMALL_PLAC_ITER)
+                                break;
+                            cuspsv = hsp.cusp[ih];
                         }
+                        if (i >= niter_max) {
+                            retc = SwissEph.ERR;
+                            hsp.serr = "very close to polar circle, switched to Porphyry";
+                            goto porphyry;
+                        }
+                        if (hsp.do_hspeed) hsp.cusp_speed[ih] = AscDash(rectasc, f, sine, cose);
                     }
                     /* ************  house  3 ******************** */
                     rectasc = SE.swe_degnorm(150 + th);
                     tant = tand(asind(sine * sind(Asc1(rectasc, fh1, sine, cose))));
+                    ih = 3;
                     if (Math.Abs(tant) < VERY_SMALL) {
-                        hsp.cusp[3] = rectasc;
+                        hsp.cusp[ih] = rectasc;
+                        if (hsp.do_hspeed) hsp.cusp_speed[ih] = hsp.armc_speed;
                     } else {
                         f = atand(sind(asind(tanfi * tant) / 3) / tant);
                         /*  pole height */
-                        hsp.cusp[3] = Asc1(rectasc, f, sine, cose);
-                        for (i = 1; i <= iteration_count; i++) {
-                            tant = tand(asind(sine * sind(hsp.cusp[3])));
+                        hsp.cusp[ih] = Asc1(rectasc, f, sine, cose);
+                        cuspsv = 0;
+                        for (i = 1; i <= niter_max; i++) {
+                            tant = tand(asind(sine * sind(hsp.cusp[ih])));
                             if (Math.Abs(tant) < VERY_SMALL) {
-                                hsp.cusp[3] = rectasc;
+                                hsp.cusp[ih] = rectasc;
+                                if (hsp.do_hspeed) hsp.cusp_speed[ih] = hsp.armc_speed;
                                 break;
                             }
                             f = atand(sind(asind(tanfi * tant) / 3) / tant);
                             /*  pole height */
-                            hsp.cusp[3] = Asc1(rectasc, f, sine, cose);
+                            hsp.cusp[ih] = Asc1(rectasc, f, sine, cose);
+                            if (i > 1 && Math.Abs(SE.swe_difdeg2n(hsp.cusp[ih], cuspsv)) < VERY_SMALL_PLAC_ITER)
+                                break;
+                            cuspsv = hsp.cusp[ih];
                         }
+                        if (i >= niter_max) {
+                            retc = SwissEph.ERR;
+                            hsp.serr = "very close to polar circle, switched to Porphyry";
+                            goto porphyry;
+                        }
+                        if (hsp.do_hspeed) hsp.cusp_speed[ih] = AscDash(rectasc, f, sine, cose);
                     }
                     break;
             } /* end switch */
@@ -1715,6 +2016,14 @@ namespace SwissEphNet.CPort
                 hsp.cusp[7] = SE.swe_degnorm(hsp.cusp[1] + 180);
                 hsp.cusp[8] = SE.swe_degnorm(hsp.cusp[2] + 180);
                 hsp.cusp[9] = SE.swe_degnorm(hsp.cusp[3] + 180);
+                if (hsp.do_hspeed && !hsp.do_interpol) {
+                    hsp.cusp_speed[4] = hsp.cusp_speed[10];
+                    hsp.cusp_speed[5] = hsp.cusp_speed[11];
+                    hsp.cusp_speed[6] = hsp.cusp_speed[12];
+                    hsp.cusp_speed[7] = hsp.cusp_speed[1];
+                    hsp.cusp_speed[8] = hsp.cusp_speed[2];
+                    hsp.cusp_speed[9] = hsp.cusp_speed[3];
+                }
             }
             /* vertex */
             if (fi >= 0)
@@ -1722,7 +2031,8 @@ namespace SwissEphNet.CPort
             else
                 f = -90 - fi;
             hsp.vertex = Asc1(th - 90, f, sine, cose);
-            /* with tropical latitudes, the vertex behaves strange, 
+            if (hsp.do_speed) hsp.vertex_speed = AscDash(th - 90, f, sine, cose);
+            /* with tropical latitudes, the vertex behaves strange,
              * in a similar way as the ascendant within the polar
              * circle. we keep it always on the western hemisphere.*/
             if (Math.Abs(fi) <= ekl) {
@@ -1748,15 +2058,21 @@ namespace SwissEphNet.CPort
                     hsp.equasc = 270;
             } /*  if */
             hsp.equasc = SE.swe_degnorm(hsp.equasc);
+            if (hsp.do_speed) hsp.equasc_speed = AscDash(th + 90, 0, sine, cose);
             /* "co-ascendant" W. Koch */
             hsp.coasc1 = SE.swe_degnorm(Asc1(th - 90, fi, sine, cose) + 180);
+            if (hsp.do_speed) hsp.coasc1_speed = AscDash(th - 90, fi, sine, cose);
             /* "co-ascendant" M. Munkasey */
-            if (fi >= 0)
+            if (fi >= 0) {
                 hsp.coasc2 = Asc1(th + 90, 90 - fi, sine, cose);
-            else /* southern hemisphere */
+                if (hsp.do_speed) hsp.coasc2_speed = AscDash(th + 90, 90 - fi, sine, cose);
+            } else { /* southern hemisphere */
                 hsp.coasc2 = Asc1(th + 90, -90 - fi, sine, cose);
+                if (hsp.do_speed) hsp.coasc2_speed = AscDash(th + 90, -90 - fi, sine, cose);
+            }
             /* "polar ascendant" M. Munkasey */
             hsp.polasc = Asc1(th - 90, fi, sine, cose);
+            if (hsp.do_speed) hsp.polasc_speed = AscDash(th - 90, fi, sine, cose);
             return retc;
         } /* procedure houses */
 

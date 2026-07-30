@@ -3,3 +3,4 @@
 2026-07-30 (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) (576 -> 576, 0 fewer rows): Pruned 0 newly-passing row(s); no reason required for a pure removal or a max_ulp improvement.
 2026-07-30 (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) (576 -> 576, no change in row count): Fix UlpMath.UnrelatedThreshold: relative-magnitude criterion (1% of the larger operand) replaces the fixed 2^52 absolute ULP cutoff, which the files grid's small-magnitude fixed-star speeds showed does not hold at every magnitude -- see UlpMath.cs.
 2026-07-30 (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) (576 -> 536, 40 fewer rows): Pruned 40 newly-passing row(s); no reason required for a pure removal or a max_ulp improvement.
+2026-07-30 (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) (536 -> 0, 536 fewer rows): Pruned 536 newly-passing row(s); no reason required for a pure removal or a max_ulp improvement.
