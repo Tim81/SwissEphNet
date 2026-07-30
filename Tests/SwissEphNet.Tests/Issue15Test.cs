@@ -34,8 +34,11 @@ namespace SwissEphNet.Tests
                 // (sweph.h), and the row also gained prec_offset = SEMOD_PREC_IAU_1976.
                 //
                 // Three values are worth keeping straight here. At 2.08 the ayanamsa was
-                // 23.871032. With the new table it is 23.871035, and that +0.000003 is the
-                // ayan_t0 change on its own. Genuine libswe 2.10.03 reports 23.871071.
+                // 23.871032. With the new table it is 23.871035. The underlying shift is
+                // +0.000002187 deg, the ayan_t0 change on its own (0.004660222 - 0.004658035),
+                // measured constant across every AY|1|* baseline row; the 0.000003 above is
+                // just the gap between two 6-decimal-rounded assertions. Genuine libswe
+                // 2.10.03 reports 23.871071.
                 //
                 // The remaining 0.000036 is get_aya_correction, which applies prec_offset
                 // and lives in swi_get_ayanamsa_ex in sweph.c -- not yet ported. So these
@@ -44,8 +47,9 @@ namespace SwissEphNet.Tests
                 // field is not. They should move again, to the libswe values, when the
                 // ayanamsha stage lands, and if they do not, that stage is incomplete.
                 //
-                // Every planet longitude below moves -0.000003 in step, which is the
-                // ayanamsa shift with the sign sidereal = tropical - ayanamsa implies.
+                // Nine of the eleven longitudes below move -0.000002; Sun and Neptune show
+                // -0.000003 as a rounding artifact. The sign follows from
+                // sidereal = tropical - ayanamsa.
                 sweph.swe_set_sid_mode(SwissEph.SE_SIDM_LAHIRI, 0, 0);
                 double ayanamsa = sweph.swe_get_ayanamsa(te);
 

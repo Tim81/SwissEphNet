@@ -675,15 +675,38 @@ the correction is recorded here rather than by editing it.
 ## SE_VERSION stays at "2.08" until the port actually is 2.10.03
 
 `sweph.h`'s `SE_VERSION` goes `"2.08"` -> `"2.10.03"` in the header delta, and the
-constants stage deliberately does not take that line. Everything else in that delta is
-data or a declaration; this one is a claim the library makes about itself through
+constants stage deliberately does not take that line. Everything else in that delta is data
+or a declaration; this one is a claim the library makes about itself through
 `swe_version()`, and it would be false while `sweph.c`, `swecl.c`, `swehouse.c` and
-`swetest.c` are still 2.08. The known-fail list is the standing evidence of that.
+`swetest.c` are still 2.08. The known-fail list is the standing evidence.
 
-It is behaviourally inert either way, which is worth knowing before someone assumes the
-deferral is load-bearing. `swe_set_astro_models` parses it (`SwephLib.cs`, from
-`swephlib.c:4205`) and branches on 2.06 / 2.01 / 2.00 / 1.80 / 1.78; `atof("2.08")` and
-`atof("2.10.03")` both land in the first branch and select `AMODELS_SE_2_06`.
+An earlier version of this note claimed the deferral was behaviourally inert, because
+`swe_set_astro_models` parses the string and both `atof("2.08")` and `atof("2.10.03")`
+select `AMODELS_SE_2_06`. **That was wrong for this port, and why is worth recording.** C's
+`atof` is `strtod`, which takes the longest initial subsequence of the expected form, so
+`"2.10.03"` yields 2.10. `Tools/C.cs` narrowed to the first character outside
+`0123456789.+-Ee`, and `.` is in that set, so the whole of `"2.10.03"` survived,
+`double.TryParse` rejected it, and the result was **0**. Zero falls through every version
+branch to the final `else`, selecting `AMODELS_SE_1_00` and a different tidal acceleration.
+Reachable from the public API via `swe_set_astro_models("")` or `(null)`.
 
-Take it in the release stage, together with the assembly version. `TransliterationFidelityTest`
-also asserts the current value and moves with it.
+`C.atof` now takes the longest parseable prefix as `strtod` does, so the claim holds *now*:
+`atof("2.10.03")` is 2.10, which is >= 2.06, and both values select `AMODELS_SE_2_06`. Do
+not rely on that without re-checking if `C.atof` changes again.
+
+Take `SE_VERSION` in the release stage with the assembly version.
+`TransliterationFidelityTest` asserts the current value and moves with it.
+
+## Constants from the header delta not yet carried
+
+The constants stage takes everything in `sweph.h`/`swephexp.h`/`swehouse.h`/`swephlib.h`
+that is data or a declaration, with two deliberate exceptions: `SE_VERSION` above, and
+declarations belonging to functions later stages add.
+
+Carried after being missed on the first pass: `SEFLG_TROPICAL`, `SEFLG_CENTER_BODY`,
+`SEFLG_TEST_PLMOON`, `SE_ECL_HYBRID`, and the three `SE_SIDBIT_*` values.
+
+Still absent, with their implementations: `swe_calc_pctr` (`swephexp.h:413`) and
+`swe_get_current_file_data` (`:447`). `swe_houses_ex2`, `swe_houses_armc_ex2` and the
+`int hsys` / `const char *` signature changes are recorded further up this file.
+

@@ -371,7 +371,6 @@ namespace SwissEphNet.CPort
             545000.0, /* Pallas */
             246596.0, /* Juno */
             525400.0, /* Vesta */
-            
         };
 
 
@@ -380,9 +379,14 @@ namespace SwissEphNet.CPort
          * t0       epoch of ayanamsa, TDT (can be ET or UT)
          * ayan_t0  ayanamsa value at epoch
          * t0_is_UT true, if t0 is UT
+         * prec_offset is the precession model for which the ayanamsha
+         *          has to be corrected by adding/subtracting a constant offset. 
+         *          0, if no correction is needed
+         *          -1, if correction is unclear or has not been investigated
+         *              and therefore is not applied
          */
         public struct aya_init { public double t0; public double ayan_t0; public bool t0_is_UT; public int prec_offset; };
-        public static aya_init[] ayanamsa = new aya_init[]{
+        public static aya_init[] ayanamsa = new aya_init[SwissEph.SE_NSIDM_PREDEF]{
             /* 0: Fagan/Bradley (Default)
                  "The American Sidereal Ephemeris, 1976-2000" (Astro Computing Services, 1981)
                  states on S.V.P. ("Synetic Vernal Point"):
@@ -627,7 +631,6 @@ namespace SwissEphNet.CPort
                   Lahiri ICRC (45) amounts to 1.1". */
             new aya_init{t0=2435553.5, ayan_t0=23.25 - 0.00464207, t0_is_UT=false, prec_offset=SwissEph.SEMOD_PREC_NEWCOMB}, // 46: SE_SIDM_LAHIRI_ICRC
             /*************************/
-
         };
 
         /*

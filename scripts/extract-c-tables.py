@@ -84,12 +84,15 @@ def parse_pla_diam(body):
 
 def main():
     header = Path(sys.argv[1] if len(sys.argv) > 1 else 'external/swisseph/sweph.h')
-    raw = header.read_text(encoding='utf-8', errors='replace')
+    # Strict, as gen-delta.ps1 decodes: a stray Latin-1 byte must fail loudly rather
+    # than become U+FFFD and land in the emitted C#.
+    raw = header.read_text(encoding='utf-8')
     text = strip_c_comments(raw)
 
+    # Alongside the header we were given, not a fixed path -- pointing this at another
+    # tree used to silently mix that tree's sweph.h with this one's swephexp.h.
     predef = re.search(r'#define\s+SE_NSIDM_PREDEF\s+(\d+)',
-                       Path('external/swisseph/swephexp.h').read_text(
-                           encoding='utf-8', errors='replace'))
+                       (header.parent / 'swephexp.h').read_text(encoding='utf-8'))
     n_predef = int(predef.group(1))
 
     aya = parse_ayanamsa(initializer_body(
@@ -121,8 +124,6 @@ def main():
         print('  pla_diam[%2d] = %s' % (i, v))
 
 
-if __name__ == '__main__':
-    main()
 
 
 def _mask_comments(text):
@@ -186,3 +187,28 @@ def emit_ayanamsa_csharp(body):
             out.append(body[i])
             i += 1
     return ''.join(out), rows
+
+
+def emit_main():
+    """`--emit` prints the C# initializer body, so the committed table is reproducible."""
+    header = Path(sys.argv[2] if len(sys.argv) > 2 else 'external/swisseph/sweph.h')
+    raw = header.read_text(encoding='utf-8')
+    body, rows = emit_ayanamsa_csharp(
+        initializer_body(raw, r'struct\s+aya_init\s+ayanamsa\s*\[[^\]]*\]\s*='))
+    n = int(re.search(r'#define\s+SE_NSIDM_PREDEF\s+(\d+)',
+                      (header.parent / 'swephexp.h').read_text(encoding='utf-8')).group(1))
+    if rows != n:
+        raise SystemExit('emitted %d rows but SE_NSIDM_PREDEF is %d' % (rows, n))
+    # Pin UTF-8 on the way out. The table carries degree signs and typographic quotes, and
+    # a redirected stdout on Windows otherwise encodes with the console codepage -- ibm850
+    # here -- so `--emit > file` produced mojibake.
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', newline='')
+    sys.stdout.write(body)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1 and sys.argv[1] == '--emit':
+        emit_main()
+    else:
+        main()

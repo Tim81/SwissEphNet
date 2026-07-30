@@ -229,12 +229,17 @@ namespace SwissEphNet
         public const int SEFLG_TOPOCTR = (32 * 1024);    /* topocentric position */
         public const int SEFLG_ORBEL_AA = SEFLG_TOPOCTR; /* used for Astronomical Almanac mode in 
                                               * calculation of Kepler elipses */
+        public const int SEFLG_TROPICAL = (0);          /* tropical position (default) */
         public const int SEFLG_SIDEREAL = (64 * 1024);    /* sidereal position */
         public const int SEFLG_ICRS = (128 * 1024);   /* ICRS (DE406 reference frame) */
         public const int SEFLG_DPSIDEPS_1980 = (256 * 1024); /* reproduce JPL Horizons 
                                                                 1962 - today to 0.002 arcsec. */
         public const int SEFLG_JPLHOR = SEFLG_DPSIDEPS_1980;
         public const int SEFLG_JPLHOR_APPROX = (512 * 1024);   /* approximate JPL Horizons 1962 - today */
+        public const int SEFLG_CENTER_BODY = (1024 * 1024);  /* calculate position of center of body (COB)
+                                                        of planet, not barycenter of its system */
+        public const int SEFLG_TEST_PLMOON = (2 * 1024 * 1024 | SEFLG_J2000 | SEFLG_ICRS | SEFLG_HELCTR | SEFLG_TRUEPOS);  /* test raw data in files sepm9* */
+
 
         public const int SE_SIDBITS = 256;
         /* for projection onto ecliptic of t0 */
@@ -328,6 +333,8 @@ namespace SwissEphNet
         public const int SE_ECL_ANNULAR = 8;
         public const int SE_ECL_PARTIAL = 16;
         public const int SE_ECL_ANNULAR_TOTAL = 32;
+        public const int SE_ECL_HYBRID = 32;  // = annular-total
+
         public const int SE_ECL_PENUMBRAL = 64;
         public const int SE_ECL_ALLTYPES_SOLAR = (SE_ECL_CENTRAL | SE_ECL_NONCENTRAL | SE_ECL_TOTAL | SE_ECL_ANNULAR | SE_ECL_PARTIAL | SE_ECL_ANNULAR_TOTAL);
         public const int SE_ECL_ALLTYPES_LUNAR = (SE_ECL_TOTAL | SE_ECL_PARTIAL | SE_ECL_PENUMBRAL);

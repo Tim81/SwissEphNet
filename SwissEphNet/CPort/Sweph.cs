@@ -246,6 +246,10 @@ namespace SwissEphNet.CPort
            "Cochrane (Gal.Center = 0 Cap)",    /* 40 SE_SIDM_GALCENT_COCHRANE */
            "Galactic Equator (Fiorenza)",      /* 41 SE_SIDM_GALEQU_FIORENZA */
            "Vettius Valens",                   /* 42 SE_SIDM_VALENS_MOON */
+           "Lahiri 1940",                      /* 43 SE_SIDM_LAHIRI_1940 */
+           "Lahiri VP285",                     /* 44 SE_SIDM_LAHIRI_VP285 */
+           "Krishnamurti-Senthilathiban",       /* 45 SE_SIDM_KRISHNAMURTI_VP291 */
+           "Lahiri ICRC",                      /* 46 SE_SIDM_LAHIRI_ICRC */
            /*"Manjula/Laghumanasa",*/
         };
         //int[] pnoint2jpl = PNOINT2JPL;
