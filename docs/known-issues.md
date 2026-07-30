@@ -63,19 +63,40 @@ unusable. This is a real behavior worth freezing and worth a second look during 
 2.10.03 port: does the C source treat `eps=0` as an error case anywhere, and if so,
 does that error surface through `retc` there but not here?
 
-**Answered: yes, and the port swallows it.** Measured against MSVC-built 2.10.03 C
-by the bit-exact comparison harness (`scripts/verify-oracle.ps1`): 176 of the
-14,220 analytic-grid rows return a different `retc`, and every one is
-`swe_houses_armc` at `eps=0` -- 88 with `hsys = 'G'`, 88 with `hsys = 'P'`. The C
-returns `ERR` (-1); the port returns `OK` (0). The 176 case ids are recorded in
-`Tests/oracle/known-diff.tsv` under category `RETC`, so the swehouse.c port has the
-exact inputs that prove it rather than a description of them.
+**Answered: 2.10.03 treats it as an error, 2.08 does not, and the port is faithful to
+2.08.** So this is upgrade work, not a defect to fix against the version the port
+currently tracks.
 
-Two things this does not yet say. It covers `'G'` and `'P'` only, because those are
-the house systems the analytic grid crosses with `eps=0`; `{J, Z, 0}` from the
-paragraph above are untested against the C so far. And it does not say where in
-`swehouse.c` the error originates, only that it reaches `retc`. Both are for the
-swehouse.c port to settle.
+Measured by the bit-exact comparison harness: 176 of the 14,220 analytic-grid rows
+return a different `retc` against 2.10.03 C, all `swe_houses_armc` at `eps=0`, 88
+with `hsys = 'G'` and 88 with `hsys = 'P'`. Against **2.08** C all 176 match
+exactly -- `Tests/oracle/version-classification.tsv` classifies every one of them
+`TRACKS-2.08` with `port_vs_2.08 = MATCH`. 2.08 returns `OK` with NaN cusps, which
+is precisely what the port does.
+
+The mechanism is in the C. 2.10.03 adds `int niter_max = 100`
+(`external/swisseph/swehouse.c:940`) and caps the Placidus and Gauquelin pole-height
+iterations with `if (i >= niter_max) { retc = ERR; hsy = 'O'; goto porphyry; }`
+(`:1667`, `:1709`, and four more). At `eps=0`, `tand(0)` is 0 and the iteration never
+converges, so 2.10.03 gives up, reports the error and falls back to Porphyry --
+returning real cusps rather than NaN. `niter_max` does not appear anywhere in
+`external/pyswisseph-2.08/swehouse.c`, and that file has three `retc = ERR` sites
+against 2.10.03's nine.
+
+So the swehouse.c port picks this up as part of the delta, and the 176 case ids in
+`Tests/oracle/known-diff.tsv` under category `RETC` are the inputs to verify it
+against. Note the rows also carry 33 to 34 cusp fields that are NaN on the port's
+side and finite on 2.10.03's, from that Porphyry fallback; the difference is not
+confined to the return code.
+
+An earlier revision of this paragraph said the port "swallows" an error the C
+reports, which was wrong in the way that costs time: it would have sent someone to
+fix code that is already correct for the version it tracks. The
+`Tests/oracle/version-classification.tsv` data that refutes it was available and
+unread. It also claimed `'G'` and `'P'` were the only house systems the grid crosses
+with `eps=0`; the grid crosses all 25 letters with `eps=0`, and `G` and `P` are
+simply the only two where `retc` differs. `{J, Z, 0}` are untested because they are
+not in the grid at all.
 
 ## swe_houses_armc, hsys 'i' (Makransky Sunshine houses): cusp = 360.0, missing normalization
 
