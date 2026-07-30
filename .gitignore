@@ -192,3 +192,11 @@ FakesAssemblies/
 # (see CONTRIBUTING.md, "Correctness oracle known-fail list") -- would
 # otherwise be excluded by the blanket "*.log" rule above.
 !/Tests/conformance/regenerations.log
+
+# Same for the bit-exact comparison harness's two known-diff lists. A full
+# regenerate can add or worsen rows and so requires a written reason; the reason
+# only means anything if the log recording it is in the repo. Excluded by the
+# blanket "*.log" rule otherwise, which silently cost the first commit of
+# Tests/oracle/known-diff.tsv its provenance log.
+!/Tests/oracle/regenerations.log
+!/Tests/oracle/regenerations-files.log
