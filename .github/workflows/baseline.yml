@@ -85,6 +85,17 @@ jobs:
         shell: pwsh
         run: dotnet test Tools/BaselineVerify.Tests -c Release
 
+      # Compile-only, not a full regeneration: this job's own "Verify baseline" step
+      # below only ever builds Tools/BaselineMatrix in local mode (a ProjectReference
+      # to the in-repo library), so reference mode (the published SwissEphNet 2.8.0.2
+      # package, which scripts/regenerate-baseline.ps1's default path builds) went
+      # unbuilt anywhere in CI and a break there shipped silently until reproduced by
+      # hand. Building it here, both net8.0 and net10.0, catches that class of
+      # regression without paying for an actual regeneration run.
+      - name: Build reference mode (compile-only regression guard)
+        shell: pwsh
+        run: dotnet build Tools/BaselineMatrix -c Release -p:UseReferencePackage=true
+
       - name: Verify baseline
         shell: pwsh
         run: pwsh scripts/verify-baseline.ps1
