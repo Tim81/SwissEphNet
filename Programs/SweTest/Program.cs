@@ -3229,14 +3229,15 @@ namespace SweTest
                 if (izod == 12) izod = 0;
                 xv = (xv % 30.0);
                 kdeg = (Int32)xv;
-                // swetest.c:2685 is sprintf(s, "%2d %s ", ...) with no leading space. The space is
-                // kept here on purpose. The sign-insertion below writes at the character before the
-                // first digit, and with "%2d" a kdeg of 10 or more fills the field, so the C writes
-                // *(sp-1) one byte before its own buffer and loses the minus: swetest -p0 -d1
-                // -b3.1.2020 -fPZ prints "27 ge 50' 3.9344" for a value of -27. Reproducing that
-                // would print a positive number for a negative one. Recorded in docs/known-issues.md
-                // and reported upstream; revisit if upstream fixes it.
-                s = C.sprintf(" %2d %s ", kdeg, zod_nam[izod]);
+                // swetest.c:2686: sprintf(s, "%2d %s ", kdeg, zod_nam[izod]); -- no leading space.
+                // A prior fix here kept a leading space to dodge a sign-loss bug in the C (see the
+                // sign-insertion guard below, at return_dms), but that made every zodiac field diverge
+                // from the C, not just the case the C gets wrong. Matching the C's own format and
+                // guarding the sign insertion instead keeps this byte-exact with the C for every
+                // non-negative value, and confines the divergence to the one input where the C itself
+                // has undefined behavior. See "swetest.c's zodiac field: a sign the C itself can
+                // lose, reproduced instead of dodged" in docs/known-issues.md.
+                s = C.sprintf("%2d %s ", kdeg, zod_nam[izod]);
             }
             else
             {
@@ -3292,7 +3293,18 @@ namespace SweTest
             if (sgn < 0)
             {
                 spi = s.IndexOfAny("0123456789".ToCharArray());
-                s = String.Concat(s.Substring(0, spi - 1), '-', s.Substring(spi));
+                // swetest.c:2723-2725 (return_dms): sp = strpbrk(s, "0123456789"); *(sp - 1) = '-';
+                // overwrites the character immediately before the first digit. Under BIT_ZODIAC,
+                // once kdeg reaches double digits "%2d" fills the field and the first digit lands
+                // at index 0, so the C writes *(sp - 1) one byte before its own buffer -- undefined
+                // behavior that loses the minus (swetest -p0 -d1 -b3.1.2020 -fPZ prints
+                // "27 ge 50' 3.9344" for a value of -27, not "-27 ge..."). Reproducing that would
+                // print a positive number for a negative one, so prepend the sign here instead of
+                // splicing at index -1 when there is no character before the digit to overwrite.
+                if (spi == 0)
+                    s = "-" + s;
+                else
+                    s = String.Concat(s.Substring(0, spi - 1), '-', s.Substring(spi));
             }
             if ((iflg & BIT_LZEROES) != 0)
             {
@@ -3842,7 +3854,10 @@ namespace SweTest
                     sout += C.sprintf("  %s ", hms_from_tjd(tret[6]));
                     if (have_gap_parameter) sout += "\t";
                     if (tret[2] != 0)
-                        sout = C.sprintf("%s ", hms_from_tjd(tret[2]));
+                        // swetest.c:3204: sprintf(sout + strlen(sout), ...) appends;
+                        // the plain assignment here dropped the eclipse label, the
+                        // date/magnitude/saros line and the penumbral time above it.
+                        sout += C.sprintf("%s ", hms_from_tjd(tret[2]));
                     else
                         sout += ("   -         ");
                     if (have_gap_parameter) sout += "\t";
@@ -4698,6 +4713,11 @@ namespace SweTest
                 var s2 = s.Substring(spi + SwissEph.ODEGREE_STRING.Length);
                 s = String.Concat(s.Substring(0, spi + 1), s2);
                 s = String.Concat(s.Substring(0, spi + 3), ":", s.Substring(spi + 4));
+                // swetest.c:3937: *(sp + 8) = '\0'; truncates the buffer after the
+                // seconds field. The length guard is needed because the C writes into
+                // a static AS_MAXCH buffer regardless of length, while Substring would
+                // throw here if s were ever shorter than spi + 8.
+                if (s.Length > spi + 8) s = s.Substring(0, spi + 8);
             }
             return s;
         }

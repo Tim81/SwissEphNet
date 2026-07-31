@@ -1253,3 +1253,31 @@ This was the one gap a function-by-function audit of all 87 shared `sweph.c` fun
 at the 2.08 form, after Phase 4 reported the file complete. It survived because
 `scripts/gen-delta.ps1` labels each hunk with the nearest *preceding* function signature, which is
 often not the function the change lands in, and the slice work lists were built from those labels.
+
+## swetest.c's zodiac field: a sign the C itself can lose, reproduced instead of dodged
+
+`dms()` (`swetest.c:2642-2731`) formats a degree value with `sprintf`, then patches a minus sign
+into the result by hand: `sp = strpbrk(s, "0123456789"); *(sp - 1) = '-';` (`:2723-2725`). That
+overwrites the character immediately before the first digit -- it assumes there always is one.
+
+Under `BIT_ZODIAC`, the degree field is `sprintf(s, "%2d %s ", kdeg, zod_nam[izod])` (`:2686`),
+`kdeg` being 0-29 within the sign. `"%2d"` only pads to width 2 when `kdeg` is single-digit; once
+it reaches 10, the field is exactly two characters and the first one is a digit at index 0. The
+minus-sign write then lands at index -1: one byte before the C's own buffer. `swetest -p0 -d1
+-b3.1.2020 -fPZ` shows it directly, printing `27 ge 50' 3.9344` for a value of -27 instead of
+`-27 ge...` -- the sign is gone, not misplaced.
+
+An earlier version of `Programs/SweTest/Program.cs`'s port of this function kept a leading space on
+every `BIT_ZODIAC` field (`" %2d %s "` instead of the C's `"%2d %s "`) to dodge the crash a literal
+translation of the sign-insertion would otherwise hit at index 0. That traded one problem for a
+bigger one: it diverged from the C's column width on every zodiac field, in every rounding mode,
+not just the one input where the C loses its sign. The port now matches `dms()`'s own format
+exactly and instead guards the sign-insertion site: when the first digit sits at index 0, it
+prepends the minus rather than splicing at index -1. That keeps the port byte-exact with the C for
+every non-negative value and confines the divergence to the single case the C itself gets wrong --
+verified against `external/.c-reference/swetest.exe` under `-fPLZ`, `-fPLZ -roundmin`,
+`-fPLZ -roundsec`, and the `-fPZ` case above.
+
+This is recorded here, not filed upstream. Astrodienst's own reporting channel is outside this
+repository's control, so "reported upstream" should never be written into a code comment as a
+statement of fact without a tracked issue behind it.
