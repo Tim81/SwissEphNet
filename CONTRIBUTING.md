@@ -35,7 +35,7 @@ folder except a small set that has actually caught real transliteration bugs
 operations, CA2242 for NaN comparison, and CS0162/CS0164/CS0219 for
 unreachable/unused code that usually means a mis-landed `goto`) -- they are
 a deliberate carve-out, not a blanket noise suppression, and that carve-out
-is exactly why `Programs/SweTest/Program.cs` alone still emits over 200
+is exactly why `Programs/SweTest/Program.cs` alone still emits two
 warning sites (see "Net warning count" below): this document forbids fixing
 them, since fixing them means editing frozen, transliterated code. Do not
 try to clean those up. Separately, and regardless of any of the above,
@@ -69,7 +69,7 @@ and pull request. It records a SHA-256 over each frozen path's normalized conten
 
 The hash is the check; the counts say what kind of change happened. Earlier versions
 carried only the counts, and that was not enough: re-indenting a file moves none of
-them. Measured, doubling the indentation of `SweDate.cs` rewrites 568 of its 613 lines
+them. Measured, doubling the indentation of `SweDate.cs` rewrites 570 of its 615 lines
 and leaves the four counts byte-identical, so the gate passed on a file where every
 content line had changed. Indentation normalization is the bulk of what
 `dotnet format whitespace` does, which is the exact tool this check exists to catch.
@@ -128,15 +128,20 @@ pinned to tag `v2.10.3final` -- the upstream C this port is being upgraded to.
 It is sparse-checked-out to keep it small: only `*.c`, `*.h`, `Makefile`,
 `LICENSE`, `setest/` (the reference test corpus `Tests/SwissEphNet.Conformance.Tests`
 is built against) and eight specific `ephe/` files the conformance oracle needs to run
-are pulled. The rest of `ephe/` is deliberately excluded -- the full tree is 378 MB
-across 259 files, most of which nothing in this repo needs.
+are pulled. The rest of `ephe/` is deliberately excluded -- `ephe/`'s own full tree (not
+the submodule's) is 378 MB across 259 files on its own, most of which nothing in this
+repo needs.
 
 To initialize it, do the sparse setup before the first checkout, so the partial clone never
 fetches blobs for the excluded paths in the first place -- this is the primary recipe, not a
 disk-conscious alternative for CI only. Measured: `git submodule update --init` (below) lands at
 the same commit but pulls the entire `aloistr/swisseph` history and every path, `ephe/` included
--- 427 MB of working tree plus 918 MB of git objects in a from-scratch checkout, not the 19 MB /
-2.3 MB this sparse recipe gives:
+-- 423.9 MB of working tree across 445 files (the same figure the README's submodule-size note
+cites, both read from the tree's own content so the number holds regardless of platform
+line-ending settings) plus roughly 870 MB of git objects in a from-scratch checkout -- that
+second figure moves as upstream's own history grows, so treat it as an order of magnitude, not
+an exact count pinned to one moment. Either way, that is not the 19 MB / 86 files and roughly
+5.8 MB of git objects this sparse recipe gives:
 
 ```powershell
 git submodule init
@@ -306,18 +311,22 @@ Measured with `dotnet build <target> -c Release --no-incremental` (an
 up-to-date build recompiles nothing and silently reports zero, so always
 force a clean rebuild when counting):
 
-- `SwissEphNet.sln`: 867 warnings, 537 distinct sites, 465 of them outside
-  `CPort/` (205 in `Programs/SweTest/Program.cs`, 185 in
-  `Tests/SwissEphNet.Tests`, 64 in `Programs/SweWin`, the remaining 11 split
-  between `Programs/SweMini/Program.cs` and `SwissEphNet/Tools/`).
-- `SwissEphNet.CrossPlatform.slnf` (excludes `SweWin`, which is Windows-only):
-  803 warnings.
+- `SwissEphNet.sln`: 16 warnings across 9 distinct sites. 6 of those sites are inside
+  `CPort/` (`Sweph.h.cs:818`, `Sweph.cs:7208`, `Sweph.cs:7457`, `Sweph.cs:7479`,
+  `Sweph.cs:8830`, `SwephLib.cs:4693`); the remaining 3 are outside it, all in the other two
+  frozen, transliterated files: `Programs/SweTest/Program.cs:758` and `:804`
+  (`CS0414`), and `Programs/SweMini/Program.cs:155` (`CS0162`). `Tests/SwissEphNet.Tests`
+  and `Programs/SweWin` currently contribute zero.
+- `SwissEphNet.CrossPlatform.slnf` (excludes `SweWin`, which is Windows-only): 16
+  warnings, the same 9 sites, because `SweWin` is one of the two projects (with
+  `Tests/SwissEphNet.Tests`) currently contributing nothing to the total.
 
-Most of the outside-`CPort/` total sits in the two other frozen,
-transliterated files (`SweTest/Program.cs`, `SweMini/Program.cs`), which this
-document forbids cleaning up for the same reason it forbids touching
-`CPort/`. A contributor should not treat this count as a backlog to clear;
-it is a snapshot, re-measure it rather than trusting a stale number here.
+These numbers are not gated by `scripts/verify-doc-counts.ps1`: that script's ground
+truth is the tracked TSVs it reads (`known-fail.tsv`, the oracle grids, the swetest
+known-diff lists), and a compiler warning count is not one of them, so there is no
+`<!--doccount:-->` marker on it. A contributor should not treat this count as a backlog
+to clear, and should not treat it as static either; it is a snapshot from a clean
+rebuild, re-measure it rather than trusting a stale number here.
 
 ## Characterization baseline
 
