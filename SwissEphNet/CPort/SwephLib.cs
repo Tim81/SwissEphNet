@@ -3902,15 +3902,6 @@ namespace SwissEphNet.CPort
             return s;
         }
 
-        public static int swi_strnlen(string str, int n)
-        {
-            //size_t swi_strnlen(const char *str, size_t n) {
-            //  const char * stop = (char *)memchr(str, '\0', n);
-            //  return stop ? stop - str : n;
-            //}
-            return str != null ? str.Length : n;
-        }
-
         /*
          * The following C code (by Rob Warnock rpw3@sgi.com) does CRC-32 in
          * BigEndian/BigEndian byte/bit order. That is, the data is sent most

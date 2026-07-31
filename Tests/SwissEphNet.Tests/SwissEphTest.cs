@@ -38,9 +38,16 @@ namespace SwissEphNet.Tests
 
         [Fact]
         public void TestOnLoadFile() {
+            // sweph.c:7044-7065 splits the not-found message in two:
+            // "(asteroid)" when ipl > SE_AST_OFFSET, "(planetary moon)"
+            // otherwise. SE_AST_OFFSET + 100 takes the asteroid branch. The
+            // previous "100: not found" (no suffix) predates that split; the
+            // port now matches, and fixing it resolved the last differing
+            // row (NAME|10005) in the file-backed oracle grid.
+
             // No file loading defined
             using (var target = new SwissEph()) {
-                Assert.Equal("100: not found", target.swe_get_planet_name(SwissEph.SE_AST_OFFSET + 100));
+                Assert.Equal("100: not found (asteroid)", target.swe_get_planet_name(SwissEph.SE_AST_OFFSET + 100));
             }
 
             // File loading defined, but file not found
@@ -48,7 +55,7 @@ namespace SwissEphNet.Tests
                 target.OnLoadFile += (s, e) => {
                     e.File = null;
                 };
-                Assert.Equal("100: not found", target.swe_get_planet_name(SwissEph.SE_AST_OFFSET + 100));
+                Assert.Equal("100: not found (asteroid)", target.swe_get_planet_name(SwissEph.SE_AST_OFFSET + 100));
             }
 
             // File loading defined

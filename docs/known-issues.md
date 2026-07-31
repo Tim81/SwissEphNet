@@ -613,20 +613,25 @@ this branch adds. Fix it (`new double[37]`, matching upstream) as its own
 reviewed PR, then remove the corresponding `known-fail.tsv` rows and drop this
 entry.
 
-## swi_strnlen outlives its deletion in swephlib.c, deliberately
+## swi_strnlen outlived its deletion in swephlib.c, deliberately, until this slice
 
-2.10.03 removes `swi_strnlen` from `swephlib.c`, and the swephlib port keeps it
-(`CPort/SwephLib.cs`). That is intentional, not an oversight: `sweph.c` is still
-at 2.08 in this repo and `CPort/Sweph.cs` still calls it. Deleting it with the
-swephlib port would not compile.
+2.10.03 removed `swi_strnlen` from `swephlib.c`, and the swephlib port kept it
+(`CPort/SwephLib.cs`) for a while: `sweph.c` was still at 2.08 in this repo and
+`CPort/Sweph.cs` still called it, and deleting it with the swephlib port would
+not have compiled.
 
-It comes out with the `sweph.c` port, along with its last caller. Anyone diffing
-`SwephLib.cs` against 2.10.03 before then will find one function the C no longer
-has, and this is why.
+**Closed.** `swi_fixstar_load_record` (`CPort/Sweph.cs`) was its only remaining
+caller, and the `sweph.c` port replaced that call with the same `strlen`-plus-clamp
+the C now uses (`sweph.c:7540-7556`: `slen = strlen(s); if (slen > SE_MAX_STNAME)
+slen = SE_MAX_STNAME;`, in place of `slen = swi_strnlen(s, SE_MAX_STNAME);`), so
+`swi_strnlen` was removed from `SwephLib.cs` in the same change. Anyone diffing
+an older revision of `SwephLib.cs` against 2.10.03 would have found one function
+the C no longer has; that is no longer the case.
 
-Its body is also not what the C's was -- it returns the whole length rather than
-`min(strlen, n)`, ignoring `n` entirely. That predates the 2.10.03 work and is
-moot once the function goes, so it is recorded rather than fixed.
+Its body was also not what the C's was -- it returned the whole length rather than
+`min(strlen, n)`, ignoring `n` entirely. That predated the 2.10.03 work and became
+moot once the function was removed, so it was recorded rather than fixed while it
+still existed.
 
 ## calc_nutation_woolard: C# long is 64-bit, MSVC's is 32-bit
 

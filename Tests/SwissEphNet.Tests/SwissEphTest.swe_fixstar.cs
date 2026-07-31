@@ -35,9 +35,23 @@ namespace SwissEphNet.Tests
                 Assert.Equal(69.43785467706, xx[0], 11);
                 Assert.Equal(-5.46862068665, xx[1], 11);
                 Assert.Equal(4214356.43826371, xx[2], 8);
-                Assert.Equal(0.00014896, xx[3], 8);
-                Assert.Equal(1.723E-05, xx[4], 8);
-                Assert.Equal(0.01522108, xx[5], 8);
+                // This call passes SEFLG_MOSEPH only, without SEFLG_SPEED, so
+                // xx[3..5] must come back zeroed. The nonzero values asserted
+                // here previously encoded a bug in
+                // swi_fixstar_calc_from_record: it set iflgsave = iflag
+                // *after* OR-ing SEFLG_SPEED into iflag, so iflgsave always
+                // carried the speed bit regardless of what the caller asked
+                // for, and the trailing "if (!(iflgsave & SEFLG_SPEED))"
+                // zero-fill never ran for a non-speed call. sweph.c:7627-7628
+                // assigns iflgsave before OR-ing in SEFLG_SPEED, and
+                // sweph.c:7871-7875 zero-fills xx[3..5] under that corrected
+                // condition; the port now matches both. Confirmed against
+                // Tools/OracleGrid/grid-files.tsv: the file-backed oracle
+                // grid's fixstar rows now match the MSVC-built 2.10.03 C bit
+                // for bit.
+                Assert.Equal(0, xx[3]);
+                Assert.Equal(0, xx[4]);
+                Assert.Equal(0, xx[5]);
 
                 name = "unknown";
                 iflag = swe.swe_fixstar(ref name, tjd, SwissEph.SEFLG_MOSEPH, xx, ref serr);
@@ -72,20 +86,18 @@ namespace SwissEphNet.Tests
                 Assert.Equal(69.43785475383, xx[0], 11);
                 Assert.Equal(-5.46862068520, xx[1], 11);
                 Assert.Equal(4214356.43827158, xx[2], 7);
-                Assert.Equal(0.000151, xx[3], 6);
-                Assert.Equal(1.7E-05, xx[4], 6);
-                // xx[5] (distance speed) is computed by numerical
-                // differentiation and genuinely diverges cross-platform --
-                // 0.015543 on Windows vs ~0.0155325 on Linux, about 6.8e-4
-                // relative. That is the same category of divergence
-                // documented in docs/known-issues.md under "calc/pheno SPEED
-                // fields: differentiation noise" (numerical differentiation
-                // amplifying ULP-level position differences between
-                // platforms), just larger in magnitude for this particular
-                // star/quantity; it is not related to any of PR #4's six
-                // bugs. 4 decimal places keeps this assertion meaningful
-                // while tolerating that divergence.
-                Assert.Equal(0.015543, xx[5], 4);
+                // This call passes SEFLG_MOSEPH only, without SEFLG_SPEED, so
+                // xx[3..5] must come back zeroed -- see the matching comment
+                // in Test_swe_fixstar for the swi_fixstar_calc_from_record bug
+                // (sweph.c:7627-7628, sweph.c:7871-7875) that the previous
+                // nonzero values here encoded. That also removes the reason
+                // for the old xx[5] cross-platform tolerance below: the
+                // 0.015543-vs-~0.0155325 divergence came from numerically
+                // differentiating a nonzero speed, and a hard-zeroed field has
+                // nothing left to differentiate or diverge.
+                Assert.Equal(0, xx[3]);
+                Assert.Equal(0, xx[4]);
+                Assert.Equal(0, xx[5]);
             }
         }
 

@@ -7274,6 +7274,7 @@ namespace SwissEphNet.CPort
             de_pm = C.atof(cpos[10]);
             radv = C.atof(cpos[11]);
             parall = C.atof(cpos[12]);
+            if (parall < 0) parall = -parall;  // to fix bug like old Rasalgheti
             mag = C.atof(cpos[13]);
             /****************************************
              * position and speed (equinox)
@@ -7281,9 +7282,13 @@ namespace SwissEphNet.CPort
             /* ra and de in degrees */
             ra = (ra_s / 3600.0 + ra_m / 60.0 + ra_h) * 15.0;
             if (sde_d.IndexOf('-') < 0)
+            {
                 de = de_s / 3600.0 + de_m / 60.0 + de_d;
+            }
             else
+            {
                 de = -de_s / 3600.0 - de_m / 60.0 + de_d;
+            }
             /* speed in ra and de, degrees per century */
             if (swed.is_old_starfile == true)
             {
@@ -7298,9 +7303,13 @@ namespace SwissEphNet.CPort
             }
             /* parallax, degrees */
             if (parall > 1)
+            {
                 parall = (1 / parall / 3600.0);
+            }
             else
+            {
                 parall /= 3600;
+            }
             /* radial velocity in AU per century */
             radv *= KM_S_TO_AU_CTY;
             /*printf("ra=%.17f,de=%.17f,ma=%.17f,md=%.17f,pa=%.17f,rv=%.17f\n",ra,de,ra_pm,de_pm,parall,radv);*/
@@ -7341,7 +7350,7 @@ namespace SwissEphNet.CPort
         Int32 load_all_fixed_stars(ref string serr)
         {
             Int32 retc = OK;
-            int nstars = 0, line = 0, fline = 0, nrecs = 0, nnamed = 0;
+            int nstars = 0, nrecs = 0, nnamed = 0;
             //char s[AS_MAXCH], *sp;
             string s, sdummy = null;
             string srecord;
@@ -7368,13 +7377,11 @@ namespace SwissEphNet.CPort
             swed.fixed_stars = null;
             while ((s = swed.fixfp.ReadLine()) != null)
             {
-                fline++;
                 // skip comment lines
                 if (string.IsNullOrEmpty(s)) continue;
                 if (s.StartsWith("#")) continue;
                 if (s.StartsWith("\n")) continue;
                 if (s.StartsWith("\r")) continue;
-                line++;
                 srecord = s;
                 retc = fixstar_cut_string(srecord, ref sdummy, ref fstdata, ref serr);
                 if (retc == ERR) return ERR;
@@ -7411,7 +7418,7 @@ namespace SwissEphNet.CPort
             swed.n_fixstars_real = nstars;
             swed.n_fixstars_named = nnamed;
             swed.n_fixstars_records = nrecs;
-            //printf("nstars=%d, nrecords=%d\n", nstars, nrecs);
+            // fprintf(stderr, "nstars=%d, nrecords=%d\n", nstars, nrecs);
             qsort(swed.fixed_stars.GetPointer(), nrecs, fixedstar_name_compare);
             return retc;
         }
@@ -7486,9 +7493,13 @@ namespace SwissEphNet.CPort
             radv = stardata.radvel; parall = stardata.parall;
             ra = stardata.ra; de = stardata.de;
             if (epoch == 1950)
+            {
                 t = (tjd - B1950);  /* days since 1950.0 */
+            }
             else /* epoch == 2000 */
+            {
                 t = (tjd - J2000);  /* days since 2000.0 */
+            }
             x[0] = ra;
             x[1] = de;
             x[2] = 1;
@@ -7844,35 +7855,35 @@ namespace SwissEphNet.CPort
             /* some stars are built-in, because they are required for Hindu
              * sidereal ephemerides */
             /* Ayanamsha SE_SIDM_TRUE_CITRA */
-            if (strncmp(star, "spica", 5) == 0)
+            if (strncmp(star, "spica", 5) == 0 || strncmp(star, "Spica", 5) == 0)
             {
                 srecord = "Spica,alVir,ICRS,13,25,11.57937,-11,09,40.7501,-42.35,-30.67,1,13.06,0.97,-10,3672";
                 sstar = "spica";
                 return true;
                 /* Ayanamsha SE_SIDM_TRUE_REVATI */
             }
-            else if (strstr(star, ",zePsc") > -1 || strncmp(star, "revati", 6) == 0)
+            else if (strstr(star, ",zePsc") > -1 || strncmp(star, "revati", 6) == 0 || strncmp(star, "Revati", 6) == 0)
             {
                 srecord = "Revati,zePsc,ICRS,01,13,43.88735,+07,34,31.2745,145,-55.69,15,18.76,5.187,06,174";
                 sstar = "revati";
                 return true;
                 /* Ayanamsha SE_SIDM_TRUE_PUSHYA */
             }
-            else if (strstr(star, ",deCnc") > -1 || strncmp(star, "pushya", 6) == 0)
+            else if (strstr(star, ",deCnc") > -1 || strncmp(star, "pushya", 6) == 0 || strncmp(star, "Pushya", 6) == 0)
             {
                 srecord = "Pushya,deCnc,ICRS,08,44,41.09921,+18,09,15.5034,-17.67,-229.26,17.14,24.98,3.94,18,2027";
                 sstar = "pushya";
                 return true;
                 /* Ayanamsha SE_SIDM_TRUE_SHEORAN */
             }
-            else if (strstr(star, ",deCnc") > -1 || strncmp(star, "pushya", 6) == 0)
+            else if (strstr(star, ",deCnc") > -1)
             {
                 srecord = "Pushya,deCnc,ICRS,08,44,41.09921,+18,09,15.5034,-17.67,-229.26,17.14,24.98,3.94,18,2027";
                 sstar = "pushya";
                 return true;
                 /* Ayanamsha SE_SIDM_TRUE_MULA */
             }
-            else if (strstr(star, ",laSco") > -1 || strncmp(star, "mula", 6) == 0)
+            else if (strstr(star, ",laSco") > -1 || strncmp(star, "mula", 6) == 0 || strncmp(star, "Mula", 6) == 0)
             {
                 srecord = "Mula,laSco,ICRS,17,33,36.52012,-37,06,13.7648,-8.53,-30.8,-3,5.71,1.62,-37,11673";
                 sstar = "mula";
@@ -7945,12 +7956,6 @@ namespace SwissEphNet.CPort
             trace_swe_fixstar(1, star, tjd, iflag, xx, ref serr);
 #endif //* TRACE */
             load_all_fixed_stars(ref serr); // loads stars unless loaded with an earlier call of function
-#if FALSE
-            for (i = 0; i < swed.n_fixstars_records; i++) {
-              printf("%s, %s, %s, %f\n", swed.fixed_stars[i].skey, swed.fixed_stars[i].starname, swed.fixed_stars[i].starbayer, swed.fixed_stars[i].mag);
-            }
-            exit(0);
-#endif
             retc = fixstar_format_search_name(star, ref sstar, ref serr);
             if (retc == ERR)
                 goto return_err;
@@ -8170,19 +8175,32 @@ namespace SwissEphNet.CPort
                         break;
                     }
                     /* asteroids */
-                    if (ipl > SwissEph.SE_AST_OFFSET)
+                    if (ipl > SwissEph.SE_PLMOON_OFFSET || ipl > SwissEph.SE_AST_OFFSET) // 2nd condition obsolete
                     {
                         /* if name is already available */
                         if (ipl == swed.fidat[SEI_FILE_ANY_AST].ipl[0])
+                        {
                             s = swed.fidat[SEI_FILE_ANY_AST].astnam;
                         /* else try to get it from ephemeris file */
+                        }
                         else
                         {
                             var retc = sweph(J2000, ipl, SEI_FILE_ANY_AST, 0, null, NO_SAVE, xp, ref sdummy);
                             if (retc != ERR && retc != NOT_AVAILABLE)
+                            {
                                 s = swed.fidat[SEI_FILE_ANY_AST].astnam;
+                            }
                             else
-                                s = C.sprintf("%d: not found", ipl - SwissEph.SE_AST_OFFSET);
+                            {
+                                if (ipl > SwissEph.SE_AST_OFFSET)
+                                {
+                                    s = C.sprintf("%d: not found (asteroid)", ipl - SwissEph.SE_AST_OFFSET);
+                                }
+                                else
+                                {
+                                    s = C.sprintf("%d: not found (planetary moon)", ipl);
+                                }
+                            }
                         }
                         /* If there is a provisional designation only in ephemeris file,
                          * we look for a name in seasnam.txt, which can be updated by
@@ -8191,14 +8209,14 @@ namespace SwissEphNet.CPort
                          * There are still a couple of unnamed bodies that got their
                          * provisional designation before 1925, when the current method
                          * of provisional designations was introduced. They have an 'A'
-                         * as the first character, e.g. A924 RC. 
+                         * as the first character, e.g. A924 RC.
                          * The file seasnam.txt may contain comments starting with '#'.
-                         * There must be at least two columns: 
+                         * There must be at least two columns:
                          * 1. asteroid catalog number
                          * 2. asteroid name
                          * The asteroid number may or may not be in brackets
                          */
-                        if (s[0] == '?' || Char.IsDigit(s[1]))
+                        if (ipl > SwissEph.SE_AST_OFFSET && (s[0] == '?' || Char.IsDigit(s[1])))
                         {
                             int ipli = (int)(ipl - SwissEph.SE_AST_OFFSET), iplf = 0;
                             CFile fp;
@@ -8659,9 +8677,13 @@ namespace SwissEphNet.CPort
                 line++;
                 // search string is star number in sefstars.txt
                 if (star_nr == line)
+                {
                     goto found;
+                }
                 else if (star_nr > 0)
+                {
                     continue;
+                }
                 // invalid line without comma
                 if ((sp = strchr(s, ',')) == -1)
                 {
@@ -8672,20 +8694,26 @@ namespace SwissEphNet.CPort
                 if (is_bayer)
                 {
                     if (strncmp(s.Substring(sp), sstar, cmplen) == 0)
+                    {
                         goto found;
+                    }
                     else
+                    {
                         continue;
+                    }
                 }
                 // search string is traditional name
                 //*sp = '\0';    /* cut off after first field to get star name, ',' -> '\0' */
                 //strncpy(fstar, s, SWI_STAR_LENGTH);
-                //slen = swi_strnlen(s, SE_MAX_STNAME);
+                //slen = strlen(s);
+                //if (slen > SE_MAX_STNAME) slen = SE_MAX_STNAME;
                 //memcpy(fstar, s, slen);
                 //fstar[slen] = '\0';  /* force termination */
                 //*sp = ',';  /* add comma again */
                 //fstar[SWI_STAR_LENGTH] = '\0';	/* force termination */
                 strncpy(out fstar, s.Substring(0, sp), SWI_STAR_LENGTH);
-                slen = SwephLib.swi_strnlen(fstar, SwissEph.SE_MAX_STNAME);
+                slen = strlen(fstar);
+                if (slen > SwissEph.SE_MAX_STNAME) slen = SwissEph.SE_MAX_STNAME;
                 //*sp = ',';  /* add comma again */
                 fstar = fstar.Substr(0, slen);    /* force termination */
                 // remove white spaces from star name
@@ -8772,8 +8800,8 @@ namespace SwissEphNet.CPort
             // char s[AS_MAXCH];
             //struct epsilon *oe = &swed.oec2000;
             epsilon oe = swed.oec2000;
-            iflag |= SwissEph.SEFLG_SPEED; /* we need this in order to work correctly */
             iflgsave = iflag;
+            iflag |= SwissEph.SEFLG_SPEED; /* we need this in order to work correctly */
             //if (serr != NULL)
             //  *serr = '\0';
             iflag = plaus_iflag(iflag, -1, tjd, out serr);
@@ -8819,9 +8847,13 @@ namespace SwissEphNet.CPort
             radv = stardata.radvel; parall = stardata.parall;
             ra = stardata.ra; de = stardata.de;
             if (epoch == 1950)
+            {
                 t = (tjd - B1950);  /* days since 1950.0 */
+            }
             else /* epoch == 2000 */
+            {
                 t = (tjd - J2000);  /* days since 2000.0 */
+            }
             x[0] = ra;
             x[1] = de;
             x[2] = 1;
@@ -9065,13 +9097,13 @@ namespace SwissEphNet.CPort
                 xx[i] = x[i];
             if (0 == (iflgsave & SwissEph.SEFLG_SPEED))
             {
+                iflag = iflag & ~SwissEph.SEFLG_SPEED;
                 for (i = 3; i <= 5; i++)
                     xx[i] = 0;
             }
             /* if no ephemeris has been specified, do not return chosen ephemeris */
             if ((iflgsave & SwissEph.SEFLG_EPHMASK) == 0)
                 iflag = iflag & ~SwissEph.SEFLG_DEFAULTEPH;
-            iflag = iflag & ~SwissEph.SEFLG_SPEED;
             return iflag;
         }
 
