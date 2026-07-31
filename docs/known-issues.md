@@ -1531,3 +1531,77 @@ of 1000 -- an edge unlikely to matter for typical CLI usage, and neither the cor
 `scripts/verify-swetest-diff.ps1` has caught a divergence from it. `Programs/SweTest/Program.cs` is
 transliteration-frozen (`CONTRIBUTING.md`); reproducing the bound is in scope as a fidelity fix under
 that freeze's one exception, but is separate work from documenting what currently diverges.
+
+## The 5% waiver caps divide by the whole area, not by the relevant sub-scope
+
+`Verdict.cs:59-60`'s `MaxWaivedFraction`/`MaxMatchedFraction` (both 5%) are checked against
+`WaivedFraction`/`MatchedFraction`, and both of those divide by the area's total row count
+(`CompareResult.Total`, see `Comparer.cs`) -- not by the row count of whatever narrower glob a
+waiver actually targets. An area with a large, mostly-unrelated sweep can make a real, glob-wide
+regression look tiny next to that denominator:
+
+- `houses-armc` is 55,512 rows. Its `HSTATE|**` case ids (the stateful `saved_sundec` pair
+  `Houses.AddStatefulPairRows` exists specifically to exercise -- see
+  `Tools/BaselineGen/README.md`'s "Matrix coverage" table) number 72, so a waiver covering every
+  one of them, regardless of outcome, would sit at 72 / 55,512 = 0.13% of the area -- nowhere near
+  either 5% cap.
+- The same area's `HSUN|**` case ids (the sunshine-state sweep, `Houses.AddSunshineStateRows`)
+  number 1,008, i.e. 1.82% of the area.
+- `house-pos` is 31,528 rows. Its `HP|G|**` case ids (`swe_house_pos` under hsys `'G'`, Gauquelin
+  sectors -- see the hcusp[37] fix a few sections up) number 1,125 (375 case ids at each of the
+  three `eps` values the sweep now covers, `Grids.Eps` = `{0, 23.4392911, 40}`), i.e. 3.57% of the
+  area.
+
+All three could be waived in full -- every row, regardless of whether it fails -- and still clear
+both caps with room to spare, because the cap is measured against 55,512 or 31,528, not against 72,
+1,008, or 1,125. This is not a bug in the arithmetic (the caps do exactly what their names say:
+bound a waiver's share of the *area*), and it is not being fixed here -- recorded because a reviewer
+skimming "5.0% cap, waiver passed at 1.8%" could reasonably assume the waiver's actual target is
+narrow, when the fraction that matters (of the sub-scope the waiver names) could be 100%.
+
+## DivergenceReport's field-compared count includes non-numeric fields
+
+`--report-only`'s "N numeric fields compared" figure (`Tools/BaselineGen/README.md`'s "Platform
+lock" section cites 3,547,367 for the current matrix) is produced by
+`DivergenceReport.Collect` (`Tools/BaselineVerify/DivergenceReport.cs:81`), which increments
+`stats.FieldsCompared` unconditionally, for every field of every matched case id, before the
+numeric-parse check nine lines later (`:87`, `Comparer.TryParseDouble`) that decides whether a
+field is actually numeric. So the denominator includes `serr` diagnostic strings and planet
+names (`swe_get_planet_name`'s own output, the `misc` area) alongside every genuinely numeric
+field -- it is a "fields compared" count, not a "numeric fields compared" count, despite the
+label. The two numerators derived from it, `FieldsDiffering` and `FieldsBeyondTolerance`, are
+unaffected: both are only ever incremented after the parse check succeeds, so the DIFFER and
+BEYOND figures the "Platform lock" table reports are correct as stated. Only the denominator --
+and therefore the DIFFER% figure computed from it -- is inflated by however many non-numeric
+fields exist across the matrix. Not fixed here: renaming the counter or filtering it changes a
+number this file and `Tools/BaselineGen/README.md` both already cite, which is out of scope for a
+tooling-defect pass that is not re-measuring cross-platform drift.
+
+## 31 of 107 public `swe_*` entry points have no matrix coverage
+
+`SwissEphNet`'s public API surface is 107 `swe_*` methods; cross-referencing that list against
+every function name that appears anywhere under `Tools/BaselineMatrix/` finds 31 with no
+matrix coverage at all -- no area's generator calls them, under any name. Eight of the 31 are a
+deliberate, already-decided exclusion: the functions the bit-exact conformance oracle
+(`Tests/SwissEphNet.Conformance.Tests`) covers instead, where a second, tolerance-based
+characterization would add nothing the oracle does not already check more strictly. The fixed-star
+family (`swe_fixstar[_ut]`, `_mag`, `swe_fixstar2[_ut]`, `_mag`) is out of reach under this harness's
+no-real-files rule (`Tools/BaselineMatrix/Areas.cs`'s `NoEphemerisFilesProvider`) for the same
+reason `sefstars.txt`-dependent ayanamsa modes are already noted as frozen-without-the-file
+behavior in `Tools/BaselineMatrix/Ayanamsa.cs`'s own doc comment -- confirmed absent from the
+matrix but excluded for a real, load-bearing reason.
+
+The rest have no stated reason and are simply gaps: `swe_houses_ex2`, `swe_houses_armc_ex2`,
+`swe_get_ayanamsa_name`, `swe_calc_pctr`, `swe_lat_to_lmt`, `swe_lmt_to_lat`, and
+`swe_get_current_file_data` -- all confirmed present in `SwissEphNet/CPort/` (`SweHouse.cs`,
+`Sweph.cs`) and confirmed absent from every `.cs` file under `Tools/BaselineMatrix/`. None of the
+seven needs a real ephemeris file: `swe_houses_ex2`/`swe_houses_armc_ex2` are the same
+sidereal-aware house calls `HousesEx.cs`/`Houses.cs` already sweep, minus the "_ex2" `nutlo[]`
+out-parameter; `swe_get_ayanamsa_name` is a lookup table keyed by `sid_mode`, no calculation at
+all; `swe_calc_pctr` (planet-centric coordinates) is `swe_calc` with a second body, already fully
+in scope for `Calc.cs`'s existing sweep shape; `swe_lat_to_lmt`/`swe_lmt_to_lat` are pure time-zone
+arithmetic, siblings of `swe_utc_time_zone` (already covered in `datetime`); and
+`swe_get_current_file_data` reports on whatever ephemeris file is currently open, which is always
+"none" under this harness's no-files rule -- a one-row, low-value addition, but not a
+zero-value one, since the "no file open" response itself is behavior worth freezing. Recorded as
+a work queue, not fixed here: closing this gap is new matrix coverage, not a tooling defect fix.
