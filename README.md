@@ -297,20 +297,26 @@ using (var sweph = new SwissEphNet.SwissEph()) {
 
 ## Loading files
 
-SwissEphNet does not access the file system directly.
+By default, SwissEphNet reads ephemeris files straight from the real filesystem: point
+`swe_set_ephe_path` at a directory the way the C reference does, and nothing else needs
+configuring.
 
-As Swiss Ephemeris use some data files, an event exists for loading the files required.
+For a source that is not a real file on disk, e.g. an embedded resource, set
+`SwissEph.FileProvider` to an `IEphemerisFileProvider`:
 
 ```C#
 using (var sweph = new SwissEphNet.SwissEph()) {
-    sweph.OnLoadFile += (s, e) => {
-        // Loading file
-    };
+    sweph.FileProvider = new MyEmbeddedResourceProvider();
     // Use it
 }
 ```
 
-For more information [read this page](https://github.com/ygrenier/SwissEphNet/wiki/Loading-files).
+`IEphemerisFileProvider` has a single method, `Stream Open(string path)`, returning
+`null` for "not found". `SwissEph.DefaultFileProvider` sets the provider every
+subsequently-constructed instance starts with, for a harness that creates many instances
+and needs every one of them configured the same way without setting `FileProvider`
+individually on each. See the "V:2.10.3" entry above for what this replaces
+(`OnLoadFile`) and why.
 
 # Continuous Integration
 
