@@ -285,7 +285,7 @@ jobs:
   # before the comparison step -- the gitlink assertion, the submodule checkout, the 2.08 sdist
   # fetch and build-c.ps1 -- is a hard failure. Not because those steps are toolchain-independent;
   # build-c.ps1 is the MSVC build, and it already patches around two upstream compile defects
-  # (docs/upstream/swetest-2.10.03-build-defects.md), so a future toolset is exactly what can
+  # (Tools/CReference/build-c.ps1:239-263 documents both), so a future toolset is exactly what can
   # break it. Rather because a compile break is a real defect worth seeing, and
   # c-reference-validate above already gates on that same step with no flag.
   #
