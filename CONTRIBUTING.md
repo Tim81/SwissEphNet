@@ -13,7 +13,7 @@ against the old one, then applies the same diff, in the same shape, to the
 matching C# file. If the C# no longer reads like the C it came from, that
 process stops working and every future upgrade gets harder, not easier. This
 is not a theoretical concern for the `Programs/` files either: `swetest.c`
-alone changes by +484/-244 lines in the 2.10.03 delta.
+alone changes by +487/-247 lines in the 2.10.03 delta.
 
 **Do not run `dotnet format`, an IDE "clean up code" command, a `var`-for-explicit-type
 rewrite, expression-bodied member conversion, or brace reflowing against
@@ -69,7 +69,7 @@ and pull request. It records a SHA-256 over each frozen path's normalized conten
 
 The hash is the check; the counts say what kind of change happened. Earlier versions
 carried only the counts, and that was not enough: re-indenting a file moves none of
-them. Measured, doubling the indentation of `SweDate.cs` rewrites 568 of its 612 lines
+them. Measured, doubling the indentation of `SweDate.cs` rewrites 568 of its 613 lines
 and leaves the four counts byte-identical, so the gate passed on a file where every
 content line had changed. Indentation normalization is the bulk of what
 `dotnet format whitespace` does, which is the exact tool this check exists to catch.
@@ -126,15 +126,16 @@ A PR that changes a frozen file with no hunk citation should not be merged.
 `external/swisseph` is a git submodule of `https://github.com/aloistr/swisseph`,
 pinned to tag `v2.10.3final` -- the upstream C this port is being upgraded to.
 It is sparse-checked-out to keep it small: only `*.c`, `*.h`, `Makefile`,
-`LICENSE` and `setest/` (the reference test corpus `Tests/SwissEphNet.Conformance.Tests`
-is built against) are pulled. `ephe/` (the ephemeris data files) is deliberately
-excluded -- it is 378 MB across 259 files and nothing in this repo needs it.
+`LICENSE`, `setest/` (the reference test corpus `Tests/SwissEphNet.Conformance.Tests`
+is built against) and eight specific `ephe/` files the conformance oracle needs to run
+are pulled. The rest of `ephe/` is deliberately excluded -- the full tree is 378 MB
+across 259 files, most of which nothing in this repo needs.
 
 To initialize it, do the sparse setup before the first checkout, so the partial clone never
 fetches blobs for the excluded paths in the first place -- this is the primary recipe, not a
 disk-conscious alternative for CI only. Measured: `git submodule update --init` (below) lands at
 the same commit but pulls the entire `aloistr/swisseph` history and every path, `ephe/` included
--- 427 MB of working tree plus 918 MB of git objects in a from-scratch checkout, not the 15 MB /
+-- 427 MB of working tree plus 918 MB of git objects in a from-scratch checkout, not the 19 MB /
 2.3 MB this sparse recipe gives:
 
 ```powershell
@@ -162,8 +163,9 @@ have to agree with it. If you change what the project declares as its data set, 
 manifest and then make these two follow, not the other way round.
 
 Extra files matter as much as missing ones because the known-fail list is generated against
-this set. A checkout carrying the full 158-file `ephe/` tree produces a list that passes
-locally and is wrong for everyone else; that happened once and is why the assertion exists.
+this set. A checkout carrying the full `ephe/` tree -- 158 files at the top level, 259
+including its subdirectories such as `sat/` -- produces a list that passes locally and is
+wrong for everyone else; that happened once and is why the assertion exists.
 
 Run that command from **PowerShell**, not Git Bash. MSYS rewrites arguments that look like
 absolute Unix paths, so `git sparse-checkout set ... /Makefile /LICENSE ...` under Git Bash
@@ -304,12 +306,12 @@ Measured with `dotnet build <target> -c Release --no-incremental` (an
 up-to-date build recompiles nothing and silently reports zero, so always
 force a clean rebuild when counting):
 
-- `SwissEphNet.sln`: 831 warnings, 546 distinct sites, 464 of them outside
-  `CPort/` (206 in `Programs/SweTest/Program.cs`, 185 in
-  `Tests/SwissEphNet.Tests`, 64 in `Programs/SweWin`, the remaining 9 split
+- `SwissEphNet.sln`: 867 warnings, 537 distinct sites, 465 of them outside
+  `CPort/` (205 in `Programs/SweTest/Program.cs`, 185 in
+  `Tests/SwissEphNet.Tests`, 64 in `Programs/SweWin`, the remaining 11 split
   between `Programs/SweMini/Program.cs` and `SwissEphNet/Tools/`).
 - `SwissEphNet.CrossPlatform.slnf` (excludes `SweWin`, which is Windows-only):
-  767 warnings.
+  803 warnings.
 
 Most of the outside-`CPort/` total sits in the two other frozen,
 transliterated files (`SweTest/Program.cs`, `SweMini/Program.cs`), which this
@@ -405,13 +407,15 @@ correctness oracle look, from a CI notification, like the same kind of thing:
 both run the library against a reference and report PASS/FAIL. Their
 *expected* results are opposites. The baseline expects **zero** diffs --
 anything else means a change altered something it should not have. This
-oracle expects **most iterations to fail** -- the port is at 2.08, the corpus
-is Astrodienst's own 2.10.03 reference values, and a two-major-version gap
-does not close by wishing. A red oracle run is not evidence anything is
-broken; a green one (all 12,757 passing with an empty `known-fail.tsv`) would
-mean the port is at parity with 2.10.03, which is the multi-PR goal this whole
-mechanism exists to track progress toward, not today's state. See "Reporting
-by testcase" below for how to read a run without it looking alarming.
+oracle expects **some iterations to still fail** -- the 2.10.03 delta has
+landed file by file, but `known-fail.tsv` still lists 1,435 of 12,757
+iterations (88.8% passing), and closing the rest is incremental porting
+work, not something a single PR finishes. A red oracle run is not evidence
+anything is broken; a green one (all 12,757 passing with an empty
+`known-fail.tsv`) would mean the port is at full parity with 2.10.03, which
+is the multi-PR goal this whole mechanism exists to track progress toward,
+not today's state. See "Reporting by testcase" below for how to read a run
+without it looking alarming.
 
 ### Reporting by testcase
 
@@ -422,9 +426,9 @@ groups by the 60 (suite, testcase) pairs instead and splits them into two
 lists: **actionable** (at least one `VALUE-MISMATCH`/`ERROR` -- the actual
 porting work queue) and **parked** (every non-passing iteration in that
 testcase is `NOT-IMPLEMENTED`, `DATA-MISSING`, or `UNREPRODUCIBLE` -- blocked
-on something other than the port's logic: a 2.10-only API the port doesn't
-have yet, a data file this repo doesn't ship, or a structural gap). As of this
-writing that split is 33 actionable / 27 parked out of 60. A porting PR should
+on something other than the port's logic: a 2.10-only API (currently none;
+the category is empty), a data file this repo doesn't ship, or a structural
+gap). As of this writing that split is 34 actionable / 26 parked out of 60. A porting PR should
 be shrinking the actionable list's mismatch/error counts, or moving a testcase
 from actionable to fully passing -- not touching the parked list, which
 changes only when a 2.10 API gets implemented or a data-file constraint is
