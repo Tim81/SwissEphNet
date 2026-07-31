@@ -890,8 +890,8 @@ namespace SwissEphNet.CPort
             if (nr != nrl) {
                 nrl = nr;
                 //if (FSEEK(js.jplfptr, (off_t)(nr * ((off_t)irecsz)), 0) != 0) {
-                // swejpl.c:796: nr * ((off_t64) irecsz) widens irecsz before the multiply, the same
-                // pattern already used 32 lines above at this file's :837. This site multiplied in
+                // swejpl.c:801: nr * ((off_t64) irecsz) widens irecsz before the multiply, the same
+                // pattern already used 32 lines above at this file's :861. This site multiplied in
                 // 32-bit Int32 and let the implicit conversion to Seek's Int64 parameter happen only
                 // after overflow had already occurred.
                 if (js.jplfptr.Seek((nr * ((Int64)irecsz)), SeekOrigin.Begin) != 0) {
@@ -904,13 +904,15 @@ namespace SwissEphNet.CPort
                     //        serr=C.sprintf("Read error in JPL eph. at %f\n", et);
                     //    return NOT_AVAILABLE;
                     //}
-                    try {
-                        buf[k - 1] = js.jplfptr.ReadDouble();
-                    }
-                    catch {
+                    // swejpl.c:807. CFile.ReadDouble() returns 0 on a short read rather than
+                    // throwing, so the try/catch this replaced never actually caught a truncated
+                    // record; use the Read(ref) shape the other eight fread sites in this file use.
+                    double b = 0;
+                    if (!js.jplfptr.Read(ref b)) {
                         serr = C.sprintf("Read error in JPL eph. at %f\n", et);
                         return Sweph.NOT_AVAILABLE;
                     }
+                    buf[k - 1] = b;
                     if (js.do_reorder)
                         //reorder((char*)&buf[k - 1], sizeof(double), 1);
                         buf[k - 1] = reorder(buf[k - 1]);

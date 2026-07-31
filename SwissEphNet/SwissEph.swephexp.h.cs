@@ -467,7 +467,12 @@ namespace SwissEphNet
         public const int SE_HELFLAG_AVKIND_MIN9 = (1 << 19);
         public const int SE_HELFLAG_AVKIND = (SE_HELFLAG_AVKIND_VR | SE_HELFLAG_AVKIND_PTO | SE_HELFLAG_AVKIND_MIN7 | SE_HELFLAG_AVKIND_MIN9);
         public const double TJD_INVALID = 99999999.0;
-        public const bool SIMULATE_VICTORVB = true;
+        // Not a C# language constant: swephexp.h:451 is `#define SIMULATE_VICTORVB 1`, so C's
+        // `#ifndef SIMULATE_VICTORVB` guards (SweHel.cs's negated sites) are always compiled out.
+        // A `const bool` here would make the negated `if (!SIMULATE_VICTORVB)` at those sites a
+        // compile-time-false condition and trip CS0162 ("unreachable code"), the same problem
+        // Sweph.cs:105's SID_TNODE_FROM_ECL_T0 avoids by not being a language constant either.
+        public static readonly bool SIMULATE_VICTORVB = true;
 
 #if FALSE  // unused and redundant
         public const int SE_HELIACAL_LONG_SEARCH = 128;

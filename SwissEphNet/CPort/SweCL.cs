@@ -1415,7 +1415,7 @@ namespace SwissEphNet.CPort
                     else if (n == 2)
                         dc[i] = de / dcore[6] - dcore[2];
                 }
-                find_zero(dc[0], dc[1], dc[2], dta, out dt1, out dt2);
+                find_zero(dc[0], dc[1], dc[2], dta, ref dt1, ref dt2);
                 tret[i1] = tjd + dt1 + dta;
                 tret[i2] = tjd + dt2 + dta;
                 for (m = 0, dt = dtb; m < 3; m++, dt /= 3) {
@@ -1882,7 +1882,7 @@ namespace SwissEphNet.CPort
                     else if (n == 2)
                         dc[i] = de / dcore[6] - dcore[2];
                 }
-                find_zero(dc[0], dc[1], dc[2], dta, out dt1, out dt2);
+                find_zero(dc[0], dc[1], dc[2], dta, ref dt1, ref dt2);
                 tret[i1] = tjd + dt1 + dta;
                 tret[i2] = tjd + dt2 + dta;
                 for (m = 0, dt = dtb; m < 3; m++, dt /= 3) {
@@ -2279,7 +2279,7 @@ namespace SwissEphNet.CPort
                     dctr = Math.Acos(SE.SwephLib.swi_dot_prod_unit(x1, x2)) * SwissEph.RADTODEG;
                     dc[i] = Math.Abs(rsminusrm) - dctr;
                 }
-                find_zero(dc[0], dc[1], dc[2], twomin, out dt1, out dt2);
+                find_zero(dc[0], dc[1], dc[2], twomin, ref dt1, ref dt2);
                 tret[2] = tjd + dt1 + twomin;
                 tret[3] = tjd + dt2 + twomin;
                 for (m = 0, dt = tensec; m < 2; m++, dt /= 10) {
@@ -2334,7 +2334,7 @@ namespace SwissEphNet.CPort
                 dctr = Math.Acos(SE.SwephLib.swi_dot_prod_unit(x1, x2)) * SwissEph.RADTODEG;
                 dc[i] = rsplusrm - dctr;
             }
-            find_zero(dc[0], dc[1], dc[2], twohr, out dt1, out dt2);
+            find_zero(dc[0], dc[1], dc[2], twohr, ref dt1, ref dt2);
             tret[1] = tjd + dt1 + twohr;
             tret[4] = tjd + dt2 + twohr;
             for (m = 0, dt = tenmin; m < 3; m++, dt /= 10) {
@@ -2651,7 +2651,7 @@ namespace SwissEphNet.CPort
                     dctr = Math.Acos(SE.SwephLib.swi_dot_prod_unit(x1, x2)) * SwissEph.RADTODEG;
                     dc[i] = Math.Abs(rsminusrm) - dctr;
                 }
-                find_zero(dc[0], dc[1], dc[2], twomin, out dt1, out dt2);
+                find_zero(dc[0], dc[1], dc[2], twomin, ref dt1, ref dt2);
                 tret[2] = tjd + dt1 + twomin;
                 tret[3] = tjd + dt2 + twomin;
                 for (m = 0, dt = tensec; m < 2; m++, dt /= 10)
@@ -2716,7 +2716,7 @@ namespace SwissEphNet.CPort
                 dctr = Math.Acos(SE.SwephLib.swi_dot_prod_unit(x1, x2)) * SwissEph.RADTODEG;
                 dc[i] = rsplusrm - dctr;
             }
-            find_zero(dc[0], dc[1], dc[2], twohr, out dt1, out dt2);
+            find_zero(dc[0], dc[1], dc[2], twohr, ref dt1, ref dt2);
             tret[1] = tjd + dt1 + twohr;
             tret[4] = tjd + dt2 + twohr;
             for (m = 0, dt = tenmin; m < 3; m++, dt /= 10)
@@ -3639,7 +3639,7 @@ namespace SwissEphNet.CPort
                     else if (n == 2)
                         dc[i] = dcore[1] / 2 - RMOON / dcore[3] - dcore[0];
                 }
-                find_zero(dc[0], dc[1], dc[2], dta, out dt1, out dt2);
+                find_zero(dc[0], dc[1], dc[2], dta, ref dt1, ref dt2);
                 dtb = (dt1 + dta) / 2;
                 tret[i1] = tjd + dt1 + dta;
                 tret[i2] = tjd + dt2 + dta;
@@ -4230,10 +4230,15 @@ namespace SwissEphNet.CPort
             return SwissEph.OK;
         }
 
+        // swecl.c:4148-4162: on a negative discriminant, the C returns ERR without writing
+        // *dxret/*dxret2 at all, leaving the caller's own prior value in place. `out` forces
+        // C# definite assignment, which the pre-zeroing below used to satisfy; that makes the
+        // failure path disagree with C whenever a caller's dt1/dt2 already held a value from an
+        // earlier iteration (swecl.c:2283/:2634's dt1, read again at :2309/:2662). `ref` matches
+        // the C's pass-through-on-failure behavior exactly.
         int find_zero(double y00, double y11, double y2, double dx,
-                                out double dxret, out double dxret2) {
+                                ref double dxret, ref double dxret2) {
             double a, b, c, x1, x2;
-            dxret = dxret2 = 0;
             c = y11;
             b = (y2 - y00) / 2.0;
             a = (y2 + y00) / 2.0 - c;

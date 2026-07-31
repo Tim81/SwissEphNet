@@ -575,7 +575,9 @@ namespace SwissEphNet.CPort
             serr = null;
             if (JDNDaysUT == SunRA_tjdlast)
                 return SunRA_ralast;
-            if (SwissEph.SIMULATE_VICTORVB) {
+            // swehel.c:563 is `#ifndef SIMULATE_VICTORVB`, and swephexp.h:451 always defines the
+            // macro, so this block is always compiled out in C; negated to match (was un-negated).
+            if (!SwissEph.SIMULATE_VICTORVB) {
                 if (true) { /*helflag & SE_HELFLAG_HIGH_PRECISION) {*/
                     double tjd_tt;
                     double[] x = new double[6];
@@ -1322,7 +1324,10 @@ namespace SwissEphNet.CPort
                     datm[2] = 40;
                 /* note: datm[3] / VR defaults outside this function */
             } else {
-                if (SwissEph.SIMULATE_VICTORVB) {
+                // swehel.c:1339 is `#ifndef SIMULATE_VICTORVB`, and swephexp.h:451 always defines
+                // the macro, so this block is always compiled out in C; negated to match (was
+                // un-negated).
+                if (!SwissEph.SIMULATE_VICTORVB) {
                     if (datm[2] <= 0.00000001) datm[2] = 0.00000001;
                     if (datm[2] >= 99.99999999) datm[2] = 99.99999999;
                 }

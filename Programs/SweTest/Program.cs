@@ -4712,7 +4712,15 @@ namespace SweTest
                 s = String.Concat(s.Substring(0, spi), ":", s.Substring(spi + 1));
                 var s2 = s.Substring(spi + SwissEph.ODEGREE_STRING.Length);
                 s = String.Concat(s.Substring(0, spi + 1), s2);
-                s = String.Concat(s.Substring(0, spi + 3), ":", s.Substring(spi + 4));
+                // swetest.c:3936: *(sp + 3) = ':'; writes a single byte into the static
+                // AS_MAXCH buffer regardless of length. Substring(spi + 4) throws where
+                // C's single-byte write would not, on a BIT_ROUND_MIN result ending at
+                // spi + 2 (s.Length == spi + 3); the guard below is the sibling of the
+                // spi + 8 one just after it.
+                if (s.Length > spi + 4)
+                    s = String.Concat(s.Substring(0, spi + 3), ":", s.Substring(spi + 4));
+                else
+                    s = String.Concat(s.Substring(0, spi + 3), ":");
                 // swetest.c:3937: *(sp + 8) = '\0'; truncates the buffer after the
                 // seconds field. The length guard is needed because the C writes into
                 // a static AS_MAXCH buffer regardless of length, while Substring would
