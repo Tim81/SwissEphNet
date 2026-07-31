@@ -310,7 +310,7 @@ Astrodienst's own reference values, not against the port's own prior output.
 The reference corpus is Swiss Ephemeris **2.10.03**'s `setest` test suite
 (12,757 iterations, ~321K asserted values across 10 functional areas). Even though the port has
 now landed the whole 2.10.03 delta file by file, it is not at full parity: `known-fail.tsv` still
-lists 1,435 failing iterations (11,322 passing, 88.8%), and the known-fail list remains the work
+lists 1,427 failing iterations (11,330 passing, 88.8%), and the known-fail list remains the work
 queue for the remainder. Each porting PR should remove entries from it; any entry that reappears
 is a regression.
 

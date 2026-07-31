@@ -387,7 +387,12 @@ exist yet) always names the *parent* of that commit, not the change itself,
 and even a SHA captured correctly would stop existing once the PR merges. A
 PR number does not have either problem. If you do not know the PR number yet,
 leave it blank and fill in the logged line by hand once you do, before the PR
-merges.
+merges. This applies to every regeneration log in the repository, not only
+this one -- `Tests/oracle/regenerations.log`, `Tests/oracle/regenerations-files.log`,
+`Tests/oracle/version-classification-regenerations.log`, and
+`Tests/swetest/regenerations.log` follow the same convention, so make filling
+in a placeholder "no PR yet" entry with the real PR number a checked step
+before merging, not a hoped-for follow-up.
 
 Never hand-edit `known-fail.tsv` and never add a row to make a failing
 `dotnet test Tests/SwissEphNet.Conformance.Tests` go green without first
@@ -408,7 +413,7 @@ both run the library against a reference and report PASS/FAIL. Their
 *expected* results are opposites. The baseline expects **zero** diffs --
 anything else means a change altered something it should not have. This
 oracle expects **some iterations to still fail** -- the 2.10.03 delta has
-landed file by file, but `known-fail.tsv` still lists 1,435 of 12,757
+landed file by file, but `known-fail.tsv` still lists 1,427 of 12,757
 iterations (88.8% passing), and closing the rest is incremental porting
 work, not something a single PR finishes. A red oracle run is not evidence
 anything is broken; a green one (all 12,757 passing with an empty

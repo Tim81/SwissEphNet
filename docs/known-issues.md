@@ -86,26 +86,22 @@ is precisely what the port does.
 
 The mechanism is in the C. 2.10.03 adds `int niter_max = 100`
 (`external/swisseph/swehouse.c:940`) and caps the Placidus and Gauquelin pole-height
-iterations with `if (i >= niter_max) { retc = ERR; hsy = 'O'; goto porphyry; }`
-(`:1667`, `:1709`, and four more). At `eps=0`, `tand(0)` is 0 and the iteration never
-converges, so 2.10.03 gives up, reports the error and falls back to Porphyry --
-returning real cusps rather than NaN. `niter_max` does not appear anywhere in
-`external/pyswisseph-2.08/swehouse.c`, and that file has three `retc = ERR` sites
-against 2.10.03's nine.
+iterations at six sites total, each `if (i >= niter_max) { retc = ERR; ...; goto
+porphyry; }`. Only the two Gauquelin sites (`:1667`, `:1709`) additionally set
+`hsy = (int) 'O'` before the jump; the four Placidus sites (`:1865`, `:1901`,
+`:1937`, `:1973`) set `retc` alone. That asymmetry is load-bearing for Gauquelin,
+where the post-switch `hsy != 'G'` block would otherwise skip cusps 4 to 9, and a
+no-op for Placidus -- treating all six as setting `hsy` would send someone to "fix"
+four sites that are already faithful. At `eps=0`, `tand(0)` is 0 and the iteration
+never converges at any of the six, so 2.10.03 gives up, reports the error and falls
+back to Porphyry, returning real cusps rather than NaN. `niter_max` does not appear
+anywhere in `external/pyswisseph-2.08/swehouse.c`, and that file has three
+`retc = ERR` sites against 2.10.03's nine.
 
 **Closed.** The swehouse.c port landed `niter_max` and all 176 rows now match 2.10.03
 C bit for bit; `Tests/oracle/known-diff.tsv` is empty. The rows had also carried 33
 to 34 cusp fields that were NaN on the port's side and finite on 2.10.03's, from the
 Porphyry fallback, and those agree too.
-
-One detail in the mechanism above is imprecise and is worth correcting rather than
-leaving to mislead. 2.10.03 caps six iteration sites, not two, but only the two
-Gauquelin ones (`swehouse.c:1667`, `:1709`) set `hsy = (int) 'O'` alongside
-`retc = ERR`. The four Placidus sites (`:1865`, `:1901`, `:1937`, `:1973`) set
-`retc` alone. That asymmetry is load-bearing for Gauquelin, where the post-switch
-`hsy != 'G'` block would otherwise skip cusps 4 to 9, and a no-op for Placidus.
-Anyone reading this entry as "all six set `hsy`" would go and "fix" four sites that
-are already faithful.
 
 An earlier revision of this paragraph said the port "swallows" an error the C
 reports, which was wrong in the way that costs time: it would have sent someone to
@@ -150,8 +146,17 @@ The likely cause: `swecalc` (in `Sweph.cs`) never populates `sd.xsaves` for
 `SE_ECL_NUT` under these flag combinations and ends up reading its own
 uninitialized save-area default (zero) instead of computing or caching anything.
 Silent zero output with a success code and no `serr` is the concerning part --
-a caller has no signal that anything went wrong. Worth checking against 2.10.03's
-`sweph.c` for whether this pseudo-body's save-area handling changed.
+a caller has no signal that anything went wrong.
+
+**Checked against 2.10.03's `sweph.c`, and this is still open.** The `sweph.c` port
+has landed, and the `SE_ECL_NUT` branch in `CPort/Sweph.cs`'s `swecalc` writes only
+the first four `x[]` slots before returning, the same shape that leaves the
+equatorial/cartesian fill this entry describes unreached. `Tests/baseline/baseline-2.8.0.2.env.txt`'s
+pyswisseph replay notes corroborate it independently: the `calc-defaulteph` divergence
+for the `SE_ECL_NUT` pseudo-body under J2000/no-nutation/sidereal flag combinations is
+recorded there as real 2.10.03 C returning non-zero values where the port still
+returns zero. Not fixed here; recorded as confirmed rather than left as "worth
+checking."
 
 ## swe_houses and swe_houses_ex(iflag=0) disagree with each other
 
@@ -166,8 +171,12 @@ Almost certainly the two functions derive obliquity differently: `swe_houses`
 appears to call `swi_epsiln` directly, while `swe_houses_ex` routes obliquity
 through `swe_calc(SE_ECL_NUT)` -- two different code paths to the same
 conceptual quantity, which is exactly the kind of duplication that drifts apart
-over time. Worth checking whether the 2.10.03 SweHouse delta unifies these paths
-or preserves the split.
+over time.
+
+**The 2.10.03 SweHouse delta unifies these paths.** `swe_houses` and
+`swe_houses_ex`/`swe_houses_ex2` (`CPort/SweHouse.cs`) both call `SwephLib.swi_epsiln`
+directly now; there is no `swe_calc(SE_ECL_NUT)` call left anywhere in that file. The
+structural disagreement this entry describes no longer has a mechanism to produce it.
 
 ## calc/pheno SPEED fields: differentiation noise, expected but unexplained in detail
 
@@ -483,12 +492,12 @@ narrowed all five of them to `char hsys` (`SwissEphNet/CPort/SweHouse.cs`,
 plus the internal `sidereal_houses_ecl_t0` / `sidereal_houses_ssypl` /
 `sidereal_houses_trad` helpers, which the port's own commented-out C
 signatures directly above them already showed as `int hsys`). `swe_houses_ex2`
-and `swe_houses_armc_ex2` are **unported 2.10 features** (they add per-cusp
-speed output and an explicit `serr` out-parameter that the ported API surface
-does not have yet) -- their absence here is not a missed narrowing, it is
-scope this branch does not touch. When they land, they must be declared
-`int hsys` from the start, matching upstream; there is no `char`-only
-predecessor to widen.
+and `swe_houses_armc_ex2` were unported 2.10 features when this entry was
+written (they add per-cusp speed output and an explicit `serr` out-parameter
+that the ported API surface did not have yet). **Both are now implemented**
+(`SwissEphNet/CPort/SweHouse.cs`), each with a `char hsys` and an `int hsys`
+overload from the start, matching upstream directly -- there was no
+`char`-only predecessor to widen for either.
 
 This is not merely a style narrowing. Internally, C truncates `hsys` to a
 `char` only once, at the `CalcH` call inside `swe_houses_armc`
@@ -753,7 +762,9 @@ Reachable from the public API via `swe_set_astro_models("")` or `(null)`.
 not rely on that without re-checking if `C.atof` changes again.
 
 Take `SE_VERSION` in the release stage with the assembly version.
-`TransliterationFidelityTest` asserts the current value and moves with it.
+`TransliterationFidelityTest.cs:206` only comments on the current value; the
+assertion that actually pins it, and that moves with it, is
+`SwissEphTest.cs:34` (`Assert.Equal("2.08", target.swe_version())`).
 
 ## Constants from the header delta not yet carried
 
@@ -764,9 +775,12 @@ declarations belonging to functions later stages add.
 Carried after being missed on the first pass: `SEFLG_TROPICAL`, `SEFLG_CENTER_BODY`,
 `SEFLG_TEST_PLMOON`, `SE_ECL_HYBRID`, and the three `SE_SIDBIT_*` values.
 
-Still absent, with their implementations: `swe_calc_pctr` (`swephexp.h:413`) and
-`swe_get_current_file_data` (`:447`). `swe_houses_ex2`, `swe_houses_armc_ex2` and the
-`int hsys` / `const char *` signature changes are recorded further up this file.
+**Closed.** `swe_calc_pctr` (`swephexp.h:705`) and `swe_get_current_file_data` (`swephexp.h:763`)
+are both implemented as full transliterations -- `CPort/Sweph.cs` (citing `sweph.c:8042-8283` and
+`:8285-8306` respectively) -- with the usual public facade in `SwissEph.swephexp.h.cs` that every
+ported function gets, not a stub. `swe_houses_ex2` and `swe_houses_armc_ex2` are implemented too,
+each with both `char hsys` and `int hsys` overloads in `CPort/SweHouse.cs`; the `int hsys` /
+`const char *` signature changes are recorded further up this file.
 
 
 
@@ -1010,6 +1024,13 @@ it currently tracks, so it can be fixed without waiting for the swetest.c re-tra
 Fixing it in `Programs/SweTest/Program.cs` is a freeze-permitted correction of a divergence from
 the C, the same standing as the six that have already landed: cite the C file and line.
 
+**Closed, all ten sites.** Commit `2b7e896` fixed the eight pointer-arithmetic sites (`-ay`,
+`-sidt0`, `-sidsp`, `-sid`, `-j`, `-helflag`, `-amod`, `-tidacc`, citing the 2.08 `swetest.c` line
+each one corresponds to) and the two unrelated crashes recorded above (`-house`, `-utc`) in the
+same change. The 150-row `Tests/swetest/known-diff.tsv` grid moved from 70 to 80 identical rows,
+ten CRASH cases becoming byte-identical against the C reference. The four commented-out sites at
+834, 847, 940 and 949 are unaffected, since there is no live code there to fix.
+
 ## The file-backed grid's divergence is Earth's position
 
 `Tools/OracleGrid/grid-files.tsv` (2,024 rows) is the only grid that opens an ephemeris
@@ -1049,12 +1070,23 @@ and Earth's heliocentric position is the one thing on this list the port gets wr
 single defect that appears once per body, because every geocentric calculation subtracts the
 same wrong vector.
 
-That reduces `read_const`, `do_fread`, `get_new_segment`, `rot_back` and the Chebyshev
-evaluation to demonstrably sound code -- 440 rows read `sepl_*.se1` for a body that is not Earth
-and match exactly, which cannot happen if any of those five were wrong. The remaining unexplained
-divergence is confined to wherever `main_planet` derives Earth's own position from the Moon
-(`SwissEphNet/CPort/Sweph.cs`'s `SEI_EARTH`/`SEI_MOON` handling), which is a far smaller place to
-look than "the file layer" suggested.
+That reduces `read_const`, `do_fread`, `get_new_segment` and the Chebyshev evaluation to
+demonstrably sound code -- 440 rows read `sepl_*.se1` for a body that is not Earth and match
+exactly, which cannot happen if any of those four were wrong. The remaining unexplained
+divergence was narrowed to wherever `main_planet` derives Earth's own position from the Moon
+(`SwissEphNet/CPort/Sweph.cs`'s `SEI_EARTH`/`SEI_MOON` handling), a far smaller place to look
+than "the file layer" suggested -- but `main_planet` was not, in the end, where the bug was.
+
+**Closed, and `rot_back` was the fifth function this paragraph cleared too soon.** The actual
+defect was in `rot_back`, not `main_planet`: it read `swed.oec2000.seps`/`.ceps`, which nothing in
+this port ever populates, so every position rotated back through it used a J2000 obliquity of
+zero (commit `276fc5b`, part of the `sweph.c` file-layer slice). `main_planet` reads Earth's
+position via `rot_back` on the way out, which is why the divergence looked like it belonged to
+`main_planet` from this grid's evidence alone -- the wrong function was simply downstream of the
+right one. Every `SEFLG_SWIEPH` position was affected, not only Earth's, since `rot_back` is on
+the return path for every body; see "Every `SEFLG_SWIEPH` position changes" in `README.md`'s
+breaking-changes list. The file-backed grid moved from 791 of 2,024 bit-identical rows to 1,975.
+No closure note was added here when the fix landed; this is that note.
 
 **The SEFLG_SPEED zero-fill claim, checked the same way.** Of the 1,500 non-SPEED
 `swe_calc`/`swe_calc_ut` rows, 0 have the C leaving `xx[3..5]` at zero while the port fills them
@@ -1276,8 +1308,9 @@ one character on Windows, and that text mismatch is already visible in 11 rows o
 `Tests/swetest/known-diff.tsv`. Changing `DIR_GLUE` back to a per-platform value would be a
 breaking change for any `IEphemerisFileProvider` consumer that matches on the separator in a file
 name it receives -- the same consumers called out in "DIR_GLUE fixed" above -- so it belongs with that
-entry's deferred release-stage work, not with this file-layer note; there is no separate Phase 7
-breaking-change list elsewhere in this repository to add it to.
+entry's deferred release-stage work, not with this file-layer note. It has not been added there yet:
+`README.md`'s `# Breaking changes` / `## Unreleased` section, which is where that deferred work
+belongs, has no entry for this Windows-only diagnostic-text divergence.
 
 **`swi_fopen` never checked `AS_MAXCH`. Closed:** it now does, at the same site the C does. What
 follows is the state as originally found, kept for the record:
@@ -1382,6 +1415,22 @@ prepends the minus rather than splicing at index -1. That keeps the port byte-ex
 every non-negative value and confines the divergence to the single case the C itself gets wrong --
 verified against `external/.c-reference/swetest.exe` under `-fPLZ`, `-fPLZ -roundmin`,
 `-fPLZ -roundsec`, and the `-fPZ` case above.
+
+**Reframed: reaching this needs `-d`, and `-d` with `-fZ` is the wrong flag combination in the
+first place.** Astrodienst reviewed this report and declined it, correctly. A zodiacal position
+format is not a way to express an angular difference: `-fZ` formats a position in
+sign/degree/minute/second form, and `-d` asks for a differential value between two positions.
+`-fL`/`-fl` (plain longitude) is the format a differential value belongs in; combining `-d` with
+`-fZ` is an application-level error, not a legitimate call this repro path exercises. Verified
+independently against `external/swisseph/swetest.c`: it has exactly three `BIT_ZODIAC` sites, and
+the two that format a node longitude both take a value `swe_nod_aps` already normalizes into
+`[0, 360)`, so a negative value reaching `dms()` under `BIT_ZODIAC` at all is only reachable through
+the differential path this section's repro uses.
+
+The port keeps its guard anyway. `dms()`'s `*(sp - 1) = '-'` at an index-0 first digit writes one
+byte before the start of a local C buffer -- undefined behavior, not a defined C result this port
+could faithfully reproduce. Guarding the site instead is the only sound choice here, independent of
+whether `-d -fZ` is a combination any caller should actually use.
 
 This is recorded here, not filed upstream. Astrodienst's own reporting channel is outside this
 repository's control, so "reported upstream" should never be written into a code comment as a
