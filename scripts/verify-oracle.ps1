@@ -26,6 +26,19 @@
     This script does not regenerate anything -- see scripts/regenerate-oracle-known-diff.ps1 for
     the only supported way to change either known-diff list.
 
+    FILE-LEVEL SHA-256 CHECK
+
+    The row-level check above decides hex-column equality via
+    Tools/OracleVerify/UlpMath.cs's Distance, whose first branch is double.Equals -- which treats
+    +0.0 and -0.0, and NaN and NaN, as equal. Two dumps can therefore disagree on a field's actual
+    hex bytes (a signed zero, or which of several NaN bit patterns landed) while every row still
+    reports zero ULPs of difference. When a grid's known-diff list is empty (see
+    Assert-DumpsByteIdentical below), this script also compares the two dump files' SHA-256
+    hashes directly and fails if they differ, even though the row-level check above passed --
+    that is a check on the bytes OracleDump.exe and sedump.exe actually wrote, independent of how
+    OracleVerify chooses to interpret them. Skipped when the known-diff list carries recorded
+    exceptions, since the two dumps are not expected to be byte-identical in that case.
+
     STALE-DUMP CHECK
 
     Before comparing anything, this script checks external/.c-reference/oracle-provenance.tsv
@@ -113,6 +126,50 @@ function Get-GridDefaults {
     }
 }
 
+# True when a known-diff TSV (Tests/oracle/known-diff.tsv or -files.tsv) has no data rows below
+# its header -- i.e. the grid claims every row is bit-identical, with nothing on the exemption
+# list. That claim is what the file-level SHA-256 check below actually verifies; a non-empty list
+# means at least one row is a recorded, reviewed exception, so a byte-for-byte dump comparison
+# would trivially fail on it and proves nothing.
+function Test-KnownDiffEmpty {
+    param([string] $Path)
+    $dataLines = @(Get-Content -LiteralPath $Path | Select-Object -Skip 1 | Where-Object { $_.Length -gt 0 })
+    return $dataLines.Count -eq 0
+}
+
+# Row-level "bit-identical" (OracleVerify's "verify" mode, called below) means every hex column,
+# the retc and the serr text compare equal per Tools/OracleVerify/RowOutcome.cs -- and hex-column
+# equality is decided by Tools/OracleVerify/UlpMath.cs's Distance, whose first check is
+# double.Equals, not a raw bit comparison. double.Equals treats +0.0 and -0.0 as equal, and NaN as
+# equal to NaN, so a row where the C dump's hex column decodes to -0.0 and the .NET dump's decodes
+# to +0.0 -- two different bit patterns, two different hex strings on disk -- reports zero ULPs of
+# difference and is silently accepted as matching. The grids carry negative-zero fields (e.g. a
+# fixed-star proper-motion component that is exactly zero but signed), so this is not a
+# hypothetical: a future change that flips such a field's sign without changing its numeric value
+# would pass the row-level check and widen no known-diff list, while the two dump files on disk
+# would stop being byte-identical. A SHA-256 comparison of the whole file catches exactly that,
+# independent of what any row-level comparator considers "equal" -- it is a check on the bytes
+# OracleDump.exe and sedump.exe actually wrote, not on how OracleVerify chooses to interpret them.
+function Assert-DumpsByteIdentical {
+    param([string] $CPath, [string] $NetPath, [string] $KnownDiffPath)
+
+    if (-not (Test-KnownDiffEmpty -Path $KnownDiffPath)) {
+        Write-Host "SKIP: $KnownDiffPath lists recorded exception(s), so the two dumps are not expected to be byte-identical." -ForegroundColor Yellow
+        return 0
+    }
+
+    $cHash = Get-Sha256Hex -Path $CPath
+    $netHash = Get-Sha256Hex -Path $NetPath
+    if ($cHash -ne $netHash) {
+        Write-Host "FAIL: $KnownDiffPath is empty (claims every row is bit-identical), but the dump files themselves differ: $CPath is $cHash, $NetPath is $netHash." -ForegroundColor Red
+        Write-Host '      The row-level check above can still report PASS here: UlpMath.Distance treats +0.0/-0.0 and NaN/NaN as equal, so it can miss a hex-column difference a raw file hash would not.' -ForegroundColor Red
+        return 1
+    }
+
+    Write-Host "PASS: $KnownDiffPath is empty and $CPath / $NetPath are SHA-256 identical ($cHash) -- bit-identical at the file level, not only per the row-level comparator." -ForegroundColor Green
+    return 0
+}
+
 function Invoke-GridVerify {
     param([string] $GridName, [string] $Project)
 
@@ -155,7 +212,13 @@ function Invoke-GridVerify {
     # Write-Host keeps this function's return value to the exit code alone.
     $verifyOutput = & dotnet run --project $Project -c Release --no-build -- verify $cPath $netPath $knownDiffPathResolved
     $verifyOutput | Write-Host
-    return $LASTEXITCODE
+    $rowLevelExitCode = $LASTEXITCODE
+    if ($rowLevelExitCode -ne 0) {
+        return $rowLevelExitCode
+    }
+
+    Write-Host ''
+    return Assert-DumpsByteIdentical -CPath $cPath -NetPath $netPath -KnownDiffPath $knownDiffPathResolved
 }
 
 # ---------------------------------------------------------------------------------------
