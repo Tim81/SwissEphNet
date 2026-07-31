@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using SwissEphNet;
 
@@ -22,6 +23,14 @@ public static class EphemerisFileResolver
     /// <summary>Opt in to running planetary-moon iterations (ipl 9000-9999), provided ephe/sat/ is available.</summary>
     public static readonly bool IncludeMoons =
         Environment.GetEnvironmentVariable("SWISSEPH_CONFORMANCE_INCLUDE_MOONS") == "1";
+
+    /// <summary>
+    /// Opt in to running SEFLG_SWIEPH iterations for dates outside the shipped _12/_18 core era
+    /// files, provided the specific era files those dates need are actually present under
+    /// <see cref="RepoLocator.EpheDir"/>. See <see cref="NeedsEraFileWeDoNotShip"/>.
+    /// </summary>
+    public static readonly bool IncludeEra =
+        Environment.GetEnvironmentVariable("SWISSEPH_CONFORMANCE_INCLUDE_ERA") == "1";
 
     /// <summary>
     /// Wires the file handler and establishes the ephemeris path, in that order.
@@ -113,17 +122,18 @@ public static class EphemerisFileResolver
 
     /// <summary>
     /// SEFLG_SWIEPH requested for a date outside the era this repo's shipped core ephemeris
-    /// files (sepl/semo/seas_12.se1 and _18.se1) cover.
+    /// files (sepl/semo/seas_12.se1 and _18.se1) cover, and either <see cref="IncludeEra"/> is
+    /// not set or the specific era files that date needs are not actually present.
     /// </summary>
     /// <remarks>
     /// Mirrors external/swisseph/swephlib.c:3610 <c>swi_gen_filename</c>'s file-naming logic:
     /// era files are named ..._&lt;icty&gt;, where icty is the calendar year's century floored
     /// to a multiple of <c>NCTIES</c> (sweph.h:249, 6 centuries = 600 years per file). "_12"
-    /// covers years 1200-1799, "_18" covers 1800-2399 -- the two this repo ships (see
-    /// README.md's "Correctness oracle" section and .github/workflows/conformance.yml's
+    /// covers years 1200-1799, "_18" covers 1800-2399 -- the two this repo ships by default
+    /// (see README.md's "Correctness oracle" section and .github/workflows/conformance.yml's
     /// sparse-checkout list). Anything outside [1200, 2400) needs a different era file
-    /// (e.g. "_06", "_00", "_m06", "_m24", ...) this repo does not ship. A request in that
-    /// range still returns a numeric answer -- Swiss Ephemeris falls back to Moshier
+    /// (e.g. "_06", "_00", "_m06", "_m24", ...) this repo does not ship by default. A request
+    /// in that range still returns a numeric answer -- Swiss Ephemeris falls back to Moshier
     /// internally -- but emits a "using Moshier eph." warning in <c>serr</c> that a
     /// reference run with the full file set never sees, so the numbers can (and for
     /// delta-T, do not, since delta-T is not itself read from these files) still agree while
@@ -131,6 +141,21 @@ public static class EphemerisFileResolver
     /// requesting SEFLG_SWIEPH): passes with this repo's full, non-sparse submodule checkout
     /// (every era file present) and fails -- correctly, since the two environments now differ
     /// in exactly the ephemeris data available -- with only the declared 8-file core set.
+    ///
+    /// Until this method carried an opt-in and a real file check, it was a bare year range test:
+    /// every date outside [1200, 2400) reported DATA-MISSING unconditionally, with no way to ask
+    /// it "but what if the file were actually there". A Phase 6 probe (dated 2026-07-31 in
+    /// Tests/conformance/regenerations.log) widened the checkout to all 150 era files, set a
+    /// then-temporary bypass, and re-ran the corpus: of 157 SEFLG_SWIEPH rows this method routed
+    /// to DATA-MISSING, zero passed once the files were actually present. They are genuine
+    /// VALUE-MISMATCH rows wearing a DATA-MISSING label, which hid them from
+    /// ConformanceReport.IsActionable's porting queue. This method's shape now matches
+    /// <see cref="NeedsJplDataWeDoNotHave"/>'s (opt-in and a real file check, not just an
+    /// opt-in): with <see cref="IncludeEra"/> unset (the default), behavior is unchanged from
+    /// before -- every out-of-range date still reports true, since the files genuinely are not
+    /// shipped by default. Opting in only changes the outcome for a checkout that actually has
+    /// the file swi_gen_filename would resolve to for that date; it does not make this method
+    /// optimistic about data it cannot see.
     /// </remarks>
     public static bool NeedsEraFileWeDoNotShip(SwissEph swe, double jd)
     {
@@ -138,6 +163,67 @@ public static class EphemerisFileResolver
         int year = 0, month = 0, day = 0;
         double hour = 0;
         swe.swe_revjul(jd, gregflag, ref year, ref month, ref day, ref hour);
-        return year < 1200 || year >= 2400;
+        if (year >= 1200 && year < 2400)
+        {
+            return false; // covered by the shipped _12/_18 core files regardless of IncludeEra
+        }
+
+        if (!IncludeEra)
+        {
+            return true;
+        }
+
+        return !EraFilesExist(year);
+    }
+
+    /// <summary>
+    /// True when every one of the three era files (sepl, semo, seas) swi_gen_filename would
+    /// resolve <paramref name="year"/> to is present under <see cref="RepoLocator.EpheDir"/>.
+    /// All three, not just the one a specific testcase's body happens to need: this method has
+    /// no ipl to work from (<see cref="NeedsEraFileWeDoNotShip"/> is called before the body is
+    /// known, from suite dispatch code shared across every body a testcase might exercise), and
+    /// era files ship in same-century triples in practice -- the Phase 6 probe this documents
+    /// widened the checkout to all 150 that way, not per body.
+    /// </summary>
+    private static bool EraFilesExist(int year)
+    {
+        var suffix = EraFileSuffix(year);
+        foreach (var prefix in EraFilePrefixes)
+        {
+            if (!File.Exists(Path.Combine(RepoLocator.EpheDir, prefix + suffix + ".se1")))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static readonly string[] EraFilePrefixes = ["sepl", "semo", "seas"];
+
+    /// <summary>
+    /// Port of external/swisseph/swephlib.c:3663-3684's icty computation and "_&lt;icty&gt;" /
+    /// "m&lt;icty&gt;" suffix formatting -- the part of swi_gen_filename that does not depend on
+    /// which body ipl names (that part only selects the "sepl"/"semo"/"seas" prefix, handled by
+    /// <see cref="EraFilePrefixes"/> instead). C's truncating integer division and modulo match
+    /// C#'s for this arithmetic, so the port is direct rather than needing Euclidean division.
+    /// </summary>
+    private static string EraFileSuffix(int year)
+    {
+        const int Ncties = 6; // sweph.h:249 NCTIES
+        var sgn = year < 0 ? -1 : 1;
+        var icty = year / 100;
+        if (sgn < 0 && year % 100 != 0)
+        {
+            icty -= 1;
+        }
+        while (icty % Ncties != 0)
+        {
+            icty--;
+        }
+
+        var prefix = icty < 0 ? "m" : "_";
+        icty = Math.Abs(icty);
+        return prefix + icty.ToString("D2", CultureInfo.InvariantCulture);
     }
 }
