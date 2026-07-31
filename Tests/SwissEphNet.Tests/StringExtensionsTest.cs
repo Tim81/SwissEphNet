@@ -9,7 +9,13 @@ namespace SwissEphNet.Tests
         [Fact]
         public void TestContainsChar() {
             String s = null;
-            Assert.False(s?.Contains('a', StringComparison.Ordinal) ?? false);
+            // Called as a static method, not member-access syntax: `s?.Contains(...)` short-circuits
+            // on a compile-time-null `s` without ever invoking anything, and instance member syntax
+            // on a non-null string would bind to System.String's own Contains(char, StringComparison)
+            // overload rather than this extension. The static call form is the only way to reach
+            // StringExtensions.Contains(this string, char) itself and exercise its
+            // String.IsNullOrEmpty(s) guard against a real null.
+            Assert.False(StringExtensions.Contains(s, 'a'));
 
             Assert.False("".Contains('a', StringComparison.Ordinal));
             Assert.False("AbCd".Contains('a', StringComparison.Ordinal));
