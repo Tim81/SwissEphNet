@@ -46,7 +46,7 @@ package ID; entries from 2.8.0.2 down are the original project's, published unde
   returning all-zero nodes and apsides, an obliquity read that affected every SEFLG_SWIEPH
   position, eclipse magnitude and obscuration off by a factor of 100, and the swe_house_pos buffer
   that was one element short for Gauquelin houses. See docs/compliance-2.10.03.md for the
-  verification numbers behind this release and docs/known-issues.md and the "Unreleased" section
+  verification numbers behind this release and docs/known-issues.md and the "V:2.10.3" section
   of README.md for the full list.
 
 2.8.1.0 (not published to nuget.org; source-only distribution):

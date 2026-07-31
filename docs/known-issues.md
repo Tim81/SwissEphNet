@@ -1309,7 +1309,7 @@ one character on Windows, and that text mismatch is already visible in 11 rows o
 breaking change for any `IEphemerisFileProvider` consumer that matches on the separator in a file
 name it receives -- the same consumers called out in "DIR_GLUE fixed" above -- so it belongs with that
 entry's deferred release-stage work, not with this file-layer note. It has not been added there yet:
-`README.md`'s `# Breaking changes` / `## Unreleased` section, which is where that deferred work
+`README.md`'s `# Breaking changes` / `## V:2.10.3` section, which is where that deferred work
 belongs, has no entry for this Windows-only diagnostic-text divergence.
 
 **`swi_fopen` never checked `AS_MAXCH`. Closed:** it now does, at the same site the C does. What

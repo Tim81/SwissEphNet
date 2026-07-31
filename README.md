@@ -217,7 +217,7 @@ it has been checked against, not yet at full parity with Astrodienst's own refer
 
 # Breaking changes
 
-## Unreleased
+## V:2.10.3
 
 `swe_houses`, `swe_houses_ex`, `swe_houses_armc`, `swe_house_pos`, and `swe_house_name`
 each gained an `int hsys` overload alongside the existing `char hsys` overload, to match
