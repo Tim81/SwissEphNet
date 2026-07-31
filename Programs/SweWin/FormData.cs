@@ -15,7 +15,6 @@ namespace SweWin
     {
         const int BUFLEN  =8000;
         const string MY_ODEGREE_STRING ="°";
-        const string progname = "Swisseph Test Program";
 
         static string[] etut = new string[] { "UT", "ET" };
         static string[] lat_n_s = new string[] { "N", "S" };
@@ -98,11 +97,6 @@ namespace SweWin
             // SearchFile used to search is sufficient on its own.
             sweph.swe_set_ephe_path(System.IO.Path.Combine(Application.StartupPath, "Datas") + SwissEph.PATH_SEPARATOR[0] + @"C:\sweph\ephe");
             init_data();
-            string argv0 = Environment.GetCommandLineArgs()[0];
-            if (make_ephemeris_path(SwissEph.SEFLG_SWIEPH | SwissEph.SEFLG_SPEED, ref argv0) == SwissEph.ERR) {
-                MessageBox.Show("error in make_ephemeris_path()", progname);
-                Environment.Exit(1);
-            }
         }
 
         void FormData_Disposed(object sender, EventArgs e) {
@@ -1050,86 +1044,6 @@ namespace SweWin
                 return SwissEph.OK;
             else
                 return SwissEph.ERR;
-        }
-
-        /* make_ephemeris_path().
-         * ephemeris path includes
-         *   current working directory
-         *   + program directory
-         *   + default path from swephexp.h on current drive
-         *   +                              on program drive
-         *   +                              on drive C:
-         */
-        int make_ephemeris_path(long iflag, ref string argv0) {
-            //char path[AS_MAXCH], s[AS_MAXCH];
-            string path, s;
-            //string sp;
-            int spi;
-            var dirglue = SwissEph.DIR_GLUE;
-            int pathlen;
-            /* moshier needs no ephemeris path */
-            if ((iflag & SwissEph.SEFLG_MOSEPH) != 0)
-                return SwissEph.OK;
-            /* current working directory */
-            // *PATH_SEPARATOR dereferences the cut-list down to its first character; see
-            // Programs/SweTest/Program.cs's make_ephemeris_path for the matching swetest.c citations.
-            path = C.sprintf(".%c", SwissEph.PATH_SEPARATOR[0]);
-            /* program directory */
-            spi = argv0.LastIndexOf(dirglue);
-            if (spi >= 0) {
-                pathlen = spi;
-                path = argv0.Substring(0, pathlen) + SwissEph.PATH_SEPARATOR[0];
-            }
-
-            //#if MSDOS
-            //{
-            string[] cpos;
-            //char s[2 * AS_MAXCH], *s1 = s + AS_MAXCH;
-            string s1;
-            string[] sp = new string[3];
-            int i, j, np;
-            s1 = ".;sweph";
-            cpos = s1.Split(SwissEph.PATH_SEPARATOR, StringSplitOptions.RemoveEmptyEntries);
-            np = cpos.Length;
-            /* 
-             * default path from swephexp.h
-             * - current drive
-             * - program drive
-             * - drive C
-             */
-            s = null;
-            /* current working drive */
-            sp[0] = Environment.CurrentDirectory;
-            if (sp[0] == null) {
-                /*do_printf("error in getcwd()\n");*/
-                return SwissEph.ERR;
-            }
-            if (sp[0][0] == 'C')
-                sp[0] = null;
-            /* program drive */
-            if (argv0[0] != 'C' && (sp[0] == null || sp[0][0] != argv0[0]))
-                sp[1] = argv0;
-            else
-                sp[1] = null;
-            /* drive C */
-            sp[2] = "C";
-            for (i = 0; i < np; i++) {
-                s = cpos[i];
-                if (!String.IsNullOrWhiteSpace(s) && s[0] == '.')	/* current directory */
-                    continue;
-                if (s != null && s.Length > 1 && s[1] == ':')  /* drive already there */
-                    continue;
-                for (j = 0; j < 3; j++) {
-                    if (sp[j] != null)
-                        path += C.sprintf("%c:%s%c", sp[j][0], s, ';');
-                }
-            }
-            //}
-            //#else
-            //    if (strlen(path) + pathlen < AS_MAXCH-1)
-            //      strcat(path, SE_EPHE_PATH);
-            //#endif
-            return SwissEph.OK;
         }
 
 //**************************************************************
