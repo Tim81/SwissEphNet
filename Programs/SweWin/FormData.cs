@@ -660,9 +660,18 @@ namespace SweWin
                 }
                 if (iflgret >= 0) {
                     if (calc_house_pos) {
-                        hpos = sweph.swe_house_pos(armc, lat, eps_true, hsys, x, ref serr);
-                        if (hpos == 0)
+                        /* Own buffer. swe_house_pos() clears serr when it succeeds, which
+                         * would discard whatever swe_calc() had left there -- in the default
+                         * geocentric configuration that is the "using Moshier eph." notice,
+                         * the one thing the serr_warn print at the end of this report exists
+                         * to show. Only adopt the buffer on failure, where it holds the
+                         * house-position error the branch below prints. */
+                        string serr_hpos = String.Empty;
+                        hpos = sweph.swe_house_pos(armc, lat, eps_true, hsys, x, ref serr_hpos);
+                        if (hpos == 0) {
                             iflgret = SwissEph.ERR;
+                            serr = serr_hpos;
+                        }
                     }
                 }
                 if (iflgret < 0) {
