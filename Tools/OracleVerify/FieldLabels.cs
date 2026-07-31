@@ -11,6 +11,13 @@ namespace OracleVerify;
 /// value (the magnitude). NAME (swe_get_planet_name) carries none at all: the returned string
 /// has no double to hex-encode, so it is written into the row's err column instead -- see
 /// gen-grid-files.ps1's header for why that is the right column for it, not a workaround.
+///
+/// SOLCROSS/SOLCROSSUT/MOONCROSS/MOONCROSSUT/HELIOCROSS/HELIOCROSSUT carry a single value, the
+/// crossing time (jd_cross) -- see Tools/CReference/sedump.c's own top-of-file comment ("THE
+/// CROSSING FUNCTIONS' retc COLUMN") for why swe_helio_cross's real int32 retc and the other
+/// five's synthetic one both land in the shared retc column rather than as a value field.
+/// MOONCROSSNODE/MOONCROSSNODEUT carry three: jd_cross, then the ecliptic longitude/latitude
+/// (xlon, xlat) swe_mooncross_node(_ut) writes through its own output parameters at the crossing.
 /// </summary>
 internal static class FieldLabels
 {
@@ -20,6 +27,8 @@ internal static class FieldLabels
         .ToArray();
     private static readonly string[] MagLabels = ["mag"];
     private static readonly string[] NameLabels = [];
+    private static readonly string[] JdCrossLabels = ["jd_cross"];
+    private static readonly string[] MoonCrossNodeLabels = ["jd_cross", "xlon", "xlat"];
 
     public static IReadOnlyList<string> For(string func, string caseId) => func switch
     {
@@ -28,6 +37,8 @@ internal static class FieldLabels
         "FIXSTAR" or "FIXSTARUT" or "FIXSTAR2" or "FIXSTAR2UT" => XxLabels,
         "FIXSTARMAG" => MagLabels,
         "NAME" => NameLabels,
+        "SOLCROSS" or "SOLCROSSUT" or "MOONCROSS" or "MOONCROSSUT" or "HELIOCROSS" or "HELIOCROSSUT" => JdCrossLabels,
+        "MOONCROSSNODE" or "MOONCROSSNODEUT" => MoonCrossNodeLabels,
         _ => throw new FormatException($"case {caseId}: unrecognized func token '{func}' at the start of case_id."),
     };
 

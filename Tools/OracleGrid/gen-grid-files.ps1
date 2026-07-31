@@ -53,6 +53,24 @@
                                  the file-not-found branch of the asteroid-name lookup on both
                                  sides instead of a case this port never has to open a file for.
 
+      swe_solcross / swe_solcross_ut / swe_mooncross / swe_mooncross_ut / swe_mooncross_node /
+                                 swe_mooncross_node_ut / swe_helio_cross / swe_helio_cross_ut --
+                                 the same eight crossing functions gen-grid-analytic.ps1 covers
+                                 under SEFLG_MOSEPH, here under SEFLG_SWIEPH so the file-backed
+                                 code path is exercised too. Every date used is chosen with enough
+                                 margin from both the 1200/2399 span edges and the 1800 file
+                                 boundary that even the slowest crossing search these rows can
+                                 trigger cannot walk past the two shipped files' combined
+                                 coverage -- see the per-function value blocks below for the
+                                 margin reasoning specific to each. swe_helio_cross's own body
+                                 list is narrower here than gen-grid-analytic.ps1's for the same
+                                 reason: a heliocentric search can take up to about one full
+                                 orbital period to converge, and Uranus/Neptune/Pluto's periods
+                                 (84/165/248 years) are close enough to this grid's own file-era
+                                 margins that including them would risk a search walking past the
+                                 shipped files' span -- gen-grid-analytic.ps1's unconstrained
+                                 Moshier range has no such limit, so those three stay there only.
+
     THE STAR NAME LOOKUP AND THE PLANET NAME ARE CARRIED IN THE err/serr COLUMN
 
     swe_get_planet_name returns a string, not a double, so it has no xx[]/mag output to hex-encode
@@ -81,10 +99,11 @@
     the first non-comment line is the column-name header, which both drivers assert against
     verbatim. Empty string means "does not apply to this row's func":
 
-      case_id, func, ipl, tjd, iflag, star, geolon, geolat, height, sid_mode
+      case_id, func, ipl, tjd, iflag, star, geolon, geolat, height, sid_mode, x2cross, dir
 
-    Ten columns, not grid-analytic.tsv's twelve: there is no house system here, so hsys, armc and
-    eps are dropped, and a star column takes their place.
+    Twelve columns, not grid-analytic.tsv's fourteen: there is no house system here, so hsys, armc
+    and eps are dropped, and a star column takes their place; x2cross and dir are appended after
+    sid_mode for the same reason and in the same position gen-grid-analytic.ps1 appends them.
 
 .NOTES
     Deterministic by construction: no timestamps, no randomness, no machine-dependent state (the
@@ -107,6 +126,7 @@ $outputPath = Join-Path $PSScriptRoot 'grid-files.tsv'
 
 $SEFLG_SWIEPH     = 2
 $SEFLG_HELCTR     = 8
+$SEFLG_TRUEPOS    = 16
 $SEFLG_SPEED      = 256
 $SEFLG_BARYCTR    = 16 * 1024
 $SEFLG_TOPOCTR    = 32 * 1024
@@ -169,7 +189,7 @@ function New-CalcFileRow {
     $sidModeField = if ($null -eq $SidMode) { '' } else { FmtI ([int]$SidMode) }
     $fields = @(
         $caseId, $Func, (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
-        $geolonField, $geolatField, $heightField, $sidModeField
+        $geolonField, $geolatField, $heightField, $sidModeField, '', ''
     )
     return ($fields -join "`t")
 }
@@ -186,7 +206,7 @@ function New-FixstarRow {
     $caseId = "$Prefix|$Star|$(Fmt $Tjd)|$FlagName"
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), $Star,
-        '', '', '', ''
+        '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -196,7 +216,7 @@ function New-FixstarMagRow {
     $caseId = "FIXSTARMAG|$Star"
     $fields = @(
         $caseId, 'FIXSTAR_MAG', '', '', '', $Star,
-        '', '', '', ''
+        '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -206,7 +226,68 @@ function New-NameRow {
     $caseId = "NAME|$(FmtI $Ipl)"
     $fields = @(
         $caseId, 'GET_PLANET_NAME', (FmtI $Ipl), '', '', '',
-        '', '', '', ''
+        '', '', '', '', '', ''
+    )
+    return ($fields -join "`t")
+}
+
+# swe_solcross/_ut and swe_mooncross/_ut share one C signature shape (x2cross, tjd, iflag, serr)
+# and one row shape here -- matches gen-grid-analytic.ps1's New-SolarLunarCrossRow, minus the
+# hsys/geolon/geolat/height/armc/eps columns this grid does not carry at all and with a star
+# column (always empty for these rows) in their place.
+function New-SolarLunarCrossRow {
+    param(
+        [string] $Prefix,
+        [string] $Func,
+        [double] $X2Cross,
+        [double] $Tjd,
+        [string] $FlagName,
+        [int]    $IFlag
+    )
+    $caseId = "$Prefix|$(Fmt $X2Cross)|$(Fmt $Tjd)|$FlagName"
+    $fields = @(
+        $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
+        '', '', '', '', (Fmt $X2Cross), ''
+    )
+    return ($fields -join "`t")
+}
+
+# swe_mooncross_node/_ut takes no target longitude -- it finds a zero-*latitude* node crossing,
+# not a crossing over a caller-supplied longitude -- so x2cross stays empty here, unlike
+# New-SolarLunarCrossRow above.
+function New-MoonCrossNodeRow {
+    param(
+        [string] $Prefix,
+        [string] $Func,
+        [double] $Tjd,
+        [string] $FlagName,
+        [int]    $IFlag
+    )
+    $caseId = "$Prefix|$(Fmt $Tjd)|$FlagName"
+    $fields = @(
+        $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
+        '', '', '', '', '', ''
+    )
+    return ($fields -join "`t")
+}
+
+# swe_helio_cross/_ut is the one crossing function that takes a body (ipl, reusing the same column
+# swe_calc's rows already carry) and a search direction (dir, the new trailing column).
+function New-HelioCrossRow {
+    param(
+        [string] $Prefix,
+        [string] $Func,
+        [int]    $Ipl,
+        [double] $X2Cross,
+        [double] $Tjd,
+        [string] $FlagName,
+        [int]    $IFlag,
+        [int]    $Dir
+    )
+    $caseId = "$Prefix|$(FmtI $Ipl)|$(Fmt $X2Cross)|$(Fmt $Tjd)|$FlagName|$(FmtI $Dir)"
+    $fields = @(
+        $caseId, $Func, (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
+        '', '', '', '', (Fmt $X2Cross), (FmtI $Dir)
     )
     return ($fields -join "`t")
 }
@@ -305,6 +386,59 @@ $NameBodies = 0..22
 $NameAsteroidOffsetBody = 10005
 
 # ---------------------------------------------------------------------------------------
+# Crossing-function grid values (swe_solcross/_ut, swe_mooncross/_ut, swe_mooncross_node/_ut,
+# swe_helio_cross/_ut) under SEFLG_SWIEPH. See this script's own .DESCRIPTION for why the body
+# list and dates below are narrower than gen-grid-analytic.ps1's own crossing coverage -- every
+# value here is chosen to keep the crossing search (which can walk up to about one full period
+# away from its start date) from ever needing a date outside the two shipped files' combined
+# 1200-2399 span.
+# ---------------------------------------------------------------------------------------
+
+# Four target longitudes -- smaller than gen-grid-analytic.ps1's six on purpose, matching how
+# $FlagCombos above is already smaller than grid-analytic.tsv's own iflag matrix for the same
+# "prove the file layer is exercised, do not re-cover ground grid-analytic.tsv already covers"
+# reason. Still includes 0.0 and 359.9999, the two ends of the wraparound swe_degnorm folds
+# together.
+$CrossX2 = @(0.0, 90.0, 180.0, 359.9999)
+
+# Two of the ten SWIEPH dates above, by index: 1 (1500, era _12) and 7 (2100, era _18) -- both
+# comfortably mid-era (100+ years from either file-span edge), which is all swe_solcross/
+# swe_mooncross need: the Sun's and Moon's crossing search only ever walks up to about one solar
+# (365-day) or lunar (27.32-day) period ahead of its start date.
+$CrossTjdFiles = @($CalcJdsFiles[1], $CalcJdsFiles[7])
+
+$SolMoonCrossFlagCombos = @(
+    [pscustomobject]@{ Name = 'PLAIN';   Flag = 0 }
+    [pscustomobject]@{ Name = 'TRUEPOS'; Flag = $SEFLG_TRUEPOS }
+)
+
+# Three of the ten SWIEPH dates above, by index -- the same three $FixstarJds already uses (0:
+# 1300 era _12, 5: 1810 era _18, 8: 2300 era _18), reused here rather than picked fresh since
+# swe_mooncross_node's own search horizon (about one lunar month) is even shorter than
+# swe_solcross/swe_mooncross's, so the same margin reasoning applies without needing a new date
+# set.
+$MoonCrossNodeTjdFiles = @($CalcJdsFiles[0], $CalcJdsFiles[5], $CalcJdsFiles[8])
+
+# swe_helio_cross(_ut)'s search can take up to about one full heliocentric orbital period to
+# converge, so the body list here is narrower than gen-grid-analytic.ps1's: SE_SUN and SE_MOON
+# (one representative pick from two of the function's three reject disjuncts -- the SUN check and
+# the MOON check; the node/apogee-range disjunct is not repeated here, since gen-grid-analytic.ps1
+# already proves it fires and this grid's job is proving the file layer, not re-covering the
+# reject logic in full) plus the bodies whose period comfortably fits inside the margins below:
+# Mercury..Saturn (88 days to 29.5 years), SE_EARTH (1 year) and SE_CHIRON (50.7 years, and the
+# one body the function overrides with a hardcoded mean speed instead of swe_calc's own --
+# external/swisseph/sweph.c:8551-8552). Uranus/Neptune/Pluto (84/165/248-year periods) are left to
+# gen-grid-analytic.ps1's unconstrained Moshier range.
+$HelioCrossIplFiles = @(0, 1, 2, 3, 4, 5, 6, 14, 15)  # SE_SUN, SE_MOON, Mercury..Saturn, SE_EARTH, SE_CHIRON
+$HelioCrossX2Files = @(0.0, 180.0)
+# Index 0 (1300, era _12: margin 100 years to the 1200 edge, 499 to the 1799 edge) and index 7
+# (2100, era _18: margin 300 years to either edge) -- both margins comfortably exceed SE_CHIRON's
+# 50.7-year period, the slowest body this list includes, on both sides (a search can walk forward
+# OR backward depending on -Dir).
+$HelioCrossTjdFiles = @($CalcJdsFiles[0], $CalcJdsFiles[7])
+$HelioCrossDir = @(1, -1)
+
+# ---------------------------------------------------------------------------------------
 # Build rows
 # ---------------------------------------------------------------------------------------
 
@@ -317,6 +451,14 @@ $fixstar2Count = 0
 $fixstar2UtCount = 0
 $fixstarMagCount = 0
 $nameCount = 0
+$solCrossCount = 0
+$solCrossUtCount = 0
+$moonCrossCount = 0
+$moonCrossUtCount = 0
+$moonCrossNodeCount = 0
+$moonCrossNodeUtCount = 0
+$helioCrossCount = 0
+$helioCrossUtCount = 0
 
 foreach ($ipl in $Bodies) {
     foreach ($tjd in $CalcJdsFiles) {
@@ -372,8 +514,57 @@ foreach ($ipl in $NameBodies) {
 $rows.Add((New-NameRow -Ipl $NameAsteroidOffsetBody))
 $nameCount++
 
+foreach ($x2 in $CrossX2) {
+    foreach ($tjd in $CrossTjdFiles) {
+        foreach ($combo in $SolMoonCrossFlagCombos) {
+            $iflag = $SEFLG_SWIEPH -bor $combo.Flag
+
+            $rows.Add((New-SolarLunarCrossRow -Prefix 'SOLCROSS' -Func 'SOLCROSS' -X2Cross $x2 -Tjd $tjd -FlagName $combo.Name -IFlag $iflag))
+            $solCrossCount++
+
+            $rows.Add((New-SolarLunarCrossRow -Prefix 'SOLCROSSUT' -Func 'SOLCROSS_UT' -X2Cross $x2 -Tjd $tjd -FlagName $combo.Name -IFlag $iflag))
+            $solCrossUtCount++
+
+            $rows.Add((New-SolarLunarCrossRow -Prefix 'MOONCROSS' -Func 'MOONCROSS' -X2Cross $x2 -Tjd $tjd -FlagName $combo.Name -IFlag $iflag))
+            $moonCrossCount++
+
+            $rows.Add((New-SolarLunarCrossRow -Prefix 'MOONCROSSUT' -Func 'MOONCROSS_UT' -X2Cross $x2 -Tjd $tjd -FlagName $combo.Name -IFlag $iflag))
+            $moonCrossUtCount++
+        }
+    }
+}
+
+foreach ($tjd in $MoonCrossNodeTjdFiles) {
+    foreach ($combo in $SolMoonCrossFlagCombos) {
+        $iflag = $SEFLG_SWIEPH -bor $combo.Flag
+
+        $rows.Add((New-MoonCrossNodeRow -Prefix 'MOONCROSSNODE' -Func 'MOONCROSS_NODE' -Tjd $tjd -FlagName $combo.Name -IFlag $iflag))
+        $moonCrossNodeCount++
+
+        $rows.Add((New-MoonCrossNodeRow -Prefix 'MOONCROSSNODEUT' -Func 'MOONCROSS_NODE_UT' -Tjd $tjd -FlagName $combo.Name -IFlag $iflag))
+        $moonCrossNodeUtCount++
+    }
+}
+
+foreach ($ipl in $HelioCrossIplFiles) {
+    foreach ($x2 in $HelioCrossX2Files) {
+        foreach ($tjd in $HelioCrossTjdFiles) {
+            foreach ($dir in $HelioCrossDir) {
+                $iflag = $SEFLG_SWIEPH
+
+                $rows.Add((New-HelioCrossRow -Prefix 'HELIOCROSS' -Func 'HELIO_CROSS' -Ipl $ipl -X2Cross $x2 -Tjd $tjd -FlagName 'PLAIN' -IFlag $iflag -Dir $dir))
+                $helioCrossCount++
+
+                $rows.Add((New-HelioCrossRow -Prefix 'HELIOCROSSUT' -Func 'HELIO_CROSS_UT' -Ipl $ipl -X2Cross $x2 -Tjd $tjd -FlagName 'PLAIN' -IFlag $iflag -Dir $dir))
+                $helioCrossUtCount++
+            }
+        }
+    }
+}
+
 $totalRows = $rows.Count
-$expectedTotal = $calcCount + $calcUtCount + $fixstarCount + $fixstarUtCount + $fixstar2Count + $fixstar2UtCount + $fixstarMagCount + $nameCount
+$expectedTotal = $calcCount + $calcUtCount + $fixstarCount + $fixstarUtCount + $fixstar2Count + $fixstar2UtCount + $fixstarMagCount + $nameCount +
+    $solCrossCount + $solCrossUtCount + $moonCrossCount + $moonCrossUtCount + $moonCrossNodeCount + $moonCrossNodeUtCount + $helioCrossCount + $helioCrossUtCount
 if ($totalRows -ne $expectedTotal) {
     throw 'Row count bookkeeping is inconsistent -- this is a bug in this script, not a data problem.'
 }
@@ -424,6 +615,16 @@ $headerLines = @(
     '# byte for byte is exactly the check a returned name needs, and costs no new column or new'
     '# comparison logic in Tools/OracleVerify.'
     '#'
+    '# swe_solcross / swe_solcross_ut / swe_mooncross / swe_mooncross_ut / swe_mooncross_node /'
+    '# swe_mooncross_node_ut / swe_helio_cross / swe_helio_cross_ut: the same eight crossing'
+    '# functions gen-grid-analytic.ps1 covers under SEFLG_MOSEPH, here under SEFLG_SWIEPH so the'
+    '# file-backed code path is exercised too. Every date is chosen with enough margin from the'
+    '# 1200/2399 span edges and the 1800 file boundary that even the slowest crossing search these'
+    '# rows can trigger cannot walk past the two shipped files'' combined coverage; swe_helio_cross''s'
+    '# own body list is narrower than gen-grid-analytic.ps1''s for the same reason (a heliocentric'
+    '# search can take up to about one orbital period to converge, and Uranus/Neptune/Pluto''s'
+    '# 84/165/248-year periods are close enough to this grid''s file-era margins to risk it).'
+    '#'
     '# A FRESH LIBRARY INSTANCE PER ROW, AND A FRESH swe_set_ephe_path PER ROW'
     '#'
     '# Every row here touches file-backed state (which segment is cached, which file handle is'
@@ -437,24 +638,41 @@ $headerLines = @(
     '# does not apply to that row''s func)'
     '#'
     '#   case_id    stable, unique, pipe-delimited id; ordinal comparison sorts it deterministically'
-    '#   func       CALC | CALC_UT | FIXSTAR | FIXSTAR_UT | FIXSTAR2 | FIXSTAR2_UT | FIXSTAR_MAG | GET_PLANET_NAME'
-    '#   ipl        body number                                        [CALC, CALC_UT, GET_PLANET_NAME]'
-    '#   tjd        Julian day (ET for CALC/FIXSTAR/FIXSTAR2; UT for CALC_UT/FIXSTAR_UT/FIXSTAR2_UT)'
-    '#              [CALC, CALC_UT, FIXSTAR, FIXSTAR_UT, FIXSTAR2, FIXSTAR2_UT]'
-    '#   iflag      swe_calc/swe_fixstar iflag, with SEFLG_SWIEPH already OR-ed in'
-    '#              [CALC, CALC_UT, FIXSTAR, FIXSTAR_UT, FIXSTAR2, FIXSTAR2_UT]'
+    '#   func       CALC | CALC_UT | FIXSTAR | FIXSTAR_UT | FIXSTAR2 | FIXSTAR2_UT | FIXSTAR_MAG |'
+    '#              GET_PLANET_NAME | SOLCROSS | SOLCROSS_UT | MOONCROSS | MOONCROSS_UT |'
+    '#              MOONCROSS_NODE | MOONCROSS_NODE_UT | HELIO_CROSS | HELIO_CROSS_UT'
+    '#   ipl        body number                                        [CALC, CALC_UT,'
+    '#              GET_PLANET_NAME, HELIO_CROSS, HELIO_CROSS_UT]'
+    '#   tjd        Julian day (ET for CALC/FIXSTAR/FIXSTAR2/SOLCROSS/MOONCROSS/MOONCROSS_NODE/'
+    '#              HELIO_CROSS; UT for the corresponding _UT funcs)'
+    '#              [CALC, CALC_UT, FIXSTAR, FIXSTAR_UT, FIXSTAR2, FIXSTAR2_UT, SOLCROSS,'
+    '#              SOLCROSS_UT, MOONCROSS, MOONCROSS_UT, MOONCROSS_NODE, MOONCROSS_NODE_UT,'
+    '#              HELIO_CROSS, HELIO_CROSS_UT]'
+    '#   iflag      swe_calc/swe_fixstar/crossing-func iflag, with SEFLG_SWIEPH already OR-ed in'
+    '#              [CALC, CALC_UT, FIXSTAR, FIXSTAR_UT, FIXSTAR2, FIXSTAR2_UT, SOLCROSS,'
+    '#              SOLCROSS_UT, MOONCROSS, MOONCROSS_UT, MOONCROSS_NODE, MOONCROSS_NODE_UT,'
+    '#              HELIO_CROSS, HELIO_CROSS_UT]'
     '#   star       star name or search string                         [FIXSTAR, FIXSTAR_UT, FIXSTAR2, FIXSTAR2_UT, FIXSTAR_MAG]'
     '#   geolon     geographic longitude, degrees east                 [CALC/CALC_UT topo rows only]'
     '#   geolat     geographic latitude, degrees north                 [CALC/CALC_UT topo rows only]'
     '#   height     observer height above sea level, metres            [CALC/CALC_UT topo rows only]'
     '#   sid_mode   swe_set_sid_mode mode, applied before the row runs [CALC/CALC_UT rows whose iflag carries SEFLG_SIDEREAL]'
+    '#   x2cross    target ecliptic longitude to cross, degrees        [SOLCROSS, SOLCROSS_UT,'
+    '#              MOONCROSS, MOONCROSS_UT, HELIO_CROSS, HELIO_CROSS_UT]'
+    '#   dir        swe_helio_cross(_ut) search direction: >= 0 forward, < 0 backward'
+    '#              [HELIO_CROSS, HELIO_CROSS_UT]'
+    '#'
+    '# x2cross and dir are appended after sid_mode rather than interleaved among the original ten'
+    '# columns, so every column this grid''s other funcs already used keeps the same index it'
+    '# always had -- the same additive-not-renumbering choice gen-grid-analytic.ps1 makes.'
     '#'
     '# Lines starting with ''#'' are comments. The first non-comment line is the column-name header'
     '# below and is not a data row -- both drivers assert it matches verbatim before reading any'
     '# data.'
 )
 $columnHeader = 'case_id' + "`t" + 'func' + "`t" + 'ipl' + "`t" + 'tjd' + "`t" + 'iflag' + "`t" +
-    'star' + "`t" + 'geolon' + "`t" + 'geolat' + "`t" + 'height' + "`t" + 'sid_mode'
+    'star' + "`t" + 'geolon' + "`t" + 'geolat' + "`t" + 'height' + "`t" + 'sid_mode' + "`t" +
+    'x2cross' + "`t" + 'dir'
 
 $writer = [System.IO.StreamWriter]::new($outputPath, $false, [System.Text.UTF8Encoding]::new($false))
 try {
@@ -468,11 +686,19 @@ finally {
 }
 
 Write-Host "PASS: wrote $totalRows data row(s) to $outputPath" -ForegroundColor Green
-Write-Host "  CALC          $calcCount"
-Write-Host "  CALC_UT       $calcUtCount"
-Write-Host "  FIXSTAR       $fixstarCount"
-Write-Host "  FIXSTAR_UT    $fixstarUtCount"
-Write-Host "  FIXSTAR2      $fixstar2Count"
-Write-Host "  FIXSTAR2_UT   $fixstar2UtCount"
-Write-Host "  FIXSTAR_MAG   $fixstarMagCount"
-Write-Host "  GET_PLANET_NAME $nameCount"
+Write-Host "  CALC               $calcCount"
+Write-Host "  CALC_UT            $calcUtCount"
+Write-Host "  FIXSTAR            $fixstarCount"
+Write-Host "  FIXSTAR_UT         $fixstarUtCount"
+Write-Host "  FIXSTAR2           $fixstar2Count"
+Write-Host "  FIXSTAR2_UT        $fixstar2UtCount"
+Write-Host "  FIXSTAR_MAG        $fixstarMagCount"
+Write-Host "  GET_PLANET_NAME    $nameCount"
+Write-Host "  SOLCROSS           $solCrossCount"
+Write-Host "  SOLCROSS_UT        $solCrossUtCount"
+Write-Host "  MOONCROSS          $moonCrossCount"
+Write-Host "  MOONCROSS_UT       $moonCrossUtCount"
+Write-Host "  MOONCROSS_NODE     $moonCrossNodeCount"
+Write-Host "  MOONCROSS_NODE_UT  $moonCrossNodeUtCount"
+Write-Host "  HELIO_CROSS        $helioCrossCount"
+Write-Host "  HELIO_CROSS_UT     $helioCrossUtCount"

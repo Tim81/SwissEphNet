@@ -39,6 +39,32 @@
                                   (including near-polar and polar-circle extremes, where Placidus
                                   and Koch degenerate), longitudes, Julian days and ARMC values.
 
+      swe_solcross / swe_solcross_ut / swe_mooncross / swe_mooncross_ut / swe_mooncross_node /
+                                  swe_mooncross_node_ut / swe_helio_cross / swe_helio_cross_ut --
+                                  the eight crossing functions, none of which any grid covered
+                                  before this addition (see Tests/conformance/regenerations.log's
+                                  Phase 6 entry, which found suite 10.5-10.8 mismatches against
+                                  t.exp for swe_helio_cross and swe_mooncross_node without any way
+                                  to tell a port defect from a t.exp-vintage artifact). All eight
+                                  carry SEFLG_MOSEPH, matching the rest of this grid. swe_solcross
+                                  and swe_mooncross are crossed with a spread of target longitudes
+                                  (including both 0.0 and 360.0, the two ends of the wraparound
+                                  swe_degnorm folds together), start dates and (most of) the flag
+                                  combinations each function's own doc comment names -- SEFLG_HELCTR
+                                  is the one documented flag deliberately left out, because it
+                                  drives swe_solcross into an unbounded loop inside libswe itself;
+                                  see $SolCrossFlagCombos below for the mechanism.
+                                  swe_mooncross_node takes no target longitude at all (it finds a
+                                  zero-latitude node crossing, not a longitude crossing), so it is
+                                  crossed with start dates and flags only. swe_helio_cross is
+                                  crossed with target longitudes, start dates, both search
+                                  directions the API takes, and a body list that deliberately
+                                  includes SE_SUN/SE_MOON/SE_TRUE_NODE (one representative body
+                                  the function rejects from each disjunct of its own reject check)
+                                  alongside the bodies it accepts, including SE_CHIRON (the one
+                                  body the function overrides with a hardcoded mean speed instead
+                                  of swe_calc's own).
+
     A FRESH LIBRARY INSTANCE PER ROW (both drivers, not this script)
 
     swe_houses_armc carries a hidden field emulating a C static (saved_sundec, see
@@ -56,7 +82,12 @@
     verbatim rather than silently reading the wrong columns if this script's schema ever changes
     out from under them. Empty string means "does not apply to this row's func":
 
-      case_id, func, ipl, tjd, iflag, hsys, geolon, geolat, height, armc, eps, sid_mode
+      case_id, func, ipl, tjd, iflag, hsys, geolon, geolat, height, armc, eps, sid_mode, x2cross,
+      dir
+
+    x2cross and dir are appended after sid_mode, not interleaved among the original twelve
+    columns, so every existing column keeps the same index it always had -- the crossing rows are
+    additive, not a renumbering.
 
 .NOTES
     Deterministic by construction: no timestamps, no randomness, no machine-dependent state.
@@ -145,7 +176,7 @@ function New-CalcRow {
     $sidModeField = if ($null -eq $SidMode) { '' } else { FmtI ([int]$SidMode) }
     $fields = @(
         $caseId, $Func, (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
-        $geolonField, $geolatField, $heightField, '', '', $sidModeField
+        $geolonField, $geolatField, $heightField, '', '', $sidModeField, '', ''
     )
     return ($fields -join "`t")
 }
@@ -155,7 +186,7 @@ function New-HousesRow {
     $caseId = "HOUSES|$Hsys|$(Fmt $GeoLat)|$(Fmt $GeoLon)|$(Fmt $Tjd)"
     $fields = @(
         $caseId, 'HOUSES', '', (Fmt $Tjd), '', "$Hsys",
-        (Fmt $GeoLon), (Fmt $GeoLat), '', '', '', ''
+        (Fmt $GeoLon), (Fmt $GeoLat), '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -165,7 +196,69 @@ function New-HousesArmcRow {
     $caseId = "HOUSESARMC|$Hsys|$(Fmt $GeoLat)|$(Fmt $Eps)|$(Fmt $Armc)"
     $fields = @(
         $caseId, 'HOUSES_ARMC', '', '', '', "$Hsys",
-        '', (Fmt $GeoLat), '', (Fmt $Armc), (Fmt $Eps), ''
+        '', (Fmt $GeoLat), '', (Fmt $Armc), (Fmt $Eps), '', '', ''
+    )
+    return ($fields -join "`t")
+}
+
+# swe_solcross/_ut and swe_mooncross/_ut share one C signature shape (x2cross, tjd, iflag, serr)
+# and one row shape here: neither takes a body, a house system, a geoposition or an ARMC/eps
+# pair, so every column except tjd/iflag/sid_mode/x2cross stays empty.
+function New-SolarLunarCrossRow {
+    param(
+        [string] $Prefix,
+        [string] $Func,
+        [double] $X2Cross,
+        [double] $Tjd,
+        [string] $FlagName,
+        [int]    $IFlag,
+        $SidMode
+    )
+    $caseId = "$Prefix|$(Fmt $X2Cross)|$(Fmt $Tjd)|$FlagName"
+    $sidModeField = if ($null -eq $SidMode) { '' } else { FmtI ([int]$SidMode) }
+    $fields = @(
+        $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
+        '', '', '', '', '', $sidModeField, (Fmt $X2Cross), ''
+    )
+    return ($fields -join "`t")
+}
+
+# swe_mooncross_node/_ut takes no target longitude at all -- it finds a zero-*latitude* node
+# crossing, not a crossing over a caller-supplied longitude -- so x2cross stays empty here, unlike
+# New-SolarLunarCrossRow above.
+function New-MoonCrossNodeRow {
+    param(
+        [string] $Prefix,
+        [string] $Func,
+        [double] $Tjd,
+        [string] $FlagName,
+        [int]    $IFlag
+    )
+    $caseId = "$Prefix|$(Fmt $Tjd)|$FlagName"
+    $fields = @(
+        $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
+        '', '', '', '', '', '', '', ''
+    )
+    return ($fields -join "`t")
+}
+
+# swe_helio_cross/_ut is the one crossing function that takes a body (ipl, reusing the same column
+# swe_calc's rows already carry) and a search direction (dir, the new trailing column).
+function New-HelioCrossRow {
+    param(
+        [string] $Prefix,
+        [string] $Func,
+        [int]    $Ipl,
+        [double] $X2Cross,
+        [double] $Tjd,
+        [string] $FlagName,
+        [int]    $IFlag,
+        [int]    $Dir
+    )
+    $caseId = "$Prefix|$(FmtI $Ipl)|$(Fmt $X2Cross)|$(Fmt $Tjd)|$FlagName|$(FmtI $Dir)"
+    $fields = @(
+        $caseId, $Func, (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
+        '', '', '', '', '', '', (Fmt $X2Cross), (FmtI $Dir)
     )
     return ($fields -join "`t")
 }
@@ -238,6 +331,96 @@ $HouseArmcs = 0..7 | ForEach-Object { $_ * 45.0 }
 $HouseEps = @(23.4392911, 0.0, 40.0)
 
 # ---------------------------------------------------------------------------------------
+# Crossing-function grid values (swe_solcross/_ut, swe_mooncross/_ut, swe_mooncross_node/_ut,
+# swe_helio_cross/_ut). See this script's own .DESCRIPTION for why these eight funcs are the gap
+# this addition closes.
+# ---------------------------------------------------------------------------------------
+
+# Six target longitudes for swe_solcross/swe_mooncross/swe_helio_cross. 0.0 and 360.0 are both
+# included on purpose even though swe_degnorm folds them to the identical normalized distance --
+# a bit-identical *result* is still worth its own grid row here, since it proves the wraparound
+# normalization at both of its own boundary inputs, not just one. 90/180/270 cover the other three
+# quadrants; 359.9999 sits just below the wraparound edge from the other side.
+$CrossX2 = @(0.0, 90.0, 180.0, 270.0, 359.9999, 360.0)
+
+# Two start dates well inside the Moshier-valid window $CalcJds above already spans -- early and
+# late. Unlike $CalcJds, this dimension does not need a wide spread: swe_solcross/swe_mooncross
+# only ever search up to about one solar/lunar period ahead of the start date, so a second,
+# distant start date is enough to prove the search still works when it starts from a very
+# different point in the ephemeris.
+$CrossTjd = @(1200000.0, 2400000.0)
+
+# swe_solcross's own doc comment (external/swisseph/sweph.c:8312-8315) names SEFLG_HELCTR,
+# SEFLG_TRUEPOS and SEFLG_NONUT, plus SEFLG_SIDEREAL, which the sibling swe_mooncross_ut doc
+# comment documents explicitly (see $MoonCrossFlagCombos below) and which swe_calc itself always
+# recognizes regardless of which wrapper calls it. SEFLG_HELCTR is deliberately NOT included
+# below, even though the doc comment names it: swe_solcross hardcodes ipl = SE_SUN
+# (external/swisseph/sweph.c:8325) and never substitutes SE_EARTH the way its own comment's "1 =
+# heliocentric, EARTH" wording implies, so SEFLG_HELCTR actually asks swe_calc for the
+# heliocentric position of the Sun itself -- the coordinate origin, with an always-zero speed.
+# Measured: for x2cross values where the initial distance estimate does not already land within
+# CROSS_PRECISION on the first pass (every value here except 0.0/360.0, which converge in one
+# step because dist starts at exactly 0), the refinement loop's `jd += dist / x[3]` divides a
+# nonzero dist by that zero speed, drives jd to +Infinity, and the next swe_calc(Infinity, ...)
+# call inside libswe never returns -- confirmed by isolating SOLCROSS|90|1200000|HELCTR against
+# the built sedump.exe and observing unbounded CPU time with no output. That is a hang, not merely
+# a slow or degenerate result, so it cannot be a grid row: a case this driver can never finish is
+# not a test case, it is a way to make every future run of this harness never complete either.
+$SolCrossFlagCombos = @(
+    [pscustomobject]@{ Name = 'PLAIN';    Flag = 0;              SidMode = $null }
+    [pscustomobject]@{ Name = 'TRUEPOS';  Flag = $SEFLG_TRUEPOS; SidMode = $null }
+    [pscustomobject]@{ Name = 'NONUT';    Flag = $SEFLG_NONUT;   SidMode = $null }
+    [pscustomobject]@{ Name = 'SIDEREAL'; Flag = $SEFLG_SIDEREAL; SidMode = $SE_SIDM_LAHIRI }
+)
+
+# swe_mooncross/swe_mooncross_ut's own doc comments (external/swisseph/sweph.c:8380-8383,
+# 8415-8423) list SEFLG_TRUEPOS, SEFLG_NONUT and SEFLG_SIDEREAL; they do not document SEFLG_HELCTR
+# the way swe_solcross does (a heliocentric Moon has no defined meaning), so this list omits it
+# rather than exercising a combination outside either function's documented contract.
+$MoonCrossFlagCombos = @(
+    [pscustomobject]@{ Name = 'PLAIN';    Flag = 0;              SidMode = $null }
+    [pscustomobject]@{ Name = 'TRUEPOS';  Flag = $SEFLG_TRUEPOS; SidMode = $null }
+    [pscustomobject]@{ Name = 'NONUT';    Flag = $SEFLG_NONUT;   SidMode = $null }
+    [pscustomobject]@{ Name = 'SIDEREAL'; Flag = $SEFLG_SIDEREAL; SidMode = $SE_SIDM_LAHIRI }
+)
+
+# swe_mooncross_node/_ut find a zero-*latitude* crossing, not a longitude target -- SEFLG_SIDEREAL
+# only changes the longitude reference frame, so it is dropped here: it would be a redundant
+# combination, not a new code path, for a search that never reads ecliptic longitude at all.
+$MoonCrossNodeFlagCombos = @(
+    [pscustomobject]@{ Name = 'PLAIN';   Flag = 0 }
+    [pscustomobject]@{ Name = 'TRUEPOS'; Flag = $SEFLG_TRUEPOS }
+    [pscustomobject]@{ Name = 'NONUT';   Flag = $SEFLG_NONUT }
+)
+# Four start dates (no target longitude to spread across instead, unlike the two crossing
+# functions above), spanning the same Moshier-valid window.
+$MoonCrossNodeTjd = @(1200000.0, 1500000.0, 1800000.0, 2400000.0)
+
+# swe_helio_cross(_ut) rejects SE_SUN, SE_MOON, both lunar nodes and both lunar apogees, and the
+# two interpolated apogee/perigee bodies (external/swisseph/sweph.c:8538-8547, a three-way `||` of
+# an SE_SUN check, an SE_MOON check, and two node/apogee range checks). SE_SUN, SE_MOON and
+# SE_TRUE_NODE below are one representative pick from each of those three disjuncts, so the SERR
+# path is proven to fire from each of them independently rather than always hitting the same one.
+$HelioCrossRejectIpl = @(0, 1, 11)   # SE_SUN, SE_MOON, SE_TRUE_NODE
+# The bodies the function does accept: every classical planet Mercury..Pluto that survives the
+# reject check, SE_EARTH (a legal but unusual heliocentric target -- heliocentric Earth is just
+# the antipode of geocentric Sun), and SE_CHIRON, which the function special-cases with a
+# hardcoded mean speed instead of the speed swe_calc itself returns
+# (external/swisseph/sweph.c:8551-8552) -- exactly the kind of hardcoded-constant boundary this
+# task exists to check bit-for-bit.
+$HelioCrossValidIpl = @(2, 3, 4, 5, 6, 7, 8, 9, 14, 15)
+$HelioCrossIpl = $HelioCrossRejectIpl + $HelioCrossValidIpl
+$HelioCrossX2 = @(0.0, 180.0)
+$HelioCrossTjd = @(1500000.0, 2200000.0)
+# Both search directions the API takes: dir >= 0 searches forward from Tjd, dir < 0 searches
+# backward -- see external/swisseph/sweph.c:8554-8559.
+$HelioCrossDir = @(1, -1)
+$HelioCrossFlagCombos = @(
+    [pscustomobject]@{ Name = 'PLAIN'; Flag = 0 }
+    [pscustomobject]@{ Name = 'NONUT'; Flag = $SEFLG_NONUT }
+)
+
+# ---------------------------------------------------------------------------------------
 # Build rows
 # ---------------------------------------------------------------------------------------
 
@@ -246,6 +429,14 @@ $calcCount = 0
 $calcUtCount = 0
 $housesCount = 0
 $housesArmcCount = 0
+$solCrossCount = 0
+$solCrossUtCount = 0
+$moonCrossCount = 0
+$moonCrossUtCount = 0
+$moonCrossNodeCount = 0
+$moonCrossNodeUtCount = 0
+$helioCrossCount = 0
+$helioCrossUtCount = 0
 
 foreach ($ipl in $Bodies) {
     foreach ($tjd in $CalcJds) {
@@ -291,8 +482,72 @@ foreach ($hsys in $HouseLetters) {
     }
 }
 
+foreach ($x2 in $CrossX2) {
+    foreach ($tjd in $CrossTjd) {
+        foreach ($combo in $SolCrossFlagCombos) {
+            $iflag = $SEFLG_MOSEPH -bor $combo.Flag
+
+            $rows.Add((New-SolarLunarCrossRow -Prefix 'SOLCROSS' -Func 'SOLCROSS' -X2Cross $x2 -Tjd $tjd `
+                -FlagName $combo.Name -IFlag $iflag -SidMode $combo.SidMode))
+            $solCrossCount++
+
+            $rows.Add((New-SolarLunarCrossRow -Prefix 'SOLCROSSUT' -Func 'SOLCROSS_UT' -X2Cross $x2 -Tjd $tjd `
+                -FlagName $combo.Name -IFlag $iflag -SidMode $combo.SidMode))
+            $solCrossUtCount++
+        }
+        foreach ($combo in $MoonCrossFlagCombos) {
+            $iflag = $SEFLG_MOSEPH -bor $combo.Flag
+
+            $rows.Add((New-SolarLunarCrossRow -Prefix 'MOONCROSS' -Func 'MOONCROSS' -X2Cross $x2 -Tjd $tjd `
+                -FlagName $combo.Name -IFlag $iflag -SidMode $combo.SidMode))
+            $moonCrossCount++
+
+            $rows.Add((New-SolarLunarCrossRow -Prefix 'MOONCROSSUT' -Func 'MOONCROSS_UT' -X2Cross $x2 -Tjd $tjd `
+                -FlagName $combo.Name -IFlag $iflag -SidMode $combo.SidMode))
+            $moonCrossUtCount++
+        }
+    }
+}
+
+foreach ($tjd in $MoonCrossNodeTjd) {
+    foreach ($combo in $MoonCrossNodeFlagCombos) {
+        $iflag = $SEFLG_MOSEPH -bor $combo.Flag
+
+        $rows.Add((New-MoonCrossNodeRow -Prefix 'MOONCROSSNODE' -Func 'MOONCROSS_NODE' -Tjd $tjd `
+            -FlagName $combo.Name -IFlag $iflag))
+        $moonCrossNodeCount++
+
+        $rows.Add((New-MoonCrossNodeRow -Prefix 'MOONCROSSNODEUT' -Func 'MOONCROSS_NODE_UT' -Tjd $tjd `
+            -FlagName $combo.Name -IFlag $iflag))
+        $moonCrossNodeUtCount++
+    }
+}
+
+foreach ($ipl in $HelioCrossIpl) {
+    foreach ($x2 in $HelioCrossX2) {
+        foreach ($tjd in $HelioCrossTjd) {
+            foreach ($dir in $HelioCrossDir) {
+                foreach ($combo in $HelioCrossFlagCombos) {
+                    $iflag = $SEFLG_MOSEPH -bor $combo.Flag
+
+                    $rows.Add((New-HelioCrossRow -Prefix 'HELIOCROSS' -Func 'HELIO_CROSS' -Ipl $ipl -X2Cross $x2 -Tjd $tjd `
+                        -FlagName $combo.Name -IFlag $iflag -Dir $dir))
+                    $helioCrossCount++
+
+                    $rows.Add((New-HelioCrossRow -Prefix 'HELIOCROSSUT' -Func 'HELIO_CROSS_UT' -Ipl $ipl -X2Cross $x2 -Tjd $tjd `
+                        -FlagName $combo.Name -IFlag $iflag -Dir $dir))
+                    $helioCrossUtCount++
+                }
+            }
+        }
+    }
+}
+
 $totalRows = $rows.Count
-if ($totalRows -ne ($calcCount + $calcUtCount + $housesCount + $housesArmcCount)) {
+$expectedTotal = $calcCount + $calcUtCount + $housesCount + $housesArmcCount +
+    $solCrossCount + $solCrossUtCount + $moonCrossCount + $moonCrossUtCount +
+    $moonCrossNodeCount + $moonCrossNodeUtCount + $helioCrossCount + $helioCrossUtCount
+if ($totalRows -ne $expectedTotal) {
     throw 'Row count bookkeeping is inconsistent -- this is a bug in this script, not a data problem.'
 }
 
@@ -333,6 +588,22 @@ $headerLines = @(
     '# including polar and near-polar extremes, where Placidus and Koch degenerate -- longitudes,'
     '# Julian days and ARMC values.'
     '#'
+    '# swe_solcross / swe_solcross_ut / swe_mooncross / swe_mooncross_ut / swe_mooncross_node /'
+    '# swe_mooncross_node_ut / swe_helio_cross / swe_helio_cross_ut: the eight crossing functions,'
+    '# all carrying SEFLG_MOSEPH like the rest of this grid. swe_solcross and swe_mooncross are'
+    '# crossed with a spread of target longitudes (including both 0.0 and 360.0, the two ends of'
+    '# the wraparound swe_degnorm folds together), start dates and (most of) the flag combinations'
+    '# each function''s own doc comment names -- SEFLG_HELCTR is deliberately left out of'
+    '# swe_solcross''s own list, because it drives swe_solcross into an unbounded loop inside libswe'
+    '# itself (see Tools/OracleGrid/gen-grid-analytic.ps1''s $SolCrossFlagCombos for the mechanism).'
+    '# swe_mooncross_node takes no target longitude (it finds a'
+    '# zero-latitude node crossing, not a longitude crossing), so it is crossed with start dates'
+    '# and flags only. swe_helio_cross is crossed with target longitudes, start dates, both search'
+    '# directions the API takes, and a body list that deliberately includes SE_SUN/SE_MOON/'
+    '# SE_TRUE_NODE (one representative body the function rejects from each disjunct of its own'
+    '# reject check) alongside the bodies it accepts, including SE_CHIRON (the one body the'
+    '# function overrides with a hardcoded mean speed instead of swe_calc''s own).'
+    '#'
     '# A FRESH LIBRARY INSTANCE PER ROW, IN BOTH DRIVERS'
     '#'
     '# swe_houses_armc carries a hidden saved_sundec field (see Tools/BaselineGen/Program.cs and'
@@ -345,17 +616,32 @@ $headerLines = @(
     '# does not apply to that row''s func)'
     '#'
     '#   case_id    stable, unique, pipe-delimited id; ordinal comparison sorts it deterministically'
-    '#   func       CALC | CALC_UT | HOUSES | HOUSES_ARMC'
-    '#   ipl        body number                                        [CALC, CALC_UT]'
-    '#   tjd        Julian day (ET for CALC; UT for CALC_UT and HOUSES) [CALC, CALC_UT, HOUSES]'
-    '#   iflag      swe_calc iflag, with SEFLG_MOSEPH already OR-ed in  [CALC, CALC_UT]'
+    '#   func       CALC | CALC_UT | HOUSES | HOUSES_ARMC | SOLCROSS | SOLCROSS_UT | MOONCROSS |'
+    '#              MOONCROSS_UT | MOONCROSS_NODE | MOONCROSS_NODE_UT | HELIO_CROSS | HELIO_CROSS_UT'
+    '#   ipl        body number                                        [CALC, CALC_UT, HELIO_CROSS, HELIO_CROSS_UT]'
+    '#   tjd        Julian day (ET for CALC/SOLCROSS/MOONCROSS/MOONCROSS_NODE/HELIO_CROSS; UT for'
+    '#              the corresponding _UT funcs and HOUSES)'
+    '#              [CALC, CALC_UT, HOUSES, SOLCROSS, SOLCROSS_UT, MOONCROSS, MOONCROSS_UT,'
+    '#              MOONCROSS_NODE, MOONCROSS_NODE_UT, HELIO_CROSS, HELIO_CROSS_UT]'
+    '#   iflag      swe_calc/crossing-func iflag, with SEFLG_MOSEPH already OR-ed in'
+    '#              [CALC, CALC_UT, SOLCROSS, SOLCROSS_UT, MOONCROSS, MOONCROSS_UT, MOONCROSS_NODE,'
+    '#              MOONCROSS_NODE_UT, HELIO_CROSS, HELIO_CROSS_UT]'
     '#   hsys       house-system letter                                [HOUSES, HOUSES_ARMC]'
     '#   geolon     geographic longitude, degrees east                 [HOUSES; CALC/CALC_UT topo rows]'
     '#   geolat     geographic latitude, degrees north                 [HOUSES, HOUSES_ARMC; CALC/CALC_UT topo rows]'
     '#   height     observer height above sea level, metres            [CALC/CALC_UT topo rows only]'
     '#   armc       ARMC, degrees                                      [HOUSES_ARMC]'
     '#   eps        obliquity of the ecliptic, degrees                 [HOUSES_ARMC]'
-    '#   sid_mode   swe_set_sid_mode mode, applied before the row runs [CALC/CALC_UT rows whose iflag carries SEFLG_SIDEREAL]'
+    '#   sid_mode   swe_set_sid_mode mode, applied before the row runs [CALC/CALC_UT rows whose iflag'
+    '#              carries SEFLG_SIDEREAL; SOLCROSS/MOONCROSS rows whose iflag carries it too]'
+    '#   x2cross    target ecliptic longitude to cross, degrees        [SOLCROSS, SOLCROSS_UT, MOONCROSS,'
+    '#              MOONCROSS_UT, HELIO_CROSS, HELIO_CROSS_UT]'
+    '#   dir        swe_helio_cross(_ut) search direction: >= 0 forward, < 0 backward'
+    '#              [HELIO_CROSS, HELIO_CROSS_UT]'
+    '#'
+    '# x2cross and dir are appended after sid_mode rather than interleaved among the original'
+    '# twelve columns, so every column HOUSES/HOUSES_ARMC/CALC/CALC_UT rows already used keeps the'
+    '# same index it always had.'
     '#'
     '# A row with a non-empty geolon/geolat/height needs swe_set_topo called first; a row with a'
     '# non-empty sid_mode needs swe_set_sid_mode called first -- both are per-row setup on that'
@@ -367,7 +653,8 @@ $headerLines = @(
     '# silently misreading columns.'
 )
 $columnHeader = 'case_id' + "`t" + 'func' + "`t" + 'ipl' + "`t" + 'tjd' + "`t" + 'iflag' + "`t" +
-    'hsys' + "`t" + 'geolon' + "`t" + 'geolat' + "`t" + 'height' + "`t" + 'armc' + "`t" + 'eps' + "`t" + 'sid_mode'
+    'hsys' + "`t" + 'geolon' + "`t" + 'geolat' + "`t" + 'height' + "`t" + 'armc' + "`t" + 'eps' + "`t" + 'sid_mode' + "`t" +
+    'x2cross' + "`t" + 'dir'
 
 $writer = [System.IO.StreamWriter]::new($outputPath, $false, [System.Text.UTF8Encoding]::new($false))
 try {
@@ -381,7 +668,15 @@ finally {
 }
 
 Write-Host "PASS: wrote $totalRows data row(s) to $outputPath" -ForegroundColor Green
-Write-Host "  CALC          $calcCount"
-Write-Host "  CALC_UT       $calcUtCount"
-Write-Host "  HOUSES        $housesCount"
-Write-Host "  HOUSES_ARMC   $housesArmcCount"
+Write-Host "  CALC               $calcCount"
+Write-Host "  CALC_UT            $calcUtCount"
+Write-Host "  HOUSES             $housesCount"
+Write-Host "  HOUSES_ARMC        $housesArmcCount"
+Write-Host "  SOLCROSS           $solCrossCount"
+Write-Host "  SOLCROSS_UT        $solCrossUtCount"
+Write-Host "  MOONCROSS          $moonCrossCount"
+Write-Host "  MOONCROSS_UT       $moonCrossUtCount"
+Write-Host "  MOONCROSS_NODE     $moonCrossNodeCount"
+Write-Host "  MOONCROSS_NODE_UT  $moonCrossNodeUtCount"
+Write-Host "  HELIO_CROSS        $helioCrossCount"
+Write-Host "  HELIO_CROSS_UT     $helioCrossUtCount"

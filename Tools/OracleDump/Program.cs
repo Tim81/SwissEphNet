@@ -2,13 +2,17 @@
 // port, printing each result's raw IEEE-754 bit pattern so scripts/run-oracle-dump.ps1 can queue
 // it up against Tools/CReference/sedump.c's C output for a later, separate comparison pass.
 //
-//   Tools/OracleGrid/grid-analytic.tsv  -- swe_calc/swe_calc_ut (SEFLG_MOSEPH) and
-//                                          swe_houses/swe_houses_armc. Touches no ephemeris data
-//                                          file. See gen-grid-analytic.ps1's header.
+//   Tools/OracleGrid/grid-analytic.tsv  -- swe_calc/swe_calc_ut (SEFLG_MOSEPH),
+//                                          swe_houses/swe_houses_armc, and the eight crossing
+//                                          functions (swe_solcross/_ut, swe_mooncross/_ut,
+//                                          swe_mooncross_node/_ut, swe_helio_cross/_ut), also
+//                                          under SEFLG_MOSEPH. Touches no ephemeris data file.
+//                                          See gen-grid-analytic.ps1's header.
 //   Tools/OracleGrid/grid-files.tsv     -- swe_calc/swe_calc_ut (SEFLG_SWIEPH), the swe_fixstar
-//                                          family, and swe_get_planet_name. Opens the shipped
-//                                          .se1/sefstars.txt files. See gen-grid-files.ps1's
-//                                          header.
+//                                          family, swe_get_planet_name, and the same eight
+//                                          crossing functions under SEFLG_SWIEPH. Opens the
+//                                          shipped .se1/sefstars.txt files. See
+//                                          gen-grid-files.ps1's header.
 //
 // Both grids share one output shape (see sedump.c's own header for the exact layout) and are
 // dispatched on in Main below by comparing the grid's header line against
@@ -39,16 +43,19 @@ namespace OracleDump;
 
 internal static class Program
 {
-    private const int AnalyticColumns = 12;
-    private const int FilesColumns = 10;
+    private const int AnalyticColumns = 14;
+    private const int FilesColumns = 12;
     private const int CuspCount = 37; // cusp[0..36]
     private const int AscmcCount = 10; // ascmc[0..9]
 
+    // x2cross and dir are appended after sid_mode in both headers, not interleaved among the
+    // original columns, so every column this file's other Process* methods already index by a
+    // fixed offset keeps that same offset -- matches Tools/CReference/sedump.c's identical choice.
     private static readonly string ExpectedHeaderAnalytic = string.Join('\t',
-        "case_id", "func", "ipl", "tjd", "iflag", "hsys", "geolon", "geolat", "height", "armc", "eps", "sid_mode");
+        "case_id", "func", "ipl", "tjd", "iflag", "hsys", "geolon", "geolat", "height", "armc", "eps", "sid_mode", "x2cross", "dir");
 
     private static readonly string ExpectedHeaderFiles = string.Join('\t',
-        "case_id", "func", "ipl", "tjd", "iflag", "star", "geolon", "geolat", "height", "sid_mode");
+        "case_id", "func", "ipl", "tjd", "iflag", "star", "geolon", "geolat", "height", "sid_mode", "x2cross", "dir");
 
     private enum GridMode { Analytic, Files }
 
@@ -157,6 +164,20 @@ internal static class Program
                 case "HOUSES_ARMC":
                     ProcessHousesArmc(swe, caseId, fields, writer);
                     break;
+                case "SOLCROSS":
+                case "SOLCROSS_UT":
+                case "MOONCROSS":
+                case "MOONCROSS_UT":
+                    ProcessCrossingDeg(swe, caseId, func, fields, sidModeIndex: 11, x2crossIndex: 12, writer);
+                    break;
+                case "MOONCROSS_NODE":
+                case "MOONCROSS_NODE_UT":
+                    ProcessMoonCrossNode(swe, caseId, func, fields, writer);
+                    break;
+                case "HELIO_CROSS":
+                case "HELIO_CROSS_UT":
+                    ProcessHelioCross(swe, caseId, func, fields, x2crossIndex: 12, dirIndex: 13, writer);
+                    break;
                 default:
                     throw new InvalidDataException($"unknown func '{func}' at case {caseId}");
             }
@@ -180,6 +201,20 @@ internal static class Program
                     break;
                 case "GET_PLANET_NAME":
                     ProcessName(swe, caseId, fields, writer);
+                    break;
+                case "SOLCROSS":
+                case "SOLCROSS_UT":
+                case "MOONCROSS":
+                case "MOONCROSS_UT":
+                    ProcessCrossingDeg(swe, caseId, func, fields, sidModeIndex: 9, x2crossIndex: 10, writer);
+                    break;
+                case "MOONCROSS_NODE":
+                case "MOONCROSS_NODE_UT":
+                    ProcessMoonCrossNode(swe, caseId, func, fields, writer);
+                    break;
+                case "HELIO_CROSS":
+                case "HELIO_CROSS_UT":
+                    ProcessHelioCross(swe, caseId, func, fields, x2crossIndex: 10, dirIndex: 11, writer);
                     break;
                 default:
                     throw new InvalidDataException($"unknown func '{func}' at case {caseId}");
@@ -240,6 +275,106 @@ internal static class Program
         {
             EmitValue(writer, xx[i]);
         }
+        writer.Write('\n');
+    }
+
+    // SOLCROSS, SOLCROSS_UT, MOONCROSS, MOONCROSS_UT: all four share one C# signature shape --
+    // double f(x2cross, tjd, iflag, ref serr) -- and one error convention, per Astrodienst's own
+    // doc comment on each (external/swisseph/sweph.c:8319, 8353, 8387, 8421): "Errors are
+    // indicated by returning a jd < jd_et [or jd_ut]!", not by a separate int return code the way
+    // swe_calc/swe_helio_cross use. There is no int retc to report at all, so this driver
+    // computes one itself -- SwissEph.ERR when the returned jd is less than the input jd,
+    // SwissEph.OK otherwise -- purely so the row still fits the shared "case_id, retc, err,
+    // values..." shape every other func in this file already uses. Tools/CReference/sedump.c's
+    // process_crossing_deg computes the identical value from the identical returned bits, so this
+    // synthetic column can never disagree between the two sides on its own. x2crossIndex is the
+    // one difference between the two grids (analytic carries armc/eps before sid_mode; files does
+    // not), matching ProcessCalc's own sidModeIndex parameter for the same reason.
+    private static void ProcessCrossingDeg(SwissEph swe, string caseId, string func, string[] fields, int sidModeIndex, int x2crossIndex, TextWriter writer)
+    {
+        var x2cross = ParseDouble(fields[x2crossIndex], caseId, "x2cross");
+        var tjd = ParseDouble(fields[3], caseId, "tjd");
+        var iflag = ParseInt(fields[4], caseId, "iflag");
+
+        if (HasValue(fields[sidModeIndex]))
+        {
+            var sidMode = ParseInt(fields[sidModeIndex], caseId, "sid_mode");
+            swe.swe_set_sid_mode(sidMode, 0, 0);
+        }
+
+        string? serr = null;
+        var result = func switch
+        {
+            "SOLCROSS" => swe.swe_solcross(x2cross, tjd, iflag, ref serr),
+            "SOLCROSS_UT" => swe.swe_solcross_ut(x2cross, tjd, iflag, ref serr),
+            "MOONCROSS" => swe.swe_mooncross(x2cross, tjd, iflag, ref serr),
+            _ => swe.swe_mooncross_ut(x2cross, tjd, iflag, ref serr),
+        };
+        var retc = result < tjd ? SwissEph.ERR : SwissEph.OK;
+
+        writer.Write(caseId);
+        writer.Write('\t');
+        writer.Write(retc.ToString(CultureInfo.InvariantCulture));
+        writer.Write('\t');
+        writer.Write(EscapeErr(serr));
+        EmitValue(writer, result);
+        writer.Write('\n');
+    }
+
+    // MOONCROSS_NODE, MOONCROSS_NODE_UT: same double-return, jd-less-than-input error convention
+    // as ProcessCrossingDeg above (external/swisseph/sweph.c:8454, 8491), plus two output
+    // parameters (xlon, xlat) this driver zero-initializes before the call -- swe_mooncross_node
+    // only writes them on the convergence path (external/swisseph/sweph.c:8480-8481), leaving
+    // them untouched on every early ERR return, so zero-initializing here is what makes an
+    // errored row's xlon/xlat columns a deterministic, comparable 0.0 on both sides instead of
+    // comparing whatever each side's uninitialized local happened to hold.
+    private static void ProcessMoonCrossNode(SwissEph swe, string caseId, string func, string[] fields, TextWriter writer)
+    {
+        var tjd = ParseDouble(fields[3], caseId, "tjd");
+        var iflag = ParseInt(fields[4], caseId, "iflag");
+
+        var xlon = 0.0;
+        var xlat = 0.0;
+        string? serr = null;
+        var result = func == "MOONCROSS_NODE"
+            ? swe.swe_mooncross_node(tjd, iflag, ref xlon, ref xlat, ref serr)
+            : swe.swe_mooncross_node_ut(tjd, iflag, ref xlon, ref xlat, ref serr);
+        var retc = result < tjd ? SwissEph.ERR : SwissEph.OK;
+
+        writer.Write(caseId);
+        writer.Write('\t');
+        writer.Write(retc.ToString(CultureInfo.InvariantCulture));
+        writer.Write('\t');
+        writer.Write(EscapeErr(serr));
+        EmitValue(writer, result);
+        EmitValue(writer, xlon);
+        EmitValue(writer, xlat);
+        writer.Write('\n');
+    }
+
+    // HELIO_CROSS, HELIO_CROSS_UT: the one pair among these eight with a real int retc (OK/ERR)
+    // and an output parameter (jdCross) written only on the OK path -- zero-initialized here for
+    // the same reason ProcessMoonCrossNode zero-initializes xlon/xlat.
+    private static void ProcessHelioCross(SwissEph swe, string caseId, string func, string[] fields, int x2crossIndex, int dirIndex, TextWriter writer)
+    {
+        var ipl = ParseInt(fields[2], caseId, "ipl");
+        var x2cross = ParseDouble(fields[x2crossIndex], caseId, "x2cross");
+        var tjd = ParseDouble(fields[3], caseId, "tjd");
+        var iflag = ParseInt(fields[4], caseId, "iflag");
+        var dir = ParseInt(fields[dirIndex], caseId, "dir");
+
+        var jdCross = 0.0;
+        string? serr = null;
+        var retc = func == "HELIO_CROSS"
+            ? swe.swe_helio_cross(ipl, x2cross, tjd, iflag, dir, ref jdCross, ref serr)
+            : swe.swe_helio_cross_ut(ipl, x2cross, tjd, iflag, dir, ref jdCross, ref serr);
+
+        writer.Write(caseId);
+        writer.Write('\t');
+        writer.Write(retc.ToString(CultureInfo.InvariantCulture));
+        writer.Write('\t');
+        writer.Write(EscapeErr(serr));
+        EmitValue(writer, jdCross);
         writer.Write('\n');
     }
 

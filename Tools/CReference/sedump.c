@@ -7,18 +7,39 @@
  * Tools/OracleDump/Program.cs is this file's .NET counterpart; the two must produce output in
  * the same shape for a later, separate pass to diff.
  *
- *   Tools/OracleGrid/grid-analytic.tsv  -- swe_calc/swe_calc_ut (SEFLG_MOSEPH) and
- *                                          swe_houses/swe_houses_armc. Touches no ephemeris
- *                                          data file. See gen-grid-analytic.ps1's header.
+ *   Tools/OracleGrid/grid-analytic.tsv  -- swe_calc/swe_calc_ut (SEFLG_MOSEPH),
+ *                                          swe_houses/swe_houses_armc, and the eight crossing
+ *                                          functions (swe_solcross/_ut, swe_mooncross/_ut,
+ *                                          swe_mooncross_node/_ut, swe_helio_cross/_ut), also
+ *                                          under SEFLG_MOSEPH. Touches no ephemeris data file.
+ *                                          See gen-grid-analytic.ps1's header.
  *   Tools/OracleGrid/grid-files.tsv     -- swe_calc/swe_calc_ut (SEFLG_SWIEPH), the
- *                                          swe_fixstar family, and swe_get_planet_name. Opens
+ *                                          swe_fixstar family, swe_get_planet_name, and the same
+ *                                          eight crossing functions under SEFLG_SWIEPH. Opens
  *                                          the shipped .se1/sefstars.txt files. See
  *                                          gen-grid-files.ps1's header.
  *
  * Both grids share one output shape (see OUTPUT COLUMN LAYOUT below) and one row-processing loop
  * in main(); which grid a given input file is dispatches on its header line, checked against
  * EXPECTED_HEADER_ANALYTIC and EXPECTED_HEADER_FILES below -- the two grids have different
- * column counts (12 vs 10), so a header mismatch is caught before any row is parsed.
+ * column counts (14 vs 12), so a header mismatch is caught before any row is parsed.
+ *
+ * SWISSEPH_HAS_CROSSING: THE EIGHT CROSSING FUNCTIONS DO NOT EXIST IN 2.08
+ *
+ * This same source file is compiled twice -- once here against external/swisseph (2.10.03),
+ * once by Tools/CReference/build-c.ps1 against external/pyswisseph-2.08 -- and swe_solcross,
+ * swe_mooncross, swe_mooncross_node, swe_helio_cross and their _ut variants are absent from
+ * pyswisseph-2.08 entirely (verified: zero matches for "solcross", "mooncross" or "helio_cross"
+ * anywhere under external/pyswisseph-2.08/), so a build against the 2.08 headers has no
+ * declaration to call. scripts/run-oracle-dump.ps1 defines SWISSEPH_HAS_CROSSING=1 on the command
+ * line when it compiles this file against 2.10.03; Tools/CReference/build-c.ps1's 2.08 build does
+ * not define it, so the #else branch below applies there by default, with no change needed to
+ * that script. The #else branch cannot call the real API, but it still emits exactly one row
+ * per crossing case, with the same column count the real branch would use for that func, and a
+ * clearly out-of-band retc (NOT_IN_208_RETC) plus an explanatory serr -- so a 2.08 build's row
+ * count for a crossing-bearing grid still matches the grid's own row count (see
+ * scripts/run-oracle-dump.ps1's own row-count guards, which fail loudly on any mismatch) and the
+ * row still parses cleanly for any future three-way classification that reads the 2.08 dump.
  *
  * INVOCATION
  *
@@ -75,6 +96,10 @@
  *   FIXSTAR, FIXSTAR_UT, FIXSTAR2, FIXSTAR2_UT  xx[0..5]              (6 doubles  -> 12 value columns)
  *   FIXSTAR_MAG                              mag                      (1 double   -> 2 value columns)
  *   GET_PLANET_NAME                          (none)                   (0 value columns)
+ *   SOLCROSS, SOLCROSS_UT, MOONCROSS,
+ *     MOONCROSS_UT, HELIO_CROSS,
+ *     HELIO_CROSS_UT                         jd_cross                 (1 double   -> 2 value columns)
+ *   MOONCROSS_NODE, MOONCROSS_NODE_UT        jd_cross, xlon, xla      (3 doubles  -> 6 value columns)
  *
  * GET_PLANET_NAME has no value column at all: swe_get_planet_name returns a string, not a
  * double, so there is nothing to hex-encode. Its returned name is written into the err column
@@ -86,6 +111,24 @@
  * own reasoning for the same choice). retc/err come right after case_id, not after the doubles,
  * purely so a reader can see whether a row errored before scanning past however many value
  * columns that func has.
+ *
+ * THE CROSSING FUNCTIONS' retc COLUMN: ONE REAL, SIX SYNTHETIC
+ *
+ * swe_helio_cross(_ut) is the only one of the eight with a real int32 return code (OK/ERR); its
+ * jd_cross output parameter is written only on the OK path (external/swisseph/sweph.c:8567,8613),
+ * left untouched on every ERR return, so this driver zero-initializes it before the call -- an
+ * ERR row's jd_cross column is then a deterministic 0.0 on both sides, not whatever happened to
+ * be on each side's stack. The other six (swe_solcross/_ut, swe_mooncross/_ut,
+ * swe_mooncross_node/_ut) return the crossing time itself as a double, with no int32 at all;
+ * Astrodienst's own doc comment on each says errors are "indicated by returning a jd < jd_et [or
+ * jd_ut]!" (external/swisseph/sweph.c:8319, 8353, 8387, 8421, 8454, 8491). This driver computes a
+ * retc for those six itself -- ERR (-1) when the returned jd is less than the input jd, OK (0)
+ * otherwise -- purely so the row still fits the shared "case_id, retc, err, values..." shape
+ * every other func in this file already uses. Tools/OracleDump/Program.cs computes the identical
+ * value from the identical returned bits, so this synthetic column can never disagree between the
+ * two sides on its own. swe_mooncross_node(_ut)'s xlon/xla output parameters follow the same
+ * zero-initialize-before-the-call rule as swe_helio_cross's jd_cross, for the same reason: they
+ * are written only on the convergence path (external/swisseph/sweph.c:8480-8481, 8517-8518).
  *
  * Decimal columns (%.17g) are for a human reading the file; the hex columns are what a
  * comparison pass should actually diff; two decimal strings from two different printf/ToString
@@ -109,18 +152,25 @@
 #include "swephexp.h"
 
 #define MAX_LINE 4096
-#define ANALYTIC_COLUMNS 12
-#define FILES_COLUMNS 10
+#define ANALYTIC_COLUMNS 14
+#define FILES_COLUMNS 12
 #define CUSP_COUNT 37   /* cusp[0..36] */
 #define ASCMC_COUNT 10  /* ascmc[0..9] */
 #define STAR_BUF_LEN AS_MAXCH
+/* Out-of-band retc for a crossing-func row emitted by a build with SWISSEPH_HAS_CROSSING
+ * undefined (2.08) -- see this file's own top-of-file comment. Never a value swe_solcross and
+ * friends (or this driver's own synthetic OK/ERR for them) could produce, so it cannot be
+ * mistaken for a real result. */
+#define NOT_IN_208_RETC (-9999)
 
 /* Mode dispatches on which of these two headers the grid's first non-comment line matches --
- * see this file's own top-of-file comment. */
+ * see this file's own top-of-file comment. x2cross and dir are appended after sid_mode in both
+ * headers, not interleaved among the original columns, so every column this file's other process_*
+ * functions already index by a fixed offset keeps that same offset. */
 static const char *EXPECTED_HEADER_ANALYTIC =
-    "case_id\tfunc\tipl\ttjd\tiflag\thsys\tgeolon\tgeolat\theight\tarmc\teps\tsid_mode";
+    "case_id\tfunc\tipl\ttjd\tiflag\thsys\tgeolon\tgeolat\theight\tarmc\teps\tsid_mode\tx2cross\tdir";
 static const char *EXPECTED_HEADER_FILES =
-    "case_id\tfunc\tipl\ttjd\tiflag\tstar\tgeolon\tgeolat\theight\tsid_mode";
+    "case_id\tfunc\tipl\ttjd\tiflag\tstar\tgeolon\tgeolat\theight\tsid_mode\tx2cross\tdir";
 
 enum grid_mode { MODE_ANALYTIC, MODE_FILES };
 
@@ -377,6 +427,147 @@ static void process_houses_armc(FILE *out, const char *case_id, char *fields[])
     fputc('\n', out);
 }
 
+/*
+ * SOLCROSS, SOLCROSS_UT, MOONCROSS, MOONCROSS_UT: all four share one C signature shape --
+ * double f(double x2cross, double jd, int32 flag, char *serr) -- and one error convention, per
+ * Astrodienst's own doc comment on each (external/swisseph/sweph.c:8319, 8353, 8387, 8421):
+ * "Errors are indicated by returning a jd < jd_et [or jd_ut]!", not by a separate int return code
+ * the way swe_calc/swe_helio_cross use. There is no int32 retc to report at all, so this driver
+ * computes one itself -- see this file's own top-of-file comment, "THE CROSSING FUNCTIONS' retc
+ * COLUMN". x2cross_idx is the one difference between the two grids (analytic carries armc/eps
+ * before sid_mode; files does not), matching process_calc's own sid_mode_idx parameter for the
+ * same reason.
+ */
+static void process_crossing_deg(FILE *out, const char *case_id, const char *func, char *fields[], int sid_mode_idx, int x2cross_idx)
+{
+#ifdef SWISSEPH_HAS_CROSSING
+    double x2cross = parse_double(fields[x2cross_idx], case_id, "x2cross");
+    double tjd = parse_double(fields[3], case_id, "tjd");
+    int32 iflag = (int32)parse_int(fields[4], case_id, "iflag");
+    char serr[AS_MAXCH];
+    double result;
+    int retc;
+
+    serr[0] = '\0';
+    if (has_value(fields[sid_mode_idx])) {
+        int32 sid_mode = (int32)parse_int(fields[sid_mode_idx], case_id, "sid_mode");
+        swe_set_sid_mode(sid_mode, 0, 0);
+    }
+
+    if (strcmp(func, "SOLCROSS") == 0)
+        result = swe_solcross(x2cross, tjd, iflag, serr);
+    else if (strcmp(func, "SOLCROSS_UT") == 0)
+        result = swe_solcross_ut(x2cross, tjd, iflag, serr);
+    else if (strcmp(func, "MOONCROSS") == 0)
+        result = swe_mooncross(x2cross, tjd, iflag, serr);
+    else
+        result = swe_mooncross_ut(x2cross, tjd, iflag, serr);
+
+    retc = (result < tjd) ? ERR : OK;
+
+    fprintf(out, "%s\t%d\t", case_id, retc);
+    emit_escaped(out, serr);
+    emit_value(out, result);
+    fputc('\n', out);
+#else
+    /* swe_solcross/swe_mooncross(_ut) do not exist in 2.08 -- see this file's own top-of-file
+     * comment on SWISSEPH_HAS_CROSSING. */
+    char not_in_208_msg[AS_MAXCH];
+    sprintf(not_in_208_msg, "%s does not exist in Swiss Ephemeris 2.08", func);
+    (void)fields; (void)sid_mode_idx; (void)x2cross_idx;
+    fprintf(out, "%s\t%d\t", case_id, NOT_IN_208_RETC);
+    emit_escaped(out, not_in_208_msg);
+    emit_value(out, 0.0);
+    fputc('\n', out);
+#endif
+}
+
+/*
+ * MOONCROSS_NODE, MOONCROSS_NODE_UT: same double-return, jd-less-than-input error convention as
+ * process_crossing_deg above (external/swisseph/sweph.c:8454, 8491), plus two output parameters
+ * (xlon, xla) this driver zero-initializes before the call -- see this file's own top-of-file
+ * comment.
+ */
+static void process_mooncross_node(FILE *out, const char *case_id, const char *func, char *fields[])
+{
+#ifdef SWISSEPH_HAS_CROSSING
+    double tjd = parse_double(fields[3], case_id, "tjd");
+    int32 iflag = (int32)parse_int(fields[4], case_id, "iflag");
+    char serr[AS_MAXCH];
+    double result, xlon = 0.0, xla = 0.0;
+    int retc;
+
+    serr[0] = '\0';
+
+    if (strcmp(func, "MOONCROSS_NODE") == 0)
+        result = swe_mooncross_node(tjd, iflag, &xlon, &xla, serr);
+    else
+        result = swe_mooncross_node_ut(tjd, iflag, &xlon, &xla, serr);
+
+    retc = (result < tjd) ? ERR : OK;
+
+    fprintf(out, "%s\t%d\t", case_id, retc);
+    emit_escaped(out, serr);
+    emit_value(out, result);
+    emit_value(out, xlon);
+    emit_value(out, xla);
+    fputc('\n', out);
+#else
+    /* swe_mooncross_node(_ut) does not exist in 2.08 -- see this file's own top-of-file comment
+     * on SWISSEPH_HAS_CROSSING. */
+    char not_in_208_msg[AS_MAXCH];
+    sprintf(not_in_208_msg, "%s does not exist in Swiss Ephemeris 2.08", func);
+    (void)fields;
+    fprintf(out, "%s\t%d\t", case_id, NOT_IN_208_RETC);
+    emit_escaped(out, not_in_208_msg);
+    emit_value(out, 0.0);
+    emit_value(out, 0.0);
+    emit_value(out, 0.0);
+    fputc('\n', out);
+#endif
+}
+
+/*
+ * HELIO_CROSS, HELIO_CROSS_UT: the one pair among these eight with a real int32 return code
+ * (OK/ERR) and an output parameter (jd_cross) written only on the OK path -- see this file's own
+ * top-of-file comment.
+ */
+static void process_helio_cross(FILE *out, const char *case_id, const char *func, char *fields[], int x2cross_idx, int dir_idx)
+{
+#ifdef SWISSEPH_HAS_CROSSING
+    int ipl = (int)parse_int(fields[2], case_id, "ipl");
+    double x2cross = parse_double(fields[x2cross_idx], case_id, "x2cross");
+    double tjd = parse_double(fields[3], case_id, "tjd");
+    int32 iflag = (int32)parse_int(fields[4], case_id, "iflag");
+    int dir = (int)parse_int(fields[dir_idx], case_id, "dir");
+    char serr[AS_MAXCH];
+    double jd_cross = 0.0;
+    int32 retc;
+
+    serr[0] = '\0';
+
+    if (strcmp(func, "HELIO_CROSS") == 0)
+        retc = swe_helio_cross(ipl, x2cross, tjd, iflag, dir, &jd_cross, serr);
+    else
+        retc = swe_helio_cross_ut(ipl, x2cross, tjd, iflag, dir, &jd_cross, serr);
+
+    fprintf(out, "%s\t%d\t", case_id, retc);
+    emit_escaped(out, serr);
+    emit_value(out, jd_cross);
+    fputc('\n', out);
+#else
+    /* swe_helio_cross(_ut) does not exist in 2.08 -- see this file's own top-of-file comment on
+     * SWISSEPH_HAS_CROSSING. */
+    char not_in_208_msg[AS_MAXCH];
+    sprintf(not_in_208_msg, "%s does not exist in Swiss Ephemeris 2.08", func);
+    (void)fields; (void)x2cross_idx; (void)dir_idx;
+    fprintf(out, "%s\t%d\t", case_id, NOT_IN_208_RETC);
+    emit_escaped(out, not_in_208_msg);
+    emit_value(out, 0.0);
+    fputc('\n', out);
+#endif
+}
+
 int main(int argc, char **argv)
 {
     FILE *in, *out;
@@ -443,6 +634,13 @@ int main(int argc, char **argv)
                 process_houses(out, case_id, fields);
             } else if (strcmp(func, "HOUSES_ARMC") == 0) {
                 process_houses_armc(out, case_id, fields);
+            } else if (strcmp(func, "SOLCROSS") == 0 || strcmp(func, "SOLCROSS_UT") == 0
+                       || strcmp(func, "MOONCROSS") == 0 || strcmp(func, "MOONCROSS_UT") == 0) {
+                process_crossing_deg(out, case_id, func, fields, 11, 12);
+            } else if (strcmp(func, "MOONCROSS_NODE") == 0 || strcmp(func, "MOONCROSS_NODE_UT") == 0) {
+                process_mooncross_node(out, case_id, func, fields);
+            } else if (strcmp(func, "HELIO_CROSS") == 0 || strcmp(func, "HELIO_CROSS_UT") == 0) {
+                process_helio_cross(out, case_id, func, fields, 12, 13);
             } else {
                 die("unknown func '%s' at case %s", func, case_id);
             }
@@ -456,6 +654,13 @@ int main(int argc, char **argv)
                 process_fixstar_mag(out, case_id, fields);
             } else if (strcmp(func, "GET_PLANET_NAME") == 0) {
                 process_name(out, case_id, fields);
+            } else if (strcmp(func, "SOLCROSS") == 0 || strcmp(func, "SOLCROSS_UT") == 0
+                       || strcmp(func, "MOONCROSS") == 0 || strcmp(func, "MOONCROSS_UT") == 0) {
+                process_crossing_deg(out, case_id, func, fields, 9, 10);
+            } else if (strcmp(func, "MOONCROSS_NODE") == 0 || strcmp(func, "MOONCROSS_NODE_UT") == 0) {
+                process_mooncross_node(out, case_id, func, fields);
+            } else if (strcmp(func, "HELIO_CROSS") == 0 || strcmp(func, "HELIO_CROSS_UT") == 0) {
+                process_helio_cross(out, case_id, func, fields, 10, 11);
             } else {
                 die("unknown func '%s' at case %s", func, case_id);
             }

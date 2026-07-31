@@ -29,8 +29,16 @@
     swe_fixstar_mag) is declared in external/pyswisseph-2.08/swephexp.h with the same signature it
     has in 2.10.03, and swe_fixstar2/swe_fixstar2_ut -- the ones most likely to be 2.10-only,
     since Astrodienst kept extending the fixed-star API across releases -- are both implemented in
-    external/pyswisseph-2.08/sweph.c, not just declared. sedump.c itself needs no change for
-    either header.
+    external/pyswisseph-2.08/sweph.c, not just declared.
+
+    One exception: swe_solcross, swe_mooncross, swe_mooncross_node, swe_helio_cross and their _ut
+    variants do not exist in 2.08 at all (verified: zero matches anywhere under
+    external/pyswisseph-2.08/), so sedump.c guards every call to them behind
+    #ifdef SWISSEPH_HAS_CROSSING -- see that file's own top-of-file comment for the full
+    reasoning. scripts/run-oracle-dump.ps1 defines that macro when it compiles sedump.exe against
+    2.10.03; this script's own $compile command below for sedump-2.08.exe deliberately does not,
+    so the 2.08 build takes sedump.c's #else branch (a fixed sentinel row per crossing case)
+    without needing a flag added here.
 
     The compiler identity is part of the result, not an incidental detail: reference values
     depend on it. Every run writes toolchain.txt recording the compiler and linker versions, the

@@ -356,7 +356,13 @@ try {
 
     # Same flags as Tools/CReference/build-c.ps1's $commonFlags: /O2 /fp:precise /MD so this
     # compiles against the identical toolchain the linked .lib itself was built with.
-    $commonFlags = '/O2 /fp:precise /D_CRT_SECURE_NO_WARNINGS /MD'
+    # /DSWISSEPH_HAS_CROSSING=1 is this build's own addition, not shared with build-c.ps1's 2.08
+    # build: swe_solcross/swe_mooncross/swe_mooncross_node/swe_helio_cross and their _ut variants
+    # do not exist in Swiss Ephemeris 2.08 at all (see sedump.c's own top-of-file comment on
+    # SWISSEPH_HAS_CROSSING), so only the 2.10.03 build linked here defines it; the 2.08 build's
+    # compile command in build-c.ps1 is left untouched and picks up that macro's #else branch by
+    # simply not defining it.
+    $commonFlags = '/O2 /fp:precise /D_CRT_SECURE_NO_WARNINGS /DSWISSEPH_HAS_CROSSING=1 /MD'
     $swephIncludeDir = Join-Path $repoRoot 'external/swisseph'
     $sedumpSource = Join-Path $repoRoot 'Tools/CReference/sedump.c'
     $cBuildDir = Join-Path $OutputDir 'oracle-dump-c'
