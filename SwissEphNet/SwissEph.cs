@@ -47,15 +47,36 @@ namespace SwissEphNet
 
         /// <summary>
         /// Throws <see cref="ObjectDisposedException"/> if this instance has already been
-        /// disposed. Every public member that reaches into the ported library does so
-        /// through one of the nine internal component properties below, plus
-        /// <see cref="OpenBinary"/> and <see cref="Trace"/> -- calling this from those spots
-        /// covers the whole surface without having to guard all 455 public members
-        /// individually. A handful of pure-formatting helpers (e.g. swe_dotnet_version(),
-        /// which only reads this assembly's own reflection metadata) never touch a
-        /// component property and so are unaffected by disposal, which is harmless: they
-        /// carry no library state to be stale.
+        /// disposed. Called from every instance member that reaches into the ported library
+        /// through one of the nine internal component properties below
+        /// (<see cref="Sweph"/>, <see cref="SweJPL"/>, <see cref="SwephLib"/>,
+        /// <see cref="SwemMoon"/>, <see cref="SwemPlan"/>, <see cref="SweDate"/>,
+        /// <see cref="SweHouse"/>, <see cref="SweCL"/>, <see cref="SweHel"/>), plus
+        /// <see cref="OpenBinary"/>, <see cref="Trace"/>, and the <see cref="FileProvider"/>
+        /// and <see cref="OnTrace"/> accessors, which carry instance state of their own
+        /// outside that group.
         /// </summary>
+        /// <remarks>
+        /// This does not cover the whole public surface, and is not meant to: a member only
+        /// needs the guard if it can observe stale instance state, and not every public
+        /// member can. Two categories are deliberately left unguarded rather than covered
+        /// here:
+        /// <list type="bullet">
+        /// <item>Members that read no instance state at all, e.g.
+        /// <see cref="FormatToDegreeMinuteSecond"/> and <see cref="GetHourValue"/>, or that
+        /// are <c>static</c> and delegate straight into a stateless <c>CPort</c> method
+        /// rather than through this instance's own guarded properties, e.g.
+        /// <see cref="swe_d2l"/> calling <c>SwephLib.swe_d2l</c> -- <c>SwephLib</c> there
+        /// binds to the <c>CPort</c> type, not the guarded <see cref="SwephLib"/> property,
+        /// because the method is <c>static</c> and has no <c>this</c> to check disposal
+        /// against in the first place.</item>
+        /// <item>Members whose guard coverage depends on the arguments passed:
+        /// <see cref="DMS"/> only reaches the guarded <see cref="SwephLib"/> property when
+        /// <c>iFlag</c> requests minute- or second-rounding (<c>BIT_ROUND_MIN</c> /
+        /// <c>BIT_ROUND_SEC</c>), so <c>DMS(x, 0)</c> still returns after Dispose() while
+        /// <c>DMS(x, BIT_ROUND_SEC)</c> throws.</item>
+        /// </list>
+        /// </remarks>
         private void ThrowIfDisposed() {
             if (_disposed)
                 throw new ObjectDisposedException(GetType().FullName);
@@ -70,7 +91,7 @@ namespace SwissEphNet
                 // swe_close() routes through the Sweph property below; call it before
                 // _disposed is set so that property's own ThrowIfDisposed() does not fire.
                 swe_close();
-                OnTrace = null;
+                _onTrace = null;
             }
             _disposed = true;
         }
@@ -92,7 +113,7 @@ namespace SwissEphNet
         /// </summary>
         public void Trace(String format, params object[] args) {
             ThrowIfDisposed();
-            var h = OnTrace;
+            var h = _onTrace;
             if (h != null) {
                 String message = args != null ? C.sprintf(format, args) : format;
                 h(this, new TraceEventArgs(message));
@@ -162,9 +183,17 @@ namespace SwissEphNet
         /// access, "no provider configured" reading real files is the more useful default; a
         /// caller that genuinely wants no file ever found (as the characterization baseline
         /// does) must say so, either through this property directly or through
-        /// <see cref="DefaultFileProvider"/>.
+        /// <see cref="DefaultFileProvider"/>. Both accessors throw
+        /// <see cref="ObjectDisposedException"/> once this instance is disposed, the same as
+        /// the nine internal component properties -- this one carries instance state despite
+        /// living outside that group, so it needs the same guard rather than being readable or
+        /// writable after Dispose().
         /// </remarks>
-        public IEphemerisFileProvider FileProvider { get; set; }
+        public IEphemerisFileProvider FileProvider {
+            get { ThrowIfDisposed(); return _fileProvider; }
+            set { ThrowIfDisposed(); _fileProvider = value; }
+        }
+        private IEphemerisFileProvider _fileProvider;
 
         /// <summary>
         /// Opens a file for reading, honouring <see cref="FileProvider"/> if one is set, or the
@@ -259,10 +288,19 @@ namespace SwissEphNet
 
         #region Events
 
+        private EventHandler<TraceEventArgs> _onTrace;
+
         /// <summary>
-        /// Event raised when a new trace message is invoked
+        /// Event raised when a new trace message is invoked. Both accessors throw
+        /// <see cref="ObjectDisposedException"/> once this instance is disposed: an
+        /// auto-implemented event would let <c>swe.OnTrace += handler</c> succeed after
+        /// Dispose(), taking a strong reference to a handler that <see cref="Trace"/> --
+        /// itself guarded -- can never reach again.
         /// </summary>
-        public event EventHandler<TraceEventArgs> OnTrace;
+        public event EventHandler<TraceEventArgs> OnTrace {
+            add { ThrowIfDisposed(); _onTrace += value; }
+            remove { ThrowIfDisposed(); _onTrace -= value; }
+        }
 
         #endregion
 

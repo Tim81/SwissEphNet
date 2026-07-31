@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Reflection;
 using Xunit;
 
 namespace SwissEphNet.Tests
@@ -46,8 +47,12 @@ namespace SwissEphNet.Tests
         public void UseAfterDispose_ThrowsFromEachInternalComponentProperty() {
             // swe_calc_ut only exercises the Sweph property. Every public member reaches the
             // library through one of nine internal component properties (SwissEph.cs); spot
-            // one call routed through each of the other eight so a future change that adds a
-            // tenth component, or a member that bypasses all of them, has a test to fail.
+            // one call routed through each of the other six that a public method reaches
+            // directly, so a future change that adds a tenth component, or a member that
+            // bypasses all of them, has a test to fail. SwemMoon and SwemPlan are the
+            // remaining two -- no public method reaches either one first, since every path
+            // to them runs through Sweph's or SweCL's own ThrowIfDisposed() check first --
+            // and are covered separately below, through reflection.
             using (var swe = new SwissEph()) {
                 swe.Dispose();
 
@@ -71,6 +76,29 @@ namespace SwissEphNet.Tests
         }
 
         [Fact]
+        public void UseAfterDispose_ThrowsFromSwemMoonAndSwemPlanProperties() {
+            // The last two of the nine internal component properties (see the comment above).
+            // No public method reaches SwemMoon or SwemPlan before Sweph or SweCL already has,
+            // so there is no public call whose first throw can be pinned to either property
+            // specifically -- reflection is the only way to exercise their own
+            // ThrowIfDisposed() directly. No InternalsVisibleTo is declared for this assembly
+            // (same reasoning as SwissEphTest.FileNaming.cs's GenFileName helper), so
+            // PropertyInfo.GetValue is used instead of a direct property access, and the
+            // ObjectDisposedException it throws arrives wrapped in a TargetInvocationException.
+            var swe = new SwissEph();
+            swe.Dispose();
+
+            var swemMoon = typeof(SwissEph).GetProperty("SwemMoon", BindingFlags.NonPublic | BindingFlags.Instance);
+            var swemPlan = typeof(SwissEph).GetProperty("SwemPlan", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            var moonEx = Assert.Throws<TargetInvocationException>(() => swemMoon.GetValue(swe));
+            Assert.IsType<ObjectDisposedException>(moonEx.InnerException);
+
+            var planEx = Assert.Throws<TargetInvocationException>(() => swemPlan.GetValue(swe));
+            Assert.IsType<ObjectDisposedException>(planEx.InnerException);
+        }
+
+        [Fact]
         public void DoubleDispose_DoesNotThrow() {
             var swe = new SwissEph();
             swe.Dispose();
@@ -86,13 +114,40 @@ namespace SwissEphNet.Tests
 
             swe.Dispose();
 
-            // Reflection is the only way to observe this: OnTrace is only ever invoked from
-            // Trace(), which now throws ObjectDisposedException before reaching the event, same
-            // as every other post-dispose call.
-            var traceField = typeof(SwissEph).GetField("OnTrace",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            // Reflection is the only way to observe this: the backing field is only ever read
+            // from Trace(), which now throws ObjectDisposedException before reaching it, same
+            // as every other post-dispose call. OnTrace has explicit add/remove accessors (see
+            // SwissEph.cs), so its compiler-generated backing field is "_onTrace", not "OnTrace".
+            var traceField = typeof(SwissEph).GetField("_onTrace",
+                BindingFlags.NonPublic | BindingFlags.Instance);
             Assert.Null(traceField.GetValue(swe));
             Assert.False(traceRaised);
+        }
+
+        [Fact]
+        public void UseAfterDispose_ThrowsFromFileProviderProperty() {
+            // FileProvider (SwissEph.cs) carries instance state despite sitting outside the
+            // nine internal component properties, and used to be a plain auto-property with no
+            // ThrowIfDisposed() guard on either accessor -- the exact escape DisposeTest exists
+            // to catch. Cover both directions: reading it and writing it.
+            var swe = new SwissEph();
+            swe.Dispose();
+
+            Assert.Throws<ObjectDisposedException>(() => _ = swe.FileProvider);
+            Assert.Throws<ObjectDisposedException>(() => swe.FileProvider = new DelegateFileProvider(_ => null));
+        }
+
+        [Fact]
+        public void UseAfterDispose_ThrowsFromOnTraceAccessors() {
+            // OnTrace used to be an auto-implemented event: add_OnTrace/remove_OnTrace had no
+            // guard, so subscribing after Dispose() succeeded and the disposed instance took a
+            // strong reference to a handler Trace() could never invoke again.
+            var swe = new SwissEph();
+            swe.Dispose();
+
+            EventHandler<TraceEventArgs> handler = (s, e) => { };
+            Assert.Throws<ObjectDisposedException>(() => swe.OnTrace += handler);
+            Assert.Throws<ObjectDisposedException>(() => swe.OnTrace -= handler);
         }
 
         [Fact]
