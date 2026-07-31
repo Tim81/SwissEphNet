@@ -15,6 +15,13 @@ namespace SwissEphNet.Tests
     /// separate Tier 2 culture-dispatch bug found the same way, not counted
     /// among these five). Each defect is documented at its fix site with the
     /// C file/line it diverged from; see also docs/known-issues.md.
+    ///
+    /// TestHousesArmc_SunshineSystem_MatchesReferenceC and
+    /// TestHousesArmc_SunshineSystem_InvalidDeclination_ReturnErrWithMessage
+    /// close a separate gap: the culture test above only compares the port's
+    /// own output against itself under two cultures, so it pins the culture
+    /// defect but no actual Sunshine cusp value, and cannot notice the whole
+    /// ascmc[9]-into-h.sundec block (SweHouse.cs:768-780) being disabled.
     /// </summary>
     public class TransliterationFidelityTest
     {
@@ -294,6 +301,90 @@ namespace SwissEphNet.Tests
             finally
             {
                 CultureInfo.CurrentCulture = original;
+            }
+        }
+
+        // --- Reference-value coverage for house system I/i (Sunshine) ---
+        //
+        // Reference cusps and ascmc below came from the vendored C itself, not from the port:
+        // a standalone driver linked directly against external/swisseph's swedate.c, swehouse.c,
+        // swejpl.c, swemmoon.c, swemplan.c, sweph.c, swephlib.c, swecl.c and swehel.c (the
+        // Makefile's SWEOBJ set, unmodified), compiled with the MSVC toolchain already on this
+        // machine, calling swe_houses_armc_ex2 with the same armc/geolat/eps/ascmc[9] used here.
+        // House system I/i needs no ephemeris file -- swehouse.c:648-660 only reads ascmc[9] and
+        // calls CalcH -- so the reference build needed no data files either.
+        //
+        // The same driver, with ascmc[9] forced to 0 (what h.sundec is left holding if the
+        // SweHouse.cs:768-780 block is skipped entirely), reproduces the reviewer's measured
+        // drift: cusp[2] becomes 232.003106748 (+2.7476 degrees) and cusp[11] becomes
+        // 155.648841185 (+1.8698 degrees) relative to the values pinned below.
+        public static IEnumerable<object[]> SunshineHouseSystemVariants()
+        {
+            yield return new object[] { 'I' }; // Treindl solution
+            yield return new object[] { 'i' }; // Makransky solution
+        }
+
+        [Theory]
+        [MemberData(nameof(SunshineHouseSystemVariants))]
+        public void TestHousesArmc_SunshineSystem_MatchesReferenceC(char hsys)
+        {
+            const double armc = 123.45;
+            const double geolat = 40.0;
+            const double eps = 23.4;
+            const double sunDeclination = 15.5;
+
+            double[] expectedCusp = {
+                0,
+                206.636476770538, 229.255542035929, 260.408320383850, 301.228326156665,
+                338.410067281163, 5.305109229877, 26.636476770538, 54.218359345664,
+                85.806337407837, 121.228326156665, 153.779045966984, 180.904988025135,
+            };
+            double[] expectedAscmc = {
+                206.636476770538, 121.228326156665, 123.45, 62.051982453407,
+                215.747636422012, 231.881044621191, 203.982628197026, 51.881044621192,
+                0, 15.5,
+            };
+
+            using (var swe = new SwissEph())
+            {
+                var cusp = new double[40];
+                var ascmc = new double[10];
+                ascmc[9] = sunDeclination;
+
+                int rc = swe.swe_houses_armc(armc, geolat, eps, hsys, cusp, ascmc);
+
+                Assert.Equal(0, rc);
+                for (int i = 1; i <= 12; i++)
+                    Assert.Equal(expectedCusp[i], cusp[i], 6);
+                for (int i = 0; i <= 9; i++)
+                    Assert.Equal(expectedAscmc[i], ascmc[i], 6);
+            }
+        }
+
+        // swehouse.c:656-658: a declination outside the physically possible [-24, 24] degree
+        // range for the Sun must return ERR with this exact message -- confirmed against the
+        // same reference C driver, which returns exactly this for ascmc[9] = 30 and -30 -- not
+        // silently fall back to some other house system or clamp the value.
+        [Theory]
+        [MemberData(nameof(SunshineHouseSystemVariants))]
+        public void TestHousesArmc_SunshineSystem_InvalidDeclination_ReturnsErrWithMessage(char hsys)
+        {
+            const string expectedMessage = "House system I (Sunshine) needs valid Sun declination in ascmc[9]";
+
+            foreach (double invalidDeclination in new[] { 30.0, -30.0 })
+            {
+                using (var swe = new SwissEph())
+                {
+                    var cusp = new double[40];
+                    var ascmc = new double[10];
+                    ascmc[9] = invalidDeclination;
+                    string serr = null;
+
+                    int rc = swe.swe_houses_armc_ex2(123.45, 40.0, 23.4, hsys, cusp, ascmc, null, null, ref serr);
+
+                    Assert.Equal(SwissEph.ERR, rc);
+                    Assert.Equal(expectedMessage, serr);
+                }
             }
         }
     }
