@@ -403,9 +403,17 @@ on every platform tested, each against a C reference built on that same platform
 
 | Platform | C reference | Result |
 |---|---|---|
-| Windows x64 | MSVC 19.51, `/O2 /fp:precise /MD` | 17,064 of 17,064 rows bit-identical |
-| Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | 17,064 of 17,064 rows bit-identical |
+| Windows x64 | MSVC 19.51, `/O2 /fp:precise /MD` | 17,064 of 17,064 rows bit-identical (gated) |
+| Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | 17,064 of 17,064 rows bit-identical (measured once, not gated) |
 | macOS arm64 | clang, `-O2 -ffp-contract=off -fno-builtin` | 17,064 of 17,064 rows bit-identical (gated) |
+
+"Gated" means `.github/workflows/oracle.yml` re-runs the comparison on every push and pull
+request: `crt-parity`, `c-reference-validate`, `oracle-dump` and `swetest-diff` cover Windows,
+`macos-exactness` covers macOS (`header-flags-check` is a self-check on that workflow file's own
+header comment, not a build of anything). None of those jobs run on Linux. The Linux row came from
+one full run of the grid, done by hand; all 17,064 rows matched bit for bit. Nothing re-runs it
+automatically, so a regression specific to glibc would sit unnoticed until someone measures it
+again.
 
 The agreement is exact rather than close because the port and the C reference call the same libm
 on a given platform: `ucrtbase.dll` on Windows, glibc on Linux, Apple's libSystem on macOS. The
