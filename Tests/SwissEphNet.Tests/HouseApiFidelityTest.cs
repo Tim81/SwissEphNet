@@ -152,7 +152,9 @@ namespace SwissEphNet.Tests
             using (var swe = new SwissEph())
             {
                 string serr = null;
-                double hpos = 0;
+                // NaN, not 0: 0 is inside [1, 13), the real range documented below, so a stub
+                // that leaves hpos untouched would still pass a 0-based sentinel silently.
+                double hpos = double.NaN;
                 var ex = Record.Exception(() => hpos = swe.swe_house_pos(armc, geolat, eps, -1, xpin, ref serr));
 
                 Assert.Null(ex);
@@ -162,7 +164,9 @@ namespace SwissEphNet.Tests
                 // "did not throw", is what distinguishes the C-faithful narrowing from
                 // any other in-range one (& 0xFFFF, Math.Abs, a placeholder).
                 Assert.Contains("system ÿ", serr ?? string.Empty, StringComparison.Ordinal);
-                Assert.InRange(hpos, 0.0, 13.0);
+                // House position is 1-based and wraps before reaching 13 ([1, 13)); 0.0 was the
+                // whole domain including the sentinel above, so it could only catch NaN.
+                Assert.InRange(hpos, 1.0, 13.0);
             }
         }
 
@@ -177,7 +181,7 @@ namespace SwissEphNet.Tests
             using (var swe = new SwissEph())
             {
                 string serr = null;
-                double hpos = 0;
+                double hpos = double.NaN; // see the sibling test for why NaN, not 0
                 var ex = Record.Exception(() => hpos = swe.swe_house_pos(armc, geolat, eps, 70000, xpin, ref serr));
 
                 Assert.Null(ex);
@@ -185,7 +189,7 @@ namespace SwissEphNet.Tests
                 // 70000 & 0xFF = 112 = 'p'. See the sibling test for why the character
                 // itself is asserted rather than only the absence of an exception.
                 Assert.Contains("system p", serr ?? string.Empty, StringComparison.Ordinal);
-                Assert.InRange(hpos, 0.0, 13.0);
+                Assert.InRange(hpos, 1.0, 13.0);
             }
         }
 
@@ -335,6 +339,14 @@ namespace SwissEphNet.Tests
             const double eps = 23.4;
             double[] cusp = new double[37];
             double[] ascmc = new double[10];
+            // NaN, not the array's default 0: 0.0 is itself a valid cusp value and inside
+            // [0, 360], so an implementation that left some slots untouched would still pass
+            // silently despite the method's name promising all 36 get written. NaN is never
+            // InRange, so this actually verifies "written", not just "not thrown".
+            for (int i = 1; i <= 36; i++)
+            {
+                cusp[i] = double.NaN;
+            }
 
             using (var swe = new SwissEph())
             {
