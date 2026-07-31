@@ -5,7 +5,7 @@ namespace BaselineMatrix;
 
 /// <summary>
 /// swe_get_ayanamsa / swe_get_ayanamsa_ut / swe_get_ayanamsa_ex / swe_get_ayanamsa_ex_ut
-/// for every predefined sidereal mode (0 .. SE_NSIDM_PREDEF-1), after swe_set_sid_mode,
+/// for every predefined sidereal mode (0 .. SidModeSweepCount-1), after swe_set_sid_mode,
 /// plus SE_SIDM_USER with real t0/ayan_t0 and the SE_SIDBIT_ECL_T0 / SE_SIDBIT_SSY_PLANE
 /// bits. A handful of the predefined modes are defined relative to a named fixed star
 /// and need sefstars.txt, which is unavailable here (SwissEph.DefaultFileProvider is a
@@ -14,6 +14,22 @@ namespace BaselineMatrix;
 /// </summary>
 internal static class Ayanamsa
 {
+    // Deliberately a literal, not SwissEph.SE_NSIDM_PREDEF: the committed baseline's row
+    // set is fixed at 47 sid_modes (ids 0..46), and that count is a property of the frozen
+    // matrix, not of whichever assembly happens to be under test. Reference mode resolves
+    // SwissEph from the SwissEphNet 2.8.0.2 NuGet package, whose own SE_NSIDM_PREDEF is 43
+    // (confirmed by loading that package's assembly directly) -- four sidereal modes short
+    // of the port's 47. Reading the bound off that constant made reference mode sweep only
+    // ids 0..42 and silently omit AY/AYUT/AYEX/AYEXUT rows for ids 43..46 (192 rows, all
+    // present in the committed baseline), which is exactly the shape of bug -ExpectedScope
+    // cannot catch: those 192 case ids are simply never generated on that side, so a
+    // reference-mode regeneration would delete them with SCOPE-OK, not SCOPE-VIOLATION,
+    // since deletion by omission never appears as a changed/added/removed id for a run that
+    // never produced the id at all. Pinning the sweep to the literal the baseline was
+    // actually built against keeps both modes' row counts equal regardless of which
+    // package or local build SE_NSIDM_PREDEF happens to report.
+    private const int SidModeSweepCount = 47;
+
     private static readonly double[] Jds = Grids.JdSpread(8);
 
     private static readonly (string Name, int Flag)[] ExIflagCombos =
@@ -42,7 +58,7 @@ internal static class Ayanamsa
 
     public static void AddRows(List<string> rows)
     {
-        for (var sidMode = 0; sidMode < SwissEph.SE_NSIDM_PREDEF; sidMode++)
+        for (var sidMode = 0; sidMode < SidModeSweepCount; sidMode++)
         {
             foreach (var jd in Jds)
             {
