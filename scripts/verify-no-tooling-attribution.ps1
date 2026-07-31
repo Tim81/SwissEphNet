@@ -125,7 +125,14 @@ try {
     foreach ($line in @($grepOutput)) {
         if ([string]::IsNullOrWhiteSpace($line)) { continue }
         foreach ($p in $patterns) {
-            if ($line -match $p.Regex) {
+            # [regex]::IsMatch, not PowerShell's -match operator: -match is case-insensitive by
+            # default regardless of what the pattern string itself says, which silently defeated
+            # every pattern above that omits an explicit "(?i)" and relies on being
+            # case-sensitive (Claude, Anthropic, ChatGPT, Co-Authored-By, Claude-Session, and
+            # critically "Generated with", whose whole point is to NOT match the lowercase
+            # "generated with" this repository's own prose legitimately uses). [regex]::IsMatch
+            # honors each pattern's own case-sensitivity exactly as written.
+            if ([regex]::IsMatch($line, $p.Regex)) {
                 $failures.Add("tracked file $line -- matches $($p.Label)")
                 break
             }
@@ -165,8 +172,10 @@ try {
             $shortSha = $sha.Substring(0, [Math]::Min(12, $sha.Length))
 
             foreach ($p in $patterns) {
-                if ($body -match $p.Regex) {
-                    $firstMatchLine = (@($body -split "`n") | Where-Object { $_ -match $p.Regex } | Select-Object -First 1)
+                # [regex]::IsMatch here too -- see the identical comment on the tracked-file loop
+                # above for why -match's default case-insensitivity is unsafe for this table.
+                if ([regex]::IsMatch($body, $p.Regex)) {
+                    $firstMatchLine = (@($body -split "`n") | Where-Object { [regex]::IsMatch($_, $p.Regex) } | Select-Object -First 1)
                     $failures.Add("commit ${shortSha}: matches $($p.Label) -- `"$($firstMatchLine.Trim())`"")
                 }
             }
