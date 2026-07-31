@@ -17,7 +17,7 @@ namespace SwissEphNet.Tests
             {
                 swe.FileProvider = new DelegateFileProvider(path => {
                     var asm = this.GetType().GetAssembly();
-                    String sr = path.Replace("[ephe]", @"SwissEphNet.Tests.files").Replace("/", ".").Replace("\\", ".");
+                    String sr = path.Replace("[ephe]", @"SwissEphNet.Tests.files", StringComparison.Ordinal).Replace("/", ".", StringComparison.Ordinal).Replace("\\", ".", StringComparison.Ordinal);
                     return asm.GetManifestResourceStream(sr);
                 });
 

@@ -112,7 +112,7 @@ namespace SwissEphNet.Tests
                 if (name == "se00005s.se1")
                     return tracking;
                 return asm.GetManifestResourceStream(
-                    path.Replace("[ephe]", "SwissEphNet.Tests.files").Replace("/", ".").Replace("\\", "."));
+                    path.Replace("[ephe]", "SwissEphNet.Tests.files", StringComparison.Ordinal).Replace("/", ".", StringComparison.Ordinal).Replace("\\", ".", StringComparison.Ordinal));
             });
 
             double tjd = swe.swe_julday(1974, 8, 16, 0.5, SwissEph.SE_GREG_CAL);

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using Xunit;
 
@@ -72,8 +72,8 @@ namespace SwissEphNet.Tests
             //Assert.True(RunTest("[%d]", "[42]", (Char)42));
 
             Assert.True(RunTest("[%d]", "[65537]", 65537));
-            Assert.True(RunTest("[%'d]", String.Format("[65{0}537]", sep1000), 65537));
-            Assert.True(RunTest("[%'d]", String.Format("[10{0}065{0}537]", sep1000), 10065537));
+            Assert.True(RunTest("[%'d]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[65{0}537]", sep1000), 65537));
+            Assert.True(RunTest("[%'d]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[10{0}065{0}537]", sep1000), 10065537));
 
             //Console.WriteLine("\n\n");
         }
@@ -107,7 +107,7 @@ namespace SwissEphNet.Tests
 
             Assert.Equal("[1]", C.sprintf("[%hd]", 65537));
             Assert.Equal("[1]", C.sprintf("[%'hd]", 65537));
-            Assert.Equal(String.Format("[-27{0}007]", sep1000), C.sprintf("[%'hd]", 10065537));
+            Assert.Equal(String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-27{0}007]", sep1000), C.sprintf("[%'hd]", 10065537));
 
             //Console.WriteLine("\n\n");
         }
@@ -154,8 +154,8 @@ namespace SwissEphNet.Tests
             //Assert.True(RunTest("[%d]", "[42]", (Char)42));
 
             Assert.True(RunTest("[%ld]", "[65537]", 65537));
-            Assert.True(RunTest("[%'ld]", String.Format("[65{0}537]", sep1000), 65537));
-            Assert.True(RunTest("[%'ld]", String.Format("[10{0}065{0}537]", sep1000), 10065537));
+            Assert.True(RunTest("[%'ld]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[65{0}537]", sep1000), 65537));
+            Assert.True(RunTest("[%'ld]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[10{0}065{0}537]", sep1000), 10065537));
 
             Assert.True(RunTest("[.%04ld]", "[.0042]", 42));
             Assert.True(RunTest("[.%04ld]", "[.0002]", 2));
@@ -189,8 +189,8 @@ namespace SwissEphNet.Tests
             //Assert.True(RunTest("[%d]", "[-42]", (Char)(-42)));
 
             Assert.True(RunTest("[%d]", "[-65537]", -65537));
-            Assert.True(RunTest("[%'d]", String.Format("[-65{0}537]", sep1000), -65537));
-            Assert.True(RunTest("[%'d]", String.Format("[-10{0}065{0}537]", sep1000), -10065537));
+            Assert.True(RunTest("[%'d]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-65{0}537]", sep1000), -65537));
+            Assert.True(RunTest("[%'d]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-10{0}065{0}537]", sep1000), -10065537));
 
             //Console.WriteLine("\n\n");
         }
@@ -216,8 +216,8 @@ namespace SwissEphNet.Tests
             Assert.True(RunTest("[%-020u]", "[4294967254          ]", -42));
 
             Assert.True(RunTest("[%u]", "[65537]", 65537));
-            Assert.True(RunTest("[%'u]", String.Format("[65{0}537]", sep1000), 65537));
-            Assert.True(RunTest("[%'u]", String.Format("[10{0}065{0}537]", sep1000), 10065537));
+            Assert.True(RunTest("[%'u]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[65{0}537]", sep1000), 65537));
+            Assert.True(RunTest("[%'u]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[10{0}065{0}537]", sep1000), 10065537));
 
             //Console.WriteLine("\n\n");
         }
@@ -233,95 +233,95 @@ namespace SwissEphNet.Tests
             Assert.Equal("[42]", C.sprintf("[%g]", 42));
             Assert.Equal("[42]", C.sprintf("[%G]", 42));
 
-            Assert.True(RunTest("[%f]", String.Format("[42{0}000000]", sepDecimal), 42));
-            Assert.True(RunTest("[%f]", String.Format("[42{0}500000]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%10f]", String.Format("[ 42{0}000000]", sepDecimal), 42));
-            Assert.True(RunTest("[%10f]", String.Format("[ 42{0}500000]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%-10f]", String.Format("[42{0}000000 ]", sepDecimal), 42));
-            Assert.True(RunTest("[%-10f]", String.Format("[42{0}500000 ]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%010f]", String.Format("[042{0}000000]", sepDecimal), 42));
-            Assert.True(RunTest("[%010f]", String.Format("[042{0}500000]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%-010f]", String.Format("[42{0}000000 ]", sepDecimal), 42));
-            Assert.True(RunTest("[%-010f]", String.Format("[42{0}500000 ]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[42{0}000000]", sepDecimal), 42));
+            Assert.True(RunTest("[%f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[42{0}500000]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%10f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[ 42{0}000000]", sepDecimal), 42));
+            Assert.True(RunTest("[%10f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[ 42{0}500000]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%-10f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[42{0}000000 ]", sepDecimal), 42));
+            Assert.True(RunTest("[%-10f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[42{0}500000 ]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%010f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[042{0}000000]", sepDecimal), 42));
+            Assert.True(RunTest("[%010f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[042{0}500000]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%-010f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[42{0}000000 ]", sepDecimal), 42));
+            Assert.True(RunTest("[%-010f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[42{0}500000 ]", sepDecimal), 42.5));
 
-            Assert.True(RunTest("[%+f]", String.Format("[+42{0}000000]", sepDecimal), 42));
-            Assert.True(RunTest("[%+f]", String.Format("[+42{0}500000]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%+10f]", String.Format("[+42{0}000000]", sepDecimal), 42));
-            Assert.True(RunTest("[%+10f]", String.Format("[+42{0}500000]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%+-10f]", String.Format("[+42{0}000000]", sepDecimal), 42));
-            Assert.True(RunTest("[%+-10f]", String.Format("[+42{0}500000]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%+010f]", String.Format("[+42{0}000000]", sepDecimal), 42));
-            Assert.True(RunTest("[%+010f]", String.Format("[+42{0}500000]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%+-010f]", String.Format("[+42{0}000000]", sepDecimal), 42));
-            Assert.True(RunTest("[%+-010f]", String.Format("[+42{0}500000]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+42{0}000000]", sepDecimal), 42));
+            Assert.True(RunTest("[%+f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+42{0}500000]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+10f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+42{0}000000]", sepDecimal), 42));
+            Assert.True(RunTest("[%+10f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+42{0}500000]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+-10f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+42{0}000000]", sepDecimal), 42));
+            Assert.True(RunTest("[%+-10f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+42{0}500000]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+010f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+42{0}000000]", sepDecimal), 42));
+            Assert.True(RunTest("[%+010f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+42{0}500000]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+-010f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+42{0}000000]", sepDecimal), 42));
+            Assert.True(RunTest("[%+-010f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+42{0}500000]", sepDecimal), 42.5));
 
-            Assert.True(RunTest("[%f]", String.Format("[-42{0}000000]", sepDecimal), -42));
-            Assert.True(RunTest("[%f]", String.Format("[-42{0}500000]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%10f]", String.Format("[-42{0}000000]", sepDecimal), -42));
-            Assert.True(RunTest("[%10f]", String.Format("[-42{0}500000]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%-10f]", String.Format("[-42{0}000000]", sepDecimal), -42));
-            Assert.True(RunTest("[%-10f]", String.Format("[-42{0}500000]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%010f]", String.Format("[-42{0}000000]", sepDecimal), -42));
-            Assert.True(RunTest("[%010f]", String.Format("[-42{0}500000]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%-010f]", String.Format("[-42{0}000000]", sepDecimal), -42));
-            Assert.True(RunTest("[%-010f]", String.Format("[-42{0}500000]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}000000]", sepDecimal), -42));
+            Assert.True(RunTest("[%f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}500000]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%10f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}000000]", sepDecimal), -42));
+            Assert.True(RunTest("[%10f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}500000]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%-10f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}000000]", sepDecimal), -42));
+            Assert.True(RunTest("[%-10f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}500000]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%010f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}000000]", sepDecimal), -42));
+            Assert.True(RunTest("[%010f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}500000]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%-010f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}000000]", sepDecimal), -42));
+            Assert.True(RunTest("[%-010f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}500000]", sepDecimal), -42.5));
 
-            Assert.True(RunTest("[%+f]", String.Format("[-42{0}000000]", sepDecimal), -42));
-            Assert.True(RunTest("[%+f]", String.Format("[-42{0}500000]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%+10f]", String.Format("[-42{0}000000]", sepDecimal), -42));
-            Assert.True(RunTest("[%+10f]", String.Format("[-42{0}500000]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%+-10f]", String.Format("[-42{0}000000]", sepDecimal), -42));
-            Assert.True(RunTest("[%+-10f]", String.Format("[-42{0}500000]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%+010f]", String.Format("[-42{0}000000]", sepDecimal), -42));
-            Assert.True(RunTest("[%+010f]", String.Format("[-42{0}500000]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%+-010f]", String.Format("[-42{0}000000]", sepDecimal), -42));
-            Assert.True(RunTest("[%+-010f]", String.Format("[-42{0}500000]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%+f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}000000]", sepDecimal), -42));
+            Assert.True(RunTest("[%+f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}500000]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%+10f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}000000]", sepDecimal), -42));
+            Assert.True(RunTest("[%+10f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}500000]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%+-10f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}000000]", sepDecimal), -42));
+            Assert.True(RunTest("[%+-10f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}500000]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%+010f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}000000]", sepDecimal), -42));
+            Assert.True(RunTest("[%+010f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}500000]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%+-010f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}000000]", sepDecimal), -42));
+            Assert.True(RunTest("[%+-010f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}500000]", sepDecimal), -42.5));
 
             // -----
 
-            Assert.True(RunTest("[%.2f]", String.Format("[42{0}00]", sepDecimal), 42));
-            Assert.True(RunTest("[%.2f]", String.Format("[42{0}50]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%10.2f]", String.Format("[     42{0}00]", sepDecimal), 42));
-            Assert.True(RunTest("[%10.2f]", String.Format("[     42{0}50]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%-10.2f]", String.Format("[42{0}00     ]", sepDecimal), 42));
-            Assert.True(RunTest("[%-10.2f]", String.Format("[42{0}50     ]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%010.2f]", String.Format("[0000042{0}00]", sepDecimal), 42));
-            Assert.True(RunTest("[%010.2f]", String.Format("[0000042{0}50]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%-010.2f]", String.Format("[42{0}00     ]", sepDecimal), 42));
-            Assert.True(RunTest("[%-010.2f]", String.Format("[42{0}50     ]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[42{0}00]", sepDecimal), 42));
+            Assert.True(RunTest("[%.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[42{0}50]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%10.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[     42{0}00]", sepDecimal), 42));
+            Assert.True(RunTest("[%10.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[     42{0}50]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%-10.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[42{0}00     ]", sepDecimal), 42));
+            Assert.True(RunTest("[%-10.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[42{0}50     ]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%010.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[0000042{0}00]", sepDecimal), 42));
+            Assert.True(RunTest("[%010.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[0000042{0}50]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%-010.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[42{0}00     ]", sepDecimal), 42));
+            Assert.True(RunTest("[%-010.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[42{0}50     ]", sepDecimal), 42.5));
 
-            Assert.True(RunTest("[%+.2f]", String.Format("[+42{0}00]", sepDecimal), 42));
-            Assert.True(RunTest("[%+.2f]", String.Format("[+42{0}50]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%+10.2f]", String.Format("[    +42{0}00]", sepDecimal), 42));
-            Assert.True(RunTest("[%+10.2f]", String.Format("[    +42{0}50]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%+-10.2f]", String.Format("[+42{0}00    ]", sepDecimal), 42));
-            Assert.True(RunTest("[%+-10.2f]", String.Format("[+42{0}50    ]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%+010.2f]", String.Format("[+000042{0}00]", sepDecimal), 42));
-            Assert.True(RunTest("[%+010.2f]", String.Format("[+000042{0}50]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%+-010.2f]", String.Format("[+42{0}00    ]", sepDecimal), 42));
-            Assert.True(RunTest("[%+-010.2f]", String.Format("[+42{0}50    ]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+42{0}00]", sepDecimal), 42));
+            Assert.True(RunTest("[%+.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+42{0}50]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+10.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[    +42{0}00]", sepDecimal), 42));
+            Assert.True(RunTest("[%+10.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[    +42{0}50]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+-10.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+42{0}00    ]", sepDecimal), 42));
+            Assert.True(RunTest("[%+-10.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+42{0}50    ]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+010.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+000042{0}00]", sepDecimal), 42));
+            Assert.True(RunTest("[%+010.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+000042{0}50]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+-010.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+42{0}00    ]", sepDecimal), 42));
+            Assert.True(RunTest("[%+-010.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+42{0}50    ]", sepDecimal), 42.5));
 
-            Assert.True(RunTest("[%.2f]", String.Format("[-42{0}00]", sepDecimal), -42));
-            Assert.True(RunTest("[%.2f]", String.Format("[-42{0}50]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%10.2f]", String.Format("[    -42{0}00]", sepDecimal), -42));
-            Assert.True(RunTest("[%10.2f]", String.Format("[    -42{0}50]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%-10.2f]", String.Format("[-42{0}00    ]", sepDecimal), -42));
-            Assert.True(RunTest("[%-10.2f]", String.Format("[-42{0}50    ]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%010.2f]", String.Format("[-000042{0}00]", sepDecimal), -42));
-            Assert.True(RunTest("[%010.2f]", String.Format("[-000042{0}50]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%-010.2f]", String.Format("[-42{0}00    ]", sepDecimal), -42));
-            Assert.True(RunTest("[%-010.2f]", String.Format("[-42{0}50    ]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}00]", sepDecimal), -42));
+            Assert.True(RunTest("[%.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}50]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%10.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[    -42{0}00]", sepDecimal), -42));
+            Assert.True(RunTest("[%10.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[    -42{0}50]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%-10.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}00    ]", sepDecimal), -42));
+            Assert.True(RunTest("[%-10.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}50    ]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%010.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-000042{0}00]", sepDecimal), -42));
+            Assert.True(RunTest("[%010.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-000042{0}50]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%-010.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}00    ]", sepDecimal), -42));
+            Assert.True(RunTest("[%-010.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}50    ]", sepDecimal), -42.5));
 
-            Assert.True(RunTest("[%+.2f]", String.Format("[-42{0}00]", sepDecimal), -42));
-            Assert.True(RunTest("[%+.2f]", String.Format("[-42{0}50]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%+10.2f]", String.Format("[    -42{0}00]", sepDecimal), -42));
-            Assert.True(RunTest("[%+10.2f]", String.Format("[    -42{0}50]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%+-10.2f]", String.Format("[-42{0}00    ]", sepDecimal), -42));
-            Assert.True(RunTest("[%+-10.2f]", String.Format("[-42{0}50    ]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%+010.2f]", String.Format("[-000042{0}00]", sepDecimal), -42));
-            Assert.True(RunTest("[%+010.2f]", String.Format("[-000042{0}50]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%+-010.2f]", String.Format("[-42{0}00    ]", sepDecimal), -42));
-            Assert.True(RunTest("[%+-010.2f]", String.Format("[-42{0}50    ]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%+.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}00]", sepDecimal), -42));
+            Assert.True(RunTest("[%+.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}50]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%+10.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[    -42{0}00]", sepDecimal), -42));
+            Assert.True(RunTest("[%+10.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[    -42{0}50]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%+-10.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}00    ]", sepDecimal), -42));
+            Assert.True(RunTest("[%+-10.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}50    ]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%+010.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-000042{0}00]", sepDecimal), -42));
+            Assert.True(RunTest("[%+010.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-000042{0}50]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%+-010.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}00    ]", sepDecimal), -42));
+            Assert.True(RunTest("[%+-010.2f]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-42{0}50    ]", sepDecimal), -42.5));
 
             //Console.WriteLine("\n\n");
         }
@@ -334,95 +334,95 @@ namespace SwissEphNet.Tests
             //Console.WriteLine("Test exponent format %f");
             //Console.WriteLine("--------------------------------------------------------------------------------");
 
-            Assert.True(RunTest("[%e]", String.Format("[4{0}200000e+01]", sepDecimal), 42));
-            Assert.True(RunTest("[%e]", String.Format("[4{0}250000e+01]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%20e]", String.Format("[        4{0}200000e+01]", sepDecimal), 42));
-            Assert.True(RunTest("[%20e]", String.Format("[        4{0}250000e+01]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%-20e]", String.Format("[4{0}200000e+01        ]", sepDecimal), 42));
-            Assert.True(RunTest("[%-20e]", String.Format("[4{0}250000e+01        ]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%020e]", String.Format("[000000004{0}200000e+01]", sepDecimal), 42));
-            Assert.True(RunTest("[%020e]", String.Format("[000000004{0}250000e+01]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%-020e]", String.Format("[4{0}200000e+01        ]", sepDecimal), 42));
-            Assert.True(RunTest("[%-020e]", String.Format("[4{0}250000e+01        ]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[4{0}200000e+01]", sepDecimal), 42));
+            Assert.True(RunTest("[%e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[4{0}250000e+01]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%20e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[        4{0}200000e+01]", sepDecimal), 42));
+            Assert.True(RunTest("[%20e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[        4{0}250000e+01]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%-20e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[4{0}200000e+01        ]", sepDecimal), 42));
+            Assert.True(RunTest("[%-20e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[4{0}250000e+01        ]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%020e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[000000004{0}200000e+01]", sepDecimal), 42));
+            Assert.True(RunTest("[%020e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[000000004{0}250000e+01]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%-020e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[4{0}200000e+01        ]", sepDecimal), 42));
+            Assert.True(RunTest("[%-020e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[4{0}250000e+01        ]", sepDecimal), 42.5));
 
-            Assert.True(RunTest("[%+E]", String.Format("[+4{0}200000E+01]", sepDecimal), 42));
-            Assert.True(RunTest("[%+E]", String.Format("[+4{0}250000E+01]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%+20E]", String.Format("[       +4{0}200000E+01]", sepDecimal), 42));
-            Assert.True(RunTest("[%+20E]", String.Format("[       +4{0}250000E+01]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%+-20E]", String.Format("[+4{0}200000E+01       ]", sepDecimal), 42));
-            Assert.True(RunTest("[%+-20E]", String.Format("[+4{0}250000E+01       ]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%+020E]", String.Format("[+00000004{0}200000E+01]", sepDecimal), 42));
-            Assert.True(RunTest("[%+020E]", String.Format("[+00000004{0}250000E+01]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%+-020E]", String.Format("[+4{0}200000E+01       ]", sepDecimal), 42));
-            Assert.True(RunTest("[%+-020E]", String.Format("[+4{0}250000E+01       ]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+4{0}200000E+01]", sepDecimal), 42));
+            Assert.True(RunTest("[%+E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+4{0}250000E+01]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+20E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[       +4{0}200000E+01]", sepDecimal), 42));
+            Assert.True(RunTest("[%+20E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[       +4{0}250000E+01]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+-20E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+4{0}200000E+01       ]", sepDecimal), 42));
+            Assert.True(RunTest("[%+-20E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+4{0}250000E+01       ]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+020E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+00000004{0}200000E+01]", sepDecimal), 42));
+            Assert.True(RunTest("[%+020E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+00000004{0}250000E+01]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+-020E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+4{0}200000E+01       ]", sepDecimal), 42));
+            Assert.True(RunTest("[%+-020E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+4{0}250000E+01       ]", sepDecimal), 42.5));
 
-            Assert.True(RunTest("[%e]", String.Format("[-4{0}200000e+01]", sepDecimal), -42));
-            Assert.True(RunTest("[%e]", String.Format("[-4{0}250000e+01]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%20e]", String.Format("[       -4{0}200000e+01]", sepDecimal), -42));
-            Assert.True(RunTest("[%20e]", String.Format("[       -4{0}250000e+01]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%-20e]", String.Format("[-4{0}200000e+01       ]", sepDecimal), -42));
-            Assert.True(RunTest("[%-20e]", String.Format("[-4{0}250000e+01       ]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%020e]", String.Format("[-00000004{0}200000e+01]", sepDecimal), -42));
-            Assert.True(RunTest("[%020e]", String.Format("[-00000004{0}250000e+01]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%-020e]", String.Format("[-4{0}200000e+01       ]", sepDecimal), -42));
-            Assert.True(RunTest("[%-020e]", String.Format("[-4{0}250000e+01       ]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}200000e+01]", sepDecimal), -42));
+            Assert.True(RunTest("[%e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}250000e+01]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%20e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[       -4{0}200000e+01]", sepDecimal), -42));
+            Assert.True(RunTest("[%20e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[       -4{0}250000e+01]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%-20e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}200000e+01       ]", sepDecimal), -42));
+            Assert.True(RunTest("[%-20e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}250000e+01       ]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%020e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-00000004{0}200000e+01]", sepDecimal), -42));
+            Assert.True(RunTest("[%020e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-00000004{0}250000e+01]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%-020e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}200000e+01       ]", sepDecimal), -42));
+            Assert.True(RunTest("[%-020e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}250000e+01       ]", sepDecimal), -42.5));
 
-            Assert.True(RunTest("[%+e]", String.Format("[-4{0}200000e+01]", sepDecimal), -42));
-            Assert.True(RunTest("[%+e]", String.Format("[-4{0}250000e+01]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%+20e]", String.Format("[       -4{0}200000e+01]", sepDecimal), -42));
-            Assert.True(RunTest("[%+20e]", String.Format("[       -4{0}250000e+01]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%+-20e]", String.Format("[-4{0}200000e+01       ]", sepDecimal), -42));
-            Assert.True(RunTest("[%+-20e]", String.Format("[-4{0}250000e+01       ]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%+020e]", String.Format("[-00000004{0}200000e+01]", sepDecimal), -42));
-            Assert.True(RunTest("[%+020e]", String.Format("[-00000004{0}250000e+01]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%+-020e]", String.Format("[-4{0}200000e+01       ]", sepDecimal), -42));
-            Assert.True(RunTest("[%+-020e]", String.Format("[-4{0}250000e+01       ]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%+e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}200000e+01]", sepDecimal), -42));
+            Assert.True(RunTest("[%+e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}250000e+01]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%+20e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[       -4{0}200000e+01]", sepDecimal), -42));
+            Assert.True(RunTest("[%+20e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[       -4{0}250000e+01]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%+-20e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}200000e+01       ]", sepDecimal), -42));
+            Assert.True(RunTest("[%+-20e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}250000e+01       ]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%+020e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-00000004{0}200000e+01]", sepDecimal), -42));
+            Assert.True(RunTest("[%+020e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-00000004{0}250000e+01]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%+-020e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}200000e+01       ]", sepDecimal), -42));
+            Assert.True(RunTest("[%+-020e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}250000e+01       ]", sepDecimal), -42.5));
 
             // -----
 
-            Assert.True(RunTest("[%.2e]", String.Format("[4{0}20e+01]", sepDecimal), 42));
-            Assert.True(RunTest("[%.2e]", String.Format("[4{0}25e+01]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%20.2e]", String.Format("[            4{0}20e+01]", sepDecimal), 42));
-            Assert.True(RunTest("[%20.2e]", String.Format("[            4{0}25e+01]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%-20.2e]", String.Format("[4{0}20e+01            ]", sepDecimal), 42));
-            Assert.True(RunTest("[%-20.2e]", String.Format("[4{0}25e+01            ]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%020.2e]", String.Format("[0000000000004{0}20e+01]", sepDecimal), 42));
-            Assert.True(RunTest("[%020.2e]", String.Format("[0000000000004{0}25e+01]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%-020.2e]", String.Format("[4{0}20e+01            ]", sepDecimal), 42));
-            Assert.True(RunTest("[%-020.2e]", String.Format("[4{0}25e+01            ]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[4{0}20e+01]", sepDecimal), 42));
+            Assert.True(RunTest("[%.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[4{0}25e+01]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%20.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[            4{0}20e+01]", sepDecimal), 42));
+            Assert.True(RunTest("[%20.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[            4{0}25e+01]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%-20.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[4{0}20e+01            ]", sepDecimal), 42));
+            Assert.True(RunTest("[%-20.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[4{0}25e+01            ]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%020.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[0000000000004{0}20e+01]", sepDecimal), 42));
+            Assert.True(RunTest("[%020.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[0000000000004{0}25e+01]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%-020.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[4{0}20e+01            ]", sepDecimal), 42));
+            Assert.True(RunTest("[%-020.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[4{0}25e+01            ]", sepDecimal), 42.5));
 
-            Assert.True(RunTest("[%+.2E]", String.Format("[+4{0}20E+01]", sepDecimal), 42));
-            Assert.True(RunTest("[%+.2E]", String.Format("[+4{0}25E+01]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%+20.2E]", String.Format("[           +4{0}20E+01]", sepDecimal), 42));
-            Assert.True(RunTest("[%+20.2E]", String.Format("[           +4{0}25E+01]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%+-20.2E]", String.Format("[+4{0}20E+01           ]", sepDecimal), 42));
-            Assert.True(RunTest("[%+-20.2E]", String.Format("[+4{0}25E+01           ]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%+020.2E]", String.Format("[+000000000004{0}20E+01]", sepDecimal), 42));
-            Assert.True(RunTest("[%+020.2E]", String.Format("[+000000000004{0}25E+01]", sepDecimal), 42.5));
-            Assert.True(RunTest("[%+-020.2E]", String.Format("[+4{0}20E+01           ]", sepDecimal), 42));
-            Assert.True(RunTest("[%+-020.2E]", String.Format("[+4{0}25E+01           ]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+.2E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+4{0}20E+01]", sepDecimal), 42));
+            Assert.True(RunTest("[%+.2E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+4{0}25E+01]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+20.2E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[           +4{0}20E+01]", sepDecimal), 42));
+            Assert.True(RunTest("[%+20.2E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[           +4{0}25E+01]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+-20.2E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+4{0}20E+01           ]", sepDecimal), 42));
+            Assert.True(RunTest("[%+-20.2E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+4{0}25E+01           ]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+020.2E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+000000000004{0}20E+01]", sepDecimal), 42));
+            Assert.True(RunTest("[%+020.2E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+000000000004{0}25E+01]", sepDecimal), 42.5));
+            Assert.True(RunTest("[%+-020.2E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+4{0}20E+01           ]", sepDecimal), 42));
+            Assert.True(RunTest("[%+-020.2E]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[+4{0}25E+01           ]", sepDecimal), 42.5));
 
-            Assert.True(RunTest("[%.2e]", String.Format("[-4{0}20e+01]", sepDecimal), -42));
-            Assert.True(RunTest("[%.2e]", String.Format("[-4{0}25e+01]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%20.2e]", String.Format("[           -4{0}20e+01]", sepDecimal), -42));
-            Assert.True(RunTest("[%20.2e]", String.Format("[           -4{0}25e+01]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%-20.2e]", String.Format("[-4{0}20e+01           ]", sepDecimal), -42));
-            Assert.True(RunTest("[%-20.2e]", String.Format("[-4{0}25e+01           ]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%020.2e]", String.Format("[-000000000004{0}20e+01]", sepDecimal), -42));
-            Assert.True(RunTest("[%020.2e]", String.Format("[-000000000004{0}25e+01]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%-020.2e]", String.Format("[-4{0}20e+01           ]", sepDecimal), -42));
-            Assert.True(RunTest("[%-020.2e]", String.Format("[-4{0}25e+01           ]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}20e+01]", sepDecimal), -42));
+            Assert.True(RunTest("[%.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}25e+01]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%20.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[           -4{0}20e+01]", sepDecimal), -42));
+            Assert.True(RunTest("[%20.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[           -4{0}25e+01]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%-20.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}20e+01           ]", sepDecimal), -42));
+            Assert.True(RunTest("[%-20.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}25e+01           ]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%020.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-000000000004{0}20e+01]", sepDecimal), -42));
+            Assert.True(RunTest("[%020.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-000000000004{0}25e+01]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%-020.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}20e+01           ]", sepDecimal), -42));
+            Assert.True(RunTest("[%-020.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}25e+01           ]", sepDecimal), -42.5));
 
-            Assert.True(RunTest("[%+.2e]", String.Format("[-4{0}20e+01]", sepDecimal), -42));
-            Assert.True(RunTest("[%+.2e]", String.Format("[-4{0}25e+01]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%+20.2e]", String.Format("[           -4{0}20e+01]", sepDecimal), -42));
-            Assert.True(RunTest("[%+20.2e]", String.Format("[           -4{0}25e+01]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%+-20.2e]", String.Format("[-4{0}20e+01           ]", sepDecimal), -42));
-            Assert.True(RunTest("[%+-20.2e]", String.Format("[-4{0}25e+01           ]", sepDecimal), -42.5));
-            Assert.True(RunTest("[%+020.2e]", String.Format("[-000000000004{0}20e+01]", sepDecimal), -42));
-            Assert.True(RunTest("[%+020.2e]", String.Format("[-000000000004{0}25e+01]", sepDecimal), -42.545));
-            Assert.True(RunTest("[%+-020.2e]", String.Format("[-4{0}20e+01           ]", sepDecimal), -42));
-            Assert.True(RunTest("[%+-020.2e]", String.Format("[-4{0}26e+01           ]", sepDecimal), -42.555));
+            Assert.True(RunTest("[%+.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}20e+01]", sepDecimal), -42));
+            Assert.True(RunTest("[%+.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}25e+01]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%+20.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[           -4{0}20e+01]", sepDecimal), -42));
+            Assert.True(RunTest("[%+20.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[           -4{0}25e+01]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%+-20.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}20e+01           ]", sepDecimal), -42));
+            Assert.True(RunTest("[%+-20.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}25e+01           ]", sepDecimal), -42.5));
+            Assert.True(RunTest("[%+020.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-000000000004{0}20e+01]", sepDecimal), -42));
+            Assert.True(RunTest("[%+020.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-000000000004{0}25e+01]", sepDecimal), -42.545));
+            Assert.True(RunTest("[%+-020.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}20e+01           ]", sepDecimal), -42));
+            Assert.True(RunTest("[%+-020.2e]", String.Format(System.Globalization.CultureInfo.InvariantCulture, "[-4{0}26e+01           ]", sepDecimal), -42.555));
 
             //Console.WriteLine("\n\n");
         }

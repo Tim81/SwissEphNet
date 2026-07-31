@@ -104,7 +104,7 @@ namespace SwissEphNet.Tests
                     if (path == "[ephe]/sedeltat.txt")
                     {
                         var asm = this.GetType().GetAssembly();
-                        String sr = path.Replace("[ephe]", @"SwissEphNet.Tests.files").Replace("/", ".").Replace("\\", ".");
+                        String sr = path.Replace("[ephe]", @"SwissEphNet.Tests.files", StringComparison.Ordinal).Replace("/", ".", StringComparison.Ordinal).Replace("\\", ".", StringComparison.Ordinal);
                         isLoaded = true;
                         return asm.GetManifestResourceStream(sr);
                     }
@@ -563,7 +563,7 @@ namespace SwissEphNet.Tests
             // We adding a lot of lines in 'file' for code coverage purpose
             StringBuilder sb = new StringBuilder(content);
             for (int i = 0; i < 100; i++) {
-                sb.AppendFormat("{0}1231", 2038 + i).AppendLine();
+                sb.AppendFormat(System.Globalization.CultureInfo.InvariantCulture, "{0}1231", 2038 + i).AppendLine();
             }
             content = sb.ToString();
             serr = null;

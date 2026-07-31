@@ -12,7 +12,7 @@ namespace SwissEphNet.Tests
         public static Stream OpenResourceFile(string name)
         {
             var asm = typeof(ResourceFileHelpers).GetAssembly();
-            String sr = $"SwissEphNet.Tests.files.{name}".Replace("/", ".").Replace("\\", ".");
+            String sr = $"SwissEphNet.Tests.files.{name}".Replace("/", ".", StringComparison.Ordinal).Replace("\\", ".", StringComparison.Ordinal);
             return asm.GetManifestResourceStream(sr);
         }
 

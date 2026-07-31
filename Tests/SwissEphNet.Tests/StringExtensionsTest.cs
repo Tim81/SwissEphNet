@@ -9,19 +9,19 @@ namespace SwissEphNet.Tests
         [Fact]
         public void TestContainsChar() {
             String s = null;
-            Assert.False(s?.Contains('a') ?? false);
+            Assert.False(s?.Contains('a', StringComparison.Ordinal) ?? false);
 
-            Assert.False("".Contains('a'));
-            Assert.False("AbCd".Contains('a'));
-            Assert.True("AbCd".Contains('b'));
-            Assert.False("AbCd".Contains('c'));
-            Assert.True("AbCd".Contains('d'));
-            Assert.False("AbCd".Contains('e'));
-            Assert.True("AbCd".Contains('A'));
-            Assert.False("AbCd".Contains('B'));
-            Assert.True("AbCd".Contains('C'));
-            Assert.False("AbCd".Contains('D'));
-            Assert.False("AbCd".Contains('E'));
+            Assert.False("".Contains('a', StringComparison.Ordinal));
+            Assert.False("AbCd".Contains('a', StringComparison.Ordinal));
+            Assert.True("AbCd".Contains('b', StringComparison.Ordinal));
+            Assert.False("AbCd".Contains('c', StringComparison.Ordinal));
+            Assert.True("AbCd".Contains('d', StringComparison.Ordinal));
+            Assert.False("AbCd".Contains('e', StringComparison.Ordinal));
+            Assert.True("AbCd".Contains('A', StringComparison.Ordinal));
+            Assert.False("AbCd".Contains('B', StringComparison.Ordinal));
+            Assert.True("AbCd".Contains('C', StringComparison.Ordinal));
+            Assert.False("AbCd".Contains('D', StringComparison.Ordinal));
+            Assert.False("AbCd".Contains('E', StringComparison.Ordinal));
         }
 
         [Fact]
