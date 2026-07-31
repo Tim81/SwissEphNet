@@ -41,13 +41,37 @@ namespace SwissEphNet
             SweHel = new CPort.SweHel(this);
         }
 
+        private bool _disposed;
+
+        /// <summary>
+        /// Throws <see cref="ObjectDisposedException"/> if this instance has already been
+        /// disposed. Every public member that reaches into the ported library does so
+        /// through one of the nine internal component properties below, plus
+        /// <see cref="LoadFile"/> and <see cref="Trace"/> -- calling this from those spots
+        /// covers the whole surface without having to guard all 455 public members
+        /// individually. A handful of pure-formatting helpers (e.g. swe_dotnet_version(),
+        /// which only reads this assembly's own reflection metadata) never touch a
+        /// component property and so are unaffected by disposal, which is harmless: they
+        /// carry no library state to be stale.
+        /// </summary>
+        private void ThrowIfDisposed() {
+            if (_disposed)
+                throw new ObjectDisposedException(GetType().FullName);
+        }
+
         /// <summary>
         /// Internal release resources
         /// </summary>
         protected virtual void Dispose(bool disposing) {
+            if (_disposed) return;
             if (disposing) {
+                // swe_close() routes through the Sweph property below; call it before
+                // _disposed is set so that property's own ThrowIfDisposed() does not fire.
                 swe_close();
+                OnTrace = null;
+                OnLoadFile = null;
             }
+            _disposed = true;
         }
 
         /// <summary>
@@ -55,6 +79,7 @@ namespace SwissEphNet
         /// </summary>
         public void Dispose() {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         #endregion
@@ -65,6 +90,7 @@ namespace SwissEphNet
         /// Trace information
         /// </summary>
         public void Trace(String format, params object[] args) {
+            ThrowIfDisposed();
             var h = OnTrace;
             if (h != null) {
                 String message = args != null ? C.sprintf(format, args) : format;
@@ -87,6 +113,7 @@ namespace SwissEphNet
         /// <param name="filename">File name</param>
         /// <returns>File loaded or null if file not found</returns>
         internal protected CFile LoadFile(String filename) {
+            ThrowIfDisposed();
             var h = OnLoadFile;
             if (h != null) {
                 var e = new LoadFileEventArgs(filename) { Encoding = DefaultEncoding };
@@ -101,50 +128,60 @@ namespace SwissEphNet
 
         #region Internals
 
+        private CPort.Sweph _sweph;
+        private CPort.SweJPL _sweJPL;
+        private CPort.SwephLib _swephLib;
+        private CPort.SwemMoon _swemMoon;
+        private CPort.SwemPlan _swemPlan;
+        private CPort.SweDate _sweDate;
+        private CPort.SweHouse _sweHouse;
+        private CPort.SweCL _sweCL;
+        private CPort.SweHel _sweHel;
+
         /// <summary>
         /// Sweph
         /// </summary>
-        internal CPort.Sweph Sweph { get; private set; }
+        internal CPort.Sweph Sweph { get { ThrowIfDisposed(); return _sweph; } private set { _sweph = value; } }
 
         /// <summary>
         /// SweJPL
         /// </summary>
-        internal CPort.SweJPL SweJPL { get; private set; }
+        internal CPort.SweJPL SweJPL { get { ThrowIfDisposed(); return _sweJPL; } private set { _sweJPL = value; } }
 
         /// <summary>
         /// SwephLib
         /// </summary>
-        internal CPort.SwephLib SwephLib { get; private set; }
+        internal CPort.SwephLib SwephLib { get { ThrowIfDisposed(); return _swephLib; } private set { _swephLib = value; } }
 
         /// <summary>
         /// SwemMoon
         /// </summary>
-        internal CPort.SwemMoon SwemMoon { get; private set; }
+        internal CPort.SwemMoon SwemMoon { get { ThrowIfDisposed(); return _swemMoon; } private set { _swemMoon = value; } }
 
         /// <summary>
-        /// SwemPlan 
+        /// SwemPlan
         /// </summary>
-        internal CPort.SwemPlan SwemPlan { get; private set; }
+        internal CPort.SwemPlan SwemPlan { get { ThrowIfDisposed(); return _swemPlan; } private set { _swemPlan = value; } }
 
         /// <summary>
         /// SweDate
         /// </summary>
-        internal CPort.SweDate SweDate { get; private set; }
+        internal CPort.SweDate SweDate { get { ThrowIfDisposed(); return _sweDate; } private set { _sweDate = value; } }
 
         /// <summary>
         /// SweHouse
         /// </summary>
-        internal CPort.SweHouse SweHouse { get; private set; }
+        internal CPort.SweHouse SweHouse { get { ThrowIfDisposed(); return _sweHouse; } private set { _sweHouse = value; } }
 
         /// <summary>
         /// SweCL
         /// </summary>
-        internal CPort.SweCL SweCL { get; private set; }
+        internal CPort.SweCL SweCL { get { ThrowIfDisposed(); return _sweCL; } private set { _sweCL = value; } }
 
         /// <summary>
         /// SweHel
         /// </summary>
-        internal CPort.SweHel SweHel { get; private set; }
+        internal CPort.SweHel SweHel { get { ThrowIfDisposed(); return _sweHel; } private set { _sweHel = value; } }
 
         #endregion
 
