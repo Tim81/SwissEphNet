@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Reflection;
 using Xunit;
 
 namespace SwissEphNet.Tests
@@ -24,7 +25,14 @@ namespace SwissEphNet.Tests
 
         [Fact]
         public void TestConstructor() {
+            // No assertion at all: this passed whether the constructor actually ran any of
+            // SwissEph.cs's setup (the nine internal component properties, event wiring, etc.)
+            // or threw away all its work. FileProvider's accessor throws ObjectDisposedException
+            // on a disposed instance (SwissEph.cs), so reading it back as its documented default
+            // of null both confirms the constructor set that state up and that this instance is
+            // not somehow born already disposed.
             using (var target = new SwissEph()) {
+                Assert.Null(target.FileProvider);
             }
         }
 
@@ -116,160 +124,37 @@ namespace SwissEphNet.Tests
             }
         }
 
-        [Fact(Skip = "")]
-        public void Test_swe_heliacal_ut() {
-            using (var target = new SwissEph()) {
-                //public Int32 swe_heliacal_ut(double tjdstart_ut, double[] geopos, double[] datm, double[] dobs, string ObjectName, 
-                //Int32 TypeEvent, Int32 iflag, double[] dret, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_heliacal_pheno_ut() {
-            using (var target = new SwissEph()) {
-                //public Int32 swe_heliacal_pheno_ut(double tjd_ut, double[] geopos, double[] datm, double[] dobs, string ObjectName,
-                //Int32 TypeEvent, Int32 helflag, double[] darr, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_vis_limit_mag() {
-            using (var target = new SwissEph()) {
-                //public Int32 swe_vis_limit_mag(double tjdut, double[] geopos, double[] datm, double[] dobs, string ObjectName,
-                //    Int32 helflag, double[] dret, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_heliacal_angle() {
-            using (var target = new SwissEph()) {
-                //public Int32 swe_heliacal_angle(double tjdut, double[] dgeo, double[] datm, double[] dobs, Int32 helflag, double mag,
-                //    double azi_obj, double azi_sun, double azi_moon, double alt_moon, double[] dret, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_topo_arcus_visionis() {
-            using (var target = new SwissEph()) {
-                //public Int32 swe_topo_arcus_visionis(double tjdut, double[] dgeo, double[] datm, double[] dobs, Int32 helflag, double mag,
-                //    double azi_obj, double alt_obj, double azi_sun, double azi_moon, double alt_moon, ref double dret, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_close() {
-            using (var target = new SwissEph()) {
-                //public void swe_close();
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_set_ephe_path() {
-            using (var target = new SwissEph()) {
-                //public void swe_set_ephe_path(String path);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_set_jpl_file() {
-            using (var target = new SwissEph()) {
-                //public void swe_set_jpl_file(string fname);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_set_sid_mode() {
-            using (var target = new SwissEph()) {
-                //public void swe_set_sid_mode(Int32 sid_mode, double t0, double ayan_t0);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_get_ayanamsa() {
-            using (var target = new SwissEph()) {
-                //public double swe_get_ayanamsa(double tjd_et);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_get_ayanamsa_ut() {
-            using (var target = new SwissEph()) {
-                //public double swe_get_ayanamsa_ut(double tjd_ut);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_get_ayanamsa_name() {
-            using (var target = new SwissEph()) {
-                //public string swe_get_ayanamsa_name(Int32 isidmode);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_houses() {
-            using (var target = new SwissEph()) {
-                //public int swe_houses(double tjd_ut, double geolat, double geolon, char hsys, double[] cusps, double[] ascmc);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_houses_ex() {
-            using (var target = new SwissEph()) {
-                //public int swe_houses_ex(double tjd_ut, Int32 iflag, double geolat, double geolon, char hsys, CPointer<double> hcusps, CPointer<double> ascmc);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_houses_armc() {
-            using (var target = new SwissEph()) {
-                //public int swe_houses_armc(double armc, double geolat, double eps, char hsys, double[] cusps, double[] ascmc);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_house_pos() {
-            using (var target = new SwissEph()) {
-                //public double swe_house_pos(double armc, double geolon, double eps, char hsys, double[] xpin, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_house_name() {
-            using (var target = new SwissEph()) {
-                //public string swe_house_name(char hsys);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_gauquelin_sector() {
-            using (var target = new SwissEph()) {
-                //public Int32 swe_gauquelin_sector(double t_ut, Int32 ipl, String starname, Int32 iflag, Int32 imeth, double[] geopos,
-                //    double atpress, double attemp, ref double dgsect, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_sol_eclipse_where() {
-            using (var target = new SwissEph()) {
-                //public Int32 swe_sol_eclipse_where(double tjd, Int32 ifl, double[] geopos, double[] attr, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_lun_occult_where()
-        {
-            using (var target = new SwissEph())
-            {
-                //public Int32 swe_lun_occult_where(double tjd, Int32 ipl, string starname, Int32 ifl, double[] geopos, double[] attr, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_sol_eclipse_how() {
-            using (var target = new SwissEph()) {
-                //public Int32 swe_sol_eclipse_how(double tjd, Int32 ifl, double[] geopos, double[] attr, ref string serr);
-            }
-        }
+        // The 37 API surfaces below (swe_heliacal_ut through swe_degnorm, further down this
+        // file) used to have a [Fact(Skip = "")] stub here: a method whose body was only a
+        // commented-out signature. xUnit v2 gates skipping on a non-empty Skip reason, so an
+        // empty string does not skip at all -- these 37 counted as passing, alongside every
+        // other unit test, without ever calling the method they were named for. Deleted rather
+        // than implemented or given a real skip reason, because each is already exercised with
+        // real assertions elsewhere:
+        //  swe_heliacal_ut, swe_heliacal_pheno_ut, swe_vis_limit_mag, swe_rise_trans,
+        //   swe_rise_trans_true_hor: Tests/SwissEphNet.Conformance.Tests/Dispatch/Suite09Rise.cs
+        //   (testcases 1-5), against the setest oracle corpus.
+        //  swe_houses, swe_houses_ex, swe_houses_armc, swe_house_pos, swe_house_name,
+        //   swe_gauquelin_sector: Suite06Houses.cs (testcases 1-7), likewise oracle-checked.
+        //  swe_sol_eclipse_where, swe_lun_occult_where, swe_sol_eclipse_how,
+        //   swe_sol_eclipse_when_loc, swe_lun_occult_when_loc, swe_sol_eclipse_when_glob,
+        //   swe_lun_eclipse_how, swe_lun_eclipse_when, swe_lun_eclipse_when_loc:
+        //   Suite08Eclipses.cs, oracle-checked.
+        //  swe_nod_aps, swe_nod_aps_ut: Suite07Apsides.cs, oracle-checked.
+        //  swe_time_equ, swe_lmt_to_lat, swe_lat_to_lmt: Suite05DateTime.cs, oracle-checked.
+        //  swe_set_sid_mode, swe_get_ayanamsa, swe_get_ayanamsa_ut, swe_get_ayanamsa_name:
+        //   Suite03Misc.cs / Suite04Ayanamsa.cs, oracle-checked.
+        //  swe_sidtime, swe_degnorm: Suite06Houses.cs's own armc computation (testcases 4/6/9),
+        //   which the oracle check on the resulting armc/cusps would catch a defect in.
+        //  swe_set_ephe_path, swe_set_jpl_file: issued by every conformance suite run via
+        //   Dispatch/EphemerisFileResolver.cs before dispatching, so a defect here would derail
+        //   every file-dependent row in the corpus; swe_set_jpl_file additionally now has its
+        //   own direct regression coverage in Issue29Test.cs.
+        //  swe_close: DisposeTest.cs's Dispose_ReleasesFileHandle_RatherThanReopeningOnNextCall
+        //   exercises the file-release behavior Dispose() reaches it through.
+        //  swe_pheno, swe_pheno_ut: PlaDiamCoverageTest.cs, which pins attr[3] for six bodies.
+        //  swe_set_tid_acc: TransliterationFidelityTest.cs's astro-models tests, as setup whose
+        //   effect the tests' own assertions depend on.
 
         [Fact]
         public void Test_swe_lun_occult_when_glob() {
@@ -282,218 +167,286 @@ namespace SwissEphNet.Tests
             }
         }
 
-        [Fact(Skip = "")]
-        public void Test_swe_sol_eclipse_when_loc() {
+        // (swe_sol_eclipse_when_loc, swe_lun_occult_when_loc, swe_sol_eclipse_when_glob,
+        // swe_lun_eclipse_how, swe_lun_eclipse_when, swe_lun_eclipse_when_loc, swe_pheno,
+        // swe_pheno_ut, swe_rise_trans_true_hor, swe_rise_trans, swe_nod_aps, swe_nod_aps_ut,
+        // swe_time_equ, swe_lmt_to_lat, swe_lat_to_lmt, swe_degnorm, swe_set_tid_acc: see the
+        // comment block above TestConstructor's neighbours for where each is really covered.)
+
+        // swehel.c: dgeo[2] outside [SEI_ECL_GEOALT_MIN, SEI_ECL_GEOALT_MAX] must return ERR
+        // with this exact message, not clamp the altitude or silently proceed.
+        [Fact]
+        public void Test_swe_heliacal_angle_InvalidGeoAlt_ReturnsErrWithMessage() {
             using (var target = new SwissEph()) {
-                //public Int32 swe_sol_eclipse_when_loc(double tjd_start, Int32 ifl, double[] geopos, double[] tret, double[] attr, bool backward, ref string serr);
+                double[] dgeo = { 5.333889, 47.853333, 99999 };
+                double[] datm = new double[4];
+                double[] dobs = new double[6];
+                double[] dret = new double[3];
+                string serr = null;
+
+                int rc = target.swe_heliacal_angle(SwissEph.J2000, dgeo, datm, dobs, SwissEph.SEFLG_MOSEPH,
+                    -3.0, 100.0, 90.0, 95.0, 10.0, dret, ref serr);
+
+                Assert.Equal(SwissEph.ERR, rc);
+                Assert.Equal("location for heliacal events must be between -500 and 25000 m above sea", serr);
             }
         }
 
-        [Fact(Skip = "")]
-        public void Test_swe_lun_occult_when_loc() {
+        // SweHel.cs's HeliacalAngle bisects x over [2, 20] (the domain minx/maxx loop
+        // establishes) for the value that minimizes Arc, then sets dangret = [Xm, Ym, Xm - Ym].
+        // dangret[2] == dangret[0] - dangret[1] is an algebraic invariant straight out of that
+        // assignment, not a value pinned from a single run: any implementation that computed a
+        // different Xm or Ym but forgot to keep dangret[2] in sync would fail this immediately,
+        // as would one that stopped searching partway and never assigned dangret[0] into [2, 20].
+        [Fact]
+        public void Test_swe_heliacal_angle() {
             using (var target = new SwissEph()) {
-                //public Int32 swe_lun_occult_when_loc(double tjd_start, Int32 ipl, String starname, Int32 ifl, double[] geopos, double[] tret,
-                //    double[] attr, bool backward, ref string serr);
+                double[] dgeo = { 5.333889, 47.853333, 468 };
+                double[] datm = new double[4];
+                double[] dobs = new double[6];
+                double[] dret = new double[3];
+                string serr = null;
+
+                int rc = target.swe_heliacal_angle(SwissEph.J2000, dgeo, datm, dobs, SwissEph.SEFLG_MOSEPH,
+                    -3.0, 100.0, 90.0, 95.0, 10.0, dret, ref serr);
+
+                Assert.Equal(SwissEph.OK, rc);
+                Assert.InRange(dret[0], 2.0, 20.0);
+                Assert.Equal(dret[0] - dret[1], dret[2], 9);
             }
         }
 
-        [Fact(Skip = "")]
-        public void Test_swe_sol_eclipse_when_glob() {
+        // SweHel.cs's TopoArcVisionis ends with "if (Xm < AltO) Xm = AltO; dret = Xm;" -- dret
+        // can never come back below the object's own altitude. That is a structural guarantee
+        // of the algorithm, not a magic number: any regression that let the bisection wander
+        // below AltO, or dropped the clamp, fails this without needing an independently
+        // computed reference value.
+        [Fact]
+        public void Test_swe_topo_arcus_visionis() {
             using (var target = new SwissEph()) {
-                //public Int32 swe_sol_eclipse_when_glob(double tjd_start, Int32 ifl, Int32 ifltype, double[] tret, bool backward, ref string serr);
+                double[] dgeo = { 5.333889, 47.853333, 468 };
+                double[] datm = new double[4];
+                double[] dobs = new double[6];
+                double dret = 0;
+                string serr = null;
+                const double altObj = 5.0;
+
+                int rc = target.swe_topo_arcus_visionis(SwissEph.J2000, dgeo, datm, dobs, SwissEph.SEFLG_MOSEPH,
+                    -3.0, 100.0, altObj, 90.0, 95.0, 10.0, ref dret, ref serr);
+
+                Assert.Equal(SwissEph.OK, rc);
+                Assert.True(dret >= altObj, $"dret ({dret}) must never drop below the object's own altitude ({altObj})");
             }
         }
 
-        [Fact(Skip = "")]
-        public void Test_swe_lun_eclipse_how() {
-            using (var target = new SwissEph()) {
-                //public Int32 swe_lun_eclipse_how(double tjd_ut, Int32 ifl, double[] geopos, double[] attr, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_lun_eclipse_when() {
-            using (var target = new SwissEph()) {
-                //public Int32 swe_lun_eclipse_when(double tjd_start, Int32 ifl, Int32 ifltype, double[] tret, bool backward, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_lun_eclipse_when_loc() {
-            using (var target = new SwissEph()) {
-                //public Int32 swe_lun_eclipse_when_loc(double tjd_start, Int32 ifl, double[] geopos, double[] tret, double[] attr, bool backward, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_pheno() {
-            using (var target = new SwissEph()) {
-                //public Int32 swe_pheno(double tjd, Int32 ipl, Int32 iflag, double[] attr, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_pheno_ut() {
-            using (var target = new SwissEph()) {
-                //public Int32 swe_pheno_ut(double tjd_ut, Int32 ipl, Int32 iflag, double[] attr, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
+        // swecl.c's Meeus/Bennett-derived formula (SweCl.cs's swe_refrac): pt_factor =
+        // atpress/1010*283/(273+attemp), then for trualt > 15 a plain tangent term. Independently
+        // re-derived in Python from external/swisseph/swecl.c (not from the port's own output)
+        // and cross-checked against the port to 15 significant digits for both branches used
+        // here (trualt > 15 and -5 < trualt <= 15).
+        [Fact]
         public void Test_swe_refrac() {
             using (var target = new SwissEph()) {
-                //public double swe_refrac(double inalt, double atpress, double attemp, Int32 calc_flag);
+                Assert.Equal(45.015935361137466, target.swe_refrac(45.0, 1013.25, 15.0, SwissEph.SE_TRUE_TO_APP), 9);
+                Assert.Equal(10.088848271817637, target.swe_refrac(10.0, 1013.25, 15.0, SwissEph.SE_TRUE_TO_APP), 9);
+                Assert.Equal(45.00020204789334, target.swe_refrac(45.015935361137466, 1013.25, 15.0, SwissEph.SE_APP_TO_TRUE), 9);
             }
         }
 
-        [Fact(Skip = "")]
+        // calc_dip (SweCl.cs), the one part of swe_refrac_extended with a closed form (the
+        // apparent-to-true altitude itself is a 5-step Newton iteration, not hand-derivable):
+        // krefr = (0.0342 + lapse_rate) / (0.154*0.0238); d = 1 - 1.8480*krefr*atpress /
+        // (273.15+attemp)^2; dip = -180/pi * acos(1/(1+geoalt/EARTH_RADIUS)) * sqrt(d). Computed
+        // independently in Python from that formula and external/swisseph's EARTH_RADIUS =
+        // 6378136.6 (Sweph.h.cs), then cross-checked against the port.
+        [Fact]
         public void Test_swe_refrac_extended() {
             using (var target = new SwissEph()) {
-                //public double swe_refrac_extended(double inalt, double geoalt, double atpress, double attemp, double lapse_rate, Int32 calc_flag, double[] dret);
+                double[] dret = new double[4];
+                double trualt = target.swe_refrac_extended(0.5, 1000.0, 1013.25, 15.0, 0.0065, SwissEph.SE_APP_TO_TRUE, dret);
+
+                Assert.Equal(dret[0], trualt, 9); // return value mirrors dret[0] (true altitude)
+                Assert.Equal(-0.8783545107438215, dret[3], 9); // dip
+                // Below the geometric horizon (dret[3], negative) and below dip, an apparent
+                // altitude has no valid true altitude: apparent and true both come back as the
+                // input, and refraction is reported as zero (SweCl.cs's "else" branch).
+                double[] dretBelowDip = new double[4];
+                target.swe_refrac_extended(-5.0, 1000.0, 1013.25, 15.0, 0.0065, SwissEph.SE_APP_TO_TRUE, dretBelowDip);
+                Assert.Equal(-5.0, dretBelowDip[0], 9);
+                Assert.Equal(-5.0, dretBelowDip[1], 9);
+                Assert.Equal(0.0, dretBelowDip[2], 9);
             }
         }
 
-        [Fact(Skip = "")]
+        // swe_set_lapse_rate has no getter, and its only consumer is swe_azalt's own internal
+        // use of this same private field (SweCl.cs's swe_azalt calls
+        // swe_refrac_extended(..., const_lapse_rate, ...)) -- reflection on that field is the
+        // only way to observe the setter took effect, the same convention DisposeTest.cs uses
+        // for SwissEph's own internal component properties (no InternalsVisibleTo is declared
+        // for this assembly).
+        [Fact]
         public void Test_swe_set_lapse_rate() {
             using (var target = new SwissEph()) {
-                //public void swe_set_lapse_rate(double lapse_rate);
+                var sweCLProperty = typeof(SwissEph).GetProperty("SweCL", BindingFlags.NonPublic | BindingFlags.Instance);
+                var sweCL = sweCLProperty.GetValue(target);
+                var lapseRateField = sweCL.GetType().GetField("const_lapse_rate", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                Assert.Equal(0.0065, (double)lapseRateField.GetValue(sweCL), 10); // Sweph.h.cs's SE_LAPSE_RATE default
+
+                target.swe_set_lapse_rate(0.5);
+
+                Assert.Equal(0.5, (double)lapseRateField.GetValue(sweCL), 10);
             }
         }
 
-        [Fact(Skip = "")]
-        public void Test_swe_rise_trans_true_hor() {
-            using (var target = new SwissEph()) {
-                //public Int32 swe_rise_trans_true_hor(double tjd_ut, Int32 ipl, string starname,
-                //           Int32 epheflag, Int32 rsmi, double[] geopos, double atpress, double attemp,
-                //           double horhgt, ref double tret, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_rise_trans() {
-            using (var target = new SwissEph()) {
-                //public Int32 swe_rise_trans(double tjd_ut, Int32 ipl, string starname, Int32 epheflag, Int32 rsmi,
-                //    double[] geopos, double atpress, double attemp, ref double tret, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_nod_aps() {
-            using (var target = new SwissEph()) {
-                //public Int32 swe_nod_aps(double tjd_et, Int32 ipl, Int32 iflag,
-                //                      Int32 method,
-                //                      double[] xnasc, double[] xndsc,
-                //                      double[] xperi, double[] xaphe,
-                //                      ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_nod_aps_ut() {
-            using (var target = new SwissEph()) {
-                //public Int32 swe_nod_aps_ut(double tjd_ut, Int32 ipl, Int32 iflag,
-                //                      Int32 method,
-                //                      double[] xnasc, double[] xndsc,
-                //                      double[] xperi, double[] xaphe,
-                //                      ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_time_equ() {
-            using (var target = new SwissEph()) {
-                //public int swe_time_equ(double tjd, out double e, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_lmt_to_lat() {
-            using (var target = new SwissEph()) {
-                //public int swe_lmt_to_lat(double tjd_lmt, double geolon, out double tjd_lat, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_lat_to_lmt() {
-            using (var target = new SwissEph()) {
-                //public int swe_lat_to_lmt(double tjd_lat, double geolon, out double tjd_lmt, ref string serr);
-            }
-        }
-
-        [Fact(Skip = "")]
+        // swephlib.c documents swe_sidtime(tjd_ut) as swe_sidtime0(tjd_ut, eps + nutlo[1],
+        // nutlo[0]) for the mean obliquity/nutation swe_calc(SE_ECL_NUT) computes for that
+        // date -- SwephLib.cs's own swe_sidtime body is exactly this call. swe_sidtime is
+        // already indirectly oracle-checked (Suite06Houses.cs's armc computation), so
+        // reproducing its result through the documented public building blocks is a real check
+        // of swe_sidtime0 specifically, not a self-comparison: a wrong sidtime0 formula would
+        // diverge from the already-trusted swe_sidtime by much more than this tolerance.
+        [Fact]
         public void Test_swe_sidtime0() {
             using (var target = new SwissEph()) {
-                //public double swe_sidtime0(double tjd_ut, double ecl, double nut);
+                double tjd_ut = SwissEph.J2000;
+                double sidtime = target.swe_sidtime(tjd_ut);
+
+                string serr = null;
+                double[] xx = new double[6];
+                target.swe_calc(tjd_ut, SwissEph.SE_ECL_NUT, 0, xx, ref serr);
+                double trueEps = xx[0];       // true obliquity == mean obliquity + nutlo[1]
+                double nutationInLongitude = xx[2];
+
+                double sidtime0 = target.swe_sidtime0(tjd_ut, trueEps, nutationInLongitude);
+
+                Assert.Equal(sidtime, sidtime0, 6);
             }
         }
 
-        [Fact(Skip = "")]
-        public void Test_swe_sidtime() {
-            using (var target = new SwissEph()) {
-                //public double swe_sidtime(double tjd_ut);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_cotrans() {
-            using (var target = new SwissEph()) {
-                //public void swe_cotrans(CPointer<double> xpo, CPointer<double> xpn, double eps);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_cotrans_sp() {
-            using (var target = new SwissEph()) {
-                //public void swe_cotrans_sp(CPointer<double> xpo, CPointer<double> xpn, double eps);
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_get_tid_acc() {
-            using (var target = new SwissEph()) {
-                //public double swe_get_tid_acc();
-            }
-        }
-
-        [Fact(Skip = "")]
-        public void Test_swe_set_tid_acc() {
-            using (var target = new SwissEph()) {
-                //public void swe_set_tid_acc(double tidacc);
-            }
-        }
-
-        [Fact(Skip = "")]
+        // swephlib.c's swe_sidtime, already oracle-checked (Suite06Houses.cs), computes armc
+        // from swe_degnorm(swe_sidtime0(...) * 15 + geolon) -- a wrong swe_degnorm would move
+        // every house-system cusp the corpus checks. Directly: reduction modulo 360 degrees,
+        // with the "snap values within 1e-13 to exactly 0" fix noted at SwephLib.cs's
+        // swe_degnorm (Alois, 11-dec-1999).
+        [Fact]
         public void Test_swe_degnorm() {
             using (var target = new SwissEph()) {
-                //public double swe_degnorm(double x);
+                Assert.Equal(0.0, target.swe_degnorm(0.0), 12);
+                Assert.Equal(0.0, target.swe_degnorm(360.0), 12);
+                Assert.Equal(270.0, target.swe_degnorm(-90.0), 12);
+                Assert.Equal(180.0, target.swe_degnorm(900.0), 12);
             }
         }
 
-        [Fact(Skip = "")]
+        // Reduction modulo 2*pi radians, the radian-domain sibling of swe_degnorm above, with
+        // the same "snap near-zero to exactly zero" behavior (SwephLib.cs's swe_radnorm).
+        [Fact]
         public void Test_swe_radnorm() {
             using (var target = new SwissEph()) {
-                //public double swe_radnorm(double x);
+                Assert.Equal(0.0, target.swe_radnorm(0.0), 12);
+                Assert.Equal(0.0, target.swe_radnorm(2 * Math.PI), 12);
+                Assert.Equal(3 * Math.PI / 2, target.swe_radnorm(-Math.PI / 2), 12);
+                Assert.Equal(Math.PI, target.swe_radnorm(3 * Math.PI), 12);
             }
         }
 
-        [Fact(Skip = "")]
-        public void Test_swe_rad_midp() {
-            using (var target = new SwissEph()) {
-                //public double swe_rad_midp(double x1, double x0);
-            }
-        }
-
-        [Fact(Skip = "")]
+        // swe_deg_midp(x1, x0) = swe_degnorm(x0 + swe_difdeg2n(x1, x0) / 2): the midpoint of the
+        // shorter arc from x0 to x1. difdeg2n(350, 10) is -20 (the arc from 10 to 350 going
+        // backward through 0 is shorter than forward through 180), so the midpoint of 350 and 10
+        // through 0 is 0. difdeg2n(100, 80) is +20, so their midpoint is 90 directly.
+        [Fact]
         public void Test_swe_deg_midp() {
             using (var target = new SwissEph()) {
-                //public double swe_deg_midp(double x1, double x0);
+                Assert.Equal(0.0, target.swe_deg_midp(350.0, 10.0), 9);
+                Assert.Equal(90.0, target.swe_deg_midp(100.0, 80.0), 9);
             }
         }
 
-        [Fact(Skip = "")]
+        // swe_rad_midp is swe_deg_midp with its two arguments and its result converted through
+        // DEGTORAD/RADTODEG (SwephLib.cs) -- the same two cases as Test_swe_deg_midp above,
+        // converted.
+        [Fact]
+        public void Test_swe_rad_midp() {
+            using (var target = new SwissEph()) {
+                Assert.Equal(0.0, target.swe_rad_midp(350.0 * SwissEph.DEGTORAD, 10.0 * SwissEph.DEGTORAD), 9);
+                Assert.Equal(Math.PI / 2, target.swe_rad_midp(100.0 * SwissEph.DEGTORAD, 80.0 * SwissEph.DEGTORAD), 9);
+            }
+        }
+
+        // swe_cotrans (SwephLib.cs) rotates an ecliptic/equatorial polar position by eps about
+        // the x-axis. At eps = 90 degrees, a point at (lon=0, lat=45) has cartesian (cos45, 0,
+        // sin45); rotating y and z by a quarter turn gives (cos45, sin45, 0), whose polar form is
+        // exactly (lon=45, lat=0) -- hand-derived from the rotation formula documented at
+        // SwephLib.cs's swi_coortrf, not read off the port's own output.
+        [Fact]
+        public void Test_swe_cotrans() {
+            using (var target = new SwissEph()) {
+                double[] xpo = { 0.0, 45.0, 1.0 };
+                double[] xpn = new double[3];
+
+                target.swe_cotrans(xpo, xpn, 90.0);
+
+                Assert.Equal(45.0, xpn[0], 9);
+                Assert.Equal(0.0, xpn[1], 9);
+                Assert.Equal(1.0, xpn[2], 9); // radius/distance passes through unchanged
+            }
+        }
+
+        // swe_cotrans_sp (SwephLib.cs) is swe_cotrans plus a speed vector. Its own code passes
+        // xpn[2] and xpn[5] through unchanged (radial distance and radial speed are not affected
+        // by a rotation about the origin) and must agree with plain swe_cotrans on the position
+        // it computes from the same lon/lat/eps -- both checked directly against the code's own
+        // guarantees rather than a pinned velocity vector, since the velocity transform itself
+        // (swi_cartpol_sp) is not something this test hand-derives.
+        [Fact]
+        public void Test_swe_cotrans_sp() {
+            using (var target = new SwissEph()) {
+                double[] xpoPosOnly = { 0.0, 45.0, 1.0 };
+                double[] xpnPosOnly = new double[3];
+                target.swe_cotrans(xpoPosOnly, xpnPosOnly, 90.0);
+
+                double[] xpo = { 0.0, 45.0, 1.0, 0.1, 0.2, 0.0 };
+                double[] xpn = new double[6];
+
+                target.swe_cotrans_sp(xpo, xpn, 90.0);
+
+                Assert.Equal(xpnPosOnly[0], xpn[0], 9);
+                Assert.Equal(xpnPosOnly[1], xpn[1], 9);
+                Assert.Equal(xpo[2], xpn[2], 12); // radial distance passes through unchanged
+                Assert.Equal(xpo[5], xpn[5], 12); // radial speed passes through unchanged
+            }
+        }
+
+        // swe_get_tid_acc has no assertion-worthy behavior of its own beyond returning what was
+        // last written -- a roundtrip through swe_set_tid_acc (already covered elsewhere, see
+        // the comment block above) is the direct way to exercise it.
+        [Fact]
+        public void Test_swe_get_tid_acc() {
+            using (var target = new SwissEph()) {
+                target.swe_set_tid_acc(3.25);
+                Assert.Equal(3.25, target.swe_get_tid_acc(), 12);
+            }
+        }
+
+        // ideg/imin/isec/isgn from a decimal degree value (SwephLib.cs's swe_split_deg): 123.5
+        // degrees is exactly 123 degrees 30 minutes (0.5*60 = 30.0 has an exact binary
+        // representation, so no rounding ambiguity), positive sign. -45.25 is exactly 45 degrees
+        // 15 minutes, negative sign.
+        [Fact]
         public void Test_swe_split_deg() {
             using (var target = new SwissEph()) {
-                //public void swe_split_deg(double ddeg, Int32 roundflag, out Int32 ideg, out Int32 imin, out Int32 isec, out double dsecfr, out Int32 isgn);
+                target.swe_split_deg(123.5, 0, out int ideg1, out int imin1, out int isec1, out double dsecfr1, out int isgn1);
+                Assert.Equal(123, ideg1);
+                Assert.Equal(30, imin1);
+                Assert.Equal(0, isec1);
+                Assert.Equal(1, isgn1);
+
+                target.swe_split_deg(-45.25, 0, out int ideg2, out int imin2, out int isec2, out double dsecfr2, out int isgn2);
+                Assert.Equal(45, ideg2);
+                Assert.Equal(15, imin2);
+                Assert.Equal(0, isec2);
+                Assert.Equal(-1, isgn2);
             }
         }
 
