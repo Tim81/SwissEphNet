@@ -8,19 +8,20 @@ name: Oracle build gates
 # .NOTES section, written when nothing here exercised them. This workflow is what makes that
 # statement go stale.
 #
-# A fifth job, header-flags-check, builds nothing and is not part of that four -- it is a
+# A sixth job, header-flags-check, builds nothing and is not part of that five -- it is a
 # self-check on this file's own header comment below, not on Astrodienst's C.
 #
 # The submodule checkout below (sparse, cached on the pinned commit SHA) is copied from
 # .github/workflows/conformance.yml rather than rebuilt from scratch, cache key included, so a
 # job in either file restores the same cache entry and one clone serves both files.
 #
-# Two of the four jobs compare something built on the runner against something else also built
+# Two of the five jobs compare something built on the runner against something else also built
 # or installed on the runner (MSVC C against .NET; MSVC C against pyswisseph), so a disagreement
 # means the same thing on any machine that runs this file and gates the same way conformance.yml
 # and baseline.yml's Windows leg do.
 #
-# Three of the four (crt-parity, c-reference-validate, oracle-dump) gate end to end: every step,
+# Four of the five (crt-parity, c-reference-validate, oracle-dump, macos-exactness) gate end to
+# end: every step,
 # comparison included, is a hard failure. oracle-dump used to be the exception -- its comparison
 # step against Tests/oracle/known-diff*.tsv carried continue-on-error, on the theory that a
 # different MSVC minor version on a future windows-latest image could move the C side's printed
@@ -46,7 +47,7 @@ name: Oracle build gates
 # it is and why.
 on:
   # push is listed for the same reason ci.yml and baseline.yml list it: without it a direct push,
-  # to main included, ran none of these four jobs, so the bit-exactness comparison this whole
+  # to main included, ran none of these five jobs, so the bit-exactness comparison this whole
   # workflow exists for was absent from exactly the path that skips review. The submodule and
   # 2.08 sdist caches plus the cancel-in-progress concurrency group below keep the repeat cost
   # down; a re-run that hits both caches skips the two slowest steps entirely.
@@ -504,3 +505,125 @@ jobs:
         shell: pwsh
         continue-on-error: true
         run: pwsh scripts/verify-swetest-diff.ps1
+
+  # Gate, and the only job here that is not Windows. It answers a question none of the others
+  # can: does the port reproduce Astrodienst's C on a platform whose libm is neither ucrtbase
+  # nor glibc? macOS is the only runner that provides Apple's libSystem, and ci.yml's own
+  # comment records that its ubuntu-24.04-arm leg buys arm64 coverage while deliberately
+  # trading libSystem away as unmeasured. This measures it.
+  #
+  # The comparison is port-against-C on this same machine, not against the Windows baseline.
+  # Two platforms do not produce the same numbers and cannot be made to: Math.Sin binds to
+  # whatever libm the platform provides, at run time. What is portable is the claim that the
+  # port computes the identical bits the C does, from the identical inputs, wherever it runs.
+  # That has been measured on Windows (MSVC, ucrtbase) and Linux x64 (gcc, glibc); this adds
+  # macOS arm64 (clang, libSystem).
+  #
+  # -ffp-contract=off is not optional here, and this is the one place it bites. Base x86-64 has
+  # no FMA3, so the Linux x64 build cannot contract even at plain -O2 and needs no flag. arm64
+  # has fmadd in the base instruction set and clang contracts by default, which changes results:
+  # measured on aarch64/gcc 13.3.0, `a*b - p` where p is the rounded product of a and b gives
+  # 2.3978347948343523e-17 contracted and exactly 0 with contraction off. This port never
+  # contracts -- RyuJIT emits FMA only for an explicit Math.FusedMultiplyAdd, which the port
+  # never calls -- so a contracted C reference would differ from it for a reason that has
+  # nothing to do with the port. Assert-NoFma below is the same discipline
+  # Tools/CReference/build-c.ps1's Assert-NoFmaContraction applies to the MSVC build.
+  macos-exactness:
+    name: "Gate: port matches the C reference on macOS arm64 (Apple libSystem)"
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assert the pinned submodule SHA matches the gitlink
+        shell: bash
+        run: |
+          pinned=af9823fe7b06ffefe3d3968fdc5680be8b5eec5f
+          actual=$(git ls-tree HEAD external/swisseph | awk '{print $3}')
+          if [ "$actual" != "$pinned" ]; then
+            echo "::error::external/swisseph gitlink is $actual, this job is pinned to $pinned"
+            exit 1
+          fi
+          echo "OK: gitlink $actual matches."
+
+      - name: Cache external/swisseph submodule
+        id: submodule-cache
+        uses: actions/cache@v4
+        with:
+          path: external/swisseph
+          key: swisseph-submodule-macos-af9823fe7b06ffefe3d3968fdc5680be8b5eec5f
+
+      - name: Checkout external/swisseph submodule (sparse)
+        if: steps.submodule-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          pinned=af9823fe7b06ffefe3d3968fdc5680be8b5eec5f
+          git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
+          cd external/swisseph
+          git config core.autocrlf false
+          git sparse-checkout init --no-cone
+          printf '%s\n' '/*.c' '/*.h' '/ephe/seas_12.se1' '/ephe/semo_12.se1' '/ephe/sepl_12.se1' \
+            '/ephe/seas_18.se1' '/ephe/semo_18.se1' '/ephe/sepl_18.se1' \
+            '/ephe/sefstars.txt' '/ephe/seorbel.txt' > .git/info/sparse-checkout
+          git checkout "$pinned"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # An explicit source list, not a glob: external/swisseph also ships obama.c, sweephe4.c
+      # and swephgen4.c, and at least one carries its own main(), so a glob build fails at link.
+      # SWISSEPH_HAS_CROSSING=1 matches what scripts/run-oracle-dump.ps1 defines for the 2.10.03
+      # build; the eight crossing functions do not exist in 2.08 and sedump.c guards on it.
+      - name: Build the C reference with clang (contraction off)
+        shell: bash
+        run: |
+          clang --version | head -1
+          E=external/swisseph
+          clang -O2 -ffp-contract=off -DSWISSEPH_HAS_CROSSING=1 -I "$E" -o sedump \
+            Tools/CReference/sedump.c \
+            "$E/sweph.c" "$E/swephlib.c" "$E/swemmoon.c" "$E/swemplan.c" "$E/swejpl.c" \
+            "$E/swedate.c" "$E/swehouse.c" "$E/swecl.c" "$E/swehel.c" -lm
+
+      - name: Assert no FMA contraction survived
+        shell: bash
+        run: |
+          n=$(otool -tv sedump | grep -cE '\bfmadd|\bfmsub|\bfnmadd|\bfnmsub' || true)
+          echo "fused multiply-add instructions in sedump: $n"
+          if [ "$n" != "0" ]; then
+            echo "::error::clang contracted despite -ffp-contract=off; the C reference would not be comparable to the port"
+            exit 1
+          fi
+
+      - name: Replay both grids through the C reference
+        shell: bash
+        run: |
+          ./sedump Tools/OracleGrid/grid-analytic.tsv c-analytic.tsv
+          ./sedump Tools/OracleGrid/grid-files.tsv c-files.tsv external/swisseph/ephe
+
+      - name: Replay both grids through the port
+        shell: bash
+        run: |
+          dotnet build Tools/OracleDump -c Release -v q --nologo
+          DLL=$(find Tools/OracleDump/bin/Release -name OracleDump.dll | head -1)
+          dotnet "$DLL" Tools/OracleGrid/grid-analytic.tsv net-analytic.tsv
+          dotnet "$DLL" Tools/OracleGrid/grid-files.tsv net-files.tsv external/swisseph/ephe
+
+      # File-level equality, not the row comparator. UlpMath.Distance opens with a.Equals(b),
+      # which is true for (+0.0, -0.0) and for (NaN, NaN), so the row comparator would call a
+      # hex-level difference of that shape identical. scripts/verify-oracle.ps1 asserts the same
+      # file-level equality on Windows for the same reason.
+      - name: Compare, bit for bit
+        shell: bash
+        run: |
+          rc=0
+          for g in analytic files; do
+            if cmp -s "c-$g.tsv" "net-$g.tsv"; then
+              echo "$g: BIT-IDENTICAL, $(wc -l < "c-$g.tsv") rows, sha256 $(shasum -a 256 "c-$g.tsv" | cut -c1-32)"
+            else
+              echo "::error::$g grid differs between the C reference and the port on macOS"
+              diff "c-$g.tsv" "net-$g.tsv" | head -20
+              rc=1
+            fi
+          done
+          exit $rc
