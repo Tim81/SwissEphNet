@@ -1,38 +1,49 @@
 # The 2.10.03 delta's no-op hunks
 
 `scripts/gen-delta-hunk-counts.tsv` pins 403 filtered hunks across 24 files for the 2.08-to-2.10.03
-delta. Of those, 35 hunks across seven files carry no semantic content for the C# port: renamed
-preprocessor symbols, `void` added to empty C parameter lists, dead local variables, comment and
-license-header churn, and a Windows-only header with no C# counterpart. This records what each
+delta. Of those, 33 hunks across eight files carry no semantic content for the C# port: `void`
+added to empty C parameter lists, dead local variables, comment and license-header churn,
+formatting-only reindentation, and a Windows-only header with no C# counterpart. Four further
+hunks in `swehel.c` rename a preprocessor symbol and are recorded separately below, because they
+turn out not to be no-op for this port. This records what each
 hunk actually contains, checked against `pwsh scripts/gen-delta.ps1 -File <name>` and the upstream
 C at the cited lines, so a future porter can retire them without re-deriving the analysis.
 
 Regenerate any of these with `pwsh scripts/gen-delta.ps1 -File <name>` -- the citations below are
 `file:line` ranges into `external/swisseph` at the pinned `v2.10.3final` tag.
 
-## `swehel.c` -- 18 hunks, confirmed no-op
+## `swehel.c` -- 22 raw hunks (18 filtered, 4 license-noise); 14 confirmed no-op, 4 not
+
+`gen-delta.ps1 -File swehel.c` reports `raw=22 filtered=18 license-noise=4`. Of the 18 filtered
+hunks, 14 are confirmed no-op; the remaining 4 (the `DEBUG`-to-`SWEHEL_DEBUG` rename) are not,
+for a reason specific to this port -- see below the table.
 
 | hunks | change |
 |---|---|
-| `swehel.c:79-85`, `281-287`, `1426-1432`, `1509-1515` | `#define DEBUG 0` renamed to `SWEHEL_DEBUG`, with its three `#if DEBUG` / `#if SWEHEL_DEBUG` guards updated to match |
 | `swehel.c:830-836`, `1286-1292`, `1389-1395`, `1917-1923`, `3227-3233` | `if (0) {` rewritten `if ((0)) {` -- same dead branch, extra parens |
 | `swehel.c:1816-1822` | `isalnum(*sp)` becomes `isalnum((int) *sp)`, an explicit cast to silence a compiler warning on signed `char` promotion |
 | `swehel.c:3164-3171`, `3173-3178`, `3251-3257`, `3260-3265`, `3384-3390` | unused locals removed (`epheflag`/`iflag` in `heliacal_ut_vis_lim` and `moon_event_vis_lim`, `itry`'s declaration in `swe_heliacal_ut`) -- each removed variable was assigned but never read |
 | `swehel.c:3482-3489` | the `for` loop in `swe_heliacal_ut` drops its unused `itry` counter: `for (itry = 0; tjd < tjdmax && retval == -2; itry++, tjd += tadd)` becomes `for (tjd = tjd0; tjd < tjdmax && retval == -2; tjd += tadd)`. The loop condition and `tjd` increment are unchanged, so the two forms iterate identically |
+| `swehel.c:476-485` | four `if`/`else` lines in the rise/set estimate reindented from column 0 to match the enclosing block; no token changes |
 | `swehel.c:51-63` | licence-header text (adds the Koch/Treindl author line and "(Astrodienst)" to the promotion clause) |
 
-None of these touch a return value, a branch condition's outcome, or a computed quantity. The
-`DEBUG`-to-`SWEHEL_DEBUG` rename in particular is a C-only naming fix (avoiding collision with a
-build system that predefines `DEBUG`) with nothing for a C# port to mirror -- C# does not read this
-macro at all.
+None of these fourteen touch a return value, a branch condition's outcome, or a computed
+quantity.
 
-One adjacent fact worth a future porter knowing, unrelated to this delta: `SwissEphNet/CPort/SweHel.cs`
-already declares `const int DEBUG = 0` (line 105) and guards trace calls with `#if DEBUG` (lines 305,
-1410, 1502). In C#, `#if DEBUG` checks the compiler's `DEBUG` build symbol, not this local constant, so
-those blocks compile into Debug builds regardless of the `= 0`. The blocks only call `trace(...)`, which
-prints; they never change a return value, so this has no effect on the characterization baseline or the
-conformance oracle. It predates the 2.10.03 delta and is independent of the `SWEHEL_DEBUG` rename above --
-noted here because the next hand to touch this file will be looking at the same lines.
+**The `DEBUG`-to-`SWEHEL_DEBUG` rename is not no-op for this port**, unlike the other thirteen.
+`swehel.c:79-85`, `281-287`, `1426-1432` and `1509-1515` rename `#define DEBUG 0` to
+`SWEHEL_DEBUG`, with its three `#if DEBUG` / `#if SWEHEL_DEBUG` guards updated to match, so a
+build system that predefines `DEBUG` does not collide with it. `SwissEphNet/CPort/SweHel.cs`
+has the exact C# counterpart of that same collision, live today: it declares `const int DEBUG =
+0` (line 105) and guards trace calls with `#if DEBUG` (lines 305, 1410, 1502). In C#, `#if
+DEBUG` checks the compiler's `DEBUG` build symbol, not this local constant, so those blocks
+compile into every Debug build regardless of the `= 0` -- the same shape of bug the C rename
+exists to avoid, just tripped by the C# compiler's own predefined symbol instead of a build
+system's. The blocks only call `trace(...)`, which prints; they never change a return value, so
+this has no effect on the characterization baseline or the conformance oracle, and it predates
+the 2.10.03 delta. But a same-shape port of the rename -- renaming `SweHel.cs`'s local `DEBUG`
+constant to `SWEHEL_DEBUG` -- would fix it, which is what makes these four hunks actionable
+rather than no-op.
 
 ## `swemmoon.c` -- 6 hunks, confirmed no-op
 
@@ -57,8 +68,8 @@ not `extern` exports):
 
 - `swedll.h:105-137` -- adds prototypes for `swe_calc_pctr` and the eight crossing functions
   (`swe_solcross[_ut]`, `swe_mooncross[_ut]`, `swe_mooncross_node[_ut]`, `swe_helio_cross[_ut]`).
-  The crossing functions are already ported (see "Landed" below); their C# signatures live on
-  `SwissEph`, not in a header.
+  The crossing functions are already ported (see "Landed" in `docs/sweph-c-stages.md`); their
+  C# signatures live on `SwissEph`, not in a header.
 - `swedll.h:172-193` -- adds `swe_houses_ex2` and `swe_houses_armc_ex2` prototypes, and widens
   `swe_house_name`'s return type from `char *` to `const char *`.
 - `swedll.h:202-208` -- adds the `swe_get_current_file_data` prototype.
@@ -97,9 +108,13 @@ of dropping, because it does not match that filter's licence-text pattern.
 
 ## Verification record
 
-Every count above matches `scripts/gen-delta-hunk-counts.tsv` and passes
-`pwsh scripts/verify-gen-delta.ps1`; none of the pinned totals needed correcting. Each hunk listed
-here was read individually against `external/swisseph` at `v2.10.3final`, not assumed from the
+Every per-file hunk count above matches `scripts/gen-delta-hunk-counts.tsv` and passes
+`pwsh scripts/verify-gen-delta.ps1`; none of the pinned totals needed correcting. A later
+re-audit did correct this document's own accounting for `swehel.c`, though: its filtered count
+of 18 was right, but the itemized table was missing the `476-485` reindentation hunk, and the
+four `DEBUG`-to-`SWEHEL_DEBUG` hunks were wrongly classified as no-op (see that section above).
+Neither correction moves any `scripts/gen-delta-hunk-counts.tsv` number. Each hunk listed here
+was read individually against `external/swisseph` at `v2.10.3final`, not assumed from the
 original summary this document verifies.
 
 ## swecl.c: two of its 29 hunks are formatting
