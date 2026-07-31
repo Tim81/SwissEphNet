@@ -124,10 +124,10 @@ namespace SwissEphNet.Tests
             }
         }
 
-        // The 37 API surfaces below (swe_heliacal_ut through swe_degnorm, further down this
+        // The 36 API surfaces below (swe_heliacal_ut through swe_degnorm, further down this
         // file) used to have a [Fact(Skip = "")] stub here: a method whose body was only a
         // commented-out signature. xUnit v2 gates skipping on a non-empty Skip reason, so an
-        // empty string does not skip at all -- these 37 counted as passing, alongside every
+        // empty string does not skip at all -- these 36 counted as passing, alongside every
         // other unit test, without ever calling the method they were named for. Deleted rather
         // than implemented or given a real skip reason, because each is already exercised with
         // real assertions elsewhere:
@@ -138,8 +138,10 @@ namespace SwissEphNet.Tests
         //   swe_gauquelin_sector: Suite06Houses.cs (testcases 1-7), likewise oracle-checked.
         //  swe_sol_eclipse_where, swe_lun_occult_where, swe_sol_eclipse_how,
         //   swe_sol_eclipse_when_loc, swe_lun_occult_when_loc, swe_sol_eclipse_when_glob,
-        //   swe_lun_eclipse_how, swe_lun_eclipse_when, swe_lun_eclipse_when_loc:
-        //   Suite08Eclipses.cs, oracle-checked.
+        //   swe_lun_eclipse_how, swe_lun_eclipse_when: Suite08Eclipses.cs, oracle-checked.
+        //   NOT swe_lun_eclipse_when_loc -- see Test_swe_lun_eclipse_when_loc below for why
+        //   that one is implemented instead, despite Suite08Eclipses.cs having a testcase
+        //   with that name.
         //  swe_nod_aps, swe_nod_aps_ut: Suite07Apsides.cs, oracle-checked.
         //  swe_time_equ, swe_lmt_to_lat, swe_lat_to_lmt: Suite05DateTime.cs, oracle-checked.
         //  swe_set_sid_mode, swe_get_ayanamsa, swe_get_ayanamsa_ut, swe_get_ayanamsa_name:
@@ -168,10 +170,67 @@ namespace SwissEphNet.Tests
         }
 
         // (swe_sol_eclipse_when_loc, swe_lun_occult_when_loc, swe_sol_eclipse_when_glob,
-        // swe_lun_eclipse_how, swe_lun_eclipse_when, swe_lun_eclipse_when_loc, swe_pheno,
-        // swe_pheno_ut, swe_rise_trans_true_hor, swe_rise_trans, swe_nod_aps, swe_nod_aps_ut,
-        // swe_time_equ, swe_lmt_to_lat, swe_lat_to_lmt, swe_degnorm, swe_set_tid_acc: see the
-        // comment block above TestConstructor's neighbours for where each is really covered.)
+        // swe_lun_eclipse_how, swe_lun_eclipse_when, swe_pheno, swe_pheno_ut,
+        // swe_rise_trans_true_hor, swe_rise_trans, swe_nod_aps, swe_nod_aps_ut, swe_time_equ,
+        // swe_lmt_to_lat, swe_lat_to_lmt, swe_degnorm, swe_set_tid_acc: see the comment block
+        // above TestConstructor's neighbours for where each is really covered.)
+
+        // Despite its name, Suite08Eclipses.cs testcase 9 -- t.exp's own recorded values, not a
+        // dispatch mistake this port introduced -- calls swe_sol_eclipse_when_loc a second time,
+        // not swe_lun_eclipse_when_loc (see that testcase's own comment: upstream's
+        // suite_08_eclipses.c TESTCASE(9), despite being titled "swe_lun_eclipse_when_loc()",
+        // has the same bug and t.exp was generated from it, so the substitution is reproduced
+        // verbatim rather than "fixed"). swe_lun_eclipse_when_loc itself is therefore never
+        // actually invoked anywhere in the conformance corpus, unlike its eight eclipse/occult
+        // siblings above -- implemented here instead of deleted.
+        //
+        // swehel.c/swecl.c: dgeo[2] outside [SEI_ECL_GEOALT_MIN, SEI_ECL_GEOALT_MAX] must return
+        // ERR with this exact message, the same contract swe_heliacal_angle below has.
+        [Fact]
+        public void Test_swe_lun_eclipse_when_loc_InvalidGeoAlt_ReturnsErrWithMessage() {
+            using (var target = new SwissEph()) {
+                double tjd = target.swe_julday(2000, 1, 21, 0.0, SwissEph.SE_GREG_CAL);
+                double[] geopos = { 5.333889, 47.853333, 99999 };
+                double[] tret = new double[10];
+                double[] attr = new double[20];
+                string serr = null;
+
+                int rc = target.swe_lun_eclipse_when_loc(tjd, SwissEph.SEFLG_MOSEPH, geopos, tret, attr, false, ref serr);
+
+                Assert.Equal(SwissEph.ERR, rc);
+                Assert.Equal("location for eclipses must be between -500 and 25000 m above sea", serr);
+            }
+        }
+
+        // swe_lun_eclipse_when_loc finds the same eclipse swe_lun_eclipse_when finds globally
+        // (already oracle-checked, see the comment block above) and then reports its local
+        // circumstances; the moment of greatest eclipse (tret[0]) is a geometric fact about the
+        // Earth-Moon-Sun alignment, not about the observer, so it must agree exactly with plain
+        // swe_lun_eclipse_when for the same start date -- a relational check against an
+        // already-trusted sibling function, not a magic number pinned from a single run.
+        [Fact]
+        public void Test_swe_lun_eclipse_when_loc() {
+            using (var target = new SwissEph()) {
+                double tjd = target.swe_julday(2000, 1, 21, 0.0, SwissEph.SE_GREG_CAL);
+
+                double[] tretGlobal = new double[10];
+                string serrGlobal = null;
+                int rcGlobal = target.swe_lun_eclipse_when(tjd, SwissEph.SEFLG_MOSEPH, 0, tretGlobal, false, ref serrGlobal);
+                Assert.True(rcGlobal >= 0, serrGlobal);
+
+                double[] geopos = { 5.333889, 47.853333, 468 };
+                double[] tretLoc = new double[10];
+                double[] attrLoc = new double[20];
+                string serrLoc = null;
+                int rcLoc = target.swe_lun_eclipse_when_loc(tjd, SwissEph.SEFLG_MOSEPH, geopos, tretLoc, attrLoc, false, ref serrLoc);
+
+                Assert.True(rcLoc >= 0, serrLoc);
+                Assert.Equal(tretGlobal[0], tretLoc[0], 9);
+                // attr[0] (fraction of lunar diameter covered) is only meaningful once an
+                // eclipse was actually located; confirms tretLoc[0] is not a leftover zero.
+                Assert.True(attrLoc[0] > 0, $"attr[0] ({attrLoc[0]}) should be positive for a located eclipse");
+            }
+        }
 
         // swehel.c: dgeo[2] outside [SEI_ECL_GEOALT_MIN, SEI_ECL_GEOALT_MAX] must return ERR
         // with this exact message, not clamp the altitude or silently proceed.
