@@ -13,7 +13,6 @@ namespace SweWin
 {
     public partial class FormData : Form
     {
-        const int BUFLEN  =8000;
         const string MY_ODEGREE_STRING ="°";
 
         static string[] etut = new string[] { "UT", "ET" };
@@ -36,7 +35,6 @@ namespace SweWin
         const int BIT_ZODIAC = 4;
         const string PLSEL_D = "0123456789mtABC";
         const string PLSEL_P = "0123456789mtABCDEFGHI";
-        const string PLSEL_H = "JKLMNOPQRSTUVWX";
         const string PLSEL_A = "0123456789mtABCDEFGHIJKLMNOPQRSTUVWX";
 
         //extern char FAR *pgmptr;
@@ -44,31 +42,6 @@ namespace SweWin
 
         class Cpd
         {
-            public Cpd Clone() {
-                return new Cpd() {
-                    etut = this.etut,
-                    lon_e_w = this.lon_e_w,
-                    lat_n_s = this.lat_n_s,
-                    ephe = this.ephe,
-                    plansel = this.plansel,
-                    ctr = this.ctr,
-                    hsysname = this.hsysname,
-                    sast = this.sast,
-                    mday = this.mday,
-                    mon = this.mon,
-                    hour = this.hour,
-                    min = this.min,
-                    sec = this.sec,
-                    year = this.year,
-                    lon_deg = this.lon_deg,
-                    lon_min = this.lon_min,
-                    lon_sec = this.lon_sec,
-                    lat_deg = this.lat_deg,
-                    lat_min = this.lat_min,
-                    lat_sec = this.lat_sec,
-                    alt = this.alt
-                };
-            }
             public string etut = null;
             public string lon_e_w = null;
             public string lat_n_s = null;
@@ -83,7 +56,7 @@ namespace SweWin
             public uint lat_deg = 0, lat_min = 0, lat_sec = 0;
             public int alt = 0;
         }
-        static Cpd pd = new Cpd(), old_pd;
+        static Cpd pd = new Cpd();
 
         SwissEph sweph;
 
@@ -135,7 +108,6 @@ namespace SweWin
 
         private void FormData_Load(object sender, EventArgs e) {
             int i, j;
-            old_pd = pd.Clone();
             COMBO_N_S.Items.Clear();
             for (i = j = 0; i < 2; i++) {
                 if (String.CompareOrdinal(lat_n_s[i], pd.lat_n_s) == 0) j = i;
@@ -999,12 +971,6 @@ namespace SweWin
                 s = String.Concat(s.Substring(0, spi - 1), "-", s.Substring(spi));
             }
             return (s);
-        }
-
-        static void do_print(ref string target, string info) {
-            if (String.IsNullOrWhiteSpace(target))
-                target = " ";
-            target += info.Replace("\n", "\r\n", StringComparison.Ordinal);
         }
 
         static void do_print(StringBuilder target, string info, params object[] args) {
