@@ -4,7 +4,7 @@
     <TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
     <AssemblyName>SwissEphNet</AssemblyName>
     <RootNamespace>SwissEphNet</RootNamespace>
-    <PackageId>SwissEphNet</PackageId>
+    <PackageId>SwissEphSharp</PackageId>
     <!--
       Version scheme: upstream Swiss Ephemeris version + port revision, e.g.
       2.8.x tracks Swiss Ephemeris C 2.08 with x as this port's own revision
@@ -17,8 +17,9 @@
     <Version>2.8.1.0</Version>
     <Authors>Yan Grenier, Timothy van der Ham</Authors>
     <Company>Yan Grenier</Company>
-    <Product>SwissEphNet</Product>
-    <Description>Swiss Ephemeris .Net portage</Description>
+    <Product>SwissEphSharp</Product>
+    <Title>SwissEphSharp</Title>
+    <Description>Swiss Ephemeris .Net portage. SwissEphSharp is the package ID under which this project is distributed: a fork of Yan Grenier's SwissEphNet, tracking Swiss Ephemeris 2.10.03. The assembly name and namespace remain SwissEphNet, so existing code that references the original port needs no source changes beyond the PackageReference itself. Not published or endorsed by Yan Grenier or Astrodienst.</Description>
     <Copyright>Copyright (C) 1997-2021 Astrodienst AG; (C) 2014-2019 Yan Grenier; (C) 2026 Timothy van der Ham</Copyright>
     <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/Tim81/SwissEphNet</PackageProjectUrl>
@@ -27,6 +28,10 @@
     <PackageTags>Swiss Ephemeris</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageReleaseNotes>2.8.1.0 (not published to nuget.org; source-only distribution):
+- Package ID renamed from SwissEphNet to SwissEphSharp. SwissEphNet on nuget.org belongs to the
+  upstream author's own release and this fork cannot publish under it. The assembly name and
+  namespace are unaffected: both stay SwissEphNet, so the only change a consumer needs to make is
+  the PackageReference itself. See the "Package name" section of README.md.
 - Retarget the library to netstandard2.0;net8.0;net10.0, dropping net40 and netstandard1.0.
 - Relicense from GPL-2.0-or-later to the Swiss Ephemeris 2.10.3 dual license: AGPL-3.0-or-later
   or a Swiss Ephemeris Professional License from Astrodienst. See LICENSE and NOTICE.

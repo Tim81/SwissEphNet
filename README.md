@@ -230,6 +230,27 @@ and bug fixes. Build from source or reference `SwissEphNet/SwissEphNet.csproj` d
 
 SwissEphNet targets `netstandard2.0`, `net8.0` and `net10.0`.
 
+## Package name
+
+This project carries three names, and meeting them separately looks like something is broken.
+It is not:
+
+- The **repository** is `Tim81/SwissEphNet`, a fork of `ygrenier/SwissEphNet`, and keeps that
+  name.
+- The **NuGet package ID** is `SwissEphSharp`. The `SwissEphNet` ID on nuget.org belongs to the
+  upstream author's own release, and this fork cannot publish under it.
+- The **namespace and assembly name** stay `SwissEphNet`. Every file under `SwissEphNet/CPort/`
+  is a line-by-line transliteration of the Swiss Ephemeris C source and declares that namespace;
+  renaming it would touch every one of those frozen files for a cosmetic reason. Keeping it also
+  means the library stays a drop-in replacement for code written against the original namespace.
+
+Migrating from the old package is the one line it sounds like: replace the `PackageReference` for
+`SwissEphNet` with one for `SwissEphSharp` and change nothing else. `using SwissEphNet;` and every
+type name are unaffected.
+
+This fork is not published or endorsed by Yan Grenier or Astrodienst. See "About this repository"
+above and `NOTICE` for the credit both are owed.
+
 ## Create an instance
 
 SwissEphNet.SwissEph is ```IDisposable``` so you can use it with an ```using``` statement.
