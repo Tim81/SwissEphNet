@@ -36,12 +36,26 @@
     -Reason.
 
     -PruneOnly: removes rows that now pass; refuses (non-zero exit, no file
-    changes) if the current run would add or change the category of any row.
-    "Adding a row is a deliberate, separate act" -- see CONTRIBUTING.md,
-    "Correctness oracle known-fail list" -- and this mode is how that is
-    enforced mechanically instead of by convention alone: a contributor who
-    only wants to record progress cannot use this mode to also slip in an
-    unreviewed new failure, because it will not run at all if one is present.
+    changes) if the current run would add or change the category or
+    magnitude_key of any row. "Adding a row is a deliberate, separate act" --
+    see CONTRIBUTING.md, "Correctness oracle known-fail list" -- and this
+    mode is how that is enforced mechanically instead of by convention
+    alone: a contributor who only wants to record progress cannot use this
+    mode to also slip in an unreviewed new failure, because it will not run
+    at all if one is present.
+
+    A row this mode keeps is written back exactly as it already reads in
+    known-fail.tsv -- category, magnitude_key and reason all untouched --
+    never from the fresh run's own output. Earlier versions of this mode
+    copied the fresh run's file over known-fail.tsv wholesale once the
+    added/changed check passed, which is not the same thing: reason text is
+    regenerated fresh on every run and its wording drifts even when nothing
+    about the underlying failure changed, so that copy silently rewrote
+    every surviving row's reason on every prune (see commit 77acc30: 12
+    deletions and 8 insertions where only 4 rows were pruned). A prune is
+    now genuinely only a removal -- no surviving row's reason or
+    magnitude_key can change through this mode, by construction, not by a
+    comparison this mode might get wrong.
 
     Removing rows needs no special process or reason -- that's the gate
     finding progress and is expected to happen often. Adding a row (a
@@ -124,9 +138,14 @@ function Get-EpheDescription {
 }
 
 function Read-KnownFailTable {
-    # Keyed by "suite`ttestcase`titeration" -> category. Plain tab-split, not
-    # Import-Csv: the "reason" column can itself contain characters Import-Csv
-    # would need quoting rules for that this TSV format does not use.
+    # Keyed by "suite`ttestcase`titeration" -> "category`tmagnitude_key". Plain tab-split, not
+    # Import-Csv: the "reason" column can itself contain characters Import-Csv would need quoting
+    # rules for that this TSV format does not use. Deliberately excludes the reason column from
+    # the value: this table is only ever used to detect whether a row was added, or its category
+    # or magnitude_key changed, between two runs (see the -PruneOnly block below and item 4's
+    # magnitude gate in Tests/SwissEphNet.Conformance.Tests/ConformanceReport.cs) -- reason text
+    # is regenerated fresh every run and compared nowhere, the same posture ConformanceReport.Build
+    # takes for the live gate.
     param([string]$Path)
     $table = @{}
     if (-not (Test-Path $Path)) { return $table }
@@ -136,7 +155,7 @@ function Read-KnownFailTable {
         if ([string]::IsNullOrEmpty($line)) { continue }
         $cols = $line -split "`t"
         $key = "$($cols[0])`t$($cols[1])`t$($cols[2])"
-        $table[$key] = $cols[3]
+        $table[$key] = "$($cols[3])`t$($cols[4])"
     }
     return $table
 }
@@ -173,14 +192,17 @@ if ($PruneOnly) {
                 Write-Host ""
                 Write-Host "Would ADD $($added.Count) row(s) (new failure, or an iteration not previously covered):"
                 foreach ($key in $added | Select-Object -First 50) {
-                    Write-Host "  $($key -replace "`t", '.')  [$($fresh[$key])]"
+                    $freshCategory, $freshMagnitude = $fresh[$key] -split "`t"
+                    Write-Host "  $($key -replace "`t", '.')  [$freshCategory magnitude_key=$freshMagnitude]"
                 }
             }
             if ($changed.Count -gt 0) {
                 Write-Host ""
-                Write-Host "Would RECATEGORIZE $($changed.Count) row(s) (category drift -- still failing, but not the same failure):"
+                Write-Host "Would RECATEGORIZE $($changed.Count) row(s) (category or magnitude_key drift -- still failing, but not the same failure):"
                 foreach ($key in $changed | Select-Object -First 50) {
-                    Write-Host "  $($key -replace "`t", '.')  $($current[$key]) -> $($fresh[$key])"
+                    $currentCategory, $currentMagnitude = $current[$key] -split "`t"
+                    $freshCategory, $freshMagnitude = $fresh[$key] -split "`t"
+                    Write-Host "  $($key -replace "`t", '.')  $currentCategory magnitude_key=$currentMagnitude -> $freshCategory magnitude_key=$freshMagnitude"
                 }
             }
             Write-Host ""
@@ -189,10 +211,31 @@ if ($PruneOnly) {
             exit 1
         }
 
+        # Every surviving row is written back exactly as it already reads in $knownFailPath, not
+        # from $tempPath: $fresh (the live run) is consulted only for its key set above, never for
+        # its own reason or magnitude_key text. ConformanceKnownFailGen regenerates reason text
+        # fresh on every run -- wording drifts even when nothing about the underlying failure
+        # changed -- so copying $tempPath wholesale, as this block used to, silently rewrote every
+        # surviving row's reason on every prune (and would now do the same to magnitude_key). A
+        # prune genuinely only removes lines: no row this block keeps is rewritten in any column.
+        $currentRawLines = Get-Content -LiteralPath $knownFailPath
+        $header = $currentRawLines[0]
+        $survivingLines = [System.Collections.Generic.List[string]]::new()
+        for ($i = 1; $i -lt $currentRawLines.Count; $i++) {
+            $line = $currentRawLines[$i]
+            if ([string]::IsNullOrEmpty($line)) { continue }
+            $cols = $line -split "`t"
+            $key = "$($cols[0])`t$($cols[1])`t$($cols[2])"
+            if ($fresh.ContainsKey($key)) {
+                [void]$survivingLines.Add($line)
+            }
+        }
+
         $beforeCount = $current.Count
-        Copy-Item -Path $tempPath -Destination $knownFailPath -Force
-        $afterCount = $fresh.Count
+        $afterCount = $survivingLines.Count
         $removed = $beforeCount - $afterCount
+        $outputLines = @($header) + $survivingLines
+        [System.IO.File]::WriteAllText($knownFailPath, (($outputLines -join "`n") + "`n"))
 
         $date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
         $prCitation = if ($PR) { "PR #$PR" } else { "(no PR yet -- fill in `"PR #N`" before merging, per CONTRIBUTING.md)" }

@@ -13,7 +13,7 @@ namespace SwissEphNet.Conformance.Tests.KnownFail;
 /// </summary>
 public static class KnownFailList
 {
-    private static readonly string[] Header = ["suite", "testcase", "iteration", "category", "reason"];
+    private static readonly string[] Header = ["suite", "testcase", "iteration", "category", "magnitude_key", "reason"];
 
     public static IReadOnlyDictionary<IterationKey, KnownFailEntry> Load(string path)
     {
@@ -37,9 +37,9 @@ public static class KnownFailList
             }
 
             var parts = line.Split('\t');
-            if (parts.Length != 5)
+            if (parts.Length != 6)
             {
-                throw new FormatException($"{path}:{lineNumber}: expected 5 tab-separated columns, got {parts.Length}: '{line}'");
+                throw new FormatException($"{path}:{lineNumber}: expected 6 tab-separated columns, got {parts.Length}: '{line}'");
             }
 
             var key = new IterationKey(
@@ -47,7 +47,7 @@ public static class KnownFailList
                 int.Parse(parts[1], CultureInfo.InvariantCulture),
                 int.Parse(parts[2], CultureInfo.InvariantCulture));
             var category = FailureCategoryNames.Parse(parts[3]);
-            var entry = new KnownFailEntry(key, category, parts[4]);
+            var entry = new KnownFailEntry(key, category, parts[4], parts[5]);
 
             if (!result.TryAdd(key, entry))
             {
@@ -75,6 +75,7 @@ public static class KnownFailList
                 entry.Key.TestCase.ToString(CultureInfo.InvariantCulture),
                 entry.Key.Iteration.ToString(CultureInfo.InvariantCulture),
                 FailureCategoryNames.ToName(entry.Category),
+                entry.MagnitudeKey,
                 entry.Reason));
         }
     }

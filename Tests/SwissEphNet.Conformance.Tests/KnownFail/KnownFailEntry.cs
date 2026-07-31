@@ -66,4 +66,12 @@ public readonly record struct IterationKey(int Suite, int TestCase, int Iteratio
     public override string ToString() => $"{Suite}.{TestCase}.{Iteration}";
 }
 
-public sealed record KnownFailEntry(IterationKey Key, FailureCategory Category, string Reason);
+/// <summary>
+/// <paramref name="MagnitudeKey"/> is
+/// <see cref="SwissEphNet.Conformance.Tests.KnownFail.MagnitudeKey.NotApplicable"/> for every
+/// category other than <see cref="FailureCategory.ValueMismatch"/> -- see
+/// <see cref="SwissEphNet.Conformance.Tests.KnownFail.MagnitudeKey"/>'s remarks for what it means
+/// and how it is computed, and <see cref="ConformanceReport"/> for how it is compared against a
+/// live run's own computation to catch magnitude drift a bare category comparison cannot.
+/// </summary>
+public sealed record KnownFailEntry(IterationKey Key, FailureCategory Category, string MagnitudeKey, string Reason);

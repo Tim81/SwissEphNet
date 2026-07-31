@@ -39,9 +39,10 @@ foreach (var r in results)
     }
 
     var category = FailureCategoryNames.FromOutcomeKind(r.Kind);
+    var magnitudeKey = MagnitudeKey.Compute(r.Mismatches);
     var rawReason = r.Reason ?? string.Join("; ", r.Mismatches.Select(m => $"{m.Name}: expected {m.Expected}, got {m.Actual}"));
     var reason = NormalizeReason(rawReason);
-    entries.Add(new KnownFailEntry(r.Key, category, reason));
+    entries.Add(new KnownFailEntry(r.Key, category, magnitudeKey, reason));
 }
 
 KnownFailList.Save(outputPath, entries);
