@@ -88,15 +88,13 @@
     CONTRIBUTING.md, "Transliterated files must never be reformatted") and this script's whole job
     is measuring the port as it stands, not repairing it.
 
-    -m/-z/-f/-F FORMAT LETTERS ARE DELIBERATELY ABSENT from FMT_LETTERS. The task that produced this
-    grid was told, in terms taken from a review of the swetest.c 2.08->2.10.03 delta, that those
-    four are 2.10.03-only additions this port does not have. That is only true for 'm' and 'z' as
-    -f format letters -- 'f'/'F' already exist in Program.cs's print_line switch (~2822-2823) for
-    apsides/focus output, apparently carried over from 2.08. Rather than second-guess the review
-    this task was handed, 'f'/'F' are excluded from FMT_LETTERS along with 'm'/'z', on the
-    assumption that 2.10.03 reassigns or extends their meaning in a way the current implementation
-    does not match; 'm' and 'z' remain valid as -p PLSEL letters (mean node, fictitious body) since
-    that is a different namespace from -f format letters and unaffected by this exclusion.
+    -m/-z FORMAT LETTERS (meridian distance / zenith distance) were 2.10.03-only additions to
+    print_line's switch and are now ported (swetest.c ~2612-2637) and included in FMT_LETTERS.
+    -f/-F (apsides, mean/osculating) already existed in the 2.08 print_line switch; the 2.10.03
+    delta only fixes a doc-string typo for them ("perihel" -> "perihelion"), so they are included
+    in FMT_LETTERS as ordinary coverage, not as a 2.10.03 addition. 'm' and 'z' remain valid as -p
+    PLSEL letters too (mean node, fictitious body) -- a different namespace from -f format letters,
+    unaffected by their presence here.
 
     COLUMN LAYOUT (documented again, verbatim, at the top of the generated file, since that is what
     a reader of args-grid.tsv opens first)
@@ -209,15 +207,19 @@ foreach ($sel in $TruncationSelections) {
 
 # ---------------------------------------------------------------------------------------
 # FMT_LETTERS -- one row per -f format letter Program.cs's print_line switch implements, Sun,
-# one fixed date. 'm'/'z'/'f'/'F' excluded -- see the header comment. Each row pairs the letter
-# under test with 'P' (object name) so the output line has a readable label; 'P' itself is tested
-# alone.
+# one fixed date. 'm' (meridian distance) and 'z' (zenith distance) are 2.10.03 additions, ported
+# in the swetest.c 2.08->2.10.03 slice; 'f'/'F' (apsides, mean/osculating) already existed in the
+# 2.08 print_line switch and are included now that the 2.10.03 diff review confirms their only
+# change in that range is a doc-string typo fix ("perihel" -> "perihelion"), not a behavior change.
+# Each row pairs the letter under test with 'P' (object name) so the output line has a readable
+# label; 'P' itself is tested alone.
 # ---------------------------------------------------------------------------------------
 
 $FmtLetters = @(
     'y', 'Y', 'P', 'p', 'J', 'T', 't', 'L', 'l', 'G', 'g', 'j', 'Z', 'S', 's',
     'B', 'b', 'A', 'a', 'D', 'd', 'I', 'i', 'H', 'h', 'K', 'k', 'R', 'W', 'w',
-    'r', 'q', 'U', 'X', 'u', 'x', 'Q', 'N', 'n', '+', '-', '*', '/', '=', 'V', 'v'
+    'r', 'q', 'U', 'X', 'u', 'x', 'Q', 'N', 'n', '+', '-', '*', '/', '=', 'V', 'v',
+    'm', 'z', 'f', 'F'
 )
 foreach ($letter in $FmtLetters) {
     $fmt = if ($letter -eq 'P') { '-fP' } else { "-fP$letter" }
@@ -352,6 +354,87 @@ foreach ($c in $CrashCases) {
     $dateArg = if ($c.Id -eq 'J') { '' } else { '-b1.1.2000 ' }
     Add-Row -CaseId "CRASH_MISC|$($c.Id)" -Category 'CRASH_MISC' `
         -ArgsText "$dateArg-p0 $($c.Args) -fPl -eswe"
+}
+
+# ---------------------------------------------------------------------------------------
+# PLANETOCENTRIC -- 2.10.03 additions: -cob (SEFLG_CENTER_BODY) and -pc<N> (swe_calc_pctr),
+# driving positions relative to a body other than the geocenter.
+# ---------------------------------------------------------------------------------------
+
+$PlanetoCentricCases = @(
+    @{ Id = 'COB_JUPITER'; Args = '-p5 -cob' }
+    @{ Id = 'COB_SATURN'; Args = '-p6 -cob' }
+    @{ Id = 'PC_VENUS'; Args = '-p2 -pc3' }
+    @{ Id = 'PC_MARS'; Args = '-p3 -pc4' }
+    @{ Id = 'PC_JUPITER_COB'; Args = '-p1 -pc9599' }
+    @{ Id = 'PC_SATURN_COB'; Args = '-p1 -pc9699' }
+)
+foreach ($c in $PlanetoCentricCases) {
+    Add-Row -CaseId "PLANETOCENTRIC|$($c.Id)" -Category 'PLANETOCENTRIC' `
+        -ArgsText "-b1.1.2000 $($c.Args) -fPLBRS -eswe"
+}
+
+# ---------------------------------------------------------------------------------------
+# PLANETARY_MOON -- 2.10.03 addition: -xv<N> selects a planetary moon or a planet's center of
+# body (COB) for the 'v' PLSEL letter; numbers per swetest.c's plmolist.txt convention (moon
+# number, or planet-number*100+99 for COB).
+# ---------------------------------------------------------------------------------------
+
+$PlanetaryMoonCases = @(
+    @{ Id = 'IO'; Args = '-xv9501' }
+    @{ Id = 'JUPITER_COB'; Args = '-xv9599' }
+    @{ Id = 'TITAN'; Args = '-xv9605' }
+)
+foreach ($c in $PlanetaryMoonCases) {
+    Add-Row -CaseId "PLANETARY_MOON|$($c.Id)" -Category 'PLANETARY_MOON' `
+        -ArgsText "-b1.1.2000 -pv $($c.Args) -fPLBRS -eswe"
+}
+
+# ---------------------------------------------------------------------------------------
+# DIFF_GEOHEL -- 2.10.03 addition: -dh<X>, a differential-ephemeris variant of -d<X> that diffs
+# the geocentric position of the selected body against the heliocentric position of body X.
+# ---------------------------------------------------------------------------------------
+
+$DiffGeoHelCases = @(
+    @{ Id = 'DH8'; Args = '-dh8' }
+    @{ Id = 'DH1'; Args = '-dh1' }
+)
+foreach ($c in $DiffGeoHelCases) {
+    Add-Row -CaseId "DIFF_GEOHEL|$($c.Id)" -Category 'DIFF_GEOHEL' `
+        -ArgsText "-b1.1.2000 -p8 $($c.Args) -fPl -eswe"
+}
+
+# ---------------------------------------------------------------------------------------
+# NEW_2_10_FLAGS -- 2.10.03 additions with no dedicated category above: -lim (ephemeris file
+# range via swe_get_current_file_data), -ep (extra output precision), -tpm (SEFLG_TEST_PLMOON),
+# -sidbit<N> (extra sidereal-mode bits, paired with -sid so the bit is visible in output).
+# ---------------------------------------------------------------------------------------
+
+$New210FlagCases = @(
+    @{ Id = 'LIM'; Args = '-ps -xs433 -lim' }
+    @{ Id = 'EP'; Args = '-p0 -ep' }
+    @{ Id = 'TPM'; Args = '-p1 -tpm' }
+    @{ Id = 'SIDBIT'; Args = '-p0 -sid1 -sidbit256' }
+)
+foreach ($c in $New210FlagCases) {
+    Add-Row -CaseId "NEW_2_10_FLAGS|$($c.Id)" -Category 'NEW_2_10_FLAGS' `
+        -ArgsText "-b1.1.2000 $($c.Args) -fPLBRS -eswe"
+}
+
+# ---------------------------------------------------------------------------------------
+# UTC_SHORT -- 2.10.03 relaxes -utHH[:MM[:SS]]/-utcHH[:MM[:SS]] to accept one- or two-digit
+# hour/minute/second components (previously HH:MM:SS was fixed-width); this exercises the short
+# form the updated -hcmd text documents.
+# ---------------------------------------------------------------------------------------
+
+$UtcShortCases = @(
+    @{ Id = 'UTC_HMS_SHORT'; Args = '-utc1:5:9' }
+    @{ Id = 'UTC_H_ONLY'; Args = '-utc9' }
+    @{ Id = 'UT_HMS_SHORT'; Args = '-ut1:5:9' }
+)
+foreach ($c in $UtcShortCases) {
+    Add-Row -CaseId "UTC_SHORT|$($c.Id)" -Category 'UTC_SHORT' `
+        -ArgsText "-b1.1.2000 -p0 $($c.Args) -fPl -eswe"
 }
 
 # ---------------------------------------------------------------------------------------

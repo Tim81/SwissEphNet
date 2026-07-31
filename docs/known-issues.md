@@ -1145,3 +1145,79 @@ rows are the uninteresting half and the conformance oracle's six rows are the on
 say something about correctness. The next time a deviation entry reports "N rows moved" for a
 change like this, check what those rows' `serr`/`retc` actually say before treating the count as
 evidence of anything beyond "the constant is now embedded in the output."
+
+## Three file-layer divergences, recorded and not fixed here
+
+Found while porting `swetest.c`/`swemini.c` to 2.10.03. All three predate that work: they sit in
+`sweph.c`'s file layer, carried in the port since 2.08, and 2.10.03 leaves these sites unchanged.
+None is fixed here; they are recorded so a future porter does not have to rediscover them.
+
+**`PATH_SEPARATOR` is always `';'`.** `SwissEph.sweodef.h.cs:136` sets
+`public static char PATH_SEPARATOR = ';';` unconditionally. The C picks per platform:
+`sweodef.h:305` gives `";:"` (semicolon or colon) on Unix, `:311` gives `";"` on Windows. Because
+the port's field is a single `char`, it cannot hold `";:"` even if it tried to branch on platform.
+A Unix caller who passes a colon-separated ephemeris path -- ordinary on that platform -- gets it
+back as one unsplit entry from `swi_fopen`'s `s1.Split(new char[] { SwissEph.PATH_SEPARATOR }, ...)`
+(`Sweph.cs:2775`), rather than the several directories the C would have tried in turn.
+
+**`DIR_GLUE` is always `'/'`, so the "not found" message reads wrong on Windows.**
+`SwissEph.sweodef.h.cs:153` sets `DIR_GLUE = '/'` unconditionally, for the reasons already recorded
+above under "DIR_GLUE fixed" -- a single cross-platform value has to pick one separator, and `/` is
+the one both Windows and everything else accept. The C instead compiles a different literal per
+platform (`sweodef.h:304` gives `"/"`, `:319` gives `"\\"` under MSDOS), so on Windows the C joins
+paths with `\` and the port joins with `/`. Both still open the file -- Windows accepts either
+separator -- so there is no numeric effect. The `"SwissEph file '%s' not found in PATH '%s'"`
+warning (`sweph.c:2400`, `Sweph.cs:2807`) embeds the joined path, though, so its *text* differs by
+one character on Windows, and that text mismatch is already visible in 11 rows of
+`Tests/swetest/known-diff.tsv`. Changing `DIR_GLUE` back to a per-platform value would be a
+breaking change for any `OnLoadFile` consumer that matches on the separator in a file name it
+receives -- the same consumers called out in "DIR_GLUE fixed" above -- so it belongs with that
+entry's deferred release-stage work, not with this file-layer note; there is no separate Phase 7
+breaking-change list elsewhere in this repository to add it to.
+
+**`swi_fopen` never checks `AS_MAXCH`.** `sweph.c:2388-2392` bounds-checks the joined path before
+using it:
+
+```c
+if (strlen(s) + strlen(fname) < AS_MAXCH) {
+  strcat(s, fname);
+} else {
+  if (serr != NULL)
+    sprintf(serr, "error: file path and name must be shorter than %d.", AS_MAXCH);
+  return NULL;
+}
+```
+
+The port's `swi_fopen` (`Sweph.cs:2775-2781`) carries this block only as a comment (directly below
+the live code, `Sweph.cs:2788-2799`) and instead builds the path unconditionally:
+
+```csharp
+fnamp = s.TrimEnd('\\', '/') + SwissEph.DIR_GLUE + fname;
+```
+
+An ephemeris path long enough to trip the C's guard never gets the
+`"error: file path and name must be shorter than %d."` message from the port at all; it is passed
+through to `SE.LoadFile` regardless of length.
+
+## swetest.c's missing `spmoon` declaration: fixed on upstream master, not on the pinned tag
+
+`swetest.c` uses `spmoon` at `:1139`, `:1140` and `:1621` (reading `-xv`, then `atoi`-ing it for
+the `v` planetary-moon selector) but never declares it in the pinned `v2.10.3final` tag.
+`Tools/CReference/build-c.ps1` patches a declaration in ahead of `sastno`'s;
+`Programs/SweTest/Program.cs:759` carries the equivalent field for the port; the two are kept at
+the same default value so the C reference binary and the port fail the same way under
+`swetest -pv` with no `-xv`.
+
+Astrodienst has since fixed this on the `aloistr/swisseph` `master` branch, past the pinned tag:
+`static char spmoon[AS_MAXCH] = "9501";  // Jupiter Moon Io`, sitting between `sastno` and `shyp`.
+Both this repo's patches now use `"9501"`, matching that fix rather than inventing a value; an
+earlier version of both used `"9001"`, which is not a moon of anything (the planetary-moon
+numbering is `SE_PLMOON_OFFSET`, 9000, plus the host planet's number times 100, so 95xx is a
+Jupiter moon and Io is the first one, `9501`, not `9001`).
+
+A future submodule bump past the commit that adds this declaration must drop both patches instead
+of applying them on top. `build-c.ps1` already asserts the declaration is absent before patching
+and fails loudly, naming this exact scenario, if it finds one already there
+(`'swetest.c: spmoon is already declared. The upstream compile defect this patch exists for may no
+longer apply...'`) -- confirmed against the master-branch declaration text directly, which matches
+the assert's pattern and would trip it.

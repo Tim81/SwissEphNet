@@ -288,7 +288,7 @@ function Assert-EphemerisManifest {
 # ---------------------------------------------------------------------------------------
 
 function Invoke-SwetestCase {
-    param([string] $ExePath, [string] $ArgsStr, [string] $EpheDirPath)
+    param([string] $ExePath, [string] $ArgsStr, [string] $EpheDirPath, [string] $RepoRootPath)
     # $ArgsStr already carries -head (or deliberately does not, for HEADER_BLOCK) -- see
     # Tools/SwetestDiff/gen-args-grid.ps1's Add-Row and its own .DESCRIPTION on why that has to be
     # baked into the grid row rather than added here uniformly: doing it here once made
@@ -299,7 +299,35 @@ function Invoke-SwetestCase {
     $full = "`"$ExePath`" $ArgsStr -edir`"$EpheDirPath`""
     $lines = @(cmd /c $full 2>&1 | ForEach-Object { $_.ToString() })
     $lines = @(Format-ArgvEchoLine -Lines $lines)
+    # Scrubbed immediately after capture, before anything (equality check, crash summary, diff
+    # summary) ever looks at these lines -- see Get-PortablePath below for why that ordering
+    # matters and what it buys.
+    $lines = @($lines | ForEach-Object { Get-PortablePath -Text $_ -RepoRootPath $RepoRootPath -EpheDirPath $EpheDirPath })
     return [pscustomobject]@{ ExitCode = $LASTEXITCODE; Lines = $lines }
+}
+
+# Both binaries are invoked with the same, machine-local absolute $EpheDirPath (Resolve-EpheDir
+# above forces that) and run from the same machine-local $RepoRootPath checkout, so a "SwissEph
+# file not found" message or a -lim/-fpath echo naming either one is reproducible in content but
+# not in text: regenerating on a different checkout rewrites the row with that machine's path
+# even though nothing about the actual difference changed. Collapsing both to fixed placeholders
+# here -- once, at capture time, before Compare-Case's equality check or either summary function
+# ever sees a line -- means every downstream consumer (the identical/differ decision itself,
+# Get-CrashSummary, Get-FirstDiffSummary, Test-PureVersionDifference) already works on portable
+# text, so a case that would only ever have differed by machine-local path stops being recorded as
+# a difference at all instead of surviving as a row that cannot be reproduced.
+#
+# $EpheDirPath is replaced before $RepoRootPath, and each is matched as an exact literal
+# substring, not a pattern: $EpheDirPath sits under $RepoRootPath, so replacing $RepoRootPath
+# first would consume that prefix and leave nothing for the $EpheDirPath replacement to match.
+# Only the two known machine-local strings are removed -- whatever a binary appended after them
+# (a filename, a trailing "\" or "/", a closing quote) is left exactly as printed, since that is
+# real output content (see the "\" vs "/" case below), not path noise.
+function Get-PortablePath {
+    param([string] $Text, [string] $RepoRootPath, [string] $EpheDirPath)
+    $result = $Text.Replace($EpheDirPath, '<ephe-dir>')
+    $result = $result.Replace($RepoRootPath, '<repo-root>')
+    return $result
 }
 
 # with_header (swetest's default, suppressed by -head -- see the grid generator's .DESCRIPTION on
@@ -391,6 +419,32 @@ function Get-CrashSummary {
     return ($kept -join ' ')
 }
 
+# The old version of this function truncated $C and $N independently from index 0: two lines that
+# agree for the first 120 characters and then diverge -- exactly what a shared, machine-local
+# $EpheDirPath/$RepoRootPath prefix produced before Get-PortablePath existed -- came out as two
+# identical-looking "..." prefixes, and the row recorded nothing about what actually differed. This
+# instead finds the first character where $C and $N actually disagree and centers the window
+# there, with $ContextBefore characters of shared lead-in so the row still reads in context. A pair
+# that already fits within $MaxLen is returned untouched.
+function Get-TruncatedDiffPair {
+    param([string] $C, [string] $N, [int] $MaxLen = 120, [int] $ContextBefore = 40)
+    if ($C.Length -le $MaxLen -and $N.Length -le $MaxLen) {
+        return @($C, $N)
+    }
+    $minLen = [Math]::Min($C.Length, $N.Length)
+    $diffIndex = $minLen
+    for ($j = 0; $j -lt $minLen; $j++) {
+        if ($C[$j] -ne $N[$j]) { $diffIndex = $j; break }
+    }
+    $start = [Math]::Max(0, $diffIndex - $ContextBefore)
+    $cOut = $C.Substring($start)
+    $nOut = $N.Substring($start)
+    if ($cOut.Length -gt $MaxLen) { $cOut = $cOut.Substring(0, $MaxLen) + '...' }
+    if ($nOut.Length -gt $MaxLen) { $nOut = $nOut.Substring(0, $MaxLen) + '...' }
+    if ($start -gt 0) { $cOut = '...' + $cOut; $nOut = '...' + $nOut }
+    return @($cOut, $nOut)
+}
+
 function Get-FirstDiffSummary {
     param([string[]] $CLines, [string[]] $NetLines)
     $max = [Math]::Max($CLines.Count, $NetLines.Count)
@@ -398,9 +452,9 @@ function Get-FirstDiffSummary {
         $c = if ($i -lt $CLines.Count) { $CLines[$i] } else { '<no line>' }
         $n = if ($i -lt $NetLines.Count) { $NetLines[$i] } else { '<no line>' }
         if ($c -ne $n) {
-            $maxLen = 120
-            if ($c.Length -gt $maxLen) { $c = $c.Substring(0, $maxLen) + '...' }
-            if ($n.Length -gt $maxLen) { $n = $n.Substring(0, $maxLen) + '...' }
+            $trimmed = Get-TruncatedDiffPair -C $c -N $n
+            $c = $trimmed[0]
+            $n = $trimmed[1]
             $countNote = if ($CLines.Count -ne $NetLines.Count) { " ($($CLines.Count) C line(s) vs $($NetLines.Count) .NET line(s))" } else { '' }
             return "line $($i + 1)$($countNote): c=`"$c`" net=`"$n`""
         }
@@ -496,8 +550,8 @@ try {
         $i++
         if (($i % 50) -eq 0) { Write-Host "  ... $i / $($grid.Count)" -ForegroundColor DarkGray }
 
-        $cResult = Invoke-SwetestCase -ExePath $CExePath -ArgsStr $row.Args -EpheDirPath $EpheDir
-        $netResult = Invoke-SwetestCase -ExePath $netExePath -ArgsStr $row.Args -EpheDirPath $EpheDir
+        $cResult = Invoke-SwetestCase -ExePath $CExePath -ArgsStr $row.Args -EpheDirPath $EpheDir -RepoRootPath $repoRoot
+        $netResult = Invoke-SwetestCase -ExePath $netExePath -ArgsStr $row.Args -EpheDirPath $EpheDir -RepoRootPath $repoRoot
 
         # Guard scoped to rows that actually asked for the real ephemeris (-eswe). -emos rows
         # (PLANETS_MOSEPH) are exempt on purpose: swetest.c's asteroid lookup ignores -edir under

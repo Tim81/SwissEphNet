@@ -286,11 +286,17 @@ function New-PatchedSwetestSource {
     # SE_AST_OFFSET/SE_FICT_OFFSET_1 inline, so spmoon has to hold a full id already. A blank
     # default made atoi("") == 0 == SE_SUN, so `swetest -pv` with no `-xv` silently printed the
     # Sun labelled as a planetary moon -- a defect in a reference artifact this build feeds an
-    # oracle. "9001" is Io, the first Jupiter moon past SE_PLMOON_OFFSET (9000). This repo's
-    # ephemeris checkout does not carry the sepm9*.se1 files planetary-moon calc needs (see
+    # oracle. "9501" is Io: SE_PLMOON_OFFSET (9000) plus the host planet's number times 100, so
+    # 94xx is a Mars moon, 95xx a Jupiter moon (Io is Jupiter's first), 96xx a Saturn moon, and
+    # so on -- 9001 is not a moon of anything. Confirmed against upstream's own later fix for
+    # this same missing-declaration defect: swetest.c on the aloistr/swisseph master branch (past
+    # the v2.10.3final tag this build otherwise pins to) declares
+    # `static char spmoon[AS_MAXCH] = "9501";  // Jupiter Moon Io`, matching the usage text's own
+    # `v -xv9501 Io/Jupiter` example. This patch adopts that value rather than inventing one. This
+    # repo's ephemeris checkout does not carry the sepm9*.se1 files planetary-moon calc needs (see
     # CONTRIBUTING.md's required-ephemeris-files.tsv list), so the untested default now fails
     # visibly with a data-missing error instead of quietly returning a wrong body's position.
-    $text = $text.Replace($sastnoDecl, $sastnoDecl + "`nstatic char spmoon[AS_MAXCH] = `"9001`";")
+    $text = $text.Replace($sastnoDecl, $sastnoDecl + "`nstatic char spmoon[AS_MAXCH] = `"9501`";")
 
     $gethostnamePattern = '(?m)^  gethostname \(hostname, 80\);\r?\n  if \(strstr\(hostname, "as80"\) != NULL\) *\r?\n    line_limit = 2 \* 36525;'
     $gethostnameCount = ([regex]::Matches($text, $gethostnamePattern)).Count
@@ -691,7 +697,7 @@ try {
         "env__CL_                  $(if ($envClUnderscoreOriginal) { $envClUnderscoreOriginal } else { 'not set' })"
         "pyswisseph_2_08_manifest  $manifest208Sha256 (scripts/pyswisseph-2.08.manifest.tsv)"
         "swisseph_commit           $submoduleHead"
-        "swetest_patches           spmoon declaration (default `"9001`"); gethostname guarded by HPUNIX"
+        "swetest_patches           spmoon declaration (default `"9501`"); gethostname guarded by HPUNIX"
         "swetest_patched_sha256    $patchedSha256"
         "libswe_2_10_03_sha256     $lib210Sha256"
         "libswe_2_08_sha256        $lib208Sha256"
