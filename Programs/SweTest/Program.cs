@@ -3229,12 +3229,23 @@ namespace SweTest
                 if (izod == 12) izod = 0;
                 xv = (xv % 30.0);
                 kdeg = (Int32)xv;
+                // swetest.c:2685 is sprintf(s, "%2d %s ", ...) with no leading space. The space is
+                // kept here on purpose. The sign-insertion below writes at the character before the
+                // first digit, and with "%2d" a kdeg of 10 or more fills the field, so the C writes
+                // *(sp-1) one byte before its own buffer and loses the minus: swetest -p0 -d1
+                // -b3.1.2020 -fPZ prints "27 ge 50' 3.9344" for a value of -27. Reproducing that
+                // would print a positive number for a negative one. Recorded in docs/known-issues.md
+                // and reported upstream; revisit if upstream fixes it.
                 s = C.sprintf(" %2d %s ", kdeg, zod_nam[izod]);
             }
             else
             {
+                // swetest.c:2688: sprintf(s, " %3d%s", kdeg, c). The leading space was missing here,
+                // which made every degree-bearing field a column narrow and, once kdeg reached 100,
+                // put a digit at index 0 so the sign path below called Substring(0, -1) and threw.
+                // swetest -p0 -d1 -b1.1.2020 -fPL -n12 -emos crashed where the C prints -121 degrees.
                 kdeg = (Int32)xv;
-                s = C.sprintf("%3d%s", kdeg, c);
+                s = C.sprintf(" %3d%s", kdeg, c);
             }
             xv -= kdeg;
             xv *= 60;
