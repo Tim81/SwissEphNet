@@ -49,16 +49,19 @@ The programs SweMini and SweTest target `net10.0`.
 ## Samples
 
 A new repos was created https://github.com/ygrenier/SwissEphNet.Samples containing
-lot of sample applications for using the library on different application types. It predates this
-fork's replacement of `OnLoadFile` with `FileProvider` (see "Will your code still compile?"
-below); a sample that loads files through `OnLoadFile` is showing the removed API, not the
-current one.
+lot of sample applications for using the library on different application types.
+
+That repository predates this fork's replacement of `OnLoadFile` with `FileProvider` (see "Will
+your code still compile?" below). A sample that loads files through `OnLoadFile` is showing the
+removed API, not the current one.
 
 ## Works with async
 
 For working with the async context read the [this paragraph](https://github.com/ygrenier/SwissEphNet/wiki/Loading-files#works-in-an-async-context)
-from the upstream wiki. It predates the same change: it documents loading files through
-`OnLoadFile`, which this fork removed.
+from the upstream wiki.
+
+That page predates the same change: it documents loading files through `OnLoadFile`, which this
+fork removed.
 
 # Upgrading from 2.8.0.2
 
@@ -79,8 +82,10 @@ in the port ever populated, so it came out zero on every call, and every positio
 through it used the wrong obliquity. That covers any `swe_calc`/`swe_calc_ut` call reading the
 Swiss Ephemeris files rather than falling back to Moshier's analytic approximation. Fixing it
 moved the file-backed comparison against Astrodienst's own C from 791 of 2,024 bit-identical rows
-to 1,975. 2.08 and 2.10.03 compute `rot_back` the same way, so this was never a version-tracking
-gap; it was wrong the whole time.
+to 1,975, as `grid-files.tsv` stood at the time of that fix (before the crossing functions added
+220 more rows to it; see "Bit-exact oracle" below for the grid's current, marked total). 2.08 and
+2.10.03 compute `rot_back` the same way, so this was never a version-tracking gap; it was wrong
+the whole time.
 
 Also a port defect, not an upstream change: `swe_nod_aps` and `swe_nod_aps_ut` returned all-zero
 nodes and apsides under `SEFLG_SIDEREAL` for every standard ayanamsha. A missing call to
@@ -141,9 +146,10 @@ staying hidden.
 `PATH_SEPARATOR` widened from `char` to `char[]`. The value is unchanged (`{ ';' }`); code that
 reads it as a single `char` needs to index `[0]` instead.
 
-The NuGet package ID will be `SwissEphSharp` once this fork publishes; the namespace will not
-change. See "Package name" below for why, and what migrating will involve once that release
-exists.
+One more thing worth flagging here even though it is not a source-level break like the four
+above: the NuGet package ID will change to `SwissEphSharp` once this fork publishes, while the
+namespace and every type name stay `SwissEphNet`. See "Package name" below for the full picture
+and what migrating will involve once that release exists.
 
 ## What you gain
 
@@ -230,7 +236,7 @@ with the same signatures.
 Source-level and reflection-based consumers can be affected:
 
 - **Reflection by name** (`Type.GetMethod("swe_house_name")` with no parameter-type
-  array, or any binder that resolves by name alone -- this affects Python.NET, some
+  array, or any binder that resolves by name alone; this affects Python.NET, some
   PowerShell cmdlet-binding paths, and dependency-injection or serializer conventions
   that enumerate methods by name) now throws `AmbiguousMatchException` for these five
   methods, because there are two overloads where there used to be one. Pass an explicit
@@ -243,22 +249,22 @@ Source-level and reflection-based consumers can be affected:
 - **A `char` above `U+00FF`** passed to `swe_houses`, `swe_houses_ex` or
   `swe_houses_armc` now takes its low byte when resolving the house system, matching what
   a genuine 8-bit C `char` would resolve to, rather than being widened untruncated as
-  before -- measured, `(char)331` (low byte `0x4B` = `'K'`) resolved to Placidus before
+  before: measured, `(char)331` (low byte `0x4B` = `'K'`) resolved to Placidus before
   and resolves to Koch now. `swe_house_pos` changes the same way in its internal cusp
   computation, but its own house-system dispatch compares the raw value and is unchanged,
-  and `swe_house_name` never narrows at all -- its behaviour is identical before and
+  and `swe_house_name` never narrows at all; its behaviour is identical before and
   after. This only affects callers passing a `char` outside the Latin-1 range, which was
   never a valid house-system letter either way; see `docs/known-issues.md` for the
   measured before/after.
 - **`swe_house_pos` with `hsys = 'G'`** (Gauquelin sectors) no longer throws
-  `IndexOutOfRangeException` -- an internal cusp array was undersized relative to
+  `IndexOutOfRangeException`: an internal cusp array was undersized relative to
   upstream 2.10.03. If your code wraps that call in a guard specifically to catch this
   exception, that guard is now dead code and can be removed.
 - **Eclipse magnitude and obscuration are a hundred times smaller.** `attr[0]` and
   `attr[2]` from `swe_sol_eclipse_how`, and from the `attr` array `swe_sol_eclipse_where`
   and `swe_lun_occult_where` fill, are now fractions rather than percentages: an eclipse
   that reported `100` reports `1`. This is upstream's change at `swecl.c:1067-1087`, not
-  this port's, and it is silent -- the call still succeeds, the array is still the same
+  this port's, and it is silent: the call still succeeds, the array is still the same
   length, and only the value moves. Any caller formatting these as a percentage needs to
   multiply by 100, and any threshold comparison against a number above 1 will now never
   fire. `attr[1]` and `attr[3]` onward are unaffected.
@@ -269,17 +275,17 @@ Source-level and reflection-based consumers can be affected:
   this side: the numbers differ because the underlying model does. Apparent diameter and
   phase angle for these bodies are unaffected by the magnitude-model swap.
   `Tests/SwissEphNet.Tests/PlaDiamCoverageTest.cs` is not evidence for that claim: it
-  covers a different, unrelated change -- the updated `pla_diam[]` table moves `attr[3]`
+  covers a different, unrelated change, the updated `pla_diam[]` table moving `attr[3]`
   for six minor bodies this bullet is not about (Chiron, Pholus, Ceres, Pallas, Juno and
-  Vesta) -- and it asserts only `attr[3]`, not phase angle or the rest of `attr`.
+  Vesta), and it asserts only `attr[3]`, leaving phase angle and the rest of `attr` untouched.
 - **`swe_rise_trans_true_hor` gains a `horhgt == -100` sentinel.** Passing exactly `-100`
   now means "use the dip of the horizon", computed from `calc_dip`, instead of a literal
-  horizon height of -100 degrees (`swecl.c:4415`; ported at `SweCL.cs:4502`). Absent from
+  horizon height of -100 degrees (`swecl.c:4415`; ported at `SweCL.cs:4507`). Absent from
   2.08, so a caller that happened to pass `-100` before now gets different rise/set times.
 - **`swe_lun_eclipse_when`'s search-precision threshold moved from 2000000 to 2100000**
   (`swecl.c:3485`, ported at `SweCL.cs:3548`), changing which Julian day range gets the
   coarser 5-day search step versus the finer 0.1-day one. The sibling function
-  `swe_sol_eclipse_when_glob` deliberately keeps its own threshold at 2000000 -- upstream
+  `swe_sol_eclipse_when_glob` deliberately keeps its own threshold at 2000000. Upstream
   did not move both.
 - **House cusps move at every latitude for Placidus and Gauquelin.** `CalcH` (`swehouse.c`)
   now iterates to convergence (`niter_max = 100`) where 2.08 always called it with
@@ -290,10 +296,12 @@ Source-level and reflection-based consumers can be affected:
   `swe_rise_trans_true_hor` rather than the fast approximation, so star rise and set times
   change.
 - **Every `SEFLG_SWIEPH` position changes.** `rot_back`'s J2000 obliquity was always zero in
-  this port -- it read `swed.oec2000`, which nothing ever populated -- so every position
+  this port (it read `swed.oec2000`, which nothing ever populated), so every position
   rotated back through it used the wrong obliquity. Fixed alongside the rest of `sweph.c`'s
-  file layer; the file-backed oracle grid went from 791 of 2,024 bit-identical to 1,975.
-  Probably the largest numeric change in this release.
+  file layer; the file-backed oracle grid went from 791 of 2,024 bit-identical to 1,975, as
+  `grid-files.tsv` stood at the time (220 crossing-function rows were added to it later; see
+  "Bit-exact oracle" below for the grid's current, marked total). Probably the largest numeric
+  change in this release.
 - **`swe_nod_aps`/`swe_nod_aps_ut` returned all-zero nodes and apsides for every standard
   ayanamsha.** A missing `swi_cartpol_sp` call on the sidereal branch (`swecl.c:5587`) left
   the ecliptic cartesian coordinates zeroed before the ayanamsha was applied. Fixed for
@@ -307,7 +315,7 @@ Source-level and reflection-based consumers can be affected:
 - **`swe_get_ayanamsa_ex` with no prior `swe_set_sid_mode` changes value**, from 92.525 to
   24.754 degrees: `swi_get_ayanamsa_ex` took its `sid_data` copy before the
   `SE_SIDM_FAGAN_BRADLEY` fallback ran, so it read pre-fallback state.
-- **`swe_nod_aps` after `swe_close`, under a sidereal or geocentric mode, changes value** --
+- **`swe_nod_aps` after `swe_close`, under a sidereal or geocentric mode, changes value:**
   344.63 degrees becomes 189.21 for the Moon's node at J2000. Two defects were cancelling
   each other out: `free_planets` replaced an object instead of zeroing it in place, and a
   separate `!= Sweph.B1950` mask (should be `!= 0`, `swecl.c:5414`) made the geocentric
@@ -339,7 +347,7 @@ Source-level and reflection-based consumers can be affected:
   target framework this library ships (`netstandard2.0`, `net8.0`, `net10.0`) has full
   filesystem access, no `FileProvider` set means the real filesystem is used, the same
   way the C reference itself behaves. Most existing `OnLoadFile` handlers that just
-  opened a real file by path can be deleted outright -- `swe_set_ephe_path` alone is
+  opened a real file by path can be deleted outright: `swe_set_ephe_path` alone is
   now sufficient. A handler whose source genuinely is not a file (an embedded resource,
   for instance) should be rewritten against the new interface. `SwissEph.PATH_SEPARATOR`
   also widens from `char` to `char[]` (still `{ ';' }`) to support this; see
@@ -398,8 +406,10 @@ SwissEphNet targets `netstandard2.0`, `net8.0` and `net10.0`.
 
 This library has been validated against the official Swiss Ephemeris C library.
 
-On modern .NET (.NET 8 and later), it produces bit-identical results for the validated test suite
-on every platform tested, each against a C reference built on that same platform:
+On .NET 10 (`net10.0` is what `Tools/OracleDump` and `Tools/OracleVerify` target, and the only
+runtime the table below was actually measured on), it produces bit-identical results for the
+validated test suite on every platform tested, each against a C reference built on that same
+platform:
 
 | Platform | C reference | Result |
 |---|---|---|
@@ -407,13 +417,28 @@ on every platform tested, each against a C reference built on that same platform
 | Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | 17,064 of 17,064 rows bit-identical (measured once, not gated) |
 | macOS arm64 | clang, `-O2 -ffp-contract=off -fno-builtin` | 17,064 of 17,064 rows bit-identical (gated) |
 
-"Gated" means `.github/workflows/oracle.yml` re-runs the comparison on every push and pull
-request: `crt-parity`, `c-reference-validate`, `oracle-dump` and `swetest-diff` cover Windows,
-`macos-exactness` covers macOS (`header-flags-check` is a self-check on that workflow file's own
-header comment, not a build of anything). None of those jobs run on Linux. The Linux row came from
-one full run of the grid, done by hand; all 17,064 rows matched bit for bit. Nothing re-runs it
-automatically, so a regression specific to glibc would sit unnoticed until someone measures it
-again.
+The characterization baseline (`scripts/verify-baseline.ps1`) separately runs on both `net8.0` and
+`net10.0` and reports them field-identical to each other on the platform that generated it. That
+corroborates `net8.0` from a different instrument, but it is a weaker claim than the table above:
+self-consistency between two TFMs of this port rather than agreement with the C reference.
+
+"Gated" on the Windows row means `oracle-dump`, the `.github/workflows/oracle.yml` job that
+replays this exact 17,064-row grid, re-runs the comparison end to end on every push and pull
+request and fails the workflow on any mismatch. Three more jobs also run on Windows in that file
+but check different things than this grid: `crt-parity` compares MSVC C against .NET on a fixed
+CRT value table, `c-reference-validate` compares the MSVC C build against pyswisseph 2.10.03, and
+`swetest-diff` compares `Programs/SweTest`'s printed text output against Astrodienst's own
+`swetest.exe`. `swetest-diff` is not itself gated on that comparison: the step carries
+`continue-on-error` by design, because it checks printed output captured from one specific MSVC
+build that a future toolchain bump could shift without the port changing (see that workflow's own
+header comment, and `docs/compliance-2.10.03.md`'s "4. SweTest text-output comparison" for the
+same exemption stated in full). `macos-exactness` covers macOS the same way `oracle-dump` covers
+Windows. `header-flags-check` does run on `ubuntu-latest`, but it checks this workflow file's own
+header comment against its own `continue-on-error` flags rather than any of Astrodienst's C, so
+while a job in this file does run on Linux, none of the four that build or compare against
+Astrodienst's C do. The Linux row came from one full run of the grid, done by hand; all 17,064
+rows matched bit for bit. Nothing re-runs it automatically, so a regression specific to glibc
+would sit unnoticed until someone measures it again.
 
 The agreement is exact rather than close because the port and the C reference call the same libm
 on a given platform: `ucrtbase.dll` on Windows, glibc on Linux, Apple's libSystem on macOS. The
@@ -431,11 +456,22 @@ platform that generated it and the cross-platform CI job reports drift without g
 it is a statement about libm rather than about this port. The baseline has not been generated on
 macOS, so this same field-by-field comparison has not been run there.
 
-When the `netstandard2.0` build is executed on .NET Framework 4.8, small floating-point
-differences may occur, because that runtime's implementations of transcendental functions (for
-example `Math.Sin` and `Math.Tan`) are not bit-identical to those of modern .NET. In the current
-validation suite this results in a maximum observed difference of 2 ULP, for example on
-`FICT_CUPIDO`.
+When the `netstandard2.0` build is executed on .NET Framework 4.8, floating-point differences can
+occur, because that runtime's implementations of transcendental functions (for example `Math.Sin`
+and `Math.Tan`) are not bit-identical to those of modern .NET. No instrument in this repository
+measures that gap: `Tests/NetStandard20Smoke.Tests` is the only `net48` asset, and it asserts
+strings and `C.atof` rather than floating-point distance. Measured directly for this note, the
+same way the bit-exact oracle compares doubles (a totalOrder ULP distance; see
+`Tools/OracleVerify/UlpMath.cs`): `swe_calc` for `FICT_CUPIDO` (`ipl` 40, `SEFLG_MOSEPH`) at
+J2000.0 returns a latitude 83 ULP apart and a distance 4 ULP apart between `net48` and `net10.0`,
+longitude bit-identical at that one date. That is not a fixed ceiling: the same call swept over
+1850-2050 at five-year steps found position differences ranging from 0 ULP up to several
+thousand depending on the date, and adding `SEFLG_SPEED` widens it further, because the speed
+fields are a finite difference between two nearby position evaluations and amplify whatever
+position-level difference already exists. The honest statement is that the two runtimes
+disagree at the ULP level on `FICT_CUPIDO` and on transcendental math generally, reproducibly,
+by an amount that depends on the input; there is no single number, measured or otherwise, that
+bounds it across every call.
 
 The table above is the bit-exact oracle's own result; see "Bit-exact oracle" below for the tooling
 behind it and what it proves that the other two verification instruments in this README cannot.
@@ -443,7 +479,7 @@ behind it and what it proves that the other two verification instruments in this
 ## Package name
 
 This project carries three names, and meeting them separately can look like something is broken.
-It is not -- one of the three has not shipped yet:
+It isn't; one of the three has not shipped yet:
 
 - The **repository** is `Tim81/SwissEphNet`, a fork of `ygrenier/SwissEphNet`, and keeps that
   name.
