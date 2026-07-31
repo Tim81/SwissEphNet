@@ -19,7 +19,7 @@ namespace SweWin
         static string[] lat_n_s = new string[] { "N", "S" };
         static string[] lon_e_w = new string[] { "E", "W" };
         const int NEPHE = 3;
-        static string[] ephe = new string[] { "Swiss Ephemeris", "JPL Ephemeris DE406", "Moshier Ephemeris" };
+        static string[] ephe = new string[] { "Swiss Ephemeris", "JPL Ephemeris DE431", "Moshier Ephemeris" };
         const int NPLANSEL = 3;
         static string[] plansel = new string[] { "main planets", "with asteroids", "with hyp. bodies" };
         const int NCENTERS = 6;
@@ -473,7 +473,7 @@ namespace SweWin
             //ephepath = ".;sweph";
             if (String.CompareOrdinal(pd.ephe, ephe[1]) == 0) {
                 whicheph = SwissEph.SEFLG_JPLEPH;
-                fname = SwissEph.SE_FNAME_DE406;
+                fname = SwissEph.SE_FNAME_DFT;
             } else if (String.CompareOrdinal(pd.ephe, ephe[0]) == 0)
                 whicheph = SwissEph.SEFLG_SWIEPH;
             else
