@@ -275,7 +275,19 @@ static int RunDiffScopeMode(string oldDir, string newDir, string[] globs)
     var rowCountLines = new List<string>();
     var newRowPrefixesByArea = new List<(string Name, IReadOnlyList<string> Prefixes)>();
 
-    foreach (var (name, _) in Areas.All)
+    // Area names come from the baseline-*.tsv files actually present on disk, in either
+    // directory, not from Areas.All. An area removed from Areas.All (BaselineMatrix no
+    // longer generates it) still has a committed baseline-<name>.tsv sitting in oldDir --
+    // trusting Areas.All here would skip that file entirely, so its rows would never be
+    // classified as "removed" and the deletion would pass with SCOPE-OK's "no areas
+    // changed". Reading both directories' filenames catches that: a name present only in
+    // oldDir still gets diffed, with newRows empty, so ScopeDiff.ComputeArea reports every
+    // one of its case ids as removed and -ExpectedScope has to cover them explicitly.
+    var areaNames = new SortedSet<string>(StringComparer.Ordinal);
+    areaNames.UnionWith(AreaNamesFromBaselineFiles(oldDir));
+    areaNames.UnionWith(AreaNamesFromBaselineFiles(newDir));
+
+    foreach (var name in areaNames)
     {
         var oldPath = Path.Combine(oldDir, $"baseline-{name}.tsv");
         var newPath = Path.Combine(newDir, $"baseline-{name}.tsv");
@@ -354,6 +366,25 @@ static int RunDiffScopeMode(string oldDir, string newDir, string[] globs)
     }
 
     return 0;
+}
+
+// Every area name RunDiffScopeMode has a baseline-<name>.tsv for in the given directory,
+// derived from the filenames actually present rather than from Areas.All -- see the doc
+// comment where this is called. Returns nothing if the directory does not exist (the
+// caller already treats a missing side as "no rows" via File.Exists on each individual
+// path).
+static IEnumerable<string> AreaNamesFromBaselineFiles(string dir)
+{
+    if (!Directory.Exists(dir))
+    {
+        yield break;
+    }
+
+    foreach (var path in Directory.EnumerateFiles(dir, "baseline-*.tsv"))
+    {
+        var fileName = Path.GetFileName(path);
+        yield return fileName["baseline-".Length..^".tsv".Length];
+    }
 }
 
 // Diagnostic-only pass: same matrix, same rows, no waivers, no PASS/FAIL of any
