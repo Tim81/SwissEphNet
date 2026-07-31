@@ -210,10 +210,13 @@ namespace SwissEphNet.CPort
          */
         Int32 fsizer(ref string serr) {
             /* Local variables */
-            Int32 ncon;
-            double emrat;
-            Int32 numde;
-            double au; double[] ss = new double[3];
+            // ncon/emrat/numde/au are read via Read(ref ...) below (see the swejpl.c:238-239 comment
+            // there), and C#'s definite-assignment rule requires a ref argument to already have a
+            // value, unlike a C local that fread() writes into regardless of prior content.
+            Int32 ncon = 0;
+            double emrat = 0;
+            Int32 numde = 0;
+            double au = 0; double[] ss = new double[3];
             int i, kmx, khi, nd;
             Int32 ksize; int[] lpt = new int[3];
             sbyte[] ttl = new sbyte[6 * 14 * 3];
@@ -226,19 +229,28 @@ namespace SwissEphNet.CPort
              *  Start Epoch: JED=   625296.5-3001 DEC 21 00:00:00
              *  Final Epoch: JED=  2817168.5 3001 JAN 17 00:00:00c */
             //nrd = fread((void*)&ttl[0], 1, 252, js->jplfptr);
-            ttl = js.jplfptr.ReadSBytes(252);
+            // swejpl.c:207 (`nrd = fread(...)`) turns a short/failed read into nrd = 0, which the
+            // `nrd != 252` check below already handles. CFile's ReadSBytes/ReadChars/ReadDoubles/
+            // ReadInt32s (Tools/CFile.cs) return null instead of an empty array when the stream is
+            // already at EOF, so `.Length` here threw NullReferenceException instead of reaching
+            // that check. `?? Array.Empty<T>()` restores the fread-returns-0-items behavior; the
+            // same pattern repeats at every read in this function and in state() below, each citing
+            // its own C line.
+            ttl = js.jplfptr.ReadSBytes(252) ?? Array.Empty<sbyte>();
             nrd = ttl.Length;
             if (nrd != 252) return Sweph.NOT_AVAILABLE;
             /* cnam = names of constants */
             //fread((void *) js.ch_cnam, 1, 6*400, js.jplfptr);
-            js.ch_cnam = js.jplfptr.ReadChars(6 * 400);
+            // swejpl.c:210
+            js.ch_cnam = js.jplfptr.ReadChars(6 * 400) ?? Array.Empty<char>();
             nrd = js.ch_cnam.Length;
             if (nrd != 6 * 400) return Sweph.NOT_AVAILABLE;
             /* ss[0] = start epoch of ephemeris
              * ss[1] = end epoch
              * ss[2] = segment size in days */
             //fread((void *) &ss[0], sizeof(double), 3, js.jplfptr);
-            ss = js.jplfptr.ReadDoubles(3);
+            // swejpl.c:215
+            ss = js.jplfptr.ReadDoubles(3) ?? Array.Empty<double>();
             nrd = ss.Length;
             if (nrd != 3) return Sweph.NOT_AVAILABLE;
             /* reorder ? */
@@ -260,22 +272,26 @@ namespace SwissEphNet.CPort
             }
             /* ncon = number of constants */
             //fread((void *) &ncon, sizeof(int32), 1, js.jplfptr);
-            ncon = js.jplfptr.ReadInt32();
-            //if (nrd != 1) return Sweph.NOT_AVAILABLE;
+            // swejpl.c:238-239: the guard below was commented out along with the fread it belongs
+            // to, so a short/failed read left ncon at 0 and fsizer kept going instead of failing.
+            // ReadInt32() (which returns 0 on failure, matching fread's own silent short-read
+            // outcome) can't distinguish "read a real 0" from "read nothing"; Read(ref ncon) reports
+            // success explicitly, the same signal nrd carried in the C.
+            if (!js.jplfptr.Read(ref ncon)) return Sweph.NOT_AVAILABLE;
             if (js.do_reorder)
                 //reorder((char *) &ncon, sizeof(int32), 1);
                 ncon = reorder(ncon);
             /* au = astronomical unit */
             //fread((void *) &au, sizeof(double), 1, js.jplfptr);
-            au = js.jplfptr.ReadDouble();
-            //if (nrd != 1) return Sweph.NOT_AVAILABLE;
+            // swejpl.c:243-244
+            if (!js.jplfptr.Read(ref au)) return Sweph.NOT_AVAILABLE;
             if (js.do_reorder)
                 //reorder((char *) &au, sizeof(double), 1);
                 au = reorder(au);
             /* emrat = earth moon mass ratio */
             //fread((void *) &emrat, sizeof(double), 1, js.jplfptr);
-            emrat = js.jplfptr.ReadDouble();
-            //if (nrd != 1) return NOT_AVAILABLE;
+            // swejpl.c:248-249
+            if (!js.jplfptr.Read(ref emrat)) return Sweph.NOT_AVAILABLE;
             if (js.do_reorder)
                 //reorder((char *) &emrat, sizeof(double), 1);
                 emrat = reorder(emrat);
@@ -295,14 +311,15 @@ namespace SwissEphNet.CPort
                 reorder(js.eh_ipt);
             /* numde = number of jpl ephemeris "404" with de404 */
             //fread((void *) &numde, sizeof(int32), 1, js.jplfptr);
-            numde = js.jplfptr.ReadInt32();
-            //if (nrd != 1) return NOT_AVAILABLE;
+            // swejpl.c:260-261
+            if (!js.jplfptr.Read(ref numde)) return Sweph.NOT_AVAILABLE;
             if (js.do_reorder)
                 //reorder((char *) &numde, sizeof(int32), 1);
                 numde = reorder(numde);
             /* read librations */
             //fread(&lpt[0], sizeof(int32), 3, js.jplfptr);
-            lpt = js.jplfptr.ReadInt32s(3);
+            // swejpl.c:265
+            lpt = js.jplfptr.ReadInt32s(3) ?? Array.Empty<Int32>();
             nrd = lpt.Length;
             if (nrd != 3) return Sweph.NOT_AVAILABLE;
             if (js.do_reorder)
@@ -716,19 +733,22 @@ namespace SwissEphNet.CPort
                  *  Start Epoch: JED=   625296.5-3001 DEC 21 00:00:00
                  *  Final Epoch: JED=  2817168.5 3001 JAN 17 00:00:00c */
                 //fread((void *) ch_ttl, 1, 252, js.jplfptr);
-                ch_ttl = js.jplfptr.ReadSBytes(252);
+                // swejpl.c:679; see fsizer's ch_ttl read above for why the null-coalesce is needed.
+                ch_ttl = js.jplfptr.ReadSBytes(252) ?? Array.Empty<sbyte>();
                 nrd = ch_ttl.Length;
                 if (nrd != 252) return Sweph.NOT_AVAILABLE;
                 /* cnam = names of constants */
                 //fread((void *) js.ch_cnam, 1, 2400, js.jplfptr);
-                js.ch_cnam = js.jplfptr.ReadChars(2400);
+                // swejpl.c:682
+                js.ch_cnam = js.jplfptr.ReadChars(2400) ?? Array.Empty<char>();
                 nrd = js.ch_cnam.Length;
                 if (nrd != 2400) return Sweph.NOT_AVAILABLE;
                 /* ss[0] = start epoch of ephemeris
                  * ss[1] = end epoch
                  * ss[2] = segment size in days */
                 //fread((void *) &js.eh_ss[0], sizeof(double), 3, js.jplfptr);
-                js.eh_ss = js.jplfptr.ReadDoubles(3);
+                // swejpl.c:687
+                js.eh_ss = js.jplfptr.ReadDoubles(3) ?? Array.Empty<double>();
                 nrd = js.eh_ss.Length;
                 if (nrd != 3) return Sweph.NOT_AVAILABLE;
                 if (js.do_reorder)
@@ -736,22 +756,24 @@ namespace SwissEphNet.CPort
                     reorder(js.eh_ss);
                 /* ncon = number of constants */
                 //fread((void *) &js.eh_ncon, sizeof(int32), 1, js.jplfptr);
-                js.eh_ncon = js.jplfptr.ReadInt32();
-                //if (nrd != 1) return Sweph.NOT_AVAILABLE;
+                // swejpl.c:692-693: see fsizer's ncon read above for why the guard has to be live,
+                // not commented out. Worst case here is js.eh_au (below) silently staying 0, which
+                // makes aufac = 1 / eh_au infinite at this file's own use of eh_au further down.
+                if (!js.jplfptr.Read(ref js.eh_ncon)) return Sweph.NOT_AVAILABLE;
                 if (js.do_reorder)
                     //reorder((char *) &js.eh_ncon, sizeof(int32), 1);
                     js.eh_ncon = reorder(js.eh_ncon);
                 /* au = astronomical unit */
                 //fread((void *) &js.eh_au, sizeof(double), 1, js.jplfptr);
-                js.eh_au = js.jplfptr.ReadDouble();
-                //if (nrd != 1) return Sweph.NOT_AVAILABLE;
+                // swejpl.c:697-698
+                if (!js.jplfptr.Read(ref js.eh_au)) return Sweph.NOT_AVAILABLE;
                 if (js.do_reorder)
                     //reorder((char *) &js.eh_au, sizeof(double), 1);
                     js.eh_au = reorder(js.eh_au);
                 /* emrat = earth moon mass ratio */
                 //fread((void *) &js.eh_emrat, sizeof(double), 1, js.jplfptr);
-                js.eh_emrat = js.jplfptr.ReadDouble();
-                //if (nrd != 1) return Sweph.NOT_AVAILABLE;
+                // swejpl.c:702-703
+                if (!js.jplfptr.Read(ref js.eh_emrat)) return Sweph.NOT_AVAILABLE;
                 if (js.do_reorder)
                     //reorder((char *) &js.eh_emrat, sizeof(double), 1);
                     js.eh_emrat = reorder(js.eh_emrat);
@@ -768,13 +790,14 @@ namespace SwissEphNet.CPort
                     reorder(ipt, 0, 36);
                 /* numde = number of jpl ephemeris "404" with de404 */
                 //fread((void *) &js.eh_denum, sizeof(int32), 1, js.jplfptr);
-                js.eh_denum = js.jplfptr.ReadInt32();
-                //if (nrd != 1) return Sweph.NOT_AVAILABLE;
+                // swejpl.c:714-715
+                if (!js.jplfptr.Read(ref js.eh_denum)) return Sweph.NOT_AVAILABLE;
                 if (js.do_reorder)
                     //reorder((char *) &js.eh_denum, sizeof(int32), 1);
                     js.eh_denum = reorder(js.eh_denum);
                 //fread((void *) &lpt[0], sizeof(int32), 3, js.jplfptr);
-                lpt = js.jplfptr.ReadInt32s(3);
+                // swejpl.c:718
+                lpt = js.jplfptr.ReadInt32s(3) ?? Array.Empty<Int32>();
                 nrd = lpt.Length;
                 if (nrd != 3) return Sweph.NOT_AVAILABLE;
                 if (js.do_reorder)
@@ -784,7 +807,8 @@ namespace SwissEphNet.CPort
                 //FSEEK(js.jplfptr, (off_t) (1L * irecsz), 0);
                 js.jplfptr.Seek(irecsz, SeekOrigin.Begin);
                 //fread((void *) &js.eh_cval[0], sizeof(double), 400, js.jplfptr);
-                js.eh_cval = js.jplfptr.ReadDoubles(400);
+                // swejpl.c:724
+                js.eh_cval = js.jplfptr.ReadDoubles(400) ?? Array.Empty<double>();
                 nrd = js.eh_cval.Length;
                 if (nrd != 400) return Sweph.NOT_AVAILABLE;
                 if (js.do_reorder)
@@ -866,7 +890,11 @@ namespace SwissEphNet.CPort
             if (nr != nrl) {
                 nrl = nr;
                 //if (FSEEK(js.jplfptr, (off_t)(nr * ((off_t)irecsz)), 0) != 0) {
-                if (js.jplfptr.Seek((nr * (irecsz)), SeekOrigin.Begin) != 0) {
+                // swejpl.c:796: nr * ((off_t64) irecsz) widens irecsz before the multiply, the same
+                // pattern already used 32 lines above at this file's :837. This site multiplied in
+                // 32-bit Int32 and let the implicit conversion to Seek's Int64 parameter happen only
+                // after overflow had already occurred.
+                if (js.jplfptr.Seek((nr * ((Int64)irecsz)), SeekOrigin.Begin) != 0) {
                     serr = C.sprintf("Read error in JPL eph. at %f\n", et);
                     return Sweph.NOT_AVAILABLE;
                 }

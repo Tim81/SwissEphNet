@@ -1437,10 +1437,15 @@ namespace SwissEphNet.CPort
             // the p > 0 guard, so p == 0 threw ArgumentOutOfRangeException.
             if (str == null) return null;
             int p = str.IndexOf(',');
+            // swehel.c:1449 (`*sp = tolower(*sp)`) is an ASCII loop, not culture-sensitive; under
+            // tr-TR, string.ToLower() maps 'I' to dotless 'ı' rather than 'i', so a capitalized
+            // "JUPITER" never matches the lowercase prefixes DeterObject (SweHel.cs:331, which
+            // already uses ToLowerInvariant with this same comment) or swe_vis_limit_mag's own
+            // "moon" check compare against.
             if (p > 0)
-                str = str.Substring(0, p).ToLower() + str.Substring(p);
+                str = str.Substring(0, p).ToLowerInvariant() + str.Substring(p);
             else if (p < 0)
-                str = str.ToLower();
+                str = str.ToLowerInvariant();
             return str;
         }
 

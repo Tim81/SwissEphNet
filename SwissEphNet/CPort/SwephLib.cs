@@ -3223,7 +3223,19 @@ namespace SwissEphNet.CPort
                     year = C.atoi(s);
                     tab_index = year - TABSTART;
                     /* table space is limited. no error msg, if exceeded */
-                    if (tab_index >= TABSIZ_SPACE)
+                    // swephlib.c:3111-3114 only guards the upper bound: `sp += 4` (pointer
+                    // arithmetic on a fixed AS_MAXCH buffer) and `dt[tab_index]` with a negative
+                    // index are both undefined behavior in the C rather than a checked case, so
+                    // there is no lower-bound check to transliterate. A line whose leading digits
+                    // parse to a year below TABSTART (1620) needs one here anyway: Substring(4)
+                    // throws on a line under 4 characters where the C would read past the buffer's
+                    // content into whatever else was there, and dt[tab_index] throws on a negative
+                    // index where the C would write before the array. Skipping both, the same way
+                    // the upper-bound check already skips an out-of-range year, keeps every in-range
+                    // line's behavior identical and turns the two undefined-in-C cases into the same
+                    // silent no-op the C's "no error msg, if exceeded" comment already describes for
+                    // the upper bound.
+                    if (tab_index >= TABSIZ_SPACE || tab_index < 0 || sp.Length < 4)
                         continue;
                     sp = sp.Substring(4).TrimStart(' ', '\t');
                     //while (strchr(" \t", *sp) != NULL && *sp != '\0')
