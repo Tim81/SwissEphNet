@@ -55,6 +55,166 @@ lot of sample applications for using the library on different application types.
 
 For working with the async context read the [this paragraph](https://github.com/ygrenier/SwissEphNet/wiki/Loading-files#works-in-an-async-context).
 
+# Upgrading from 2.8.0.2
+
+This section is for anyone with `SwissEphNet 2.8.0.2` in a project, deciding whether to move to
+`SwissEphSharp 2.10.3`. Four questions, in the order they matter: will your numbers change, will
+your code still compile, what do you gain, and can you trust the answers you get.
+
+## Will your numbers change?
+
+For most calls, yes. Two different things are mixed together in this list: places where
+Astrodienst changed the reference model between 2.08 and 2.10.03, and places where this port's
+own arithmetic was wrong and is fixed now. Both move your output. Only one of them is upstream's
+doing, and it matters which.
+
+The largest change in the release, and a port defect rather than an upstream one: every
+`SEFLG_SWIEPH` position changes. `rot_back` reads a J2000 obliquity, `swed.oec2000`, that nothing
+in the port ever populated, so it came out zero on every call, and every position rotated back
+through it used the wrong obliquity. That covers any `swe_calc`/`swe_calc_ut` call reading the
+Swiss Ephemeris files rather than falling back to Moshier's analytic approximation. Fixing it
+moved the file-backed comparison against Astrodienst's own C from 791 of 2,024 bit-identical rows
+to 1,975. 2.08 and 2.10.03 compute `rot_back` the same way, so this was never a version-tracking
+gap; it was wrong the whole time.
+
+Also a port defect, not an upstream change: `swe_nod_aps` and `swe_nod_aps_ut` returned all-zero
+nodes and apsides under `SEFLG_SIDEREAL` for every standard ayanamsha. A missing call to
+`swi_cartpol_sp` left the ecliptic cartesian coordinates zeroed before the ayanamsha was applied.
+Fixed for every ayanamsha except `SE_SIDBIT_ECL_T0` and `SE_SIDBIT_SSY_PLANE`, which took a
+different path and were already correct.
+
+One more port defect, present since long before 2.10.03: `swe_cs2lonlatstr` transposed its
+hemisphere letter and its degrees units digit on every call. `swe_cs2lonlatstr(1234567, 'p', 'm')`
+returned `"p325'46"`; the correct string, which the C has always produced, is `"3p25'46"`.
+
+Now the model changes, which are upstream's doing and not a bug being fixed. `eclipse_how`'s
+`attr[0]` and `attr[2]` are fractions now, not percentages (`swecl.c:1067-1087`): an eclipse that
+used to report `100` reports `1`. Multiply by 100 if your code expects a percentage, and recheck
+any threshold comparison written against a number above 1. `swe_pheno` and `swe_pheno_ut` compute
+Moon and Mercury-through-Neptune magnitudes with the Mallama 2018 model instead of Hilton 2005;
+apparent diameter and phase angle are unaffected. House cusps move at every latitude for Placidus
+and Gauquelin, because 2.10.03 iterates `CalcH`'s pole-height calculation to convergence
+(`niter_max = 100`) where 2.08 always stopped after exactly two iterations; the old and new cusps
+only agree where two iterations happened to already converge.
+
+A further set of smaller numeric shifts, some upstream's and some this fork's, is itemized with
+exact C line citations under "Breaking changes" below: the `swe_refrac_extended`/`calc_dip` predicate
+and constant fix, the `swe_lun_eclipse_when` search-precision threshold, fixed stars being routed
+onto `swe_rise_trans`'s slower path, and a handful of `serr` messages that now report a failure the
+port used to swallow silently. That section is the reference; this one is the summary an upgrade
+decision needs.
+
+## Will your code still compile?
+
+Mostly. A handful of things need a one-line fix.
+
+`OnLoadFile` is gone. It is replaced by `SwissEph.FileProvider`, a settable
+`IEphemerisFileProvider` with one method, `Stream Open(string path)`, where `null` means "not
+found". If your handler just opened a real file by path, delete it: the library now reads
+straight off the filesystem whenever `swe_set_ephe_path` points at a real, populated directory,
+the same way the C reference does. That is new, and it closes a real defect: previously, having no
+`OnLoadFile` subscriber meant every ephemeris file silently failed to load and every calculation
+quietly fell back to Moshier, even with a correctly configured ephemeris path. Write an
+`IEphemerisFileProvider` only when your source is not a file on disk at all, an embedded resource
+being the usual case.
+
+`swe_houses`, `swe_houses_ex`, `swe_houses_armc`, `swe_house_pos`, and `swe_house_name` each
+gained an `int hsys` overload alongside the existing `char hsys` one, matching what `swephexp.h`
+has always declared. Binary compatibility holds: anything already compiled against this library
+keeps working unchanged. Two source-level cases do break. `Type.GetMethod("swe_house_name")` and
+any other name-only reflection lookup now throws `AmbiguousMatchException`, because there are two
+overloads where there used to be one; pass an explicit parameter-type array. `var f =
+swe.swe_house_name;` no longer compiles under C# 10 and later: the compiler cannot pick an
+overload and reports `CS8917`; declare an explicit delegate type instead.
+
+`Dispose()` now actually disposes. Before, it called `swe_close()` and stopped there: nothing
+marked the instance as disposed, so a call made after `Dispose()` silently reopened the ephemeris
+files and returned a correct answer. It now throws `ObjectDisposedException` instead. If your code
+used a `SwissEph` instance after disposing it, that was already a bug; it surfaces now rather than
+staying hidden.
+
+`PATH_SEPARATOR` widened from `char` to `char[]`. The value is unchanged (`{ ';' }`); code that
+reads it as a single `char` needs to index `[0]` instead.
+
+The NuGet package ID changed, to `SwissEphSharp`. The namespace did not. `SwissEphNet` on
+nuget.org already belongs to the upstream author's own release, so this fork cannot publish under
+that name. Everything under `SwissEphNet/CPort/` is a line-by-line transliteration of the C and
+declares the `SwissEphNet` namespace; renaming it would touch every one of those files for no
+functional reason and would break drop-in compatibility with code written against the original.
+Migrating is the one line it sounds like: swap the `PackageReference` name and change nothing
+else. `using SwissEphNet;` and every type name stay exactly as they are.
+
+## What you gain
+
+Beyond fewer wrong numbers, the 2.10.3 API surface adds functionality the 2.8.0.2-era port simply
+did not have:
+
+- `swe_houses_ex2` and `swe_houses_armc_ex2`: house calculations with per-cusp speed output and
+  an explicit `serr` parameter.
+- `swe_calc_pctr`: planetocentric position, one body as seen from another.
+- `swe_get_current_file_data`: reports which ephemeris file is currently open and the time range
+  it covers.
+- Eight crossing functions: `swe_solcross`/`_ut`, `swe_mooncross`/`_ut`,
+  `swe_mooncross_node`/`_ut`, and `swe_helio_cross`/`_ut`. None of these existed in the 2.08-based
+  port at all.
+- House system `'J'` (Savard-A).
+- Planetary-moon and centre-of-body support (`SEFLG_CENTER_BODY`, `SEFLG_TEST_PLMOON`), reaching
+  bodies numbered 9000 and up. This needs the `ephe/sat/` data set, which this repository does not
+  ship.
+- `SEFLG_TROPICAL`, `SE_ECL_HYBRID`, and three `SE_SIDBIT_*` constants (`SE_SIDBIT_ECL_DATE`,
+  `SE_SIDBIT_NO_PREC_OFFSET`, `SE_SIDBIT_PREC_ORIG`).
+
+None of this replaces existing API. It is purely additive.
+
+## What was actually fixed, and how we know
+
+Model changes aside, several defects in this list are bugs a caller could hit in ordinary use,
+some dating back to the original 2014-2019 port.
+
+The fixed-star cache mixed up which star it had cached. `swe_fixstar`, `swe_fixstar_mag`,
+`swe_fixstar2`, and `swe_fixstar2_mag` each declare their own function-local cache in the C; the
+port had collapsed all four into three shared fields, so calling one entry point for one star
+could return a different, previously-cached star's position under another entry point. Each
+function now keeps its own cache.
+
+Star and heliacal lookups broke under a Turkish locale. `ToLower()` on `"JUPITER"` produces
+`"jupıter"` (dotless i) under `tr-TR`, so a name match against `"jupiter"` silently failed, and
+`swe_vis_limit_mag`'s Moon special case never matched a capitalized `"Moon"` either. Both now
+lowercase ASCII-only, matching the C's own loop.
+
+`Programs/SweTest` crashed on any longitude reaching 100 degrees or more. Its degree formatter was
+one character narrower than the C's own field width, so the routine that splices in a minus sign
+wrote one byte before its own buffer and threw. Fixed by restoring the leading space the C's
+format string has.
+
+Thirteen call sites threw where the C, using `atoi`/`atof`, returns zero for input it cannot
+parse. One of them made `swe_heliacal_ut` throw a `FormatException` for any non-numeric object
+name. Another turned a data file's own header line into an unhandled exception, because the C
+uses `atoi`'s zero return as its own signal to skip that line.
+
+`swe_house_pos` threw `IndexOutOfRangeException` on every Gauquelin-sector (`hsys = 'G'`) call:
+its internal cusp buffer was one element short of what upstream's own 2.10.03 array-size fix
+requires.
+
+How this is checked, and what checking it does and does not prove. The port's output is compared
+field by field against Astrodienst's own C, built from the same source and run against the same
+ephemeris files. On Windows (MSVC) and Linux (gcc), all 17,064 rows in that comparison (14,820
+calls that need no ephemeris file plus 2,244 that read the shipped `.se1` files) come back
+bit-identical, not merely close; the tracked difference lists for both are empty. macOS (clang,
+arm64) matches too, once clang is told not to substitute its own math builtins for individual libm
+calls (`-fno-builtin`). None of that proves agreement between platforms: comparing the port's own
+frozen output, generated on Windows and on Linux from the same commit, finds 66,342 of 3,547,367
+compared fields differing at all, 5,394 of them beyond the shipped tolerance. That divergence is
+each platform's own math library disagreeing with itself in the last few bits, the same thing two
+independently built C programs would show; it is not evidence against the port.
+
+Separately, the port's output is checked against Astrodienst's own 2.10.03 test suite (`setest`),
+12,757 iterations across ten functional areas. 1,427 of those still fail: 714 because the answer
+is outside the tolerance Astrodienst's own suite allows, and 713 because a required data file (a
+JPL ephemeris, or an ephemeris era this repository does not ship, roughly years 1200 to 2399) is
+not present, not because the answer is wrong. That is the honest state of it: strong on everything
+it has been checked against, not yet at full parity with Astrodienst's own reference corpus.
+
 # Breaking changes
 
 ## Unreleased
@@ -237,23 +397,29 @@ SwissEphNet targets `netstandard2.0`, `net8.0` and `net10.0`.
 This library has been validated against the official Swiss Ephemeris C library.
 
 On modern .NET (.NET 8 and later), it produces bit-identical results for the validated test suite
-on both platforms tested, each against a C reference built on that same platform:
+on every platform tested, each against a C reference built on that same platform:
 
 | Platform | C reference | Result |
 |---|---|---|
 | Windows x64 | MSVC 19.51, `/O2 /fp:precise /MD` | 17,064 of 17,064 rows bit-identical |
 | Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | 17,064 of 17,064 rows bit-identical |
+| macOS arm64 | clang, `-O2 -ffp-contract=off -fno-builtin` | 17,064 of 17,064 rows bit-identical (gated) |
 
 The agreement is exact rather than close because the port and the C reference call the same libm
-on a given platform: `ucrtbase.dll` on Windows, glibc on Linux. macOS has not been measured.
+on a given platform: `ucrtbase.dll` on Windows, glibc on Linux, Apple's libSystem on macOS. The
+macOS build needs `-fno-builtin`: without it, clang substitutes its own math builtins for some
+libm calls (fusing an adjacent `sin`/`cos` pair into one `__sincos`, for instance), and Apple's
+`__sincos` does not return bit-identically to calling the two functions separately the way the
+port does. With `-fno-builtin`, both grids are bit-identical there too.
 
-The two platforms do not produce the same numbers as each other, and cannot be made to. `Math.Sin`
+Windows and Linux do not produce the same numbers as each other, and cannot be made to. `Math.Sin`
 and its siblings bind to whatever libm the platform provides, at run time, so this is the same
 divergence two identically-built C programs would show. Comparing the Windows-generated
 characterization baseline against Linux gives 3,547,367 numeric fields with 66,342 (1.87%)
 differing and 5,394 beyond the shipped tolerance. That is why the baseline is locked to the
 platform that generated it and the cross-platform CI job reports drift without gating on it, and
-it is a statement about libm rather than about this port.
+it is a statement about libm rather than about this port. The baseline has not been generated on
+macOS, so this same field-by-field comparison has not been run there.
 
 When the `netstandard2.0` build is executed on .NET Framework 4.8, small floating-point
 differences may occur, because that runtime's implementations of transcendental functions (for
