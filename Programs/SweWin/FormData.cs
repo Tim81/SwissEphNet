@@ -103,7 +103,7 @@ namespace SweWin
 
         Stream SearchFile(String fileName) {
             fileName = fileName.Trim('/', '\\');
-            var folders = new string[] { 
+            var folders = new string[] {
                 System.IO.Path.Combine(Application.StartupPath, "Datas"),
                 @"C:\sweph\ephe"
             };
@@ -1078,12 +1078,14 @@ namespace SweWin
             if ((iflag & SwissEph.SEFLG_MOSEPH) != 0)
                 return SwissEph.OK;
             /* current working directory */
-            path = C.sprintf(".%c", SwissEph.PATH_SEPARATOR);
+            // *PATH_SEPARATOR dereferences the cut-list down to its first character; see
+            // Programs/SweTest/Program.cs's make_ephemeris_path for the matching swetest.c citations.
+            path = C.sprintf(".%c", SwissEph.PATH_SEPARATOR[0]);
             /* program directory */
             spi = argv0.LastIndexOf(dirglue);
             if (spi >= 0) {
                 pathlen = spi;
-                path = argv0.Substring(0, pathlen) + SwissEph.PATH_SEPARATOR;
+                path = argv0.Substring(0, pathlen) + SwissEph.PATH_SEPARATOR[0];
             }
 
             //#if MSDOS
@@ -1094,7 +1096,7 @@ namespace SweWin
             string[] sp = new string[3];
             int i, j, np;
             s1 = ".;sweph";
-            cpos = s1.Split(new char[] { SwissEph.PATH_SEPARATOR }, StringSplitOptions.RemoveEmptyEntries);
+            cpos = s1.Split(SwissEph.PATH_SEPARATOR, StringSplitOptions.RemoveEmptyEntries);
             np = cpos.Length;
             /* 
              * default path from swephexp.h

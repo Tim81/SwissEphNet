@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -122,6 +123,39 @@ namespace SwissEphNet
                 return new CFile(e.File, e.Encoding ?? DefaultEncoding);
             }
             return null;
+        }
+
+        /// <summary>
+        /// Opens a file for reading directly off the real filesystem. This is the sole
+        /// "fopen()" substitution point in <c>swi_fopen</c>'s transliteration
+        /// (<c>CPort/Sweph.cs</c>, matching <c>sweph.c:2370-2405</c>) -- everything else in
+        /// that function's path-search loop (splitting <c>ephepath</c>, the "."
+        /// current-directory case, joining with <see cref="DIR_GLUE"/>, the
+        /// <see cref="AS_MAXCH"/> bounds check) is transliterated faithfully, line by line,
+        /// ahead of this call.
+        /// </summary>
+        /// <remarks>
+        /// This is the release stage's minimal substitution for <see cref="LoadFile"/> --
+        /// filesystem access only, no resolver override yet. The overridable, single-valued
+        /// <c>IEphemerisFileProvider</c> that replaces <see cref="OnLoadFile"/> entirely (and
+        /// the accompanying migration of every consumer) lands in the very next change; see
+        /// <c>docs/known-issues.md</c>'s OnLoadFile entry.
+        /// </remarks>
+        /// <param name="path">The full candidate path <c>swi_fopen</c> built for this attempt.</param>
+        /// <returns>An open <see cref="CFile"/>, or <c>null</c> if <paramref name="path"/> does
+        /// not resolve to a file.</returns>
+        internal protected CFile OpenBinary(String path) {
+            ThrowIfDisposed();
+            Stream stream;
+            try {
+                stream = File.Exists(path) ? File.OpenRead(path) : null;
+            } catch (IOException) {
+                stream = null;
+            } catch (UnauthorizedAccessException) {
+                stream = null;
+            }
+            if (stream == null) return null;
+            return new CFile(stream, DefaultEncoding);
         }
 
         #endregion

@@ -2769,56 +2769,62 @@ namespace SwissEphNet.CPort
         }
 
         /*
-         * Alois 2.12.98: inserted error message generation for file not found 
+         * Alois 2.12.98: inserted error message generation for file not found
          */
         public CFile swi_fopen(int ifno, string fname, string ephepath, ref string serr)
         {
-            int np, i/*, j*/;
+            int np, i, j;
             CFile fp = null;
             string fnamp;
             string[] cpos;
-            //char s[2 * AS_MAXCH];
-            //char s1[AS_MAXCH];
-            string s = String.Empty, s1 = String.Empty;
-            //if (ifno >= 0) {
-            //    fnamp = swed.fidat[ifno].fnam;
-            //} else {
-            //    fnamp = fn;
-            //}
+            string s, s1;
             s1 = ephepath;
-            cpos = s1.Split(new char[] { SwissEph.PATH_SEPARATOR }, StringSplitOptions.RemoveEmptyEntries);
-            np = cpos.Length;
+            // sweph.c:2377
+            np = SwephLib.swi_cutstr(s1, SwissEph.PATH_SEPARATOR, out cpos, 20);
             s = String.Empty;
             for (i = 0; i < np; i++)
             {
                 s = cpos[i];
-                fnamp = s.TrimEnd('\\', '/') + SwissEph.DIR_GLUE + fname;
+                if (s == ".")
+                { /* current directory */
+                    // sweph.c:2381
+                    s = String.Empty;
+                }
+                else
+                {
+                    j = s.Length;
+                    if (s != String.Empty && s[j - 1] != SwissEph.DIR_GLUE)
+                        s += SwissEph.DIR_GLUE;
+                }
+                // sweph.c:2388
+                if (s.Length + fname.Length < SwissEph.AS_MAXCH)
+                {
+                    s += fname;
+                }
+                else
+                {
+                    // sweph.c:2391's `if (serr != NULL)` asks whether the caller supplied a
+                    // buffer at all; a C# `ref string` always does, so (per the swept class of
+                    // bug in docs/known-issues.md, "Inverted serr != NULL guards") the guard is
+                    // dropped and the assignment is unconditional.
+                    serr = C.sprintf("error: file path and name must be shorter than %d.", SwissEph.AS_MAXCH);
+                    return null;
+                }
+                fnamp = s;
                 if (ifno >= 0)
                 {
                     swed.fidat[ifno].fnam = fnamp;
                 }
-                fp = SE.LoadFile(fnamp);
-                if (fp != null) return fp;
-                //    if (strcmp(s, ".") == 0) { /* current directory */
-                //      *s = '\0';
-                //    } else {
-                //      j = (int) strlen(s);
-                //      if (*s != '\0' && *(s + j - 1) != *DIR_GLUE)
-                //    s+= DIR_GLUE;
-                //    }
-                //    if (strlen(s) + strlen(fname) < AS_MAXCH) {
-                //      s+= fname;
-                //    } else {
-                //      if (serr != NULL)
-                //    serr=C.sprintf("error: file path and name must be shorter than %d.", AS_MAXCH);
-                //      return NULL;
-                //    }
-                //    fnamp= s;
-                //    fp = fopen(fnamp, BFILE_R_ACCESS);
-                //    if (fp != NULL) 
-                //      return fp;
+                fp = SE.OpenBinary(fnamp);
+                if (fp != null)
+                    return fp;
             }
-            serr = C.sprintf("SwissEph file '%s' not found in PATH '%s'", fname, ephepath);
+            s = C.sprintf("SwissEph file '%s' not found in PATH '%s'", fname, ephepath);
+            if (s.Length > SwissEph.AS_MAXCH - 1)
+                s = s.Substring(0, SwissEph.AS_MAXCH - 1);		/* s must not be longer then AS_MAXCH */
+            // sweph.c:2404's `if (serr != NULL)` guard: same inverted-guard class as above,
+            // dropped for the same reason.
+            serr = s;
             return null;
         }
 

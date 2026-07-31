@@ -133,7 +133,21 @@ namespace SwissEphNet
 
         public const double CS2DEG = (1.0 / 360000.0);	/* centisec to degree */
 
-        public static char PATH_SEPARATOR = ';';	/* semicolon as PATH separator */
+        /// <summary>used for string declarations, allowing 255 char+\0 (sweodef.h:259)</summary>
+        public const int AS_MAXCH = 256;
+
+        // The C source (sweodef.h:305/:311) defines PATH_SEPARATOR as a *cut-list* of
+        // candidate separator characters passed to swi_cutstr/cut_str_any, not a single
+        // delimiter: ";:" (semicolon or colon) on Unix, ";" alone on MSDOS/Windows. This
+        // port is not compiled per-platform, so -- as with DIR_GLUE below -- a single
+        // cross-platform value has to be chosen. Unlike DIR_GLUE, that choice cannot just
+        // take the union of both platforms' candidates: a bare ':' is not safe to add,
+        // because it collides with a Windows drive letter ("C:\ephe;D:\ephe2" would split
+        // at the drive letter, not at the ';'). ";" alone -- the MSDOS/Windows candidate
+        // list -- is the value that is safe and correct on every platform this library
+        // targets, so that is what is kept; the type still widens to char[] to match the
+        // C's cut-list shape and to let swi_fopen call swi_cutstr the way sweph.c does.
+        public static char[] PATH_SEPARATOR = new char[] { ';' };	/* semicolon as PATH separator */
         // The C source defines DIR_GLUE per-platform (backslash on Windows,
         // forward slash elsewhere). This port is not compiled per-platform,
         // so a single value has to work everywhere: '/' is that value, since

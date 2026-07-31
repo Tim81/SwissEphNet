@@ -4749,14 +4749,19 @@ namespace SweTest
             char dirglue = SwissEph.DIR_GLUE;
             int pathlen = 0;
             /* current working directory */
-            path = C.sprintf(".%c", SwissEph.PATH_SEPARATOR);
+            // swetest.c:3965: sprintf(path, ".%c", *PATH_SEPARATOR); -- *PATH_SEPARATOR
+            // dereferences the cut-list string down to its first character. PATH_SEPARATOR
+            // widened to char[] alongside swi_fopen's swi_cutstr restoration
+            // (SwissEph.sweodef.h.cs); [0] is the equivalent dereference here.
+            path = C.sprintf(".%c", SwissEph.PATH_SEPARATOR[0]);
             /* program directory */
             spi = argv0.LastIndexOf(dirglue);
             if (spi >= 0)
             {
                 pathlen = spi;
                 path += argv0.Substring(0, pathlen);
-                path += C.sprintf("%c", SwissEph.PATH_SEPARATOR);
+                // swetest.c:3972: sprintf(path + strlen(path), "%c", *PATH_SEPARATOR);
+                path += C.sprintf("%c", SwissEph.PATH_SEPARATOR[0]);
             }
 #if MSDOS
             {
@@ -4766,7 +4771,10 @@ namespace SweTest
                 int i, j, np;
                 s1 = SwissEph.SE_EPHE_PATH;
                 //s1 = ".;sweph";
-                cpos = s1.Split(new char[] { SwissEph.PATH_SEPARATOR }, StringSplitOptions.RemoveEmptyEntries);
+                // swetest.c:3982: np = cut_str_any(s1, PATH_SEPARATOR, cpos, 20); -- the full
+                // cut-list, not a dereferenced single char, matching Split's own multi-char
+                // separator array now that PATH_SEPARATOR is one.
+                cpos = s1.Split(SwissEph.PATH_SEPARATOR, StringSplitOptions.RemoveEmptyEntries);
                 np = cpos.Length;
                 /* 
                  * default path from swephexp.h
@@ -4801,7 +4809,8 @@ namespace SweTest
                     for (j = 0; j < 3; j++)
                     {
                         if (sp[j] != null)
-                            path += C.sprintf("%c:%s%c", sp[j][0], s, SwissEph.PATH_SEPARATOR);
+                            // swetest.c:4013: sprintf(path + strlen(path), "%c:%s%c", *sp[j], s, *PATH_SEPARATOR);
+                            path += C.sprintf("%c:%s%c", sp[j][0], s, SwissEph.PATH_SEPARATOR[0]);
                     }
                 }
             }
