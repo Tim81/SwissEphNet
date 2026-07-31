@@ -7172,7 +7172,9 @@ namespace SwissEphNet.CPort
          */
         static Int32 fixstar_format_search_name(string star, ref string sstar, ref string serr)
         {
-            sstar = star ?? string.Empty;
+            // sweph.c:6158-6159: strncpy(sstar, star, SWI_STAR_LENGTH); sstar[SWI_STAR_LENGTH] = '\0';
+            // truncates the search name to 40 characters before anything else touches it.
+            strncpy(out sstar, star ?? string.Empty, SWI_STAR_LENGTH);
             // remove whitespaces from search name
             sstar = sstar.Replace(" ", string.Empty);
             /* traditional name of star to lower case;
@@ -7183,9 +7185,12 @@ namespace SwissEphNet.CPort
                 // lowercases indices [0, p) -- everything strictly before the comma,
                 // i.e. p characters. Substring(0, p - 1) took only p-1, silently
                 // dropping the character immediately before the comma.
-                sstar = sstar.Substring(0, p).ToLower() + sstar.Substring(p);
+                // sweph.c:6165-6166 is an ASCII tolower loop, not culture-sensitive; ToLowerInvariant
+                // is the same fix already used at the list side of this file (see the "ASCII tolower
+                // loop in C, not culture-sensitive" comment a few hundred lines below).
+                sstar = sstar.Substring(0, p).ToLowerInvariant() + sstar.Substring(p);
             else if (p < 0)
-                sstar = sstar.ToLower();
+                sstar = sstar.ToLowerInvariant();
             if (sstar == string.Empty)
             {
                 serr = "swe_fixstar(): star name empty";
@@ -7950,8 +7955,13 @@ namespace SwissEphNet.CPort
          * x		pointer to 6 doubles for returning position coordinates
          * serr		error return string
         **********************************************************/
-        string slast_starname = String.Empty;
-        fixed_star last_stardata = new fixed_star();
+        // sweph.c:6825-6826: swe_fixstar2's own static TLS slast_starname/last_stardata. Each of
+        // swe_fixstar, swe_fixstar_mag, swe_fixstar2 and swe_fixstar2_mag declares its own
+        // function-local static pair in the C (sweph.c:7901-7902, :7993-7994, :6825-6826, :6915-6916
+        // respectively); the port had collapsed all four into three shared fields, so a call to one
+        // entry point could serve another entry point's cached star out of the wrong cache.
+        string fixstar2_slast_starname = String.Empty;
+        fixed_star fixstar2_last_stardata = new fixed_star();
         public Int32 swe_fixstar2(ref string star, double tjd, Int32 iflag, double[] xx, ref string serr)
         {
             int i;
@@ -7974,10 +7984,10 @@ namespace SwissEphNet.CPort
             if (retc == ERR)
                 goto return_err;
             /* star elements from last call: */
-            if (swed.n_fixstars_records > 0 && strcmp(slast_starname, sstar) == 0)
+            if (swed.n_fixstars_records > 0 && strcmp(fixstar2_slast_starname, sstar) == 0)
             {
                 //   strcpy(srecord, slast_stardata);
-                stardata = last_stardata;
+                stardata = fixstar2_last_stardata;
                 goto found;
             }
             if (get_builtin_star(ref star, ref sstar, out srecord))
@@ -7997,8 +8007,8 @@ namespace SwissEphNet.CPort
             /******************************************************/
             found:
             //strcpy(slast_stardata, srecord);
-            last_stardata = stardata;
-            slast_starname = sstar;
+            fixstar2_last_stardata = stardata;
+            fixstar2_slast_starname = sstar;
             if ((retc = fixstar_calc_from_struct(ref stardata, tjd, iflag, ref star, xx, ref serr)) == ERR)
                 goto return_err;
 #if TRACE
@@ -8048,6 +8058,10 @@ namespace SwissEphNet.CPort
          * mag 		pointer to a double, for star magnitude
          * serr		error return string
         **********************************************************/
+        // sweph.c:6915-6916: swe_fixstar2_mag's own static TLS slast_starname/last_stardata --
+        // distinct from swe_fixstar2's pair above (see that field's comment).
+        string fixstar2mag_slast_starname = String.Empty;
+        fixed_star fixstar2mag_last_stardata = new fixed_star();
         public Int32 swe_fixstar2_mag(ref string star, ref double mag, ref string serr)
         {
             string sstar = null;
@@ -8063,10 +8077,10 @@ namespace SwissEphNet.CPort
             if (retc == ERR)
                 goto return_err;
             /* star elements from last call: */
-            if (swed.n_fixstars_records > 0 && strcmp(slast_starname, sstar) == 0)
+            if (swed.n_fixstars_records > 0 && strcmp(fixstar2mag_slast_starname, sstar) == 0)
             {
                 //   strcpy(srecord, slast_stardata);
-                stardata = last_stardata;
+                stardata = fixstar2mag_last_stardata;
                 goto found;
             }
             retc = search_star_in_list(ref sstar, ref stardata, ref serr);
@@ -8074,8 +8088,8 @@ namespace SwissEphNet.CPort
                 goto return_err;
             /******************************************************/
             found:
-            last_stardata = stardata;
-            slast_starname = sstar;
+            fixstar2mag_last_stardata = stardata;
+            fixstar2mag_slast_starname = sstar;
             mag = stardata.mag;
             star = sprintf("%s,%s", stardata.starname, stardata.starbayer);
             return OK;
@@ -9136,7 +9150,11 @@ namespace SwissEphNet.CPort
          * x		pointer for returning the ecliptic coordinates
          * serr		error return string
         **********************************************************/
-        string slast_stardata = String.Empty;
+        // sweph.c:7901-7902: swe_fixstar's own static TLS slast_stardata/slast_starname --
+        // distinct from swe_fixstar_mag's pair below, and from swe_fixstar2's/swe_fixstar2_mag's
+        // pairs above (see swe_fixstar2's field comment for the full picture).
+        string fixstar_slast_stardata = String.Empty;
+        string fixstar_slast_starname = String.Empty;
         string sdummy = null;
         public Int32 swe_fixstar(ref string star, double tjd, Int32 iflag,
           CPointer<double> xx, ref string serr)
@@ -9171,9 +9189,9 @@ namespace SwissEphNet.CPort
                     sstar = sstar.Substring(0, sp);
             }
             /* star elements from last call: */
-            if (!string.IsNullOrEmpty(slast_stardata) && strcmp(slast_starname, sstar) == 0)
+            if (!string.IsNullOrEmpty(fixstar_slast_stardata) && strcmp(fixstar_slast_starname, sstar) == 0)
             {
-                strcpy(out srecord, slast_stardata);
+                strcpy(out srecord, fixstar_slast_stardata);
                 goto found;
             }
             if (get_builtin_star(ref star, ref sstar, out srecord))
@@ -9190,8 +9208,8 @@ namespace SwissEphNet.CPort
             if ((retc = swi_fixstar_load_record(ref star, out srecord, out sdummy, out sdummy, null, ref serr)) != OK)
                 goto return_err;
             found:
-            strcpy(out slast_stardata, srecord);
-            strcpy(out slast_starname, sstar);
+            strcpy(out fixstar_slast_stardata, srecord);
+            strcpy(out fixstar_slast_starname, sstar);
             if ((retc = swi_fixstar_calc_from_record(srecord, tjd, iflag, ref star, xx, ref serr)) == ERR)
                 goto return_err;
 #if TRACE
@@ -9243,6 +9261,11 @@ namespace SwissEphNet.CPort
          * mag 		pointer to a double, for star magnitude
          * serr		error return string
         **********************************************************/
+        // sweph.c:7993-7994: swe_fixstar_mag's own static TLS slast_stardata/slast_starname --
+        // distinct from swe_fixstar's pair above (see swe_fixstar2's field comment for the full
+        // picture of all four functions' caches).
+        string fixstarmag_slast_stardata = String.Empty;
+        string fixstarmag_slast_starname = String.Empty;
         public Int32 swe_fixstar_mag(ref string star, ref double mag, ref string serr)
         {
             //char sstar[SWI_STAR_LENGTH + 1];
@@ -9272,9 +9295,9 @@ namespace SwissEphNet.CPort
                     sstar = sstar.Substring(0, sp);
             }
             /* star elements from last call: */
-            if (!string.IsNullOrEmpty(slast_stardata) && strcmp(slast_starname, sstar) == 0)
+            if (!string.IsNullOrEmpty(fixstarmag_slast_stardata) && strcmp(fixstarmag_slast_starname, sstar) == 0)
             {
-                strcpy(out srecord, slast_stardata);
+                strcpy(out srecord, fixstarmag_slast_stardata);
                 retc = fixstar_cut_string(srecord, ref star, ref stardata, ref serr);
                 if (retc == ERR) goto return_err;
                 // magnitude V
@@ -9291,8 +9314,8 @@ namespace SwissEphNet.CPort
             if ((retc = swi_fixstar_load_record(ref star, out srecord, out sdummy, out sdummy, dparams, ref serr)) != OK)
                 goto return_err;
             found:
-            strcpy(out slast_stardata, srecord);
-            strcpy(out slast_starname, sstar);
+            strcpy(out fixstarmag_slast_stardata, srecord);
+            strcpy(out fixstarmag_slast_starname, sstar);
             mag = dparams[7];
             return OK;
         return_err:

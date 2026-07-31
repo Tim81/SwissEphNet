@@ -141,7 +141,18 @@ namespace SwissEphNet
 
         public static CPointer<TVal> bsearch<TKey, TVal>(TKey key, CPointer<TVal> array, int n, Func<TKey, TVal, int> compare)
         {
-            var list = new List<TVal>(array.ToArray().Take(n));
+            // The real C bsearch(3) returns NULL immediately when nmemb (n) is 0, without ever
+            // dereferencing base -- so a possibly-NULL base pointer is harmless in that case. This
+            // used to call array.ToArray() unconditionally first, and CPointer<T>.ToArray() returns
+            // null when the pointer has no backing array (Tools/CPointer.cs), so Take(n) on that
+            // null threw instead of returning "not found". Reached from
+            // SwissEphNet/CPort/Sweph.cs's search_star_in_list (sweph.c:6735) by swe_fixstar2 on any
+            // SwissEph with no OnLoadFile handler attached (the default), where no star data is ever
+            // loaded and n is 0.
+            if (n <= 0) return new CPointer<TVal>();
+            var arr = array.ToArray();
+            if (arr == null) return new CPointer<TVal>();
+            var list = new List<TVal>(arr.Take(n));
             var idx = list.BinarySearch(default(TVal), new bcomparer<TKey, TVal>(key, compare));
             return idx >= 0 ? array + idx : new CPointer<TVal>();
         }
