@@ -1732,14 +1732,28 @@ namespace SwissEphNet.CPort
             /* close all open files and delete all planetary data */
             swi_close_keep_topo_etc();
             swi_init_swed_if_start();
-            /* if path is contained in fnam, it is filled into the path variable */
-            //sp = strrchr(fname, (int)*DIR_GLUE);
-            //if (sp == NULL)
-            //    sp = fname;
-            //else
-            //    sp = sp + 1;
+            /* if path is contained in fname, it is filled into the path variable */
+            //if (strlen(fname) >= AS_MAXCH) {
+            //   strncpy(s, fname, AS_MAXCH - 1);
+            //   s[AS_MAXCH - 1] = '\0';
+            //} else {
+            //  strcpy(s, fname);
+            //}
+            //sp = strrchr(s, (int) *DIR_GLUE);
+            //if (sp == NULL) {
+            //  sp = s;
+            //} else {
+            //  sp = sp + 1;
+            //}
             //if (strlen(sp) >= AS_MAXCH)
-            //    sp[AS_MAXCH] = '\0';
+            //  sp[AS_MAXCH - 1] = '\0';
+            // The comments above were still 2.08's, which took the basename of the caller's own
+            // buffer and then wrote sp[AS_MAXCH] -- one past the end of a 256-byte array.
+            // 2.10.03 (sweph.c:1483-1497) copies into a local s[AS_MAXCH] first, so the write
+            // lands at AS_MAXCH-1 and strrchr runs on the copy. Both clamps guard a fixed C
+            // buffer that swed.jplfnam is not here, so neither is reproduced, consistent with
+            // every other AS_MAXCH site in this file. The second clamp is dead in the C anyway:
+            // s is already at most AS_MAXCH-1 long, so its suffix sp can never reach AS_MAXCH.
             spi = fname.LastIndexOf(SwissEph.DIR_GLUE);
             sp = spi < 0 ? fname : fname.Substring(spi + 1);
             swed.jplfnam = sp;

@@ -1221,3 +1221,35 @@ and fails loudly, naming this exact scenario, if it finds one already there
 (`'swetest.c: spmoon is already declared. The upstream compile defect this patch exists for may no
 longer apply...'`) -- confirmed against the master-branch declaration text directly, which matches
 the assert's pattern and would trip it.
+
+## swe_set_jpl_file: the C's AS_MAXCH clamps are not reproduced, and the comments were 2.08's
+
+`swe_set_jpl_file` changed in 2.10.03 (`sweph.c:1475-1529`, against `:1491-1538` in 2.08). The C
+now copies its argument into a local `s[AS_MAXCH]`, truncating at `AS_MAXCH - 1` when the argument
+reaches 256 characters, runs `strrchr` on that copy rather than on the caller's buffer, and fixes
+`sp[AS_MAXCH] = '\0'` to `sp[AS_MAXCH - 1] = '\0'`. The 2.08 form wrote one past the end of a
+256-byte array.
+
+`Sweph.cs:1727` reproduces none of it, deliberately. Both clamps exist to keep a `strcpy` inside a
+fixed C buffer, and `swed.jplfnam` is a C# `string` with no such bound, so there is nothing for the
+truncation to protect. Every other `AS_MAXCH` occurrence in `Sweph.cs` is likewise commented-out C
+rather than live code; adding a clamp here would make this the only exception in the file, and it
+would import a C buffer limit as behaviour by truncating a filename that currently resolves.
+
+The second clamp is unreachable in the C regardless: after the first one `s` is at most
+`AS_MAXCH - 1` characters, so its suffix `sp` can never reach `AS_MAXCH`.
+
+What was actually wrong here was the commented C, which still quoted the 2.08 body including the
+off-by-one write, so the file misrepresented what upstream does. That is now the 2.10.03 text.
+
+The residual behavioural difference is bounded and cannot reach a computed number. `swed.jplfnam`
+feeds `open_jpl_file` and nothing else, so a caller passing a filename whose basename reaches 256
+characters gets the untruncated name here where the C gets 255, which changes only whether the file
+is found. A second difference in the same class: the C takes the basename of the clamped copy, so
+for a path longer than `AS_MAXCH` it can compute a different basename than the port, which takes it
+from the full string.
+
+This was the one gap a function-by-function audit of all 87 shared `sweph.c` functions found still
+at the 2.08 form, after Phase 4 reported the file complete. It survived because
+`scripts/gen-delta.ps1` labels each hunk with the nearest *preceding* function signature, which is
+often not the function the change lands in, and the slice work lists were built from those labels.
