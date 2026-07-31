@@ -104,7 +104,16 @@ function Resolve-LogBase {
             return $before
         }
         # before == HEAD means the push moved nothing. Nothing to diff, and returning HEAD
-        # would be an empty window, so say so explicitly rather than resolving onward.
+        # would be an empty window, so say so explicitly rather than resolving onward -- the
+        # comment above always claimed this; the code silently returned HEAD without saying
+        # anything until this line existed, which is not the same thing. [Console]::Error, not
+        # Write-Warning or Write-Host: every consumer of this script captures its stdout directly
+        # as the resolved base (`$base = pwsh scripts/resolve-log-base.ps1 ...`), and in this
+        # non-interactive host both Write-Warning and Write-Host land on stdout too -- confirmed
+        # by testing, not assumed -- which would silently corrupt $base into "WARNING: ...<sha>"
+        # instead of leaving it a clean commit SHA. Only a direct write to the real OS-level
+        # stderr handle stays out of that capture.
+        [Console]::Error.WriteLine("resolve-log-base.ps1: github.event.before ('$before') equals HEAD: this push moved nothing, so there are no new commits for the caller to check. Returning HEAD, which yields an empty HEAD..HEAD diff window on purpose, not a bug -- a consumer reporting zero commits checked from this base is the expected, correct outcome here, not a silently-defeated gate.")
         return $head
     }
 
@@ -305,6 +314,33 @@ git checkout -q -b feature
 git commit -q -am 'golden change'
 Assert-Throws 'unreachable pull_request base refuses' {
     Resolve-LogBase -EventName 'pull_request' -BeforeSha '' -PrBaseSha ('d' * 40) -IntegrationRef @('origin/release/2.10.03', 'origin/main')
+}
+Pop-Location
+
+# 8. before == HEAD (github.event.before equals the current tip -- a no-op push, e.g. a force-push
+#    that lands on the exact same commit) resolves to HEAD, an intentionally empty diff window,
+#    not a bug -- and says so explicitly rather than silently, on the real OS-level stderr handle
+#    (never Write-Warning or Write-Host: both land on stdout in a non-interactive host and would
+#    corrupt every real consumer's `$base = pwsh scripts/resolve-log-base.ps1 ...` capture).
+$lab = New-Lab 'noop-push'
+$head = (git rev-parse HEAD).Trim()
+$originalConsoleError = [Console]::Error
+$capturedStderr = New-Object System.IO.StringWriter
+[Console]::SetError($capturedStderr)
+try {
+    $got = Resolve-LogBase -EventName 'push' -BeforeSha $head -PrBaseSha '' -IntegrationRef @('origin/release/2.10.03', 'origin/main')
+}
+finally {
+    [Console]::SetError($originalConsoleError)
+}
+Assert-Base 'before == HEAD (no-op push) resolves to HEAD, not a thrown refusal' $head $got
+if ($capturedStderr.ToString() -match 'equals HEAD') {
+    Write-Host '  PASS  before == HEAD says so explicitly, on stderr, instead of resolving silently'
+}
+else {
+    Write-Host ("  FAIL  before == HEAD says so explicitly, on stderr, instead of resolving silently`n" +
+        "          expected stderr to mention 'equals HEAD', got: [$($capturedStderr.ToString())]")
+    $script:failures++
 }
 Pop-Location
 
