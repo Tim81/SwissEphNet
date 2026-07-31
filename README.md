@@ -2,11 +2,11 @@
 
 This project is an Astrodienst Swiss Ephemeris (http://www.astro.com/swisseph/) .Net portage from
 C to C#, targeting netstandard2.0, .NET 8 and .NET 10 for cross platform usage. `SE_VERSION` still
-reports `"2.08"`, deliberately: the upgrade to 2.10.03 is underway file by file. `swephlib.c`, the
-2.10.03 ayanamsa and `pla_diam` tables, the header and constants stage, the eight crossing
-functions, and the ayanamsha machinery (`get_aya_correction`, `prec_offset`) are ported.
-`sweph.c`, `swecl.c`, `swehouse.c`, and `swetest.c` are not; see `docs/sweph-c-stages.md` for how
-the remaining `sweph.c` work divides.
+reports `"2.08"`, deliberately: the API surface reflects the whole 2.10.03 delta, but the version
+string itself is a separate, deferred change. `swephlib.c`, the 2.10.03 ayanamsa and `pla_diam`
+tables, the header and constants stage, the eight crossing functions, the ayanamsha machinery
+(`get_aya_correction`, `prec_offset`), `sweph.c`, `swecl.c`, `swehouse.c`, and `swetest.c` are all
+ported; see `docs/sweph-c-stages.md` for how `sweph.c`'s work divided across four slices.
 
 ## About this repository
 
@@ -103,10 +103,70 @@ Source-level and reflection-based consumers can be affected:
   `attr[4]` for the Moon and for Mercury through Neptune. Upstream replaced the Hilton
   2005 model with Mallama 2018, and added a separate lunar model that switches formula
   past a phase angle of 147.1385465 degrees. Not an API change and not a defect fix on
-  this side: the numbers differ because the underlying model does. Apparent diameter,
-  phase angle and the rest of `attr` are unchanged, which
-  `Tests/SwissEphNet.Tests/PlaDiamCoverageTest.cs` pins for the six bodies with their own
-  diameter entry.
+  this side: the numbers differ because the underlying model does. Apparent diameter and
+  phase angle for these bodies are unaffected by the magnitude-model swap.
+  `Tests/SwissEphNet.Tests/PlaDiamCoverageTest.cs` is not evidence for that claim: it
+  covers a different, unrelated change -- the updated `pla_diam[]` table moves `attr[3]`
+  for six minor bodies this bullet is not about (Chiron, Pholus, Ceres, Pallas, Juno and
+  Vesta) -- and it asserts only `attr[3]`, not phase angle or the rest of `attr`.
+- **`swe_rise_trans_true_hor` gains a `horhgt == -100` sentinel.** Passing exactly `-100`
+  now means "use the dip of the horizon", computed from `calc_dip`, instead of a literal
+  horizon height of -100 degrees (`swecl.c:4415`; ported at `SweCL.cs:4502`). Absent from
+  2.08, so a caller that happened to pass `-100` before now gets different rise/set times.
+- **`swe_lun_eclipse_when`'s search-precision threshold moved from 2000000 to 2100000**
+  (`swecl.c:3485`, ported at `SweCL.cs:3548`), changing which Julian day range gets the
+  coarser 5-day search step versus the finer 0.1-day one. The sibling function
+  `swe_sol_eclipse_when_glob` deliberately keeps its own threshold at 2000000 -- upstream
+  did not move both.
+- **House cusps move at every latitude for Placidus and Gauquelin.** `CalcH` (`swehouse.c`)
+  now iterates to convergence (`niter_max = 100`) where 2.08 always called it with
+  `iteration_count = 2` fixed. The two now agree only where two iterations happened to
+  already converge.
+- **`swe_rise_trans` routes fixed stars to the slow path.** `swecl.c:4362-4376` gates the
+  fast algorithm on `!do_fixstar`; a fixed-star call now always falls through to
+  `swe_rise_trans_true_hor` rather than the fast approximation, so star rise and set times
+  change.
+- **Every `SEFLG_SWIEPH` position changes.** `rot_back`'s J2000 obliquity was always zero in
+  this port -- it read `swed.oec2000`, which nothing ever populated -- so every position
+  rotated back through it used the wrong obliquity. Fixed alongside the rest of `sweph.c`'s
+  file layer; the file-backed oracle grid went from 791 of 2,024 bit-identical to 1,975.
+  Probably the largest numeric change in this release.
+- **`swe_nod_aps`/`swe_nod_aps_ut` returned all-zero nodes and apsides for every standard
+  ayanamsha.** A missing `swi_cartpol_sp` call on the sidereal branch (`swecl.c:5587`) left
+  the ecliptic cartesian coordinates zeroed before the ayanamsha was applied. Fixed for
+  every ayanamsha except `SE_SIDBIT_ECL_T0` and `SE_SIDBIT_SSY_PLANE`, which were already
+  correct.
+- **`serr` is now populated at roughly twenty sites where it was silently empty before**, a
+  guard-inversion bug (`serr != NULL` transliterated from C, where it means "caller
+  supplied a buffer", into a check for "a message is already present" against a C# `ref
+  string` that always supplies one). Any caller using `String.IsNullOrEmpty(serr)` as a
+  success signal will see previously-silent failures start reporting a message.
+- **`swe_get_ayanamsa_ex` with no prior `swe_set_sid_mode` changes value**, from 92.525 to
+  24.754 degrees: `swi_get_ayanamsa_ex` took its `sid_data` copy before the
+  `SE_SIDM_FAGAN_BRADLEY` fallback ran, so it read pre-fallback state.
+- **`swe_nod_aps` after `swe_close`, under a sidereal or geocentric mode, changes value** --
+  344.63 degrees becomes 189.21 for the Moon's node at J2000. Two defects were cancelling
+  each other out: `free_planets` replaced an object instead of zeroing it in place, and a
+  separate `!= Sweph.B1950` mask (should be `!= 0`, `swecl.c:5414`) made the geocentric
+  correction unreachable, so the stale object's coincidentally-zero values had been masking
+  the first bug.
+- **`swe_set_astro_models("")` or `(null)` changes value**, from `AMODELS_SE_1_00` to
+  `AMODELS_SE_2_06`: the version-string parser did not match `strtod`'s "longest parseable
+  prefix" behavior, so `"2.10.03"` failed to parse at all and fell through to the last
+  branch.
+- **`swe_refrac_extended` and `calc_dip` change value.** `swe_refrac_extended`'s
+  visibility test flips from `trualt > dip` to `inalt >= dip` (upstream's own 4 Feb 2020 fix,
+  `swecl.c:3070-3113`), and `calc_dip` corrects a constant from 273.16 to 273.15
+  (`swecl.c:3159-3168`).
+- **New additive API surface**, absent from 2.08 and now present: `swe_houses_ex2`,
+  `swe_houses_armc_ex2`, `swe_calc_pctr`, `swe_get_current_file_data`, the
+  `SEFLG_TROPICAL`, `SEFLG_CENTER_BODY` and `SEFLG_TEST_PLMOON` flags, `SE_ECL_HYBRID`, and
+  three `SE_SIDBIT_*` constants (`SE_SIDBIT_ECL_DATE`, `SE_SIDBIT_NO_PREC_OFFSET`,
+  `SE_SIDBIT_PREC_ORIG`). None of this replaces existing API; it is purely additive.
+- **SweTest CLI**: options that previously threw (`-ay`, `-sidt0`, `-sidsp`, `-sid`, `-j`,
+  `-helflag`, `-amod`, `-tidacc`) now parse instead of crashing on C pointer-arithmetic
+  transliterated as string concatenation. `-house` and `-utc` no longer crash. `dms()` no
+  longer throws `ArgumentOutOfRangeException` once a degree value reaches 100 or more.
 
 ## V:2.6.0.21
 
@@ -212,10 +272,10 @@ is for.
 `Tests/SwissEphNet.Conformance.Tests` checks the port's output against
 Astrodienst's own reference values, not against the port's own prior output.
 The reference corpus is Swiss Ephemeris **2.10.03**'s `setest` test suite
-(12,757 iterations, ~321K asserted values across 10 functional areas); the
-port is currently at **2.08**, so most iterations fail today, and that is the
-expected starting state -- the known-fail list is the work queue for the
-port. Each porting PR should remove entries from it; any entry that reappears
+(12,757 iterations, ~321K asserted values across 10 functional areas). Even though the port has
+now landed the whole 2.10.03 delta file by file, it is not at full parity: `known-fail.tsv` still
+lists 1,435 failing iterations (11,322 passing, 88.8%), and the known-fail list remains the work
+queue for the remainder. Each porting PR should remove entries from it; any entry that reappears
 is a regression.
 
 - `external/swisseph` -- a git submodule, sparse-checked-out, pinned to tag
@@ -227,8 +287,11 @@ is a regression.
   2. **The C source to diff the port against**, file by file, as porting work
      from 2.08 to 2.10.03 proceeds (`*.c`, `*.h`, `Makefile`, `LICENSE`).
 
-  Initialize it with `git submodule update --init external/swisseph` (~25 MB;
-  it is sparse-checked-out, not the ~444 MB full checkout).
+  Initialize it with the sparse-checkout recipe in `CONTRIBUTING.md` ("The upstream C is
+  vendored at `external/swisseph`"), measured at ~19 MB. Sparse patterns have to be set up
+  before the first checkout, so `git submodule update --init external/swisseph` on its own
+  does not produce a sparse checkout -- it lands at the same commit but pulls the full,
+  unfiltered tree, measured at ~423.9 MB.
 
 - `Tests/conformance/known-fail.tsv` -- one row per iteration currently known
   to fail, with a category (`NOT-IMPLEMENTED`, `VALUE-MISMATCH`,
@@ -242,8 +305,11 @@ is a regression.
   without failing" case -- the file and the port's behavior must agree, in
   both directions, for the gate to pass.
 
-  - `NOT-IMPLEMENTED`: the port is at 2.08 and doesn't have this 2.10-only API
-    yet. `DATA-MISSING`: a required data file (a JPL DE ephemeris, `ephe/sat/`)
+  - `NOT-IMPLEMENTED` names the category for a 2.10-only API the port doesn't have; it is
+    currently empty and its classifier unreachable, because every function the 2.10.03 API
+    surface declares now exists on the port (the last three, `swe_calc_pctr`,
+    `swe_houses_ex2` and `swe_houses_armc_ex2`, landed with `sweph.c`'s dispatch slice).
+    `DATA-MISSING`: a required data file (a JPL DE ephemeris, `ephe/sat/`)
     isn't shipped by this repo. `ERROR`: the dispatch threw. `VALUE-MISMATCH`:
     the port ran and produced an answer that doesn't match the reference
     within `t.fix` tolerance -- this and `ERROR` are the actionable
@@ -272,16 +338,19 @@ is a regression.
   `SWISSEPH_CONFORMANCE_INCLUDE_MOONS=1` and that directory populated).
 
 - A separate workflow, not folded into `ci.yml`'s fast job:
-  `.github/workflows/conformance.yml` runs on a schedule, on demand, and on
-  pull requests that touch `SwissEphNet/**` or the oracle itself -- gated by
-  `paths`, so it does not run on every PR the way `ci.yml` does. It earns that
-  spot on the PR path on cost, not by default: dispatching all 12,757
+  `.github/workflows/conformance.yml` runs on a schedule, on demand, and on every pull
+  request, with no `paths` filter -- an earlier version restricted the `pull_request`
+  trigger to `SwissEphNet/**` and the oracle's own paths, but that allowlist could never be
+  complete (it missed `global.json`, `Directory.Build.props`, and a submodule gitlink bump
+  to `external/swisseph` itself), so it was dropped to match `ci.yml` and `baseline.yml`,
+  neither of which filters by paths either. It earns that spot on every PR on cost, not by
+  default: dispatching all 12,757
   iterations is ~2s in-process (measured, Release build,
   `Tools/ConformanceKnownFailGen`), and `dotnet test
   Tests/SwissEphNet.Conformance.Tests` end-to-end (both TFMs, including test
   host startup) is ~8s. The submodule checkout is the only real cost and is
-  sparse (~25 MB, not the full ~444 MB `git submodule update --init` would
-  pull) and cached on the pinned commit SHA.
+  sparse (~19 MB, not the ~423.9 MB a full, unfiltered checkout would pull)
+  and cached on the pinned commit SHA.
 
 - Regenerating `Tests/conformance/known-fail.tsv` is
   `scripts/regenerate-known-fail.ps1 -PruneOnly` to remove newly-passing rows
@@ -291,11 +360,10 @@ is a regression.
   list" in `CONTRIBUTING.md` for the invariant it enforces (rows may be
   removed freely; adding one needs a written reason and review).
 
-**Licensing note:** vendoring Swiss Ephemeris 2.10.x source is consistent with
-the AGPL-3.0 relicensing Astrodienst has planned for that line, but that
-relicensing has **not** happened in this repo yet -- `LICENSE` here is still
-GPL-2. The license itself is unchanged by the submodule; a separate PR should
-land that relicensing before or alongside any further 2.10.03 porting work.
+**Licensing note:** vendoring Swiss Ephemeris 2.10.x source is consistent with this project's own
+license, which is already the dual AGPL-3.0 / Swiss Ephemeris Professional text (see "License"
+above and `LICENSE`). The submodule does not change that; both sides of the port have carried the
+same license since before 2.10.03 work started.
 
 # Firsts steps
 
