@@ -73,6 +73,15 @@
     <ProjectReference Include="..\..\SwissEphNet\SwissEphNet.csproj" />
   </ItemGroup>
 
+  <!--
+    Lets Tools/BaselineVerify.Tests read Ayanamsa.SidModeSweepCount directly (see the doc
+    comment on that constant) instead of having to re-derive its value some other way. Same
+    pattern Tools/BaselineVerify/BaselineVerify.csproj already uses for the same test project.
+  -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="BaselineVerify.Tests" />
+  </ItemGroup>
+
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 
 </Project>

@@ -28,7 +28,18 @@ internal static class Ayanamsa
     // never produced the id at all. Pinning the sweep to the literal the baseline was
     // actually built against keeps both modes' row counts equal regardless of which
     // package or local build SE_NSIDM_PREDEF happens to report.
-    private const int SidModeSweepCount = 47;
+    //
+    // Nothing else re-derives this number, so a local-mode SwissEphNet that grows a 48th
+    // predefined sidereal mode would leave this literal untouched: row-counts.tsv still
+    // says 2,464, the sweep still stops at 46, and every gate stays green while the new
+    // mode goes ungenerated. Tools/BaselineVerify.Tests/AyanamsaSweepCoverageTests.cs
+    // guards against exactly that by asserting SidModeSweepCount &lt;= SwissEph.SE_NSIDM_PREDEF
+    // in local mode only (never reference mode, where SE_NSIDM_PREDEF is 43 and the
+    // assertion would fail every time for the reason explained above) -- internal, not
+    // private, so that test can read it without re-deriving it a second way. See that
+    // file's own doc comment for why the guard is directional (&lt;=, never ==) and why it
+    // lives in a test rather than a runtime check.
+    internal const int SidModeSweepCount = 47;
 
     private static readonly double[] Jds = Grids.JdSpread(8);
 
