@@ -43,22 +43,22 @@ full parity with 2.10.03; it is not, and the next section says by how much.
 | Linux x64, Ubuntu 24.04.4 | gcc 13.3.0, `-O2` | 17,064 of 17,064 oracle rows bit-identical |
 | macOS arm64 (Apple libSystem) | clang, `-O2 -ffp-contract=off -fno-builtin` | 17,064 of 17,064 oracle rows bit-identical (gated) |
 
-17,064 is the sum of the two grids, and neither is a single homogeneous function. Recounted by
+17,064<!--doccount:grid-total-combined--> is the sum of the two grids, and neither is a single homogeneous function. Recounted by
 `func` column rather than trusted from an earlier draft of this document:
-`Tools/OracleGrid/grid-analytic.tsv` is 14,820 rows -- 6,600 `HOUSES_ARMC`, 3,300 `HOUSES`, 2,160
-`CALC`, 2,160 `CALC_UT` (all `SEFLG_MOSEPH`, opening no ephemeris file), plus 600 crossing rows
-(`HELIO_CROSS`/`HELIO_CROSS_UT` 192 each, `SOLCROSS`/`SOLCROSS_UT` 48 each,
-`MOONCROSS`/`MOONCROSS_UT` 48 each, `MOONCROSS_NODE`/`MOONCROSS_NODE_UT` 12 each). Earlier text
+`Tools/OracleGrid/grid-analytic.tsv` is 14,820<!--doccount:grid-analytic-total--> rows -- 6,600<!--doccount:grid-analytic-func-houses-armc--> `HOUSES_ARMC`, 3,300<!--doccount:grid-analytic-func-houses--> `HOUSES`, 2,160<!--doccount:grid-analytic-func-calc-->
+`CALC`, 2,160<!--doccount:grid-analytic-func-calc-ut--> `CALC_UT` (all `SEFLG_MOSEPH`, opening no ephemeris file), plus 600<!--doccount:grid-analytic-crossing-total--> crossing rows
+(`HELIO_CROSS`/`HELIO_CROSS_UT` 192<!--doccount:grid-analytic-func-helio-cross--><!--doccount:grid-analytic-func-helio-cross-ut--> each, `SOLCROSS`/`SOLCROSS_UT` 48<!--doccount:grid-analytic-func-solcross--><!--doccount:grid-analytic-func-solcross-ut--> each,
+`MOONCROSS`/`MOONCROSS_UT` 48<!--doccount:grid-analytic-func-mooncross--><!--doccount:grid-analytic-func-mooncross-ut--> each, `MOONCROSS_NODE`/`MOONCROSS_NODE_UT` 12<!--doccount:grid-analytic-func-mooncross-node--><!--doccount:grid-analytic-func-mooncross-node-ut--> each). Earlier text
 here described the grid as just `swe_calc`/`swe_calc_ut` plus `swe_houses`/`swe_houses_armc` and
 omitted all 600 crossing rows.
-`Tools/OracleGrid/grid-files.tsv` is 2,244 rows -- 900 `CALC`, 900 `CALC_UT` (`SEFLG_SWIEPH`,
-reading the shipped `.se1` files), 200 across the `swe_fixstar` family (`FIXSTAR`/`FIXSTAR_UT`/
-`FIXSTAR2`/`FIXSTAR2_UT` 48 each, `FIXSTAR_MAG` 8, reading `sefstars.txt`), 24
-`GET_PLANET_NAME`, plus 220 crossing rows (`HELIO_CROSS`/`HELIO_CROSS_UT` 72 each,
-`SOLCROSS`/`SOLCROSS_UT` 16 each, `MOONCROSS`/`MOONCROSS_UT` 16 each,
-`MOONCROSS_NODE`/`MOONCROSS_NODE_UT` 6 each) -- 820 crossing rows omitted from an earlier draft
+`Tools/OracleGrid/grid-files.tsv` is 2,244<!--doccount:grid-files-total--> rows -- 900<!--doccount:grid-files-func-calc--> `CALC`, 900<!--doccount:grid-files-func-calc-ut--> `CALC_UT` (`SEFLG_SWIEPH`,
+reading the shipped `.se1` files), 200<!--doccount:grid-files-fixstar-family-total--> across the `swe_fixstar` family (`FIXSTAR`/`FIXSTAR_UT`/
+`FIXSTAR2`/`FIXSTAR2_UT` 48<!--doccount:grid-files-func-fixstar--><!--doccount:grid-files-func-fixstar-ut--><!--doccount:grid-files-func-fixstar2--><!--doccount:grid-files-func-fixstar2-ut--> each, `FIXSTAR_MAG` 8<!--doccount:grid-files-func-fixstar-mag-->, reading `sefstars.txt`), 24<!--doccount:grid-files-func-get-planet-name-->
+`GET_PLANET_NAME`, plus 220<!--doccount:grid-files-crossing-total--> crossing rows (`HELIO_CROSS`/`HELIO_CROSS_UT` 72<!--doccount:grid-files-func-helio-cross--><!--doccount:grid-files-func-helio-cross-ut--> each,
+`SOLCROSS`/`SOLCROSS_UT` 16<!--doccount:grid-files-func-solcross--><!--doccount:grid-files-func-solcross-ut--> each, `MOONCROSS`/`MOONCROSS_UT` 16<!--doccount:grid-files-func-mooncross--><!--doccount:grid-files-func-mooncross-ut--> each,
+`MOONCROSS_NODE`/`MOONCROSS_NODE_UT` 6<!--doccount:grid-files-func-mooncross-node--><!--doccount:grid-files-func-mooncross-node-ut--> each) -- 820 crossing rows omitted from an earlier draft
 across both grids combined. Both `Tests/oracle/known-diff.tsv` and `Tests/oracle/known-diff-files.tsv`
-are empty: there is no recorded exception on either grid, on any platform.
+are empty (0<!--doccount:oracle-known-diff-analytic--> and 0<!--doccount:oracle-known-diff-files--> rows respectively): there is no recorded exception on either grid, on any platform.
 
 The Linux run reused both grids and both drivers unchanged; `sedump.c` needed only
 `-DSWISSEPH_HAS_CROSSING=1` and an explicit source list to build there, the same macro the
@@ -125,17 +125,18 @@ across 10 functional areas, checked against `external/swisseph/setest/t.exp` wit
 tolerances `setest/t.fix` itself ships. `Tests/conformance/known-fail.tsv` is the work queue: one
 row per iteration the port does not currently match.
 
-As of this record, `known-fail.tsv` carries 1,427 rows, so 11,330 of 12,757 iterations pass
+As of this record, `known-fail.tsv` carries 1,427<!--doccount:known-fail-total--> rows, so 11,330 of 12,757 iterations pass
 (88.8%). That is down from 4,382 rows when the oracle was first wired up (commit `835a6c6`) --
 the 2.10.03 port has closed 2,955 of the iterations it started 4,382 behind on.
 
-The 1,427 remaining rows split into two categories, with none in `ERROR`, `UNREPRODUCIBLE`, or
+The 1,427<!--doccount:known-fail-total--> remaining rows split into two categories, with 0<!--doccount:known-fail-error--> in
+`ERROR`, 0<!--doccount:known-fail-unreproducible--> in `UNREPRODUCIBLE`, and 0<!--doccount:known-fail-not-implemented--> in
 `NOT-IMPLEMENTED` at present:
 
 | Category | Rows | What it means |
 |---|---|---|
-| `VALUE-MISMATCH` | 714 | The port ran and produced an answer outside `t.fix` tolerance -- the actual porting work queue. |
-| `DATA-MISSING` | 713 | A required data file (a JPL DE ephemeris, a pre-1200/post-2399 era `.se1` file, `ephe/sat/`) is not shipped by this repo, so the iteration was not run at all. |
+| `VALUE-MISMATCH` | 714<!--doccount:known-fail-value-mismatch--> | The port ran and produced an answer outside `t.fix` tolerance -- the actual porting work queue. |
+| `DATA-MISSING` | 713<!--doccount:known-fail-data-missing--> | A required data file (a JPL DE ephemeris, a pre-1200/post-2399 era `.se1` file, `ephe/sat/`) is not shipped by this repo, so the iteration was not run at all. |
 
 **157 of the 713 `DATA-MISSING` rows are `SEFLG_SWIEPH` calls for a date outside the era this
 repo's shipped core ephemeris files cover** (the `sepl`/`semo`/`seas_N.se1` and their BCE `_N.se1`
@@ -177,7 +178,7 @@ does not match, checked by category so a listed row whose difference has changed
 fails the gate.
 
 **This is the one instrument in this document that is not currently clean.**
-`Tests/swetest/known-diff.tsv` carries 21 rows, all category `OUTPUT-DIFFERS`, so 231 of 252
+`Tests/swetest/known-diff.tsv` carries 21<!--doccount:swetest-known-diff--> rows, all category `OUTPUT-DIFFERS`, so 231 of 252
 argument strings (91.7%) produce output that matches Astrodienst's C exactly. Of the 21:
 
 - **17 are path-separator or placeholder cosmetics, not computational divergence.** Most print an

@@ -198,8 +198,8 @@ requires.
 
 How this is checked, and what checking it does and does not prove. The port's output is compared
 field by field against Astrodienst's own C, built from the same source and run against the same
-ephemeris files. On Windows (MSVC) and Linux (gcc), all 17,064 rows in that comparison (14,820
-calls that need no ephemeris file plus 2,244 that read the shipped `.se1` files) come back
+ephemeris files. On Windows (MSVC) and Linux (gcc), all 17,064<!--doccount:grid-total-combined--> rows in that comparison (14,820<!--doccount:grid-analytic-total-->
+calls that need no ephemeris file plus 2,244<!--doccount:grid-files-total--> that read the shipped `.se1` files) come back
 bit-identical, not merely close; the tracked difference lists for both are empty. macOS (clang,
 arm64) matches too, once clang is told not to substitute its own math builtins for individual libm
 calls (`-fno-builtin`). None of that proves agreement between platforms: comparing the port's own
@@ -209,8 +209,8 @@ each platform's own math library disagreeing with itself in the last few bits, t
 independently built C programs would show; it is not evidence against the port.
 
 Separately, the port's output is checked against Astrodienst's own 2.10.03 test suite (`setest`),
-12,757 iterations across ten functional areas. 1,427 of those still fail: 714 because the answer
-is outside the tolerance Astrodienst's own suite allows, and 713 because a required data file (a
+12,757 iterations across ten functional areas. 1,427<!--doccount:known-fail-total--> of those still fail: 714<!--doccount:known-fail-value-mismatch--> because the answer
+is outside the tolerance Astrodienst's own suite allows, and 713<!--doccount:known-fail-data-missing--> because a required data file (a
 JPL ephemeris, or an ephemeris era this repository does not ship, roughly years 1200 to 2399) is
 not present, not because the answer is wrong. That is the honest state of it: strong on everything
 it has been checked against, not yet at full parity with Astrodienst's own reference corpus.
@@ -521,7 +521,7 @@ Astrodienst's own reference values, not against the port's own prior output.
 The reference corpus is Swiss Ephemeris **2.10.03**'s `setest` test suite
 (12,757 iterations, ~321K asserted values across 10 functional areas). Even though the port has
 now landed the whole 2.10.03 delta file by file, it is not at full parity: `known-fail.tsv` still
-lists 1,427 failing iterations (11,330 passing, 88.8%), and the known-fail list remains the work
+lists 1,427<!--doccount:known-fail-total--> failing iterations (11,330 passing, 88.8%), and the known-fail list remains the work
 queue for the remainder. Each porting PR should remove entries from it; any entry that reappears
 is a regression.
 
@@ -620,9 +620,9 @@ itself ships. Neither can prove the strongest claim this project makes: that for
 the port and Astrodienst's own C compute the identical bits. That is what this third instrument
 is for, and it is the source of the "Numerical compatibility" table above.
 
-- `Tools/OracleGrid` holds the two input grids: `grid-analytic.tsv` (14,820 rows, `SEFLG_MOSEPH
+- `Tools/OracleGrid` holds the two input grids: `grid-analytic.tsv` (14,820<!--doccount:grid-analytic-total--> rows, `SEFLG_MOSEPH
   swe_calc`/`swe_calc_ut` plus `swe_houses`/`swe_houses_armc`, opening no ephemeris file) and
-  `grid-files.tsv` (2,244 rows, `SEFLG_SWIEPH swe_calc`/`swe_calc_ut`, the `swe_fixstar` family,
+  `grid-files.tsv` (2,244<!--doccount:grid-files-total--> rows, `SEFLG_SWIEPH swe_calc`/`swe_calc_ut`, the `swe_fixstar` family,
   and `swe_get_planet_name`, reading the shipped `.se1`/`sefstars.txt` files).
 - Each grid is replayed by a pair of drivers built from the same inputs: `Tools/CReference/sedump.c`,
   compiled against Astrodienst's own vendored 2.10.03 C, and `Tools/OracleDump`, built against this
