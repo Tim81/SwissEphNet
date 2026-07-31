@@ -739,13 +739,13 @@ measured identical at the point of use in the working and failing cases. The cor
 diagnosis is the `free_planets` object-replacement entry above. The log is append-only, so
 the correction is recorded here rather than by editing it.
 
-## SE_VERSION stays at "2.08" until the port actually is 2.10.03
+## SE_VERSION: was deferred until the port reached 2.10.03; closed
 
 `sweph.h`'s `SE_VERSION` goes `"2.08"` -> `"2.10.03"` in the header delta, and the
-constants stage deliberately does not take that line. Everything else in that delta is data
-or a declaration; this one is a claim the library makes about itself through
-`swe_version()`, and it would be false while `sweph.c`, `swecl.c`, `swehouse.c` and
-`swetest.c` are still 2.08. The known-fail list is the standing evidence.
+constants stage deliberately did not take that line on its own. Everything else in that
+delta is data or a declaration; this one is a claim the library makes about itself through
+`swe_version()`, and it would have been false while `sweph.c`, `swecl.c`, `swehouse.c` and
+`swetest.c` were still 2.08.
 
 An earlier version of this note claimed the deferral was behaviourally inert, because
 `swe_set_astro_models` parses the string and both `atof("2.08")` and `atof("2.10.03")`
@@ -761,10 +761,10 @@ Reachable from the public API via `swe_set_astro_models("")` or `(null)`.
 `atof("2.10.03")` is 2.10, which is >= 2.06, and both values select `AMODELS_SE_2_06`. Do
 not rely on that without re-checking if `C.atof` changes again.
 
-Take `SE_VERSION` in the release stage with the assembly version.
-`TransliterationFidelityTest.cs:206` only comments on the current value; the
-assertion that actually pins it, and that moves with it, is
-`SwissEphTest.cs:34` (`Assert.Equal("2.08", target.swe_version())`).
+**Closed.** `SE_VERSION` now reports `"2.10.03"` (`Sweph.h.cs:89`), landed with the release
+stage alongside the assembly version. The assertion that pins it, and moves with it, is
+`SwissEphTest.cs:34` (`Assert.Equal("2.10.03", target.swe_version())`);
+`TransliterationFidelityTest.cs:206` only comments on the current value.
 
 ## Constants from the header delta not yet carried
 
