@@ -8,6 +8,9 @@ name: Oracle build gates
 # .NOTES section, written when nothing here exercised them. This workflow is what makes that
 # statement go stale.
 #
+# A fifth job, header-flags-check, builds nothing and is not part of that four -- it is a
+# self-check on this file's own header comment below, not on Astrodienst's C.
+#
 # The submodule checkout below (sparse, cached on the pinned commit SHA) is copied from
 # .github/workflows/conformance.yml rather than rebuilt from scratch, cache key included, so a
 # job in either file restores the same cache entry and one clone serves both files.
@@ -17,17 +20,30 @@ name: Oracle build gates
 # means the same thing on any machine that runs this file and gates the same way conformance.yml
 # and baseline.yml's Windows leg do.
 #
-# The other two also gate, but not on their final step. They compare the runner's MSVC C against
-# Tests/oracle/known-diff*.tsv and Tests/swetest/known-diff.tsv, lists generated once by a
-# specific compiler (external/.c-reference/toolchain.txt records which one). A different MSVC
-# minor version on a future windows-latest image can move the C side's printed digits without
-# the port changing at all, so that one comparison step carries continue-on-error -- see
-# baseline.yml's own verify-baseline-linux job for the precedent: report the drift, do not gate
-# on it. Everything before it does gate: the gitlink assertion, the submodule checkout, the 2.08
-# sdist fetch, build-c.ps1 and run-oracle-dump.ps1's row-count guards.
+# Three of the four (crt-parity, c-reference-validate, oracle-dump) gate end to end: every step,
+# comparison included, is a hard failure. oracle-dump used to be the exception -- its comparison
+# step against Tests/oracle/known-diff*.tsv carried continue-on-error, on the theory that a
+# different MSVC minor version on a future windows-latest image could move the C side's printed
+# digits without the port changing at all. Commit 0217b72 removed that flag: both known-diff
+# lists are header-only (every oracle row is required to be bit-identical), so there was no
+# recorded toolchain-sensitive value left to protect, and verify-oracle.ps1 does far more than
+# that one comparison -- it also exits 1 on a missing provenance sidecar, a missing dump, a failed
+# OracleVerify build, and OracleVerify's own row-count and case-id-set mismatches, all of which
+# the flag was silently absorbing too. That job also gates its later three-way-classification
+# step the same way, added afterwards for the same reason (see Tests/oracle/version-classification*.tsv).
 #
-# The flag sat at job level until review found it was swallowing all of those too, so a broken
-# build reported success to the checks API. Each job below says which kind it is and why.
+# swetest-diff is the one job that still exempts its final step. It compares the runner's MSVC C
+# against Tests/swetest/known-diff.tsv, which holds 24 real rows of printed output captured from
+# one specific compiler (external/.c-reference/toolchain.txt records which one) -- a future
+# windows-latest MSVC genuinely can move those without the port changing at all, so that
+# comparison step carries continue-on-error, matching baseline.yml's own verify-baseline-linux job:
+# report the drift, do not gate on it. Everything before it in that job still gates: the gitlink
+# assertion, the submodule checkout, the 2.08 sdist fetch, build-c.ps1's compile.
+#
+# Both flags -- oracle-dump's now-removed one and swetest-diff's remaining one -- sat at job level
+# before they sat on a single step, and at job level each was swallowing steps that should have
+# gated too, so a broken build reported success to the checks API. Each job below says which kind
+# it is and why.
 on:
   # push is listed for the same reason ci.yml and baseline.yml list it: without it a direct push,
   # to main included, ran none of these four jobs, so the bit-exactness comparison this whole
@@ -49,6 +65,57 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Gate, and cheap: pure text parsing, no submodule, no MSVC, no dotnet -- runs on ubuntu-latest
+  # so it does not queue behind the Windows runners the other three jobs need. Exists because this
+  # file's own header comment (above) has drifted from which jobs actually carry
+  # continue-on-error three times now, each time a job's flag was added or removed without the
+  # prose being updated to match -- most recently when commit 0217b72 removed oracle-dump's flag.
+  # A header comment is not something CI can enforce; the list of jobs whose steps actually carry
+  # continue-on-error is. This job fails the moment that set no longer matches $expectedFlaggedJobs
+  # below, so the two are forced to move together instead of the header quietly going stale again.
+  header-flags-check:
+    name: "Gate: continue-on-error appears only where this file's header documents it"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assert continue-on-error's job set matches what the header documents
+        shell: pwsh
+        run: |
+          $path = '.github/workflows/oracle.yml'
+          $lines = Get-Content -LiteralPath $path
+          $currentJob = $null
+          $flaggedJobs = [System.Collections.Generic.List[string]]::new()
+          foreach ($line in $lines) {
+            if ($line -match '^  ([a-z][a-z0-9-]*):$') { $currentJob = $Matches[1] }
+            if ($line -match 'continue-on-error:\s*true') {
+              if (-not $currentJob) {
+                Write-Host "FAIL: found continue-on-error before this script could attribute it to a job -- job-name regex needs updating." -ForegroundColor Red
+                exit 1
+              }
+              $flaggedJobs.Add($currentJob)
+            }
+          }
+
+          # The only job this workflow currently expects to carry continue-on-error -- see the
+          # header comment's own explanation of why swetest-diff still does and the other three do
+          # not. Update this list, and the header comment above, together and deliberately when
+          # that changes; this check exists so the two cannot drift apart silently.
+          $expectedFlaggedJobs = @('swetest-diff')
+
+          $extra = @($flaggedJobs | Where-Object { $_ -notin $expectedFlaggedJobs })
+          $missing = @($expectedFlaggedJobs | Where-Object { $_ -notin $flaggedJobs })
+          if ($extra.Count -gt 0 -or $missing.Count -gt 0) {
+            Write-Host "FAIL: continue-on-error's job set no longer matches what this workflow's header documents." -ForegroundColor Red
+            if ($extra.Count -gt 0) { Write-Host "  Newly flagged (not in the header's account): $($extra -join ', ')" -ForegroundColor Red }
+            if ($missing.Count -gt 0) { Write-Host "  No longer flagged (header still claims it is): $($missing -join ', ')" -ForegroundColor Red }
+            Write-Host "  Update this job's `$expectedFlaggedJobs and the header comment together, deliberately." -ForegroundColor Red
+            exit 1
+          }
+
+          Write-Host "PASS: continue-on-error appears only in $($flaggedJobs -join ', '), matching the header comment."
+
   # Gate. Compares MSVC C against .NET, both built on this runner in this run -- see
   # scripts/verify-crt-parity.ps1's own .DESCRIPTION for what it checks; a FAIL here means the
   # bit-exact oracle's own premise has broken, independent of anything sweph.c does. Needs no
@@ -177,12 +244,11 @@ jobs:
         shell: pwsh
         run: pwsh scripts/validate-c-reference.ps1
 
-  # Partly gating. run-oracle-dump.ps1 builds and runs both C drivers (2.10.03 and 2.08, the "both
-  # submodule trees" this job needs) and the .NET driver, and its own row-count guards are a hard
-  # failure -- a driver silently truncating its own output is a real defect regardless of which
-  # MSVC produced it. So are the gitlink assertion and the two fetch/build steps.
-  #
-  # This job gates end to end, verify-oracle.ps1 included, and that step carries no
+  # Gates end to end. run-oracle-dump.ps1 builds and runs both C drivers (2.10.03 and 2.08, the
+  # "both submodule trees" this job needs) and the .NET driver, and its own row-count guards are a
+  # hard failure -- a driver silently truncating its own output is a real defect regardless of
+  # which MSVC produced it. So are the gitlink assertion, the two fetch/build steps,
+  # verify-oracle.ps1 and the three-way-classification diff below it: none of them carry
   # continue-on-error.
   #
   # It reached that state in two corrections. The flag first sat at job level, where it absorbed
