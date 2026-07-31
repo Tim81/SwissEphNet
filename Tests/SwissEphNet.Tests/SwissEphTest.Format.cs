@@ -11,35 +11,35 @@ namespace SwissEphNet.Tests
                 Assert.Equal("nan", sweph.DMS(double.NaN, 0, false));
 
                 Assert.Equal("   0° 0' 0.0000", sweph.DMS(0, 0, false));
-                Assert.Equal("   0° 0' 0.00000", sweph.DMS(0, 0, true));
+                Assert.Equal("   0° 0' 0.00000000", sweph.DMS(0, 0, true));
 
                 Assert.Equal("  12° 0' 0.0000", sweph.DMS(12, 0, false));
-                Assert.Equal("  12° 0' 0.00000", sweph.DMS(12, 0, true));
+                Assert.Equal("  12° 0' 0.00000000", sweph.DMS(12, 0, true));
 
                 Assert.Equal(" -12° 0' 0.0000", sweph.DMS(-12, 0, false));
-                Assert.Equal(" -12° 0' 0.00000", sweph.DMS(-12, 0, true));
+                Assert.Equal(" -12° 0' 0.00000000", sweph.DMS(-12, 0, true));
 
                 Assert.Equal(" 123° 0' 0.0000", sweph.DMS(123, 0, false));
-                Assert.Equal(" 123° 0' 0.00000", sweph.DMS(123, 0, true));
+                Assert.Equal(" 123° 0' 0.00000000", sweph.DMS(123, 0, true));
 
                 Assert.Equal("-123° 0' 0.0000", sweph.DMS(-123, 0, false));
-                Assert.Equal("-123° 0' 0.00000", sweph.DMS(-123, 0, true));
+                Assert.Equal("-123° 0' 0.00000000", sweph.DMS(-123, 0, true));
 
-                Assert.Equal("  12° 5'59.10000", sweph.DMS(12.1, 0, false));
+                Assert.Equal("  12° 6' 0.0000", sweph.DMS(12.1, 0, false));
                 Assert.Equal("  12° 9' 0.0000", sweph.DMS(12.15, 0, false));
-                Assert.Equal("  12°30' 0.00000", sweph.DMS(12.5, 0, true));
+                Assert.Equal("  12°30' 0.00000000", sweph.DMS(12.5, 0, true));
 
                 Assert.Equal("  98°45'55.5556", sweph.DMS(98.7654321, 0, false));
-                Assert.Equal("  98°45'55.55556", sweph.DMS(98.7654321, 0, true));
+                Assert.Equal("  98°45'55.55556000", sweph.DMS(98.7654321, 0, true));
 
                 Assert.Equal("  98h45'55.5556", sweph.DMS(98.7654321, SwissEph.SEFLG_EQUATORIAL, false));
-                Assert.Equal("  98h45'55.55556", sweph.DMS(98.7654321, SwissEph.SEFLG_EQUATORIAL, true));
+                Assert.Equal("  98h45'55.55556000", sweph.DMS(98.7654321, SwissEph.SEFLG_EQUATORIAL, true));
 
-                Assert.Equal("   8 cn 45'55.5556", sweph.DMS(98.7654321, SwissEph.BIT_ZODIAC, false));
-                Assert.Equal("   8 cn 45'55.55556", sweph.DMS(98.7654321, SwissEph.BIT_ZODIAC, true));
+                Assert.Equal(" 8 cn 45'55.5556", sweph.DMS(98.7654321, SwissEph.BIT_ZODIAC, false));
+                Assert.Equal(" 8 cn 45'55.55556000", sweph.DMS(98.7654321, SwissEph.BIT_ZODIAC, true));
 
-                Assert.Equal("  12°09'17.10000", sweph.DMS(12.155, SwissEph.BIT_LZEROES, false));
-                Assert.Equal("  12°09'17.100000", sweph.DMS(12.155, SwissEph.BIT_LZEROES, true));
+                Assert.Equal("  12°09'18.0000", sweph.DMS(12.155, SwissEph.BIT_LZEROES, false));
+                Assert.Equal("  12°09'18.00000000", sweph.DMS(12.155, SwissEph.BIT_LZEROES, true));
 
                 Assert.Equal("  98°45'56\"", sweph.DMS(98.7654321, SwissEph.BIT_ROUND_SEC, false));
                 Assert.Equal("  98°45'56\"", sweph.DMS(98.7654321, SwissEph.BIT_ROUND_SEC, true));
@@ -47,14 +47,22 @@ namespace SwissEphNet.Tests
                 Assert.Equal("  98°46'", sweph.DMS(98.7654321, SwissEph.BIT_ROUND_MIN, false));
                 Assert.Equal("  98°46'", sweph.DMS(98.7654321, SwissEph.BIT_ROUND_MIN, true));
 
-                Assert.Equal("  120ar009'17.10000", sweph.DMS(12.155, SwissEph.BIT_ZODIAC | SwissEph.BIT_LZEROES, false));
-                Assert.Equal("  120ar009'17.100000", sweph.DMS(12.155, SwissEph.BIT_ZODIAC | SwissEph.BIT_LZEROES, true));
+                Assert.Equal("120ar009'18.0000", sweph.DMS(12.155, SwissEph.BIT_ZODIAC | SwissEph.BIT_LZEROES, false));
+                Assert.Equal("120ar009'18.00000000", sweph.DMS(12.155, SwissEph.BIT_ZODIAC | SwissEph.BIT_LZEROES, true));
 
-                Assert.Equal("   8 cn 45'56\"", sweph.DMS(98.7654321, SwissEph.BIT_ZODIAC | SwissEph.BIT_ROUND_SEC, false));
-                Assert.Equal("   8 cn 45'56\"", sweph.DMS(98.7654321, SwissEph.BIT_ZODIAC | SwissEph.BIT_ROUND_SEC, true));
+                Assert.Equal(" 8 cn 45'56\"", sweph.DMS(98.7654321, SwissEph.BIT_ZODIAC | SwissEph.BIT_ROUND_SEC, false));
+                Assert.Equal(" 8 cn 45'56\"", sweph.DMS(98.7654321, SwissEph.BIT_ZODIAC | SwissEph.BIT_ROUND_SEC, true));
 
-                Assert.Equal("   8 cn 46", sweph.DMS(98.7654321, SwissEph.BIT_ZODIAC | SwissEph.BIT_ROUND_MIN, false));
-                Assert.Equal("   8 cn 46", sweph.DMS(98.7654321, SwissEph.BIT_ZODIAC | SwissEph.BIT_ROUND_MIN, true));
+                Assert.Equal(" 8 cn 46", sweph.DMS(98.7654321, SwissEph.BIT_ZODIAC | SwissEph.BIT_ROUND_MIN, false));
+                Assert.Equal(" 8 cn 46", sweph.DMS(98.7654321, SwissEph.BIT_ZODIAC | SwissEph.BIT_ROUND_MIN, true));
+
+                // Regression: DMS(value >= 360, BIT_ZODIAC) used to throw
+                // IndexOutOfRangeException (ZodiacShortNames[12]) for lack of
+                // swetest.c:2657's >= 360 clamp and :2683's izod == 12 guard.
+                Assert.Equal("   0° 0' 0.0000", sweph.DMS(360, 0, false));
+                Assert.Equal(" 0 ar  0' 0.0000", sweph.DMS(360, SwissEph.BIT_ZODIAC, false));
+                Assert.Equal(" 0 ar  0' 0.0000", sweph.DMS(370, SwissEph.BIT_ZODIAC, false));
+                Assert.Equal(" 0 ar  0' 0.0000", sweph.DMS(359.999999999, SwissEph.BIT_ZODIAC, false));
 
             }
         }
@@ -70,45 +78,45 @@ namespace SwissEphNet.Tests
                 Assert.Equal("  12: 0: 0.0", sweph.HMS(12, 0, false));
                 Assert.Equal("  12: 0: 0.0", sweph.HMS(12, 0, true));
                                      
-                Assert.Equal(" -12: 0: 0.0", sweph.HMS(-12, 0, false));
-                Assert.Equal(" -12: 0: 0.0", sweph.HMS(-12, 0, true));
+                Assert.Equal(" -11:59:59.9", sweph.HMS(-12, 0, false));
+                Assert.Equal(" -11:59:59.9", sweph.HMS(-12, 0, true));
                                         
                 Assert.Equal(" 123: 0: 0.0", sweph.HMS(123, 0, false));
                 Assert.Equal(" 123: 0: 0.0", sweph.HMS(123, 0, true));
                                         
-                Assert.Equal("-123: 0: 0.0", sweph.HMS(-123, 0, false));
-                Assert.Equal("-123: 0: 0.0", sweph.HMS(-123, 0, true));
+                Assert.Equal("-122:59:59.9", sweph.HMS(-123, 0, false));
+                Assert.Equal("-122:59:59.9", sweph.HMS(-123, 0, true));
                                         
-                Assert.Equal("  12: 5:59.1", sweph.HMS(12.1, 0, false));
+                Assert.Equal("  12: 6: 0.0", sweph.HMS(12.1, 0, false));
                 Assert.Equal("  12: 9: 0.0", sweph.HMS(12.15, 0, false));
                 Assert.Equal("  12:30: 0.0", sweph.HMS(12.5, 0, true));
                                      
-                Assert.Equal("  98:45:55.5", sweph.HMS(98.7654321, 0, false));
-                Assert.Equal("  98:45:55.5", sweph.HMS(98.7654321, 0, true));
+                Assert.Equal("  98:45:55.6", sweph.HMS(98.7654321, 0, false));
+                Assert.Equal("  98:45:55.6", sweph.HMS(98.7654321, 0, true));
 
-                Assert.Equal("  98h45'55.5556", sweph.HMS(98.7654321, SwissEph.SEFLG_EQUATORIAL, false));
-                Assert.Equal("  98h45'55.55556", sweph.HMS(98.7654321, SwissEph.SEFLG_EQUATORIAL, true));
+                Assert.Equal("  98h45'55.6056", sweph.HMS(98.7654321, SwissEph.SEFLG_EQUATORIAL, false));
+                Assert.Equal("  98h45'55.60556000", sweph.HMS(98.7654321, SwissEph.SEFLG_EQUATORIAL, true));
 
-                Assert.Equal("   8 cn 45'55.5556", sweph.HMS(98.7654321, SwissEph.BIT_ZODIAC, false));
-                Assert.Equal("   8 cn 45'55.55556", sweph.HMS(98.7654321, SwissEph.BIT_ZODIAC, true));
+                Assert.Equal(" 8 cn 45'55.6056", sweph.HMS(98.7654321, SwissEph.BIT_ZODIAC, false));
+                Assert.Equal(" 8 cn 45'55.60556000", sweph.HMS(98.7654321, SwissEph.BIT_ZODIAC, true));
 
-                Assert.Equal("  12:09:17.1", sweph.HMS(12.155, SwissEph.BIT_LZEROES, false));
-                Assert.Equal("  12:09:17.1", sweph.HMS(12.155, SwissEph.BIT_LZEROES, true));
+                Assert.Equal("  12:09:18.0", sweph.HMS(12.155, SwissEph.BIT_LZEROES, false));
+                Assert.Equal("  12:09:18.0", sweph.HMS(12.155, SwissEph.BIT_LZEROES, true));
 
-                Assert.Equal("  98:45:56", sweph.HMS(98.7654321, SwissEph.BIT_ROUND_SEC, false));
-                Assert.Equal("  98:45:56", sweph.HMS(98.7654321, SwissEph.BIT_ROUND_SEC, true));
+                Assert.Equal("  98:45:56\"", sweph.HMS(98.7654321, SwissEph.BIT_ROUND_SEC, false));
+                Assert.Equal("  98:45:56\"", sweph.HMS(98.7654321, SwissEph.BIT_ROUND_SEC, true));
 
-                Assert.Equal("  98:46", sweph.HMS(98.7654321, SwissEph.BIT_ROUND_MIN, false));
-                Assert.Equal("  98:46", sweph.HMS(98.7654321, SwissEph.BIT_ROUND_MIN, true));
+                Assert.Equal("  98:46:", sweph.HMS(98.7654321, SwissEph.BIT_ROUND_MIN, false));
+                Assert.Equal("  98:46:", sweph.HMS(98.7654321, SwissEph.BIT_ROUND_MIN, true));
 
-                Assert.Equal("  120ar009'17.10000", sweph.HMS(12.155, SwissEph.BIT_ZODIAC | SwissEph.BIT_LZEROES, false));
-                Assert.Equal("  120ar009'17.100000", sweph.HMS(12.155, SwissEph.BIT_ZODIAC | SwissEph.BIT_LZEROES, true));
+                Assert.Equal("120ar009'18.0500", sweph.HMS(12.155, SwissEph.BIT_ZODIAC | SwissEph.BIT_LZEROES, false));
+                Assert.Equal("120ar009'18.05000000", sweph.HMS(12.155, SwissEph.BIT_ZODIAC | SwissEph.BIT_LZEROES, true));
 
-                Assert.Equal("   8 cn 45'56\"", sweph.HMS(98.7654321, SwissEph.BIT_ZODIAC | SwissEph.BIT_ROUND_SEC, false));
-                Assert.Equal("   8 cn 45'56\"", sweph.HMS(98.7654321, SwissEph.BIT_ZODIAC | SwissEph.BIT_ROUND_SEC, true));
+                Assert.Equal(" 8 cn 45'56\"", sweph.HMS(98.7654321, SwissEph.BIT_ZODIAC | SwissEph.BIT_ROUND_SEC, false));
+                Assert.Equal(" 8 cn 45'56\"", sweph.HMS(98.7654321, SwissEph.BIT_ZODIAC | SwissEph.BIT_ROUND_SEC, true));
 
-                Assert.Equal("   8 cn 46", sweph.HMS(98.7654321, SwissEph.BIT_ZODIAC | SwissEph.BIT_ROUND_MIN, false));
-                Assert.Equal("   8 cn 46", sweph.HMS(98.7654321, SwissEph.BIT_ZODIAC | SwissEph.BIT_ROUND_MIN, true));
+                Assert.Equal(" 8 cn 46", sweph.HMS(98.7654321, SwissEph.BIT_ZODIAC | SwissEph.BIT_ROUND_MIN, false));
+                Assert.Equal(" 8 cn 46", sweph.HMS(98.7654321, SwissEph.BIT_ZODIAC | SwissEph.BIT_ROUND_MIN, true));
 
             }
         }
