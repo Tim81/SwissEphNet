@@ -352,7 +352,9 @@ namespace SwissEphNet.CPort
                     return NLEAP_SECONDS;
                 while ((s = fp.ReadLine()) != null) {
                     s = s.TrimStart(' ', '\t');
-                    if (String.IsNullOrEmpty(s) || s.StartsWith("#")) continue;
+                    // swedate.c:330 tests *sp == '#', a single-byte comparison; StartsWith
+                    // without StringComparison is culture-sensitive, so make it ordinal.
+                    if (String.IsNullOrEmpty(s) || s.StartsWith("#", StringComparison.Ordinal)) continue;
                     // swedate.c:334 is `ndat = atoi(s);`, which cannot throw.
                     ndat = C.atoi(s);
                     if (ndat <= ndat_last)

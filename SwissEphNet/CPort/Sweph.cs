@@ -1574,7 +1574,9 @@ namespace SwissEphNet.CPort
             i = s.Length;
             //  if (*(s + i - 1) != *DIR_GLUE && *s != '\0')
             //    s+= DIR_GLUE;
-            if (!s.EndsWith(SwissEph.DIR_GLUE.ToString()))
+            // sweph.c:1339 compares *(s + i - 1) != *DIR_GLUE, a single-byte comparison;
+            // EndsWith without StringComparison is culture-sensitive, so make it ordinal.
+            if (!s.EndsWith(SwissEph.DIR_GLUE.ToString(), StringComparison.Ordinal))
                 s = s + SwissEph.DIR_GLUE;
             swed.ephepath = s;
             //swe_set_interpolate_nut(TRUE);
@@ -2565,7 +2567,10 @@ namespace SwissEphNet.CPort
                     // if it is a planetary moon, also try without the directory "sat/"
                     if (ipli > SwissEph.SE_PLMOON_OFFSET && ipli < SwissEph.SE_AST_OFFSET)
                     {
-                        if (subdirlen > 0 && s.StartsWith(subdirnam))
+                        // sweph.c:2196 uses strncmp(s, subdirnam, subdirlen), a byte-wise
+                        // comparison; StartsWith without StringComparison is culture-sensitive,
+                        // so make it ordinal.
+                        if (subdirlen > 0 && s.StartsWith(subdirnam, StringComparison.Ordinal))
                         {
                             s = s.Substring(subdirlen + 1);	/* remove "sat/" etc. */
                             goto again;
@@ -2577,7 +2582,10 @@ namespace SwissEphNet.CPort
                     }
                     else if (ipli > SwissEph.SE_AST_OFFSET)
                     {
-                        int sppi = s.IndexOf('.');
+                        // sweph.c:2206 (strchr(s, '.')) is a byte-wise scan; IndexOf(char) has
+                        // no netstandard2.0 StringComparison overload, so use C.strchr (already
+                        // ordinal, see its own comment in Tools/C.cs) for the same effect.
+                        int sppi = C.strchr(s, '.');
                         //if (spp > s && *(spp - 1) != 's') {	/* no 's' before '.' ? */
                         //    spp=C.sprintf("s.%s", SE_FILE_SUFFIX);	/* insert an 's' */
                         //    goto again;
@@ -2596,7 +2604,10 @@ namespace SwissEphNet.CPort
                         sppi--;	/* point to the character before '.' which must be a 's' */
                         // remove the s
                         s = s.Substring(0, sppi) + s.Substring(sppi + 1);
-                        if (s.StartsWith(subdirnam))
+                        // sweph.c:2219 uses strncmp(s, subdirnam, subdirlen), a byte-wise
+                        // comparison; StartsWith without StringComparison is culture-sensitive,
+                        // so make it ordinal.
+                        if (s.StartsWith(subdirnam, StringComparison.Ordinal))
                         {
                             s = s.Substring(subdirlen + 1);
                             goto again;
@@ -2631,7 +2642,11 @@ namespace SwissEphNet.CPort
                 }
                 else if (ipli > SwissEph.SE_PLMOON_OFFSET)
                 {
-                    if (fname.Contains("99."))
+                    // sweph.c:2246 uses strstr, a byte-wise search; Contains(string) without
+                    // StringComparison is culture-sensitive. The (string, StringComparison)
+                    // overload is not part of netstandard2.0, so use IndexOf(string,
+                    // StringComparison.Ordinal) instead, which is.
+                    if (fname.IndexOf("99.", StringComparison.Ordinal) >= 0)
                         s = C.sprintf("plan. COB No. %d (%s): ", ipli, sp);
                     else
                         s = C.sprintf("plan. moon No. %d (%s): ", ipli, sp);
@@ -5481,7 +5496,11 @@ namespace SwissEphNet.CPort
                 //    sp--;
                 //}
                 //sp[1] = '\0';
-                i = fdp.astnam.IndexOf('\0');
+                // sweph.c:4743 (strlen(fdp->astnam)) stops at the first byte-valued null;
+                // IndexOf(char) has no netstandard2.0 StringComparison overload, so use
+                // C.strchr (already ordinal, see its own comment in Tools/C.cs) for the
+                // same effect.
+                i = C.strchr(fdp.astnam, '\0');
                 if (i >= 0) fdp.astnam = fdp.astnam.Substring(0, i);
                 fdp.astnam = fdp.astnam.TrimEnd(' ', '\0');
                 i = fdp.astnam.IndexOf("  ", StringComparison.Ordinal);
@@ -7182,10 +7201,17 @@ namespace SwissEphNet.CPort
             // truncates the search name to 40 characters before anything else touches it.
             strncpy(out sstar, star ?? string.Empty, SWI_STAR_LENGTH);
             // remove whitespaces from search name
+            // sweph.c:6161 uses strchr(sstar, ' ') in a removal loop, a byte-wise search.
+            // string.Replace(string, string) (no StringComparison) is already ordinal by
+            // definition; the (string, string, StringComparison) overload that would make
+            // that explicit is not part of netstandard2.0, so this stays as-is.
             sstar = sstar.Replace(" ", string.Empty);
             /* traditional name of star to lower case;
              * keep uppercase with Bayer/Flamsteed designations after comma */
-            int p = sstar.IndexOf(',');
+            // sweph.c:6165 (`*sp != ','`) is a byte-wise scan; IndexOf(char) has no
+            // netstandard2.0 StringComparison overload, so use C.strchr (already ordinal,
+            // see its own comment in Tools/C.cs) for the same effect.
+            int p = C.strchr(sstar, ',');
             if (p > 0)
                 // sweph.c:5996-5997: `for (sp = sstar; *sp != '\0' && *sp != ','; sp++)`
                 // lowercases indices [0, p) -- everything strictly before the comma,
@@ -7306,7 +7332,10 @@ namespace SwissEphNet.CPort
              ****************************************/
             /* ra and de in degrees */
             ra = (ra_s / 3600.0 + ra_m / 60.0 + ra_h) * 15.0;
-            if (sde_d.IndexOf('-') < 0)
+            // sweph.c:6267 (strchr(sde_d, '-')) is a byte-wise scan; IndexOf(char) has no
+            // netstandard2.0 StringComparison overload, so use C.strchr (already ordinal,
+            // see its own comment in Tools/C.cs) for the same effect.
+            if (C.strchr(sde_d, '-') < 0)
             {
                 de = de_s / 3600.0 + de_m / 60.0 + de_d;
             }
@@ -7403,10 +7432,13 @@ namespace SwissEphNet.CPort
             while ((s = swed.fixfp.ReadLine()) != null)
             {
                 // skip comment lines
+                // sweph.c:6350-6352 test *s against '#'/'\n'/'\r', single-byte comparisons;
+                // StartsWith without StringComparison is culture-sensitive, so make it
+                // ordinal.
                 if (string.IsNullOrEmpty(s)) continue;
-                if (s.StartsWith("#")) continue;
-                if (s.StartsWith("\n")) continue;
-                if (s.StartsWith("\r")) continue;
+                if (s.StartsWith("#", StringComparison.Ordinal)) continue;
+                if (s.StartsWith("\n", StringComparison.Ordinal)) continue;
+                if (s.StartsWith("\r", StringComparison.Ordinal)) continue;
                 srecord = s;
                 retc = fixstar_cut_string(srecord, ref sdummy, ref fstdata, ref serr);
                 if (retc == ERR) return ERR;
@@ -7417,6 +7449,11 @@ namespace SwissEphNet.CPort
                     nnamed++;
                     fstdata.skey = fstdata.starname;
                     // remove white spaces from star name
+                    // sweph.c:6363 uses strchr(fstdata.skey, ' ') in a removal loop, a
+                    // byte-wise search. string.Replace(string, string) (no StringComparison)
+                    // is already ordinal by definition; the (string, string, StringComparison)
+                    // overload that would make that explicit is not part of netstandard2.0,
+                    // so this stays as-is.
                     fstdata.skey = fstdata.skey.Replace(" ", string.Empty);
                     // star name to lowercase and compare with search string
                     // ASCII tolower loop in C, not culture-sensitive.
@@ -7425,13 +7462,20 @@ namespace SwissEphNet.CPort
                 }
                 // also save it with Bayer designation as search key;
                 // only if it has not been saved already
-                if (string.Equals(fstdata.starbayer, last_starbayer))
+                // sweph.c:6372 uses strcmp, a byte-wise comparison; Equals without
+                // StringComparison is culture-sensitive, so make it ordinal.
+                if (string.Equals(fstdata.starbayer, last_starbayer, StringComparison.Ordinal))
                     continue;
                 nstars++;
                 nrecs++;
                 //sprintf(fstdata.skey, "~%s", fstdata.starbayer); // ~ sorts after alnum
                 fstdata.skey = C.sprintf(",%s", fstdata.starbayer); // , sorts before alnum
                 // remove white spaces from star bayer name
+                // sweph.c:6379 uses strchr(fstdata.skey, ' ') in a removal loop, a
+                // byte-wise search. string.Replace(string, string) (no StringComparison) is
+                // already ordinal by definition; the (string, string, StringComparison)
+                // overload that would make that explicit is not part of netstandard2.0, so
+                // this stays as-is.
                 fstdata.skey = fstdata.skey.Replace(" ", string.Empty);
                 last_starbayer = fstdata.starbayer;
                 if ((retc = save_star_in_struct(nrecs, fstdata, ref serr)) == ERR) return ERR;
@@ -7788,7 +7832,9 @@ namespace SwissEphNet.CPort
             CPointer<fixed_star> stardatap;
             CPointer<fixed_star> stardatabegp;
             sstar = sstar ?? string.Empty;
-            if (sstar.StartsWith(","))
+            // sweph.c:6682 tests *sstar == ',', a single-byte comparison; StartsWith
+            // without StringComparison is culture-sensitive, so make it ordinal.
+            if (sstar.StartsWith(",", StringComparison.Ordinal))
             {
                 is_bayer = true;
             }
@@ -7798,7 +7844,10 @@ namespace SwissEphNet.CPort
             }
             else
             {
-                sp = sstar.IndexOf(',');
+                // sweph.c:6687 (strchr(sstar, ',')) is a byte-wise scan; IndexOf(char) has
+                // no netstandard2.0 StringComparison overload, so use C.strchr (already
+                // ordinal, see its own comment in Tools/C.cs) for the same effect.
+                sp = C.strchr(sstar, ',');
                 if (sp >= 0)
                 {
                     sstar = sstar.Substring(sp);
@@ -7818,7 +7867,10 @@ namespace SwissEphNet.CPort
                 return OK;
                 /* traditional name with wildcard '%' at end of string */
             }
-            else if (!is_bayer && (sp = sstar.IndexOf('%')) >= 0)
+            // sweph.c:6702 (strchr(sstar, '%')) is a byte-wise scan; IndexOf(char) has no
+            // netstandard2.0 StringComparison overload, so use C.strchr (already ordinal,
+            // see its own comment in Tools/C.cs) for the same effect.
+            else if (!is_bayer && (sp = C.strchr(sstar, '%')) >= 0)
             {
                 stardatabegp = swed.fixed_stars.GetPointer() + swed.n_fixstars_real;
                 ndata = swed.n_fixstars_named;
@@ -7835,7 +7887,9 @@ namespace SwissEphNet.CPort
                 for (i = 0; i < ndata; i++)
                 {
                     //if (string.Equals(stardatabegp[i].skey.Substring(0, len), searchkey))
-                    if (stardatabegp[i].skey.StartsWith(searchkey))
+                    // sweph.c:6714 uses strncmp(..., len), a byte-wise comparison; StartsWith
+                    // without StringComparison is culture-sensitive, so make it ordinal.
+                    if (stardatabegp[i].skey.StartsWith(searchkey, StringComparison.Ordinal))
                     {
                         stardata = stardatabegp[i];
                         return OK;
@@ -8261,7 +8315,10 @@ namespace SwissEphNet.CPort
                                 while (ipli != iplf && ((sp = fp.ReadLine()) != null))
                                 {
                                     sp = sp.TrimStart(' ', '\t', '(', '[', '{');
-                                    if (String.IsNullOrWhiteSpace(sp) || sp.StartsWith("#"))
+                                    // sweph.c:7087 tests *sp == '#', a single-byte comparison;
+                                    // StartsWith without StringComparison is culture-sensitive,
+                                    // so make it ordinal.
+                                    if (String.IsNullOrWhiteSpace(sp) || sp.StartsWith("#", StringComparison.Ordinal))
                                         continue;
                                     /* catalog number of body of current line */
                                     int spi = sp.IndexOfFirstNot('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
@@ -8615,7 +8672,11 @@ namespace SwissEphNet.CPort
             /* If we fail with default JPL ephemeris (DE431), we try the second default
              * (DE406), but only if serr is not NULL and an warning message can be 
              * returned. */
-            if (retc != OK && fname.Contains(SwissEph.SE_FNAME_DFT))
+            // sweph.c:7446 uses strstr, a byte-wise search; Contains(string) without
+            // StringComparison is culture-sensitive. The (string, StringComparison)
+            // overload is not part of netstandard2.0, so use IndexOf(string,
+            // StringComparison.Ordinal) instead, which is.
+            if (retc != OK && fname.IndexOf(SwissEph.SE_FNAME_DFT, StringComparison.Ordinal) >= 0)
             {
                 retc = SE.SweJPL.swi_open_jpl_file(ss, SwissEph.SE_FNAME_DFT2, fpath, ref serr2);
                 if (retc == OK)
@@ -8666,7 +8727,9 @@ namespace SwissEphNet.CPort
             if (retc == ERR)
                 return ERR;
             // search name is Bayer designation
-            if (sstar.StartsWith(","))
+            // sweph.c:7494 tests *sstar == ',', a single-byte comparison; StartsWith
+            // without StringComparison is culture-sensitive, so make it ordinal.
+            if (sstar.StartsWith(",", StringComparison.Ordinal))
             {
                 is_bayer = true;
                 // search name star number in sefstars.txt
@@ -8707,7 +8770,9 @@ namespace SwissEphNet.CPort
             {
                 fline++;
                 // skip comment lines
-                if (s.StartsWith("#")) continue;
+                // sweph.c:7526 tests *s == '#', a single-byte comparison; StartsWith
+                // without StringComparison is culture-sensitive, so make it ordinal.
+                if (s.StartsWith("#", StringComparison.Ordinal)) continue;
                 line++;
                 // search string is star number in sefstars.txt
                 if (star_nr == line)
@@ -8757,6 +8822,11 @@ namespace SwissEphNet.CPort
                 // not just leading/trailing ones; Trim(' ') only stripped the ends,
                 // leaving multi-word names ("Galactic Center") unfindable because
                 // the search key (line ~6748 above) strips all spaces.
+                // sweph.c:7559 uses strchr(fstar, ' ') in a removal loop, a byte-wise
+                // search. string.Replace(string, string) (no StringComparison) is already
+                // ordinal by definition; the (string, string, StringComparison) overload
+                // that would make that explicit is not part of netstandard2.0, so this
+                // stays as-is.
                 fstar = fstar.Replace(" ", string.Empty);
                 i = strlen(fstar);
                 // length of star name differs from length of search string: continue
@@ -9180,7 +9250,9 @@ namespace SwissEphNet.CPort
             retc = fixstar_format_search_name(star, ref sstar, ref serr);
             if (retc == ERR)
                 goto return_err;
-            if (sstar.StartsWith(","))
+            // sweph.c:7914 tests *sstar == ',', a single-byte comparison; StartsWith
+            // without StringComparison is culture-sensitive, so make it ordinal.
+            if (sstar.StartsWith(",", StringComparison.Ordinal))
             {
                 ; // is Bayer designation
             }
@@ -9286,7 +9358,9 @@ namespace SwissEphNet.CPort
             retc = fixstar_format_search_name(star, ref sstar, ref serr);
             if (retc == ERR)
                 goto return_err;
-            if (sstar.StartsWith(","))
+            // sweph.c:8004 tests *sstar == ',', a single-byte comparison; StartsWith
+            // without StringComparison is culture-sensitive, so make it ordinal.
+            if (sstar.StartsWith(",", StringComparison.Ordinal))
             {
                 ; // is Bayer designation
             }

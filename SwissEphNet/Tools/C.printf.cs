@@ -121,6 +121,7 @@ namespace SwissEphNet
         /// type.
         /// </summary>
         /// <param name="Value">The value.</param>
+        /// <param name="Round">true to round to the nearest integer instead of truncating.</param>
         /// <returns>A boxed numeric object whos type is an integer type.</returns>
         public static object ToInteger(object Value, bool Round) {
             switch (Value.GetType().GetTypeCode()) {

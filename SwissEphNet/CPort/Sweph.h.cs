@@ -717,7 +717,7 @@ namespace SwissEphNet.CPort
             public int[] ipl = new int[SEI_FILE_NMAXPLAN];	/* planet numbers */
         
             /// <summary>Zero every member in place, as C's
-            /// memset(&swed.fidat[i], 0, sizeof(struct file_data)) does (sweph.c:397).
+            /// memset(&amp;swed.fidat[i], 0, sizeof(struct file_data)) does (sweph.c:397).
             /// fnam and astnam are inline char buffers in the C; null is this port's
             /// equivalent of the zeroed buffer. ipl is an inline array, so its contents
             /// are zeroed and the array object is kept.</summary>
@@ -756,7 +756,7 @@ namespace SwissEphNet.CPort
             public double[] xsaves { get; private set; }
         
             /// <summary>Zero every member in place, as C's
-            /// memset(&swed.savedat[i], 0, sizeof(struct save_positions)) does
+            /// memset(&amp;swed.savedat[i], 0, sizeof(struct save_positions)) does
             /// (sweph.c:1172). xsaves is an inline array in the C, not a pointer, so its
             /// contents are zeroed and the array object is kept.</summary>
             public void Clear() {
@@ -811,6 +811,10 @@ namespace SwissEphNet.CPort
             public string skey;
             public string starname;
             public string starbayer;
+            // sweph.h:777 declares char starno[10], but grep across every .c/.h file in
+            // external/swisseph finds no assignment or read of ->starno anywhere -- it is
+            // a dead field in the upstream C struct too, not a porting gap. Left unassigned
+            // to match.
             public string starno;
             public double epoch, ra, de, ramot, demot, radvel, parall, mag;
             //struct fixed_star {
@@ -982,7 +986,7 @@ namespace SwissEphNet.CPort
              */
         
             /// <summary>Zero every member in place, as C's
-            /// memset(&swed.pldat[i], 0, sizeof(struct plan_data)) does (sweph.c:1169).
+            /// memset(&amp;swed.pldat[i], 0, sizeof(struct plan_data)) does (sweph.c:1169).
             /// Assigning a fresh object instead would leave any reference already taken
             /// -- swe_nod_aps holds pedp.x and psbdp.x across a nested swe_calc -- pointing
             /// at the old one. refep and segp are the C's pointers, free()d then nulled;

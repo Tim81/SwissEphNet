@@ -761,7 +761,9 @@ namespace SwissEphNet.CPort
                     s = s.TrimStart(' ', '\t');
                     //    if (*s == '#')
                     //      continue;
-                    if (s.StartsWith("#")) continue;
+                    // swemplan.c:745 tests *s == '#', a single-byte comparison; StartsWith
+                    // without StringComparison is culture-sensitive, so make it ordinal.
+                    if (s.StartsWith("#", StringComparison.Ordinal)) continue;
                     //    if (*s == '\r')
                     //      continue;
                     //    if (*s == '\n')
@@ -771,7 +773,10 @@ namespace SwissEphNet.CPort
                     if (String.IsNullOrWhiteSpace(s)) continue;
                     //    if ((sp = strchr(s, '#')) != NULL)
                     //      *sp = '\0';
-                    int ip = s.IndexOf('#');
+                    // swemplan.c:753 (strchr(s, '#')) is a byte-wise scan; IndexOf(char) has no
+                    // netstandard2.0 StringComparison overload, so use C.strchr (already
+                    // ordinal, see its own comment in Tools/C.cs) for the same effect.
+                    int ip = C.strchr(s, '#');
                     if (ip >= 0) s = s.Substring(0, ip);
                     //    ncpos = swi_cutstr(s, ",", cpos, 20);
                     cpos = s.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
@@ -792,13 +797,16 @@ namespace SwissEphNet.CPort
                     //    if (tjd0 != NULL) {
                     // ASCII tolower loop in C, not culture-sensitive.
                     sp = cpos[0].ToLowerInvariant();
-                    if (sp.StartsWith("j2000"))
+                    // swemplan.c:772-778 tests each prefix with strncmp/*sp==, byte-wise
+                    // comparisons; StartsWith without StringComparison is culture-sensitive,
+                    // so make it ordinal.
+                    if (sp.StartsWith("j2000", StringComparison.Ordinal))
                         tjd0 = Sweph.J2000;
-                    else if (sp.StartsWith("b1950"))
+                    else if (sp.StartsWith("b1950", StringComparison.Ordinal))
                         tjd0 = Sweph.B1950;
-                    else if (sp.StartsWith("j1900"))
+                    else if (sp.StartsWith("j1900", StringComparison.Ordinal))
                         tjd0 = Sweph.J1900;
-                    else if (sp.StartsWith("j") || sp.StartsWith("b")) {
+                    else if (sp.StartsWith("j", StringComparison.Ordinal) || sp.StartsWith("b", StringComparison.Ordinal)) {
                         serr = C.sprintf("%s invalid epoch", serri);
                         return SwissEph.ERR;
                     } else
@@ -810,15 +818,18 @@ namespace SwissEphNet.CPort
                     //    if (tequ != NULL) {
                     // ASCII tolower loop in C, not culture-sensitive.
                     sp = cpos[1].TrimStart(' ', '\t').ToLowerInvariant();
-                    if (sp.StartsWith("j2000"))
+                    // swemplan.c:794-802 tests each prefix with strncmp/*sp==, byte-wise
+                    // comparisons; StartsWith without StringComparison is culture-sensitive,
+                    // so make it ordinal.
+                    if (sp.StartsWith("j2000", StringComparison.Ordinal))
                         tequ = Sweph.J2000;
-                    else if (sp.StartsWith("b1950"))
+                    else if (sp.StartsWith("b1950", StringComparison.Ordinal))
                         tequ = Sweph.B1950;
-                    else if (sp.StartsWith("j1900"))
+                    else if (sp.StartsWith("j1900", StringComparison.Ordinal))
                         tequ = Sweph.J1900;
-                    else if (sp.StartsWith("jdate"))
+                    else if (sp.StartsWith("jdate", StringComparison.Ordinal))
                         tequ = tjd;
-                    else if (sp.StartsWith("j") || sp.StartsWith("b")) {
+                    else if (sp.StartsWith("j", StringComparison.Ordinal) || sp.StartsWith("b", StringComparison.Ordinal)) {
                         serr = C.sprintf("%s invalid equinox", serri);
                         return SwissEph.ERR;
                     } else
@@ -896,7 +907,11 @@ namespace SwissEphNet.CPort
                     if (ncpos > 9) {
                         // ASCII tolower loop in C, not culture-sensitive.
                         cpos[9] = cpos[9].ToLowerInvariant();
-                        if (cpos[9].Contains("geo"))
+                        // swemplan.c:897 uses strstr, a byte-wise search; Contains(string)
+                        // without StringComparison is culture-sensitive. The (string,
+                        // StringComparison) overload is not part of netstandard2.0, so use
+                        // IndexOf(string, StringComparison.Ordinal) instead, which is.
+                        if (cpos[9].IndexOf("geo", StringComparison.Ordinal) >= 0)
                             fict_ifl |= FICT_GEO;
                     }
                     break;
@@ -936,11 +951,14 @@ namespace SwissEphNet.CPort
             z = 0;
             while (true) {
                 sp = sp.TrimStart(' ', '\t');
-                if (String.IsNullOrWhiteSpace(sp) || sp.StartsWith("+") || sp.StartsWith("-")) {
+                // swemplan.c:936, 940 test *sp against "+-"/'-' with strchr/==, byte-wise
+                // comparisons; StartsWith without StringComparison is culture-sensitive,
+                // so make it ordinal.
+                if (String.IsNullOrWhiteSpace(sp) || sp.StartsWith("+", StringComparison.Ordinal) || sp.StartsWith("-", StringComparison.Ordinal)) {
                     if (z > 0)
                         doutp += fac;
                     isgn = 1;
-                    if (sp != null && sp.StartsWith("-"))
+                    if (sp != null && sp.StartsWith("-", StringComparison.Ordinal))
                         isgn = -1;
                     fac = 1 * isgn;
                     if (String.IsNullOrWhiteSpace(sp))
@@ -951,7 +969,10 @@ namespace SwissEphNet.CPort
                     if (sp != null && sp.StartsWith("t", StringComparison.OrdinalIgnoreCase)) {
                         /* a T */
                         sp = sp.Substring(1);
-                        if (sp != null && (sp.StartsWith("+") || sp.StartsWith("-")))
+                        // swemplan.c:952 tests strchr("+-", *sp), a byte-wise comparison;
+                        // StartsWith without StringComparison is culture-sensitive, so make
+                        // it ordinal.
+                        if (sp != null && (sp.StartsWith("+", StringComparison.Ordinal) || sp.StartsWith("-", StringComparison.Ordinal)))
                             fac *= tt[0];
                         else
                         {
@@ -973,7 +994,10 @@ namespace SwissEphNet.CPort
                         // two atof(sp) calls on the same input; neither can throw. The port
                         // already collapses them into one C.atof call reused for both checks.
                         var val = C.atof(sval);
-                        if (val != 0 || sp.StartsWith("0"))
+                        // swemplan.c:958 tests *sp == '0', a single-byte comparison;
+                        // StartsWith without StringComparison is culture-sensitive, so make
+                        // it ordinal.
+                        if (val != 0 || sp.StartsWith("0", StringComparison.Ordinal))
                             fac *= val;
                     }
                     if (sp != null) {

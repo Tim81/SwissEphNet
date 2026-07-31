@@ -62,7 +62,7 @@ namespace SwissEphNet
             /// <summary>
             /// Sets the current document and resets the current position to the start of it
             /// </summary>
-            /// <param name="html"></param>
+            /// <param name="text">The document to parse.</param>
             public void Reset(string text) {
                 _text = (text != null) ? text : String.Empty;
                 _pos = 0;

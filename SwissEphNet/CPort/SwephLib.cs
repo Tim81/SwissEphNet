@@ -4685,7 +4685,12 @@ namespace SwissEphNet.CPort
             if (samod != null)
             {
                 //if (C.strchr(samod, '+') != null)
-                if (samod.Contains('+')) 
+                // swephlib.c:4415 uses strchr, a byte-wise search. string.Contains(char) (no
+                // StringComparison) is built on IndexOf(char), which is already ordinal by
+                // definition (see the comment on C.strchr in Tools/C.cs); the (char,
+                // StringComparison) overload that would make that explicit is not part of
+                // netstandard2.0, so this stays as-is.
+                if (samod.Contains('+'))
                     list_all_models = true;
                 swe_set_astro_models(samod, iflag);
             }

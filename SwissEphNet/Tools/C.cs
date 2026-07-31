@@ -111,9 +111,9 @@ namespace SwissEphNet
                 array[i] = list[i];
         }
 
-        class bcomparer<TKey, TVal> : IComparer<TVal>
+        class BComparer<TKey, TVal> : IComparer<TVal>
         {
-            public bcomparer(TKey key, Func<TKey, TVal, int> compare)
+            public BComparer(TKey key, Func<TKey, TVal, int> compare)
             {
                 Key = key;
                 Comparer = compare;
@@ -153,7 +153,7 @@ namespace SwissEphNet
             var arr = array.ToArray();
             if (arr == null) return new CPointer<TVal>();
             var list = new List<TVal>(arr.Take(n));
-            var idx = list.BinarySearch(default(TVal), new bcomparer<TKey, TVal>(key, compare));
+            var idx = list.BinarySearch(default(TVal), new BComparer<TKey, TVal>(key, compare));
             return idx >= 0 ? array + idx : new CPointer<TVal>();
         }
 

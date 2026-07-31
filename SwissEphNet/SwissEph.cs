@@ -49,7 +49,7 @@ namespace SwissEphNet
         /// Throws <see cref="ObjectDisposedException"/> if this instance has already been
         /// disposed. Every public member that reaches into the ported library does so
         /// through one of the nine internal component properties below, plus
-        /// <see cref="LoadFile"/> and <see cref="Trace"/> -- calling this from those spots
+        /// <see cref="OpenBinary"/> and <see cref="Trace"/> -- calling this from those spots
         /// covers the whole surface without having to guard all 455 public members
         /// individually. A handful of pure-formatting helpers (e.g. swe_dotnet_version(),
         /// which only reads this assembly's own reflection metadata) never touch a
