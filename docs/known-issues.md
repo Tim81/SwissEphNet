@@ -1085,8 +1085,10 @@ position via `rot_back` on the way out, which is why the divergence looked like 
 `main_planet` from this grid's evidence alone -- the wrong function was simply downstream of the
 right one. Every `SEFLG_SWIEPH` position was affected, not only Earth's, since `rot_back` is on
 the return path for every body; see "Every `SEFLG_SWIEPH` position changes" in `README.md`'s
-breaking-changes list. The file-backed grid moved from 791 of 2,024 bit-identical rows to 1,975.
-No closure note was added here when the fix landed; this is that note.
+breaking-changes list. The file-backed grid moved from 791 of 2,024 bit-identical rows to 1,975,
+as `grid-files.tsv` stood at the time -- before the crossing functions added 220 more rows to it;
+see `README.md`'s "Bit-exact oracle" section for the grid's current, marked total. No closure note
+was added here when the fix landed; this is that note.
 
 **The SEFLG_SPEED zero-fill claim, checked the same way.** Of the 1,500 non-SPEED
 `swe_calc`/`swe_calc_ut` rows, 0 have the C leaving `xx[3..5]` at zero while the port fills them

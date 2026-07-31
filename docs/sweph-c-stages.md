@@ -46,7 +46,9 @@ with the nearest preceding function signature rather than the location of the ch
 `rot_back` is the hunk that mattered most: the port read `swed.oec2000.seps`/`.ceps`, which
 nothing in this port ever populated, so every position rotated back through it used a J2000
 obliquity of zero. 2.10.03 replaces the reads with literal constants, which is what made this
-visible. The file-backed oracle grid went from 791 of 2,024 bit-identical to 1,975.
+visible. The file-backed oracle grid went from 791 of 2,024 bit-identical to 1,975, as
+`grid-files.tsv` stood at the time -- before the crossing functions added 220 more rows to it;
+see `README.md`'s "Bit-exact oracle" section for the grid's current, marked total.
 
 ### B. Position pipeline (~40 hunks) -- `83c0363`
 

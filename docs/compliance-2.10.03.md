@@ -39,9 +39,16 @@ full parity with 2.10.03; it is not, and the next section says by how much.
 
 | Platform | C reference | Result |
 |---|---|---|
-| Windows x64 | MSVC 19.51.36248, `/O2 /fp:precise /MD` | 17,064 of 17,064 oracle rows bit-identical |
-| Linux x64, Ubuntu 24.04.4 | gcc 13.3.0, `-O2` | 17,064 of 17,064 oracle rows bit-identical |
+| Windows x64 | MSVC 19.51.36248, `/O2 /fp:precise /MD` | 17,064 of 17,064 oracle rows bit-identical (gated) |
+| Linux x64, Ubuntu 24.04.4 | gcc 13.3.0, `-O2` | 17,064 of 17,064 oracle rows bit-identical (measured once, not gated) |
 | macOS arm64 (Apple libSystem) | clang, `-O2 -ffp-contract=off -fno-builtin` | 17,064 of 17,064 oracle rows bit-identical (gated) |
+
+Windows is gated by `oracle-dump`, the `.github/workflows/oracle.yml` job that replays this grid
+end to end on every push and pull request; macOS is gated the same way by `macos-exactness`. The
+Linux row came from one full run of the grid, done by hand, with nothing re-running it
+automatically -- see `README.md`'s "Numerical compatibility" section for what the other Windows
+jobs in that workflow (`crt-parity`, `c-reference-validate`, `swetest-diff`) check instead, since
+none of them replay this grid.
 
 17,064<!--doccount:grid-total-combined--> is the sum of the two grids, and neither is a single homogeneous function. Recounted by
 `func` column rather than trusted from an earlier draft of this document:
