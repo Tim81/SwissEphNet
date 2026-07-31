@@ -10,10 +10,12 @@
       2.10.3 tracks Swiss Ephemeris C 2.10.03 (upstream tag v2.10.3final),
       the version the port itself now targets end to end: SE_VERSION,
       sweph.c, swecl.c, swehouse.c and swetest.c have all landed. This is
-      still not published to nuget.org: 2.8.0.2 already is under the old
-      package ID, and the library no longer ships net40/netstandard1.0, so
-      it would not be a drop-in replacement for that package anyway.
-      Distribution stays source-only (clone/build/reference).
+      the version intended for the first nuget.org release, under the
+      SwissEphSharp package ID. It cannot go out under SwissEphNet: 2.8.0.2
+      already holds that ID, and the library no longer ships
+      net40/netstandard1.0, so it would not be a drop-in replacement for
+      that package anyway. Until the release lands, build from source or
+      reference the project directly.
     -->
     <Version>2.10.3</Version>
     <InformationalVersion>2.10.3 (Swiss Ephemeris 2.10.03, upstream tag v2.10.3final)</InformationalVersion>
@@ -29,7 +31,8 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>Swiss Ephemeris</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>2.10.3 (not published to nuget.org; source-only distribution):
+    <PackageReleaseNotes>2.10.3 (the first release published to nuget.org under the SwissEphSharp
+package ID; entries from 2.8.0.2 down are the original project's, published under SwissEphNet):
 - SE_VERSION now reports "2.10.03", matching the C library this port tracks (upstream tag
   v2.10.3final). Every stage of the 2.10.03 delta has landed: the header/constants stage,
   swephlib.c, the ayanamsha machinery, sweph.c, swecl.c, swehouse.c and swetest.c.
