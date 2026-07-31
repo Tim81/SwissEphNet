@@ -23,7 +23,7 @@
     <Company>Yan Grenier</Company>
     <Product>SwissEphSharp</Product>
     <Title>SwissEphSharp</Title>
-    <Description>Swiss Ephemeris .Net portage. SwissEphSharp is the package ID under which this project is distributed: a fork of Yan Grenier's SwissEphNet, tracking Swiss Ephemeris 2.10.03. The assembly name and namespace remain SwissEphNet, so existing code that references the original port needs no source changes beyond the PackageReference itself. Not published or endorsed by Yan Grenier or Astrodienst.</Description>
+    <Description>Swiss Ephemeris .Net portage. SwissEphSharp is the package ID under which this project will be distributed: a fork of Yan Grenier's SwissEphNet, tracking Swiss Ephemeris 2.10.03. The assembly name and namespace remain SwissEphNet, so existing code that references the original port needs no source changes beyond the PackageReference itself. Not published or endorsed by Yan Grenier or Astrodienst.</Description>
     <Copyright>Copyright (C) 1997-2021 Astrodienst AG; (C) 2014-2019 Yan Grenier; (C) 2026 Timothy van der Ham</Copyright>
     <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/Tim81/SwissEphNet</PackageProjectUrl>
@@ -31,8 +31,9 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>Swiss Ephemeris</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>2.10.3 (the first release published to nuget.org under the SwissEphSharp
-package ID; entries from 2.8.0.2 down are the original project's, published under SwissEphNet):
+    <PackageReleaseNotes>2.10.3 (intended as the first release published to nuget.org, under the
+SwissEphSharp package ID; entries from 2.8.0.2 down are the original project's, published under
+SwissEphNet):
 - SE_VERSION now reports "2.10.03", matching the C library this port tracks (upstream tag
   v2.10.3final). Every stage of the 2.10.03 delta has landed: the header/constants stage,
   swephlib.c, the ayanamsha machinery, sweph.c, swecl.c, swehouse.c and swetest.c.
