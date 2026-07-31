@@ -167,6 +167,21 @@ Source-level and reflection-based consumers can be affected:
   `-helflag`, `-amod`, `-tidacc`) now parse instead of crashing on C pointer-arithmetic
   transliterated as string concatenation. `-house` and `-utc` no longer crash. `dms()` no
   longer throws `ArgumentOutOfRangeException` once a degree value reaches 100 or more.
+- **`OnLoadFile` is gone; ephemeris files are read from disk by default.** The event
+  (and `LoadFileEventArgs`) is replaced by `SwissEph.FileProvider`, a settable
+  `IEphemerisFileProvider` (`Stream Open(string path)`, null meaning "not found"). A
+  caller that never subscribed to `OnLoadFile` used to get every ephemeris file reported
+  as missing and every calculation silently downgraded to Moshier, even with a real,
+  populated ephemeris directory configured via `swe_set_ephe_path`; now that every
+  target framework this library ships (`netstandard2.0`, `net8.0`, `net10.0`) has full
+  filesystem access, no `FileProvider` set means the real filesystem is used, the same
+  way the C reference itself behaves. Most existing `OnLoadFile` handlers that just
+  opened a real file by path can be deleted outright -- `swe_set_ephe_path` alone is
+  now sufficient. A handler whose source genuinely is not a file (an embedded resource,
+  for instance) should be rewritten against the new interface. `SwissEph.PATH_SEPARATOR`
+  also widens from `char` to `char[]` (still `{ ';' }`) to support this; see
+  `docs/known-issues.md`'s OnLoadFile entry for the full detail and the DefaultFileProvider
+  static escape hatch for harnesses that construct many instances.
 
 ## V:2.6.0.21
 

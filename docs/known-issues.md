@@ -824,7 +824,7 @@ The lesson is the diagnosis, not the fix. Two plausible messages in two places i
 ordering explanation, and the constant that names which branch runs settles it in one line. Read
 the C before proposing a mechanism for what the C does.
 
-## OnLoadFile: multicast leaks a stream, and a missing handler is indistinguishable from a missing file
+## OnLoadFile superseded: single-valued IEphemerisFileProvider, real filesystem by default
 
 `SwissEph.LoadFile` (`SwissEphNet/SwissEph.cs:89`) is the only route by which the library reads
 an ephemeris file -- `swi_fopen` calls it at `CPort/Sweph.cs:2659` and nowhere else does. It
@@ -868,6 +868,105 @@ which belongs with the version bump the package is already going to take; and th
 harness and the bit-exact comparison drivers are all `OnLoadFile` consumers, so changing it
 mid-port would rebuild the instruments while they are being used to decide whether the port is
 correct.
+
+**Closed.** `OnLoadFile` and `LoadFileEventArgs` are gone. `SwissEph.cs` now exposes:
+
+```csharp
+public interface IEphemerisFileProvider { Stream Open(string path); }  // null means not found
+public IEphemerisFileProvider FileProvider { get; set; }               // per-instance, null default
+public static IEphemerisFileProvider DefaultFileProvider = null;       // read into FileProvider by the ctor
+internal protected CFile OpenBinary(string path) { ... }               // the fopen() substitution
+```
+
+Single-valued by construction, so the multicast leak cannot recur: `FileProvider` holds at most
+one provider, and `OpenBinary` (`SwissEph.cs`) calls it directly rather than raising anything.
+Ownership and the readable/seekable requirement, both load-bearing before but undocumented, are
+now stated on `IEphemerisFileProvider.Open`'s own doc comment: the library disposes whatever
+stream it is handed, and `CFile` seeks during parsing (e.g. rewinding `sefstars.txt` between a
+`swe_fixstar` and a `swe_fixstar2` call), so a provider's stream must support both.
+
+**The null-provider decision, made deliberately.** `FileProvider == null` now means "use the real
+filesystem" -- `OpenBinary` opens the path with `File.OpenRead` directly -- rather than "not
+found". This is the opposite default from the event it replaces, and is the better one now:
+`SwissEph.csproj:12` records that `net40`/`netstandard1.0`, the targets `OnLoadFile` originally
+existed to work around (no `System.IO.FileSystem`), were dropped; the three targets this library
+ships today (`netstandard2.0`, `net8.0`, `net10.0`) all have full filesystem access, and the
+library uses `System.IO.File` zero times before this change. A caller who calls
+`swe_set_ephe_path` pointed at a real, populated directory and never touches `FileProvider` now
+gets real ephemeris data instead of a silent Moshier downgrade -- closing the exact defect this
+entry opened with, by construction rather than by a caller remembering to attach a handler. A
+provider is still the right tool when the source genuinely is not a file (an embedded test
+resource); `Tests/SwissEphNet.Tests` keeps one (`ResourceFileHelpers.DelegateFileProvider`) for
+exactly that case.
+
+**`swi_fopen` (`CPort/Sweph.cs`) is now a faithful transliteration of `sweph.c:2370-2405`**, not a
+single `SE.LoadFile(fnamp)` call standing in for 18 commented-out lines. The path-search loop --
+splitting `ephepath` with `swi_cutstr` against the cut-list `PATH_SEPARATOR`, the `"."`
+current-directory case, joining with `DIR_GLUE`, the `AS_MAXCH` bounds check with its own "file
+path and name must be shorter than" error -- is transliterated line by line; `SE.OpenBinary(fnamp)`
+is the only substitution for the C's `fopen()` call. This closes the three gaps this document
+elsewhere recorded as unfixed, under "Three file-layer divergences, recorded and not fixed here":
+`AS_MAXCH` is now checked, and the `"."` case is now handled. `PATH_SEPARATOR` (below) closes the
+third.
+
+**`PATH_SEPARATOR` widens from `char` to `char[]`** (`SwissEph.sweodef.h.cs`), matching the C's own
+cut-list shape (`sweodef.h:305`/`:311`: `";:"` on Unix, `";"` on MSDOS/Windows) so `swi_cutstr` can
+be called at all. The value itself stays `{ ';' }` rather than adopting the Unix `";:"` list: unlike
+`DIR_GLUE` (which safely picked `'/'` as the one separator both Windows and everything else accept),
+a bare `':'` is not safe to add on this cross-platform port, because it collides with a Windows
+drive letter (`"C:\ephe;D:\ephe2"` would split at the drive letter, not at the `;`). `";"` alone is
+the value that is correct on every platform this library targets. `Programs/SweTest/Program.cs`'s
+`make_ephemeris_path` (frozen, transliterated) needed a companion fix at the four sites that use
+`*PATH_SEPARATOR` in the C (`swetest.c:3965`, `:3972`, `:4013`) to dereference the first element,
+`PATH_SEPARATOR[0]`, now that the port's own field is an array; the one site using the bare
+cut-list (`swetest.c:3982`) drops its `new char[] { ... }` wrapper since `PATH_SEPARATOR` already
+is one. `Programs/SweWin/FormData.cs` (not frozen) needed the same fix for the same reason.
+
+**A real bug found while restoring the transliteration, not by inspection: an inverted
+`serr != NULL` guard, the same class already sept from a dozen other sites in this document.**
+`sweph.c:2391` and `:2404` both guard their `sprintf`/`strcpy` into `serr` with `if (serr != NULL)`
+-- in C, "did the caller supply a buffer at all". A first-draft transliteration of both sites as
+`if (serr != null) serr = ...;` compiles and looks faithful, but a C# `ref string` always supplies
+a buffer, so the guard instead asks "does `serr` already hold a message" -- false for every caller
+starting from `null`, which is all of them. Caught immediately, not eventually: with a real
+filesystem default, `Tools/BaselineVerify`'s `calc-defaulteph` area (which pins the exact "file not
+found ... using Moshier eph." diagnostic) started rendering the message with the "file not found"
+half silently missing, `scripts/verify-baseline.ps1` showed 1,610 rows in that area alone, and the
+`gauquelin` area showed a matching 32-row loss. Both guards were dropped (unconditional assignment,
+matching the fix already applied at the dozen sites in "Inverted `serr != NULL` guards: swept"
+above); `verify-baseline.ps1` is byte-identical, both TFMs, after the fix.
+
+**Verified byte-identical / bit-identical, not merely "still green".** The characterization
+baseline (`Tests/baseline/`) is unchanged to the byte across all 19 areas on both `net8.0` and
+`net10.0` -- `Tools/BaselineMatrix/Areas.cs`'s `Generate` now sets
+`SwissEph.DefaultFileProvider` to a no-op provider before running any area's generator (the one
+choke point every `new SwissEph()` in the several-hundred-call-site matrix goes through), so the
+matrix stays Moshier-only exactly as it was when nothing subscribed to `OnLoadFile`, rather than
+starting to find whatever ephemeris files happen to be present on the machine that runs it. The
+bit-exact oracle (`Tests/SwissEphNet.Conformance.Tests`, `scripts/verify-oracle.ps1`) stays at
+14,820 + 2,244 rows, all bit-identical against MSVC-built 2.10.03 C, both `known-diff.tsv` lists
+empty -- including the files grid, which exercises real path resolution through
+`SwissEph.OpenBinary`'s filesystem branch for the first time.
+
+**Migration.** 37 files referenced `OnLoadFile`. Most became simpler: a handler that just opened a
+real file by path (`Programs/SweTest/Program.cs`, `Programs/SweMini/Program.cs`,
+`Programs/SweWin/FormData.cs`, `Tools/OracleDump/Program.cs`,
+`Tests/SwissEphNet.Conformance.Tests/Dispatch/EphemerisFileResolver.cs`, several
+`Tests/SwissEphNet.Tests` cases) was deleted outright, since `swe_set_ephe_path` alone now reaches
+the same files through the restored `swi_fopen`. `EphemerisFileResolver`'s JPL-file redirect
+(matching a custom DE-file path by filename regardless of directory) is now a second
+`PATH_SEPARATOR`-joined `swe_set_ephe_path` entry instead of a provider. A provider survives only
+where the source genuinely is not a file: `Tests/SwissEphNet.Tests`'s embedded-resource cases
+(`ResourceFileHelpers.DelegateFileProvider`, a small adapter from a `Func<string, Stream>` to
+`IEphemerisFileProvider`, replacing the per-test `OnLoadFile` lambda).
+
+One capability did not survive the interface's fixed shape (`Stream Open(string path)`, no
+encoding channel): `LoadFileEventArgs.Encoding` used to let a handler override the decode encoding
+per file. `IEphemerisFileProvider` cannot express that -- the static `SwissEph.DefaultEncoding` is
+the only lever left, applying to every file for the life of the process rather than per file.
+`Tests/SwissEphNet.Tests/SwissEphTest.cs`'s `TestOnLoadFileHandlerCanOverrideEncodingPerFile` is
+now `TestDefaultEncodingAppliesToProviderSuppliedStreams`, pinning the new, coarser mechanism
+rather than the one that is gone.
 
 ## Pointer arithmetic as string concatenation: Defect 4's class survives in SweTest
 
@@ -1146,19 +1245,24 @@ say something about correctness. The next time a deviation entry reports "N rows
 change like this, check what those rows' `serr`/`retc` actually say before treating the count as
 evidence of anything beyond "the constant is now embedded in the output."
 
-## Three file-layer divergences, recorded and not fixed here
+## Three file-layer divergences: two closed, one remains
 
 Found while porting `swetest.c`/`swemini.c` to 2.10.03. All three predate that work: they sit in
 `sweph.c`'s file layer, carried in the port since 2.08, and 2.10.03 leaves these sites unchanged.
-None is fixed here; they are recorded so a future porter does not have to rediscover them.
+None was fixed at the time this was written; they were recorded so a future porter would not have
+to rediscover them. **`PATH_SEPARATOR` and the `AS_MAXCH` check are now closed**, alongside
+restoring `swi_fopen`'s actual transliteration -- see "OnLoadFile superseded" above, which is
+where the fix landed and cites the exact C lines. `DIR_GLUE` remains open, deliberately: it is a
+narrower case (see its own paragraph below for why it is safe to defer where the other two were
+not) and is still deferred to the same release-stage breaking-change list `OnLoadFile` was.
 
-**`PATH_SEPARATOR` is always `';'`.** `SwissEph.sweodef.h.cs:136` sets
-`public static char PATH_SEPARATOR = ';';` unconditionally. The C picks per platform:
-`sweodef.h:305` gives `";:"` (semicolon or colon) on Unix, `:311` gives `";"` on Windows. Because
-the port's field is a single `char`, it cannot hold `";:"` even if it tried to branch on platform.
-A Unix caller who passes a colon-separated ephemeris path -- ordinary on that platform -- gets it
-back as one unsplit entry from `swi_fopen`'s `s1.Split(new char[] { SwissEph.PATH_SEPARATOR }, ...)`
-(`Sweph.cs:2775`), rather than the several directories the C would have tried in turn.
+**`PATH_SEPARATOR` was always `';'` as a single `char`. Closed:** it is now `char[]`, matching the
+C's cut-list shape, and `swi_fopen` calls `swi_cutstr` against it the way `sweph.c:2377` does
+instead of `string.Split`. The *value* deliberately stays `{ ';' }` rather than adopting Unix's
+`";:"` -- see "OnLoadFile superseded" above for why a bare `':'` is not safe to add on a
+cross-platform port (it collides with a Windows drive letter). A Unix caller passing a
+colon-separated path still gets one unsplit entry, which is now a considered choice rather than a
+`char`-width accident.
 
 **`DIR_GLUE` is always `'/'`, so the "not found" message reads wrong on Windows.**
 `SwissEph.sweodef.h.cs:153` sets `DIR_GLUE = '/'` unconditionally, for the reasons already recorded
@@ -1170,13 +1274,13 @@ separator -- so there is no numeric effect. The `"SwissEph file '%s' not found i
 warning (`sweph.c:2400`, `Sweph.cs:2807`) embeds the joined path, though, so its *text* differs by
 one character on Windows, and that text mismatch is already visible in 11 rows of
 `Tests/swetest/known-diff.tsv`. Changing `DIR_GLUE` back to a per-platform value would be a
-breaking change for any `OnLoadFile` consumer that matches on the separator in a file name it
-receives -- the same consumers called out in "DIR_GLUE fixed" above -- so it belongs with that
+breaking change for any `IEphemerisFileProvider` consumer that matches on the separator in a file
+name it receives -- the same consumers called out in "DIR_GLUE fixed" above -- so it belongs with that
 entry's deferred release-stage work, not with this file-layer note; there is no separate Phase 7
 breaking-change list elsewhere in this repository to add it to.
 
-**`swi_fopen` never checks `AS_MAXCH`.** `sweph.c:2388-2392` bounds-checks the joined path before
-using it:
+**`swi_fopen` never checked `AS_MAXCH`. Closed:** it now does, at the same site the C does. What
+follows is the state as originally found, kept for the record:
 
 ```c
 if (strlen(s) + strlen(fname) < AS_MAXCH) {
@@ -1195,9 +1299,10 @@ the live code, `Sweph.cs:2788-2799`) and instead builds the path unconditionally
 fnamp = s.TrimEnd('\\', '/') + SwissEph.DIR_GLUE + fname;
 ```
 
-An ephemeris path long enough to trip the C's guard never gets the
-`"error: file path and name must be shorter than %d."` message from the port at all; it is passed
-through to `SE.LoadFile` regardless of length.
+An ephemeris path long enough to trip the C's guard never got the
+`"error: file path and name must be shorter than %d."` message from the port at all; it was passed
+through to `SE.LoadFile` regardless of length. (Historical: `SE.LoadFile` itself is also gone,
+replaced by `SE.OpenBinary` -- see "OnLoadFile superseded" above.)
 
 ## swetest.c's missing `spmoon` declaration: fixed on upstream master, not on the pinned tag
 
