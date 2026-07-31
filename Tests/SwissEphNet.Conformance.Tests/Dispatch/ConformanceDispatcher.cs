@@ -74,9 +74,6 @@ public sealed class ConformanceDispatcher
     {
         switch (suiteId, testCaseId)
         {
-            case (1, 5):
-                reason = "swe_calc_pctr is not implemented in SwissEphNet (port is at 2.08; added in 2.10).";
-                return true;
             default:
                 reason = "";
                 return false;

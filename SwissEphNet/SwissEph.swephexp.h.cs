@@ -709,6 +709,11 @@ namespace SwissEphNet
             return Sweph.swe_calc_ut(tjd_ut, ipl, iflag, xx, ref serr);
         }
 
+        public Int32 swe_calc_pctr(double tjd, Int32 ipl, Int32 iplctr, Int32 iflag, double[] xxret, ref string serr)
+        {
+            return Sweph.swe_calc_pctr(tjd, ipl, iplctr, iflag, xxret, ref serr);
+        }
+
         // sweph.c:8310-8615
         public double swe_solcross(double x2cross, double jd_et, Int32 flag, ref string serr)
         {
@@ -814,6 +819,8 @@ namespace SwissEphNet
         public double swe_get_ayanamsa_ut(double tjd_ut) { return Sweph.swe_get_ayanamsa_ut(tjd_ut); }
 
         public string swe_get_ayanamsa_name(Int32 isidmode) { return Sweph.swe_get_ayanamsa_name(isidmode); }
+
+        public string swe_get_current_file_data(int ifno, ref double tfstart, ref double tfend, ref int denum) { return Sweph.swe_get_current_file_data(ifno, ref tfstart, ref tfend, ref denum); }
 
         /*ext_def(void) swe_set_timeout(int32 tsec);*/
 

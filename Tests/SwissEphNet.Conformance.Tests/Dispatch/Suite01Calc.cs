@@ -82,8 +82,17 @@ internal static class Suite01Calc
             }
 
             case 5:
-                // swe_calc_pctr: 2.10-only, not yet ported.
-                return DispatchOutcome.NotImplemented("swe_calc_pctr is not implemented in SwissEphNet (port is at 2.08; added in 2.10).");
+            {
+                var iflag = f.GetInt("iflag");
+                var iephe = f.GetInt("iephe");
+                var jd = f.GetDouble("jd");
+                var ipl = f.GetInt("ipl");
+                var iplctr = f.GetInt("iplctr");
+                var xx = new double[6];
+                string serr = "";
+                var rc = swe.swe_calc_pctr(jd, ipl, iplctr, iflag | iephe, xx, ref serr);
+                return CheckCalc(f, precision, rc, xx, serr);
+            }
 
             default:
                 return DispatchOutcome.Error($"Suite 1 has no testcase {testCaseId}.");
