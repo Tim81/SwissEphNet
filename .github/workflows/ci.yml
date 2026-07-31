@@ -152,10 +152,12 @@ jobs:
   # request alongside the other ubuntu-latest checks above. Recomputes the load-bearing counts
   # (known-fail.tsv's total and category split, both oracle grids' known-diff row counts and
   # swetest's, and both oracle grids' totals with their per-func breakdown) directly from the
-  # files that define them, and fails when a `<!--doccount:ID-->`-marked figure in README.md,
-  # CONTRIBUTING.md, docs/compliance-2.10.03.md, docs/known-issues.md or the oracle/conformance/
-  # baseline workflow files disagrees -- or when a defined count has no marker left to check at
-  # all. See scripts/verify-doc-counts.ps1's own header for the marker-vs-manifest design choice.
+  # files that define them, and fails when a doccount-marker-tagged figure (see
+  # scripts/verify-doc-counts.ps1's own header for the exact HTML-comment marker syntax) in
+  # README.md, CONTRIBUTING.md, docs/compliance-2.10.03.md, docs/known-issues.md or the
+  # oracle/conformance/baseline workflow files disagrees -- or when a defined count has no marker
+  # left to check at all, or a marker exists somewhere outside that document set. See
+  # scripts/verify-doc-counts.ps1's own header for the marker-vs-manifest design choice.
   verify-doc-counts:
     name: Documentation counts match the repository
     runs-on: ubuntu-latest

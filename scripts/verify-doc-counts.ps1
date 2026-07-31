@@ -40,12 +40,26 @@
 
     Scope, "at minimum" per the class of defect this exists to catch: known-fail.tsv's total row
     count and its category split; known-diff.tsv's row count for both oracle grids and for
-    swetest; and both oracle grid row counts together with their per-`func` breakdown. Markers are
-    currently placed in README.md, CONTRIBUTING.md, docs/compliance-2.10.03.md,
-    docs/known-issues.md and .github/workflows/oracle.yml -- wherever a load-bearing number from
-    that list is currently written out. Not every mention of every number in the repository carries
-    a marker (some are historical, e.g. "4,382 rows when the oracle was first wired up", which
-    this script is not meant to re-derive); a mention without a marker is not gated, by design.
+    swetest; and both oracle grid row counts together with their per-`func` breakdown. $docFiles
+    below -- README.md, CONTRIBUTING.md, docs/compliance-2.10.03.md, docs/known-issues.md,
+    .github/workflows/oracle.yml, .github/workflows/conformance.yml and .github/workflows/
+    baseline.yml -- is the allowlist of files a marker is permitted to live in; a marker anywhere
+    else is a failure in its own right (see "Reverse check" below), not merely unread. As of this
+    writing, markers actually appear in README.md, CONTRIBUTING.md, docs/compliance-2.10.03.md and
+    .github/workflows/oracle.yml; docs/known-issues.md, conformance.yml and baseline.yml are
+    allowlisted destinations that happen to hold none today, not files this script currently reads
+    a number out of. Not every mention of every number in the repository carries a marker (some
+    are historical, e.g. "4,382 rows when the oracle was first wired up", which this script is not
+    meant to re-derive); a mention without a marker is not gated, by design.
+
+    Reverse check: a marker outside $docFiles is invisible to every check above by construction --
+    the loop above only ever opens the files in that list, so `9,999<!--doccount:known-fail-total-->`
+    pasted into a new, un-allowlisted document (or a workflow file not in the list) was previously
+    unchecked, silently, forever, which is the opposite of this script's own selling point that a
+    marker "survives a copy-paste into another document". This script also greps every tracked file
+    outside $docFiles (and outside its own path, which explains the marker syntax in prose above)
+    for the literal marker delimiter and fails if it finds one -- a marker has to be moved into an
+    allowlisted document or deleted, not merely left where nothing reads it.
 
     docs/upstream/ and external/ are out of scope: the former is untracked scratch work, the
     latter is Astrodienst's own vendored source, not this repository's documentation.
@@ -156,7 +170,7 @@ $GroundTruth['grid-total-combined'] = $analyticGrid.Total + $filesGrid.Total
 # ---------------------------------------------------------------------------
 # Scan the documents for citation markers and check each one.
 # ---------------------------------------------------------------------------
-$docFiles = @(
+$docFileRelPaths = @(
     'README.md',
     'CONTRIBUTING.md',
     'docs/compliance-2.10.03.md',
@@ -164,7 +178,8 @@ $docFiles = @(
     '.github/workflows/oracle.yml',
     '.github/workflows/conformance.yml',
     '.github/workflows/baseline.yml'
-) | ForEach-Object { Join-Path $RepoRoot $_ } | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }
+)
+$docFiles = $docFileRelPaths | ForEach-Object { Join-Path $RepoRoot $_ } | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }
 
 # A number, then a run of one or more marker tags. A run (not a single tag) is required because
 # two documents cite one shared number for two different functions at once, e.g.
@@ -212,6 +227,37 @@ foreach ($id in $GroundTruth.Keys) {
         $tag = '<!--doccount:' + $id + '-->'
         $failures.Add("doccount:$id is defined in this script but has no marker anywhere in the scanned documents -- either add $tag next to the number it checks, or remove the id from the GroundTruth table in this script if nothing cites it any more.")
     }
+}
+
+# ---------------------------------------------------------------------------
+# Reverse check: no doccount: marker outside the $docFileRelPaths allowlist.
+# ---------------------------------------------------------------------------
+# The loop above only ever opens the files in $docFileRelPaths, so a marker anywhere else is
+# invisible to every check in this script by construction -- not a false negative, a silent
+# non-check. `9,999<!--doccount:known-fail-total-->` pasted into a brand-new document, or into a
+# workflow file that is not already one of the seven above, previously exited 0 forever. This
+# greps every other tracked file for the literal marker text and fails if it finds one; a marker
+# has to live in an allowlisted document (move it) or not exist (delete it), never sit somewhere
+# nothing reads it.
+$selfRelPath = [System.IO.Path]::GetRelativePath($RepoRoot, $PSCommandPath).Replace('\', '/')
+$reverseGrepArgs = @('-C', $RepoRoot, 'grep', '-nI', '--no-color', '-e', 'doccount:', '--', '.', ':!external/*')
+foreach ($rel in $docFileRelPaths) { $reverseGrepArgs += ":!$rel" }
+# Only excludable when this script actually lives inside $RepoRoot -- see the identical guard (and
+# the reason for it) in scripts/verify-no-tooling-attribution.ps1.
+if (-not $selfRelPath.StartsWith('..')) { $reverseGrepArgs += ":!$selfRelPath" }
+
+$reverseGrepOutput = & git @reverseGrepArgs
+if ($LASTEXITCODE -eq 128) {
+    throw "git grep exited 128 (not a git repository, or an invalid pathspec) while scanning for doccount: markers outside the allowlist -- output above."
+}
+# git grep exits 1 when nothing matched, which is the expected, good outcome here.
+
+foreach ($line in @($reverseGrepOutput)) {
+    if ([string]::IsNullOrWhiteSpace($line)) { continue }
+    $failures.Add(
+        "$line -- 'doccount:' marker found outside the allowlisted document set " +
+        "($($docFileRelPaths -join ', ')); every check above only reads those files, so this " +
+        "marker is invisible to them. Move it into an allowlisted document, or remove it.")
 }
 
 Write-Host "Checked $($seenIds.Count) distinct doccount id(s) across $($docFiles.Count) document(s)."
