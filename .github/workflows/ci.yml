@@ -147,3 +147,79 @@ jobs:
   # Whoever adds the general job must run it as
   # `dotnet format SwissEphNet.sln --verify-no-changes --exclude SwissEphNet/CPort/ --exclude Programs/SweTest/Program.cs --exclude Programs/SweMini/Program.cs`
   # -- see CONTRIBUTING.md for why all three exclusions are mandatory.
+
+  # Pure text parsing, no build, no submodule -- cheap enough to run on every push and pull
+  # request alongside the other ubuntu-latest checks above. Recomputes the load-bearing counts
+  # (known-fail.tsv's total and category split, both oracle grids' known-diff row counts and
+  # swetest's, and both oracle grids' totals with their per-func breakdown) directly from the
+  # files that define them, and fails when a `<!--doccount:ID-->`-marked figure in README.md,
+  # CONTRIBUTING.md, docs/compliance-2.10.03.md, docs/known-issues.md or the oracle/conformance/
+  # baseline workflow files disagrees -- or when a defined count has no marker left to check at
+  # all. See scripts/verify-doc-counts.ps1's own header for the marker-vs-manifest design choice.
+  verify-doc-counts:
+    name: Documentation counts match the repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify documented counts against the repository
+        shell: pwsh
+        run: pwsh scripts/verify-doc-counts.ps1
+
+  # Also pure text parsing. README.md is the package's own PackageReadmeFile, so a code sample
+  # in it that calls a removed API ships to every consumer who reads the package page -- the
+  # concrete defect this catches (a "Loading files" tutorial still telling readers to subscribe
+  # to the `OnLoadFile` event one release after it was deleted). See
+  # scripts/verify-doc-no-removed-apis.ps1's own header for why the check fires on a fenced code
+  # sample rather than on any mention, and for why that is a deliberate false-negative bias.
+  verify-doc-no-removed-apis:
+    name: Documentation does not teach a removed API
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify no current-usage documentation calls a removed API
+        shell: pwsh
+        run: pwsh scripts/verify-doc-no-removed-apis.ps1
+
+  # Two checks in one job: every tracked file (a fast, pure `git grep`), and every commit message
+  # in the range this push or pull request actually introduces. The commit-message half needs a
+  # base to diff from, so it reuses scripts/resolve-log-base.ps1 -- the same resolver
+  # baseline.yml's own log-check job depends on -- rather than a second, independently-maintained
+  # notion of "what changed in this push". No -SelfTest step here: baseline.yml's verify-baseline
+  # job already runs it on every push and pull_request (the same triggers this workflow listens
+  # on), so a second run here would exercise the identical resolver against the identical commit
+  # for no new coverage. See scripts/verify-no-tooling-attribution.ps1's own header for the
+  # pattern table and why each pattern is shaped the way it is.
+  verify-no-tooling-attribution:
+    name: No tooling-authorship text in tracked files or new commits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Same reasoning as baseline.yml's own log-check job: resolve-log-base.ps1 (and the
+          # git log range it produces) need history beyond the default shallow clone.
+          fetch-depth: 0
+
+      - name: Fetch the integration refs the base resolver needs
+        shell: bash
+        run: |
+          git fetch --quiet origin \
+            "+refs/heads/release/2.10.03:refs/remotes/origin/release/2.10.03" \
+            "+refs/heads/main:refs/remotes/origin/main" || true
+
+      - name: Determine base ref for the commit-message scan
+        id: base-ref
+        shell: pwsh
+        run: |
+          $base = pwsh scripts/resolve-log-base.ps1 `
+            -EventName '${{ github.event_name }}' `
+            -BeforeSha '${{ github.event.before }}' `
+            -PrBaseSha '${{ github.event.pull_request.base.sha }}'
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          "sha=$base" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Resolved commit-message scan base: $base"
+
+      - name: Verify no tooling-authorship text
+        shell: pwsh
+        run: pwsh scripts/verify-no-tooling-attribution.ps1 -CommitRange '${{ steps.base-ref.outputs.sha }}..HEAD'
