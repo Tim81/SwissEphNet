@@ -24,7 +24,15 @@ Four projects, one shared matrix:
   changes, missing rows, glob anchoring, rejection of catch-all waivers, the waived
   and matched-breadth fraction caps on both sides of 5%, both stale-waiver
   conditions, and all four assembly-identity-check outcomes. The gate's own logic
-  needs coverage independent of whatever the matrix happens to produce. Run with
+  needs coverage independent of whatever the matrix happens to produce. Every one
+  of those is a decision function, unit tested directly; `Program.cs` itself --
+  the composition of those functions into an exit code -- is untested by every one
+  of them, since none actually runs the process. `ProgramEndToEndTests` is the one
+  exception: it copies the committed baseline, corrupts one area's expected row
+  count in the copy, runs the real, compiled `BaselineVerify.dll` against it as a
+  subprocess, and asserts the process exits nonzero -- proof the wiring itself
+  (`Program.cs`'s own `&&`s and `overallExitCode = 1` assignments) is load-bearing,
+  not just the functions it calls. Run with
   `dotnet test Tools/BaselineVerify.Tests -c Release`; CI runs this before every
   verify.
 
