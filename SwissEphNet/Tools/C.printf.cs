@@ -645,6 +645,19 @@ namespace SwissEphNet
             if (IsNumericType(Value)) {
                 w = String.Format(CultureInfo.InvariantCulture, numberFormat, Value);
 
+                if (NativeFormat == "e" || NativeFormat == "E") {
+                    // .NET's e/E format always pads the exponent to exactly 3 digits
+                    // (e.g. "1.234560e-005"); C's printf mandates a minimum of two and
+                    // never pads beyond what the magnitude needs ("1.234560e-05").
+                    // Trim the leading zero .NET always adds, but never below 2 digits.
+                    w = Regex.Replace(w, "([eE][+-])0*([0-9][0-9]+)", m => {
+                        var digits = m.Groups[2].Value.TrimStart('0');
+                        if (digits.Length < 2)
+                            digits = digits.PadLeft(2, '0');
+                        return m.Groups[1].Value + digits;
+                    });
+                }
+
                 if (Left2Right || Padding == ' ') {
                     if (IsPositive(Value, true))
                         w = (PositiveSign ?
