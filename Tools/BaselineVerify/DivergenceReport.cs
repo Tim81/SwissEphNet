@@ -15,7 +15,7 @@ internal sealed class DivergenceStats
     /// <summary>Of FieldsDiffering, how many are still beyond tolerance (i.e. would actually fail the gate) after the angle-wraparound allowance.</summary>
     public int FieldsBeyondTolerance;
 
-    /// <summary>Relative difference (EffectiveAbsoluteDiff / max(|a|,|b|)) for every differing field, sorted ascending after <see cref="Collect"/> returns.</summary>
+    /// <summary>Relative difference (EffectiveAbsoluteDiff / max(|a|,|b|)) for every differing field, sorted ascending after <see cref="DivergenceReport.Collect"/> returns.</summary>
     public List<double> SortedRelativeDiffs { get; } = [];
 
     public double Median => Percentile(SortedRelativeDiffs, 50);

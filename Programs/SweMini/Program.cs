@@ -97,15 +97,20 @@ namespace SweMini
                     Console.Write("\nDate (d.m.y) ? ");
                     sdate = Console.ReadLine();
                     // stop if a period . is entered
-                    if (sdate != null && sdate.StartsWith("."))
+                    // swemini.c:40 tests *sdate == '.', a single-byte comparison; StartsWith
+                    // without StringComparison is culture-sensitive, so make it ordinal.
+                    if (sdate != null && sdate.StartsWith(".", StringComparison.Ordinal))
                         return SwissEph.OK;
                     var match = Regex.Match(sdate ?? String.Empty, @"(\d+)\.(\d+)\.(\d+)");
                     // we have day, month and year and convert to Julian day number
                     if (match.Success)
                     {
-                        jday = int.Parse(match.Groups[1].Value);
-                        jmon = int.Parse(match.Groups[2].Value);
-                        jyear = int.Parse(match.Groups[3].Value);
+                        // swemini.c:42 (sscanf(sdate, "%d%*c%d%*c%d", ...)) parses ASCII
+                        // digits regardless of locale; int.Parse without a format provider
+                        // is culture-sensitive, so make it invariant.
+                        jday = int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
+                        jmon = int.Parse(match.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture);
+                        jyear = int.Parse(match.Groups[3].Value, System.Globalization.CultureInfo.InvariantCulture);
                     }
                     if (jmon < 1 || jmon > 12)
                     {
@@ -144,6 +149,9 @@ namespace SweMini
             Console.Write("\nPress a key to quit...");
             Console.ReadKey();
 #endif
+            // swemini.c:72 has this same trailing `return OK;` after its own
+            // `while (TRUE)` loop, whose only exit is the `return OK;` at swemini.c:41 --
+            // unreachable in the C too, not a mis-transliterated goto. Left to match.
             return 0;
         }
 
