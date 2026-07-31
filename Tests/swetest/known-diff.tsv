@@ -2,9 +2,6 @@ case_id	category	reason
 DATE_FORMATS|NEGATIVE_YEAR	OUTPUT-DIFFERS	line 3: c="warning: SwissEph file 'seplm06.se1' not found in PATH '<ephe-dir>\' " net="warning: SwissEph file 'seplm06.se1' not found in PATH '<ephe-dir>/' "
 DATE_FORMATS|OUT_OF_RANGE_PAST	OUTPUT-DIFFERS	line 1: c="error: SwissEph file 'seplm42.se1' not found in PATH '<ephe-dir>\'" net="error: SwissEph file 'seplm42.se1' not found in PATH '<ephe-dir>/'"
 FMT_MULTI|6	OUTPUT-DIFFERS	line 15: c="intp. Apogee      -nan(ind)         nan " net="intp. Apogee            NaN         NaN "
-HEADER_BLOCK|1.1.2000	PORT-VERSION	entire difference is the embedded swe_version() banner (2.08 vs 2.10.03); every other line matches
-HEADER_BLOCK|1.1.2100	PORT-VERSION	entire difference is the embedded swe_version() banner (2.08 vs 2.10.03); every other line matches
-HEADER_BLOCK|4.10.1582	PORT-VERSION	entire difference is the embedded swe_version() banner (2.08 vs 2.10.03); every other line matches
 NEW_2_10_FLAGS|LIM	OUTPUT-DIFFERS	line 1: c="range <ephe-dir>\se00433s.se1: 0.0 = 24.11.-4713 to 0.0 = 24.11.-4713 de=0" net="range <ephe-dir>/se00433s.se1: 0.0 = 24.11.-4713 to 0.0 = 24.11.-4713 de=0"
 PLANETARY_MOON|IO	OUTPUT-DIFFERS	line 1: c="error: SwissEph file 'sepm9501.se1' not found in PATH '<ephe-dir>\'" net="error: SwissEph file 'sepm9501.se1' not found in PATH '<ephe-dir>/'"
 PLANETARY_MOON|JUPITER_COB	OUTPUT-DIFFERS	line 1: c="error: SwissEph file 'sepm9599.se1' not found in PATH '<ephe-dir>\'" net="error: SwissEph file 'sepm9599.se1' not found in PATH '<ephe-dir>/'"
@@ -13,12 +10,12 @@ PLANETOCENTRIC|COB_JUPITER	OUTPUT-DIFFERS	line 1: c="error: SwissEph file 'sepm9
 PLANETOCENTRIC|COB_SATURN	OUTPUT-DIFFERS	line 1: c="error: SwissEph file 'sepm9699.se1' not found in PATH '<ephe-dir>\'" net="error: SwissEph file 'sepm9699.se1' not found in PATH '<ephe-dir>/'"
 PLANETOCENTRIC|PC_JUPITER_COB	OUTPUT-DIFFERS	line 1: c="error: SwissEph file 'sepm9599.se1' not found in PATH '<ephe-dir>\'" net="error: SwissEph file 'sepm9599.se1' not found in PATH '<ephe-dir>/'"
 PLANETOCENTRIC|PC_SATURN_COB	OUTPUT-DIFFERS	line 1: c="error: SwissEph file 'sepm9699.se1' not found in PATH '<ephe-dir>\'" net="error: SwissEph file 'sepm9699.se1' not found in PATH '<ephe-dir>/'"
-PLANETS_MOSEPH|1.1.1900|p|EMOS	OUTPUT-DIFFERS	line 17 (23 C line(s) vs 22 .NET line(s)): c="error: SwissEph file 'seas_18.se1' not found in PATH '\sweph\ephe\'" net="Chiron           258┬░53'45.9581    4┬░45'56.5563   11.258352998    0┬░ 6'43.1435"
-PLANETS_MOSEPH|1.1.2000|p|EMOS	OUTPUT-DIFFERS	line 17 (23 C line(s) vs 22 .NET line(s)): c="error: SwissEph file 'seas_18.se1' not found in PATH '\sweph\ephe\'" net="Chiron           251┬░33'37.1118    4┬░ 4' 7.1703   10.666728575    0┬░ 6'52.6457"
-PLANETS_MOSEPH|1.1.2024|p|EMOS	OUTPUT-DIFFERS	line 17 (23 C line(s) vs 22 .NET line(s)): c="error: SwissEph file 'seas_18.se1' not found in PATH '\sweph\ephe\'" net="Chiron            15┬░27'45.2755    1┬░21'27.3640   18.604539976    0┬░ 0'16.0506"
-PLANETS_MOSEPH|1.1.2100|p|EMOS	OUTPUT-DIFFERS	line 17 (23 C line(s) vs 22 .NET line(s)): c="error: SwissEph file 'seas_18.se1' not found in PATH '\sweph\ephe\'" net="Chiron           241┬░51'35.2020    3┬░ 0' 8.4648   10.027214140    0┬░ 6'48.6060"
-PLANETS_MOSEPH|29.2.2000|p|EMOS	OUTPUT-DIFFERS	line 17 (23 C line(s) vs 22 .NET line(s)): c="error: SwissEph file 'seas_18.se1' not found in PATH '\sweph\ephe\'" net="Chiron           256┬░35'10.2157    4┬░34'40.3651    9.982903574    0┬░ 2'46.9156"
-PLANETS_MOSEPH|4.10.1582|p|EMOS	OUTPUT-DIFFERS	line 17 (23 C line(s) vs 22 .NET line(s)): c="error: SwissEph file 'seas_12.se1' not found in PATH '\sweph\ephe\'" net="Chiron            11┬░58'15.7078    1┬░43'51.6769   16.889678090   -0┬░ 2'48.6134"
+PLANETS_MOSEPH|1.1.1900|p|EMOS	OUTPUT-DIFFERS	line 17: c="error: SwissEph file 'seas_18.se1' not found in PATH '\sweph\ephe\'" net="error: SwissEph file 'seas_18.se1' not found in PATH '[ephe]'"
+PLANETS_MOSEPH|1.1.2000|p|EMOS	OUTPUT-DIFFERS	line 17: c="error: SwissEph file 'seas_18.se1' not found in PATH '\sweph\ephe\'" net="error: SwissEph file 'seas_18.se1' not found in PATH '[ephe]'"
+PLANETS_MOSEPH|1.1.2024|p|EMOS	OUTPUT-DIFFERS	line 17: c="error: SwissEph file 'seas_18.se1' not found in PATH '\sweph\ephe\'" net="error: SwissEph file 'seas_18.se1' not found in PATH '[ephe]'"
+PLANETS_MOSEPH|1.1.2100|p|EMOS	OUTPUT-DIFFERS	line 17: c="error: SwissEph file 'seas_18.se1' not found in PATH '\sweph\ephe\'" net="error: SwissEph file 'seas_18.se1' not found in PATH '[ephe]'"
+PLANETS_MOSEPH|29.2.2000|p|EMOS	OUTPUT-DIFFERS	line 17: c="error: SwissEph file 'seas_18.se1' not found in PATH '\sweph\ephe\'" net="error: SwissEph file 'seas_18.se1' not found in PATH '[ephe]'"
+PLANETS_MOSEPH|4.10.1582|p|EMOS	OUTPUT-DIFFERS	line 17: c="error: SwissEph file 'seas_12.se1' not found in PATH '\sweph\ephe\'" net="error: SwissEph file 'seas_12.se1' not found in PATH '[ephe]'"
 PLSEL_TRUNCATION|1	OUTPUT-DIFFERS	line 2 (10 C line(s) vs 1 .NET line(s)): c="Moon             217.2843446" net="<no line>"
 PLSEL_TRUNCATION|2	OUTPUT-DIFFERS	line 2 (4 C line(s) vs 1 .NET line(s)): c="Moon             217.2843446" net="<no line>"
 PLSEL_TRUNCATION|3	OUTPUT-DIFFERS	line 2 (8 C line(s) vs 1 .NET line(s)): c="osc. Apogee      252.2322891" net="<no line>"

@@ -7,14 +7,16 @@
     <PackageId>SwissEphSharp</PackageId>
     <!--
       Version scheme: upstream Swiss Ephemeris version + port revision, e.g.
-      2.8.x tracks Swiss Ephemeris C 2.08 with x as this port's own revision
-      counter. This is not published to nuget.org: 2.8.0.2 already is, and
-      the library no longer ships net40/netstandard1.0, so it would not be a
-      drop-in replacement for that package anyway. Distribution is
-      source-only (clone/build/reference) until the 2.10.03 port lands. Do
-      not bump this to a 2.10.x version before that port actually happens.
+      2.10.3 tracks Swiss Ephemeris C 2.10.03 (upstream tag v2.10.3final),
+      the version the port itself now targets end to end: SE_VERSION,
+      sweph.c, swecl.c, swehouse.c and swetest.c have all landed. This is
+      still not published to nuget.org: 2.8.0.2 already is under the old
+      package ID, and the library no longer ships net40/netstandard1.0, so
+      it would not be a drop-in replacement for that package anyway.
+      Distribution stays source-only (clone/build/reference).
     -->
-    <Version>2.8.1.0</Version>
+    <Version>2.10.3</Version>
+    <InformationalVersion>2.10.3 (Swiss Ephemeris 2.10.03, upstream tag v2.10.3final)</InformationalVersion>
     <Authors>Yan Grenier, Timothy van der Ham</Authors>
     <Company>Yan Grenier</Company>
     <Product>SwissEphSharp</Product>
@@ -27,7 +29,24 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>Swiss Ephemeris</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>2.8.1.0 (not published to nuget.org; source-only distribution):
+    <PackageReleaseNotes>2.10.3 (not published to nuget.org; source-only distribution):
+- SE_VERSION now reports "2.10.03", matching the C library this port tracks (upstream tag
+  v2.10.3final). Every stage of the 2.10.03 delta has landed: the header/constants stage,
+  swephlib.c, the ayanamsha machinery, sweph.c, swecl.c, swehouse.c and swetest.c.
+- swe_houses, swe_houses_ex, swe_houses_armc, swe_house_pos and swe_house_name each gained an
+  int hsys overload alongside the existing char hsys overload, matching upstream swephexp.h.
+- New API surface: swe_houses_ex2, swe_houses_armc_ex2, swe_calc_pctr, swe_get_current_file_data.
+- OnLoadFile is gone; ephemeris files are read from disk by default through the new
+  SwissEph.FileProvider (IEphemerisFileProvider).
+- Numerous port bug fixes surfaced by the 2.10.03 work, several of them upstream C bugs Astrodienst
+  fixed between 2.08 and 2.10.03 that this port now also carries: swe_nod_aps/swe_nod_aps_ut
+  returning all-zero nodes and apsides, an obliquity read that affected every SEFLG_SWIEPH
+  position, eclipse magnitude and obscuration off by a factor of 100, and the swe_house_pos buffer
+  that was one element short for Gauquelin houses. See docs/compliance-2.10.03.md for the
+  verification numbers behind this release and docs/known-issues.md and the "Unreleased" section
+  of README.md for the full list.
+
+2.8.1.0 (not published to nuget.org; source-only distribution):
 - Package ID renamed from SwissEphNet to SwissEphSharp. SwissEphNet on nuget.org belongs to the
   upstream author's own release and this fork cannot publish under it. The assembly name and
   namespace are unaffected: both stay SwissEphNet, so the only change a consumer needs to make is

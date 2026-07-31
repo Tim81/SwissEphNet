@@ -203,7 +203,7 @@ namespace SwissEphNet.Tests
         [InlineData("")]
         public void TestSetAstroModels_EmptyOrNull_SelectsCurrentLibraryVersion(string samod)
         {
-            // SE_VERSION is "2.08" (Sweph.h.cs), which is >= 2.06, so both ""
+            // SE_VERSION is "2.10.03" (Sweph.h.cs), which is >= 2.06, so both ""
             // and null should resolve to AMODELS_SE_2_06 = "5,9,9,4,3,0,0,4" --
             // the same model set as explicitly requesting it via the
             // digit-list branch, which does not go through the buggy code path.
