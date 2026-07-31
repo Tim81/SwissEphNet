@@ -275,7 +275,7 @@ rather than editing it directly:
 | misc | `PN`, `VER` |
 | nodaps | `NA`, `NAUT` |
 | orbit | `OE`, `OMM` |
-| pheno-ast | `PHA`, `PHATOPO`, `PHATOPO_SPEED`, `PHAUT`, `PHAUTTOPO`, `PHAUTTOPO_SPEED` |
+| pheno-ast | `PHACHIRON`, `PHAFILE` |
 | pheno | `PH`, `PHTOPO`, `PHTOPO_SPEED`, `PHUT`, `PHUTTOPO`, `PHUTTOPO_SPEED` |
 | risetrans | `RT`, `RTATM`, `RTBIT`, `RTH` |
 
@@ -584,7 +584,7 @@ each area covers. Areas and their files:
 | coord | `CoordHelpers.cs` | `swe_cotrans[_sp]`, `swe_azalt[_rev]` |
 | format | `FormatHelpers.cs` | `swe_split_deg`, `swe_cs2*str`, norm/midpoint helpers, and their radian/centisecond siblings (`swe_radnorm`, `swe_difrad2n`, `swe_difcsn`, `swe_difcs2n`, `swe_csroundsec`, `swe_d2l`, `swe_day_of_week`) |
 | misc | `Misc.cs` | `swe_get_planet_name`, `swe_version` |
-| pheno-ast | `PhenoAst.cs` | `swe_pheno[_ut]` for the six asteroids `pheno.cs`'s `Grids.CalcPlanets` sweep never reaches (Chiron, Pholus, Ceres, Pallas, Juno, Vesta) |
+| pheno-ast | `PhenoAst.cs` | `swe_pheno` (never `_ut`) for two bodies, Chiron and Pholus, that `pheno.cs`'s `Grids.CalcPlanets` sweep never reaches -- not all six originally swept; Ceres/Pallas/Juno/Vesta and every iflag/topocentric/ET-UT axis were collapsed out as duplicate rows, since the underlying `swe_calc` call always fails at file-open before any of them is ever consulted (see the file's doc comment). Every row's `retc` is `-1` with an all-zero `attr[]` payload, so the only thing a row actually pins is its `serr` string; this area cannot distinguish two library versions that fail at the same lookup but would disagree on a real `attr[]` value (e.g. the `pla_diam[]` change this area was originally meant to catch, which never executes here -- see the doc comment's "CORRECTION" paragraph) |
 | eclipse | `Eclipse.cs` | `swe_sol_eclipse_where/how/when_glob/when_loc`, `swe_lun_eclipse_how/when/when_loc`, `swe_lun_occult_where/when_glob/when_loc` |
 | risetrans | `RiseTrans.cs` | `swe_rise_trans`, `swe_rise_trans_true_hor` across `SE_CALC_RISE/SET/MTRANSIT/ITRANSIT` and the `SE_BIT_*` rise/set bit flags |
 | atmo | `Atmo.cs` | `swe_refrac`, `swe_refrac_extended` (both directions), `swe_set_lapse_rate` |
