@@ -5671,6 +5671,17 @@ namespace SwissEphNet.CPort
                             return SwissEph.ERR;
                     } else {
                         /* traditional algorithm */
+                        // swecl.c:5587 opens this branch with swi_cartpol_sp(pldat.xreturn+6,
+                        // pldat.xreturn), identical in 2.08 at :5495. It was missing here, and had
+                        // never been present. pldat is a fresh local, so xreturn[0..5] was still
+                        // zero at this point: the ayanamsha was subtracted from 0, and
+                        // swi_polcart_sp then wrote a zero vector back over the correct ecliptic
+                        // cartesian coordinates. swe_nod_aps and swe_nod_aps_ut returned xnasc,
+                        // xndsc, xperi and xaphe as all-zero, with retc OK and no serr, for every
+                        // ayanamsha that is not SE_SIDBIT_ECL_T0 or SE_SIDBIT_SSY_PLANE -- which
+                        // is all the standard ones. The same C construct is transliterated with
+                        // the cartpol_sp at Sweph.cs:3320 and :3340.
+                        SE.SwephLib.swi_cartpol_sp(pldat.xreturn.GetPointer(6), pldat.xreturn);
                         if (SE.Sweph.swi_get_ayanamsa_ex(tjd_et, iflag, out daya, ref serr) == SwissEph.ERR)
                             return SwissEph.ERR;
                         pldat.xreturn[0] -= daya * SwissEph.DEGTORAD;
