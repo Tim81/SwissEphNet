@@ -630,20 +630,23 @@ jobs:
         shell: bash
         run: |
           rc=0
+          # grep -c exits 1 on no match and this shell runs with -e -o pipefail, so every
+          # count below is guarded with || true. macOS ships BSD diff, which has none of GNU's
+          # --unchanged-line-format options; these use plain POSIX diff output instead.
           for g in analytic files; do
             total=$(($(wc -l < "c-$g.tsv") - 1))
             if cmp -s "c-$g.tsv" "net-$g.tsv"; then
               echo "$g: BIT-IDENTICAL, $total rows, sha256 $(shasum -a 256 "c-$g.tsv" | cut -c1-32)"
             else
-              n=$(diff --unchanged-line-format= --old-line-format='%L' --new-line-format= "c-$g.tsv" "net-$g.tsv" | wc -l | tr -d ' ')
+              n=$(diff "c-$g.tsv" "net-$g.tsv" | grep -c '^<' || true)
               echo "::error::$g: $n of $total rows differ between the clang C reference and the port"
               echo "  by func:"
-              diff --unchanged-line-format= --old-line-format='%L' --new-line-format= "c-$g.tsv" "net-$g.tsv"                 | cut -d'|' -f1 | sort | uniq -c | sort -rn | sed 's/^/    /'
+              diff "c-$g.tsv" "net-$g.tsv" | grep '^<' | sed 's/^< //'                 | cut -d'|' -f1 | sort | uniq -c | sort -rn | sed 's/^/    /'
               # Does the -fno-builtin reference agree with the port where the default one does not?
               if cmp -s "nb-$g.tsv" "net-$g.tsv"; then
                 echo "  -fno-builtin reference IS bit-identical to the port: clang builtin substitution is the cause"
               else
-                m=$(diff --unchanged-line-format= --old-line-format='%L' --new-line-format= "nb-$g.tsv" "net-$g.tsv" | wc -l | tr -d ' ')
+                m=$(diff "nb-$g.tsv" "net-$g.tsv" | grep -c '^<' || true)
                 echo "  -fno-builtin reference also differs, on $m rows: builtin substitution is not the whole cause"
                 if cmp -s "nb-$g.tsv" "c-$g.tsv"; then
                   echo "  and the two C builds agree with each other, so -fno-builtin changed nothing here"
