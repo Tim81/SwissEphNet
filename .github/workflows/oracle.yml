@@ -595,11 +595,24 @@ jobs:
             exit 1
           fi
 
-      - name: Replay both grids through the C reference
+      # A second reference with -fno-builtin, to test one specific hypothesis. clang may fuse an
+      # adjacent sin(x) and cos(x) on the same argument into a single __sincos(x) call, and Apple's
+      # __sincos need not return bit-identically to calling the two separately, which is what the
+      # port does. If the -fno-builtin build agrees with the port where the default build does not,
+      # that is the cause. If both disagree identically, it is not, and the search moves elsewhere.
+      - name: Build a second C reference with -fno-builtin
         shell: bash
         run: |
-          ./sedump Tools/OracleGrid/grid-analytic.tsv c-analytic.tsv
-          ./sedump Tools/OracleGrid/grid-files.tsv c-files.tsv external/swisseph/ephe
+          E=external/swisseph
+          clang -O2 -ffp-contract=off -fno-builtin -DSWISSEPH_HAS_CROSSING=1 -I "$E" -o sedump-nb             Tools/CReference/sedump.c             "$E/sweph.c" "$E/swephlib.c" "$E/swemmoon.c" "$E/swemplan.c" "$E/swejpl.c"             "$E/swedate.c" "$E/swehouse.c" "$E/swecl.c" "$E/swehel.c" -lm
+
+      - name: Replay both grids through both C references
+        shell: bash
+        run: |
+          ./sedump    Tools/OracleGrid/grid-analytic.tsv c-analytic.tsv
+          ./sedump    Tools/OracleGrid/grid-files.tsv    c-files.tsv    external/swisseph/ephe
+          ./sedump-nb Tools/OracleGrid/grid-analytic.tsv nb-analytic.tsv
+          ./sedump-nb Tools/OracleGrid/grid-files.tsv    nb-files.tsv   external/swisseph/ephe
 
       - name: Replay both grids through the port
         shell: bash
@@ -613,16 +626,31 @@ jobs:
       # which is true for (+0.0, -0.0) and for (NaN, NaN), so the row comparator would call a
       # hex-level difference of that shape identical. scripts/verify-oracle.ps1 asserts the same
       # file-level equality on Windows for the same reason.
-      - name: Compare, bit for bit
+      - name: Compare, bit for bit, and quantify any difference
         shell: bash
         run: |
           rc=0
           for g in analytic files; do
+            total=$(($(wc -l < "c-$g.tsv") - 1))
             if cmp -s "c-$g.tsv" "net-$g.tsv"; then
-              echo "$g: BIT-IDENTICAL, $(wc -l < "c-$g.tsv") rows, sha256 $(shasum -a 256 "c-$g.tsv" | cut -c1-32)"
+              echo "$g: BIT-IDENTICAL, $total rows, sha256 $(shasum -a 256 "c-$g.tsv" | cut -c1-32)"
             else
-              echo "::error::$g grid differs between the C reference and the port on macOS"
-              diff "c-$g.tsv" "net-$g.tsv" | head -20
+              n=$(diff --unchanged-line-format= --old-line-format='%L' --new-line-format= "c-$g.tsv" "net-$g.tsv" | wc -l | tr -d ' ')
+              echo "::error::$g: $n of $total rows differ between the clang C reference and the port"
+              echo "  by func:"
+              diff --unchanged-line-format= --old-line-format='%L' --new-line-format= "c-$g.tsv" "net-$g.tsv"                 | cut -d'|' -f1 | sort | uniq -c | sort -rn | sed 's/^/    /'
+              # Does the -fno-builtin reference agree with the port where the default one does not?
+              if cmp -s "nb-$g.tsv" "net-$g.tsv"; then
+                echo "  -fno-builtin reference IS bit-identical to the port: clang builtin substitution is the cause"
+              else
+                m=$(diff --unchanged-line-format= --old-line-format='%L' --new-line-format= "nb-$g.tsv" "net-$g.tsv" | wc -l | tr -d ' ')
+                echo "  -fno-builtin reference also differs, on $m rows: builtin substitution is not the whole cause"
+                if cmp -s "nb-$g.tsv" "c-$g.tsv"; then
+                  echo "  and the two C builds agree with each other, so -fno-builtin changed nothing here"
+                fi
+              fi
+              echo "  first differing row, C then port:"
+              diff "c-$g.tsv" "net-$g.tsv" | head -4 | sed 's/^/    /'
               rc=1
             fi
           done
