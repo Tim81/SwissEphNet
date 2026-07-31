@@ -629,10 +629,16 @@ jobs:
       - name: Compare, bit for bit, and quantify any difference
         shell: bash
         run: |
+          # set +e for the whole block. This step is built out of diff, cmp and grep, and every
+          # one of them exits non-zero for the ordinary case it is being asked about: diff exits
+          # 1 when files differ, cmp the same, grep -c 1 when it counts nothing. Under the
+          # default -e -o pipefail any of those aborts the step mid-report, which is how an
+          # earlier revision died after printing the per-func breakdown and never reached the
+          # -fno-builtin comparison or the files grid at all. rc is tracked by hand instead.
+          set +e
           rc=0
-          # grep -c exits 1 on no match and this shell runs with -e -o pipefail, so every
-          # count below is guarded with || true. macOS ships BSD diff, which has none of GNU's
-          # --unchanged-line-format options; these use plain POSIX diff output instead.
+          # macOS ships BSD diff, which has none of GNU's --unchanged-line-format options, so
+          # everything below reads plain POSIX diff output.
           for g in analytic files; do
             total=$(($(wc -l < "c-$g.tsv") - 1))
             if cmp -s "c-$g.tsv" "net-$g.tsv"; then
