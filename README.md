@@ -40,20 +40,25 @@ Swiss Ephemeris, and therefore this library, is dual-licensed. You must choose o
 See [`LICENSE`](LICENSE) for the full license conditions, [`agpl-3.0.txt`](agpl-3.0.txt) for the
 AGPL text, and [`NOTICE`](NOTICE) for attribution.
 
-The library targets 3 frameworks: `netstandard2.0`, `net8.0` and `net10.0`. It is not currently
-published as a NuGet package (see the versioning note in `SwissEphNet.csproj`); build it from
-source or reference the project directly.
+The library targets 3 frameworks: `netstandard2.0`, `net8.0` and `net10.0`. Publication to NuGet,
+under the `SwissEphSharp` package ID, is planned but has not happened yet (see the versioning note
+in `SwissEphNet.csproj`); until it does, build it from source or reference the project directly.
 
 The programs SweMini and SweTest target `net10.0`.
 
 ## Samples
 
 A new repos was created https://github.com/ygrenier/SwissEphNet.Samples containing
-lot of sample applications for using the library on different application types.
+lot of sample applications for using the library on different application types. It predates this
+fork's replacement of `OnLoadFile` with `FileProvider` (see "Will your code still compile?"
+below); a sample that loads files through `OnLoadFile` is showing the removed API, not the
+current one.
 
 ## Works with async
 
-For working with the async context read the [this paragraph](https://github.com/ygrenier/SwissEphNet/wiki/Loading-files#works-in-an-async-context).
+For working with the async context read the [this paragraph](https://github.com/ygrenier/SwissEphNet/wiki/Loading-files#works-in-an-async-context)
+from the upstream wiki. It predates the same change: it documents loading files through
+`OnLoadFile`, which this fork removed.
 
 # Upgrading from 2.8.0.2
 
@@ -136,13 +141,9 @@ staying hidden.
 `PATH_SEPARATOR` widened from `char` to `char[]`. The value is unchanged (`{ ';' }`); code that
 reads it as a single `char` needs to index `[0]` instead.
 
-The NuGet package ID changed, to `SwissEphSharp`. The namespace did not. `SwissEphNet` on
-nuget.org already belongs to the upstream author's own release, so this fork cannot publish under
-that name. Everything under `SwissEphNet/CPort/` is a line-by-line transliteration of the C and
-declares the `SwissEphNet` namespace; renaming it would touch every one of those files for no
-functional reason and would break drop-in compatibility with code written against the original.
-Migrating is the one line it sounds like: swap the `PackageReference` name and change nothing
-else. `using SwissEphNet;` and every type name stay exactly as they are.
+The NuGet package ID will be `SwissEphSharp` once this fork publishes; the namespace will not
+change. See "Package name" below for why, and what migrating will involve once that release
+exists.
 
 ## What you gain
 
@@ -385,10 +386,11 @@ continue to exist in parallel :
 
 # Usage
 
-This fork is not currently published to NuGet (see the versioning note in `SwissEphNet.csproj`).
-An older release of the upstream project is available as a
-[Nuget package](https://www.nuget.org/packages/SwissEphNet), but it predates this fork's retarget
-and bug fixes. Build from source or reference `SwissEphNet/SwissEphNet.csproj` directly.
+This fork has not published a NuGet package yet; the `SwissEphSharp` package ID is claimed for
+that release (see the versioning note in `SwissEphNet.csproj`). An older release of the upstream
+project is available as a [Nuget package](https://www.nuget.org/packages/SwissEphNet), but it
+predates this fork's retarget and bug fixes. Build from source or reference
+`SwissEphNet/SwissEphNet.csproj` directly until this fork's own package exists.
 
 SwissEphNet targets `netstandard2.0`, `net8.0` and `net10.0`.
 
@@ -432,21 +434,24 @@ behind it and what it proves that the other two verification instruments in this
 
 ## Package name
 
-This project carries three names, and meeting them separately looks like something is broken.
-It is not:
+This project carries three names, and meeting them separately can look like something is broken.
+It is not -- one of the three has not shipped yet:
 
 - The **repository** is `Tim81/SwissEphNet`, a fork of `ygrenier/SwissEphNet`, and keeps that
   name.
-- The **NuGet package ID** is `SwissEphSharp`. The `SwissEphNet` ID on nuget.org belongs to the
-  upstream author's own release, and this fork cannot publish under it.
+- The **NuGet package ID**, once this fork publishes, will be `SwissEphSharp`. The `SwissEphNet`
+  ID on nuget.org already belongs to the upstream author's own release, so this fork cannot
+  publish under it.
 - The **namespace and assembly name** stay `SwissEphNet`. Every file under `SwissEphNet/CPort/`
   is a line-by-line transliteration of the Swiss Ephemeris C source and declares that namespace;
   renaming it would touch every one of those frozen files for a cosmetic reason. Keeping it also
   means the library stays a drop-in replacement for code written against the original namespace.
 
-Migrating from the old package is the one line it sounds like: replace the `PackageReference` for
-`SwissEphNet` with one for `SwissEphSharp` and change nothing else. `using SwissEphNet;` and every
-type name are unaffected.
+Publication has not happened yet (see the versioning note in `SwissEphNet.csproj`); until it does,
+build from source or reference `SwissEphNet/SwissEphNet.csproj` directly. Migrating from the old
+package, once this fork's release exists, will be the one line it sounds like: replace the
+`PackageReference` for `SwissEphNet` with one for `SwissEphSharp` and change nothing else. `using
+SwissEphNet;` and every type name will be unaffected.
 
 This fork is not published or endorsed by Yan Grenier or Astrodienst. See "About this repository"
 above and `NOTICE` for the credit both are owed.
