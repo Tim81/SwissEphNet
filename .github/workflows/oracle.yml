@@ -193,7 +193,7 @@ jobs:
   # First, the exemption's premise no longer holds. It was justified by Tests/oracle/known-diff*.tsv
   # recording ULP distances captured from one specific compiler, which a future windows-latest MSVC
   # could shift without any change to this port. Both lists are now header-only: every one of the
-  # 14,220 analytic and 2,024 file-backed rows is required to be bit-identical, so there is no
+  # 14,820 analytic and 2,244 file-backed rows is required to be bit-identical, so there is no
   # recorded toolchain-sensitive value left to protect.
   #
   # Second, verify-oracle.ps1 does far more than that comparison. It exits 1 on a missing or
@@ -285,6 +285,53 @@ jobs:
       - name: Compare port vs 2.10.03 C reference against known-diff.tsv
         shell: pwsh
         run: pwsh scripts/verify-oracle.ps1
+
+      # Gate. Tests/oracle/version-classification.tsv and -files.tsv (see
+      # Tools/OracleVerify/ThreeWayClassification.cs) classify every row above by which C
+      # version(s) the port matches -- a second, three-way view of the same six dumps
+      # run-oracle-dump.ps1 just produced, not a fresh comparison. Committed, but until this step
+      # existed nothing regenerated or checked it, so it could (and did) go stale: it drifted
+      # from present-tense claims made when the port still tracked 2.08 in most places to a state
+      # where verify-oracle.ps1 above reports every row bit-identical, while the checked-in
+      # classification still recorded hundreds of TRACKS-2.08/TRACKS-NEITHER rows. Calling
+      # OracleVerify's "classify" mode directly (rather than scripts/classify-oracle-versions.ps1,
+      # which reruns run-oracle-dump.ps1 from scratch and appends a dated log entry -- redundant
+      # work for a read-only CI check, and a log this job has no business writing to) regenerates
+      # both files from the dumps already on disk and diffs them against what is committed. A
+      # difference means someone changed the port (or the grids) without also running
+      # scripts/classify-oracle-versions.ps1 and committing the result, per that script's own
+      # header.
+      - name: Regenerate the three-way version classification and diff it against what is committed
+        shell: pwsh
+        run: |
+          $proj = "Tools/OracleVerify/OracleVerify.csproj"
+          $exitCode = 0
+
+          dotnet run --project $proj -c Release --no-build -- classify `
+            external/.c-reference/dump-c-2.10.03.tsv `
+            external/.c-reference/dump-c-2.08.tsv `
+            external/.c-reference/dump-net.tsv `
+            Tests/oracle/version-classification.tsv
+          if ($LASTEXITCODE -ne 0) { $exitCode = $LASTEXITCODE }
+
+          dotnet run --project $proj -c Release --no-build -- classify `
+            external/.c-reference/dump-c-2.10.03-files.tsv `
+            external/.c-reference/dump-c-2.08-files.tsv `
+            external/.c-reference/dump-net-files.tsv `
+            Tests/oracle/version-classification-files.tsv
+          if ($LASTEXITCODE -ne 0) { $exitCode = $LASTEXITCODE }
+
+          if ($exitCode -ne 0) {
+            Write-Host "FAIL: OracleVerify classify exited non-zero; see output above." -ForegroundColor Red
+            exit $exitCode
+          }
+
+          git diff --exit-code -- Tests/oracle/version-classification.tsv Tests/oracle/version-classification-files.tsv
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "FAIL: Tests/oracle/version-classification.tsv and/or -files.tsv no longer match what this run's dumps produce (diff above). Run pwsh scripts/classify-oracle-versions.ps1 locally, with -Reason, and commit the result." -ForegroundColor Red
+            exit 1
+          }
+          Write-Host "PASS: the committed three-way version classification matches this run's dumps." -ForegroundColor Green
 
   # Partly gating, and unlike oracle-dump above the exemption here is still earned:
   # Tests/swetest/known-diff.tsv holds 24 real rows of printed output captured from one specific

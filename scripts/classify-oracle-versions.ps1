@@ -81,12 +81,33 @@ function Get-GridPaths {
 # case_id -> classification name only, ignoring the three describe-columns: those are diagnostic
 # detail regenerated fresh every run (like known-diff.tsv's reason column), never themselves the
 # reason a re-run happened.
+#
+# Mirrors Tools/OracleVerify/ThreeWayClassification.cs's ThreeWayClassificationFile.Load: skip the
+# leading '#'-prefixed comment block (whatever its current length -- this counts it dynamically,
+# never a fixed number of lines), then the column header row itself, before treating anything as
+# data. An earlier version of this function started at a fixed index (1) instead, which counted
+# every comment line after the first, plus the header row, as a phantom "case". Measured against
+# the file as it stood before this fix (27 comment+header lines ahead of the data): that inflated
+# every count this function produced, and therefore every count logged to
+# version-classification-regenerations.log, by exactly 27.
+#
+# The table is keyed with an ordinal (case-sensitive) comparer, not PowerShell's `@{}` default
+# (case-insensitive, culture-aware). case_id legitimately differs only by case for some rows --
+# e.g. HOUSESARMC|I|... vs HOUSESARMC|i|... -- and a case-insensitive table silently collapses
+# those into one entry. Measured against that same pre-fix file: 14,220 real data rows, but only
+# 13,824 distinct keys under the default comparer -- 396 case-only collisions, coincidentally close
+# enough to the index-1 bug's own 27-row inflation to look like the same problem from the logged
+# counts alone. Tools/OracleVerify/ThreeWayClassification.cs's C# side never had this bug; .NET's
+# Dictionary<string, T> defaults to ordinal, unlike PowerShell's `@{}`.
 function Read-ClassificationTable {
     param([string]$Path)
-    $table = @{}
+    $table = [System.Collections.Generic.Dictionary[string, string]]::new([System.StringComparer]::Ordinal)
     if (-not (Test-Path $Path)) { return $table }
     $lines = Get-Content $Path
-    for ($i = 1; $i -lt $lines.Count; $i++) {
+    $i = 0
+    while ($i -lt $lines.Count -and $lines[$i].StartsWith('#')) { $i++ }
+    if ($i -lt $lines.Count) { $i++ } # skip the column header row itself
+    for (; $i -lt $lines.Count; $i++) {
         $line = $lines[$i]
         if ([string]::IsNullOrEmpty($line)) { continue }
         $cols = $line -split "`t"
