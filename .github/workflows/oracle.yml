@@ -71,51 +71,105 @@ jobs:
   # file's own header comment (above) has drifted from which jobs actually carry
   # continue-on-error three times now, each time a job's flag was added or removed without the
   # prose being updated to match -- most recently when commit 0217b72 removed oracle-dump's flag.
-  # A header comment is not something CI can enforce; the list of jobs whose steps actually carry
-  # continue-on-error is. This job fails the moment that set no longer matches $expectedFlaggedJobs
-  # below, so the two are forced to move together instead of the header quietly going stale again.
+  # A header comment is not something CI can enforce; the hardcoded $expectedStepLevelFlags below
+  # is. This job fails the moment the file's actual flags no longer match that list, so the two
+  # are forced to move together instead of the header quietly going stale again -- update both,
+  # deliberately, together, when a job's continue-on-error changes. (This job validates against
+  # its own hardcoded list, not by parsing the header's prose -- the name says so on purpose;
+  # header and list are two things a person keeps in sync, not one the machine derives from the
+  # other.)
+  #
+  # Where a continue-on-error sits matters as much as which job it names: at step level it
+  # suppresses failure for one step, leaving every step before and after it, in the same job, a
+  # real gate. At job level it suppresses failure for the whole job, silently swallowing every
+  # step in it -- which is the precise regression that put continue-on-error at job level twice
+  # before this check existed (see the file header above). A job-name-only comparison cannot see
+  # the difference: moving swetest-diff's flag from its one step up to the job keeps the same job
+  # name in the flagged set either way. This check records each flag's indentation and treats any
+  # job-level continue-on-error, on any job, as a failure in its own right.
+  #
+  # Matching is `continue-on-error:\s*\S`, not the literal word `true`: a quoted 'true' and a
+  # `${{ expression }}` both suppress a step's failure exactly like the bare word does, and both
+  # went completely undetected under the old, narrower match if attached to a job with no
+  # previously-recorded flag -- the newly-flagged job simply never appeared anywhere, so nothing
+  # about the comparison below could catch it.
   header-flags-check:
-    name: "Gate: continue-on-error appears only where this file's header documents it"
+    name: "Gate: continue-on-error matches this file's own hardcoded expectation"
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
 
-      - name: Assert continue-on-error's job set matches what the header documents
+      - name: Assert continue-on-error's job/level set matches this script's own expectation
         shell: pwsh
         run: |
           $path = '.github/workflows/oracle.yml'
           $lines = Get-Content -LiteralPath $path
+
+          # Only start attributing a job-name-shaped line once inside "jobs:" -- "on:"'s own
+          # trigger keys (push:, pull_request:, schedule:, workflow_dispatch:) match the same
+          # two-space "name:" shape and used to set $currentJob before any real job existed,
+          # which made the "found continue-on-error before this script could attribute it" guard
+          # below unreachable in practice: a stray flag before "jobs:" was silently attributed to
+          # a trigger name instead of refused.
+          $inJobsSection = $false
           $currentJob = $null
-          $flaggedJobs = [System.Collections.Generic.List[string]]::new()
+          $currentJobIndent = $null
+          $jobLevelFlags = [System.Collections.Generic.List[string]]::new()
+          $stepLevelFlags = [System.Collections.Generic.List[string]]::new()
+
           foreach ($line in $lines) {
-            if ($line -match '^  ([a-z][a-z0-9-]*):$') { $currentJob = $Matches[1] }
-            if ($line -match 'continue-on-error:\s*true') {
+            if ($line -match '^jobs:\s*$') {
+              $inJobsSection = $true
+              continue
+            }
+
+            if ($inJobsSection -and $line -match '^  ([a-z][a-z0-9-]*):\s*$') {
+              $currentJob = $Matches[1]
+              $currentJobIndent = 2
+              continue
+            }
+
+            if ($line -match '^(\s*)continue-on-error:\s*\S') {
+              $indent = $Matches[1].Length
               if (-not $currentJob) {
-                Write-Host "FAIL: found continue-on-error before this script could attribute it to a job -- job-name regex needs updating." -ForegroundColor Red
+                Write-Host "FAIL: found continue-on-error before this script could attribute it to a job (before 'jobs:', or before any job-name line) -- job-name/jobs-section detection needs updating." -ForegroundColor Red
                 exit 1
               }
-              $flaggedJobs.Add($currentJob)
+              # A job's own top-level keys (runs-on:, steps:, ...) sit two spaces deeper than the
+              # job name; anything indented no further than that is job level, anything deeper is
+              # nested inside a step.
+              $jobBodyIndent = $currentJobIndent + 2
+              if ($indent -le $jobBodyIndent) {
+                $jobLevelFlags.Add($currentJob)
+              }
+              else {
+                $stepLevelFlags.Add($currentJob)
+              }
             }
           }
 
-          # The only job this workflow currently expects to carry continue-on-error -- see the
-          # header comment's own explanation of why swetest-diff still does and the other three do
-          # not. Update this list, and the header comment above, together and deliberately when
+          # The only job/level combination this workflow currently expects: swetest-diff, at step
+          # level. No job is ever expected to carry continue-on-error at job level -- see the file
+          # header and the job comment above for why that specific placement is the historical
+          # bug. Update this list, and the header comment above, together and deliberately when
           # that changes; this check exists so the two cannot drift apart silently.
-          $expectedFlaggedJobs = @('swetest-diff')
+          $expectedStepLevelFlags = @('swetest-diff')
 
-          $extra = @($flaggedJobs | Where-Object { $_ -notin $expectedFlaggedJobs })
-          $missing = @($expectedFlaggedJobs | Where-Object { $_ -notin $flaggedJobs })
-          if ($extra.Count -gt 0 -or $missing.Count -gt 0) {
-            Write-Host "FAIL: continue-on-error's job set no longer matches what this workflow's header documents." -ForegroundColor Red
-            if ($extra.Count -gt 0) { Write-Host "  Newly flagged (not in the header's account): $($extra -join ', ')" -ForegroundColor Red }
-            if ($missing.Count -gt 0) { Write-Host "  No longer flagged (header still claims it is): $($missing -join ', ')" -ForegroundColor Red }
-            Write-Host "  Update this job's `$expectedFlaggedJobs and the header comment together, deliberately." -ForegroundColor Red
+          $extraJobLevel = @($jobLevelFlags | Sort-Object -Unique)
+          $extraStepLevel = @($stepLevelFlags | Where-Object { $_ -notin $expectedStepLevelFlags } | Sort-Object -Unique)
+          $missingStepLevel = @($expectedStepLevelFlags | Where-Object { $_ -notin $stepLevelFlags })
+
+          if ($extraJobLevel.Count -gt 0 -or $extraStepLevel.Count -gt 0 -or $missingStepLevel.Count -gt 0) {
+            Write-Host "FAIL: continue-on-error's job/level set no longer matches this workflow's hardcoded expectation." -ForegroundColor Red
+            if ($extraJobLevel.Count -gt 0) { Write-Host "  At job level (never expected -- see the header on why job level is the historical bug): $($extraJobLevel -join ', ')" -ForegroundColor Red }
+            if ($extraStepLevel.Count -gt 0) { Write-Host "  At step level but not in the header's account: $($extraStepLevel -join ', ')" -ForegroundColor Red }
+            if ($missingStepLevel.Count -gt 0) { Write-Host "  Expected at step level but not found there: $($missingStepLevel -join ', ')" -ForegroundColor Red }
+            Write-Host "  Update `$expectedStepLevelFlags and the header comment together, deliberately." -ForegroundColor Red
             exit 1
           }
 
-          Write-Host "PASS: continue-on-error appears only in $($flaggedJobs -join ', '), matching the header comment."
+          Write-Host "PASS: continue-on-error appears only at step level in $($stepLevelFlags -join ', '), matching the header comment."
 
   # Gate. Compares MSVC C against .NET, both built on this runner in this run -- see
   # scripts/verify-crt-parity.ps1's own .DESCRIPTION for what it checks; a FAIL here means the
