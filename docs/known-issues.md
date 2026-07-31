@@ -1498,3 +1498,36 @@ not a divergence-from-the-C correction the freeze's one exception covers -- the 
 the C here, which is exactly the problem. Recorded so a future porter (or anyone routing a caller-
 supplied `x2cross` into `swe_solcross` with `SEFLG_HELCTR` set) knows this before hitting it in
 production rather than during an oracle run.
+
+## insert_gap_string_for_tabs drops swetest.c's LEN_SOUT bound
+
+`Programs/SweTest/Program.cs`'s `insert_gap_string_for_tabs` (near line 3410) replaces
+swetest.c:2801-2814's bounded tab-replacement loop --
+
+```c
+while((sp = strchr(sout, '\t')) != NULL && strlen(sout) + strlen(gap) < LEN_SOUT) {
+    strcpy(s, sp + 1);
+    strcpy(sp, gap);
+    strcat(sp, s);
+}
+```
+
+-- with an unconditional `sout = sout?.Replace("\t", gap, StringComparison.Ordinal);`. The C loop
+stops substituting once `sout` would grow past `LEN_SOUT` (1000) bytes; the port's `Replace` has no
+such limit and keeps substituting regardless of the result's length.
+
+This was previously misdocumented rather than left unrecorded: a comment beside `LEN_SOUT`'s own
+declaration (`Program.cs:747-751`) claimed the port's dynamic strings made the bound irrelevant and
+that leaving `LEN_SOUT` unread was "left assigned, unread, to match" the C -- but the C does read it,
+live, at exactly this site. `LEN_SOUT` is genuinely unread anywhere in the C# (confirmed: it appears
+nowhere outside comments and its own declaration), so the port has no equivalent guard at all, not a
+faithful match with one. That comment is now corrected to describe the divergence instead of denying
+it.
+
+**Not fixed in this pass.** `-gap0`/`-gap1`/similar SweTest CLI options that request a
+tab-replacement gap wider than what `LEN_SOUT` bytes of accumulated substitutions would allow are
+the only way to reach the missing bound, and only once `sout` is already within `strlen(gap)` bytes
+of 1000 -- an edge unlikely to matter for typical CLI usage, and neither the correctness oracle nor
+`scripts/verify-swetest-diff.ps1` has caught a divergence from it. `Programs/SweTest/Program.cs` is
+transliteration-frozen (`CONTRIBUTING.md`); reproducing the bound is in scope as a fidelity fix under
+that freeze's one exception, but is separate work from documenting what currently diverges.

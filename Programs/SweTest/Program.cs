@@ -744,10 +744,17 @@ namespace SweTest
 
         const int SEARCH_RANGE_LUNAR_CYCLES = 20000;
 
-        // swetest.c:712 sizes fixed char buffers (sout[LEN_SOUT], etc.) with this; the port
-        // uses dynamic strings instead (see the commented-out `//char s[LEN_SOUT];` near
-        // line 3404), so the bound it names is never read here. Left assigned, unread,
-        // to match.
+        // swetest.c:712 sizes fixed char buffers (sout[LEN_SOUT], etc.) with this, and it is
+        // not merely a size: swetest.c:2809's insert_gap_string_for_tabs reads it live,
+        // bounding its tab-replacement loop (`while ((sp = strchr(sout, '\t')) != NULL &&
+        // strlen(sout) + strlen(gap) < LEN_SOUT)`). This port's own
+        // insert_gap_string_for_tabs (below) replaces that bounded loop with an
+        // unconditional string.Replace (see the commented-out C original near line 3416),
+        // dropping the 1000-byte bound rather than reproducing it -- a real, pre-existing
+        // divergence from the C, not a faithful match. See docs/known-issues.md,
+        // "insert_gap_string_for_tabs drops swetest.c's LEN_SOUT bound". LEN_SOUT itself
+        // stays genuinely unread in this file; only the claim that its being unread matches
+        // the C was wrong.
         static int LEN_SOUT = 1000; // length of output string variable
         static double SIND(double x) { return Math.Sin(x * SwissEph.DEGTORAD); }
         static double COSD(double x) { return Math.Cos(x * SwissEph.DEGTORAD); }
