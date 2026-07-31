@@ -442,18 +442,32 @@ to Windows.** It is not portable to Linux/macOS by construction, and that is a
 choice, not an oversight -- see the measurements below for why.
 
 A full Windows-vs-Linux comparison (same source, same commit, `.NET SDK 10.0.302`
-both sides, Linux via `mcr.microsoft.com/dotnet/sdk:10.0` on Ubuntu 24.04) found
-the numbers below, against the matrix as it stood at the time of that comparison
-(3,443,058 numeric fields). The matrix has since widened: the committed baseline
-now has 3,453,972 total fields, 3,426,469 of which parse as numbers -- about
-10,900 more numeric fields than this comparison covered. The percentages and the
-per-field findings below (the `'Y'` and `'i'` house-system bugs, the SPEED
-differentiation noise) are not invalidated by that -- they describe fields still
-present in the current matrix -- but the absolute counts are scoped to the
-smaller, earlier matrix and have not been re-measured against the current one.
-Re-running this comparison against the current matrix, on Linux, would be needed
-to get current absolute counts; see "Verifying current code against the
-baseline" above for how to run a report-only pass yourself.
+both sides, Linux via `mcr.microsoft.com/dotnet/sdk:10.0-noble` on Ubuntu 24.04.4,
+which is what `ubuntu-latest` currently resolves to) has been re-run against the
+current matrix:
+
+- **3,547,367** numeric fields compared; **66,342** (1.87%) differ at all between
+  platforms; **5,394** are still beyond the shipped tolerance after the
+  angle-wraparound allowance.
+- **net8.0 and net10.0 produce identical numbers**, to the field: .NET 8.0.29 and
+  .NET 10.0.10 each report 3,547,367 / 66,342 / 5,394. The divergence is
+  ucrtbase-versus-glibc, not a difference between .NET versions, which is why the
+  bit-exactness claim is scoped by platform rather than by runtime version.
+- Five areas are bit-identical across platforms outright: `format`, `misc`,
+  `pheno-ast`, `risetrans` and `atmo`. They are formatting, date arithmetic and
+  table lookups, so no transcendental is involved.
+- `houses` differs in 2.71% of its fields and yet **zero** rows fail, which is the
+  tolerance doing what it was sized for against real libm divergence rather than
+  synthetic boundary tests. `calc` (11.27% of fields, 3,442 beyond tolerance) and
+  `nodaps` (14.96%) are the heaviest contributors.
+
+The earlier pass, against a smaller matrix (3,443,058 numeric fields), found 47,052
+differing and 3,346 beyond tolerance. The per-field findings below (the `'Y'` and
+`'i'` house-system bugs, the SPEED differentiation noise) come from that pass and
+still describe fields present in the current matrix; the sub-counts in the bullets
+that follow have not been re-derived against the current run, so read them as
+characterising the classes rather than as current totals. See "Verifying current
+code against the baseline" above for how to run a report-only pass yourself.
 
 - **3,443,058** numeric fields compared (at the time of this comparison); **47,052**
   (1.37%) differ at all between platforms.
