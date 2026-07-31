@@ -4104,8 +4104,12 @@ namespace SwissEphNet.CPort
 
             if (h > 99) sb.Append((char)(h / 100 + '0'));
             if (h > 9) sb.Append((char)(h % 100 / 10 + '0'));
-            sb.Append(pchar)
-                .Append((char)(h % 10 + '0'))
+            // swephlib.c:3906-3911: a[2]=h%10, a[3]=pchar, a[4]=m/10, a[5]=m%10 -- pchar sits
+            // between the degrees' units digit and the minutes, not before it. This appended pchar
+            // one position too early, transposing it with the units digit for every caller
+            // (e.g. 1234567 with pchar 'p'/mchar 'm' printed "p325'46" instead of "3p25'46").
+            sb.Append((char)(h % 10 + '0'))
+                .Append(pchar)
                 .Append((char)(m / 10 + '0'))
                 .Append((char)(m % 10 + '0'))
                 ;

@@ -603,9 +603,12 @@ namespace SwissEphNet.Tests
         [Fact]
         public void Test_swe_cs2lonlatstr() {
             using (var target = new SwissEph()) {
-                Assert.Equal("p000", target.swe_cs2lonlatstr(0, 'p', 'm'));
-                Assert.Equal("p325'46", target.swe_cs2lonlatstr(1234567, 'p', 'm'));
-                Assert.Equal("m325'46", target.swe_cs2lonlatstr(-1234567, 'p', 'm'));
+                // swephlib.c:3906-3911 places pchar between the degrees' units digit and the
+                // minutes (a[2]=h%10, a[3]=pchar, a[4..5]=m), not before the units digit. These
+                // three values were verified against pyswisseph 2.10.03 directly.
+                Assert.Equal("0p00", target.swe_cs2lonlatstr(0, 'p', 'm'));
+                Assert.Equal("3p25'46", target.swe_cs2lonlatstr(1234567, 'p', 'm'));
+                Assert.Equal("3m25'46", target.swe_cs2lonlatstr(-1234567, 'p', 'm'));
             }
         }
 
