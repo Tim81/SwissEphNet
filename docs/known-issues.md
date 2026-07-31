@@ -1281,3 +1281,66 @@ verified against `external/.c-reference/swetest.exe` under `-fPLZ`, `-fPLZ -roun
 This is recorded here, not filed upstream. Astrodienst's own reporting channel is outside this
 repository's control, so "reported upstream" should never be written into a code comment as a
 statement of fact without a tracked issue behind it.
+
+## swe_solcross(SEFLG_HELCTR): an upstream libswe hang, not a grid problem
+
+Found while building `Tools/OracleGrid/gen-grid-analytic.ps1`'s crossing-function coverage. Every
+one of `swe_solcross`'s three documented flag bits (`external/swisseph/sweph.c:8312-8315`) was
+meant to get its own grid row, `SEFLG_HELCTR` included, until a `SOLCROSS|90|1200000|HELCTR`-shaped
+row made `sedump.exe` spin forever with zero output.
+
+**Mechanism.** `swe_solcross` (`sweph.c:8321-8343`) hardcodes `int ipl = SE_SUN;` and never
+substitutes `SE_EARTH`, despite its own doc comment reading "`SEFLG_HELCTR` ... 1 = heliocentric,
+EARTH". So a caller passing `SEFLG_HELCTR` asks `swe_calc` for the heliocentric position of the Sun
+itself -- the coordinate origin by definition, with an always-zero speed (`x[3]`). The refinement
+loop is:
+
+```c
+for(;;) {
+    if (swe_calc(jd, ipl, flag, x, serr) < 0)
+      return jd_et - 1;
+    dist = swe_difdeg2n(x2cross, x[0]);
+    jd += dist / x[3];
+    if (fabs(dist) < CROSS_PRECISION) break;
+}
+```
+
+For `x2cross` values whose initial distance estimate does not already land within
+`CROSS_PRECISION` on the very first pass (every value tried except `x2cross` at exactly 0.0/360.0,
+where `dist` starts at 0 and the loop exits on its first iteration before the division), `dist /
+x[3]` divides a nonzero `dist` by that zero speed. IEEE 754 gives `+Infinity`, not a fault, so `jd`
+becomes `+Infinity` and the next `swe_calc(Infinity, SE_SUN, ...)` call inside `libswe` itself never
+returns -- confirmed by isolating exactly that one row (`SOLCROSS|90|1200000|HELCTR`, x2cross=90,
+via a purpose-built repro grid, not guessed from reading the loop) against the built `sedump.exe`
+and observing unbounded CPU time (measured past 370 seconds and still climbing) with no output.
+Killing the process and re-running the same row alone, with `x2cross` at exactly 0.0, completes
+immediately and returns `NaN` -- the `0/0` form of the same division, not `Infinity`, and a `for(;;)`
+that happens to exit on its first pass regardless (`fabs(NaN) < CROSS_PRECISION` is a false
+comparison, but the loop's own body already ran once, so the corrupted `jd` propagates out rather
+than looping). Both are the same defect; only the second one hangs, because it needs more than one
+iteration to reach the division that produces `Infinity` instead of `NaN`.
+
+This hangs Astrodienst's own C, built with the MSVC toolchain this repository's oracle is locked
+to (`Tools/CReference/build-c.ps1`) -- it is an upstream `libswe` defect, not a mistranslation, and
+not something a grid can work around by choosing different inputs; every `x2cross` value that is
+not exactly 0.0/360.0 reaches it. `Tools/OracleGrid/gen-grid-analytic.ps1`'s `$SolCrossFlagCombos`
+excludes `SEFLG_HELCTR` for this reason, with the mechanism summarized in that script's own
+comment; this entry is the fuller record.
+
+**The port almost certainly shares this hazard, and that is untested.** `SwissEphNet/CPort/Sweph.cs`'s
+`swe_solcross` (citing `sweph.c:8310-8343`) is a line-by-line transliteration: it hardcodes `int ipl
+= SwissEph.SE_SUN;` the same way, and its refinement loop divides by `x[3]` the same way. C#'s
+`double` follows IEEE 754 exactly as C's does, so `dist / x[3]` at `x[3] == 0` produces the same
+`+Infinity`, and nothing in `swe_calc`'s ported form is known to reject an infinite `jd_et` any
+more than the C does. No one has actually called `swe_solcross(x2cross, jd_et, SEFLG_HELCTR, ref
+serr)` on the port with a non-degenerate `x2cross` and confirmed a hang (or confirmed it does not
+hang, for whatever reason) -- this paragraph is a structural argument from the shared source, not a
+reproduced result. Confirming it either way on the C# side is future work.
+
+**Do not fix the port.** `SwissEphNet/CPort/Sweph.cs` is a transliteration-frozen path
+(`CONTRIBUTING.md`), and even setting that aside, this is a design decision (how the port should
+guard against or recover from a hang its own upstream source has) separate from porting 2.10.03,
+not a divergence-from-the-C correction the freeze's one exception covers -- the port is faithful to
+the C here, which is exactly the problem. Recorded so a future porter (or anyone routing a caller-
+supplied `x2cross` into `swe_solcross` with `SEFLG_HELCTR` set) knows this before hitting it in
+production rather than during an oracle run.

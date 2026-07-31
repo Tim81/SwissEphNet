@@ -61,9 +61,13 @@
                                   directions the API takes, and a body list that deliberately
                                   includes SE_SUN/SE_MOON/SE_TRUE_NODE (one representative body
                                   the function rejects from each disjunct of its own reject check)
-                                  alongside the bodies it accepts, including SE_CHIRON (the one
-                                  body the function overrides with a hardcoded mean speed instead
-                                  of swe_calc's own).
+                                  alongside the bodies it accepts under SEFLG_MOSEPH. SE_CHIRON,
+                                  the one body the function overrides with a hardcoded mean speed
+                                  instead of swe_calc's own, is deliberately NOT in this grid's
+                                  body list: it has no Moshier model, so it needs a real data
+                                  file regardless of SEFLG_MOSEPH, which would make it the only
+                                  row in this whole grid to open one -- see gen-grid-files.ps1,
+                                  where it is covered against the real files instead.
 
     A FRESH LIBRARY INSTANCE PER ROW (both drivers, not this script)
 
@@ -401,14 +405,25 @@ $MoonCrossNodeTjd = @(1200000.0, 1500000.0, 1800000.0, 2400000.0)
 # an SE_SUN check, an SE_MOON check, and two node/apogee range checks). SE_SUN, SE_MOON and
 # SE_TRUE_NODE below are one representative pick from each of those three disjuncts, so the SERR
 # path is proven to fire from each of them independently rather than always hitting the same one.
-$HelioCrossRejectIpl = @(0, 1, 11)   # SE_SUN, SE_MOON, SE_TRUE_NODE
 # The bodies the function does accept: every classical planet Mercury..Pluto that survives the
-# reject check, SE_EARTH (a legal but unusual heliocentric target -- heliocentric Earth is just
-# the antipode of geocentric Sun), and SE_CHIRON, which the function special-cases with a
-# hardcoded mean speed instead of the speed swe_calc itself returns
-# (external/swisseph/sweph.c:8551-8552) -- exactly the kind of hardcoded-constant boundary this
-# task exists to check bit-for-bit.
-$HelioCrossValidIpl = @(2, 3, 4, 5, 6, 7, 8, 9, 14, 15)
+# reject check, and SE_EARTH (a legal but unusual heliocentric target -- heliocentric Earth is
+# just the antipode of geocentric Sun).
+#
+# SE_CHIRON is deliberately NOT in this list, even though it is the one body
+# swe_helio_cross(_ut) special-cases with a hardcoded mean speed instead of the speed swe_calc
+# itself returns (external/swisseph/sweph.c:8551-8552) -- exactly the kind of hardcoded-constant
+# boundary worth checking bit-for-bit. It belongs in gen-grid-files.ps1's $HelioCrossIplFiles
+# instead, not here: Chiron has no Moshier analytic model, so swe_calc reads seas_12.se1/
+# seas_18.se1 for it regardless of the SEFLG_MOSEPH bit this whole grid otherwise guarantees means
+# "touches no ephemeris data file" (see this script's own .DESCRIPTION). Putting it here was a
+# category error, caught because this grid never configures an ephemeris path: the call reached
+# no farther than a "file not found" error before it could ever exercise the mean-speed override
+# the SE_CHIRON case exists to cover, so the 16 rows this produced were testing a path string, not
+# the branch they were meant to test. gen-grid-files.ps1 opens a real ephemeris directory that
+# ships seas_12.se1/seas_18.se1, which is where SE_CHIRON's mean-speed override is actually
+# reachable -- see that script's own $HelioCrossIplFiles comment.
+$HelioCrossRejectIpl = @(0, 1, 11)   # SE_SUN, SE_MOON, SE_TRUE_NODE
+$HelioCrossValidIpl = @(2, 3, 4, 5, 6, 7, 8, 9, 14)
 $HelioCrossIpl = $HelioCrossRejectIpl + $HelioCrossValidIpl
 $HelioCrossX2 = @(0.0, 180.0)
 $HelioCrossTjd = @(1500000.0, 2200000.0)
@@ -601,8 +616,10 @@ $headerLines = @(
     '# and flags only. swe_helio_cross is crossed with target longitudes, start dates, both search'
     '# directions the API takes, and a body list that deliberately includes SE_SUN/SE_MOON/'
     '# SE_TRUE_NODE (one representative body the function rejects from each disjunct of its own'
-    '# reject check) alongside the bodies it accepts, including SE_CHIRON (the one body the'
-    '# function overrides with a hardcoded mean speed instead of swe_calc''s own).'
+    '# reject check) alongside the bodies it accepts under SEFLG_MOSEPH. SE_CHIRON, the one body'
+    '# the function overrides with a hardcoded mean speed instead of swe_calc''s own, is NOT in'
+    '# this grid: it has no Moshier model, so it needs a real data file regardless of SEFLG_MOSEPH'
+    '# -- covered instead in grid-files.tsv, where that file is actually present.'
     '#'
     '# A FRESH LIBRARY INSTANCE PER ROW, IN BOTH DRIVERS'
     '#'

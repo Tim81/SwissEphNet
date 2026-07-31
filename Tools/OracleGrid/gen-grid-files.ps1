@@ -425,10 +425,21 @@ $MoonCrossNodeTjdFiles = @($CalcJdsFiles[0], $CalcJdsFiles[5], $CalcJdsFiles[8])
 # the MOON check; the node/apogee-range disjunct is not repeated here, since gen-grid-analytic.ps1
 # already proves it fires and this grid's job is proving the file layer, not re-covering the
 # reject logic in full) plus the bodies whose period comfortably fits inside the margins below:
-# Mercury..Saturn (88 days to 29.5 years), SE_EARTH (1 year) and SE_CHIRON (50.7 years, and the
-# one body the function overrides with a hardcoded mean speed instead of swe_calc's own --
-# external/swisseph/sweph.c:8551-8552). Uranus/Neptune/Pluto (84/165/248-year periods) are left to
-# gen-grid-analytic.ps1's unconstrained Moshier range.
+# Mercury..Saturn (88 days to 29.5 years), SE_EARTH (1 year) and SE_CHIRON (50.7 years).
+#
+# SE_CHIRON is the ONE place either grid tests it, deliberately: it is the one body
+# swe_helio_cross(_ut) overrides with a hardcoded mean speed instead of the speed swe_calc itself
+# returns (external/swisseph/sweph.c:8551-8552), but Chiron has no Moshier analytic model, so
+# swe_calc needs a real seas_12.se1/seas_18.se1 segment for it regardless of iflag -- a
+# requirement gen-grid-analytic.ps1's SEFLG_MOSEPH grid cannot satisfy by definition (see that
+# script's own $HelioCrossValidIpl comment for the 16-row false start this caused there). This
+# grid opens -EpheDir, which does ship both files (Tests/conformance/required-ephemeris-files.tsv),
+# with dates chosen so Chiron's mean-speed branch is genuinely reached, not just its file-not-found
+# path -- see the date-margin comment below.
+#
+# Uranus/Neptune/Pluto (84/165/248-year periods) are left to gen-grid-analytic.ps1's unconstrained
+# Moshier range; their orbits are analytic-only bodies with no data-file dependency, so nothing is
+# lost by not repeating them here.
 $HelioCrossIplFiles = @(0, 1, 2, 3, 4, 5, 6, 14, 15)  # SE_SUN, SE_MOON, Mercury..Saturn, SE_EARTH, SE_CHIRON
 $HelioCrossX2Files = @(0.0, 180.0)
 # Index 0 (1300, era _12: margin 100 years to the 1200 edge, 499 to the 1799 edge) and index 7
