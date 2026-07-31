@@ -23,6 +23,12 @@ name: Conformance oracle
 # gitlink bump both triggers the run and correctly misses the cache) for
 # exactly that reason.
 on:
+  # push is listed for the same reason ci.yml and baseline.yml list it: without it a direct push,
+  # to main included, runs no conformance check at all, and review found exactly that gap -- the
+  # freeze check, the unit tests and the baseline ran on a push while the correctness oracle did
+  # not. Branch protection narrows who can push, it does not make an absent workflow run.
+  push:
+    branches: ["**"]
   pull_request:
   schedule:
     - cron: "17 4 * * 1" # Mondays, 04:17 UTC

@@ -29,6 +29,13 @@ name: Oracle build gates
 # The flag sat at job level until review found it was swallowing all of those too, so a broken
 # build reported success to the checks API. Each job below says which kind it is and why.
 on:
+  # push is listed for the same reason ci.yml and baseline.yml list it: without it a direct push,
+  # to main included, ran none of these four jobs, so the bit-exactness comparison this whole
+  # workflow exists for was absent from exactly the path that skips review. The submodule and
+  # 2.08 sdist caches plus the cancel-in-progress concurrency group below keep the repeat cost
+  # down; a re-run that hits both caches skips the two slowest steps entirely.
+  push:
+    branches: ["**"]
   pull_request:
   schedule:
     - cron: "42 4 * * 1" # Mondays, 04:42 UTC -- offset from conformance.yml's 04:17 so the two do not start in the same minute
