@@ -11,7 +11,9 @@
     since the fork started, and by hand is not a gate: one commit message on this branch's history
     already carried a stray tool-authorship phrase before a manual scan happened to catch it.
 
-    Two independent checks, both driven by the same pattern table:
+    Two independent checks, both driven by the same pattern table and, since both now use PCRE-
+    compatible regex semantics (git grep -P on one side, .NET's [regex] on the other), both give
+    every pattern -- including the case-insensitive ones -- the same meaning:
 
       1. Every tracked file (git grep -I, which already skips binary files -- see "Binary files"
          below), excluding external/ (Astrodienst's own vendored source, not this repository's
@@ -40,7 +42,11 @@
         Capitalization is the deliberate discriminator: every legitimate use found in this
         repository's own text is mid-sentence and lowercase ("was generated with setest"); the
         footer this pattern exists to catch is not. A leading word boundary also keeps
-        "regenerated with" from matching "Generated with" as a substring regardless of case.
+        "regenerated with" from matching "Generated with" as a substring regardless of case. This
+        was re-examined, not merely left alone, when the patterns below moved to PCRE: an all-caps
+        "GENERATED WITH" would still slip past, and that is accepted on purpose, for the same
+        reason -- widening it to (?i) would turn every legitimate lowercase "generated with" in
+        this repository's own prose back into a false positive.
 
     Binary files: git grep -I applies the same "does this look like text" heuristic `git diff`
     uses to decide whether to print "Binary files ... differ", so a `.se1` ephemeris file (or any
@@ -81,8 +87,27 @@ try {
     # the one file allowed to contain the literal pattern text below.
     $selfPath = [System.IO.Path]::GetRelativePath($RepoRoot, $PSCommandPath).Replace('\', '/')
 
-    # Each pattern paired with a human-readable label for the failure message. Patterns are .NET
-    # regex; a leading "(?i)" makes that one pattern case-insensitive, its absence means
+    # git grep's default regex dialect is POSIX BRE, which has no "(?i)" -- it is matched as four
+    # literal characters, so every case-insensitive pattern below silently became a case-sensitive
+    # one. Measured: a tracked file containing "Copilot" passed this gate at exit 0 before this
+    # check existed. -P switches git grep to PCRE, which (like .NET's own regex engine used on the
+    # commit-message side below) understands "(?i)" and "\b" the way every pattern here assumes.
+    # Fail loudly, not with a confusing later mismatch, if this git build was not compiled with
+    # PCRE support (a git grep -P call always exits non-zero without it). Probes against pathspec
+    # "." (the whole of $RepoRoot, already the current location) rather than $selfPath, which may
+    # sit outside $RepoRoot -- see the "throwaway repo" comment below -- and would make git grep
+    # refuse with exit 128 for a reason that has nothing to do with PCRE support. A match is not
+    # required (an empty repo legitimately exits 1, "no match"); only "git refused to run this
+    # regex dialect at all" (anything past 1) means PCRE is unavailable.
+    $null = & git grep -P -q '(?i)^' -- . 2>&1
+    if ($LASTEXITCODE -gt 1) {
+        throw "git grep -P (PCRE) is required by this script's pattern table but this git build does not support it (exit $LASTEXITCODE). Install a git built with PCRE2 support."
+    }
+
+    # Each pattern paired with a human-readable label for the failure message. Patterns are PCRE
+    # (git grep -P) on the tracked-file side and .NET regex (see part 2 below) on the
+    # commit-message side -- the same syntax for everything used here, so one pattern table serves
+    # both. A leading "(?i)" makes that one pattern case-insensitive, its absence means
     # case-sensitive -- see the .DESCRIPTION for why each choice was made.
     $patterns = @(
         @{ Regex = '\bClaude\b'; Label = "product name 'Claude'" }
@@ -103,9 +128,11 @@ try {
     # ---------------------------------------------------------------------------------------
     # -I: skip files git itself detects as binary (the same heuristic `git diff` uses to print
     # "Binary files ... differ" instead of a text diff), so a .se1 ephemeris file is never opened
-    # as text. -n: line numbers. --no-color, -e per pattern: one `git grep` call checks every
-    # pattern in a single pass rather than one process per pattern.
-    $grepArgs = @('grep', '-nI', '--no-color')
+    # as text. -n: line numbers. -P: PCRE, so "(?i)" and "\b" mean what the pattern table above
+    # assumes instead of being matched as literal text under the default POSIX BRE dialect.
+    # --no-color, -e per pattern: one `git grep` call checks every pattern in a single pass rather
+    # than one process per pattern.
+    $grepArgs = @('grep', '-nPI', '--no-color')
     foreach ($p in $patterns) { $grepArgs += @('-e', $p.Regex) }
     $grepArgs += @('--', '.', ':!external/*')
     # Only excludable when this script actually lives inside $RepoRoot -- e.g. a throwaway repo
