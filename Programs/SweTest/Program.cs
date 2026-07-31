@@ -905,7 +905,11 @@ namespace SweTest
             stimein = string.Empty;
             using (sweph = new SwissEph())
             {
-                sweph.OnLoadFile += sweph_OnLoadFile;
+                // sweph.OnLoadFile used to be wired to sweph_OnLoadFile here, duplicating the
+                // path search swi_fopen already performs against swe_set_ephe_path(ephepath)
+                // below. That duplication existed only because the library had no filesystem
+                // access of its own; now that it does (SwissEph.OpenBinary), swe_set_ephe_path
+                // alone is sufficient, matching how swetest.c's own C reference resolves files.
                 ephepath = @".;C:\\sweph\ephe";
                 fname = SwissEph.SE_FNAME_DFT;
                 for (i = 1; i < argc; i++)
@@ -2436,20 +2440,6 @@ namespace SweTest
                 }
                 //swe_close();
                 return SwissEph.OK;
-            }
-        }
-
-        static void sweph_OnLoadFile(object sender, LoadFileEventArgs e)
-        {
-            String fname = e.FileName.Replace("[ephe]", "").Trim('/', '\\');
-            String[] paths = String.IsNullOrWhiteSpace(ephepath) ? new String[] { "" } : ephepath.Split(';');
-            foreach (var path in paths)
-            {
-                String f = System.IO.Path.Combine(path, fname);
-                if (System.IO.File.Exists(f))
-                {
-                    e.File = new System.IO.FileStream(f, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
-                }
             }
         }
 

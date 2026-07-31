@@ -82,23 +82,17 @@ namespace SwissEphNet.Tests
         public void Dispose_ClearsSubscribedEvents() {
             var swe = new SwissEph();
             var traceRaised = false;
-            var loadRaised = false;
             swe.OnTrace += (s, e) => traceRaised = true;
-            swe.OnLoadFile += (s, e) => loadRaised = true;
 
             swe.Dispose();
 
-            // Reflection is the only way to observe this: OnTrace/OnLoadFile are only ever
-            // invoked from Trace()/LoadFile(), both of which now throw ObjectDisposedException
-            // before reaching the event, same as every other post-dispose call.
+            // Reflection is the only way to observe this: OnTrace is only ever invoked from
+            // Trace(), which now throws ObjectDisposedException before reaching the event, same
+            // as every other post-dispose call.
             var traceField = typeof(SwissEph).GetField("OnTrace",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var loadField = typeof(SwissEph).GetField("OnLoadFile",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             Assert.Null(traceField.GetValue(swe));
-            Assert.Null(loadField.GetValue(swe));
             Assert.False(traceRaised);
-            Assert.False(loadRaised);
         }
 
         [Fact]
@@ -112,15 +106,14 @@ namespace SwissEphNet.Tests
             var tracking = new TrackingStream(bytes);
 
             var swe = new SwissEph();
-            swe.OnLoadFile += (s, e) => {
+            swe.FileProvider = new DelegateFileProvider(path => {
                 var asm = this.GetType().GetAssembly();
-                var name = ResourceFileHelpers.GetPortableFileName(e.FileName);
+                var name = ResourceFileHelpers.GetPortableFileName(path);
                 if (name == "se00005s.se1")
-                    e.File = tracking;
-                else
-                    e.File = asm.GetManifestResourceStream(
-                        e.FileName.Replace("[ephe]", "SwissEphNet.Tests.files").Replace("/", ".").Replace("\\", "."));
-            };
+                    return tracking;
+                return asm.GetManifestResourceStream(
+                    path.Replace("[ephe]", "SwissEphNet.Tests.files").Replace("/", ".").Replace("\\", "."));
+            });
 
             double tjd = swe.swe_julday(1974, 8, 16, 0.5, SwissEph.SE_GREG_CAL);
             double[] xx = new double[6];

@@ -84,17 +84,17 @@ namespace SwissEphNet.Tests
         public void TestAsteroidFileNameReachesOnLoadFileWithForwardSlash()
         {
             // End-to-end version of TestAsteroidFileNameUsesForwardSlashNotBackslash:
-            // confirms the forward slash actually reaches an OnLoadFile
-            // consumer through swe_calc/swi_fopen, not just swi_gen_filename
-            // in isolation.
+            // confirms the forward slash actually reaches an
+            // IEphemerisFileProvider consumer through swe_calc/swi_fopen, not
+            // just swi_gen_filename in isolation.
             using (var swe = new SwissEph())
             {
                 var capturedFileNames = new List<string>();
-                swe.OnLoadFile += (s, e) =>
+                swe.FileProvider = new DelegateFileProvider(path =>
                 {
-                    capturedFileNames.Add(e.FileName);
-                    e.File = null; // force "not found": we only need the requested name
-                };
+                    capturedFileNames.Add(path);
+                    return null; // force "not found": we only need the requested name
+                });
 
                 double tjd = swe.swe_julday(1974, 8, 16, 0.5, SwissEph.SE_GREG_CAL);
                 double[] xx = new double[6];

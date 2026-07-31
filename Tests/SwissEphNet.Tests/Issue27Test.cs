@@ -29,11 +29,9 @@ namespace SwissEphNet.Tests
 
             using (var swe = new SwissEph())
             {
-                swe.OnLoadFile += (s,e)=> {
-                    string f = e.FileName;
-                    if (File.Exists(f))
-                        e.File = new FileStream(f, FileMode.Open, FileAccess.Read);
-                };
+                // OnLoadFile used to be wired to open real files off disk here, which is
+                // exactly what SwissEph.OpenBinary does by default now that no FileProvider is
+                // configured.
                 swe.swe_set_ephe_path(jplfolder);
                 swe.swe_set_jpl_file(file);
 

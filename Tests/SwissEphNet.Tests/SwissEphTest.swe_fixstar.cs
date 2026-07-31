@@ -19,13 +19,14 @@ namespace SwissEphNet.Tests
                 Assert.Equal(SwissEph.ERR, iflag);
                 Assert.Equal("SwissEph file 'sefstars.txt' not found in PATH '[ephe]'", serr);
 
-                swe.OnLoadFile += (s, e) =>
+                swe.FileProvider = new DelegateFileProvider(path =>
                 {
-                    if (string.Equals(e.FileName, "[ephe]/sefstars.txt", StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(path, "[ephe]/sefstars.txt", StringComparison.OrdinalIgnoreCase))
                     {
-                        e.File = ResourceFileHelpers.OpenResourceFile("sefstars.txt");
+                        return ResourceFileHelpers.OpenResourceFile("sefstars.txt");
                     }
-                };
+                    return null;
+                });
 
                 iflag = swe.swe_fixstar(ref name, tjd, SwissEph.SEFLG_MOSEPH, xx, ref serr);
                 Assert.NotEqual(SwissEph.ERR, iflag);
@@ -70,13 +71,14 @@ namespace SwissEphNet.Tests
                 double[] geopos = new double[] { 47.853333, 5.333889, 468 };
                 double[] xx = new double[6]; String serr = null;
 
-                swe.OnLoadFile += (s, e) =>
+                swe.FileProvider = new DelegateFileProvider(path =>
                 {
-                    if (string.Equals(e.FileName, "[ephe]/sefstars.txt", StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(path, "[ephe]/sefstars.txt", StringComparison.OrdinalIgnoreCase))
                     {
-                        e.File = ResourceFileHelpers.OpenResourceFile("sefstars.txt");
+                        return ResourceFileHelpers.OpenResourceFile("sefstars.txt");
                     }
-                };
+                    return null;
+                });
 
                 int iflag = swe.swe_fixstar_ut(ref name, tjd, SwissEph.SEFLG_MOSEPH, xx, ref serr);
                 Assert.NotEqual(SwissEph.ERR, iflag);
@@ -109,13 +111,14 @@ namespace SwissEphNet.Tests
                 string name = "aldebaran";
                 double mag = 0; String serr = null;
 
-                swe.OnLoadFile += (s, e) =>
+                swe.FileProvider = new DelegateFileProvider(path =>
                 {
-                    if (string.Equals(e.FileName, "[ephe]/sefstars.txt", StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(path, "[ephe]/sefstars.txt", StringComparison.OrdinalIgnoreCase))
                     {
-                        e.File = ResourceFileHelpers.OpenResourceFile("sefstars.txt");
+                        return ResourceFileHelpers.OpenResourceFile("sefstars.txt");
                     }
-                };
+                    return null;
+                });
 
                 int iflag = swe.swe_fixstar_mag(ref name, ref mag, ref serr);
                 Assert.NotEqual(SwissEph.ERR, iflag);
@@ -135,13 +138,14 @@ namespace SwissEphNet.Tests
         {
             using (var swe = new SwissEph())
             {
-                swe.OnLoadFile += (s, e) =>
+                swe.FileProvider = new DelegateFileProvider(path =>
                 {
-                    if (string.Equals(e.FileName, "[ephe]/sefstars.txt", StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(path, "[ephe]/sefstars.txt", StringComparison.OrdinalIgnoreCase))
                     {
-                        e.File = ResourceFileHelpers.OpenResourceFile("sefstars.txt");
+                        return ResourceFileHelpers.OpenResourceFile("sefstars.txt");
                     }
-                };
+                    return null;
+                });
 
                 // Mirrors the sequence the conformance corpus runs: a path is established
                 // first, so swed.fidat is initialized before either lookup.

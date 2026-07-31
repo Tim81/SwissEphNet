@@ -5,7 +5,7 @@ using SwissEphNet;
 namespace SwissEphNet.Conformance.Tests.Dispatch;
 
 /// <summary>
-/// Wires SwissEph's OnLoadFile event to the external/swisseph submodule's ephe/
+/// Points SwissEph's ephemeris path at the external/swisseph submodule's ephe/
 /// directory (or an environment-variable override), and classifies iterations
 /// whose data files this repo does not ship (JPL DE files, planetary-moon .se1
 /// files) so the runner can mark them DATA-MISSING instead of running them.
@@ -41,17 +41,6 @@ public static class EphemerisFileResolver
     /// </remarks>
     public static void Attach(SwissEph swe)
     {
-        swe.OnLoadFile += (_, e) =>
-        {
-            var candidate = e.FileName;
-            if (!string.IsNullOrEmpty(JplFilePath) && string.Equals(Path.GetFileName(candidate), Path.GetFileName(JplFilePath), StringComparison.OrdinalIgnoreCase))
-            {
-                candidate = JplFilePath;
-            }
-
-            e.File = File.Exists(candidate) ? File.OpenRead(candidate) : null;
-        };
-
         ResetEphePath(swe);
         SetJplFile(swe);
     }
@@ -92,10 +81,26 @@ public static class EphemerisFileResolver
     /// SE_EPHE_PATH pointing at Astrodienst's real files, so a real directory is the closer
     /// reproduction. It cannot mask a failure either: it only makes files reachable, and
     /// exactly which files are reachable is asserted by EphemerisManifest.
+    ///
+    /// When a JPL DE file path is supplied (<see cref="JplFilePath"/>) and lives outside
+    /// <see cref="RepoLocator.EpheDir"/>, its directory is appended as a second search
+    /// entry -- swi_fopen tries every PATH_SEPARATOR-delimited entry in order (sweph.c:2374
+    /// -2395), so this reaches the file by its own name without needing a
+    /// SwissEph.IEphemerisFileProvider to redirect a mismatched path, the way this used to
+    /// work through OnLoadFile.
     /// </remarks>
     public static void ResetEphePath(SwissEph swe)
     {
-        swe.swe_set_ephe_path(RepoLocator.EpheDir);
+        var path = RepoLocator.EpheDir;
+        if (!string.IsNullOrEmpty(JplFilePath))
+        {
+            var jplDir = Path.GetDirectoryName(Path.GetFullPath(JplFilePath));
+            if (!string.IsNullOrEmpty(jplDir) && !string.Equals(jplDir, Path.GetFullPath(RepoLocator.EpheDir).TrimEnd('/', '\\'), StringComparison.OrdinalIgnoreCase))
+            {
+                path = path + SwissEph.PATH_SEPARATOR[0] + jplDir;
+            }
+        }
+        swe.swe_set_ephe_path(path);
     }
 
     /// <summary>SEFLG_JPLEPH set and we have nowhere to get a multi-hundred-MB DE file from.</summary>

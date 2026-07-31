@@ -27,19 +27,19 @@ namespace SwissEphNet.Tests
 
             using (var swe = new SwissEph())
             {
-                swe.OnLoadFile += (s, e) =>
+                swe.FileProvider = new DelegateFileProvider(path =>
                 {
-                    string f = e.FileName;
-                    string fn = Path.GetFileName(f);
-                    if (File.Exists(f))
+                    string fn = Path.GetFileName(path);
+                    if (File.Exists(path))
                     {
-                        e.File = new FileStream(f, FileMode.Open, FileAccess.Read);
+                        return new FileStream(path, FileMode.Open, FileAccess.Read);
                     }
                     else if (fn == eop_today || fn == eop_finals)
                     {
-                        e.File = ResourceFileHelpers.OpenResourceFile(fn);
+                        return ResourceFileHelpers.OpenResourceFile(fn);
                     }
-                };
+                    return null;
+                });
                 swe.swe_set_ephe_path(jplfolder);
 
                 // The issue raise a FormatException on this instruction

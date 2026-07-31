@@ -1,10 +1,20 @@
 // Characterization ("golden master") generator for SwissEphNet.
 //
 // Runs the fixed matrix defined in Tools/BaselineMatrix (Swiss Ephemeris calls that
-// need no ephemeris data files -- Moshier / analytic paths only, since no OnLoadFile
-// handler is ever subscribed) and writes one tab-separated file per area into the
-// directory given as argv[0], plus an EnvInfo.SidecarFileName sidecar recording the
-// environment the run executed in.
+// need no ephemeris data files -- Moshier / analytic paths only) and writes one
+// tab-separated file per area into the directory given as argv[0], plus an
+// EnvInfo.SidecarFileName sidecar recording the environment the run executed in.
+//
+// SwissEph.OpenBinary defaults to reading real files off the filesystem (see
+// docs/known-issues.md, "OnLoadFile: multicast leaks a stream..." and its superseding
+// entry), which this generator must never do: the committed baseline is Moshier-only
+// by construction, and a real ephemeris directory happening to be present on whatever
+// machine regenerates it would silently change the areas that exercise a missing-file
+// fallback. Areas.Generate (Tools/BaselineMatrix/Areas.cs) sets
+// SwissEph.DefaultFileProvider to a no-op provider before running any area's
+// generator -- every one of the several hundred `new SwissEph()` call sites across
+// Tools/BaselineMatrix inherits it structurally, from the one choke point all of them
+// go through, rather than this Main needing to remember it too.
 //
 // The matrix code lives in BaselineMatrix.csproj, which is built in one of two
 // modes selected by the UseReferencePackage MSBuild property:

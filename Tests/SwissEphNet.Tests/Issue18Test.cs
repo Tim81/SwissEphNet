@@ -15,11 +15,11 @@ namespace SwissEphNet.Tests
         {
             using (var swe = new SwissEph())
             {
-                swe.OnLoadFile += (s, e) => {
+                swe.FileProvider = new DelegateFileProvider(path => {
                     var asm = this.GetType().GetAssembly();
-                    String sr = e.FileName.Replace("[ephe]", @"SwissEphNet.Tests.files").Replace("/", ".").Replace("\\", ".");
-                    e.File = asm.GetManifestResourceStream(sr);
-                };
+                    String sr = path.Replace("[ephe]", @"SwissEphNet.Tests.files").Replace("/", ".").Replace("\\", ".");
+                    return asm.GetManifestResourceStream(sr);
+                });
 
                 double tjd = swe.swe_julday(1974, 8, 16, 0.5, SwissEph.SE_GREG_CAL);
                 double[] geopos = new double[] { 47.853333, 5.333889, 468 };

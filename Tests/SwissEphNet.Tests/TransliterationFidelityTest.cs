@@ -20,19 +20,15 @@ namespace SwissEphNet.Tests
     {
         private static void HookStarFile(SwissEph swe)
         {
-            swe.OnLoadFile += (s, e) =>
+            swe.FileProvider = new DelegateFileProvider(path =>
             {
-                string f = e.FileName;
-                string fn = ResourceFileHelpers.GetPortableFileName(f);
-                if (File.Exists(f))
+                string fn = ResourceFileHelpers.GetPortableFileName(path);
+                if (File.Exists(path))
                 {
-                    e.File = new FileStream(f, FileMode.Open, FileAccess.Read);
+                    return new FileStream(path, FileMode.Open, FileAccess.Read);
                 }
-                else
-                {
-                    e.File = ResourceFileHelpers.OpenResourceFile(fn);
-                }
-            };
+                return ResourceFileHelpers.OpenResourceFile(fn);
+            });
         }
 
         // --- Defect 2: Sweph.cs fixstar_format_search_name off-by-one (sweph.c:5996-5997) ---

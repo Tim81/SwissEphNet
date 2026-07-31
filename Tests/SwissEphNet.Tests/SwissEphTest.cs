@@ -45,24 +45,24 @@ namespace SwissEphNet.Tests
             // port now matches, and fixing it resolved the last differing
             // row (NAME|10005) in the file-backed oracle grid.
 
-            // No file loading defined
+            // No FileProvider configured: SwissEph.OpenBinary falls back to the real
+            // filesystem, which does not have a "[ephe]/..." directory, so this still ends
+            // up at the same not-found path as before.
             using (var target = new SwissEph()) {
                 Assert.Equal("100: not found (asteroid)", target.swe_get_planet_name(SwissEph.SE_AST_OFFSET + 100));
             }
 
-            // File loading defined, but file not found
+            // FileProvider configured, but reports every file not found
             using (var target = new SwissEph()) {
-                target.OnLoadFile += (s, e) => {
-                    e.File = null;
-                };
+                target.FileProvider = new DelegateFileProvider(path => null);
                 Assert.Equal("100: not found (asteroid)", target.swe_get_planet_name(SwissEph.SE_AST_OFFSET + 100));
             }
 
-            // File loading defined
+            // FileProvider configured
             using (var target = new SwissEph()) {
-                target.OnLoadFile += (s, e) => {
-                    if (e.FileName == "[ephe]/seasnam.txt") {
-                        e.File = new System.IO.MemoryStream(System.Text.Encoding.ASCII.GetBytes(@"
+                target.FileProvider = new DelegateFileProvider(path => {
+                    if (path == "[ephe]/seasnam.txt") {
+                        return new System.IO.MemoryStream(System.Text.Encoding.ASCII.GetBytes(@"
 000096  Aegle
 000097  Klotho
 000098  Ianthe
@@ -72,44 +72,47 @@ namespace SwissEphNet.Tests
 000102  Miriam
 000103  Hera
 "));
-                    } else
-                        e.File = null;
-                };
+                    }
+                    return null;
+                });
                 Assert.Equal("Hekate", target.swe_get_planet_name(SwissEph.SE_AST_OFFSET + 100));
             }
 
         }
 
         [Fact]
-        public void TestOnLoadFileHandlerCanOverrideEncodingPerFile() {
-            // LoadFileEventArgs.Encoding is the reachable escape hatch for a
-            // non-UTF-8-encoded file: it starts out set to DefaultEncoding
-            // (see SwissEph.LoadFile in SwissEph.cs), but a handler can
-            // overwrite it before returning, and LoadFile passes exactly that
-            // value (e.Encoding ?? DefaultEncoding) to the CFile it
-            // constructs. This is the mechanism a real consumer with a
-            // genuinely non-UTF-8-encoded ephemeris file uses -- unlike
-            // CFile's own Encoding constructor parameter (see CFileTest's
-            // TestExplicitEncodingOverridesUtf8Default), which no OnLoadFile
-            // consumer can reach: the event only ever exposes a Stream.
-            using (var target = new SwissEph()) {
-                target.OnLoadFile += (s, e) => {
-                    if (e.FileName == "[ephe]/seasnam.txt") {
-                        e.Encoding = System.Text.Encoding.GetEncoding("ISO-8859-1");
-                        // 0xE9 is Windows-1252 (and Latin-1) for é; decoded
-                        // as UTF-8 on its own it is an invalid lead byte, so
-                        // if the handler's Encoding override were ignored
-                        // (falling back to UTF-8), this would read back as
-                        // "Kor�", not "Koré".
-                        var bytes = new System.Collections.Generic.List<byte>();
-                        bytes.AddRange(System.Text.Encoding.ASCII.GetBytes("000200  Kor"));
-                        bytes.Add(0xE9);
-                        bytes.AddRange(System.Text.Encoding.ASCII.GetBytes("\n"));
-                        e.File = new System.IO.MemoryStream(bytes.ToArray());
-                    } else
-                        e.File = null;
-                };
-                Assert.Equal("Koré", target.swe_get_planet_name(SwissEph.SE_AST_OFFSET + 200));
+        public void TestDefaultEncodingAppliesToProviderSuppliedStreams() {
+            // The multicast OnLoadFile event used to expose a per-file LoadFileEventArgs.Encoding
+            // escape hatch a handler could overwrite before returning. The single-valued
+            // IEphemerisFileProvider that replaces it (docs/known-issues.md's OnLoadFile entry)
+            // only ever returns a Stream (see THE RESOLVER's fixed shape), so per-file encoding
+            // control is gone; the one remaining lever is the static SwissEph.DefaultEncoding,
+            // which applies to every file SwissEph.OpenBinary opens for the lifetime of the
+            // process (or until changed again) -- unlike CFile's own Encoding constructor
+            // parameter (see CFileTest's TestExplicitEncodingOverridesUtf8Default), which no
+            // IEphemerisFileProvider consumer can reach either: OpenBinary always passes
+            // DefaultEncoding to the CFile it constructs.
+            var savedEncoding = SwissEph.DefaultEncoding;
+            try {
+                SwissEph.DefaultEncoding = System.Text.Encoding.GetEncoding("ISO-8859-1");
+                using (var target = new SwissEph()) {
+                    target.FileProvider = new DelegateFileProvider(path => {
+                        if (path == "[ephe]/seasnam.txt") {
+                            // 0xE9 is Windows-1252 (and Latin-1) for é; decoded as UTF-8 on its
+                            // own it is an invalid lead byte, so if DefaultEncoding were ignored
+                            // (falling back to UTF-8), this would read back as "Kor�", not "Koré".
+                            var bytes = new System.Collections.Generic.List<byte>();
+                            bytes.AddRange(System.Text.Encoding.ASCII.GetBytes("000200  Kor"));
+                            bytes.Add(0xE9);
+                            bytes.AddRange(System.Text.Encoding.ASCII.GetBytes("\n"));
+                            return new System.IO.MemoryStream(bytes.ToArray());
+                        }
+                        return null;
+                    });
+                    Assert.Equal("Koré", target.swe_get_planet_name(SwissEph.SE_AST_OFFSET + 200));
+                }
+            } finally {
+                SwissEph.DefaultEncoding = savedEncoding;
             }
         }
 

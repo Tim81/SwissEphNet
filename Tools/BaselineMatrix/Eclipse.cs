@@ -5,9 +5,9 @@ namespace BaselineMatrix;
 
 /// <summary>
 /// swe_sol_eclipse_where/how/when_glob/when_loc, swe_lun_eclipse_how/when/when_loc and
-/// swe_lun_occult_where/when_glob/when_loc, all reachable under SEFLG_MOSEPH with no
-/// OnLoadFile handler for the eight classical planets. None of these functions are
-/// exercised anywhere else in the matrix.
+/// swe_lun_occult_where/when_glob/when_loc, all reachable under SEFLG_MOSEPH with no real
+/// ephemeris files available (SwissEph.DefaultFileProvider is a no-op provider) for the
+/// eight classical planets. None of these functions are exercised anywhere else in the matrix.
 ///
 /// The four "_where"/"_how" functions compute directly at a given time and are cheap;
 /// the "_when_*" search functions iterate forward or backward from a start time looking

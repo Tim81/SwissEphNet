@@ -99,16 +99,17 @@ namespace SwissEphNet.Tests
             {
                 var tjd_ut = swe.swe_julday(2017, 8, 26, 11.25, SwissEph.SE_GREG_CAL);
                 bool isLoaded = false;
-                swe.OnLoadFile += (s, e) =>
+                swe.FileProvider = new DelegateFileProvider(path =>
                 {
-                    if (e.FileName == "[ephe]/sedeltat.txt")
+                    if (path == "[ephe]/sedeltat.txt")
                     {
                         var asm = this.GetType().GetAssembly();
-                        String sr = e.FileName.Replace("[ephe]", @"SwissEphNet.Tests.files").Replace("/", ".").Replace("\\", ".");
-                        e.File = asm.GetManifestResourceStream(sr);
+                        String sr = path.Replace("[ephe]", @"SwissEphNet.Tests.files").Replace("/", ".").Replace("\\", ".");
                         isLoaded = true;
+                        return asm.GetManifestResourceStream(sr);
                     }
-                };
+                    return null;
+                });
                 Assert.Equal(0.00079690270176499512, swe.swe_deltat(tjd_ut), 8);
                 Assert.True(isLoaded);
             }
@@ -542,11 +543,12 @@ namespace SwissEphNet.Tests
 ";
             serr = null;
             using (var swe = new SwissEph()) {
-                swe.OnLoadFile += (s, e) => {
-                    if (e.FileName == "[ephe]/seleapsec.txt") {
-                        e.File = new System.IO.MemoryStream(Encoding.ASCII.GetBytes(content));
+                swe.FileProvider = new DelegateFileProvider(path => {
+                    if (path == "[ephe]/seleapsec.txt") {
+                        return new System.IO.MemoryStream(Encoding.ASCII.GetBytes(content));
                     }
-                };
+                    return null;
+                });
 
                 res = swe.swe_utc_to_jd(year, month, day, hour, min, sec, SwissEph.SE_GREG_CAL, dret, ref serr);
                 Assert.Equal(SwissEph.OK, res);
@@ -566,11 +568,12 @@ namespace SwissEphNet.Tests
             content = sb.ToString();
             serr = null;
             using (var swe = new SwissEph()) {
-                swe.OnLoadFile += (s, e) => {
-                    if (e.FileName == "[ephe]/seleapsec.txt") {
-                        e.File = new System.IO.MemoryStream(Encoding.ASCII.GetBytes(content));
+                swe.FileProvider = new DelegateFileProvider(path => {
+                    if (path == "[ephe]/seleapsec.txt") {
+                        return new System.IO.MemoryStream(Encoding.ASCII.GetBytes(content));
                     }
-                };
+                    return null;
+                });
 
                 res = swe.swe_utc_to_jd(year, month, day, hour, min, sec, SwissEph.SE_GREG_CAL, dret, ref serr);
                 Assert.Equal(SwissEph.OK, res);

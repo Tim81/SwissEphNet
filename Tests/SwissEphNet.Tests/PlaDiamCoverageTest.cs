@@ -15,8 +15,9 @@ namespace SwissEphNet.Tests
     /// the one field in attr[] that depends on pla_diam[] for these bodies. No
     /// other attr[] index reads pla_diam[] for a body outside SE_SUN/SE_MOON.
     ///
-    /// The characterization baseline (Tests/baseline/) never subscribes to
-    /// OnLoadFile, and swe_calc's dispatch for these six bodies (Sweph.cs, the
+    /// The characterization baseline (Tests/baseline/) always configures
+    /// SwissEph.DefaultFileProvider to a no-op provider (Tools/BaselineGen/Program.cs),
+    /// and swe_calc's dispatch for these six bodies (Sweph.cs, the
     /// "minor planets" branch) always requests the seas_18.se1 asteroid file
     /// regardless of the ephemeris flag passed in -- SEFLG_MOSEPH included -- so
     /// without a file these calls return ERR before swe_pheno ever reads
@@ -43,7 +44,7 @@ namespace SwissEphNet.Tests
     ///
     /// SEFLG_MOSEPH, not SEFLG_SWIEPH: main_planet (Sweph.cs) computes Earth and
     /// the Sun analytically under SEFLG_MOSEPH, so the only ephemeris file this
-    /// test's OnLoadFile handler ever has to serve is seas_18.se1 -- the exact
+    /// test's FileProvider ever has to serve is seas_18.se1 -- the exact
     /// blind spot described above, and nothing more.
     ///
     /// Precision: 11 decimal places on the asserted attr[3] values, the same
@@ -93,18 +94,15 @@ namespace SwissEphNet.Tests
 
         static void SubscribeSeasFixture(SwissEph swe)
         {
-            swe.OnLoadFile += (s, e) =>
+            swe.FileProvider = new DelegateFileProvider(path =>
             {
-                string fn = ResourceFileHelpers.GetPortableFileName(e.FileName);
-                if (File.Exists(e.FileName))
+                string fn = ResourceFileHelpers.GetPortableFileName(path);
+                if (File.Exists(path))
                 {
-                    e.File = new FileStream(e.FileName, FileMode.Open, FileAccess.Read);
+                    return new FileStream(path, FileMode.Open, FileAccess.Read);
                 }
-                else
-                {
-                    e.File = ResourceFileHelpers.OpenResourceFile(fn);
-                }
-            };
+                return ResourceFileHelpers.OpenResourceFile(fn);
+            });
         }
 
         [Theory]

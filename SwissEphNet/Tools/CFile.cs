@@ -35,16 +35,13 @@ namespace SwissEphNet
             // unavailable on .NET Core and later without registering
             // System.Text.Encoding.CodePages, which this library does not do,
             // so there is no reason to attempt it here at all. This
-            // constructor's own Encoding parameter is not something a real
-            // OnLoadFile consumer can reach, though: the event only exposes a
-            // Stream (LoadFileEventArgs.File), and SwissEph.LoadFile
-            // (SwissEph.cs) is the only caller of this constructor, always
-            // with encoding: e.Encoding ?? DefaultEncoding. Callers with
-            // genuinely non-UTF-8-encoded files should set
-            // LoadFileEventArgs.Encoding inside their OnLoadFile handler
-            // instead (checked per file, since it is reset for every
-            // LoadFileEventArgs), or set the static SwissEph.DefaultEncoding
-            // once for every file that does not override it.
+            // constructor's own Encoding parameter is not something a
+            // SwissEph.IEphemerisFileProvider consumer can reach, though:
+            // SwissEph.OpenBinary (SwissEph.cs) is the only caller of this
+            // constructor, always with encoding: DefaultEncoding. Callers with
+            // genuinely non-UTF-8-encoded files should set the static
+            // SwissEph.DefaultEncoding once for every file that does not
+            // override it.
             this.Encoding = encoding ?? Encoding.UTF8;
             this._Decoder = Encoding.GetDecoder();
         }

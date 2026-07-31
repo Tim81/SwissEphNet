@@ -173,11 +173,11 @@ namespace SwissEphNet.Tests
         public void TestExplicitEncodingOverridesUtf8Default() {
             // This exercises CFile's own Encoding constructor parameter
             // directly, which is a real feature of CFile itself, but not one
-            // an OnLoadFile consumer can reach: SwissEph.LoadFile is the only
-            // caller of this constructor from that path, and it always passes
-            // e.Encoding ?? DefaultEncoding (SwissEph.cs). A consumer with
-            // genuinely non-UTF-8-encoded files sets LoadFileEventArgs.Encoding
-            // inside the handler instead -- see
+            // an IEphemerisFileProvider consumer can reach: SwissEph.OpenBinary
+            // is the only caller of this constructor from that path, and it
+            // always passes DefaultEncoding (SwissEph.cs). A consumer with
+            // genuinely non-UTF-8-encoded files sets the static
+            // SwissEph.DefaultEncoding before the call instead -- see
             // TestOnLoadFileHandlerCanOverrideEncodingPerFile below for that
             // actually-reachable path. 0xE9 is Windows-1252 (and Latin-1) for
             // é; decoded as UTF-8 on its own it is an invalid lead byte and

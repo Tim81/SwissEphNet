@@ -78,7 +78,7 @@
  * cached (free_planets, the fidat table); swe_close() does reset that (it is swed state), so it
  * runs before every row here, not just once at the end -- getting this wrong would make this
  * driver disagree with Tools/OracleDump/Program.cs (which constructs a fresh SwissEph instance,
- * and for grid-files.tsv rows, a fresh OnLoadFile attachment, per row) for a reason that has
+ * and for grid-files.tsv rows, a fresh swe_set_ephe_path() call, per row) for a reason that has
  * nothing to do with the port being compared.
  *
  * OUTPUT COLUMN LAYOUT

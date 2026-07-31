@@ -86,9 +86,12 @@ namespace SweMini
             //int p;
             using (var swe = new SwissEph())
             {
-                swe.swe_set_ephe_path(null);
+                // swe.OnLoadFile used to be wired to swe_OnLoadFile/SearchFile below,
+                // duplicating the path search the library now performs itself
+                // (SwissEph.OpenBinary): pointing swe_set_ephe_path at the same "Datas"
+                // folder SearchFile used to search is sufficient on its own.
+                swe.swe_set_ephe_path(Path.Combine(Directory.GetCurrentDirectory(), "Datas"));
                 iflag = SwissEph.SEFLG_SPEED;
-                swe.OnLoadFile += swe_OnLoadFile;
                 while (true)
                 {
                     Console.Write("\nDate (d.m.y) ? ");
@@ -142,36 +145,6 @@ namespace SweMini
             Console.ReadKey();
 #endif
             return 0;
-        }
-
-        static Stream SearchFile(String fileName)
-        {
-            fileName = fileName.Trim('/', '\\');
-            var folders = new string[] {
-                System.IO.Path.Combine(Directory.GetCurrentDirectory(), "Datas"),
-                @"C:\Temp\swisseph\swisseph\ephe"
-            };
-            foreach (var folder in folders)
-            {
-                var f = Path.Combine(folder, fileName);
-                if (File.Exists(f))
-                    return new System.IO.FileStream(f, System.IO.FileMode.Open, System.IO.FileAccess.Read);
-            }
-            return null;
-        }
-
-        static void swe_OnLoadFile(object sender, LoadFileEventArgs e)
-        {
-            if (e.FileName.StartsWith("[ephe]"))
-            {
-                e.File = SearchFile(e.FileName.Replace("[ephe]", string.Empty));
-            }
-            else
-            {
-                var f = e.FileName;
-                if (System.IO.File.Exists(f))
-                    e.File = new System.IO.FileStream(f, System.IO.FileMode.Open, System.IO.FileAccess.Read);
-            }
         }
 
         public static void printf(string Format, params object[] Parameters)

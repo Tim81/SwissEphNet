@@ -92,36 +92,16 @@ namespace SweWin
             InitializeComponent();
             this.Disposed += FormData_Disposed;
             sweph = new SwissEph();
-            sweph.OnLoadFile += sweph_OnLoadFile;
+            // sweph.OnLoadFile used to be wired to sweph_OnLoadFile/SearchFile below,
+            // duplicating the path search the library now performs itself
+            // (SwissEph.OpenBinary): pointing swe_set_ephe_path at the same two folders
+            // SearchFile used to search is sufficient on its own.
+            sweph.swe_set_ephe_path(System.IO.Path.Combine(Application.StartupPath, "Datas") + SwissEph.PATH_SEPARATOR[0] + @"C:\sweph\ephe");
             init_data();
             string argv0 = Environment.GetCommandLineArgs()[0];
             if (make_ephemeris_path(SwissEph.SEFLG_SWIEPH | SwissEph.SEFLG_SPEED, ref argv0) == SwissEph.ERR) {
                 MessageBox.Show("error in make_ephemeris_path()", progname);
                 Environment.Exit(1);
-            }
-        }
-
-        Stream SearchFile(String fileName) {
-            fileName = fileName.Trim('/', '\\');
-            var folders = new string[] {
-                System.IO.Path.Combine(Application.StartupPath, "Datas"),
-                @"C:\sweph\ephe"
-            };
-            foreach (var folder in folders) {
-                var f = Path.Combine(folder, fileName);
-                if (File.Exists(f))
-                    return new System.IO.FileStream(f, System.IO.FileMode.Open, System.IO.FileAccess.Read);
-            }
-            return null;
-        }
-
-        void sweph_OnLoadFile(object sender, LoadFileEventArgs e) {
-            if (e.FileName.StartsWith("[ephe]")) {
-                e.File = SearchFile(e.FileName.Replace("[ephe]", string.Empty));
-            } else {
-                var f = e.FileName;
-                if (System.IO.File.Exists(f))
-                    e.File = new System.IO.FileStream(f, System.IO.FileMode.Open, System.IO.FileAccess.Read);
             }
         }
 

@@ -34,7 +34,7 @@
 // Reusing one instance across rows would make this driver disagree with sedump.c (which calls
 // swe_close() before every row, and swe_set_ephe_path() again for grid-files.tsv) for a reason
 // that has nothing to do with the port, so a brand new SwissEph is constructed for every row
-// here too, and for grid-files.tsv rows, a fresh OnLoadFile attachment on that new instance.
+// here too, and for grid-files.tsv rows, a fresh swe_set_ephe_path() call on that new instance.
 
 using System.Globalization;
 using SwissEphNet;
@@ -222,22 +222,17 @@ internal static class Program
         }
     }
 
-    // Mirrors the ordering fix documented in
-    // Tests/SwissEphNet.Conformance.Tests/Dispatch/EphemerisFileResolver.cs's Attach: swe_set_ephe_path
-    // is not a setter (sweph.c:1315-1350) -- it closes every open file and eagerly calls swe_calc
-    // internally to pin tidal acceleration from the lunar file it opens, so the OnLoadFile handler
-    // has to be attached before swe_set_ephe_path runs, or that eager open silently finds nothing.
-    // This driver receives its ephemeris directory as an explicit argument rather than through
-    // RepoLocator/environment-variable resolution -- sedump.c gets the same path the same way (its
-    // own optional third argv) -- so only the ordering fix itself is reused here, not
-    // EphemerisFileResolver's test-specific JPL-file and moon-data opt-ins, which do not apply to
-    // this harness.
+    // swe_set_ephe_path is not a setter (sweph.c:1315-1350) -- it closes every open file and
+    // eagerly calls swe_calc internally to pin tidal acceleration from the lunar file it opens.
+    // With SwissEph.OpenBinary defaulting to the real filesystem, that eager open now reaches
+    // real files on its own, without the OnLoadFile handler this used to need attached first
+    // (see Tests/SwissEphNet.Conformance.Tests/Dispatch/EphemerisFileResolver.cs's Attach for
+    // the ordering history that motivated the old attach-before-set sequencing). This driver
+    // receives its ephemeris directory as an explicit argument rather than through
+    // RepoLocator/environment-variable resolution; sedump.c gets the same path the same way
+    // (its own optional third argv).
     private static void AttachEpheDir(SwissEph swe, string epheDir)
     {
-        swe.OnLoadFile += (_, e) =>
-        {
-            e.File = File.Exists(e.FileName) ? File.OpenRead(e.FileName) : null;
-        };
         swe.swe_set_ephe_path(epheDir);
     }
 

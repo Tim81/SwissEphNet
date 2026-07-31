@@ -8,7 +8,8 @@ namespace BaselineMatrix;
 /// for every predefined sidereal mode (0 .. SE_NSIDM_PREDEF-1), after swe_set_sid_mode,
 /// plus SE_SIDM_USER with real t0/ayan_t0 and the SE_SIDBIT_ECL_T0 / SE_SIDBIT_SSY_PLANE
 /// bits. A handful of the predefined modes are defined relative to a named fixed star
-/// and need sefstars.txt, which is unavailable here (no OnLoadFile handler); whatever
+/// and need sefstars.txt, which is unavailable here (SwissEph.DefaultFileProvider is a
+/// no-op provider, see Tools/BaselineMatrix/Areas.cs); whatever
 /// those modes currently produce without the file is itself frozen behavior.
 /// </summary>
 internal static class Ayanamsa

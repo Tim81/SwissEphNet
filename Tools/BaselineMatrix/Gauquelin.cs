@@ -90,8 +90,9 @@ internal static class Gauquelin
 
     private static void AddStarnameRows(List<string> rows)
     {
-        // No sefstars.txt is loaded (no OnLoadFile handler anywhere in this matrix), so
-        // this exercises the star-not-found error path, not a real star position.
+        // No sefstars.txt is loaded (SwissEph.DefaultFileProvider is a no-op provider, set
+        // once by Tools/BaselineMatrix/Areas.cs, so no instance in this matrix can reach a
+        // real file), so this exercises the star-not-found error path, not a real star position.
         var observer = Observers[0];
         foreach (var imeth in Imeths)
         {

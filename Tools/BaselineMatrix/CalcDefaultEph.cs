@@ -14,7 +14,9 @@ namespace BaselineMatrix;
 /// concerned. Confirmed: a red-team change to plaus_iflag's SEFLG_DEFAULTEPH from SEFLG_SWIEPH
 /// to SEFLG_JPLEPH left scripts/verify-baseline.ps1 100% EXACT on the (existing) calc area.
 ///
-/// With no OnLoadFile handler ever subscribed (see Tools/BaselineGen/Program.cs), SEFLG_SWIEPH
+/// With SwissEph.DefaultFileProvider set to a no-op provider (see Tools/BaselineMatrix/Areas.cs
+/// -- deliberately, so a real ephemeris directory being present on the machine that regenerates
+/// this baseline can never change it), SEFLG_SWIEPH
 /// cannot find its ephemeris files and falls back to Moshier internally, emitting a diagnostic
 /// in serr -- that fallback path, and the exact serr text it produces, is itself worth
 /// freezing: a change to the default ephemeris flag, or to how the missing-file fallback is

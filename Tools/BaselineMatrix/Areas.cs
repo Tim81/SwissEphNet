@@ -1,4 +1,21 @@
+using SwissEphNet;
+
 namespace BaselineMatrix;
+
+/// <summary>
+/// Always reports "file not found", so every SwissEph instance that inherits it (via
+/// <see cref="SwissEph.DefaultFileProvider"/>) falls back to Moshier exactly as it did
+/// when no OnLoadFile handler was ever subscribed. See docs/known-issues.md's OnLoadFile
+/// entry: with SwissEph.OpenBinary defaulting to the real filesystem, a matrix area that
+/// forgot to configure this would silently start reading whatever ephemeris files happen
+/// to be present on the machine that runs it.
+/// </summary>
+public sealed class NoEphemerisFilesProvider : SwissEph.IEphemerisFileProvider
+{
+    public static readonly NoEphemerisFilesProvider Instance = new();
+
+    public Stream Open(string path) => null!; // SwissEphNet itself is not nullable-annotated; the interface contract is "null means not found"
+}
 
 /// <summary>
 /// The named areas the matrix is split into. Each area writes to its own file, so
@@ -34,6 +51,12 @@ public static class Areas
     /// <summary>Runs one area's generator and returns its rows, sorted deterministically.</summary>
     public static List<string> Generate(Action<List<string>> populate)
     {
+        // Every new SwissEph() constructed anywhere in this matrix -- there are several
+        // hundred call sites -- must never be able to read a real ephemeris file (see
+        // NoEphemerisFilesProvider above). Setting the static default here, in the one
+        // choke point every area's generation goes through, is structural rather than
+        // relying on every caller (Tools/BaselineGen, Tools/BaselineVerify) to remember.
+        SwissEph.DefaultFileProvider = NoEphemerisFilesProvider.Instance;
         var rows = new List<string>();
         populate(rows);
         rows.Sort(StringComparer.Ordinal);
