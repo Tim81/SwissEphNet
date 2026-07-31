@@ -1,12 +1,14 @@
 # SwissEphNet
 
 This project is an Astrodienst Swiss Ephemeris (http://www.astro.com/swisseph/) .Net portage from
-C to C#, targeting netstandard2.0, .NET 8 and .NET 10 for cross platform usage. `SE_VERSION` still
-reports `"2.08"`, deliberately: the API surface reflects the whole 2.10.03 delta, but the version
-string itself is a separate, deferred change. `swephlib.c`, the 2.10.03 ayanamsa and `pla_diam`
-tables, the header and constants stage, the eight crossing functions, the ayanamsha machinery
-(`get_aya_correction`, `prec_offset`), `sweph.c`, `swecl.c`, `swehouse.c`, and `swetest.c` are all
-ported; see `docs/sweph-c-stages.md` for how `sweph.c`'s work divided across four slices.
+C to C#, targeting netstandard2.0, .NET 8 and .NET 10 for cross platform usage. `SE_VERSION`
+reports `"2.10.03"`: the whole 2.10.03 delta has landed, file by file -- `swephlib.c`, the
+2.10.03 ayanamsa and `pla_diam` tables, the header and constants stage, the eight crossing
+functions, the ayanamsha machinery (`get_aya_correction`, `prec_offset`), `sweph.c`, `swecl.c`,
+`swehouse.c`, and `swetest.c` are all ported; see `docs/sweph-c-stages.md` for how `sweph.c`'s
+work divided across four slices. The port is not yet at full parity with 2.10.03's own reference
+values -- see "Correctness oracle" below and `docs/compliance-2.10.03.md` for how far along it is
+and what has and has not been measured.
 
 ## About this repository
 
@@ -230,6 +232,38 @@ and bug fixes. Build from source or reference `SwissEphNet/SwissEphNet.csproj` d
 
 SwissEphNet targets `netstandard2.0`, `net8.0` and `net10.0`.
 
+## Numerical compatibility
+
+This library has been validated against the official Swiss Ephemeris C library.
+
+On modern .NET (.NET 8 and later), it produces bit-identical results for the validated test suite
+on both platforms tested, each against a C reference built on that same platform:
+
+| Platform | C reference | Result |
+|---|---|---|
+| Windows x64 | MSVC 19.51, `/O2 /fp:precise /MD` | 17,064 of 17,064 rows bit-identical |
+| Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | 17,064 of 17,064 rows bit-identical |
+
+The agreement is exact rather than close because the port and the C reference call the same libm
+on a given platform: `ucrtbase.dll` on Windows, glibc on Linux. macOS has not been measured.
+
+The two platforms do not produce the same numbers as each other, and cannot be made to. `Math.Sin`
+and its siblings bind to whatever libm the platform provides, at run time, so this is the same
+divergence two identically-built C programs would show. Comparing the Windows-generated
+characterization baseline against Linux gives 3,547,367 numeric fields with 66,342 (1.87%)
+differing and 5,394 beyond the shipped tolerance. That is why the baseline is locked to the
+platform that generated it and the cross-platform CI job reports drift without gating on it, and
+it is a statement about libm rather than about this port.
+
+When the `netstandard2.0` build is executed on .NET Framework 4.8, small floating-point
+differences may occur, because that runtime's implementations of transcendental functions (for
+example `Math.Sin` and `Math.Tan`) are not bit-identical to those of modern .NET. In the current
+validation suite this results in a maximum observed difference of 2 ULP, for example on
+`FICT_CUPIDO`.
+
+The table above is the bit-exact oracle's own result; see "Bit-exact oracle" below for the tooling
+behind it and what it proves that the other two verification instruments in this README cannot.
+
 ## Package name
 
 This project carries three names, and meeting them separately looks like something is broken.
@@ -295,8 +329,13 @@ makes each upstream Swiss Ephemeris upgrade tractable.
 Before any change to the C-to-C# port, a frozen golden-master file records what the
 library currently outputs for a large matrix of calls. See `Tools/BaselineGen/README.md`
 for what it covers and `scripts/verify-baseline.ps1` to check current code against it.
-The baseline is Windows-specific by design; see that file's "Platform lock" section.
-Numerical-stability findings turned up while building it are in `docs/known-issues.md`.
+The baseline is Windows-specific by design; see that file's "Platform lock" section. This is not
+in tension with "Numerical compatibility" above showing both Windows and Linux bit-identical
+against their own C: the baseline is a Windows-generated golden master, so comparing Linux output
+against it measures libm divergence between platforms (glibc versus `ucrtbase.dll`), not a defect
+in the port. Comparing each platform against its own C reference, as "Numerical compatibility" and
+"Bit-exact oracle" below do, is what actually tests the port. Numerical-stability findings turned
+up while building the baseline are in `docs/known-issues.md`.
 
 The characterization baseline proves *self-consistency*: a change did not alter
 anything it wasn't supposed to. It cannot prove *correctness*, because it is
@@ -400,6 +439,35 @@ is a regression.
 license, which is already the dual AGPL-3.0 / Swiss Ephemeris Professional text (see "License"
 above and `LICENSE`). The submodule does not change that; both sides of the port have carried the
 same license since before 2.10.03 work started.
+
+# Bit-exact oracle
+
+The characterization baseline above proves self-consistency, and the correctness oracle proves
+agreement with Astrodienst's own published reference values within the tolerances Astrodienst
+itself ships. Neither can prove the strongest claim this project makes: that for a given input,
+the port and Astrodienst's own C compute the identical bits. That is what this third instrument
+is for, and it is the source of the "Numerical compatibility" table above.
+
+- `Tools/OracleGrid` holds the two input grids: `grid-analytic.tsv` (14,820 rows, `SEFLG_MOSEPH
+  swe_calc`/`swe_calc_ut` plus `swe_houses`/`swe_houses_armc`, opening no ephemeris file) and
+  `grid-files.tsv` (2,244 rows, `SEFLG_SWIEPH swe_calc`/`swe_calc_ut`, the `swe_fixstar` family,
+  and `swe_get_planet_name`, reading the shipped `.se1`/`sefstars.txt` files).
+- Each grid is replayed by a pair of drivers built from the same inputs: `Tools/CReference/sedump.c`,
+  compiled against Astrodienst's own vendored 2.10.03 C, and `Tools/OracleDump`, built against this
+  port. Both write every hex-encoded field, the return code, and the `serr` text to a TSV.
+- `Tools/OracleVerify` compares the two dumps field by field. A row that is not an outright match
+  has to be listed in `Tests/oracle/known-diff.tsv` or `known-diff-files.tsv`, under a category
+  that still fits and at a magnitude no worse than the last time that entry was regenerated -- both
+  lists are currently empty.
+- `scripts/verify-oracle.ps1` is the gate: it also checks that the committed dumps still reflect
+  what is on disk (the two grids, the port's own source, and the C reference binaries), and, when a
+  grid's known-diff list is empty, that the two dump files are byte-for-byte identical at the
+  file level, not merely equal per `OracleVerify`'s own field comparator.
+
+Run `scripts/run-oracle-dump.ps1` to regenerate the dumps, then `scripts/verify-oracle.ps1` to
+check them. See `docs/compliance-2.10.03.md` for the current numbers on both Windows and Linux,
+what this instrument does and does not cover, and the same record for the other two instruments
+above.
 
 # Firsts steps
 
