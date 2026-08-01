@@ -96,6 +96,22 @@
     being passed to either binary as -edir, whether it came from this default or an override --
     see "NEITHER BINARY IS BUILT SILENTLY WRONG" above for why a relative directory would be a
     silent Moshier-fallback defect on the .NET side.
+
+.PARAMETER GuardOnly
+    Run every check up to and including the Programs/SweTest build, then exit 0 without dispatching
+    a single grid case -- no comparison, no -Regenerate/gate logic. Exists so
+    .github/workflows/oracle.yml can gate on the build and the guard checks (a missing C reference
+    exe, an ephemeris directory that does not match the declared manifest, a malformed grid, a
+    failed dotnet build) as a hard failure, separately from the actual text comparison against
+    Tests/swetest/known-diff.tsv, which stays under continue-on-error because a future MSVC can
+    move the C side's printed digits without this port changing at all. Before this switch existed,
+    both lived inside one script invocation covered by a single continue-on-error step in the
+    workflow, so a broken build or a missing ephemeris file was silently absorbed by the same
+    exemption meant only for toolchain-sensitive text drift -- exactly what that job's own comment
+    in oracle.yml said the flag was never meant to cover. The workflow calls this script twice: once
+    with -GuardOnly (no continue-on-error), once normally (continue-on-error still set) -- the
+    second call rebuilds Programs/SweTest again, a redundant few seconds, not a second grid
+    dispatch, since -GuardOnly's own invocation never reaches the grid loop at all.
 #>
 [CmdletBinding()]
 param(
@@ -105,7 +121,8 @@ param(
     [string] $GridPath,
     [string] $KnownDiffPath,
     [string] $CExePath,
-    [string] $EpheDir
+    [string] $EpheDir,
+    [switch] $GuardOnly
 )
 
 Set-StrictMode -Version Latest
@@ -126,6 +143,11 @@ $netExePath = Join-Path $repoRoot 'Programs/SweTest/bin/Release/net10.0/SweTest.
 
 if ($Regenerate -and -not $Reason) {
     Write-Host 'FAIL: -Regenerate requires -Reason.' -ForegroundColor Red
+    exit 1
+}
+
+if ($GuardOnly -and $Regenerate) {
+    Write-Host 'FAIL: -GuardOnly and -Regenerate are mutually exclusive -- -GuardOnly never reaches the grid loop -Regenerate needs to capture.' -ForegroundColor Red
     exit 1
 }
 
@@ -538,6 +560,11 @@ try {
         Fail "dotnet build reported success but $netExePath does not exist. Is this running on Windows (the apphost .exe is Windows-only)?"
     }
     Write-Host ''
+
+    if ($GuardOnly) {
+        Write-Host "PASS (guard-only): C reference exe found, ephemeris manifest matched, grid loaded ($($grid.Count) rows), Programs/SweTest built. No case was dispatched -- see this script's own -GuardOnly parameter help." -ForegroundColor Green
+        exit 0
+    }
 
     # -----------------------------------------------------------------------------------
     # Run every case through both binaries.

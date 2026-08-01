@@ -473,18 +473,26 @@ jobs:
   # break it. Rather because a compile break is a real defect worth seeing, and
   # c-reference-validate above already gates on that same step with no flag.
   #
-  # Be clear about what the flag on the final step does absorb, because it is more than the text
-  # comparison. verify-swetest-diff.ps1 also throws, and so exits 1 indistinguishably, on a failed
-  # Assert-EphemerisManifest, an unresolvable ephemeris directory, a failed Programs/SweTest
-  # build, a duplicate case_id or malformed row in the args grid, and its own
+  # Be clear about what the flag on the final step does and does not absorb, because
+  # verify-swetest-diff.ps1 throws, and so exits 1 indistinguishably, on more than a text
+  # mismatch: a failed Assert-EphemerisManifest, an unresolvable ephemeris directory, a failed
+  # Programs/SweTest build, a duplicate case_id or malformed row in the args grid, and its own
   # Test-RequiredFileMissReported guard -- the one whose description says it aborts the run the
-  # moment either binary would be built silently wrong. Splitting that script's build and guard
-  # phases from its comparison phase would let those gate; until then they do not.
+  # moment either binary would be built silently wrong. None of those are toolchain-sensitive the
+  # way the text comparison is, so none of them belong under continue-on-error -- and until the
+  # script's -GuardOnly switch existed, all of them rode under the same one flagged step as the
+  # comparison anyway, because build, guard and comparison all lived inside a single invocation.
+  # This job now calls the script twice: once with -GuardOnly (below, no continue-on-error) that
+  # runs every guard check and the Programs/SweTest build and stops before dispatching a single
+  # grid case, and once normally (continue-on-error still set) for the actual comparison --
+  # duplicating the build (a redundant few seconds, not a second grid dispatch) is the price of
+  # keeping the toolchain-sensitive exemption from also covering everything upstream of it.
   #
-  # Unlike oracle-dump, this script builds Programs/SweTest and compares in a single pass, so a
-  # SweTest build break rides under the same step-level flag as the comparison. That gap is
-  # covered elsewhere: Programs/SweTest builds as part of SwissEphNet.sln in ci.yml's
-  # build-and-test job on every push and pull request, which gates.
+  # Unlike oracle-dump, this script builds Programs/SweTest and compares in the same script, so a
+  # SweTest build break is also caught here now, not only by ci.yml's build-and-test job (which
+  # still builds Programs/SweTest as part of SwissEphNet.sln on every push and pull request, and
+  # still gates) -- this job's own guard step is a second, earlier catch of the same class of
+  # break, specific to the Release configuration this comparison actually runs.
   swetest-diff:
     name: "Gate: swetest reference builds (text comparison itself is toolchain-sensitive)"
     runs-on: windows-latest
@@ -562,8 +570,22 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      # The one step allowed to go red: see the job comment above. Everything before this point
-      # is a real gate.
+      # Hard gate, not exempted: the job comment above already names what this absorbed before it
+      # had its own step -- Assert-EphemerisManifest, an unresolvable ephemeris directory, a failed
+      # Programs/SweTest build, a duplicate case_id or malformed grid row, and
+      # Test-RequiredFileMissReported's own guard -- none of which the comparison's
+      # continue-on-error below was ever meant to cover (see the job comment's own citation of
+      # this file's header, lines 477-481). -GuardOnly runs every one of those checks and the
+      # Programs/SweTest build, then exits before dispatching a single grid case, so a break here
+      # fails this job for real.
+      - name: Build Programs/SweTest and verify guard conditions
+        shell: pwsh
+        run: pwsh scripts/verify-swetest-diff.ps1 -GuardOnly
+
+      # The one step allowed to go red: see the job comment above. Everything before this point,
+      # including the guard step immediately above, is a real gate; this step re-runs the same
+      # build (a redundant few seconds, not a second grid dispatch -- see -GuardOnly's own
+      # parameter help) before dispatching the grid for the actual text comparison.
       - name: Compare Programs/SweTest vs 2.10.03 C reference against known-diff.tsv
         shell: pwsh
         continue-on-error: true
