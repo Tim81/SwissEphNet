@@ -31,3 +31,10 @@ If this PR does not touch a frozen/transliterated file, write "N/A" and say why 
       same commit as the change, explaining why the new numbers are expected (see
       `scripts/regenerate-baseline.ps1` / CONTRIBUTING.md). If nothing there changed, delete
       this line.
+- [ ] Every `(no PR yet -- fill in "PR #N" ...)` placeholder this PR's own regeneration left
+      behind is now filled in with this PR's real number, in this PR, not a follow-up (see
+      CONTRIBUTING.md, "Correctness oracle known-fail list"). A grep for `PR #` will not find
+      every shape these placeholders take -- `Tests/baseline/baseline-2.8.0.2.env.txt` records
+      one as `pheno-ast | local (no PR yet, log entry N; ...)`, not `PR #N` -- so check the
+      regeneration log this PR actually touched by eye, not just by grep. If this PR did not run
+      a regeneration script, delete this line.
