@@ -181,17 +181,17 @@ $docFileRelPaths = @(
 )
 $docFiles = $docFileRelPaths | ForEach-Object { Join-Path $RepoRoot $_ } | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }
 
-# A number, then a run of one or more marker tags. A run (not a single tag) is required because
-# two documents cite one shared number for two different functions at once, e.g.
-# "HELIO_CROSS/HELIO_CROSS_UT 192 each" -- both markers sit back-to-back after the one "192".
-# The id itself is kebab-case: alphanumeric segments joined by single dashes. Written this way,
-# not as the simpler-looking "[A-Za-z0-9-]+", specifically so the id can never swallow the "--"
-# that opens the tag's own closing "-->" -- a greedy character class containing '-' does exactly
-# that (matches "known-fail-total--" instead of "known-fail-total"), since '-' is a valid id
-# character right up until two of them appear in a row, which only the closing delimiter does.
+# Marker detection is deliberately loose (case-insensitive "doccount", optional whitespace
+# around the colon and inside the delimiters) because the failure mode this guards against is
+# not "someone writes a marker wrong on purpose" but "someone reformats prose near a marker
+# without noticing the marker has syntax". `<!--DOCCOUNT: known-fail-total-->` and
+# `<!--doccount:known-fail-total-->` must be equally visible to this script, or the case/spacing
+# accident silently un-checks the number next to it -- exactly as invisible as no marker at all.
+# The id capture itself stays strict (kebab-case only, matching $GroundTruth's own key shape) so
+# a malformed id -- `known_fail_total` with underscores, a typo -- is a hard failure below rather
+# than a run that quietly fails to match anything and vanishes the same way.
 $idPattern = '[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*'
-$markerRunPattern = "(?<num>[\d,]+)(?<tags>(?:\s*<!--\s*doccount:$idPattern\s*-->)+)"
-$singleTagPattern = "doccount:(?<id>$idPattern)\s*-->"
+$markerPattern = '(?i)<!--\s*doccount\s*:\s*(?<idraw>[^>]*?)\s*-->'
 
 $failures = [System.Collections.Generic.List[string]]::new()
 $seenIds = [System.Collections.Generic.HashSet[string]]::new()
@@ -200,24 +200,57 @@ foreach ($docPath in $docFiles) {
     $relPath = [System.IO.Path]::GetRelativePath($RepoRoot, $docPath).Replace('\', '/')
     $text = Get-Content -LiteralPath $docPath -Raw
 
-    foreach ($match in [regex]::Matches($text, $markerRunPattern)) {
-        $docValue = [int] ($match.Groups['num'].Value -replace ',', '')
-        # 1-based line number: count newlines in everything before the match.
-        $lineNumber = ([regex]::Matches($text.Substring(0, $match.Index), "`n")).Count + 1
+    foreach ($match in [regex]::Matches($text, $markerPattern)) {
+        # 1-based line number, and the start/prefix of that same line up to the marker itself.
+        $beforeMatch = $text.Substring(0, $match.Index)
+        $lastNewline = $beforeMatch.LastIndexOf("`n")
+        $lineStart = $lastNewline + 1
+        $lineNumber = ([regex]::Matches($beforeMatch, "`n")).Count + 1
+        $linePrefix = $text.Substring($lineStart, $match.Index - $lineStart)
 
-        foreach ($tagMatch in [regex]::Matches($match.Groups['tags'].Value, $singleTagPattern)) {
-            $id = $tagMatch.Groups['id'].Value
-            [void]$seenIds.Add($id)
+        $idRaw = $match.Groups['idraw'].Value
+        if ($idRaw.Trim() -eq '') {
+            # `<!--doccount:-->` with nothing between the colon and the close: this script's own
+            # documentation (CONTRIBUTING.md) illustrates the marker syntax generically this way,
+            # with no id at all, not even a malformed one -- not an attempted citation of any
+            # number, so there is nothing to validate or bind a number to. Treated the same as "no
+            # marker here" rather than as a malformed one.
+            continue
+        }
+        if ($idRaw -notmatch "^$idPattern$") {
+            $failures.Add("${relPath}:${lineNumber}: malformed doccount marker '$idRaw' -- an id must be lowercase letters, digits and single dashes only (e.g. 'known-fail-total'); underscores, spaces or mixed case inside the id are never valid, even though the 'doccount' keyword and the colon's spacing are matched case- and whitespace-insensitively above.")
+            continue
+        }
+        $id = $idRaw
+        [void]$seenIds.Add($id)
 
-            if (-not $GroundTruth.Contains($id)) {
-                $failures.Add("${relPath}:${lineNumber}: doccount:$id is not a defined id (typo, or not yet added to the GroundTruth table in this script).")
-                continue
-            }
+        # The number this marker cites: the last run of digits/commas on the same line before the
+        # marker's own opening delimiter, with any earlier marker tags on that line stripped out
+        # first. Stripping matters when two or more markers chain back-to-back after one shared
+        # number (e.g. "48<!--doccount:...fixstar--><!--doccount:...fixstar2-->" for the second
+        # marker) -- an id containing a digit itself, like "fixstar2", would otherwise be picked up
+        # as the "number" instead of the real, earlier "48". Deliberately NOT anchored to require
+        # the number be immediately adjacent: "**9,999**<!--...-->", "`9,999`<!--...-->" and
+        # "9,999 rows<!--...-->" must all still resolve to 9,999 -- markdown emphasis, inline-code
+        # backticks and ordinary prose words between the number and its marker are exactly the kind
+        # of incidental edit (bolding a number while editing a sentence) that must not silently
+        # detach the marker from the number it is checking.
+        $strippedPrefix = [regex]::Replace($linePrefix, '<!--.*?-->', '')
+        $numMatches = [regex]::Matches($strippedPrefix, '[\d,]+')
+        if ($numMatches.Count -eq 0) {
+            $failures.Add("${relPath}:${lineNumber}: doccount:$id has no number anywhere earlier on its line to check against.")
+            continue
+        }
+        $docValue = [int] ($numMatches[$numMatches.Count - 1].Value -replace ',', '')
 
-            $actual = $GroundTruth[$id]
-            if ($docValue -ne $actual) {
-                $failures.Add("${relPath}:${lineNumber}: doccount:$id says $docValue but the repository currently computes $actual.")
-            }
+        if (-not $GroundTruth.Contains($id)) {
+            $failures.Add("${relPath}:${lineNumber}: doccount:$id is not a defined id (typo, or not yet added to the GroundTruth table in this script).")
+            continue
+        }
+
+        $actual = $GroundTruth[$id]
+        if ($docValue -ne $actual) {
+            $failures.Add("${relPath}:${lineNumber}: doccount:$id says $docValue but the repository currently computes $actual.")
         }
     }
 }
@@ -236,11 +269,27 @@ foreach ($id in $GroundTruth.Keys) {
 # invisible to every check in this script by construction -- not a false negative, a silent
 # non-check. `9,999<!--doccount:known-fail-total-->` pasted into a brand-new document, or into a
 # workflow file that is not already one of the seven above, previously exited 0 forever. This
-# greps every other tracked file for the literal marker text and fails if it finds one; a marker
-# has to live in an allowlisted document (move it) or not exist (delete it), never sit somewhere
-# nothing reads it.
+# greps every other tracked file for the marker text and fails if it finds one; a marker has to
+# live in an allowlisted document (move it) or not exist (delete it), never sit somewhere nothing
+# reads it.
+#
+# -P (PCRE) with an explicit "(?i)" -- git grep's default POSIX BRE dialect has no case-insensitive
+# mode, and the loop above now recognizes "doccount:" case-insensitively (`<!--DOCCOUNT:...-->`),
+# so a marker written that way in a non-allowlisted file must be just as visible here or this
+# reverse check misses exactly the case variant the forward check was widened to catch.
+#
+# -a ("--text"), not -I: -I skips any file git's own content heuristic calls binary AND any file
+# an applicable .gitattributes entry marks `binary` or `-diff` -- confirmed by direct testing, both
+# independently make a real text file (one with a single stray embedded NUL byte, or one merely
+# tagged `binary` in .gitattributes despite being ordinary UTF-8) invisible to -I regardless of
+# what it actually contains. "Save as Unicode"/UTF-16 in a Windows editor produces exactly the
+# first case; a future .gitattributes entry (this file already ships commented-out `binary`
+# template blocks) produces the second. -a forces every tracked file to be scanned as text
+# regardless of either signal, closing both at once; the only tracked binaries in this repository
+# (Tests/SwissEphNet.Tests/files/*.se1) were confirmed by direct testing to produce no match and
+# no error under -a, so nothing legitimate is lost.
 $selfRelPath = [System.IO.Path]::GetRelativePath($RepoRoot, $PSCommandPath).Replace('\', '/')
-$reverseGrepArgs = @('-C', $RepoRoot, 'grep', '-nI', '--no-color', '-e', 'doccount:', '--', '.', ':!external/*')
+$reverseGrepArgs = @('-C', $RepoRoot, 'grep', '-nPa', '--no-color', '-e', '(?i)doccount\s*:', '--', '.', ':!external/*')
 foreach ($rel in $docFileRelPaths) { $reverseGrepArgs += ":!$rel" }
 # Only excludable when this script actually lives inside $RepoRoot -- see the identical guard (and
 # the reason for it) in scripts/verify-no-tooling-attribution.ps1.
