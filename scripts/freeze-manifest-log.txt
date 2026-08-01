@@ -1,0 +1,21 @@
+Sidecar log for scripts/freeze-manifest.tsv, checked by scripts/verify-freeze-log.ps1.
+
+scripts/verify-freeze.ps1 -Update rewrites scripts/freeze-manifest.tsv from whatever is
+currently on disk, with nothing else requiring that rewrite to be reviewed alongside a
+real reason. Tests/baseline/*.tsv has exactly this same failure mode and closes it with
+Tests/baseline/baseline-*.env.txt's own "## Local regenerations" log, checked by
+scripts/verify-baseline-log.ps1; this file and scripts/verify-freeze-log.ps1 are the
+identical mechanism for the freeze manifest. Never add an entry here to make a failing
+freeze gate pass without first understanding why it failed -- see CONTRIBUTING.md and
+scripts/verify-freeze.ps1's own header for what a legitimate change to a frozen file
+looks like (a fidelity fix citing the C, or a re-transliteration).
+
+## Manifest updates
+
+This append-only log records each deliberate, reviewed run of
+`scripts/verify-freeze.ps1 -Update`, most recent last. Cite the PR number, not a commit
+SHA still on an open branch (see Tests/baseline/baseline-*.env.txt's own log for why:
+squash-merged PRs mean a SHA cited while a branch is still open names a commit that will
+not exist on the integration branch once it lands).
+
+None yet: scripts/freeze-manifest.tsv has not been regenerated since this log was added.

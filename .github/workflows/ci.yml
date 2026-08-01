@@ -111,10 +111,56 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # resolve-log-base.ps1 (and the git log range it produces) need history beyond the
+          # default shallow clone -- same reasoning as the other jobs in this workflow that
+          # resolve a log base.
+          fetch-depth: 0
 
       - name: Verify frozen paths were not reformatted
         shell: pwsh
         run: pwsh scripts/verify-freeze.ps1
+
+      # scripts/freeze-manifest.tsv is the golden artifact `verify-freeze.ps1 -Update` rewrites.
+      # Nothing before this step stopped a red freeze gate from being turned green by running
+      # -Update and committing the result with no record of why -- the exact same failure mode
+      # Tests/baseline/*.tsv has, closed there by verify-baseline-log.ps1 requiring a sidecar log
+      # entry. scripts/verify-freeze-log.ps1 and scripts/freeze-manifest-log.txt are the same
+      # mechanism for the freeze manifest.
+      - name: Fetch the integration refs the base resolver needs
+        shell: bash
+        run: |
+          git fetch --quiet origin \
+            "+refs/heads/release/2.10.03:refs/remotes/origin/release/2.10.03" \
+            "+refs/heads/main:refs/remotes/origin/main" || true
+
+      - name: Determine base ref for the manifest-log check
+        id: base-ref
+        shell: pwsh
+        run: |
+          # See verify-no-tooling-attribution's own "Determine base ref" step in this same file
+          # for why both of these are needed: the explicit pin (without it, a native command's
+          # ordinary non-zero exit inside -WidenPastCancellation would throw
+          # NativeCommandExitException the day the runner's ambient default flips), and the
+          # argument-list splat (a bare trailing token would bind to -IntegrationRef instead of
+          # toggling the switch, since resolve-log-base.ps1 runs as a separate child process here).
+          $PSNativeCommandUseErrorActionPreference = $false
+
+          $resolveArgs = @(
+            '-EventName', '${{ github.event_name }}',
+            '-BeforeSha', '${{ github.event.before }}',
+            '-PrBaseSha', '${{ github.event.pull_request.base.sha }}'
+          )
+          if ('${{ github.event_name }}' -eq 'push') { $resolveArgs += '-WidenPastCancellation' }
+          $base = pwsh scripts/resolve-log-base.ps1 @resolveArgs
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $base = $base.Trim()
+          "sha=$base" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Resolved manifest-log base: $base"
+
+      - name: Verify freeze-manifest changes are logged
+        shell: pwsh
+        run: pwsh scripts/verify-freeze-log.ps1 -BaseRef '${{ steps.base-ref.outputs.sha }}'
 
   # SwissEphNet.csproj has no PackageReference, and the packed nuspec has an empty
   # dependency group per target framework and no framework references -- a deliberate
