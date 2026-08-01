@@ -16,9 +16,31 @@
       net40/netstandard1.0, so it would not be a drop-in replacement for
       that package anyway. Until the release lands, build from source or
       reference the project directly.
+
+      The "port revision" above is the fourth component, for a fork-only
+      release made while upstream stays put: 2.10.3, then 2.10.3.1, 2.10.3.2,
+      resetting whenever upstream moves. Two things to know before using it.
+      NuGet normalizes a trailing zero away, so 2.10.3.0 and 2.10.3 are the
+      same package and there is no point writing the .0. That was measured,
+      not assumed: packing 2.10.3.0 produces a .2.10.3.nupkg. And four components
+      are not valid SemVer 2.0, which has exactly three; NuGet accepts them
+      for backwards compatibility. That is a deliberate choice, because the
+      alternatives are worse. Build metadata (2.10.3+fork.1) is ignored by
+      NuGet when comparing versions, so a second package differing only there
+      cannot be published. A prerelease suffix (2.10.3-rev1) sorts BEFORE
+      2.10.3, which is backwards for a release that comes after it.
     -->
     <Version>2.10.3</Version>
-    <InformationalVersion>2.10.3 (Swiss Ephemeris 2.10.03, upstream tag v2.10.3final)</InformationalVersion>
+    <!--
+      Plain SemVer, with no descriptive text. The SDK appends +<commit sha> to
+      whatever is here, so anything with spaces or parentheses in the core
+      version produces a string no SemVer parser accepts, and several tools
+      do parse AssemblyInformationalVersionAttribute. It is also what Windows
+      Explorer shows as "Product version". The upstream tracking detail this
+      used to carry now lives in the AssemblyMetadata items below, which is
+      where arbitrary text belongs.
+    -->
+    <InformationalVersion>2.10.3</InformationalVersion>
     <Authors>Yan Grenier, Timothy van der Ham</Authors>
     <Company>Yan Grenier</Company>
     <Product>SwissEphSharp</Product>
@@ -131,6 +153,15 @@ SwissEphNet):
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DefineConstants>TRACE;RELEASE;</DefineConstants>
   </PropertyGroup>
+
+  <!--
+    The upstream tracking detail that InformationalVersion used to carry.
+    AssemblyMetadata takes arbitrary text without having to parse as a version.
+  -->
+  <ItemGroup>
+    <AssemblyMetadata Include="UpstreamSwissEphemerisVersion" Value="2.10.03" />
+    <AssemblyMetadata Include="UpstreamSwissEphemerisTag" Value="v2.10.3final" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Include="..\LICENSE">

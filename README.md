@@ -607,6 +607,25 @@ that calls `Assembly.Load("SwissEphNet")` by literal string, carries a binding r
 `SwissEphNet`, or otherwise hardcodes the DLL filename needs to be updated to `SwissEphSharp`
 too.
 
+## Version numbers
+
+The package version tracks upstream, with a fourth component for releases this fork makes on its
+own. `2.10.3` tracks Swiss Ephemeris C 2.10.03; a fork-only release while upstream stays put would
+be `2.10.3.1`, then `2.10.3.2`, and the fourth component resets whenever upstream moves.
+
+Two things about that are worth knowing rather than discovering. NuGet normalizes a trailing zero
+away, so `2.10.3.0` and `2.10.3` are the same package and writing the `.0` achieves nothing.
+And four components are not valid SemVer 2.0, which has exactly three; NuGet accepts them for
+backwards compatibility. That is a deliberate choice, because the two obvious alternatives are
+worse. Build metadata (`2.10.3+fork.1`) is ignored by NuGet when it compares versions, so a second
+package differing only there cannot be published at all. A prerelease suffix (`2.10.3-rev1`) sorts
+*before* `2.10.3`, which is backwards for a release that comes after it.
+
+The assembly's `InformationalVersion` is plain SemVer, and the SDK appends the commit SHA to it as
+build metadata. The upstream version and tag it used to spell out are now `AssemblyMetadata`
+entries, `UpstreamSwissEphemerisVersion` and `UpstreamSwissEphemerisTag`, which is where text that
+does not have to parse as a version belongs.
+
 This fork is not published or endorsed by Yan Grenier or Astrodienst. See "About this repository"
 above and `NOTICE` for the credit both are owed.
 
