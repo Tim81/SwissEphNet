@@ -123,6 +123,13 @@ jobs:
             8.0.x
             10.0.x
 
+      # --blame-hang(-timeout/-dump-type): a hung test previously had no faster exit than this
+      # job's own 30-minute timeout-minutes killing the whole runner with no diagnostic beyond
+      # "cancelled" -- see ci.yml's identical comment on its own "Test" step for the full
+      # reasoning. This is the largest test suite of the three gated here (t.exp's full corpus),
+      # so its timeout is longer than the smaller unit-test suites' 5min, while still leaving
+      # headroom under the job's own 30-minute ceiling for a real hang dump to be collected and
+      # uploaded rather than the whole runner being killed first.
       - name: Run conformance oracle
         shell: pwsh
         run: >
@@ -131,6 +138,9 @@ jobs:
           --logger "console;verbosity=detailed"
           --logger trx
           --results-directory TestResults
+          --blame-hang
+          --blame-hang-timeout 15min
+          --blame-hang-dump-type mini
 
       - name: Upload conformance report
         uses: actions/upload-artifact@v4

@@ -105,9 +105,13 @@ jobs:
             8.0.x
             10.0.x
 
+      # --blame-hang(-timeout/-dump-type): a hung test previously had no faster exit than this
+      # job's own 30-minute timeout-minutes killing the whole runner with no diagnostic beyond
+      # "cancelled" -- see ci.yml's identical comment on its own "Test" step for the full
+      # reasoning; this gate's own unit test suite gets the same protection.
       - name: Run gate unit tests
         shell: pwsh
-        run: dotnet test Tools/BaselineVerify.Tests -c Release
+        run: dotnet test Tools/BaselineVerify.Tests -c Release --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type mini
 
       # Compile-only, not a full regeneration: this job's own "Verify baseline" step
       # below only ever builds Tools/BaselineMatrix in local mode (a ProjectReference
@@ -155,9 +159,10 @@ jobs:
             8.0.x
             10.0.x
 
+      # --blame-hang: same reasoning as verify-baseline's identical step above.
       - name: Run gate unit tests
         shell: pwsh
-        run: dotnet test Tools/BaselineVerify.Tests -c Release
+        run: dotnet test Tools/BaselineVerify.Tests -c Release --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type mini
 
       - name: Report cross-platform divergence (never fails)
         shell: pwsh
