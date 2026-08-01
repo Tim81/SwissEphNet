@@ -51,7 +51,9 @@
 
 .PARAMETER SelfTest
     Build throwaway repositories covering every bypass this family of gates has been shown to
-    have, run this same script against each of them in a child process, and assert the exit code.
+    have, run this same script against each of them in a child process, and assert its exit code
+    AND the failure message it gives -- this gate has three independent ways to refuse, so a plant
+    aimed at one of them can go red through another and look like it proved something it did not.
     Touches nothing outside a temporary directory -- in particular it never reads, and never
     writes, the real Tests/conformance/regenerations.log.
 #>
@@ -193,32 +195,76 @@ if ($SelfTest) {
         param([pscustomobject] $Lab)
         $output = & pwsh -NoProfile -NonInteractive -File $PSCommandPath -BaseRef $Lab.BaseSha -RepoRoot $Lab.Path 2>&1
         $code = $LASTEXITCODE
-        return [pscustomobject]@{ Code = $code; Output = ($output | Out-String) }
+        $text = ($output | Out-String)
+        # Flat is the same text with PowerShell's error-display decoration removed and every run of
+        # whitespace collapsed to one space. The gate reports through Write-Error, and PowerShell
+        # renders an ErrorRecord re-wrapped at the console width -- which differs between a
+        # developer's terminal and a CI runner -- with each wrapped line prefixed by a "     | "
+        # gutter. So a phrase that reads as one line locally arrives elsewhere as
+        # "...no real" on one line and "     | content..." on the next, and a -Matching pattern
+        # written the way the sentence reads would fail on terminal width alone. Measured: the
+        # substance matcher below did exactly that on first run. Stripping the gutter first, then
+        # collapsing whitespace, makes these
+        # assertions depend on the gate's words and nothing else.
+        $flat = ($text -replace '(?m)^\s*(\d+\s*)?\|\s?', '') -replace '\s+', ' '
+        return [pscustomobject]@{ Code = $code; Output = $text; Flat = $flat }
     }
 
+    # -Matching is not optional decoration here. This gate has three independent ways to refuse -- the
+    # count check, the append-only prefix check and the substance floor -- and a plant aimed at one of
+    # them very easily goes red through another, or through a broken fixture, and looks like it proved
+    # something it did not. Demonstrated on the sibling gate: with the entry parser bounding the
+    # SECTION instead of the ENTRY, the case that exists to prove entries past a "## " heading are
+    # still compared stayed green -- because the entries had vanished from BOTH sides, so the count
+    # check refused instead, and an exit-code-only assertion cannot tell those two refusals apart.
+    # The four content gates in this repository already assert their messages for the same reason.
     function Assert-GateRefuses {
-        param([string] $Case, [pscustomobject] $Lab)
+        param([string] $Case, [pscustomobject] $Lab, [string] $Matching)
         $r = Invoke-Gate $Lab
-        if ($r.Code -ne 0) {
+        $problem = $null
+        if ($r.Code -eq 0) { $problem = 'expected a non-zero exit, got 0' }
+        elseif ($Matching -and $r.Flat -notmatch $Matching) {
+            $problem = "refused with exit $($r.Code) as expected, but for the wrong reason: nothing in its output matched /$Matching/"
+        }
+        if (-not $problem) {
             Write-Host ("  PASS  {0} (refused, exit {1})" -f $Case, $r.Code)
         }
         else {
-            Write-Host ("  FAIL  {0}`n          expected a non-zero exit, got 0`n{1}" -f $Case, $r.Output)
+            Write-Host ("  FAIL  {0}`n          {1}`n{2}" -f $Case, $problem, $r.Output)
             $script:failures++
         }
     }
 
+    # The accept cases assert a message too, and specifically the "gained N entr(y|ies)" line. Exit 0
+    # alone is also what this gate reports when it finds nothing to compare -- "Nothing to check" --
+    # which is exactly what a lab whose fixture commit silently failed would produce. An accept case
+    # that cannot tell "the gate looked and approved" from "the gate found nothing to look at" is the
+    # control for every refusal case below resting on nothing.
     function Assert-GateAccepts {
-        param([string] $Case, [pscustomobject] $Lab)
+        param([string] $Case, [pscustomobject] $Lab, [string] $Matching = 'gained \d+ entr')
         $r = Invoke-Gate $Lab
-        if ($r.Code -eq 0) {
+        $problem = $null
+        if ($r.Code -ne 0) { $problem = "expected exit 0, got $($r.Code)" }
+        elseif ($Matching -and $r.Flat -notmatch $Matching) {
+            $problem = "accepted as expected, but nothing in its output matched /$Matching/ -- it may have exited 0 without comparing anything"
+        }
+        if (-not $problem) {
             Write-Host ("  PASS  {0} (accepted)" -f $Case)
         }
         else {
-            Write-Host ("  FAIL  {0}`n          expected exit 0, got {1}`n{2}" -f $Case, $r.Code, $r.Output)
+            Write-Host ("  FAIL  {0}`n          {1}`n{2}" -f $Case, $problem, $r.Output)
             $script:failures++
         }
     }
+
+    # The three refusal messages the cases below discriminate between. Entry numbers are part of the
+    # assertion: "entry #2 differs" and "entry #1 differs" are different findings about different
+    # entries, and a case that plants an edit in one must not be satisfied by the gate objecting to
+    # the other.
+    $CountRefusal = 'did not gain a new entry'
+    $AppendOnly2 = 'append-only, but entry #2 differs'
+    $AppendOnly1 = 'append-only, but entry #1 differs'
+    $NoSubstance = 'gained entry #4, but it has no real content'
 
     Write-Host 'verify-known-fail-log self-test'
     Write-Host ''
@@ -234,7 +280,7 @@ if ($SelfTest) {
     #    edit that goes around scripts/regenerate-known-fail.ps1 and its -Reason entirely.
     $lab = New-Lab 'known-fail-without-entry'
     Set-LabHead $lab $null -ChangeKnownFail
-    Assert-GateRefuses 'known-fail.tsv changed with no new log entry' $lab
+    Assert-GateRefuses 'known-fail.tsv changed with no new log entry' $lab $CountRefusal
 
     # 3. An existing entry rewritten in place, with a valid entry appended alongside it. The
     #    append makes the count rise, so a count-only check reports progress while history is
@@ -242,7 +288,7 @@ if ($SelfTest) {
     $edited = @($BaseEntries[0], ($BaseEntries[1] -replace 'regressed', 'improved'), $BaseEntries[2])
     $lab = New-Lab 'entry-edited-in-place'
     Set-LabHead $lab (New-LogText ($edited + $NewEntry4)) -ChangeKnownFail
-    Assert-GateRefuses 'an existing entry edited in place (count still rises)' $lab
+    Assert-GateRefuses 'an existing entry edited in place (count still rises)' $lab $AppendOnly2
 
     # 4. The same edit expressed only as a change of case. PowerShell's -eq and -ne on strings are
     #    culture-aware and case-insensitive, so a comparison written with them reports these two
@@ -252,7 +298,7 @@ if ($SelfTest) {
     $upper = @($BaseEntries[0], $BaseEntries[1].ToUpperInvariant(), $BaseEntries[2])
     $lab = New-Lab 'entry-differs-only-in-case'
     Set-LabHead $lab (New-LogText ($upper + $NewEntry4)) -ChangeKnownFail
-    Assert-GateRefuses 'an existing entry differing only in case' $lab
+    Assert-GateRefuses 'an existing entry differing only in case' $lab $AppendOnly2
 
     # 5. Differs only by a soft hyphen. Invisible in every diff view, and treated as equal by both
     #    -eq and -cne, which is why the comparison has to be ordinal rather than merely
@@ -260,33 +306,33 @@ if ($SelfTest) {
     $softened = @($BaseEntries[0], $BaseEntries[1].Insert(40, $SoftHyphen), $BaseEntries[2])
     $lab = New-Lab 'entry-differs-only-by-soft-hyphen'
     Set-LabHead $lab (New-LogText ($softened + $NewEntry4)) -ChangeKnownFail
-    Assert-GateRefuses 'an existing entry differing only by a soft hyphen' $lab
+    Assert-GateRefuses 'an existing entry differing only by a soft hyphen' $lab $AppendOnly2
 
     # 6. Differs only by a zero-width space. Same reasoning as case 5.
     $zeroed = @($BaseEntries[0], $BaseEntries[1].Insert(40, $ZeroWidthSpace), $BaseEntries[2])
     $lab = New-Lab 'entry-differs-only-by-zero-width-space'
     Set-LabHead $lab (New-LogText ($zeroed + $NewEntry4)) -ChangeKnownFail
-    Assert-GateRefuses 'an existing entry differing only by a zero-width space' $lab
+    Assert-GateRefuses 'an existing entry differing only by a zero-width space' $lab $AppendOnly2
 
     # 7. Entries deleted and more added, so the total count still goes up. This is the bypass the
     #    header comment's point 1 records: three entries become four while two of the original
     #    three are gone. Only an entry-by-entry prefix comparison sees it.
     $lab = New-Lab 'entries-deleted-but-count-rises'
     Set-LabHead $lab (New-LogText @($BaseEntries[2], $NewEntry4, $NewEntry5, $NewEntry6)) -ChangeKnownFail
-    Assert-GateRefuses 'two entries deleted and three added (count still rises)' $lab
+    Assert-GateRefuses 'two entries deleted and three added (count still rises)' $lab $AppendOnly1
 
     # 8. The log gutted in a commit that touches no gated artifact. A gate that only ran its
     #    append-only comparison when known-fail.tsv itself had changed would report "Nothing to
     #    check" and exit 0 here. The prefix comparison has to run whenever the LOG moved.
     $lab = New-Lab 'log-gutted-without-known-fail-change'
     Set-LabHead $lab 'Every entry removed; nothing date-prefixed is left in this file.'
-    Assert-GateRefuses 'the log gutted in a commit that touches no known-fail.tsv' $lab
+    Assert-GateRefuses 'the log gutted in a commit that touches no known-fail.tsv' $lab $AppendOnly1
 
     # 9. A new entry that is a bare date and nothing else. It satisfies "the count went up" while
     #    giving a reviewer nothing at all to read, which is the entire point of demanding an entry.
     $lab = New-Lab 'vacuous-new-entry'
     Set-LabHead $lab (New-LogText ($BaseEntries + '2026-01-04 .')) -ChangeKnownFail
-    Assert-GateRefuses 'a new entry with no real content' $lab
+    Assert-GateRefuses 'a new entry with no real content' $lab $NoSubstance
 
     # 10. Line endings must stay invisible. HEAD's working tree holds the log as CRLF (this
     #     sidecar has no eol pin in .gitattributes, so a Windows checkout or a fresh worktree under

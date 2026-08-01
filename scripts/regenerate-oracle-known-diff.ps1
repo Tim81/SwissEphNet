@@ -106,16 +106,24 @@ function Get-GridPaths {
             Name          = 'Analytic'
             KnownDiffPath = Join-Path $oracleDir 'known-diff.tsv'
             LogPath       = Join-Path $oracleDir 'regenerations.log'
-            CDumpPath     = Join-Path $repoRoot 'external\.c-reference\dump-c-2.10.03.tsv'
-            NetDumpPath   = Join-Path $repoRoot 'external\.c-reference\dump-net.tsv'
+            # Forward slashes, like the three paths above. A backslash is an ordinary filename
+            # character on Linux rather than a separator, so each of these would resolve to one
+            # file literally named "external\.c-reference\dump-c-2.10.03.tsv" there. The commit
+            # that converted this script said it fixed "all three of its path literals"; it fixed
+            # the three above and left these four, so the file was half-converted. Unlike the
+            # sidecar-path defect in verify-baseline-log.ps1 this is latent rather than live --
+            # Get-GridPaths is only reached in the real regeneration mode, which -SelfTest exits
+            # before, so no self-test case here can see it either way.
+            CDumpPath     = Join-Path $repoRoot 'external/.c-reference/dump-c-2.10.03.tsv'
+            NetDumpPath   = Join-Path $repoRoot 'external/.c-reference/dump-net.tsv'
         }
     }
     return [pscustomobject]@{
         Name          = 'Files'
         KnownDiffPath = Join-Path $oracleDir 'known-diff-files.tsv'
         LogPath       = Join-Path $oracleDir 'regenerations-files.log'
-        CDumpPath     = Join-Path $repoRoot 'external\.c-reference\dump-c-2.10.03-files.tsv'
-        NetDumpPath   = Join-Path $repoRoot 'external\.c-reference\dump-net-files.tsv'
+        CDumpPath     = Join-Path $repoRoot 'external/.c-reference/dump-c-2.10.03-files.tsv'
+        NetDumpPath   = Join-Path $repoRoot 'external/.c-reference/dump-net-files.tsv'
     }
 }
 

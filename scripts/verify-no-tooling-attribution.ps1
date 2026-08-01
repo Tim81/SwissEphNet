@@ -551,6 +551,28 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 $cleanName = 'Timothy van der Ham'
 $cleanEmail = 'tvdham@hotmail.com'
 
+function Invoke-LabGit {
+    # Every fixture git command goes through here, for two reasons that both produced a real defect.
+    #
+    # The exit code is read straight from $LASTEXITCODE -- no pipeline in between, which would
+    # report the pipe's last stage -- and a non-zero one throws instead of being discarded. The
+    # previous `& git ... 2>&1 | Out-Null` shape threw away the message AND the code, so a fixture
+    # command that did not run left the lab in a state no case asserted anything about. That is not
+    # hypothetical: the merge below passed no identity, and a machine with no global or system git
+    # config (every CI runner) made it exit 128 with "Committer identity unknown". The merge
+    # silently did not happen, the lab was left with HEAD == base, the gate correctly reported 0
+    # commits and exited 0, and that case failed on every CI run while passing on any developer
+    # machine whose user-level .gitconfig happened to supply an identity. A fixture whose failure is
+    # invisible turns the case built on it into a coin flip.
+    #
+    # No param block, so `-C`, `--` and a bare branch name reach git verbatim rather than being
+    # parsed as this function's own parameters.
+    $output = & git @args 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw ("self-test fixture command failed (exit $LASTEXITCODE): git $($args -join ' ')`n" + (@($output) -join "`n"))
+    }
+}
+
 function Set-LabFile {
     param([string] $LabRoot, [string] $RelPath, [string[]] $Lines, [System.Text.Encoding] $Encoding)
 
@@ -573,11 +595,11 @@ function Add-LabCommit {
         [string] $CommitterName = $cleanName,
         [string] $CommitterEmail = $cleanEmail)
 
-    foreach ($path in $Paths) { & git -C $LabRoot add -- $path 2>&1 | Out-Null }
+    foreach ($path in $Paths) { Invoke-LabGit -C $LabRoot add -- $path }
     $env:GIT_COMMITTER_NAME = $CommitterName
     $env:GIT_COMMITTER_EMAIL = $CommitterEmail
     try {
-        & git -C $LabRoot -c "user.name=$AuthorName" -c "user.email=$AuthorEmail" commit -q -m $Message 2>&1 | Out-Null
+        Invoke-LabGit -C $LabRoot -c "user.name=$AuthorName" -c "user.email=$AuthorEmail" commit -q -m $Message
     }
     finally {
         Remove-Item Env:\GIT_COMMITTER_NAME -ErrorAction SilentlyContinue
@@ -591,7 +613,7 @@ function New-AttributionLab {
     param([string] $Name)
     $dir = Join-Path $root $Name
     New-Item -ItemType Directory -Path $dir -Force | Out-Null
-    & git init -q $dir 2>&1 | Out-Null
+    Invoke-LabGit init -q $dir
     Set-LabFile $dir 'README.md' @('# Lab', '', 'An ephemeris port, ported by hand.')
     Add-LabCommit -LabRoot $dir -Message 'seed the lab' -Paths @('README.md')
     return $dir
@@ -600,6 +622,13 @@ function New-AttributionLab {
 function Get-LabHead {
     param([string] $LabRoot)
     return (& git -C $LabRoot rev-parse HEAD).Trim()
+}
+
+function Get-LabBranch {
+    # The lab's initial branch by name rather than `git checkout -`, whose name depends on
+    # init.defaultBranch and which reads as a parameter dash at a PowerShell call site.
+    param([string] $LabRoot)
+    return (& git -C $LabRoot rev-parse --abbrev-ref HEAD).Trim()
 }
 
 function Assert-Gate {
@@ -698,7 +727,27 @@ Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'The corpus was generated with
 Add-LabCommit -LabRoot $lab -Message 'add a note' -Paths @('docs/notes.md')
 Assert-Gate 'the legitimate lowercase "generated with" (must not fire)' 'passes' $lab
 
-# 11-12. A violation in a commit message, in the subject and in the body separately. The body case
+# 12. The same legitimate lowercase phrase, in the three places nothing filters it first. Case 11
+#     above cannot see the pattern table losing its case-sensitivity at all: the tracked-file loop
+#     only ever re-examines lines `git grep -P` has ALREADY matched, and git grep applied
+#     '\bGenerated with\b' case-sensitively, so a lowercase "generated with" in an ordinary UTF-8
+#     tracked file never reaches the PowerShell comparison to be mis-compared. Every other leg feeds
+#     that comparison unfiltered -- the UTF-16 decode pass (which reads whole files), the
+#     commit-message scan, the diff scan, the tracked-path scan and the identity scan -- and there
+#     the comparison's own case-sensitivity is the only thing between this sentence and a failure.
+#     Measured: replacing [regex]::IsMatch with PowerShell's -match, which is case-insensitive
+#     whatever the pattern string says and is the second of the two defects this table has actually
+#     had, left all of the other cases green and is caught only here. The same phrase is planted
+#     three times on purpose, once per unfiltered leg, so this case cannot be satisfied by whichever
+#     leg happens to still be right.
+$lab = New-AttributionLab 'lowercase-generated-with-unfiltered'
+$base = Get-LabHead $lab
+Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'The corpus was generated with setest.')
+Set-LabFile $lab 'docs/notes-utf16.md' @('# Notes', '', 'The corpus was generated with setest.') ([System.Text.Encoding]::Unicode)
+Add-LabCommit -LabRoot $lab -Message "Add two notes`n`nThe corpus was generated with setest." -Paths @('docs/notes.md', 'docs/notes-utf16.md')
+Assert-Gate 'the lowercase "generated with" in a UTF-16 file, a commit message and a diff (must not fire)' 'passes' $lab -CommitRange "$base..HEAD"
+
+# 13-14. A violation in a commit message, in the subject and in the body separately. The body case
 #        is the one that matters: a trailer appended by tooling lands there, several lines below a
 #        subject that reads perfectly clean, and a scan reading only the subject sees nothing.
 $lab = New-AttributionLab 'message-subject'
@@ -713,20 +762,35 @@ Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'A note.')
 Add-LabCommit -LabRoot $lab -Message "Add a note`n`nAn ordinary body paragraph.`n`nCo-Authored-By: someone <someone@example.org>" -Paths @('docs/notes.md')
 Assert-Gate 'a violation in a commit body, several lines below a clean subject' 'fails' $lab -CommitRange "$base..HEAD" -Matching "matches 'Co-Authored-By' trailer"
 
-# 13. A merge commit in the range. `git log <range>` walks both parents, so the offending commit on
+# 15. A merge commit in the range. `git log <range>` walks both parents, so the offending commit on
 #     the side branch is visited on its own -- but a range whose only new commit is the merge, with
 #     the violation on the branch it merges, is exactly the shape a first-parent-only or
 #     diff-of-the-merge-alone reading would miss.
+#
+#     The violation lives in the side commit's MESSAGE, and the file it commits is clean. That is
+#     the whole point: nothing offending reaches HEAD's tree, so the tracked-file scan has nothing
+#     to find and only a walk that visits both parents sees the side commit at all. An earlier
+#     version of this case put the violation in a file that survived the merge into HEAD -- measured,
+#     that plant failed the gate with no -CommitRange passed at all, so it demonstrated the
+#     tracked-file scan working and said nothing whatever about merge traversal.
 $lab = New-AttributionLab 'merge-commit'
 $base = Get-LabHead $lab
-& git -C $lab checkout -q -b side
-Set-LabFile $lab 'docs/side.md' @('# Side', '', 'Suggested by Copilot.')
-Add-LabCommit -LabRoot $lab -Message 'add a side note' -Paths @('docs/side.md')
-& git -C $lab checkout -q -
-& git -C $lab merge -q --no-ff side -m 'merge the side branch' 2>&1 | Out-Null
-Assert-Gate 'a violation reachable only through a merge commit' 'fails' $lab -CommitRange "$base..HEAD" -Matching "'copilot'"
+$mainBranch = Get-LabBranch $lab
+Invoke-LabGit -C $lab checkout -q -b side
+Set-LabFile $lab 'docs/side.md' @('# Side', '', 'An ordinary side note, written by hand.')
+Add-LabCommit -LabRoot $lab -Message "Add a side note`n`nSuggested by Copilot." -Paths @('docs/side.md')
+Invoke-LabGit -C $lab checkout -q $mainBranch
+# An identity, and a checked exit code. Every other commit in this self-test goes through
+# Add-LabCommit, which has always passed -c user.name / -c user.email; this one call passed none and
+# swallowed its own result through `2>&1 | Out-Null`. On a machine with no global or system git
+# config -- every CI runner -- git therefore exited 128 with "Committer identity unknown", the merge
+# did not happen, and this case reported "expected the gate to fail, got exit 0" on every CI run
+# while passing locally off a user-level .gitconfig. Reproduce the runner's state by pointing
+# GIT_CONFIG_GLOBAL and GIT_CONFIG_SYSTEM at an empty file.
+Invoke-LabGit -C $lab -c "user.name=$cleanName" -c "user.email=$cleanEmail" merge -q --no-ff side -m 'merge the side branch'
+Assert-Gate 'a violation reachable only through a merge commit' 'fails' $lab -CommitRange "$base..HEAD" -Matching "matches 'copilot'"
 
-# 14. A file added and deleted again inside the same range. It never reaches HEAD, so the
+# 16. A file added and deleted again inside the same range. It never reaches HEAD, so the
 #     tracked-file scan cannot see it and the commit-message scan has nothing to read -- yet the
 #     text is permanently in the published history, which is the whole point of the check. Only the
 #     per-commit diff scan sees it.
@@ -738,7 +802,7 @@ Remove-Item -LiteralPath (Join-Path $lab 'docs/draft.md') -Force
 Add-LabCommit -LabRoot $lab -Message 'drop the draft' -Paths @('docs/draft.md')
 Assert-Gate 'a file added and deleted again inside one range' 'fails' $lab -CommitRange "$base..HEAD" -Matching 'added a line matching'
 
-# 15. A violation in a path with entirely clean content. `git grep` has no mode that reports a
+# 17. A violation in a path with entirely clean content. `git grep` has no mode that reports a
 #     match against a path, so the content scan cannot produce a line for this however the patterns
 #     are written -- and this is a conventional filename that can land without anyone intending an
 #     attribution claim at all.
@@ -747,7 +811,7 @@ Set-LabFile $lab '.github/copilot-instructions.md' @('# Instructions', '', 'Buil
 Add-LabCommit -LabRoot $lab -Message 'add instructions' -Paths @('.github/copilot-instructions.md')
 Assert-Gate 'a violation in a path whose content is clean' 'fails' $lab -Matching "tracked path '.github/copilot-instructions.md'"
 
-# 16. A tracked file saved as UTF-16LE. git grep matches bytes and UTF-16 stores every ASCII
+# 18. A tracked file saved as UTF-16LE. git grep matches bytes and UTF-16 stores every ASCII
 #     character as two of them, so no flag makes the pattern occur in that file -- -a stops git
 #     skipping a file, which is not the same as being able to read one. Measured: this exited 0.
 $lab = New-AttributionLab 'utf16-content'
@@ -755,16 +819,16 @@ Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'Written with help from Claude
 Add-LabCommit -LabRoot $lab -Message 'add a note' -Paths @('docs/notes.md')
 Assert-Gate 'a tracked file saved as UTF-16LE' 'fails' $lab -Matching "product name 'Claude'"
 
-# 17. A UTF-16LE file with clean content must still pass, so that the decode pass added for case 16
+# 19. A UTF-16LE file with clean content must still pass, so that the decode pass added for case 18
 #     stays a content check rather than an encoding policy.
 $lab = New-AttributionLab 'utf16-clean'
 Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'An ordinary note, written by hand.') ([System.Text.Encoding]::Unicode)
 Add-LabCommit -LabRoot $lab -Message 'add a note' -Paths @('docs/notes.md')
 Assert-Gate 'a UTF-16LE file with clean content (must not fire)' 'passes' $lab
 
-# 18. One stray embedded NUL byte in an otherwise ordinary UTF-8 file. That alone makes git's
+# 20. One stray embedded NUL byte in an otherwise ordinary UTF-8 file. That alone makes git's
 #     content heuristic call the file binary, and -I skipped it entirely; the text around the NUL
-#     is still ASCII, so -a is genuinely sufficient here, unlike case 16.
+#     is still ASCII, so -a is genuinely sufficient here, unlike case 18.
 $lab = New-AttributionLab 'embedded-nul'
 $nulPath = Join-Path $lab 'docs/notes.md'
 New-Item -ItemType Directory -Path (Split-Path -Parent $nulPath) -Force | Out-Null
@@ -775,7 +839,7 @@ New-Item -ItemType Directory -Path (Split-Path -Parent $nulPath) -Force | Out-Nu
 Add-LabCommit -LabRoot $lab -Message 'add a note' -Paths @('docs/notes.md')
 Assert-Gate 'a file with one stray embedded NUL byte' 'fails' $lab -Matching "product name 'Claude'"
 
-# 19-20. A .gitattributes entry marking an ordinary text file `binary`, and one marking it `-diff`.
+# 21-22. A .gitattributes entry marking an ordinary text file `binary`, and one marking it `-diff`.
 #        This is the second, independent way -I skipped a file: not the content at all, but an
 #        attribute someone can add in one line, to a file that stays plain UTF-8 text. This
 #        repository's own .gitattributes already ships commented-out template blocks for both.
@@ -787,7 +851,7 @@ foreach ($attr in @('binary', '-diff')) {
     Assert-Gate "a text file marked ``$attr`` in .gitattributes" 'fails' $lab -Matching "product name 'Claude'"
 }
 
-# 21-22. An author identity, and a committer identity, that are not the fork's. The pattern table
+# 23-24. An author identity, and a committer identity, that are not the fork's. The pattern table
 #        cannot catch these: it matches vendor and product names, and a placeholder address names
 #        no vendor. That exact address reached 14 commits on this branch with the identity scan
 #        already in place and this script still exiting 0 -- the scan read the right four fields,
@@ -807,7 +871,20 @@ Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'A note.')
 Add-LabCommit -LabRoot $lab -Message 'add a note' -Paths @('docs/notes.md') -CommitterName 'test' -CommitterEmail 'test@example.com'
 Assert-Gate 'a placeholder committer identity, with a clean author' 'fails' $lab -CommitRange "$base..HEAD" -Matching 'committer email .* is a placeholder address'
 
-# 23. A clean range. Without this every case above could be satisfied by a check that fails on
+# 25. A tool identity on the commit itself. Cases 23 and 24 above catch a PLACEHOLDER identity, by
+#     the reserved-domain rule; nothing caught a TOOL identity, which is the other half of what the
+#     identity scan exists for and answers to a different rule entirely -- the pattern table, not
+#     RFC 2606/6761. An address at a real vendor's domain is in no reserved TLD, so the rule cases
+#     23 and 24 exercise cannot see it, and the name is what the table matches on. Measured:
+#     deleting the pattern table's pass over %an/%ae/%cn/%ce outright left every other case in this
+#     file green, so that half of the scan could have been removed with nothing going red.
+$lab = New-AttributionLab 'vendor-identity'
+$base = Get-LabHead $lab
+Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'A note.')
+Add-LabCommit -LabRoot $lab -Message 'add a note' -Paths @('docs/notes.md') -AuthorName 'Claude' -AuthorEmail 'noreply@anthropic.com'
+Assert-Gate 'a tool identity on the commit, which no reserved-domain rule can see' 'fails' $lab -CommitRange "$base..HEAD" -Matching 'author name .* matches product name'
+
+# 26. A clean range. Without this every case above could be satisfied by a check that fails on
 #     everything -- and this one exercises the range legs too, which the tracked-file cases skip.
 $lab = New-AttributionLab 'clean'
 $base = Get-LabHead $lab
