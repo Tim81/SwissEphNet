@@ -25,3 +25,10 @@ not exist on the integration branch once it lands).
    line in SwissEphNet/CPort moved. SwissEphNet/CPort: 48411 -> 48419 lines, 1259 -> 1258
    trailing-whitespace lines (one commented C line's trailing space was trimmed while
    restoring it), sha256 6A8B1530... -> 6944FDFD....
+2. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01: Added the
+   JD-range guard sweph.c:994-1006 has on SE_INTP_PERG (interpolated lunar perigee), mirroring
+   the SE_INTP_APOG guard already at Sweph.cs:1161-1168 just above it in the same file. Fidelity
+   fix, not a re-transliteration: no other line in SwissEphNet/CPort moved. Flips suite 1
+   testcase 1 iterations 377, 379, 383 and 385 in Tests/conformance/known-fail.tsv from failing
+   to passing (via scripts/regenerate-known-fail.ps1 -PruneOnly, 1427 -> 1423 rows). SwissEphNet/
+   CPort: 48419 -> 48427 lines, sha256 6944FDFD... -> 97CEB47C....

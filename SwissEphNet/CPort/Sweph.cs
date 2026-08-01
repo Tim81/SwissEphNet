@@ -1185,6 +1185,14 @@ namespace SwissEphNet.CPort
                         x[i] = 0;
                     return iflag;
                 }
+                if (tjd < MOSHLUEPH_START || tjd > MOSHLUEPH_END)
+                {
+                    for (i = 0; i < 24; i++)
+                        x[i] = 0;
+                    serr = C.sprintf("Interpolated apsides are restricted to JD %8.1f - JD %8.1f",
+                            MOSHLUEPH_START, MOSHLUEPH_END);
+                    return ERR;
+                }
                 ndp = swed.nddat[SEI_INTP_PERG];
                 xp = ndp.xreturn;
                 retc = intp_apsides(tjd, SEI_INTP_PERG, iflag, ref serr);
