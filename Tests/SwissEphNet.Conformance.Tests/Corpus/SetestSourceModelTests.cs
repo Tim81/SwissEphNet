@@ -181,7 +181,7 @@ public class SetestSourceModelTests
 
             // Non-triviality floors are a property of the real corpus, so the
             // synthetic sources are parsed through the same entry point but only
-            // ever inspected for their name sets -- LoadForTesting skips the floors.
+            // ever inspected for their name sets -- LoadWithoutFloors skips the floors.
             return SetestSourceModel.LoadWithoutFloors(dir);
         }
         finally
