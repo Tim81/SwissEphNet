@@ -30,6 +30,54 @@ internal static class CoordHelpers
         AddCotransSpRadius(rows);
         AddAzalt(rows);
         AddAzaltRev(rows);
+        CheckRadiusPassthroughReached(rows);
+    }
+
+    // The CTR/CTSR sweeps exist for one behavior and one only: swe_cotrans copying
+    // xpo[2] into xpn[2] verbatim, and swe_cotrans_sp doing the same for xpo[2] and
+    // xpo[5]. That copy has no observable effect unless two rows pass different radii,
+    // which is why the whole area proved nothing about it while every caller passed
+    // 1.0 -- "copy the caller's radius" and "write a hardcoded 1.0" produce the same
+    // 100 rows. Adding the sweeps fixed that, but nothing yet stopped a later edit
+    // from folding a constant back into the case body (leaving the case id still
+    // parameterized by radius) or trimming Radii to a single entry: either one puts
+    // the area straight back into the state it was added to get out of, with the same
+    // row count, the same case ids and a green gate.
+    //
+    // So assert the evidence rather than the row: for each (lon, lat), the rows for
+    // the different radii must not be byte-identical. This runs before any of this
+    // area's rows reach a file (see Reachability's doc comment).
+    private static void CheckRadiusPassthroughReached(List<string> rows)
+    {
+        if (Radii.Length < 2)
+        {
+            throw new InvalidOperationException(
+                "CTR/CTSR sweeps need at least 2 radii to make the radius passthrough observable at all, but Radii " +
+                $"has {Radii.Length}. With a single radius the sweep still emits every row it always did, and not one " +
+                "of them distinguishes a real passthrough from a hardcoded constant -- exactly the blind spot these " +
+                "two sweeps were added to close.");
+        }
+
+        var index = Reachability.IndexPayloads(rows);
+        foreach (var lon in Lons)
+        {
+            foreach (var lat in Lats)
+            {
+                Reachability.RequireDistinctPayloads(
+                    index,
+                    "CTR",
+                    "swe_cotrans's radius passthrough (xpn[2] = xpo[2])",
+                    "Reaching it requires the radius handed to swe_cotrans to be the one named in the case id, not a constant.",
+                    [.. Radii.Select(radius => $"CTR|{D(lon)}|{D(lat)}|{D(radius)}")]);
+
+                Reachability.RequireDistinctPayloads(
+                    index,
+                    "CTSR",
+                    "swe_cotrans_sp's radius passthrough (xpn[2] = xpo[2] and xpn[5] = xpo[5])",
+                    "Reaching it requires the radius handed to swe_cotrans_sp to be the one named in the case id, not a constant.",
+                    [.. Radii.Select(radius => $"CTSR|{D(lon)}|{D(lat)}|{D(radius)}")]);
+            }
+        }
     }
 
     private static void AddCotrans(List<string> rows)

@@ -70,6 +70,9 @@ internal static class AstroModels
         AddVersionStringRows(rows);
         AddInterpolateNutRows(rows);
         AddListAllModelsRow(rows);
+
+        CheckInterpolateNutReached(rows);
+        CheckDeltaTWindowReached(rows);
     }
 
     private static string BuildSamod(int modelIndex, int value)
@@ -154,11 +157,16 @@ internal static class AstroModels
         }
     }
 
+    // Hoisted out of AddInterpolateNutRows so CheckInterpolateNutReached below can name
+    // the same Julian days the sweep emits rows for, instead of re-deriving them a
+    // second way and quietly checking a different set if one of the two ever changes.
+    private static readonly double[] NutJds = Grids.JdSpread(3);
+
     private static void AddInterpolateNutRows(List<string> rows)
     {
         foreach (var doInterpolate in new[] { false, true })
         {
-            foreach (var jd in Grids.JdSpread(3))
+            foreach (var jd in NutJds)
             {
                 foreach (var ipl in CalcBodies)
                 {
@@ -228,5 +236,107 @@ internal static class AstroModels
             swe.swe_get_astro_models("+", out var sdet, MOSEPH);
             return [S(sdet)];
         }));
+    }
+
+    // AMNUT|True and AMNUT|False were byte-identical for every jd/ipl while the sweep
+    // set the flag on a fresh instance before any swe_calc: swi_init_swed_if_start's
+    // one-time reset wiped do_interpolate_nut before it could ever be read, so the
+    // whole interpolated-nutation path was dead and the "False" rows and the "True"
+    // rows described the same computation. Nothing about the emitted rows said so --
+    // there were still twelve of them, still with the two distinct case-id prefixes.
+    //
+    // Their being identical is therefore the symptom itself, and their differing is
+    // the evidence the path is reached. Any future edit that drops the warm-up call,
+    // reverts to a fresh instance per recorded call, or drops the second call inside
+    // the one-day interpolation window collapses the pair back together and fails
+    // here, before any of this area's rows reach a file.
+    private static void CheckInterpolateNutReached(List<string> rows)
+    {
+        var index = Reachability.IndexPayloads(rows);
+        foreach (var jd in NutJds)
+        {
+            foreach (var ipl in CalcBodies)
+            {
+                Reachability.RequireDistinctPayloads(
+                    index,
+                    "AMNUT",
+                    "swi_nutation's interpolated-nutation path (SwephLib.cs:2202-2205's quadratic_intp)",
+                    "Reaching it requires swe_set_interpolate_nut(true) to be called AFTER a warm-up swe_calc has " +
+                    "absorbed swi_init_swed_if_start's one-time reset, and a second swe_calc within one day of the " +
+                    "first on the SAME instance.",
+                    $"AMNUT|{B(false)}|{D(jd)}|{I(ipl)}",
+                    $"AMNUT|{B(true)}|{D(jd)}|{I(ipl)}");
+            }
+        }
+    }
+
+    // calc_deltat's own year formula, SwephLib.cs:2665.
+    private const double J2000 = 2451545.0;
+
+    // SwephLib.cs:2756 gates the SEMOD_DELTAT_STEPHENSON_MORRISON_1984 model on
+    // Y < TABSTART (1620, SwephLib.cs:2494); SwephLib.cs:2758 then splits that at
+    // Y >= 948 into Stephenson & Morrison's own formula (stated domain 948 to 1600)
+    // and Borkowski's fallback below it. CalcJds alone reached only the fallback
+    // (JD 1,000,000 is year ~-1974) and the post-1620 tables (JD 2,600,000 is year
+    // ~2406), so the model's own formula was never evaluated by anything here.
+    private const double Sm1984YearFloor = 948.0;
+    private const double Sm1984YearCeiling = 1620.0;
+
+    private static double DeltaTYear(double tjd) => 2000.0 + (tjd - J2000) / 365.25;
+
+    // Two things have to hold at once for that branch to be reached, because it is
+    // gated on a conjunction: the DELTAT dimension must sweep the model, and some
+    // AMSDT Julian day must land inside the year window. Straddling the window emits
+    // every AMSDT row exactly as landing inside it does, which is how this stayed
+    // unreached; so assert the input lands where it must, then confirm the model is
+    // observable there by requiring its row to differ from every other DELTAT value's
+    // row at the same Julian day.
+    private static void CheckDeltaTWindowReached(List<string> rows)
+    {
+        const int sm1984 = SwissEph.SEMOD_DELTAT_STEPHENSON_MORRISON_1984;
+
+        var deltat = Array.Find(Dimensions, dimension => string.Equals(dimension.Name, "DELTAT", StringComparison.Ordinal));
+        if (deltat.Values is null || !deltat.Values.Contains(sm1984))
+        {
+            throw new InvalidOperationException(
+                "AMSDT sweep is no longer reaching SwephLib.cs:2756's SEMOD_DELTAT_STEPHENSON_MORRISON_1984 branch: " +
+                $"the DELTAT dimension does not sweep model value {I(sm1984)} at all. No other sweep in this matrix " +
+                "varies deltat_model, so nothing else can reach it either.");
+        }
+
+        var inWindow = Array.FindAll(AmsdtJds, jd => DeltaTYear(jd) >= Sm1984YearFloor && DeltaTYear(jd) < Sm1984YearCeiling);
+        if (inWindow.Length == 0)
+        {
+            throw new InvalidOperationException(
+                "AMSDT sweep is no longer reaching SwephLib.cs:2756-2764's SEMOD_DELTAT_STEPHENSON_MORRISON_1984 " +
+                $"formula: none of its Julian days lands inside the [{D(Sm1984YearFloor)}, {D(Sm1984YearCeiling)}) " +
+                "year window that branch is gated on. Julian days swept, with the year calc_deltat derives from each " +
+                "(Y = 2000 + (tjd - J2000) / 365.25): " +
+                string.Join("; ", AmsdtJds.Select(jd => $"{D(jd)} -> {D(DeltaTYear(jd))}")) + ". " +
+                "Days that straddle the window without landing in it emit every AMSDT row unchanged and take some " +
+                "other deltat branch entirely, which is how this sweep was dead while its gate stayed green.");
+        }
+
+        var index = Reachability.IndexPayloads(rows);
+        foreach (var jd in inWindow)
+        {
+            foreach (var other in deltat.Values)
+            {
+                if (other == sm1984)
+                {
+                    continue;
+                }
+
+                Reachability.RequireDistinctPayloads(
+                    index,
+                    "AMSDT",
+                    "SwephLib.cs:2756-2764's SEMOD_DELTAT_STEPHENSON_MORRISON_1984 formula at year " +
+                    D(DeltaTYear(jd)),
+                    $"Reaching it requires both halves of that branch's conjunction: deltat_model = {I(sm1984)} and a " +
+                    $"Julian day inside [{D(Sm1984YearFloor)}, {D(Sm1984YearCeiling)}).",
+                    $"AMSDT|DELTAT|{I(sm1984)}|{D(jd)}",
+                    $"AMSDT|DELTAT|{I(other)}|{D(jd)}");
+            }
+        }
     }
 }
