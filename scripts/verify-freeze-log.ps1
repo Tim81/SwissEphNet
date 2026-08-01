@@ -21,10 +21,25 @@
     something to read that explains why the fingerprint moved, the same standard
     verify-baseline-log.ps1 already holds Tests/baseline/*.tsv to.
 
-    Counts numbered entries ("1. ", "2. ", ...) under the sidecar's "## Manifest updates" heading
-    at -BaseRef and at HEAD; a manifest change without the count going up is a failure. Unlike
-    Tests/baseline/baseline-*.env.txt, the sidecar here has one fixed name and is not renamed by
-    anything, so it is read by path directly at each ref rather than discovered by a glob pattern.
+    Extracts numbered entries ("1. ", "2. ", ...) under the sidecar's "## Manifest updates"
+    heading at -BaseRef and at HEAD, and requires two things, not one:
+
+      1. Every entry present at -BaseRef must still be present, verbatim and in the same order,
+         at HEAD -- the base entry list must be a prefix of the head entry list. A count-only
+         comparison ("did the number go up") is satisfied by deleting an old entry and adding two
+         new ones, which destroys history while reporting progress; this was demonstrated against
+         an earlier version of this script (a 3-entry log rewritten to drop entry 2 and add two
+         replacements printed "gained 1 entry (3 -> 4)" and exited 0). Comparing entries, not just
+         counting them, is what makes the log actually append-only rather than append-only in name.
+      2. Every entry added since -BaseRef must have real content: a bare "." or a numbered line
+         with nothing readable after it satisfies a presence check but gives a reviewer nothing to
+         read, which is the entire point of requiring an entry at all. See
+         $MinNewEntrySubstanceChars below for the exact bar and why a small fixed floor was chosen
+         over no floor at all.
+
+    Unlike Tests/baseline/baseline-*.env.txt, the sidecar here has one fixed name and is not
+    renamed by anything, so it is read by path directly at each ref rather than discovered by a
+    glob pattern.
 
     Needs enough history to resolve -BaseRef (fetch-depth: 0, or an explicit fetch of the base
     commit) -- a shallow checkout will make this fail with a clear message rather than silently
@@ -70,19 +85,46 @@ if (-not $changed) {
 Write-Host "$manifestRelPath changed between $BaseRef and HEAD."
 Write-Host ""
 
-function Get-LogEntryCount {
-    # Scoped to the "## Manifest updates" section, not the whole file -- a numbered line
-    # appearing anywhere else (this file's own header prose, a future section) should not count.
+# Below this many letters/digits (numbering and punctuation stripped), a new entry is rejected as
+# having no real content -- see the header comment's point 2. Chosen well under every genuine
+# entry in scripts/freeze-manifest-log.txt today (the shortest reads in the hundreds of
+# characters) and well over what a placeholder like "." or "4. " or "TODO" can reach, so this
+# floor rejects the vacuous case demonstrated in review without being able to reject a real entry
+# by accident.
+$MinNewEntrySubstanceChars = 20
+
+# Scoped to the "## Manifest updates" section, not the whole file -- a numbered line appearing
+# anywhere else (this file's own header prose, a future section) should not count. Returns the
+# entries themselves, each trimmed of trailing whitespace, in file order -- not just a count --
+# so the caller can both compare entry text (append-only prefix check) and inspect each new
+# entry's content (substance check), neither of which a bare count can do.
+function Get-LogEntries {
     param([string] $Content)
     if ([string]::IsNullOrEmpty($Content)) {
-        return 0
+        return @()
     }
     $idx = $Content.IndexOf('## Manifest updates')
     if ($idx -lt 0) {
-        return 0
+        return @()
     }
     $section = $Content.Substring($idx)
-    return ([regex]::Matches($section, '(?m)^\d+\. ')).Count
+    $starts = [regex]::Matches($section, '(?m)^\d+\. ')
+    $entries = [System.Collections.Generic.List[string]]::new()
+    for ($i = 0; $i -lt $starts.Count; $i++) {
+        $entryStart = $starts[$i].Index
+        $entryEnd = if ($i + 1 -lt $starts.Count) { $starts[$i + 1].Index } else { $section.Length }
+        $entries.Add($section.Substring($entryStart, $entryEnd - $entryStart).TrimEnd())
+    }
+    return $entries.ToArray()
+}
+
+# True when $Entry (one element of Get-LogEntries' return, numbering still attached) has enough
+# actual content to be worth a reviewer's time -- see $MinNewEntrySubstanceChars above.
+function Test-EntryHasSubstance {
+    param([string] $Entry)
+    $body = $Entry -replace '^\d+\.\s*', ''
+    $meaningfulChars = ($body -replace '[^\p{L}\p{N}]', '')
+    return $meaningfulChars.Length -ge $MinNewEntrySubstanceChars
 }
 
 if (-not (Test-Path -LiteralPath $sidecarFullPath -PathType Leaf)) {
@@ -112,8 +154,17 @@ else {
     $baseContent = $baseContentLines -join "`n"
 }
 
-$baseCount = Get-LogEntryCount $baseContent
-$headCount = Get-LogEntryCount $headContent
+# @() wraps deliberately: PowerShell unrolls a single-element array on return into a bare scalar,
+# which would silently turn $baseEntries[0] on a one-entry log into that entry's first CHARACTER
+# ($baseEntries.Count would then read the string's own .Count, which PowerShell's adapter reports
+# as 1, hiding the problem completely) instead of the entry text. @() forces array shape
+# regardless of how many entries Get-LogEntries found, matching this repository's own convention
+# for the same hazard (see e.g. regenerate-baseline.ps1's @($ExpectedScope | ...) and
+# @($existingSidecars)).
+$baseEntries = @(Get-LogEntries $baseContent)
+$headEntries = @(Get-LogEntries $headContent)
+$baseCount = $baseEntries.Count
+$headCount = $headEntries.Count
 
 if ($headCount -le $baseCount) {
     Write-Error @"
@@ -132,7 +183,49 @@ change, this manifest update is very likely an unexcluded reformat -- see CONTRI
     exit 1
 }
 
+# Append-only check: every entry that existed at -BaseRef must still read identically, in the
+# same position, at HEAD. A count that only goes up is not enough on its own -- see the header
+# comment's point 1 for the demonstrated bypass (delete one entry, add two, count still rises).
+for ($i = 0; $i -lt $baseCount; $i++) {
+    if ($headEntries[$i] -ne $baseEntries[$i]) {
+        Write-Error @"
+$sidecarRelPath's '## Manifest updates' log is append-only, but entry #$($i + 1) differs between
+$BaseRef and HEAD -- it was edited, reordered or removed rather than left alone.
+
+Base entry #$($i + 1):
+$($baseEntries[$i])
+
+HEAD entry #$($i + 1):
+$($headEntries[$i])
+
+If an old entry was wrong, add a NEW entry noting the correction instead of rewriting history in
+place -- an append-only log that gets edited is no longer append-only, and Tests/baseline/
+baseline-2.8.0.2.env.txt's own '## Local regenerations' log documents exactly this convention for
+entries 2 to 4 (left as originally written, with the misattribution noted afterward, rather than
+silently corrected).
+"@
+        exit 1
+    }
+}
+
+# Substance check: every entry added since -BaseRef must have real content, not just a numbered
+# line -- see the header comment's point 2 and `Test-EntryHasSubstance` above.
+for ($i = $baseCount; $i -lt $headCount; $i++) {
+    if (-not (Test-EntryHasSubstance $headEntries[$i])) {
+        Write-Error @"
+$sidecarRelPath's '## Manifest updates' log gained entry #$($i + 1), but it has no real content
+for a reviewer to read (fewer than $MinNewEntrySubstanceChars letters/digits once the numbering
+is stripped):
+
+$($headEntries[$i])
+
+Describe what changed and cite the C, the same way every existing entry in this log does.
+"@
+        exit 1
+    }
+}
+
 $gained = $headCount - $baseCount
 $plural = if ($gained -eq 1) { 'entry' } else { 'entries' }
-Write-Host "OK: $sidecarRelPath's manifest-updates log gained $gained $plural ($baseCount -> $headCount)."
+Write-Host "OK: $sidecarRelPath's manifest-updates log gained $gained $plural ($baseCount -> $headCount), every prior entry unchanged, every new entry has real content."
 exit 0

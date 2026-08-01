@@ -13,9 +13,15 @@
     is accompanied by a corresponding entry in the sidecar's append-only log, so a
     reviewer always has something to read that explains the change.
 
-    Counts numbered entries ("1. ", "2. ", ...) under the sidecar's "## Local
-    regenerations" heading at -BaseRef and at HEAD; a TSV change without the count going
-    up is a failure. The sidecar file is discovered by name pattern (baseline-*.env.txt)
+    Extracts numbered entries ("1. ", "2. ", ...) under the sidecar's "## Local
+    regenerations" heading at -BaseRef and at HEAD, and requires two things, not one: every
+    entry present at -BaseRef must still read identically, in the same order, at HEAD (the
+    base entry list must be a prefix of the head entry list -- a count-only comparison is
+    satisfied by deleting an old entry and adding two new ones, which destroys history while
+    reporting progress), and every entry added since -BaseRef must have real content, not
+    just a numbered line with nothing readable after it (see $MinNewEntrySubstanceChars
+    below). A TSV change without the count going up at all is still a failure, as before.
+    The sidecar file is discovered by name pattern (baseline-*.env.txt)
     SEPARATELY at each ref (git ls-tree at -BaseRef, Get-ChildItem at HEAD), never by
     reusing HEAD's filename to look up -BaseRef's content: EnvInfo.SidecarFileName derives the name from
     ReferenceVersion, so a reference-mode regeneration that bumps the version renames the
@@ -73,21 +79,48 @@ if ($sidecars.Count -ne 1) {
 $headContent = Get-Content -Raw -Path $sidecars[0].FullName
 $headSidecarRelPath = "Tests/baseline/$($sidecars[0].Name)"
 
-function Get-LogEntryCount {
+# Below this many letters/digits (numbering and punctuation stripped), a new entry is rejected as
+# having no real content -- see this file's own header comment. Chosen well under every genuine
+# entry in Tests/baseline/baseline-*.env.txt today (the shortest reads in the hundreds of
+# characters) and well over what a placeholder like "." or "4. " or "TODO" can reach, so this
+# floor rejects the vacuous case demonstrated in review without being able to reject a real entry
+# by accident.
+$MinNewEntrySubstanceChars = 20
+
+# Scoped to the "## Local regenerations" section, not the whole file: the automatic "^\d+\. "
+# regex has no other anchor, so a numbered line appearing anywhere else in the sidecar (a
+# numbered list in a comment, a future section) would otherwise count too. The heading is a
+# location to slice from, not just a presence check. Returns the entries themselves, each
+# trimmed of trailing whitespace, in file order -- not just a count -- so the caller can both
+# compare entry text (append-only prefix check) and inspect each new entry's content (substance
+# check), neither of which a bare count can do.
+function Get-LogEntries {
     param([string]$Content)
-    # Scoped to the "## Local regenerations" section, not the whole file: the automatic
-    # "^\d+\. " regex has no other anchor, so a numbered line appearing anywhere else in
-    # the sidecar (a numbered list in a comment, a future section) would otherwise count
-    # too. The heading is a location to slice from, not just a presence check.
     if ([string]::IsNullOrEmpty($Content)) {
-        return 0
+        return @()
     }
     $idx = $Content.IndexOf('## Local regenerations')
     if ($idx -lt 0) {
-        return 0
+        return @()
     }
     $section = $Content.Substring($idx)
-    return ([regex]::Matches($section, '(?m)^\d+\. ')).Count
+    $starts = [regex]::Matches($section, '(?m)^\d+\. ')
+    $entries = [System.Collections.Generic.List[string]]::new()
+    for ($i = 0; $i -lt $starts.Count; $i++) {
+        $entryStart = $starts[$i].Index
+        $entryEnd = if ($i + 1 -lt $starts.Count) { $starts[$i + 1].Index } else { $section.Length }
+        $entries.Add($section.Substring($entryStart, $entryEnd - $entryStart).TrimEnd())
+    }
+    return $entries.ToArray()
+}
+
+# True when $Entry (one element of Get-LogEntries' return, numbering still attached) has enough
+# actual content to be worth a reviewer's time -- see $MinNewEntrySubstanceChars above.
+function Test-EntryHasSubstance {
+    param([string]$Entry)
+    $body = $Entry -replace '^\d+\.\s*', ''
+    $meaningfulChars = ($body -replace '[^\p{L}\p{N}]', '')
+    return $meaningfulChars.Length -ge $MinNewEntrySubstanceChars
 }
 
 # Resolve the sidecar SEPARATELY at $BaseRef, by pattern, rather than reusing HEAD's
@@ -127,8 +160,17 @@ else {
     $baseContent = $baseContentLines -join "`n"
 }
 
-$baseCount = Get-LogEntryCount $baseContent
-$headCount = Get-LogEntryCount $headContent
+# @() wraps deliberately: PowerShell unrolls a single-element array on return into a bare scalar,
+# which would silently turn $baseEntries[0] on a one-entry log into that entry's first CHARACTER
+# ($baseEntries.Count would then read the string's own .Count, which PowerShell's adapter reports
+# as 1, hiding the problem completely) instead of the entry text. @() forces array shape
+# regardless of how many entries Get-LogEntries found, matching this repository's own convention
+# for the same hazard (see e.g. this script's own @($sidecars) above and
+# regenerate-baseline.ps1's @($ExpectedScope | ...) / @($existingSidecars)).
+$baseEntries = @(Get-LogEntries $baseContent)
+$headEntries = @(Get-LogEntries $headContent)
+$baseCount = $baseEntries.Count
+$headCount = $headEntries.Count
 
 if ($headCount -le $baseCount) {
     # Tests/baseline/*.tsv sweeps up three different kinds of file: the golden
@@ -180,7 +222,48 @@ Tests/baseline/, not Tools/BaselineVerify/'.
     exit 1
 }
 
+# Append-only check: every entry that existed at -BaseRef must still read identically, in the
+# same position, at HEAD. A count that only goes up is not enough on its own -- see this file's
+# own header comment for the demonstrated bypass (delete one entry, add two, count still rises).
+for ($i = 0; $i -lt $baseCount; $i++) {
+    if ($headEntries[$i] -ne $baseEntries[$i]) {
+        Write-Error @"
+$headSidecarRelPath's '## Local regenerations' log is append-only, but entry #$($i + 1) differs
+between $BaseRef and HEAD -- it was edited, reordered or removed rather than left alone.
+
+Base entry #$($i + 1):
+$($baseEntries[$i])
+
+HEAD entry #$($i + 1):
+$($headEntries[$i])
+
+If an old entry was wrong, add a NEW entry noting the correction instead of rewriting history in
+place -- an append-only log that gets edited is no longer append-only, and this sidecar's own log
+documents exactly this convention for entries 2 to 4 (left as originally written, with the
+misattribution noted afterward, rather than silently corrected).
+"@
+        exit 1
+    }
+}
+
+# Substance check: every entry added since -BaseRef must have real content, not just a numbered
+# line -- see this file's own header comment and `Test-EntryHasSubstance` above.
+for ($i = $baseCount; $i -lt $headCount; $i++) {
+    if (-not (Test-EntryHasSubstance $headEntries[$i])) {
+        Write-Error @"
+$headSidecarRelPath's '## Local regenerations' log gained entry #$($i + 1), but it has no real
+content for a reviewer to read (fewer than $MinNewEntrySubstanceChars letters/digits once the
+numbering is stripped):
+
+$($headEntries[$i])
+
+Describe what changed and why, the same way every existing entry in this log does.
+"@
+        exit 1
+    }
+}
+
 $gained = $headCount - $baseCount
 $plural = if ($gained -eq 1) { 'entry' } else { 'entries' }
-Write-Host "OK: $headSidecarRelPath's regenerations log gained $gained $plural ($baseCount -> $headCount)."
+Write-Host "OK: $headSidecarRelPath's regenerations log gained $gained $plural ($baseCount -> $headCount), every prior entry unchanged, every new entry has real content."
 exit 0
