@@ -237,6 +237,19 @@ did not have:
 
 None of this replaces existing API. It is purely additive.
 
+With those additions the port now covers the C library's whole public surface. `swephexp.h` at
+`v2.10.3final` declares 106 `swe_*` functions, and all 106 are present and public here. The count
+is not an estimate: it comes from parsing the header and diffing it against the committed
+public-API list under `Tests/SwissEphNet.Tests/PublicApi/`, which a test regenerates and compares
+on every run, so a member appearing or disappearing fails the build rather than going unnoticed.
+The only public `swe_*` member the C does not declare is `swe_dotnet_version`, which is this
+port's own and named so it cannot be mistaken for upstream.
+
+Surface coverage is not the same as behavioural agreement, and the two are measured separately.
+What the port does with that surface is the subject of "Correctness oracle" below, which runs
+Astrodienst's own 12,757-iteration reference corpus. Read both before concluding anything: a
+function can be present and still disagree, and the oracle is what says whether it does.
+
 ## What was actually fixed, and how we know
 
 Model changes aside, several defects in this list are bugs a caller could hit in ordinary use,
@@ -772,9 +785,13 @@ Astrodienst's own reference values, not against the port's own prior output.
 The reference corpus is Swiss Ephemeris **2.10.03**'s `setest` test suite
 (12,757 iterations, ~321K asserted values across 10 functional areas). Even though the port has
 now landed the whole 2.10.03 delta file by file, it is not at full parity: `known-fail.tsv` still
-lists 1,423<!--doccount:known-fail-total--> failing iterations (11,334 passing, 88.8%), and the known-fail list remains the work
-queue for the remainder. Each porting PR should remove entries from it; any entry that reappears
-is a regression.
+lists 1,423<!--doccount:known-fail-total--> failing iterations (11,334 passing, 88.8%). Each
+porting PR should remove entries from it; any entry that reappears is a regression.
+
+Read that 1,423 with the split under "Numerical compatibility" above, because it is not 1,423
+things left to port: 759 of them are a data file this repository does not ship rather than a wrong
+answer, the other 664 sit outside the tolerance Astrodienst's own suite allows, and the four rows
+ever confirmed as port defects were fixed and pruned.
 
 - `external/swisseph` -- a git submodule, sparse-checked-out, pinned to tag
   `v2.10.3final`. It serves two purposes:
