@@ -9,6 +9,11 @@ namespace SwissEphNet.Tests
         public void TestDMS() {
             using (var sweph=new SwissEph()) {
                 Assert.Equal("nan", sweph.DMS(double.NaN, 0, false));
+                // Infinity saturated the (int) casts before it was guarded, giving
+                // "2147483647...2147483647'2147483647.2147483647" -- a value that reads as a
+                // measurement rather than as the absence of one.
+                Assert.Equal("inf", sweph.DMS(double.PositiveInfinity, 0, false));
+                Assert.Equal("-inf", sweph.DMS(double.NegativeInfinity, 0, false));
 
                 Assert.Equal("   0° 0' 0.0000", sweph.DMS(0, 0, false));
                 Assert.Equal("   0° 0' 0.00000000", sweph.DMS(0, 0, true));
@@ -71,6 +76,10 @@ namespace SwissEphNet.Tests
         public void TestHMS() {
             using (var sweph = new SwissEph()) {
                 Assert.Equal("nan", sweph.HMS(double.NaN, 0, false));
+                // HMS inherits both guards through DMS: it adds a rounding term first, and
+                // infinity plus a finite term is still infinity.
+                Assert.Equal("inf", sweph.HMS(double.PositiveInfinity, 0, false));
+                Assert.Equal("-inf", sweph.HMS(double.NegativeInfinity, 0, false));
 
                 Assert.Equal("   0: 0: 0.0", sweph.HMS(0, 0, false));
                 Assert.Equal("   0: 0: 0.0", sweph.HMS(0, 0, true));
@@ -125,6 +134,8 @@ namespace SwissEphNet.Tests
         public void TestFormatToDegreeMinuteSecond() {
 
             Assert.Equal("nan", SwissEph.FormatToDegreeMinuteSecond(double.NaN));
+            Assert.Equal("inf", SwissEph.FormatToDegreeMinuteSecond(double.PositiveInfinity));
+            Assert.Equal("-inf", SwissEph.FormatToDegreeMinuteSecond(double.NegativeInfinity));
 
             Assert.Equal("   0° 0' 0.0000", SwissEph.FormatToDegreeMinuteSecond(0));
             Assert.Equal("  12° 9'18.0000", SwissEph.FormatToDegreeMinuteSecond(12.155));

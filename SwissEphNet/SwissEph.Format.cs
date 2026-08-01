@@ -40,6 +40,13 @@ namespace SwissEphNet
         /// </remarks>
         public String DMS(double value, int iFlag, bool outputExtraPrecision = false) {
             if (double.IsNaN(value)) return "nan";
+            // Infinity for the same reason as NaN, and in the same printf spelling. Without
+            // this the (int) casts below saturate at Int32.MinValue/MaxValue and the method
+            // returns "2147483647{degree}2147483647'2147483647.2147483647", which reads as a
+            // real measurement rather than as the absence of one. The C cannot be copied here:
+            // swetest.c's dms() casts a double to int too, and doing that with an infinity is
+            // undefined behaviour in C rather than a defined result worth matching.
+            if (double.IsInfinity(value)) return value > 0 ? "inf" : "-inf";
             int izod = 0;
             Int32 k, kdeg, kmin, ksec;
             string c = SwissEph.ODEGREE_STRING;
@@ -239,6 +246,9 @@ namespace SwissEphNet
         /// </remarks>
         public static String FormatToDegreeMinuteSecond(double value, String format = null) {
             if (double.IsNaN(value)) return "nan";
+            // See DMS above: same saturation, same spelling. Measured before this guard,
+            // PositiveInfinity formatted as "2147483647{degree}2147483647'2147483647.2147483647".
+            if (double.IsInfinity(value)) return value > 0 ? "inf" : "-inf";
             if (String.IsNullOrEmpty(format)) format = "dddd°mm'ss.pppp";
             switch (format) {
                 case "D1": format = "dddd°mm'ss.pppp"; break;
