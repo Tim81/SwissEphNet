@@ -182,3 +182,19 @@ not exist on the integration branch once it lands).
    SwissEphNet/CPort moved. SwissEphNet/CPort: 48460 -> 48476 lines, sha256 D87C454F... ->
    0AEEA27E.... Programs/SweMini/Program.cs: 164 -> 165 lines, sha256 075ABEEC... ->
    D1274D16....
+10. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01: One
+   fidelity fix. Programs/SweMini/Program.cs:125 wrote its column header with
+   Console.WriteLine, where swemini.c:52 is printf("planet     	longitude	latitude	
+   distance	speed long.
+") like every other output in that loop, including the printf on
+   the line immediately above it. Console.WriteLine terminates with Environment.NewLine, so
+   on Windows that single line emitted CRLF while every printf around it emitted the bare LF
+   its format string carries -- one program, two line endings, from the one output call that
+   did not go through this file's own printf helper. Replaced with that helper, which is
+   Console.Write(C.sprintf(...)) and so passes the format string's 
+ through unchanged.
+   Not a re-transliteration: no other line moved, and the header text itself is byte-for-byte
+   what it was. SweMini's stdout is compared by no harness in this repo (the swetest diff
+   covers Programs/SweTest only), so this changes nothing any gate measures; it was found by
+   reading for output calls that bypass printf rather than by a failure.
+   Programs/SweMini/Program.cs: 165 -> 170 lines, sha256 D1274D16... -> F692F611....

@@ -122,7 +122,12 @@ namespace SweMini
                     // compute Ephemeris time from Universal time by adding delta_t
                     var te = jd + swe.swe_deltat(jd);
                     printf("date: %02d %s %04d at 0:00 Universal time, jd=%.1lf\n", jday, smon[jmon], jyear, jd);
-                    Console.WriteLine("planet     \tlongitude\tlatitude\tdistance\tspeed long.");
+                    // swemini.c:52 is printf("...speed long.\n"), like every other output in
+                    // this loop. Console.WriteLine ends the line with Environment.NewLine
+                    // instead, so this one line emitted CRLF on Windows while the printf calls
+                    // around it emitted the bare LF their format strings carry -- one file, two
+                    // line endings, from a single line that did not go through printf.
+                    printf("planet     \tlongitude\tlatitude\tdistance\tspeed long.\n");
                     for (var p = SwissEph.SE_SUN; p <= SwissEph.SE_CHIRON; p++) // a loop over all planets
                     {
                         if (p == SwissEph.SE_EARTH) continue;
