@@ -130,6 +130,18 @@ jobs:
       # so its timeout is longer than the smaller unit-test suites' 5min, while still leaving
       # headroom under the job's own 30-minute ceiling for a real hang dump to be collected and
       # uploaded rather than the whole runner being killed first.
+      # ConformanceKnownFailGen compiles nowhere else in CI. It is the generator behind
+      # Tests/conformance/known-fail.tsv, the porting work queue every conformance PR is
+      # measured against, so a compile break in it is only discovered by whoever next tries to
+      # regenerate that list -- which is exactly when they are least able to absorb it. Its
+      # only other mention in this file is a comment about its runtime, which is what made the
+      # gap easy to miss. Build only: running it would rewrite the committed allowlist, and
+      # regenerating that is a reviewed act (see scripts/regenerate-known-fail.ps1), never a
+      # side effect of a CI run.
+      - name: Build the known-fail generator
+        shell: pwsh
+        run: dotnet build Tools/ConformanceKnownFailGen/ConformanceKnownFailGen.csproj -c Release
+
       - name: Run conformance oracle
         shell: pwsh
         run: >
