@@ -81,6 +81,16 @@
     <PackageReleaseNotes>2.10.3 (the first release of this fork published to nuget.org, under the
 SwissEphSharp package ID; entries from 2.8.0.2 down are the original project's, published under
 SwissEphNet):
+- LICENCE CHANGE, read this before upgrading. 2.8.0.2 was distributed under the GNU General
+  Public License version 2 or later. This release is under the Swiss Ephemeris dual licence:
+  the GNU Affero General Public License, or a Swiss Ephemeris Professional License bought from
+  Astrodienst. The practical difference is the AGPL's network clause. Under GPL-2.0 you could
+  run this library inside a web service and owe nobody source, because nothing was distributed.
+  Under the AGPL, operating the service is itself the trigger, and users who reach it over a
+  network can require the complete corresponding source of your whole service, not just this
+  library. If that does not work for your project, the Professional License is the other arm.
+  This follows Astrodienst's own relicensing of Swiss Ephemeris and applies to the C library
+  just as much as to this port. LICENSE, agpl-3.0.txt and NOTICE ship at the package root.
 - SE_VERSION now reports "2.10.03", matching the C library this port tracks (upstream tag
   v2.10.3final). Every stage of the 2.10.03 delta has landed: the header/constants stage,
   swephlib.c, the ayanamsha machinery, sweph.c, swecl.c, swehouse.c and swetest.c.
@@ -113,6 +123,14 @@ SwissEphNet):
   that was one element short for Gauquelin houses. See docs/compliance-2.10.03.md for the
   verification numbers behind this release and docs/known-issues.md and the "V:2.10.3" section
   of README.md for the full list.
+
+- You are also inheriting everything in the 2.8.1.0 entry below, even though no such package was
+  ever published. On nuget.org the step is 2.8.0.2 straight to this release, so those changes
+  arrive with it: DIR_GLUE went from '\' to '/' on every platform, which changes the asteroid
+  file names a file provider is asked for; DefaultEncoding became UTF-8 explicitly rather than
+  falling back to it when Windows-1252 could not be resolved; and C.strcmp, strncmp, strstr and
+  strchr became ordinal instead of culture-sensitive, which affects fixed-star name search and
+  sort under a non-invariant culture. Read that entry as part of this one.
 
 2.8.1.0 (not published to nuget.org; source-only distribution):
 - Package ID renamed from SwissEphNet to SwissEphSharp. SwissEphNet on nuget.org belongs to the
