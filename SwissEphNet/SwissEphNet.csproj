@@ -42,10 +42,18 @@
     -->
     <InformationalVersion>2.10.3</InformationalVersion>
     <Authors>Yan Grenier, Timothy van der Ham</Authors>
-    <Company>Yan Grenier</Company>
+    <!--
+      Company is the publisher field, distinct from Authors above: NuGet shows it separately, and
+      it should name whoever is actually publishing this package, not the original author of the
+      code it is a fork of. This fork is published by Timothy van der Ham; Yan Grenier is credited
+      in Authors, Copyright and NOTICE, which is where authorship attribution belongs. Setting
+      Company to Yan Grenier here would sit awkwardly next to Description's own "Not published or
+      endorsed by Yan Grenier" line below.
+    -->
+    <Company>Timothy van der Ham</Company>
     <Product>SwissEphSharp</Product>
     <Title>SwissEphSharp</Title>
-    <Description>Swiss Ephemeris .Net portage. SwissEphSharp is the package ID under which this project will be distributed: a fork of Yan Grenier's SwissEphNet, tracking Swiss Ephemeris 2.10.03. The assembly is now named SwissEphSharp too, so it can coexist with the original SwissEphNet package; the namespace stays SwissEphNet, so source that only uses the public API needs no changes beyond the PackageReference itself. Callers of the removed OnLoadFile event still need to migrate to SwissEph.FileProvider. Not published or endorsed by Yan Grenier or Astrodienst.</Description>
+    <Description>Swiss Ephemeris .Net portage. SwissEphSharp is the package ID this project is distributed under: a fork of Yan Grenier's SwissEphNet, tracking Swiss Ephemeris 2.10.03. The assembly is now named SwissEphSharp too, so it can coexist with the original SwissEphNet package; the namespace stays SwissEphNet, so source that only uses the public API needs no changes beyond the PackageReference itself. Callers of the removed OnLoadFile event still need to migrate to SwissEph.FileProvider. Not published or endorsed by Yan Grenier or Astrodienst.</Description>
     <Copyright>Copyright (C) 1997-2021 Astrodienst AG; (C) 2014-2019 Yan Grenier; (C) 2026 Timothy van der Ham</Copyright>
     <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/Tim81/SwissEphNet</PackageProjectUrl>
@@ -53,7 +61,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>Swiss Ephemeris</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>2.10.3 (intended as the first release published to nuget.org, under the
+    <PackageReleaseNotes>2.10.3 (the first release of this fork published to nuget.org, under the
 SwissEphSharp package ID; entries from 2.8.0.2 down are the original project's, published under
 SwissEphNet):
 - SE_VERSION now reports "2.10.03", matching the C library this port tracks (upstream tag
@@ -85,9 +93,10 @@ SwissEphNet):
 
 2.8.1.0 (not published to nuget.org; source-only distribution):
 - Package ID renamed from SwissEphNet to SwissEphSharp. SwissEphNet on nuget.org belongs to the
-  upstream author's own release and this fork cannot publish under it. The assembly name and
-  namespace are unaffected: both stay SwissEphNet, so the only change a consumer needs to make is
-  the PackageReference itself. See the "Package name" section of README.md.
+  upstream author's own release and this fork cannot publish under it. At this release the
+  assembly name and namespace were unaffected: both stayed SwissEphNet, so the only change a
+  consumer needed to make was the PackageReference itself. The assembly was renamed too, later,
+  at 2.10.3 above -- see that entry and the "Package name" section of README.md.
 - Retarget the library to netstandard2.0;net8.0;net10.0, dropping net40 and netstandard1.0.
 - Relicense from GPL-2.0-or-later to the Swiss Ephemeris 2.10.3 dual license: AGPL-3.0-or-later
   or a Swiss Ephemeris Professional License from Astrodienst. See LICENSE and NOTICE.
