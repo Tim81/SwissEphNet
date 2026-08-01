@@ -109,6 +109,17 @@ namespace SwissEphNet.Tests
         /// <c>MethodKey</c>/<c>PropertyKey</c>/<c>EventKey</c>/<c>FieldKey</c> helpers below build
         /// these keys the same way the sweep does, so an entry here can never silently mismatch
         /// the member it is meant to exempt.
+        ///
+        /// Each <c>ParamType</c> is <see cref="Type.ToString"/>, namespace-qualified (e.g.
+        /// <c>System.Double</c>, not <c>Double</c>) -- a narrower recurrence of the same bare-name
+        /// defeat this class exists to close: <c>Type.Name</c> is the bare, unqualified
+        /// name, which stringifies identically for two overloads distinguished only by a generic
+        /// argument (<c>List&lt;int&gt;</c> vs <c>List&lt;string&gt;</c> both give <c>List`1</c>,
+        /// likewise <c>Nullable&lt;int&gt;</c> vs <c>Nullable&lt;double&gt;</c>), by two
+        /// same-named types in different namespaces, or by two same-named types nested under
+        /// different parents. None of those collide today, but a bare-<c>Name</c> key would have
+        /// let a future one clear this test unseen, exactly like the original bare-method-name
+        /// defeat.
         /// </summary>
         private static readonly Dictionary<string, string> AllowList =
             new Dictionary<string, string>(StringComparer.Ordinal)
@@ -119,22 +130,22 @@ namespace SwissEphNet.Tests
             ["Method:swe_dotnet_version()"] =
                 "reads only assembly metadata (typeof(SwissEph).Assembly.FullName); touches no " +
                 "instance state, so there is nothing for a disposed instance to have invalidated.",
-            ["Method:swe_d2l(Double)"] =
+            ["Method:swe_d2l(System.Double)"] =
                 "public static; its body binds \"SwephLib\" to the CPort.SwephLib type (a " +
                 "stateless static delegator), not to this instance's guarded SwephLib property, " +
                 "because a static method has no \"this\" to check disposal against.",
-            ["Method:DMS(Double,Int32,Boolean)"] =
+            ["Method:DMS(System.Double,System.Int32,System.Boolean)"] =
                 "guard coverage is argument-dependent: DMS only reaches the guarded SwephLib " +
                 "property when iFlag requests minute/second rounding (BIT_ROUND_MIN / " +
                 "BIT_ROUND_SEC), so DMS(x, 0) -- the synthesized all-default call this test " +
                 "makes -- returns normally after Dispose() while DMS(x, BIT_ROUND_SEC) throws.",
-            ["Method:HMS(Double,Int32,Boolean)"] =
+            ["Method:HMS(System.Double,System.Int32,System.Boolean)"] =
                 "delegates straight to DMS(value, iFlag, ...) and inherits the same " +
                 "argument-dependent guard coverage described under DMS above.",
-            ["Method:FormatToDegreeMinuteSecond(Double,String)"] =
+            ["Method:FormatToDegreeMinuteSecond(System.Double,System.String)"] =
                 "public static; a pure string-formatting function over its own arguments, " +
                 "reads no SwissEph instance state and has no \"this\" to check disposal against.",
-            ["Method:GetHourValue(Int32,Int32,Int32)"] =
+            ["Method:GetHourValue(System.Int32,System.Int32,System.Int32)"] =
                 "public static; a pure arithmetic function over its own arguments, reads no " +
                 "SwissEph instance state and has no \"this\" to check disposal against.",
             ["Field:DefaultEncoding"] =
@@ -159,8 +170,18 @@ namespace SwissEphNet.Tests
 
         private static string MethodKey(MethodInfo method)
         {
+            // ParameterType.ToString(), not ParameterType.Name: Name is the bare, unqualified
+            // type name ("List`1", "Nullable`1"), which two overloads distinguished only by a
+            // generic argument -- List<int> vs List<string>, Nullable<int> vs Nullable<double>,
+            // or two same-named types in different namespaces or under different nesting parents
+            // -- stringify identically under. That collapses a signature-keyed exemption back
+            // into the exact bare-name defeat this class's own remarks describe fixing: a second
+            // overload nobody looked at clears this test by sharing a key with one that had
+            // already been reasoned about. ToString() is namespace-qualified and never null (
+            // unlike FullName, which is null for an open generic type parameter), so it tells
+            // every overload this sweep can encounter apart.
             return "Method:" + method.Name + "(" +
-                string.Join(",", method.GetParameters().Select(p => p.ParameterType.Name)) + ")";
+                string.Join(",", method.GetParameters().Select(p => p.ParameterType.ToString())) + ")";
         }
 
         private static string PropertyKey(PropertyInfo property)
@@ -180,8 +201,9 @@ namespace SwissEphNet.Tests
 
         private static string InterfaceMethodKey(Type iface, MethodInfo interfaceMethod)
         {
+            // Same ToString()-not-Name reasoning as MethodKey above.
             return "Interface:" + iface.FullName + "." + interfaceMethod.Name + "(" +
-                string.Join(",", interfaceMethod.GetParameters().Select(p => p.ParameterType.Name)) + ")";
+                string.Join(",", interfaceMethod.GetParameters().Select(p => p.ParameterType.ToString())) + ")";
         }
 
         private static object DefaultArgument(Type parameterType)
