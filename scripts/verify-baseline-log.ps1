@@ -109,7 +109,20 @@ function Get-LogEntries {
     for ($i = 0; $i -lt $starts.Count; $i++) {
         $entryStart = $starts[$i].Index
         $entryEnd = if ($i + 1 -lt $starts.Count) { $starts[$i + 1].Index } else { $section.Length }
-        $entries.Add($section.Substring($entryStart, $entryEnd - $entryStart).TrimEnd())
+        $entryText = $section.Substring($entryStart, $entryEnd - $entryStart)
+        # An entry's body also ends at a "## " subsection heading, not only at the next numbered
+        # line. Without this, any section sitting between two entries is swallowed into the
+        # earlier one's body: this sidecar's own "## pyswisseph 2.10.03 validation coverage"
+        # sits between entries 6 and 7 and carries no numbered line, so 271 lines of
+        # re-measurable coverage figures parsed as entry 6's tail. Correcting a figure there
+        # then read as rewriting an append-only log entry, and the gate failed on a file whose
+        # log was untouched. Bounding the entry rather than the section keeps entries 7 onward,
+        # which sit after that heading and are genuinely part of the log.
+        $subHeading = [regex]::Match($entryText, '(?m)^## ')
+        if ($subHeading.Success) {
+            $entryText = $entryText.Substring(0, $subHeading.Index)
+        }
+        $entries.Add($entryText.TrimEnd())
     }
     return $entries.ToArray()
 }
