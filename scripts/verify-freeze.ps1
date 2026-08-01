@@ -82,6 +82,19 @@ function Get-FrozenFile {
         # and not on the CI runner: the manifest generated on Windows reported 17 files and the
         # ubuntu job read 16 from the same commit. That would make the hash platform-dependent,
         # which is the one property the line-ending normalization above exists to preserve.
+        #
+        # KNOWN GAP, left as-is deliberately: [System.Array]::Sort($keys, $items, comparer) below,
+        # with $keys typed [string[]] and $items [object[]], resolves in PowerShell to the generic
+        # Array.Sort<TKey,TValue>(TKey[], TValue[], IComparer<TKey>) overload -- confirmed directly
+        # (Write-Host on $items before and after the call prints the identical, unsorted sequence
+        # both times) -- which sorts $keys but silently leaves $items untouched. So this function
+        # has never actually returned files in ordinal-sorted order; it returns whatever order
+        # Get-ChildItem's OS directory enumeration happens to produce, with no cross-platform
+        # guarantee. The real fix (force the non-generic Array.Sort(Array, Array, IComparer)
+        # overload via `[Array] $keys, [Array] $items`) changes which order files are concatenated
+        # into $contents below, which moves the SHA256 in scripts/freeze-manifest.tsv even though
+        # no frozen file's content changes -- regenerating that manifest is out of scope for this
+        # change. Left unfixed here on purpose; needs a reviewed -Update alongside this fix.
         $found = @(Get-ChildItem -LiteralPath $full -Recurse -File -Force)
         $keys = [string[]] ($found | ForEach-Object { $_.FullName })
         $items = [object[]] $found
@@ -97,6 +110,55 @@ function Get-FrozenFile {
     }
 }
 
+# Two invariants checked directly against the raw bytes of every frozen file, independent of
+# scripts/freeze-manifest.tsv: nothing about the manifest's stored counts or hash needs to change
+# for these to apply, because both are asserted as fixed rules (verified against the tree as it
+# stands today, see the plant/fix table this was proven with) rather than diffed against a golden
+# snapshot. That matters here specifically because the alternative -- folding an encoding tag and
+# a final-newline flag into the hashed content that already feeds Sha256 -- would move every
+# existing row's stored hash and require regenerating scripts/freeze-manifest.tsv to match, which
+# this script's own manifest is not touched for a check addition alone.
+#
+# 1. Every frozen file must end with exactly one trailing newline (`insert_final_newline`, one of
+#    the two .editorconfig pins this script's own header already calls a defense). Verified
+#    directly against the byte stream: File.ReadAllText + a text split, the way the four proxy
+#    counts below are computed, throws this signal away entirely -- "a\nb\n" and "a\nb" both split
+#    to ["a","b"] once the trailing empty element is discarded, so a stripped final newline left
+#    every count (and, before this check existed, the hash) byte-identical. Measured directly: yes.
+# 2. Every frozen file's encoding matches what is on disk today: a UTF-8 BOM (EF BB BF) for every
+#    frozen *.cs file, no BOM at all for CPort/.editorconfig, the one frozen file that is not *.cs.
+#    Verified across all 19 frozen files before writing this rule, not assumed. File.ReadAllText
+#    silently decodes UTF-8 (with or without a BOM) and UTF-16LE/BE (with a BOM) to the identical
+#    in-memory string, so re-encoding a frozen file to UTF-16LE (its on-disk size doubles) or
+#    stripping its UTF-8 BOM previously left every downstream count, and the hash, unchanged too.
+function Test-FrozenFileInvariant {
+    param([System.IO.FileInfo] $File, [System.Collections.Generic.List[string]] $Violations)
+
+    $relPath = $File.FullName.Substring($repoRoot.Length).Replace([char]92, [char]47)
+    $bytes = [System.IO.File]::ReadAllBytes($File.FullName)
+
+    if ($bytes.Length -eq 0 -or $bytes[$bytes.Length - 1] -ne 0x0A) {
+        $Violations.Add("$relPath does not end with a trailing newline (insert_final_newline violation).")
+    }
+
+    $hasUtf8Bom = $bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
+    $hasUtf16Bom = $bytes.Length -ge 2 -and (
+        ($bytes[0] -eq 0xFF -and $bytes[1] -eq 0xFE) -or ($bytes[0] -eq 0xFE -and $bytes[1] -eq 0xFF))
+    $expectUtf8Bom = $File.Extension -eq '.cs'
+
+    if ($hasUtf16Bom) {
+        $Violations.Add("$relPath is UTF-16 encoded (a UTF-16LE/BE byte-order mark was found); every frozen file must stay UTF-8.")
+    }
+    elseif ($expectUtf8Bom -and -not $hasUtf8Bom) {
+        $Violations.Add("$relPath is a frozen *.cs file with no UTF-8 BOM (the BOM was stripped, or it was re-saved without one).")
+    }
+    elseif (-not $expectUtf8Bom -and $hasUtf8Bom) {
+        $Violations.Add("$relPath unexpectedly carries a UTF-8 BOM; every frozen non-*.cs file (CPort/.editorconfig today) carries none.")
+    }
+}
+
+$encodingViolations = [System.Collections.Generic.List[string]]::new()
+
 function Get-Fingerprint {
     param([string] $RelativePath)
 
@@ -110,12 +172,18 @@ function Get-Fingerprint {
     $contents = [System.Collections.Generic.List[string]]::new()
 
     foreach ($file in $files) {
+        Test-FrozenFileInvariant -File $file -Violations $encodingViolations
+
         # Read raw so line-ending normalization cannot mask a change, and split on both
         # conventions: these files are CRLF in the repo but a contributor's tooling may not be.
         $text = [System.IO.File]::ReadAllText($file.FullName)
         $fileLines = $text -split "`r`n|`n|`r"
 
-        # A trailing empty element is the artifact of a final newline, not a line of content.
+        # A trailing empty element is the artifact of a final newline, not a line of content. Its
+        # *presence or absence* is exactly what Test-FrozenFileInvariant checks above, directly
+        # against the raw bytes and independent of this hash -- discarding it here only trims the
+        # $fileLines/$lines/$krBraces/$trailingWs proxies back to counting real content lines, the
+        # same as before; it is not this function's job to also catch its removal.
         if ($fileLines.Count -gt 0 -and $fileLines[-1] -eq '') {
             $fileLines = $fileLines[0..($fileLines.Count - 2)]
         }
@@ -157,6 +225,17 @@ function Get-Fingerprint {
 }
 
 $current = foreach ($path in $frozenPaths) { Get-Fingerprint -RelativePath $path }
+
+if ($encodingViolations.Count -gt 0) {
+    Write-Host ''
+    foreach ($violation in $encodingViolations) { Write-Host "  $violation" }
+    Write-Host ''
+    Write-Host 'FAIL: a transliteration-frozen file changed encoding or lost its trailing newline.'
+    Write-Host 'This is checked directly against every frozen file, independent of scripts/freeze-manifest.tsv --'
+    Write-Host 'no manifest update fixes it. Restore the UTF-8 encoding (with a BOM for *.cs files) and the'
+    Write-Host 'trailing newline instead.'
+    exit 1
+}
 
 if ($Update) {
     $out = [System.Text.StringBuilder]::new()
