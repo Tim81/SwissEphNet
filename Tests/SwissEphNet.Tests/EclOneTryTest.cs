@@ -27,7 +27,7 @@ namespace SwissEphNet.Tests
     /// identical to the C on both calls, including the C-formatted error string.
     ///
     /// swe_lun_occult_when_loc took the identical defect and got the identical Int32 fix (commit
-    /// 8f56292), but had no test of its own until the three _loc-suffixed tests below were added
+    /// 1a8dae4), but had no test of its own until the three _loc-suffixed tests below were added
     /// alongside these -- see their own remarks for the matching C-reference measurements.
     /// </summary>
     public class EclOneTryTest
@@ -111,7 +111,7 @@ namespace SwissEphNet.Tests
         }
 
         // swe_lun_occult_when_loc took the same bool-narrowing defect as swe_lun_occult_when_glob
-        // above (commit 8f56292 gave its public entry point Int32 backward, matching the private
+        // above (commit 1a8dae4 gave its public entry point Int32 backward, matching the private
         // occult_when_loc it already called through -- see SweCL.cs:2113's remarks), but no test
         // exercised it: the three tests above cover only _glob. These three mirror them for _loc,
         // adding a geographic location (London: lon=0, lat=51.5, alt=0) since a local occultation

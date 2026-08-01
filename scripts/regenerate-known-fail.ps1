@@ -51,7 +51,7 @@
     added/changed check passed, which is not the same thing: reason text is
     regenerated fresh on every run and its wording drifts even when nothing
     about the underlying failure changed, so that copy silently rewrote
-    every surviving row's reason on every prune (see commit 77acc30: 12
+    every surviving row's reason on every prune (see commit 2bf3396: 12
     deletions and 8 insertions where only 4 rows were pruned). A prune is
     now genuinely only a removal -- no surviving row's reason or
     magnitude_key can change through this mode, by construction, not by a

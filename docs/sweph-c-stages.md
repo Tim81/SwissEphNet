@@ -63,7 +63,7 @@ substance of this slice's delta turned out to be brace placement, dead-code remo
 plumbing (an `iplmoon` parameter, `SEFLG_CENTER_BODY` blocks) for a dispatch path that stayed
 unreachable until slice C.
 
-### C. Dispatch and new API (~30 hunks) -- `b288652`
+### C. Dispatch and new API (~30 hunks) -- `4f6cbeb`
 
 `swecalc` (8), `sweph` (8), `swe_calc` (7), `swe_calc_ut`, `plaus_iflag`, `swi_force_app_pos_etc`,
 `swe_get_ayanamsa_ut`, `calc_center_body` (new). `swe_set_timeout` needed no deletion --

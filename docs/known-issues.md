@@ -1177,14 +1177,14 @@ measurement.
 
 **Deviation 17** says "919 rows in house-pos: 918 HP\|J cusp values and the single HN\|J name
 row." 918 + 1 is 919, but the entry's own scope check reports "house-pos: 918 changed" -- 918
-total, not 919. Diffing the area directly (commit `e31a9d6`, deviation 16's landing commit, against
-`2c95529`, deviation 17's) confirms the scope check: 917 `HP\|J` rows changed plus the 1 `HN\|J`
+total, not 919. Diffing the area directly (commit `dcdf293`, deviation 16's landing commit, against
+`7b6e1ca`, deviation 17's) confirms the scope check: 917 `HP\|J` rows changed plus the 1 `HN\|J`
 row, 918 in total. "918 HP\|J" in the prose should read "917 HP\|J."
 
 **Deviation 16** lists three mechanisms for why house cusps move -- `niter_max`'s Placidus/Gauquelin
 fallback, the Alcabitius clamp, and house system `'J'` becoming real -- without saying that the
 second of the three moved nothing. Checked directly: every hsys `'B'` (Alcabitius) row is
-byte-identical between commit `7470527` (deviation 16's parent) and the current baseline, in
+byte-identical between commit `ea07643` (deviation 16's parent) and the current baseline, in
 every area that carries house-system-keyed rows -- 0 of 1,944 in `houses-armc`, 0 of 480 in
 `houses` (60 `HS\|B\|*` + 420 `HX\|B\|*`), 0 of 1,125 in `house-pos`. The clamp was ported
 faithfully (`swehouse.c:1602-1606`, `if (r > 1) r = 1; if (r < -1) r = -1;` before `acosd`) and

@@ -36,7 +36,7 @@ name: Oracle build gates
 # comparison included, is a hard failure. oracle-dump used to be the exception -- its comparison
 # step against Tests/oracle/known-diff*.tsv carried continue-on-error, on the theory that a
 # different MSVC minor version on a future windows-latest image could move the C side's printed
-# digits without the port changing at all. Commit 0217b72 removed that flag: both known-diff
+# digits without the port changing at all. Commit eec6e44 removed that flag: both known-diff
 # lists are header-only (every oracle row is required to be bit-identical), so there was no
 # recorded toolchain-sensitive value left to protect, and verify-oracle.ps1 does far more than
 # that one comparison -- it also exits 1 on a missing provenance sidecar, a missing dump, a failed
@@ -83,7 +83,7 @@ jobs:
   # macos-latest and ubuntu-latest, not Windows). Exists because this
   # file's own header comment (above) has drifted from which jobs actually carry
   # continue-on-error three times now, each time a job's flag was added or removed without the
-  # prose being updated to match -- most recently when commit 0217b72 removed oracle-dump's flag.
+  # prose being updated to match -- most recently when commit eec6e44 removed oracle-dump's flag.
   # A header comment is not something CI can enforce; the hardcoded $expectedStepLevelFlags below
   # is. This job fails the moment the file's actual flags no longer match that list, so the two
   # are forced to move together instead of the header quietly going stale again -- update both,
