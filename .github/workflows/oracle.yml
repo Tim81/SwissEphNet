@@ -665,9 +665,12 @@ jobs:
       # builtins for libm calls -- fusing an adjacent sin(x) and cos(x) on one argument into a
       # single __sincos(x), among others -- and Apple's __sincos does not return bit-identically
       # to calling the two separately, which is what the port does one call at a time. With
-      # builtins on, 62 of 14,819 analytic rows and 10 of 2,243 file-backed rows differed from
+      # builtins on, 62 of 14,820 analytic rows and 10 of 2,244 file-backed rows differed from
       # the port; with -fno-builtin both grids were bit-identical. This build keeps that number
-      # visible so a change in it is noticed.
+      # visible so a change in it is noticed. (14,820 and 2,244, not the 14,819/2,243 wc -l would
+      # report below: the grid/dump files have no trailing newline on the last row, so wc -l
+      # undercounts the true row total by one -- see the row-count guard's own comment in the
+      # compare step below.)
       - name: Build a diagnostic C reference with clang's builtins left on
         shell: bash
         run: |
@@ -711,7 +714,20 @@ jobs:
           # macOS ships BSD diff, which has none of GNU's --unchanged-line-format options, so
           # everything below reads plain POSIX diff output.
           for g in analytic files; do
+            # wc -l counts newlines, not lines -- the grid/dump files here have no trailing
+            # newline on the last row, so this undercounts the true row total by one (14,820 and
+            # 2,244 are the true totals; wc -l reports 14,819 and 2,243, which is also why the
+            # builtins-on comment above states the corrected figures explicitly rather than
+            # quoting wc -l). Row-count guard below: without it, two empty files compare
+            # bit-identical (cmp -s on two zero-byte files succeeds) and total comes out -1,
+            # which would report "BIT-IDENTICAL, -1 rows" and exit 0 -- a grid that silently
+            # shrank to nothing would still pass.
             total=$(($(wc -l < "c-$g.tsv") - 1))
+            if [ "$total" -le 0 ]; then
+              echo "::error::$g: c-$g.tsv has $total data row(s) (wc -l undercounts by one, see comment above) -- refusing to call an empty or near-empty grid bit-identical"
+              rc=1
+              continue
+            fi
             if cmp -s "c-$g.tsv" "net-$g.tsv"; then
               m=$(diff "nb-$g.tsv" "net-$g.tsv" | grep -c '^<' || true)
               echo "$g: BIT-IDENTICAL, $total rows, sha256 $(shasum -a 256 "c-$g.tsv" | cut -c1-32)"
@@ -835,6 +851,27 @@ jobs:
             exit 1
           fi
 
+      # The job comment above states, as measured fact, that gcc substitutes glibc's sincos()
+      # for an adjacent sin()/cos() pair and that this is confirmed with nm -- this step is that
+      # confirmation, not a restatement of it. sedump.c never calls sincos() itself (grep -c
+      # below over the source, not the binary, makes that explicit), so a linked sincos symbol
+      # can only be the compiler's own substitution. -D reads the dynamic symbol table: this
+      # build is not statically linked, so the plain (non-dynamic) symbol table would not show a
+      # libc import at all.
+      - name: Assert glibc's sincos substitution is actually linked
+        shell: bash
+        run: |
+          if grep -qE '\bsincos\s*\(' Tools/CReference/sedump.c; then
+            echo "::error::Tools/CReference/sedump.c now calls sincos() directly -- the job comment's premise (a linked sincos symbol can only be gcc's own substitution) no longer holds; update that comment instead of this check"
+            exit 1
+          fi
+          sincos_symbol=$(nm -D sedump | grep -i sincos || true)
+          if [ -z "$sincos_symbol" ]; then
+            echo "::error::sedump does not link a sincos symbol -- this gcc/glibc no longer substitutes sincos() for an adjacent sin()/cos() pair, so the job comment's builtin-substitution paragraph is stale and its 'confirmed with nm' claim needs re-measuring, not just re-asserting"
+            exit 1
+          fi
+          echo "OK: $sincos_symbol"
+
       # Diagnostic only, not gated -- see the job comment above. Adds the two flags
       # macos-exactness needs (-ffp-contract=off -fno-builtin) to confirm neither changes the
       # result on this glibc.
@@ -875,11 +912,31 @@ jobs:
           set +e
           rc=0
           for g in analytic files; do
+            # wc -l counts newlines, not lines -- the grid/dump files here have no trailing
+            # newline on the last row, so this undercounts the true row total by one (the same
+            # off-by-one macos-exactness's own comment carries: 14,819/2,243 there should read
+            # 14,820/2,244). Row-count guard below: without it, two empty files compare
+            # bit-identical (cmp -s on two zero-byte files succeeds) and total comes out -1,
+            # which would report "BIT-IDENTICAL, -1 rows" and exit 0 -- a grid that silently
+            # shrank to nothing would still pass.
             total=$(($(wc -l < "c-$g.tsv") - 1))
+            if [ "$total" -le 0 ]; then
+              echo "::error::$g: c-$g.tsv has $total data row(s) (wc -l undercounts by one, see comment above) -- refusing to call an empty or near-empty grid bit-identical"
+              rc=1
+              continue
+            fi
             if cmp -s "c-$g.tsv" "net-$g.tsv"; then
               m=$(diff "strict-$g.tsv" "net-$g.tsv" | grep -c '^<' || true)
               echo "$g: BIT-IDENTICAL, $total rows, sha256 $(sha256sum "c-$g.tsv" | cut -c1-32)"
               echo "  (the -ffp-contract=off -fno-builtin diagnostic build differs from the port on $m rows)"
+              # Unlike macos-exactness (where Apple's __sincos is expected to disagree, 62 and 10
+              # rows respectively), the job comment above states glibc's sincos() returns
+              # bit-identically to separate sin()/cos() calls, measured as 0 rows either way --
+              # so this is a real assertion, not a restatement of what was just measured.
+              if [ "$m" != "0" ]; then
+                echo "::error::$g: the -ffp-contract=off -fno-builtin diagnostic build differs from the port on $m rows, expected 0 -- glibc's sincos() substitution (or FMA contraction) may have stopped matching the port; see the job comment's builtin-substitution paragraph"
+                rc=1
+              fi
             else
               n=$(diff "c-$g.tsv" "net-$g.tsv" | grep -c '^<' || true)
               echo "::error::$g: $n of $total rows differ between the gcc C reference and the port"
