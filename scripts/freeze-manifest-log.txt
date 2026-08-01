@@ -18,4 +18,10 @@ SHA still on an open branch (see Tests/baseline/baseline-*.env.txt's own log for
 squash-merged PRs mean a SHA cited while a branch is still open names a commit that will
 not exist on the integration branch once it lands).
 
-None yet: scripts/freeze-manifest.tsv has not been regenerated since this log was added.
+1. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01: Restored
+   the SE_EPHE_PATH environment-variable priority in swe_set_ephe_path (sweph.c:1327-1337),
+   which existed in this port but was commented out (Sweph.cs:1561-1573 before this change),
+   so setting the variable had no effect. Fidelity fix, not a re-transliteration: no other
+   line in SwissEphNet/CPort moved. SwissEphNet/CPort: 48411 -> 48419 lines, 1259 -> 1258
+   trailing-whitespace lines (one commented C line's trailing space was trimmed while
+   restoring it), sha256 6A8B1530... -> 6944FDFD....

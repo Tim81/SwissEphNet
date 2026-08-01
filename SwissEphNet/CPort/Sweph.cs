@@ -1552,14 +1552,14 @@ namespace SwissEphNet.CPort
         {
             int i, iflag;
             string s; string sdummy = null;
-            //string sp;
+            string sp;
             double[] xx = new double[6];
             /* close all open files and delete all planetary data */
             swi_close_keep_topo_etc();
             swi_init_swed_if_start();
             swed.ephe_path_is_set = true;
             /* environment variable SE_EPHE_PATH has priority */
-            //  if ((sp = getenv("SE_EPHE_PATH")) != NULL 
+            //  if ((sp = getenv("SE_EPHE_PATH")) != NULL
             //    && strlen(sp) != 0
             //    && strlen(sp) <= AS_MAXCH-1-13) {
             //    strcpy(s, sp);
@@ -1570,7 +1570,15 @@ namespace SwissEphNet.CPort
             //  } else {
             //    strcpy(s, SE_EPHE_PATH);
             //  }
-            s = !String.IsNullOrWhiteSpace(path) ? path : SwissEph.SE_EPHE_PATH;
+            sp = Environment.GetEnvironmentVariable("SE_EPHE_PATH");
+            if (!String.IsNullOrEmpty(sp) && sp.Length <= SwissEph.AS_MAXCH - 1 - 13)
+                s = sp;
+            else if (String.IsNullOrEmpty(path))
+                s = SwissEph.SE_EPHE_PATH;
+            else if (path.Length <= SwissEph.AS_MAXCH - 1 - 13)
+                s = path;
+            else
+                s = SwissEph.SE_EPHE_PATH;
             i = s.Length;
             //  if (*(s + i - 1) != *DIR_GLUE && *s != '\0')
             //    s+= DIR_GLUE;
