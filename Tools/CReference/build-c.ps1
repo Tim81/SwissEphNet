@@ -101,9 +101,18 @@
     independently packaged build of the same 2.10.03 libswe (see that script's own header for
     what "independent" does and does not mean here).
 
-    Neither this script nor scripts/validate-c-reference.ps1 runs in CI. This one needs a local
-    MSVC installation with the C++ toolset; the other needs a local Python with pyswisseph
-    installed. Run both by hand after any change that could affect the C reference build.
+    Both this script and scripts/validate-c-reference.ps1 now run in CI. .github/workflows/
+    oracle.yml's own header comment predicted this note would go stale ("Tools/CReference/
+    build-c.ps1 and scripts/validate-c-reference.ps1 each say so in their own .NOTES section,
+    written when nothing here exercised them. This workflow is what makes that statement go
+    stale."), and oracle.yml is that workflow. Its c-reference-validate job runs this script and
+    then scripts/validate-c-reference.ps1, in that order; oracle-dump and swetest-diff each also
+    run this script (they need the C reference build but not the pyswisseph cross-check).
+    windows-latest carries a preinstalled Visual Studio with the C++ toolset, and a Python with
+    pyswisseph is installed as its own step in c-reference-validate, so neither local-tooling
+    requirement below is a reason to still call this a local-only pair. Running both by hand
+    after a change that could affect the C reference build remains useful for faster iteration
+    than waiting on a CI run, just no longer the only way either one runs.
 #>
 [CmdletBinding()]
 param(
