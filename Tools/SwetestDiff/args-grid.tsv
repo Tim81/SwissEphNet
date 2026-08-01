@@ -168,6 +168,7 @@ HOUSES_CRASH|1	HOUSES_CRASH	-head -b1.1.2000 -p0 -house10,51.5,P -fPl -eswe
 HOUSES_CRASH|2	HOUSES_CRASH	-head -b1.1.2000 -p0 -house[10,51.5,K] -fPl -eswe
 HOUSES_CRASH|3	HOUSES_CRASH	-head -b1.1.2000 -p0 -house0,66,O -fPl -eswe
 HOUSES_CRASH|4	HOUSES_CRASH	-head -b1.1.2000 -p0 -house139.6917,35.6895,W -fPl -eswe
+HOUSES_CRASH|5	HOUSES_CRASH	-head -b1.1.2000 -p0 -house10,51.5,G -fPl -eswe
 ECLIPSE|SOLECL|1.1.2000	ECLIPSE	-head -b1.1.2000 -p0 -geopos10,51.5,0 -solecl -fPl -eswe
 ECLIPSE|SOLECL|1.1.2020	ECLIPSE	-head -b1.1.2020 -p0 -geopos10,51.5,0 -solecl -fPl -eswe
 ECLIPSE|SOLECL|21.6.2001	ECLIPSE	-head -b21.6.2001 -p0 -geopos10,51.5,0 -solecl -fPl -eswe

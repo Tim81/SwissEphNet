@@ -253,6 +253,11 @@ $HouseCrashCases = @(
     @{ Id = '2'; Args = '-house[10,51.5,K]' }
     @{ Id = '3'; Args = '-house0,66,O' }
     @{ Id = '4'; Args = '-house139.6917,35.6895,W' }
+    # Id 5: Gauquelin (36 cusps, iofs=37) -- Program.cs's do_houses block read cusp[ipl] up to
+    # ipl < iofs+8 (44) out of a double[37], IndexOutOfRangeException on every Gauquelin
+    # invocation; the C reference does the identical out-of-bounds read (swetest.c:1958-1959)
+    # as benign stack UB. Distinct crash from Id 1-4, which are all -house sscanf %c crashes.
+    @{ Id = '5'; Args = '-house10,51.5,G' }
 )
 foreach ($c in $HouseCrashCases) {
     Add-Row -CaseId "HOUSES_CRASH|$($c.Id)" -Category 'HOUSES_CRASH' `

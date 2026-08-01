@@ -92,3 +92,33 @@ not exist on the integration branch once it lands).
    3\r\n"-only sepl_18.se1 stream; reverting this fix and rerunning throws
    NullReferenceException on all three instead of returning ret=-1 "damaged". SwissEphNet/CPort:
    48435 -> 48448 lines, sha256 3E241AA5... -> 42A10A5B....
+7. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01: Two
+   independent fidelity fixes to Programs/SweTest/Program.cs, landed together because both were
+   found by the same review pass. First, the -p<seq> option handler: swetest.c:1120-1131
+   declares spno as `char *`, sets it to the whole remainder of the argument (argv[i]+2), and
+   switches on *spno (its first character, '\0' for an empty remainder); the default branch
+   assigns that whole remainder to plsel. The port declared spno as a single char and read
+   argv[i][2] directly, which threw IndexOutOfRangeException on bare "-p" (no character at index
+   2) and, in the default branch, kept only that one character where the C keeps the whole
+   selector string (e.g. "-p0123456789Dmte" is documented to select ten bodies; the port
+   computed only the first). Now spno is a string (argv[i].Substring(2)), switched on its first
+   character or '\0' when empty, matching the C exactly. Second, the do_houses Gauquelin cusp
+   read: swetest.c:1958 reads cusp[ipl] unconditionally for every ipl up to iofs+8, before the
+   ipl >= iofs branch immediately overwrites it from ascmc -- benign stack UB in C when cusp is
+   only double[37] (swetest.c:1933) and iofs is 37 (Gauquelin, nhouses=36), since the read value
+   past cusp's nominal end is always discarded before use. The port's identical double[37] threw
+   IndexOutOfRangeException on every -house...,G invocation. Sized cusp to iofs+8 (computed
+   after nhouses/iofs are finalized, not before) rather than adding a bounds check the C does
+   not have -- the same precedent SwissEphNet/CPort/SweHouse.cs's hcusp[37] fix already set.
+   Neither is a re-transliteration: no other line in Programs/SweTest/Program.cs moved. Proven
+   to discriminate against external/.c-reference/swetest.exe (MSVC-built 2.10.03): "-p0123456789
+   -b1.1.2000 -eswe" now prints all 10 bodies, byte-identical to the C, where it printed only
+   the Sun before; bare "-p -b1.1.2000 -eswe" now prints nothing and exits 0 like the C instead
+   of throwing; "-house10,51.5,G -b1.1.2000 -p0 -fPl -eswe" now runs to completion, byte-
+   identical to the C (36 house cusps plus Ascendant/MC/ARMC/Vertex/co-Ascendant/Polar-Ascendant
+   lines), where it threw before. Tools/SwetestDiff/gen-args-grid.ps1 gained a fifth
+   HOUSES_CRASH case (Id 5, -house10,51.5,G) for the second fix; Tests/swetest/known-diff.tsv
+   dropped PLSEL_TRUNCATION|1..3 (now bit-identical) for the first, taking it from 15 to 12
+   rows -- see Tests/swetest/regenerations.log's own entry. Programs/SweTest/Program.cs: 4963 ->
+   4981 lines, 69 -> 68 trailing-whitespace lines (one commented C line's trailing space was
+   trimmed while adding the fix comment next to it), sha256 B3DC53A7... -> 667C09F3....

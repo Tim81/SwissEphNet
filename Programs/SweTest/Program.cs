@@ -880,7 +880,7 @@ namespace SweTest
             string sdate_save = String.Empty;
             string s1 = String.Empty, s2 = String.Empty;
             string sp; int spi, sp2i, sp2;
-            char spno;
+            string spno;
             string plsel = PLSEL_D;
             //#if HPUNIX
             //  char hostname[80];
@@ -1345,19 +1345,27 @@ namespace SweTest
                     }
                     else if (argv[i].StartsWith("-p", StringComparison.Ordinal))
                     {
-                        spno = argv[i][2];
-                        switch (spno)
+                        // swetest.c:1120-1131: spno is `char *`, set to the whole remainder of
+                        // the argument (argv[i]+2) and switched on *spno (its first character,
+                        // '\0' for an empty remainder); the default branch assigns that whole
+                        // remainder to plsel. This narrowed spno to a single char
+                        // (argv[i][2]), which threw IndexOutOfRangeException on bare "-p" (no
+                        // char at index 2) and, in the default branch, kept only that one
+                        // character instead of the full body-selector string -p<seq> is
+                        // documented to take (e.g. "-p0123456789Dmte").
+                        spno = argv[i].Substring(2);
+                        switch (spno.Length > 0 ? spno[0] : '\0')
                         {
                             case 'd':
                                 /*
                                 case '\0':
-                                case ' ':  
+                                case ' ':
                                 */
                                 plsel = PLSEL_D; break;
                             case 'p': plsel = PLSEL_P; break;
                             case 'h': plsel = PLSEL_H; break;
                             case 'a': plsel = PLSEL_A; break;
-                            default: plsel = spno.ToString(); break;
+                            default: plsel = spno; break;
                         }
                     }
                     else if (argv[i].StartsWith("-xs", StringComparison.Ordinal))
@@ -2362,7 +2370,6 @@ namespace SweTest
                         }
                         if (do_houses)
                         {
-                            double[] cusp = new double[37];
                             double[] cusp_speed = new double[37];
                             double[] ascmc = new double[10];
                             double[] ascmc_speed = new double[10];
@@ -2373,6 +2380,17 @@ namespace SweTest
                             if (ihsy == 'G' || ihsy == 'g') // Gauquelin has 36 cusps
                                 nhouses = 36;
                             iofs = nhouses + 1;
+                            // swetest.c:1958's loop below reads cusp[ipl] unconditionally for
+                            // every ipl up to iofs+8, before the ipl >= iofs branch immediately
+                            // overwrites x[0] from ascmc -- so the value read past cusp's
+                            // nominal length is always discarded, never printed. cusp[37] (both
+                            // languages, swetest.c:1933) is large enough for the default
+                            // 12-house case (iofs=13) but not Gauquelin (nhouses=36, iofs=37,
+                            // so the loop reads up to cusp[44]): benign stack UB in C, an
+                            // IndexOutOfRangeException here. Sized to iofs+8, the largest index
+                            // the loop touches, rather than adding a bounds check the C does not
+                            // have -- same fix SweHouse.cs already applied to hcusp[37].
+                            double[] cusp = new double[iofs + 8];
                             iflgret = sweph.swe_houses_ex2(t, iflag, top_lat, top_long, ihsy, cusp, ascmc, cusp_speed, ascmc_speed, ref serr);
                             // when swe_houses_ex() fails (e.g. with Placidus, Gauquelin, Makranski),
                             // it always returns Porphyry cusps instead
