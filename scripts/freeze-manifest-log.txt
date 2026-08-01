@@ -61,3 +61,20 @@ not exist on the integration branch once it lands).
    the queried date -- confirmed by reverting this fix and rerunning: swe_pheno(SE_CHIRON, ...)
    returns success (4) with a wrong attr[3] instead of ERR. SwissEphNet/CPort: 48427 -> 48435
    lines, sha256 26C28B33... -> 66866B61....
+5. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01: Not a change to
+   any frozen file -- scripts/verify-freeze.ps1's own hashing was wrong. Get-FrozenFile's
+   directory branch called `[System.Array]::Sort($keys, $items, comparer)` with $keys typed
+   [string[]] and $items [object[]], which PowerShell resolves to the generic
+   Array.Sort<TKey,TValue> overload: it sorts $keys but silently leaves $items untouched, so the
+   function actually returned files in whatever order Get-ChildItem's OS directory enumeration
+   produced, not the ordinal order the surrounding comments claimed. The fingerprint hashed that
+   unstable enumeration order. Fixed by casting both arguments to [Array], which forces the
+   non-generic Array.Sort(Array, Array, IComparer) overload that does sort $items, and by keying
+   the sort on the repo-relative, separator-normalized path (the same string already hashed per
+   file) instead of the raw absolute FullName. Confirmed no frozen file's content moved: `git diff
+   --stat` over SwissEphNet/CPort, Programs/SweTest/Program.cs and Programs/SweMini/Program.cs is
+   empty at the commit that changed this script and regenerated the manifest. Every count except
+   the hash is unchanged (SwissEphNet/CPort stays 17 files, 48435 lines, 1205 kr_braces, 1258
+   trailing_ws); only the enumeration order, and therefore the sha256, moved: SwissEphNet/CPort
+   66866B61... -> 3E241AA5..., the two single-file frozen paths unchanged (a one-file directory
+   has nothing to reorder).

@@ -83,22 +83,28 @@ function Get-FrozenFile {
         # ubuntu job read 16 from the same commit. That would make the hash platform-dependent,
         # which is the one property the line-ending normalization above exists to preserve.
         #
-        # KNOWN GAP, left as-is deliberately: [System.Array]::Sort($keys, $items, comparer) below,
-        # with $keys typed [string[]] and $items [object[]], resolves in PowerShell to the generic
-        # Array.Sort<TKey,TValue>(TKey[], TValue[], IComparer<TKey>) overload -- confirmed directly
-        # (Write-Host on $items before and after the call prints the identical, unsorted sequence
-        # both times) -- which sorts $keys but silently leaves $items untouched. So this function
-        # has never actually returned files in ordinal-sorted order; it returns whatever order
-        # Get-ChildItem's OS directory enumeration happens to produce, with no cross-platform
-        # guarantee. The real fix (force the non-generic Array.Sort(Array, Array, IComparer)
-        # overload via `[Array] $keys, [Array] $items`) changes which order files are concatenated
-        # into $contents below, which moves the SHA256 in scripts/freeze-manifest.tsv even though
-        # no frozen file's content changes -- regenerating that manifest is out of scope for this
-        # change. Left unfixed here on purpose; needs a reviewed -Update alongside this fix.
+        # [Array] casts on both arguments, deliberately: [System.Array]::Sort($keys, $items,
+        # comparer), with $keys typed [string[]] and $items [object[]] and no cast, resolves in
+        # PowerShell to the generic Array.Sort<TKey,TValue>(TKey[], TValue[], IComparer<TKey>)
+        # overload -- confirmed directly (Write-Host on $items before and after the call printed
+        # the identical, unsorted sequence both times) -- which sorts $keys but silently leaves
+        # $items untouched. So this function never actually returned files in ordinal-sorted
+        # order; it returned whatever order Get-ChildItem's OS directory enumeration happened to
+        # produce, with no cross-platform guarantee, and the fingerprint below hashed that
+        # enumeration order instead of a stable one. Casting both arguments to [Array] forces the
+        # non-generic Array.Sort(Array, Array, IComparer) overload instead, which does sort
+        # $items in place -- verified directly (a three-element cast-vs-uncast comparison; only
+        # the cast form reorders $items to match $keys). The sort key is the repo-relative path
+        # with separators normalized to `/`, not $_.FullName: that is the same string $contents
+        # below hashes for each file (see its own comment), so the order files are concatenated
+        # into the hash matches the order they are keyed by here, independent of whether the
+        # absolute path happens to sort identically (it does for every frozen file today, since
+        # `\` and `/` both sort above every character any of their names actually contains, but
+        # nothing here should depend on that coincidence holding for a future frozen file).
         $found = @(Get-ChildItem -LiteralPath $full -Recurse -File -Force)
-        $keys = [string[]] ($found | ForEach-Object { $_.FullName })
+        $keys = [string[]] ($found | ForEach-Object { $_.FullName.Substring($repoRoot.Length).Replace([char]92, [char]47) })
         $items = [object[]] $found
-        [System.Array]::Sort($keys, $items, [System.StringComparer]::Ordinal)
+        [System.Array]::Sort([Array] $keys, [Array] $items, [System.StringComparer]::Ordinal)
         $items
     }
     elseif (Test-Path -LiteralPath $full -PathType Leaf) {
@@ -262,7 +268,13 @@ if (-not (Test-Path -LiteralPath $ManifestPath)) {
 
 $expected = @{}
 foreach ($line in [System.IO.File]::ReadAllLines($ManifestPath)) {
-    if ($line.StartsWith('#') -or $line.Trim() -eq '' -or $line.StartsWith('path`t')) { continue }
+    # Header skip is the -like check below, which uses a double-quoted "path`t*" so the backtick
+    # is interpreted as a real tab. An earlier version of this line also tried a single-quoted
+    # $line.StartsWith('path`t'), which PowerShell never interprets as an escape inside single
+    # quotes -- it tested for a literal backtick-t sequence that never appears in the manifest, so
+    # that clause was dead code doing nothing; the -like check below has always been what actually
+    # skips the header row.
+    if ($line.StartsWith('#') -or $line.Trim() -eq '') { continue }
     if ($line -like "path`t*") { continue }
     $f = $line -split "`t"
     if ($f.Count -ne 6) {
