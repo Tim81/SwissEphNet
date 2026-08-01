@@ -66,6 +66,12 @@
     scripts/regenerate-known-fail.ps1's -PR: this repo squash-merges PRs, so a PR number survives
     the merge in a way a commit SHA captured on an open branch does not. If you do not know it yet,
     omit this and fill in the logged line by hand once you do, before the PR merges.
+
+.PARAMETER SelfTest
+    Assert the two things about this script that a live run cannot practically check: that case_ids
+    differing only in case stay distinct, and that -PruneOnly refuses every change it is not allowed
+    to make. Runs against scratch known-diff files in a temporary directory -- it never rebuilds a
+    dump, never invokes OracleVerify, and never reads or writes Tests/oracle/.
 #>
 
 param(
@@ -76,12 +82,14 @@ param(
     [ValidateSet('Analytic', 'Files', 'Both')]
     [string]$Grid = 'Both',
 
-    [string]$PR
+    [string]$PR,
+
+    [switch]$SelfTest
 )
 
 $ErrorActionPreference = 'Stop'
 
-if (-not $PruneOnly -and [string]::IsNullOrWhiteSpace($Reason)) {
+if (-not $SelfTest -and -not $PruneOnly -and [string]::IsNullOrWhiteSpace($Reason)) {
     Write-Error "-Reason is required in default (full regenerate) mode. Use -PruneOnly if you only want to remove newly-passing rows or accept max_ulp improvements."
     exit 1
 }
@@ -154,6 +162,47 @@ function Read-KnownDiffTable {
     return $table
 }
 
+# The -PruneOnly refusal guard itself, factored out of Invoke-GridRegeneration below so it can be
+# exercised directly. A live run cannot practically check it: reaching this comparison requires
+# both dumps rebuilt from a C build and OracleVerify run over both grids, and it only refuses when
+# the port happens to have regressed, which is precisely the situation nobody can produce on
+# demand. Returns the four disjoint kinds of change this mode is not allowed to write, each a list
+# of case_ids, plus whether any of them fired.
+function Get-PruneOnlyRefusals {
+    param($Current, $Fresh)
+
+    $added = @()
+    $recategorized = @()
+    $categoricalFlipped = @()
+    $grew = @()
+    foreach ($key in $Fresh.Keys) {
+        if (-not $Current.ContainsKey($key)) {
+            $added += $key
+        }
+        elseif ($Current[$key].Category -ne $Fresh[$key].Category) {
+            $recategorized += $key
+        }
+        elseif ($Current[$key].IsCategorical -ne $Fresh[$key].IsCategorical) {
+            # A row's categorical/numeric state flipping either way has no magnitude to compare
+            # -- same reasoning as Tools/OracleVerify/OracleVerifyReport.cs's
+            # RegressionKind.CategoricalStateChanged -- so -PruneOnly must not silently accept
+            # it in either direction, exactly like a recategorization.
+            $categoricalFlipped += $key
+        }
+        elseif (-not $Fresh[$key].IsCategorical -and $Fresh[$key].MaxUlp -gt $Current[$key].MaxUlp) {
+            $grew += $key
+        }
+    }
+
+    return [pscustomobject]@{
+        Added              = $added
+        Recategorized      = $recategorized
+        CategoricalFlipped = $categoricalFlipped
+        Grew               = $grew
+        Any                = ($added.Count -gt 0 -or $recategorized.Count -gt 0 -or $categoricalFlipped.Count -gt 0 -or $grew.Count -gt 0)
+    }
+}
+
 # Runs one grid's regeneration (either mode). Returns $true on success, $false on a -PruneOnly
 # refusal (already reported to the console by this point).
 function Invoke-GridRegeneration {
@@ -182,30 +231,13 @@ function Invoke-GridRegeneration {
             $current = Read-KnownDiffTable -Path $knownDiffPath
             $fresh = Read-KnownDiffTable -Path $tempPath
 
-            $added = @()
-            $recategorized = @()
-            $categoricalFlipped = @()
-            $grew = @()
-            foreach ($key in $fresh.Keys) {
-                if (-not $current.ContainsKey($key)) {
-                    $added += $key
-                }
-                elseif ($current[$key].Category -ne $fresh[$key].Category) {
-                    $recategorized += $key
-                }
-                elseif ($current[$key].IsCategorical -ne $fresh[$key].IsCategorical) {
-                    # A row's categorical/numeric state flipping either way has no magnitude to compare
-                    # -- same reasoning as Tools/OracleVerify/OracleVerifyReport.cs's
-                    # RegressionKind.CategoricalStateChanged -- so -PruneOnly must not silently accept
-                    # it in either direction, exactly like a recategorization.
-                    $categoricalFlipped += $key
-                }
-                elseif (-not $fresh[$key].IsCategorical -and $fresh[$key].MaxUlp -gt $current[$key].MaxUlp) {
-                    $grew += $key
-                }
-            }
+            $refusals = Get-PruneOnlyRefusals -Current $current -Fresh $fresh
+            $added = $refusals.Added
+            $recategorized = $refusals.Recategorized
+            $categoricalFlipped = $refusals.CategoricalFlipped
+            $grew = $refusals.Grew
 
-            if ($added.Count -gt 0 -or $recategorized.Count -gt 0 -or $categoricalFlipped.Count -gt 0 -or $grew.Count -gt 0) {
+            if ($refusals.Any) {
                 Write-Host ''
                 Write-Host '-PruneOnly refuses: the current run would add, recategorize, or worsen a row, and this mode can only remove rows or improve them.' -ForegroundColor Red
                 if ($added.Count -gt 0) {
@@ -289,6 +321,170 @@ function Invoke-GridRegeneration {
     Write-Host "Logged to $logPath"
     return $true
 }
+
+# ---------------------------------------------------------------------------------------------
+# Self-test. Everything below the functions is a live run -- two dumps rebuilt from a C build,
+# OracleVerify over both grids, minutes of work -- so this block exits before any of it. It
+# exercises the two pieces that decide whether a row can be written into a known-diff list without
+# review: how the list is keyed, and what -PruneOnly refuses.
+
+if ($SelfTest) {
+    $failures = 0
+    $root = Join-Path ([System.IO.Path]::GetTempPath()) ("regenerate-oracle-known-diff-selftest-" + [System.Guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $root -Force | Out-Null
+
+    function New-Row {
+        param([string] $CaseId, [string] $Category, [string] $MaxUlp, [string] $Reason = 'lon differs')
+        return "$CaseId`t$Category`t$MaxUlp`t$Reason"
+    }
+
+    function New-KnownDiffFile {
+        param([string] $Path, [string[]] $Rows)
+        $text = "case_id`tcategory`tmax_ulp`treason`n" + (($Rows -join "`n") + "`n")
+        [System.IO.File]::WriteAllText($Path, ($text -replace "`r`n", "`n"), (New-Object System.Text.UTF8Encoding $false))
+    }
+
+    function Read-Pair {
+        # Round-trips both sides through real files, not hand-built hashtables: the keying is the
+        # thing under test here, and building the tables directly would build them with whatever
+        # comparer this test chose rather than the one Read-KnownDiffTable actually uses.
+        param([string[]] $CurrentRows, [string[]] $FreshRows)
+        $currentPath = Join-Path $root 'current.tsv'
+        $freshPath = Join-Path $root 'fresh.tsv'
+        New-KnownDiffFile $currentPath $CurrentRows
+        New-KnownDiffFile $freshPath $FreshRows
+        return [pscustomobject]@{
+            Current = (Read-KnownDiffTable -Path $currentPath)
+            Fresh   = (Read-KnownDiffTable -Path $freshPath)
+        }
+    }
+
+    function Assert-Equal {
+        param([string] $Case, $Expected, $Actual)
+        if ($Expected -eq $Actual) {
+            Write-Host ("  PASS  {0}" -f $Case)
+        }
+        else {
+            Write-Host ("  FAIL  {0}`n          expected {1}`n          actual   {2}" -f $Case, $Expected, $Actual)
+            $script:failures++
+        }
+    }
+
+    function Assert-Refuses {
+        param([string] $Case, [string[]] $CurrentRows, [string[]] $FreshRows, [string] $Bucket)
+        $pair = Read-Pair $CurrentRows $FreshRows
+        $refusals = Get-PruneOnlyRefusals -Current $pair.Current -Fresh $pair.Fresh
+        if ($refusals.Any -and $refusals.$Bucket.Count -gt 0) {
+            Write-Host ("  PASS  {0} (refused: {1} = {2})" -f $Case, $Bucket, ($refusals.$Bucket -join ', '))
+        }
+        else {
+            Write-Host ("  FAIL  {0}`n          expected a refusal in {1}, got Any={2} Added={3} Recategorized={4} CategoricalFlipped={5} Grew={6}" -f
+                $Case, $Bucket, $refusals.Any, $refusals.Added.Count, $refusals.Recategorized.Count, $refusals.CategoricalFlipped.Count, $refusals.Grew.Count)
+            $script:failures++
+        }
+    }
+
+    function Assert-Accepts {
+        param([string] $Case, [string[]] $CurrentRows, [string[]] $FreshRows)
+        $pair = Read-Pair $CurrentRows $FreshRows
+        $refusals = Get-PruneOnlyRefusals -Current $pair.Current -Fresh $pair.Fresh
+        if (-not $refusals.Any) {
+            Write-Host ("  PASS  {0} (accepted)" -f $Case)
+        }
+        else {
+            Write-Host ("  FAIL  {0}`n          expected no refusal, got Added={1} Recategorized={2} CategoricalFlipped={3} Grew={4}" -f
+                $Case, ($refusals.Added -join ', '), ($refusals.Recategorized -join ', '), ($refusals.CategoricalFlipped -join ', '), ($refusals.Grew -join ', '))
+            $script:failures++
+        }
+    }
+
+    Write-Host 'regenerate-oracle-known-diff self-test'
+    Write-Host ''
+
+    # 1. Control: a pure prune plus a shrinking max_ulp, which is everything -PruneOnly exists to
+    #    allow. Without this, a refusal case passing would prove only that the guard refuses
+    #    everything.
+    Assert-Accepts 'a pure removal plus a shrinking max_ulp is accepted' `
+        @((New-Row 'CALC|1' 'PORT-VERSION' '4'), (New-Row 'CALC|2' 'PORT-VERSION' '9')) `
+        @((New-Row 'CALC|1' 'PORT-VERSION' '2'))
+
+    # 2. The mandated refusal: a row the current run produces that is not on the list is a
+    #    currently-failing case, and writing it in without review is exactly the gate bypass
+    #    -PruneOnly refuses to be used for.
+    Assert-Refuses 'a row that would be newly written into the list is refused' `
+        @((New-Row 'CALC|1' 'PORT-VERSION' '4')) `
+        @((New-Row 'CALC|1' 'PORT-VERSION' '4'), (New-Row 'CALC|2' 'PORT-VERSION' '7')) 'Added'
+
+    # 3. A recategorization is an editorial claim about why a row differs, so it needs -Reason.
+    Assert-Refuses 'a recategorized row is refused' `
+        @((New-Row 'CALC|1' 'PORT-VERSION' '4')) `
+        @((New-Row 'CALC|1' 'LIBM-RESIDUAL' '4')) 'Recategorized'
+
+    # 4. A larger max_ulp on a row already listed. Recorded as an update to an existing line rather
+    #    than a new one, it is the same silent widening as an added row.
+    Assert-Refuses 'a larger max_ulp on an already-listed row is refused' `
+        @((New-Row 'CALC|1' 'PORT-VERSION' '4')) `
+        @((New-Row 'CALC|1' 'PORT-VERSION' '5')) 'Grew'
+
+    # 5. Numeric to categorical, and back. Neither direction has a magnitude to compare, so
+    #    -PruneOnly cannot call either one an improvement.
+    Assert-Refuses 'a numeric row turning categorical is refused' `
+        @((New-Row 'CALC|1' 'PORT-VERSION' '4')) `
+        @((New-Row 'CALC|1' 'PORT-VERSION' 'categorical')) 'CategoricalFlipped'
+    Assert-Refuses 'a categorical row turning numeric is refused' `
+        @((New-Row 'CALC|1' 'PORT-VERSION' 'categorical')) `
+        @((New-Row 'CALC|1' 'PORT-VERSION' '4')) 'CategoricalFlipped'
+
+    # 6. The 'categorical' marker is a literal, not a number: coercing it would need [uint64]
+    #    'categorical', which throws, and treating it as 0 would make every later run look like
+    #    growth. Read as a flag, with no magnitude of its own.
+    $categoricalPath = Join-Path $root 'categorical.tsv'
+    New-KnownDiffFile $categoricalPath @((New-Row 'CALC|1' 'PORT-VERSION' 'categorical'))
+    $categoricalTable = Read-KnownDiffTable -Path $categoricalPath
+    Assert-Equal "the 'categorical' max_ulp marker is read as a flag, not a number" $true $categoricalTable['CALC|1'].IsCategorical
+
+    # 7. case_ids differing only in case must stay distinct. Measured against
+    #    Tests/oracle/grid-analytic.tsv: 15,916 ordinal-distinct case_ids collapse to 15,520 under
+    #    PowerShell's default @{} comparer -- 396 case-only collisions merged last-write-wins.
+    $casePath = Join-Path $root 'case-collision.tsv'
+    New-KnownDiffFile $casePath @((New-Row 'HOUSESARMC|I|1' 'PORT-VERSION' '4'), (New-Row 'HOUSESARMC|i|1' 'PORT-VERSION' '9'))
+    $caseTable = Read-KnownDiffTable -Path $casePath
+    Assert-Equal 'two case_ids differing only in case stay two rows, not one' 2 $caseTable.Count
+    Assert-Equal 'the upper-case case_id keeps its own max_ulp' ([uint64]4) $caseTable['HOUSESARMC|I|1'].MaxUlp
+    # Stated as "the two lookups disagree" rather than as a second per-row expectation: a collapse
+    # is last-write-wins, so exactly one of the two rows' values survives, and a per-row assertion
+    # naming that survivor's value would pass under the collapse it is supposed to catch. This
+    # form has no such survivor to agree with.
+    Assert-Equal 'the two case-only siblings do not resolve to one shared row' $false `
+        ($caseTable['HOUSESARMC|I|1'].MaxUlp -eq $caseTable['HOUSESARMC|i|1'].MaxUlp)
+
+    # 8. What the collapse costs the refusal guard, part one: a case-only sibling of a listed row
+    #    is a genuinely new row. Under a case-insensitive table it looks like one already on the
+    #    list, so it is never reported as added and -PruneOnly writes it in silently.
+    Assert-Refuses 'a case-only sibling of a listed row is still an added row' `
+        @((New-Row 'HOUSESARMC|I|1' 'PORT-VERSION' '20')) `
+        @((New-Row 'HOUSESARMC|I|1' 'PORT-VERSION' '20'), (New-Row 'HOUSESARMC|i|1' 'PORT-VERSION' '3')) 'Added'
+
+    # 9. Part two, and the reason a case-insensitive table is not merely imprecise but actively
+    #    hides growth: with the colliding rows written in this order, both sides collapse
+    #    last-write-wins onto the same surviving value (20), the lower-case row's 5 -> 12 growth
+    #    disappears entirely, and -PruneOnly records the worsened row as though nothing moved.
+    Assert-Refuses 'a case-only collision cannot hide a max_ulp that grew' `
+        @((New-Row 'HOUSESARMC|i|1' 'PORT-VERSION' '5'), (New-Row 'HOUSESARMC|I|1' 'PORT-VERSION' '20')) `
+        @((New-Row 'HOUSESARMC|i|1' 'PORT-VERSION' '12'), (New-Row 'HOUSESARMC|I|1' 'PORT-VERSION' '20')) 'Grew'
+
+    Write-Host ''
+    Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+
+    if ($failures -gt 0) {
+        Write-Host "FAIL: $failures self-test case(s) failed."
+        exit 1
+    }
+    Write-Host 'PASS: all regenerate-oracle-known-diff self-test cases passed.'
+    exit 0
+}
+
+# ---------------------------------------------------------------------------------------------
 
 Write-Host 'Rebuilding both sides of the oracle harness, both grids (scripts/run-oracle-dump.ps1)...'
 & $dumpScript
