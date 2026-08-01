@@ -68,8 +68,9 @@
 
 .PARAMETER SelfTest
     Plant each bypass this check was measured to have into a throwaway document, run the check
-    against it, and assert it fails -- plus the exemptions it must keep honouring, and assert those
-    pass. Touches nothing outside a temporary directory.
+    against it, and assert both its exit code and the failure message it gives -- plus the
+    exemptions it must keep honouring, and assert those pass. Touches nothing outside a temporary
+    directory.
 
 .NOTES
     Vacuity floor: $currentUsageDocs is filtered through Where-Object { Test-Path ... }, so a
@@ -368,23 +369,41 @@ function Assert-Gate {
     # terminating Write-Error, which in-process would abort the self-test itself instead of being
     # observable as a code. The exit code is read straight from $LASTEXITCODE with no pipeline
     # between -- piping would make it report the last stage of the pipe instead of the gate.
+    #
+    # -Matching additionally requires the failure output to say what the case claims it says. This
+    # script has three independent ways to fail (a removed API in a sample, an unbalanced
+    # delimiter, a historical heading left open), so a plant meant to exercise one of them can very
+    # easily go red through another and look like it proved something it did not.
     param(
         [string] $Case,
         [ValidateSet('fails', 'passes')][string] $Expect,
-        [string] $LabRoot)
+        [string] $LabRoot,
+        [string] $Matching)
 
     $output = & $pwshExe -NoProfile -File $PSCommandPath -RepoRoot $LabRoot *>&1
     $code = $LASTEXITCODE
-    $ok = if ($Expect -eq 'fails') { $code -ne 0 } else { $code -eq 0 }
-    if ($ok) {
+    $text = (@($output) -join "`n")
+
+    $problem = $null
+    if ($Expect -eq 'fails' -and $code -eq 0) { $problem = 'expected the gate to fail, got exit 0' }
+    elseif ($Expect -eq 'passes' -and $code -ne 0) { $problem = "expected the gate to pass, got exit $code" }
+    elseif ($Matching -and $text -notmatch $Matching) {
+        $problem = "gate exited $code as expected, but for the wrong reason: nothing in its output matched /$Matching/"
+    }
+
+    if (-not $problem) {
         Write-Host ("  PASS  {0} (gate {1}, exit {2})" -f $Case, $Expect, $code)
     }
     else {
-        Write-Host ("  FAIL  {0}`n          expected the gate to {1}, got exit {2}" -f $Case, $Expect, $code)
+        Write-Host ("  FAIL  {0}`n          {1}" -f $Case, $problem)
         foreach ($line in @($output)) { Write-Host "            | $line" }
         $script:failures++
     }
 }
+
+# The three failure messages the cases below discriminate between.
+$namesRemovedApi = "code sample outside any historical section names 'OnLoadFile'"
+$splitAcrossLines = 'appears to be split across these two lines'
 
 Write-Host 'verify-doc-no-removed-apis self-test'
 Write-Host ''
@@ -430,7 +449,7 @@ swe.OnLoadFile += (s, e) => { e.File = File.OpenRead(e.FileName); };
 
 ## Building
 '@
-Assert-Gate 'a fenced sample naming a removed API outside a historical section' 'fails' (New-DocLab 'fenced' $doc)
+Assert-Gate 'a fenced sample naming a removed API outside a historical section' 'fails' (New-DocLab 'fenced' $doc) -Matching $namesRemovedApi
 
 # 2. The same sample shown as a 4-space indented block instead of a fenced one. Ignoring indented
 #    samples entirely (the earlier behaviour) left markdown's second standard code form unchecked.
@@ -441,7 +460,7 @@ $doc = $cleanDoc -replace '## Building', @'
 
 ## Building
 '@
-Assert-Gate 'a 4-space indented sample naming a removed API' 'fails' (New-DocLab 'indented' $doc)
+Assert-Gate 'a 4-space indented sample naming a removed API' 'fails' (New-DocLab 'indented' $doc) -Matching $namesRemovedApi
 
 # 3. Markdown's third code form: a raw <pre> block, which neither the fence tracker nor the
 #    indent test sees.
@@ -452,7 +471,7 @@ $doc = $cleanDoc -replace '## Building', @'
 
 ## Building
 '@
-Assert-Gate 'a raw <pre> block naming a removed API' 'fails' (New-DocLab 'pre-block' $doc)
+Assert-Gate 'a raw <pre> block naming a removed API' 'fails' (New-DocLab 'pre-block' $doc) -Matching $namesRemovedApi
 
 # 4. The heading-inside-a-fence bypass: a shell comment inside a fenced sample starts with '#'
 #    exactly like a markdown heading. Testing headings before fences let that comment open a
@@ -474,7 +493,7 @@ swe.OnLoadFile += (s, e) => { };
 
 ## Building
 '@
-Assert-Gate 'a heading-shaped comment inside a fence does not exempt the rest of the file' 'fails' (New-DocLab 'fence-comment-heading' $doc)
+Assert-Gate 'a heading-shaped comment inside a fence does not exempt the rest of the file' 'fails' (New-DocLab 'fence-comment-heading' $doc) -Matching $namesRemovedApi
 
 # 5. Nested fences. A literal ``` shown as CONTENT inside a longer ~~~~ fence is not a close --
 #    CommonMark closes a fence only on a run of the same character at least as long as the opener.
@@ -491,7 +510,7 @@ swe.OnLoadFile += (s, e) => { };
 
 ## Building
 '@
-Assert-Gate 'a fence nested inside a longer fence of the other character' 'fails' (New-DocLab 'nested-fence' $doc)
+Assert-Gate 'a fence nested inside a longer fence of the other character' 'fails' (New-DocLab 'nested-fence' $doc) -Matching $namesRemovedApi
 
 # 6. A fenced sample quoted inside a `>` blockquote, which CommonMark renders as a real fenced
 #    code block. Without the leading-blockquote allowance the sample was never classified as code
@@ -505,7 +524,7 @@ $doc = $cleanDoc -replace '## Building', @'
 
 ## Building
 '@
-Assert-Gate 'a fenced sample inside a blockquote' 'fails' (New-DocLab 'blockquote-fence' $doc)
+Assert-Gate 'a fenced sample inside a blockquote' 'fails' (New-DocLab 'blockquote-fence' $doc) -Matching $namesRemovedApi
 
 # 7. The API name hard-wrapped across two lines of a code sample. It matches on neither line
 #    alone; only the join of each code line with the one before it sees it.
@@ -519,13 +538,13 @@ File += (s, e) => { };
 
 ## Building
 '@
-Assert-Gate 'a removed API name split across two lines of a sample' 'fails' (New-DocLab 'split-name' $doc)
+Assert-Gate 'a removed API name split across two lines of a sample' 'fails' (New-DocLab 'split-name' $doc) -Matching $splitAcrossLines
 
 # 8. The vacuity case: no README.md at all. Before the $checkedFiles floor this printed
 #    "Checked 0 current-usage documentation file(s)" and exited 0 -- a PASS having read nothing,
 #    which is exactly what a README.md renamed to Readme.md looks like on the case-sensitive
 #    runner this check actually runs on.
-Assert-Gate 'a scan that finds zero documents to check' 'fails' (New-DocLab 'vacuous')
+Assert-Gate 'a scan that finds zero documents to check' 'fails' (New-DocLab 'vacuous') -Matching 'Checked zero current-usage documentation file'
 
 # 9. The clean document -- prose mentions, a current sample, and a historical before/after sample
 #    -- must pass. Without this, every case above could be satisfied by a check that fails on
@@ -542,14 +561,14 @@ swe.FileProvider = new MyProvider();
 
 ## Building
 '@
-Assert-Gate 'an unbalanced fence' 'fails' (New-DocLab 'unbalanced-fence' $doc)
+Assert-Gate 'an unbalanced fence' 'fails' (New-DocLab 'unbalanced-fence' $doc) -Matching 'unbalanced code block'
 
 # 11. A historical heading still open at end of file exempted everything after it from the scan on
 #     that basis alone. Same reasoning as case 10: report it rather than trust the verdict.
 $doc = $cleanDoc -replace '## Building', @'
 ## Migration
 '@
-Assert-Gate 'a historical heading left open at end of file' 'fails' (New-DocLab 'open-historical' $doc)
+Assert-Gate 'a historical heading left open at end of file' 'fails' (New-DocLab 'open-historical' $doc) -Matching 'historical/migration heading is still open at end of file'
 
 # 12. The one deliberate carve-out: `Assembly.LoadFile` is an unrelated BCL API a legitimate
 #     current sample may genuinely call, and the default whole-word match on the removed

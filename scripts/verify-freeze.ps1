@@ -45,8 +45,8 @@
 
 .PARAMETER SelfTest
     Build a throwaway frozen tree, plant each way a frozen file has been -- or could be -- altered
-    without this check noticing, and assert the check's exit code for each. Touches nothing outside
-    a temporary directory, and never writes this repository's own manifest.
+    without this check noticing, and assert the check's exit code and failure message for each.
+    Touches nothing outside a temporary directory, and never writes this repository's own manifest.
 #>
 [CmdletBinding()]
 param(
@@ -463,23 +463,42 @@ function Assert-Gate {
     # Runs this script's own normal path in a CHILD process, the way CI invokes it, and asserts the
     # exit code -- read straight from $LASTEXITCODE with no pipeline in between, which would report
     # the pipe's last stage instead of the gate's own code.
+    #
+    # -Matching additionally requires the failure output to say what the case claims it says. That
+    # distinction is the whole point of cases 2 and 4: both must be reported by the byte-level
+    # invariants, which run before the manifest is even read, and a case that only checked the exit
+    # code could not tell "the invariant caught it" from "the fingerprint caught it" -- when the
+    # documented fact about those two plants is that the fingerprint cannot.
     param(
         [string] $Case,
         [ValidateSet('fails', 'passes')][string] $Expect,
-        [string] $LabRoot)
+        [string] $LabRoot,
+        [string] $Matching)
 
     $output = & $pwshExe -NoProfile -File $PSCommandPath -RepoRoot $LabRoot -ManifestPath $labManifest *>&1
     $code = $LASTEXITCODE
-    $ok = if ($Expect -eq 'fails') { $code -ne 0 } else { $code -eq 0 }
-    if ($ok) {
+    $text = (@($output) -join "`n")
+
+    $problem = $null
+    if ($Expect -eq 'fails' -and $code -eq 0) { $problem = 'expected the gate to fail, got exit 0' }
+    elseif ($Expect -eq 'passes' -and $code -ne 0) { $problem = "expected the gate to pass, got exit $code" }
+    elseif ($Matching -and $text -notmatch $Matching) {
+        $problem = "gate exited $code as expected, but for the wrong reason: nothing in its output matched /$Matching/"
+    }
+
+    if (-not $problem) {
         Write-Host ("  PASS  {0} (gate {1}, exit {2})" -f $Case, $Expect, $code)
     }
     else {
-        Write-Host ("  FAIL  {0}`n          expected the gate to {1}, got exit {2}" -f $Case, $Expect, $code)
+        Write-Host ("  FAIL  {0}`n          {1}" -f $Case, $problem)
         foreach ($line in @($output)) { Write-Host "            | $line" }
         $script:failures++
     }
 }
+
+# The fingerprint-mismatch message, shared by the cases the manifest comparison is supposed to
+# catch. It is deliberately NOT what cases 2, 3 and 4 expect.
+$changedShape = 'a transliteration-frozen path changed shape'
 
 function Get-LabFrozenFile {
     param([string] $LabRoot)
@@ -494,7 +513,7 @@ $lab = New-FreezeLab 'content-change'
 $target = Join-Path $lab 'SwissEphNet/CPort/SweDate.cs'
 $text = [System.IO.File]::ReadAllText($target)
 [System.IO.File]::WriteAllText($target, $text.Replace('return -1;', 'return -2;'), $utf8Bom)
-Assert-Gate 'a content change inside a frozen file' 'fails' $lab
+Assert-Gate 'a content change inside a frozen file' 'fails' $lab -Matching $changedShape
 
 # 2. The trailing newline stripped from EVERY frozen file. This is invisible to all four proxy
 #    counts and to the hash: File.ReadAllText plus a text split throws the signal away, because
@@ -509,21 +528,21 @@ foreach ($file in Get-LabFrozenFile $lab) {
     }
     [System.IO.File]::WriteAllBytes($file.FullName, $bytes)
 }
-Assert-Gate 'the trailing newline stripped from every frozen file' 'fails' $lab
+Assert-Gate 'the trailing newline stripped from every frozen file' 'fails' $lab -Matching 'does not end with a trailing newline'
 
 # 3. A frozen file re-encoded to UTF-16LE. Its size doubles on disk, and File.ReadAllText decodes
 #    it back to the identical in-memory string, so every count and the hash were unchanged.
 $lab = New-FreezeLab 'utf16-reencode'
 $target = Join-Path $lab 'SwissEphNet/CPort/Sweph.cs'
 [System.IO.File]::WriteAllText($target, [System.IO.File]::ReadAllText($target), [System.Text.Encoding]::Unicode)
-Assert-Gate 'a frozen file re-encoded to UTF-16LE' 'fails' $lab
+Assert-Gate 'a frozen file re-encoded to UTF-16LE' 'fails' $lab -Matching 'is UTF-16 encoded'
 
 # 4. The UTF-8 BOM stripped from a frozen *.cs file -- same blind spot as case 3 from the other
 #    direction: ReadAllText decodes UTF-8 with or without a BOM to the same string.
 $lab = New-FreezeLab 'stripped-bom'
 $target = Join-Path $lab 'SwissEphNet/CPort/Sweph.cs'
 [System.IO.File]::WriteAllText($target, [System.IO.File]::ReadAllText($target), $utf8NoBom)
-Assert-Gate 'the UTF-8 BOM stripped from a frozen *.cs file' 'fails' $lab
+Assert-Gate 'the UTF-8 BOM stripped from a frozen *.cs file' 'fails' $lab -Matching 'no UTF-8 BOM'
 
 # 5. A rename whose ONLY change is capitalisation. core.ignorecase is true in this repository's
 #    checkouts, which is how a frozen file has been silently re-cased before; the hash covers each
@@ -534,18 +553,18 @@ $lab = New-FreezeLab 'case-only-rename'
 $dir = Join-Path $lab 'SwissEphNet/CPort'
 Rename-Item -LiteralPath (Join-Path $dir 'SweDate.cs') -NewName 'SweDate.cs.tmp'
 Rename-Item -LiteralPath (Join-Path $dir 'SweDate.cs.tmp') -NewName 'swedate.cs'
-Assert-Gate 'a frozen file renamed by capitalisation alone' 'fails' $lab
+Assert-Gate 'a frozen file renamed by capitalisation alone' 'fails' $lab -Matching $changedShape
 
 # 6. A file added under a frozen path. A directory in $frozenPaths means everything under it, so a
 #    new file is covered automatically instead of escaping the freeze.
 $lab = New-FreezeLab 'added-file'
 Write-LabFile (Join-Path $lab 'SwissEphNet/CPort/SweHouse.cs') @('namespace SwissEphNet.CPort {', '}')
-Assert-Gate 'a file added under a frozen path' 'fails' $lab
+Assert-Gate 'a file added under a frozen path' 'fails' $lab -Matching $changedShape
 
 # 7. A file deleted from a frozen path.
 $lab = New-FreezeLab 'deleted-file'
 Remove-Item -LiteralPath (Join-Path $lab 'SwissEphNet/CPort/Sweph.cs') -Force
-Assert-Gate 'a file deleted from a frozen path' 'fails' $lab
+Assert-Gate 'a file deleted from a frozen path' 'fails' $lab -Matching $changedShape
 
 # 8. CRLF rewritten to LF across every frozen file MUST STAY INVISIBLE. That is deliberate: the
 #    fingerprint splits on both conventions and joins with "`n" precisely so a contributor whose
