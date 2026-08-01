@@ -39,24 +39,360 @@
     Commit-ish to diff HEAD against: the PR's base SHA for pull_request events, or the
     previous commit for push events. Resolved by the caller (see .github/workflows/baseline.yml),
     not by this script, since only the workflow knows which GitHub event triggered it.
+
+.PARAMETER RepoRoot
+    Repository root. Defaults to the checkout containing this script. Matches
+    scripts/verify-freeze-log.ps1 and scripts/verify-known-fail-log.ps1, which both already take
+    one, and is what lets -SelfTest point this gate at a scratch repository instead of the real
+    tree.
+
+.PARAMETER SelfTest
+    Build throwaway repositories covering every bypass this gate has been shown to have, run this
+    same script against each of them in a child process, and assert the exit code. Touches nothing
+    outside a temporary directory -- in particular it never reads, and never writes, the real
+    Tests/baseline/baseline-*.env.txt.
 #>
 
+[CmdletBinding(DefaultParameterSetName = 'Verify')]
 param(
-    [Parameter(Mandatory)]
-    [string]$BaseRef
+    [Parameter(Mandatory, ParameterSetName = 'Verify')]
+    [string]$BaseRef,
+    [Parameter(Mandatory, ParameterSetName = 'SelfTest')]
+    [switch]$SelfTest,
+    [string]$RepoRoot = (Split-Path -Parent $PSScriptRoot)
 )
 
 $ErrorActionPreference = 'Stop'
-$repoRoot = Split-Path -Parent $PSScriptRoot
-$baselineDir = Join-Path $repoRoot 'Tests\baseline'
+$baselineDir = Join-Path $RepoRoot 'Tests\baseline'
 
-git -C $repoRoot rev-parse --verify "$BaseRef^{commit}" *> $null
+# ---------------------------------------------------------------------------------------------
+# Self-test. Placed ahead of the gate body rather than wrapping it, so the gate itself stays
+# byte-for-byte what it was: every case below runs this script as a child process and reads its
+# exit code, which is the same thing CI does, so nothing can pass here by way of an in-process
+# shortcut the real invocation would not take.
+#
+# Each case builds a real scratch repository. Mocking git would test the mock: every bypass this
+# gate has actually had lived in what git reported (which paths changed, which sidecar path
+# existed at the base ref, what that blob held), not in the comparison arithmetic alone.
+
+if ($SelfTest) {
+    $failures = 0
+    $root = Join-Path ([System.IO.Path]::GetTempPath()) ("verify-baseline-log-selftest-" + [System.Guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $root -Force | Out-Null
+
+    # By code point, never pasted literally: an invisible character sitting in this file is
+    # precisely the thing no reviewer can see, which is the whole reason these two cases exist.
+    $SoftHyphen = [string][char]0x00AD
+    $ZeroWidthSpace = [string][char]0x200B
+
+    $BaseSidecarName = 'baseline-2.8.0.2.env.txt'
+
+    $Header = @'
+Environment sidecar fixture built by this script's own self-test. Not the real sidecar.
+
+## Local regenerations
+
+'@
+
+    # A "## " section sitting BETWEEN two log entries, carrying no numbered line of its own. The
+    # real sidecar had exactly this shape (271 lines of re-measurable coverage figures between
+    # entries 6 and 7) and it broke the parser: with an entry bounded only by the next numbered
+    # line, the whole section parsed as the tail of the entry above it, so correcting one figure
+    # in it read as rewriting an append-only entry and the gate failed on a log nobody had
+    # touched. That section has since been moved above "## Local regenerations", so only cases 11
+    # and 12 below keep the misparse from coming back unnoticed.
+    $MidSectionBase = @'
+## Coverage figures
+
+Re-measurable figures that sit between two log entries and carry no numbered line
+of their own: 14220 of 14220 analytic grid rows bit-identical, 2024 of 2024 for
+the file-backed grid.
+
+'@
+    $MidSectionCorrected = $MidSectionBase -replace '2024 of 2024', '2025 of 2025'
+
+    # Where the mid-log section goes: after this many entries. Entries past it must still be
+    # compared (case 12), not silently dropped by the bounding fix (case 11).
+    $MidSectionAfter = 3
+
+    # Multi-line on purpose. A log of single-line entries would make the CRLF case below vacuous:
+    # an entry with no interior line break reads identically whichever ending the file uses, so
+    # only a wrapped entry can tell a normalizing comparison from a non-normalizing one.
+    $BaseEntries = @(
+        @'
+1. abc1234 (2026-01-01): Fixed a mis-transliteration against the C file and line
+   it came from; 207 rows changed per TFM, all a diagnostic string.
+'@
+        @'
+2. abc1234 (2026-01-02): Added seven new baseline areas. New coverage, not a
+   behavior change: every pre-existing file is byte-identical before and after.
+'@
+        @'
+3. def5678 (2026-01-03): Fixed a duplicate case id in one of the new areas; no
+   other new area and no pre-existing area changed.
+'@
+        @'
+4. ghi9012 (2026-01-04): An entry that sits AFTER the mid-log section above, and
+   is therefore the one a bounding fix could drop by accident.
+'@
+        @'
+5. jkl3456 (2026-01-05): A second entry after the mid-log section, so that case
+   12 below is not testing the last entry as a special case.
+'@
+    )
+
+    $NewEntry6 = @'
+6. mno7890 (2026-01-06): A deliberate, reviewed local-mode regeneration, with
+   enough text in it for a reviewer to actually read.
+'@
+    $NewEntry7 = @'
+7. pqr1234 (2026-01-07): A second added entry, also with real content in it.
+'@
+    $NewEntry8 = @'
+8. stu5678 (2026-01-08): A third added entry, also with real content in it.
+'@
+
+    $BaseTsv = "case_id`tvalue`nCALC|1`t1.0`nCALC|2`t2.0`n"
+    $ChangedTsv = "case_id`tvalue`nCALC|1`t1.5`nCALC|2`t2.0`n"
+
+    function New-LogText {
+        param([string[]] $Entries, [string] $MidSection = $MidSectionBase)
+        $before = @()
+        $after = @()
+        for ($i = 0; $i -lt $Entries.Count; $i++) {
+            if ($i -lt $MidSectionAfter) { $before += $Entries[$i] } else { $after += $Entries[$i] }
+        }
+        $chunks = @()
+        if ($before.Count -gt 0) { $chunks += (($before -join "`n") + "`n") }
+        $chunks += $MidSection
+        if ($after.Count -gt 0) { $chunks += (($after -join "`n") + "`n") }
+        return (($Header + ($chunks -join "`n")) -replace "`r`n", "`n")
+    }
+
+    function Set-LabFile {
+        # -Crlf writes the file with CRLF endings while git stores whatever bytes it is given
+        # (see New-Lab's core.autocrlf setting), which is how the CRLF case gets a CRLF working
+        # tree at HEAD against an LF blob at the base ref.
+        param([string] $Path, [string] $Text, [switch] $Crlf)
+        $normalized = $Text -replace "`r`n", "`n"
+        if ($Crlf) { $normalized = $normalized -replace "`n", "`r`n" }
+        [System.IO.File]::WriteAllText($Path, $normalized, (New-Object System.Text.UTF8Encoding $false))
+    }
+
+    function New-Lab {
+        param([string] $Name)
+        $dir = Join-Path $root $Name
+        New-Item -ItemType Directory -Path (Join-Path $dir 'Tests/baseline') -Force | Out-Null
+        git init -q -b main $dir
+        git -C $dir config user.email 'selftest@example.invalid'
+        git -C $dir config user.name 'selftest'
+        # autocrlf off, and no .gitattributes: the real sidecar is pinned to eol=lf, and the CRLF
+        # case below is exactly the "what if that pin is ever removed or narrowed" scenario this
+        # gate's own normalization comment describes -- so the lab must NOT reproduce the pin, and
+        # the blob must hold exactly the bytes written to disk.
+        git -C $dir config core.autocrlf false
+        Set-LabFile (Join-Path $dir 'Tests/baseline/baseline-calc.tsv') $BaseTsv
+        Set-LabFile (Join-Path $dir "Tests/baseline/$BaseSidecarName") (New-LogText $BaseEntries)
+        git -C $dir add Tests/baseline
+        git -C $dir commit -q -m 'fixture base'
+        return [pscustomobject]@{ Path = $dir; BaseSha = (git -C $dir rev-parse HEAD).Trim() }
+    }
+
+    function Set-LabHead {
+        # Applies one case's head commit: optionally a golden TSV change, optionally a rewritten
+        # log, optionally a sidecar rename, then commits the named path (never `git add -A`).
+        param(
+            [pscustomobject] $Lab,
+            [string] $LogText,
+            [switch] $ChangeTsv,
+            [switch] $Crlf,
+            [string] $RenameSidecarTo
+        )
+        if ($ChangeTsv) {
+            Set-LabFile (Join-Path $Lab.Path 'Tests/baseline/baseline-calc.tsv') $ChangedTsv
+        }
+        $sidecarName = $BaseSidecarName
+        if (-not [string]::IsNullOrEmpty($RenameSidecarTo)) {
+            git -C $Lab.Path mv "Tests/baseline/$BaseSidecarName" "Tests/baseline/$RenameSidecarTo"
+            $sidecarName = $RenameSidecarTo
+        }
+        # IsNullOrEmpty, not `$null -ne $LogText`: a [string] parameter coerces $null to the empty
+        # string, so the null test is always true and "leave the log alone" would silently become
+        # "write an empty log" -- which makes the TSV-changed-without-an-entry case below fail for
+        # the wrong reason (the append-only check catching an emptied log) and never exercise the
+        # count check it exists for at all.
+        if (-not [string]::IsNullOrEmpty($LogText)) {
+            Set-LabFile (Join-Path $Lab.Path "Tests/baseline/$sidecarName") $LogText -Crlf:$Crlf
+        }
+        git -C $Lab.Path add Tests/baseline
+        git -C $Lab.Path commit -q -m 'case head'
+    }
+
+    function Invoke-Gate {
+        # A child process, not dot-sourcing: the gate ends in `exit`, which would tear the
+        # self-test down in-process, and an exit code is the only thing CI ever looks at anyway.
+        # Assigned, never piped -- through a pipeline $LASTEXITCODE reports the pipe's last stage
+        # instead of the command's own status.
+        param([pscustomobject] $Lab)
+        $output = & pwsh -NoProfile -NonInteractive -File $PSCommandPath -BaseRef $Lab.BaseSha -RepoRoot $Lab.Path 2>&1
+        $code = $LASTEXITCODE
+        return [pscustomobject]@{ Code = $code; Output = ($output | Out-String) }
+    }
+
+    function Assert-GateRefuses {
+        param([string] $Case, [pscustomobject] $Lab)
+        $r = Invoke-Gate $Lab
+        if ($r.Code -ne 0) {
+            Write-Host ("  PASS  {0} (refused, exit {1})" -f $Case, $r.Code)
+        }
+        else {
+            Write-Host ("  FAIL  {0}`n          expected a non-zero exit, got 0`n{1}" -f $Case, $r.Output)
+            $script:failures++
+        }
+    }
+
+    function Assert-GateAccepts {
+        param([string] $Case, [pscustomobject] $Lab)
+        $r = Invoke-Gate $Lab
+        if ($r.Code -eq 0) {
+            Write-Host ("  PASS  {0} (accepted)" -f $Case)
+        }
+        else {
+            Write-Host ("  FAIL  {0}`n          expected exit 0, got {1}`n{2}" -f $Case, $r.Code, $r.Output)
+            $script:failures++
+        }
+    }
+
+    Write-Host 'verify-baseline-log self-test'
+    Write-Host ''
+
+    # 1. Control. The same fixture and the same kind of commit as every refusal case below, with
+    #    nothing planted in it, must be accepted -- otherwise a case that "passes" proves only
+    #    that this harness makes the gate red no matter what.
+    $lab = New-Lab 'legitimate-append'
+    Set-LabHead $lab (New-LogText ($BaseEntries + $NewEntry6)) -ChangeTsv
+    Assert-GateAccepts 'a golden TSV change with one real appended entry is accepted' $lab
+
+    # 2. The gate's basic contract: the committed baseline moved and the log did not.
+    $lab = New-Lab 'tsv-without-entry'
+    Set-LabHead $lab $null -ChangeTsv
+    Assert-GateRefuses 'a golden TSV changed with no new log entry' $lab
+
+    # 3. An existing entry rewritten in place, with a valid entry appended alongside it. The
+    #    append makes the count rise, so a count-only check reports progress while history is
+    #    being edited underneath it.
+    $edited = @($BaseEntries[0], ($BaseEntries[1] -replace 'byte-identical', 'unverified'), $BaseEntries[2], $BaseEntries[3], $BaseEntries[4])
+    $lab = New-Lab 'entry-edited-in-place'
+    Set-LabHead $lab (New-LogText ($edited + $NewEntry6)) -ChangeTsv
+    Assert-GateRefuses 'an existing entry edited in place (count still rises)' $lab
+
+    # 4. The same edit expressed only as a change of case. PowerShell's -eq and -ne on strings are
+    #    culture-aware and case-insensitive, so a comparison written with them reports these two
+    #    entries as identical and prints "every prior entry unchanged" -- which is how this bypass
+    #    was demonstrated. Only an ordinal comparison sees it. -cne is not the fix either: it
+    #    catches this case and misses cases 5 and 6 below.
+    $upper = @($BaseEntries[0], $BaseEntries[1].ToUpperInvariant(), $BaseEntries[2], $BaseEntries[3], $BaseEntries[4])
+    $lab = New-Lab 'entry-differs-only-in-case'
+    Set-LabHead $lab (New-LogText ($upper + $NewEntry6)) -ChangeTsv
+    Assert-GateRefuses 'an existing entry differing only in case' $lab
+
+    # 5. Differs only by a soft hyphen. Invisible in every diff view, and treated as equal by both
+    #    -eq and -cne, which is why the comparison has to be ordinal rather than merely
+    #    case-sensitive.
+    $softened = @($BaseEntries[0], $BaseEntries[1].Insert(30, $SoftHyphen), $BaseEntries[2], $BaseEntries[3], $BaseEntries[4])
+    $lab = New-Lab 'entry-differs-only-by-soft-hyphen'
+    Set-LabHead $lab (New-LogText ($softened + $NewEntry6)) -ChangeTsv
+    Assert-GateRefuses 'an existing entry differing only by a soft hyphen' $lab
+
+    # 6. Differs only by a zero-width space. Same reasoning as case 5.
+    $zeroed = @($BaseEntries[0], $BaseEntries[1].Insert(30, $ZeroWidthSpace), $BaseEntries[2], $BaseEntries[3], $BaseEntries[4])
+    $lab = New-Lab 'entry-differs-only-by-zero-width-space'
+    Set-LabHead $lab (New-LogText ($zeroed + $NewEntry6)) -ChangeTsv
+    Assert-GateRefuses 'an existing entry differing only by a zero-width space' $lab
+
+    # 7. Entries deleted and more added, so the total count still goes up. Five entries become
+    #    six while four of the original five are gone. Only an entry-by-entry prefix comparison
+    #    sees it.
+    $renumbered = @(
+        ($BaseEntries[4] -replace '^5\. ', '1. '),
+        ($NewEntry6 -replace '^6\. ', '2. '),
+        ($NewEntry7 -replace '^7\. ', '3. '),
+        ($NewEntry8 -replace '^8\. ', '4. '),
+        ($NewEntry6 -replace '^6\. ', '5. '),
+        ($NewEntry7 -replace '^7\. ', '6. ')
+    )
+    $lab = New-Lab 'entries-deleted-but-count-rises'
+    Set-LabHead $lab (New-LogText $renumbered) -ChangeTsv
+    Assert-GateRefuses 'four entries deleted and five added (count still rises)' $lab
+
+    # 8. The log gutted in a commit that touches no gated artifact. An earlier version only ran
+    #    its append-only comparison when a *.tsv had changed, so this reported "Nothing to check"
+    #    and exited 0. The prefix comparison has to run whenever the LOG moved.
+    $lab = New-Lab 'log-gutted-without-tsv-change'
+    Set-LabHead $lab (New-LogText @())
+    Assert-GateRefuses 'the log gutted in a commit that touches no TSV' $lab
+
+    # 9. A new entry that is numbered and nothing else. It satisfies "the count went up" while
+    #    giving a reviewer nothing at all to read, which is the entire point of demanding an entry.
+    $lab = New-Lab 'vacuous-new-entry'
+    Set-LabHead $lab (New-LogText ($BaseEntries + '6. .')) -ChangeTsv
+    Assert-GateRefuses 'a new entry with no real content' $lab
+
+    # 10. Line endings must stay invisible. This is the one log gate that did not normalize its
+    #     own sidecar, relying on the eol=lf pin in .gitattributes instead; with the pin gone or
+    #     its pattern narrowed, HEAD's working tree is CRLF while `git show` returns the base
+    #     blob's stored LF, and every multi-line entry reports as edited on a log nobody touched.
+    $lab = New-Lab 'crlf-working-tree-vs-lf-blob'
+    Set-LabHead $lab (New-LogText ($BaseEntries + $NewEntry6)) -ChangeTsv -Crlf
+    Assert-GateAccepts 'a CRLF working tree against an LF base blob is not an edit' $lab
+
+    # 11. The misparse that cost this gate a false red: a "## " section between two entries, with
+    #     one of its re-measurable figures corrected and a real new entry appended. An entry
+    #     bounded only by the next numbered line swallows that whole section into the entry above
+    #     it, so correcting a figure reads as rewriting entry 3. This must be accepted.
+    $lab = New-Lab 'mid-log-section-edited'
+    Set-LabHead $lab (New-LogText ($BaseEntries + $NewEntry6) $MidSectionCorrected) -ChangeTsv
+    Assert-GateAccepts 'a figure corrected in a "## " section between entries is not an entry edit' $lab
+
+    # 12. The other half of case 11, and the reason the fix bounds the ENTRY rather than the
+    #     section: entries sitting after that "## " heading are still part of the log and must
+    #     still be compared. Entry 4 lives past the heading; editing it must be refused.
+    $editedPastHeading = @($BaseEntries[0], $BaseEntries[1], $BaseEntries[2], ($BaseEntries[3] -replace 'by accident', 'on purpose'), $BaseEntries[4])
+    $lab = New-Lab 'entry-past-mid-log-section-edited'
+    Set-LabHead $lab (New-LogText ($editedPastHeading + $NewEntry6)) -ChangeTsv
+    Assert-GateRefuses 'an entry sitting after the "## " section edited in place' $lab
+
+    # 13. The version-bump rename. EnvInfo.SidecarFileName derives the sidecar's name from
+    #     ReferenceVersion, so a reference-mode regeneration renames the file. Looking the base ref
+    #     up by HEAD's new name finds nothing at a path that never existed there, which silently
+    #     reads as "0 prior entries" -- and 0 prior entries makes any log at all look like it
+    #     gained some, so preserving the old log verbatim across the rename satisfies "the count
+    #     went up" while describing nothing about this diff. Resolving the base sidecar by pattern
+    #     at the base ref is what makes this a refusal.
+    $lab = New-Lab 'sidecar-renamed-by-version-bump'
+    Set-LabHead $lab (New-LogText $BaseEntries) -ChangeTsv -RenameSidecarTo 'baseline-2.10.0.0.env.txt'
+    Assert-GateRefuses 'the sidecar renamed by a version bump with the log carried over unchanged' $lab
+
+    Write-Host ''
+    Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+
+    if ($failures -gt 0) {
+        Write-Host "FAIL: $failures self-test case(s) failed."
+        exit 1
+    }
+    Write-Host 'PASS: all verify-baseline-log self-test cases passed.'
+    exit 0
+}
+
+# ---------------------------------------------------------------------------------------------
+
+git -C $RepoRoot rev-parse --verify "$BaseRef^{commit}" *> $null
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Cannot resolve base ref '$BaseRef' as a commit. The workflow must check out enough history (fetch-depth: 0, or an explicit fetch of the base commit) for this check to diff against it."
     exit 1
 }
 
-$changedTsv = git -C $repoRoot diff --name-only "$BaseRef" HEAD -- 'Tests/baseline/*.tsv'
+$changedTsv = git -C $RepoRoot diff --name-only "$BaseRef" HEAD -- 'Tests/baseline/*.tsv'
 if ($LASTEXITCODE -ne 0) {
     Write-Error "git diff between '$BaseRef' and HEAD failed."
     exit 1
@@ -67,7 +403,7 @@ if ($LASTEXITCODE -ne 0) {
 # commit that guts the sidecar's whole log while leaving every *.tsv alone previously never even
 # ran this diff against the sidecar path, so it reported "Nothing to check" -- "nothing to check"
 # has to mean neither side changed, not just that the TSV side didn't.
-$changedSidecar = git -C $repoRoot diff --name-only "$BaseRef" HEAD -- 'Tests/baseline/baseline-*.env.txt'
+$changedSidecar = git -C $RepoRoot diff --name-only "$BaseRef" HEAD -- 'Tests/baseline/baseline-*.env.txt'
 if ($LASTEXITCODE -ne 0) {
     Write-Error "git diff between '$BaseRef' and HEAD failed."
     exit 1
@@ -169,7 +505,7 @@ function Test-EntryHasSubstance {
 # the other means "compare against the wrong (nonexistent) path and get zero by accident".
 # git ls-tree lists whatever baseline-*.env.txt path(s) actually existed at $BaseRef, so a
 # rename is followed instead of missed.
-$baseSidecarPaths = @(git -C $repoRoot ls-tree -r --name-only $BaseRef -- 'Tests/baseline' 2>$null |
+$baseSidecarPaths = @(git -C $RepoRoot ls-tree -r --name-only $BaseRef -- 'Tests/baseline' 2>$null |
     Where-Object { $_ -match '^Tests/baseline/baseline-.*\.env\.txt$' })
 
 if ($baseSidecarPaths.Count -eq 0) {
@@ -189,7 +525,7 @@ else {
     # coerces it via $OFS space-joining, which silently discards every line break --
     # the (?m)^ anchors would then only ever match at the very start of the whole blob.
     # -join "`n" restores real newlines before the regex ever sees it.
-    $baseContentLines = git -C $repoRoot show "${BaseRef}:${baseSidecarRelPath}" 2>$null
+    $baseContentLines = git -C $RepoRoot show "${BaseRef}:${baseSidecarRelPath}" 2>$null
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Resolved sidecar path '$baseSidecarRelPath' at $BaseRef via git ls-tree, but 'git show' could not read it. This should not happen; investigate before trusting this check's result."
         exit 1

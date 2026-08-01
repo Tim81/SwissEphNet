@@ -48,10 +48,19 @@
 
 .PARAMETER RepoRoot
     Repository root. Defaults to the checkout containing this script.
+
+.PARAMETER SelfTest
+    Build throwaway repositories covering every bypass this family of gates has been shown to
+    have, run this same script against each of them in a child process, and assert the exit code.
+    Touches nothing outside a temporary directory -- in particular it never reads, and never
+    writes, the real Tests/conformance/regenerations.log.
 #>
+[CmdletBinding(DefaultParameterSetName = 'Verify')]
 param(
-    [Parameter(Mandatory)]
+    [Parameter(Mandatory, ParameterSetName = 'Verify')]
     [string] $BaseRef,
+    [Parameter(Mandatory, ParameterSetName = 'SelfTest')]
+    [switch] $SelfTest,
     [string] $RepoRoot = (Split-Path -Parent $PSScriptRoot)
 )
 
@@ -60,6 +69,246 @@ $ErrorActionPreference = 'Stop'
 $manifestRelPath = 'Tests/conformance/known-fail.tsv'
 $sidecarRelPath = 'Tests/conformance/regenerations.log'
 $sidecarFullPath = Join-Path $RepoRoot 'Tests/conformance/regenerations.log'
+
+# ---------------------------------------------------------------------------------------------
+# Self-test. Placed ahead of the gate body rather than wrapping it, so the gate itself stays
+# byte-for-byte what it was: every case below runs this script as a child process and reads its
+# exit code, which is the same thing CI does, so nothing can pass here by way of an in-process
+# shortcut the real invocation would not take.
+#
+# Each case builds a real scratch repository. Mocking git would test the mock: the bypasses this
+# family of gates has actually had lived in what git reported (which paths changed, what a blob
+# held at the base ref), not in the comparison arithmetic alone.
+
+if ($SelfTest) {
+    $failures = 0
+    $root = Join-Path ([System.IO.Path]::GetTempPath()) ("verify-known-fail-log-selftest-" + [System.Guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $root -Force | Out-Null
+
+    # By code point, never pasted literally: an invisible character sitting in this file is
+    # precisely the thing no reviewer can see, which is the whole reason these two cases exist.
+    $SoftHyphen = [string][char]0x00AD
+    $ZeroWidthSpace = [string][char]0x200B
+
+    # Multi-line, and one of them multi-paragraph, on purpose. A log of single-line entries would
+    # make the CRLF case below vacuous (an entry with no interior line break reads identically
+    # whichever ending the file uses) and would never exercise this gate's own rule that a blank
+    # line does not start a new entry -- only the next date-prefixed line does.
+    $BaseEntries = @(
+        @'
+2026-01-01 PR #1 (10 -> 8, 2 fewer rows) [ephe: 8 files]: Pruned two
+    newly-passing rows after porting one function; no reason is required for a
+    pure removal.
+'@
+        @'
+2026-01-02 PR #2 (8 -> 9, 1 more rows) [ephe: 8 files]: Added one row that
+    regressed while a second function was being ported.
+
+    A second paragraph of the same entry, carrying no date prefix of its own,
+    which is what makes this entry a multi-paragraph one.
+'@
+        @'
+2026-01-03 PR #3 (9 -> 7, 2 fewer rows) [ephe: 8 files]: Pruned two more
+    newly-passing rows after a fidelity fix citing the C.
+'@
+    )
+
+    $NewEntry4 = @'
+2026-01-04 PR #4 (7 -> 6, 1 fewer rows) [ephe: 8 files]: Pruned one more
+    newly-passing row, with enough text for a reviewer to actually read.
+'@
+    $NewEntry5 = @'
+2026-01-05 PR #5 (6 -> 5, 1 fewer rows): A second added entry, also with real content.
+'@
+    $NewEntry6 = @'
+2026-01-06 PR #6 (5 -> 4, 1 fewer rows): A third added entry, also with real content.
+'@
+
+    $BaseKnownFail = "suite`ttestcase`titeration`tcategory`n1`t1`t377`tVALUE-MISMATCH`n1`t1`t379`tVALUE-MISMATCH`n"
+    $ChangedKnownFail = "suite`ttestcase`titeration`tcategory`n1`t1`t377`tVALUE-MISMATCH`n"
+
+    function New-LogText {
+        param([string[]] $Entries)
+        $text = ($Entries -join "`n") + "`n"
+        return ($text -replace "`r`n", "`n")
+    }
+
+    function Set-LabFile {
+        # -Crlf writes the file with CRLF endings while git stores whatever bytes it is given
+        # (see New-Lab's core.autocrlf setting), which is how the CRLF case gets a CRLF working
+        # tree at HEAD against an LF blob at the base ref.
+        param([string] $Path, [string] $Text, [switch] $Crlf)
+        $normalized = $Text -replace "`r`n", "`n"
+        if ($Crlf) { $normalized = $normalized -replace "`n", "`r`n" }
+        [System.IO.File]::WriteAllText($Path, $normalized, (New-Object System.Text.UTF8Encoding $false))
+    }
+
+    function New-Lab {
+        param([string] $Name)
+        $dir = Join-Path $root $Name
+        New-Item -ItemType Directory -Path (Join-Path $dir 'Tests/conformance') -Force | Out-Null
+        git init -q -b main $dir
+        git -C $dir config user.email 'selftest@example.invalid'
+        git -C $dir config user.name 'selftest'
+        # autocrlf off, and no .gitattributes: the CRLF case needs the blob to hold exactly the
+        # bytes written to disk, so that a CRLF working tree really does disagree with an LF base
+        # blob instead of both being normalized to LF on the way in and the case proving nothing.
+        git -C $dir config core.autocrlf false
+        Set-LabFile (Join-Path $dir 'Tests/conformance/known-fail.tsv') $BaseKnownFail
+        Set-LabFile (Join-Path $dir 'Tests/conformance/regenerations.log') (New-LogText $BaseEntries)
+        git -C $dir add Tests/conformance/known-fail.tsv Tests/conformance/regenerations.log
+        git -C $dir commit -q -m 'fixture base'
+        return [pscustomobject]@{ Path = $dir; BaseSha = (git -C $dir rev-parse HEAD).Trim() }
+    }
+
+    function Set-LabHead {
+        # Applies one case's head commit: optionally a known-fail.tsv change, optionally a
+        # rewritten log, then commits both named paths (never `git add -A`).
+        param(
+            [pscustomobject] $Lab,
+            [string] $LogText,
+            [switch] $ChangeKnownFail,
+            [switch] $Crlf
+        )
+        if ($ChangeKnownFail) {
+            Set-LabFile (Join-Path $Lab.Path 'Tests/conformance/known-fail.tsv') $ChangedKnownFail
+        }
+        # IsNullOrEmpty, not `$null -ne $LogText`: a [string] parameter coerces $null to the empty
+        # string, so the null test is always true and "leave the log alone" would silently become
+        # "write an empty log" -- which makes the known-fail-changed-without-an-entry case below
+        # fail for the wrong reason (the append-only check catching an emptied log) and never
+        # exercise the count check it exists for at all.
+        if (-not [string]::IsNullOrEmpty($LogText)) {
+            Set-LabFile (Join-Path $Lab.Path 'Tests/conformance/regenerations.log') $LogText -Crlf:$Crlf
+        }
+        git -C $Lab.Path add Tests/conformance/known-fail.tsv Tests/conformance/regenerations.log
+        git -C $Lab.Path commit -q -m 'case head'
+    }
+
+    function Invoke-Gate {
+        # A child process, not dot-sourcing: the gate ends in `exit`, which would tear the
+        # self-test down in-process, and an exit code is the only thing CI ever looks at anyway.
+        # Assigned, never piped -- through a pipeline $LASTEXITCODE reports the pipe's last stage
+        # instead of the command's own status.
+        param([pscustomobject] $Lab)
+        $output = & pwsh -NoProfile -NonInteractive -File $PSCommandPath -BaseRef $Lab.BaseSha -RepoRoot $Lab.Path 2>&1
+        $code = $LASTEXITCODE
+        return [pscustomobject]@{ Code = $code; Output = ($output | Out-String) }
+    }
+
+    function Assert-GateRefuses {
+        param([string] $Case, [pscustomobject] $Lab)
+        $r = Invoke-Gate $Lab
+        if ($r.Code -ne 0) {
+            Write-Host ("  PASS  {0} (refused, exit {1})" -f $Case, $r.Code)
+        }
+        else {
+            Write-Host ("  FAIL  {0}`n          expected a non-zero exit, got 0`n{1}" -f $Case, $r.Output)
+            $script:failures++
+        }
+    }
+
+    function Assert-GateAccepts {
+        param([string] $Case, [pscustomobject] $Lab)
+        $r = Invoke-Gate $Lab
+        if ($r.Code -eq 0) {
+            Write-Host ("  PASS  {0} (accepted)" -f $Case)
+        }
+        else {
+            Write-Host ("  FAIL  {0}`n          expected exit 0, got {1}`n{2}" -f $Case, $r.Code, $r.Output)
+            $script:failures++
+        }
+    }
+
+    Write-Host 'verify-known-fail-log self-test'
+    Write-Host ''
+
+    # 1. Control. The same fixture and the same kind of commit as every refusal case below, with
+    #    nothing planted in it, must be accepted -- otherwise a case that "passes" proves only
+    #    that this harness makes the gate red no matter what.
+    $lab = New-Lab 'legitimate-append'
+    Set-LabHead $lab (New-LogText ($BaseEntries + $NewEntry4)) -ChangeKnownFail
+    Assert-GateAccepts 'a known-fail.tsv change with one real appended entry is accepted' $lab
+
+    # 2. The gate's basic contract: the work queue moved and the log did not. This is the hand
+    #    edit that goes around scripts/regenerate-known-fail.ps1 and its -Reason entirely.
+    $lab = New-Lab 'known-fail-without-entry'
+    Set-LabHead $lab $null -ChangeKnownFail
+    Assert-GateRefuses 'known-fail.tsv changed with no new log entry' $lab
+
+    # 3. An existing entry rewritten in place, with a valid entry appended alongside it. The
+    #    append makes the count rise, so a count-only check reports progress while history is
+    #    being edited underneath it.
+    $edited = @($BaseEntries[0], ($BaseEntries[1] -replace 'regressed', 'improved'), $BaseEntries[2])
+    $lab = New-Lab 'entry-edited-in-place'
+    Set-LabHead $lab (New-LogText ($edited + $NewEntry4)) -ChangeKnownFail
+    Assert-GateRefuses 'an existing entry edited in place (count still rises)' $lab
+
+    # 4. The same edit expressed only as a change of case. PowerShell's -eq and -ne on strings are
+    #    culture-aware and case-insensitive, so a comparison written with them reports these two
+    #    entries as identical and prints "every prior entry unchanged" -- which is how this bypass
+    #    was demonstrated. Only an ordinal comparison sees it. -cne is not the fix either: it
+    #    catches this case and misses cases 5 and 6 below.
+    $upper = @($BaseEntries[0], $BaseEntries[1].ToUpperInvariant(), $BaseEntries[2])
+    $lab = New-Lab 'entry-differs-only-in-case'
+    Set-LabHead $lab (New-LogText ($upper + $NewEntry4)) -ChangeKnownFail
+    Assert-GateRefuses 'an existing entry differing only in case' $lab
+
+    # 5. Differs only by a soft hyphen. Invisible in every diff view, and treated as equal by both
+    #    -eq and -cne, which is why the comparison has to be ordinal rather than merely
+    #    case-sensitive.
+    $softened = @($BaseEntries[0], $BaseEntries[1].Insert(40, $SoftHyphen), $BaseEntries[2])
+    $lab = New-Lab 'entry-differs-only-by-soft-hyphen'
+    Set-LabHead $lab (New-LogText ($softened + $NewEntry4)) -ChangeKnownFail
+    Assert-GateRefuses 'an existing entry differing only by a soft hyphen' $lab
+
+    # 6. Differs only by a zero-width space. Same reasoning as case 5.
+    $zeroed = @($BaseEntries[0], $BaseEntries[1].Insert(40, $ZeroWidthSpace), $BaseEntries[2])
+    $lab = New-Lab 'entry-differs-only-by-zero-width-space'
+    Set-LabHead $lab (New-LogText ($zeroed + $NewEntry4)) -ChangeKnownFail
+    Assert-GateRefuses 'an existing entry differing only by a zero-width space' $lab
+
+    # 7. Entries deleted and more added, so the total count still goes up. This is the bypass the
+    #    header comment's point 1 records: three entries become four while two of the original
+    #    three are gone. Only an entry-by-entry prefix comparison sees it.
+    $lab = New-Lab 'entries-deleted-but-count-rises'
+    Set-LabHead $lab (New-LogText @($BaseEntries[2], $NewEntry4, $NewEntry5, $NewEntry6)) -ChangeKnownFail
+    Assert-GateRefuses 'two entries deleted and three added (count still rises)' $lab
+
+    # 8. The log gutted in a commit that touches no gated artifact. A gate that only ran its
+    #    append-only comparison when known-fail.tsv itself had changed would report "Nothing to
+    #    check" and exit 0 here. The prefix comparison has to run whenever the LOG moved.
+    $lab = New-Lab 'log-gutted-without-known-fail-change'
+    Set-LabHead $lab 'Every entry removed; nothing date-prefixed is left in this file.'
+    Assert-GateRefuses 'the log gutted in a commit that touches no known-fail.tsv' $lab
+
+    # 9. A new entry that is a bare date and nothing else. It satisfies "the count went up" while
+    #    giving a reviewer nothing at all to read, which is the entire point of demanding an entry.
+    $lab = New-Lab 'vacuous-new-entry'
+    Set-LabHead $lab (New-LogText ($BaseEntries + '2026-01-04 .')) -ChangeKnownFail
+    Assert-GateRefuses 'a new entry with no real content' $lab
+
+    # 10. Line endings must stay invisible. HEAD's working tree holds the log as CRLF (this
+    #     sidecar has no eol pin in .gitattributes, so a Windows checkout or a fresh worktree under
+    #     core.autocrlf produces exactly this) while `git show` returns the base blob's stored LF.
+    #     Without normalizing both sides, every multi-line entry reports as edited on a log nobody
+    #     touched, and the gate goes red for a reason that has nothing to do with its subject.
+    $lab = New-Lab 'crlf-working-tree-vs-lf-blob'
+    Set-LabHead $lab (New-LogText ($BaseEntries + $NewEntry4)) -ChangeKnownFail -Crlf
+    Assert-GateAccepts 'a CRLF working tree against an LF base blob is not an edit' $lab
+
+    Write-Host ''
+    Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+
+    if ($failures -gt 0) {
+        Write-Host "FAIL: $failures self-test case(s) failed."
+        exit 1
+    }
+    Write-Host 'PASS: all verify-known-fail-log self-test cases passed.'
+    exit 0
+}
+
+# ---------------------------------------------------------------------------------------------
 
 git -C $RepoRoot rev-parse --verify "$BaseRef^{commit}" *> $null
 if ($LASTEXITCODE -ne 0) {
