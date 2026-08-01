@@ -70,12 +70,33 @@ internal static class CoordHelpers
                     "Reaching it requires the radius handed to swe_cotrans to be the one named in the case id, not a constant.",
                     [.. Radii.Select(radius => $"CTR|{D(lon)}|{D(lat)}|{D(radius)}")]);
 
-                Reachability.RequireDistinctPayloads(
+                // Per field, not per row. swe_cotrans_sp copies two fields, xpn[2] from xpo[2]
+                // and xpn[5] from xpo[5], and this sweep derives both from the same radius
+                // (xpo[5] is radius * 0.01, just above). A whole-row comparison is therefore
+                // satisfied by either one on its own: hardcoding xpn[2] to a constant while
+                // leaving xpo[5] alone leaves the rows still distinct, the check silent, and
+                // half the branch this sweep exists for unreached. Measured, not supposed.
+                //
+                // Two calls rather than one so a failure names which field regressed. The
+                // committed baseline would also catch that particular mutation today, but
+                // leaning on it is the mistake this whole check exists to stop: the baseline
+                // stops objecting the moment it is regenerated, which is how all three sweeps
+                // came to be unreachable in the first place.
+                var ctsrIds = Radii.Select(radius => $"CTSR|{D(lon)}|{D(lat)}|{D(radius)}").ToArray();
+                Reachability.RequireDistinctFields(
                     index,
                     "CTSR",
-                    "swe_cotrans_sp's radius passthrough (xpn[2] = xpo[2] and xpn[5] = xpo[5])",
+                    "swe_cotrans_sp's position radius passthrough (xpn[2] = xpo[2])",
                     "Reaching it requires the radius handed to swe_cotrans_sp to be the one named in the case id, not a constant.",
-                    [.. Radii.Select(radius => $"CTSR|{D(lon)}|{D(lat)}|{D(radius)}")]);
+                    2,
+                    ctsrIds);
+                Reachability.RequireDistinctFields(
+                    index,
+                    "CTSR",
+                    "swe_cotrans_sp's speed radius passthrough (xpn[5] = xpo[5])",
+                    "Reaching it requires the speed radius handed to swe_cotrans_sp to vary with the case id's radius, not a constant.",
+                    5,
+                    ctsrIds);
             }
         }
     }

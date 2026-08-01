@@ -119,4 +119,82 @@ internal static class Reachability
             }
         }
     }
+
+    /// <summary>
+    /// Like <see cref="RequireDistinctPayloads"/>, but compares one named value field instead
+    /// of the whole payload.
+    /// </summary>
+    /// <remarks>
+    /// Use this wherever the branch writes more than one field from the same input. A
+    /// whole-payload comparison is satisfied by any field that still varies, so it cannot tell
+    /// "both fields are written" from "one is written and the other is a constant" -- it passes
+    /// on the strength of the field that still moves and says nothing about the one that
+    /// stopped. That is not hypothetical: swe_cotrans_sp writes xpn[2] and xpn[5], both derived
+    /// from the radius, and hardcoding only xpn[2] left a whole-payload check silent because
+    /// xpn[5] still varied.
+    /// Call it once per field, so a failure names the field that actually regressed rather than
+    /// reporting that something somewhere in the row changed.
+    /// </remarks>
+    /// <param name="index">Case id to value fields, from <see cref="IndexPayloads"/>.</param>
+    /// <param name="sweep">Case-id prefix of the sweep being checked, for the message.</param>
+    /// <param name="target">The library branch the sweep exists to reach.</param>
+    /// <param name="reachingRequires">One sentence on what reaching that branch takes, so the message says how to fix it.</param>
+    /// <param name="fieldIndex">Zero-based index into the tab-separated value fields, case id excluded.</param>
+    /// <param name="caseIds">The rows carrying the evidence; at least two, differing only in the branch's gating input.</param>
+    public static void RequireDistinctFields(
+        Dictionary<string, string> index,
+        string sweep,
+        string target,
+        string reachingRequires,
+        int fieldIndex,
+        params string[] caseIds)
+    {
+        if (caseIds.Length < 2)
+        {
+            throw new InvalidOperationException(
+                $"{sweep} sweep's reachability check was handed {caseIds.Length} case id(s) but needs at least 2 to " +
+                $"establish that {target} is reached. A check with nothing to compare passes vacuously, which is the " +
+                "one outcome it must never have.");
+        }
+
+        for (var i = 0; i < caseIds.Length; i++)
+        {
+            var left = Field(index, caseIds[i], sweep, target, fieldIndex);
+            for (var j = i + 1; j < caseIds.Length; j++)
+            {
+                var right = Field(index, caseIds[j], sweep, target, fieldIndex);
+                if (string.Equals(left, right, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"{sweep} sweep is no longer reaching {target}: rows \"{caseIds[i]}\" and \"{caseIds[j]}\" " +
+                        $"carry the same value in field {fieldIndex} (\"{left}\"), yet they differ in exactly the " +
+                        $"input that field is derived from. {reachingRequires} Checking this field on its own is " +
+                        "deliberate: the rest of the row may still differ through some other field driven by the same " +
+                        "input, which would make a whole-row comparison pass while this field had stopped varying.");
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// One tab-separated value field of <paramref name="caseId"/>, or a throw naming the branch.
+    /// A row that no longer has that field is a shape change, not a pass.
+    /// </summary>
+    private static string Field(
+        Dictionary<string, string> index,
+        string caseId,
+        string sweep,
+        string target,
+        int fieldIndex)
+    {
+        var fields = Payload(index, caseId, sweep, target).Split('\t');
+        if (fieldIndex < 0 || fieldIndex >= fields.Length)
+        {
+            throw new InvalidOperationException(
+                $"{sweep} sweep's reachability check for {target} asked for value field {fieldIndex} of row " +
+                $"\"{caseId}\", which emits {fields.Length}. The row's shape changed under the check; point it at the " +
+                "field carrying the evidence now rather than letting it read whichever field moved into that slot.");
+        }
+        return fields[fieldIndex];
+    }
 }
