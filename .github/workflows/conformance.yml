@@ -176,6 +176,21 @@ jobs:
   verify-known-fail-log:
     name: Correctness oracle known-fail list changes are logged
     runs-on: ubuntu-latest
+    # push and pull_request only, unlike the conformance job above, which is the reason this
+    # workflow also carries `schedule` and `workflow_dispatch`. "Did this change record itself in
+    # the log" is a question about a range of new commits; a cron run introduces none, so there is
+    # nothing for it to answer. It does not merely have nothing to do on those events -- it goes
+    # red on them. github.event.before and github.event.pull_request.base.sha are both empty for
+    # schedule and workflow_dispatch, so resolve-log-base.ps1 falls through to its integration-ref
+    # fallback, and a scheduled run checks out the default branch, where
+    # merge-base(HEAD, <integration ref>) == HEAD. That is the case the resolver refuses outright
+    # ("Cannot determine a safe base ... Refusing to guess", resolve-log-base.ps1:176-192), so the
+    # base-ref step exits 1 and this job fails every Monday for a reason that has nothing to do
+    # with known-fail.tsv. Reproduced directly against origin/main in this clone. The three sibling
+    # base-ref jobs (ci.yml's verify-freeze and verify-no-tooling-attribution, baseline.yml's
+    # verify-baseline) are unaffected only because those two workflows carry no cron trigger at
+    # all -- this is not a rule they follow and this job broke, it is one only this workflow needed.
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
         with:

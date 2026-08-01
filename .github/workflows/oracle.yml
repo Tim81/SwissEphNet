@@ -58,7 +58,7 @@ name: Oracle build gates
 # it is and why.
 on:
   # push is listed for the same reason ci.yml and baseline.yml list it: without it a direct push,
-  # to main included, ran none of these seven jobs, so the bit-exactness comparison this whole
+  # to main included, ran none of these eight jobs, so the bit-exactness comparison this whole
   # workflow exists for was absent from exactly the path that skips review. The submodule and
   # 2.08 sdist caches plus the cancel-in-progress concurrency group below keep the repeat cost
   # down; a re-run that hits both caches skips the two slowest steps entirely.
@@ -78,9 +78,9 @@ concurrency:
 
 jobs:
   # Gate, and cheap: pure text parsing, no submodule, no MSVC, no dotnet -- runs on ubuntu-latest
-  # so it does not queue behind the Windows runners the other four jobs need (crt-parity,
-  # c-reference-validate, oracle-dump, swetest-diff -- macos-exactness and linux-exactness use
-  # macos-latest and ubuntu-latest, not Windows). Exists because this
+  # so it does not queue behind the Windows runners the other five jobs need (crt-parity,
+  # c-reference-validate, verify-gen-delta, oracle-dump, swetest-diff -- macos-exactness and
+  # linux-exactness use macos-latest and ubuntu-latest, not Windows). Exists because this
   # file's own header comment (above) has drifted from which jobs actually carry
   # continue-on-error three times now, each time a job's flag was added or removed without the
   # prose being updated to match -- most recently when commit eec6e44 removed oracle-dump's flag.
