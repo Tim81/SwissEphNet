@@ -459,7 +459,7 @@ a no-op at best and a miscount at worst.
 Baseline effect: 375 `HP|G|*` rows in `Tests/baseline/baseline-house-pos.tsv`
 were frozen as `EXCEPTION IndexOutOfRangeException`. This is freezing a
 known-bad result in the committed baseline, not the waiver mechanism
-(`Tools/BaselineVerify/waivers.tsv`) -- the two are different things.
+(`Tests/baseline/waivers.tsv`) -- the two are different things.
 Freezing keeps a row in the comparison, with its known-bad value as the
 expected value, so any change to it (a fix, or a regression) is caught and
 must be reviewed. Waiving a row removes it from comparison entirely, which
@@ -467,7 +467,7 @@ would have hidden these 375 rows rather than recorded them. The waiver
 mechanism was correctly not used here, and should not be: every waiver is
 staleness-checked (a waiver that matches zero rows, or whose matched rows are
 all byte-for-byte identical to the baseline anyway, fails the run --
-`Tools/BaselineVerify/waivers.tsv`), so a waiver only ever suppresses rows
+`Tests/baseline/waivers.tsv`), so a waiver only ever suppresses rows
 that are actively differing, which is the opposite of what this baseline
 freeze is for. Fixing the array size turns all 375 into real Gauquelin
 house-position values, confirmed row by row: every one of the 375 changed
@@ -917,7 +917,7 @@ stream it is handed, and `CFile` seeks during parsing (e.g. rewinding `sefstars.
 **The null-provider decision, made deliberately.** `FileProvider == null` now means "use the real
 filesystem" -- `OpenBinary` opens the path with `File.OpenRead` directly -- rather than "not
 found". This is the opposite default from the event it replaces, and is the better one now:
-`SwissEph.csproj:12` records that `net40`/`netstandard1.0`, the targets `OnLoadFile` originally
+`SwissEphNet/SwissEphNet.csproj:15-16` records that `net40`/`netstandard1.0`, the targets `OnLoadFile` originally
 existed to work around (no `System.IO.FileSystem`), were dropped; the three targets this library
 ships today (`netstandard2.0`, `net8.0`, `net10.0`) all have full filesystem access, and the
 library uses `System.IO.File` zero times before this change. A caller who calls
