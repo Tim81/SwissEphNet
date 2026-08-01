@@ -50,19 +50,34 @@ def strip_c_comments(text):
 
 
 def initializer_body(text, decl_pattern):
-    """Return the text between the outermost braces of a `... name[] = { ... };`."""
+    """Return the text between the outermost braces of a `... name[] = { ... };`.
+
+    Brace depth is counted with C comments masked out (see _mask_comments below), never
+    over the raw character stream -- an explanatory comment sitting inside the initializer
+    can itself contain literal `{`/`}` characters (ayanamsa row 1's own comment is exactly
+    this: `/*{J1900, 360 - 337.53953},  * 1: Lahiri (Robert Hand) */`), and naive depth
+    counting over such a comment happens to land on the right answer only when that
+    comment's braces are balanced -- an unbalanced one would silently return the wrong
+    span with no error at all. Masking removes that dependency on luck. The returned slice
+    is still taken from the ORIGINAL `text`, comments and all: masking only decides which
+    characters count toward depth, never what gets returned, so this stays safe to call on
+    raw, not-yet-comment-stripped text -- which emit_main() below does, precisely so the
+    comments survive into the emitted C#.
+    """
     m = re.search(decl_pattern, text)
     if not m:
         raise SystemExit('declaration not found: %s' % decl_pattern)
     start = text.index('{', m.end() - 1)
+    flags = _mask_comments(text)
     depth, i = 0, start
     while i < len(text):
-        if text[i] == '{':
-            depth += 1
-        elif text[i] == '}':
-            depth -= 1
-            if depth == 0:
-                return text[start + 1:i]
+        if not flags[i]:
+            if text[i] == '{':
+                depth += 1
+            elif text[i] == '}':
+                depth -= 1
+                if depth == 0:
+                    return text[start + 1:i]
         i += 1
     raise SystemExit('unterminated initializer for %s' % decl_pattern)
 
@@ -91,9 +106,19 @@ def main():
 
     # Alongside the header we were given, not a fixed path -- pointing this at another
     # tree used to silently mix that tree's sweph.h with this one's swephexp.h.
-    predef = re.search(r'#define\s+SE_NSIDM_PREDEF\s+(\d+)',
-                       (header.parent / 'swephexp.h').read_text(encoding='utf-8'))
+    swephexp_text = (header.parent / 'swephexp.h').read_text(encoding='utf-8')
+    predef = re.search(r'#define\s+SE_NSIDM_PREDEF\s+(\d+)', swephexp_text)
     n_predef = int(predef.group(1))
+
+    # sweph.h declares `static const double pla_diam[NDIAM] = {...}` and
+    # `#define NDIAM (SE_VESTA + 1)`, so the expected row count is SE_VESTA (from
+    # swephexp.h, alongside SE_NSIDM_PREDEF above) plus one -- not a literal 21 written
+    # here by hand, which would silently stop tracking the real declaration the day either
+    # constant moves.
+    se_vesta = re.search(r'#define\s+SE_VESTA\s+(\d+)', swephexp_text)
+    if not se_vesta:
+        raise SystemExit('SE_VESTA not found in swephexp.h -- cannot compute the expected pla_diam row count (NDIAM = SE_VESTA + 1)')
+    n_diam = int(se_vesta.group(1)) + 1
 
     aya = parse_ayanamsa(initializer_body(
         text, r'struct\s+aya_init\s+ayanamsa\s*\[[^\]]*\]\s*='))
@@ -113,7 +138,16 @@ def main():
         raise SystemExit('ayanamsa has %d rows but SE_NSIDM_PREDEF is %d'
                          % (len(aya), n_predef))
 
+    # Same shape of check for pla_diam as ayanamsa above: nothing previously checked this
+    # table's row count against its own declared size at all, though scripts/verify-crt-parity.ps1
+    # (a gated, append-only log) records "21 of 21 match" as though this had already been
+    # verified here.
+    if len(diam) != n_diam:
+        raise SystemExit('pla_diam has %d values but NDIAM (SE_VESTA + 1) is %d'
+                         % (len(diam), n_diam))
+
     print('SE_NSIDM_PREDEF = %d' % n_predef)
+    print('NDIAM (SE_VESTA + 1) = %d' % n_diam)
     print('ayanamsa rows   = %d  (fields: t0, ayan_t0, t0_is_UT, prec_offset)' % len(aya))
     print('pla_diam values = %d' % len(diam))
     print()
