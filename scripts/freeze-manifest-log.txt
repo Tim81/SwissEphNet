@@ -78,3 +78,17 @@ not exist on the integration branch once it lands).
    trailing_ws); only the enumeration order, and therefore the sha256, moved: SwissEphNet/CPort
    66866B61... -> 3E241AA5..., the two single-file frozen paths unchanged (a one-file directory
    has nothing to reorder).
+6. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01: read_const
+   (Sweph.cs) dereferenced fp.ReadLine()'s result with .Trim() unconditionally in the file-name
+   section, unlike every sibling ReadLine call in the same function (:5277, :5320, :5331), which
+   all null-check first, matching sweph.c:4553-4557's own `sp == NULL || ...` guard on the
+   equivalent fgets() call. A .se1 file truncated to exactly its first line put the second
+   ReadLine at true EOF, returning null, so the unguarded .Trim() threw NullReferenceException
+   instead of reaching the same file_damage path (`ret=-1`, serr "is damaged") every other
+   truncation length already reached -- escaping swe_calc, swe_calc_ut and swe_set_ephe_path
+   (which calls swe_calc internally). Fidelity fix, not a re-transliteration: no other line in
+   SwissEphNet/CPort moved. Proven to discriminate: Tests/SwissEphNet.Tests/
+   TruncatedFirstLineSe1Test.cs feeds swe_calc/swe_calc_ut/swe_set_ephe_path a 13-byte "SWISSEPH
+   3\r\n"-only sepl_18.se1 stream; reverting this fix and rerunning throws
+   NullReferenceException on all three instead of returning ret=-1 "damaged". SwissEphNet/CPort:
+   48435 -> 48448 lines, sha256 3E241AA5... -> 42A10A5B....

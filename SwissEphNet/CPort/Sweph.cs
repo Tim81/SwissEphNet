@@ -5294,7 +5294,20 @@ namespace SwissEphNet.CPort
             /************************************* 
              * correct file name?                *
              *************************************/
-            s = fp.ReadLine().Trim();
+            // sweph.c:4553-4557 null-checks fgets()'s return before ever touching the
+            // buffer it read into (`sp == NULL || ...`); this called .Trim() on
+            // fp.ReadLine()'s result unconditionally, so a file truncated to exactly
+            // its first line (ReadLine returns null on the second call, at EOF) threw
+            // NullReferenceException here instead of reaching the same file_damage path
+            // every sibling ReadLine in this function already guards (see :5277, :5320,
+            // :5331 immediately below).
+            s = fp.ReadLine();
+            if (s == null)
+            {
+                smsg = "b";
+                goto file_damage;
+            }
+            s = s.Trim();
             if (String.IsNullOrEmpty(s))
             {
                 smsg = "b";
