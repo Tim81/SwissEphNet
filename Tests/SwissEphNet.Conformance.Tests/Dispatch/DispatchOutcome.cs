@@ -32,6 +32,17 @@ public sealed class DispatchOutcome
     public string? Reason { get; init; }
     public IReadOnlyList<FieldMismatch> Mismatches { get; init; } = [];
 
+    /// <summary>
+    /// Whether the <see cref="CheckContext"/> that produced this outcome (via
+    /// <see cref="FromMismatches(CheckContext)"/>) actually performed at least
+    /// one comparison. False only for a mis-implemented dispatch case whose
+    /// <c>CheckContext</c> was constructed but never had a Check* method
+    /// called on it -- see <see cref="Dispatch.CheckContext.AnyComparisonPerformed"/>.
+    /// Always true for an outcome built any other way (Passed/NotImplemented/
+    /// DataMissing/Error/Unreproducible never claim to have compared t.exp).
+    /// </summary>
+    public bool AnyComparisonPerformed { get; init; } = true;
+
     public static DispatchOutcome Passed() => new() { Kind = OutcomeKind.Passed };
 
     public static DispatchOutcome NotImplemented(string reason) =>
@@ -46,8 +57,15 @@ public sealed class DispatchOutcome
     public static DispatchOutcome Unreproducible(string reason) =>
         new() { Kind = OutcomeKind.Unreproducible, Reason = reason };
 
-    public static DispatchOutcome FromMismatches(IReadOnlyList<FieldMismatch> mismatches) =>
-        mismatches.Count == 0
-            ? Passed()
-            : new DispatchOutcome { Kind = OutcomeKind.ValueMismatch, Mismatches = mismatches };
+    /// <summary>
+    /// Builds a Passed/ValueMismatch outcome from a finished <see cref="CheckContext"/>,
+    /// carrying forward <see cref="CheckContext.AnyComparisonPerformed"/> so the
+    /// completeness guard in <c>ConformanceRunner.Run</c> can tell a genuine
+    /// pass (something was compared and matched) apart from a dispatch case
+    /// that dropped its only comparison and defaulted to "no mismatches found".
+    /// </summary>
+    public static DispatchOutcome FromMismatches(CheckContext ctx) =>
+        ctx.Mismatches.Count == 0
+            ? new DispatchOutcome { Kind = OutcomeKind.Passed, AnyComparisonPerformed = ctx.AnyComparisonPerformed }
+            : new DispatchOutcome { Kind = OutcomeKind.ValueMismatch, Mismatches = ctx.Mismatches, AnyComparisonPerformed = ctx.AnyComparisonPerformed };
 }

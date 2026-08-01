@@ -19,6 +19,7 @@ public sealed class ExpFields
 {
     private readonly Dictionary<string, string> _values = new(StringComparer.Ordinal);
     private readonly HashSet<string> _consumed = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _compared = new(StringComparer.Ordinal);
 
     public int LineNumber { get; init; }
 
@@ -34,6 +35,21 @@ public sealed class ExpFields
     /// silently never looked at a field t.exp actually asserts.
     /// </summary>
     public IReadOnlyCollection<string> ConsumedKeys => _consumed;
+
+    /// <summary>
+    /// Keys read specifically through <see cref="GetDoubleCompared"/>,
+    /// <see cref="GetIntCompared"/> or <see cref="GetRawStringCompared"/> --
+    /// i.e. through <c>CheckContext</c>'s own comparison entry points
+    /// (CheckD/CheckDD/CheckI/CheckS), never through a plain testcase-input
+    /// read. A strict subset of <see cref="ConsumedKeys"/>: every compared key
+    /// is also consumed, but a consumed key (e.g. a plain input like "ipl" or
+    /// "jd") need not be compared. Exists so the completeness guard can tell
+    /// "this field was actually asserted against t.exp" apart from "something
+    /// merely read this field's text and threw it away" -- the latter is
+    /// exactly how a dropped CHECK_S/CHECK_D call could otherwise still mark a
+    /// field as accounted for.
+    /// </summary>
+    public IReadOnlyCollection<string> ComparedKeys => _compared;
 
     /// <summary>
     /// Records a "name: value" line. Matches the reference reader's semantics
@@ -88,6 +104,20 @@ public sealed class ExpFields
 
     public double? TryGetDouble(string name) => Contains(name) ? GetDouble(name) : null;
 
+    /// <summary>
+    /// Same as <see cref="GetDouble"/>, but also records <paramref name="name"/>
+    /// into <see cref="ComparedKeys"/>. Reserved for <c>CheckContext</c>'s own
+    /// comparison entry points -- never call this for a plain testcase-input
+    /// read, or the completeness guard's "was this actually compared" signal
+    /// becomes meaningless.
+    /// </summary>
+    internal double GetDoubleCompared(string name)
+    {
+        var value = GetDouble(name);
+        _compared.Add(name);
+        return value;
+    }
+
     /// <summary>Parses a value as an int, truncating at a trailing "#" comment first.</summary>
     public int GetInt(string name)
     {
@@ -102,6 +132,22 @@ public sealed class ExpFields
     }
 
     public int? TryGetInt(string name) => Contains(name) ? GetInt(name) : null;
+
+    /// <summary>Comparison-tracking counterpart to <see cref="GetInt"/> -- see <see cref="GetDoubleCompared"/>.</summary>
+    internal int GetIntCompared(string name)
+    {
+        var value = GetInt(name);
+        _compared.Add(name);
+        return value;
+    }
+
+    /// <summary>Comparison-tracking counterpart to <see cref="GetRawString"/> -- see <see cref="GetDoubleCompared"/>.</summary>
+    internal string GetRawStringCompared(string name)
+    {
+        var value = GetRawString(name);
+        _compared.Add(name);
+        return value;
+    }
 
     public double[] GetDoubleArray(string prefix, int count)
     {

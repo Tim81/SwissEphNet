@@ -63,9 +63,20 @@ internal static class Suite01Calc
                 // testcase's own body never uses that value (it computes its
                 // own local iflag from iephe instead), but t.exp still
                 // carries the field because SETUP recorded it. Read it here
-                // too, purely so the harness completeness guard
-                // (ConformanceRunner) sees it as accounted for rather than
-                // silently unchecked.
+                // too, purely so the harness completeness guard's per-field
+                // half (ConformanceRunner.UnconsumedKeys) sees it as accounted
+                // for rather than silently unchecked.
+                //
+                // This is a plain, discarded field read -- structurally the
+                // same shape as the regression the guard's other half
+                // (CheckContext.AnyComparisonPerformed) exists to catch (see
+                // Suite03Misc testcase 1). It stays legitimate here, and does
+                // not need to route through a Check* call instead, because
+                // "iflag" genuinely has nothing to compare it against (SETUP
+                // records it, but no CHECK_* macro in the reference ever reads
+                // it back) and because this testcase still performs a real
+                // comparison below (CheckEqualsI), so AnyComparisonPerformed
+                // is satisfied independently of this line.
                 _ = f.GetInt("iflag");
                 var iephe = f.GetInt("iephe");
                 var jd = f.GetDouble("jd");
@@ -78,7 +89,7 @@ internal static class Suite01Calc
                 var rc = swe.swe_calc(jd, ipl, iflag, xx, ref serr);
                 var ctx = new CheckContext(f, precision);
                 ctx.CheckEqualsI("rc==iflag", rc, iflag);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 5:
@@ -105,6 +116,6 @@ internal static class Suite01Calc
         ctx.CheckDD("xx", xx);
         ctx.CheckI("rc", rc);
         ctx.CheckS("serr", serr);
-        return DispatchOutcome.FromMismatches(ctx.Mismatches);
+        return DispatchOutcome.FromMismatches(ctx);
     }
 }

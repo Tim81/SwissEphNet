@@ -17,7 +17,7 @@ internal static class Suite03Misc
                 var ipl = f.GetInt("ipl");
                 var name = swe.swe_get_planet_name(ipl);
                 ctx.CheckS("name", name);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 2:
@@ -25,7 +25,7 @@ internal static class Suite03Misc
                 var sidMode = f.GetInt("sid_mode");
                 var name = swe.swe_get_ayanamsa_name(sidMode);
                 ctx.CheckS("name", name);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             default:

@@ -125,7 +125,7 @@ internal static class Suite10Solcross
         ctx.CheckI("rc", rc);
         ctx.CheckD("jx", jx);
         ctx.CheckS("serr", serr);
-        return DispatchOutcome.FromMismatches(ctx.Mismatches);
+        return DispatchOutcome.FromMismatches(ctx);
     }
 
     private static DispatchOutcome CheckCrossNode(ExpFields f, Precision precision, int rc, double jx, double xlon, double xlat, string serr)
@@ -136,7 +136,7 @@ internal static class Suite10Solcross
         ctx.CheckD("xlon", xlon);
         ctx.CheckD("xlat", xlat);
         ctx.CheckS("serr", serr);
-        return DispatchOutcome.FromMismatches(ctx.Mismatches);
+        return DispatchOutcome.FromMismatches(ctx);
     }
 
     private static DispatchOutcome CheckHelioCross(ExpFields f, Precision precision, double jx, int rc, string serr)
@@ -145,6 +145,6 @@ internal static class Suite10Solcross
         ctx.CheckD("jx", jx);
         ctx.CheckI("rc", rc);
         ctx.CheckS("serr", serr);
-        return DispatchOutcome.FromMismatches(ctx.Mismatches);
+        return DispatchOutcome.FromMismatches(ctx);
     }
 }

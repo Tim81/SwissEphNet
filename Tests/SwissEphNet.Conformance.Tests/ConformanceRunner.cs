@@ -155,6 +155,26 @@ public static class ConformanceRunner
                                 $"were never read by the dispatcher (neither as input nor as a comparison): {string.Join(", ", unconsumed)}. " +
                                 "This means a Check* call is missing or a buffer is undersized relative to what t.exp actually recorded.");
                         }
+                        // Second half of the completeness guard: a field being *read* is
+                        // not the same as a field being *compared*. A dispatch case that
+                        // reads an expected value with a plain field accessor instead of
+                        // routing it through a Check* call (e.g. `_ = f.GetRawString("name")`
+                        // where the correct code is `ctx.CheckS("name", name)`) marks that
+                        // field consumed without ever asserting anything about it -- the
+                        // first check above is blind to this, because the field was in fact
+                        // read. If nothing the dispatcher did for this iteration actually
+                        // ran a comparison (CheckD/CheckDD/CheckI/CheckS against t.exp, or
+                        // CheckEqualsI for the rare non-file-backed self-consistency check),
+                        // "Passed" is not a real pass: it is indistinguishable from a
+                        // testcase that silently checks nothing at all.
+                        else if (!outcome.AnyComparisonPerformed)
+                        {
+                            outcome = DispatchOutcome.Error(
+                                "harness completeness guard: outcome was reported as Passed/ValueMismatch but the dispatcher " +
+                                "never actually performed a comparison for this iteration (no CheckD/CheckDD/CheckI/CheckS/CheckEqualsI " +
+                                "call was made). Every field t.exp records was read, but nothing was asserted -- a Check* call was " +
+                                "likely replaced by a plain field read.");
+                        }
                     }
 
                     results.Add(new IterationResult(

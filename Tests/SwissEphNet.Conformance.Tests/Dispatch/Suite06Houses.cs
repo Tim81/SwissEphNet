@@ -93,7 +93,7 @@ internal static class Suite06Houses
                 var sp = swe.swe_house_name(rawHsys);
                 var ctx5 = new CheckContext(f, precision);
                 ctx5.CheckS("sp", sp);
-                return DispatchOutcome.FromMismatches(ctx5.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx5);
             }
 
             case 6:
@@ -133,7 +133,7 @@ internal static class Suite06Houses
                 ctx6.CheckD("armc", armc);
                 ctx6.CheckD("xx[0]", xx[0]);
                 ctx6.CheckD("hp", hp);
-                return DispatchOutcome.FromMismatches(ctx6.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx6);
             }
 
             case 7:
@@ -148,7 +148,7 @@ internal static class Suite06Houses
                 ctx7.CheckD("gp", gp);
                 ctx7.CheckI("rc", rc);
                 ctx7.CheckS("serr", serr);
-                return DispatchOutcome.FromMismatches(ctx7.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx7);
             }
 
             case 8:
@@ -191,7 +191,7 @@ internal static class Suite06Houses
         ctx.CheckDD("cusps", cusps[..cuspCount]);
         ctx.CheckDD("ascmc", ascmc[..6]);
         ctx.CheckI("rc", rc);
-        return DispatchOutcome.FromMismatches(ctx.Mismatches);
+        return DispatchOutcome.FromMismatches(ctx);
     }
 
     private static DispatchOutcome CheckHousesArmc(ExpFields f, Precision precision, int rc, double armc, double[] cusps, double[] ascmc, int cuspCount)
@@ -201,7 +201,7 @@ internal static class Suite06Houses
         ctx.CheckDD("cusps", cusps[..cuspCount]);
         ctx.CheckDD("ascmc", ascmc[..6]);
         ctx.CheckI("rc", rc);
-        return DispatchOutcome.FromMismatches(ctx.Mismatches);
+        return DispatchOutcome.FromMismatches(ctx);
     }
 
     // external/swisseph/setest/globals_suite.c: check_swehouses_ex2_results -- same fields as
@@ -216,7 +216,7 @@ internal static class Suite06Houses
         ctx.CheckDD("ascmc", ascmc[..6]);
         ctx.CheckDD("ascmc_speed", ascmcSpeed[..6]);
         ctx.CheckI("rc", rc);
-        return DispatchOutcome.FromMismatches(ctx.Mismatches);
+        return DispatchOutcome.FromMismatches(ctx);
     }
 
     // external/swisseph/setest/globals_suite.c: check_swehouses_armc_ex2_results -- same fields
@@ -230,6 +230,6 @@ internal static class Suite06Houses
         ctx.CheckDD("ascmc", ascmc[..6]);
         ctx.CheckDD("ascmc_speed", ascmcSpeed[..6]);
         ctx.CheckI("rc", rc);
-        return DispatchOutcome.FromMismatches(ctx.Mismatches);
+        return DispatchOutcome.FromMismatches(ctx);
     }
 }
