@@ -11,16 +11,23 @@
     since the fork started, and by hand is not a gate: one commit message on this branch's history
     already carried a stray tool-authorship phrase before a manual scan happened to catch it.
 
-    Two independent checks, both driven by the same pattern table and, since both now use PCRE-
-    compatible regex semantics (git grep -P on one side, .NET's [regex] on the other), both give
+    Four independent checks, all driven by the same pattern table and, since all now use PCRE-
+    compatible regex semantics (git grep -P on one side, .NET's [regex] on the other), all give
     every pattern -- including the case-insensitive ones -- the same meaning:
 
-      1. Every tracked file (git grep -I, which already skips binary files -- see "Binary files"
-         below), excluding external/ (Astrodienst's own vendored source, not this repository's
-         writing) and this script's own path (which necessarily contains the literal pattern text
-         it searches for -- a filter has to name what it filters).
+      1. Every tracked file's content (git grep -a, forcing every tracked file to be scanned as
+         text -- see "Binary files" below), excluding external/ (Astrodienst's own vendored
+         source, not this repository's writing) and this script's own path (which necessarily
+         contains the literal pattern text it searches for -- a filter has to name what it
+         filters).
+      1b. Every tracked file's path. `git grep` never reports a match against a path with clean
+         content, so a file named e.g. ".github/copilot-instructions.md" needs a separate check
+         against `git ls-files`.
       2. Every commit message in -CommitRange, if given. Skipped (not failed) when omitted, so
          this script still works as a plain content scan outside CI.
+      3. Every line added anywhere in -CommitRange's diff, if given, not just what survives to
+         HEAD -- a file added with a flagged phrase and deleted again later in the same range is
+         invisible to checks 1 and 2 otherwise, and is still permanently in the published history.
 
     Pattern design, and why each one is shaped the way it is:
 
@@ -48,10 +55,18 @@
         reason -- widening it to (?i) would turn every legitimate lowercase "generated with" in
         this repository's own prose back into a false positive.
 
-    Binary files: git grep -I applies the same "does this look like text" heuristic `git diff`
-    uses to decide whether to print "Binary files ... differ", so a `.se1` ephemeris file (or any
-    other binary asset) is never opened as text and can never produce a spurious match on a short
-    pattern landing inside its byte stream.
+    Binary files: `git grep -I` (the previous flag here) skips a file two independent ways --
+    git's own "does this look like text" content heuristic, AND any applicable .gitattributes
+    `binary`/`-diff` entry -- and confirmed by direct testing, either one alone is enough to make
+    a genuinely offending text file invisible: a tracked file saved as UTF-16LE, or UTF-8 with a
+    single stray embedded NUL byte (both one click away in a Windows editor's "Save as Unicode",
+    or a copy-paste artifact), trips the first; a future `.gitattributes` entry marking a path
+    `binary` or `-diff` (this repository's own `.gitattributes` already ships commented-out
+    template blocks for exactly that) trips the second regardless of what the file actually
+    contains. `-a`/`--text` (used for both the content scan and the diff scan below) forces every
+    tracked file to be processed as text regardless of either signal. The only tracked binaries in
+    this repository, `Tests/SwissEphNet.Tests/files/*.se1`, were confirmed by direct testing to
+    produce no match and no error under -a.
 
     docs/upstream/ is untracked, so `git grep` (which searches the index, not the working tree)
     never sees it regardless of any explicit exclusion.
@@ -124,15 +139,24 @@ try {
     $failures = [System.Collections.Generic.List[string]]::new()
 
     # ---------------------------------------------------------------------------------------
-    # 1. Tracked files.
+    # 1. Tracked files' content.
     # ---------------------------------------------------------------------------------------
-    # -I: skip files git itself detects as binary (the same heuristic `git diff` uses to print
-    # "Binary files ... differ" instead of a text diff), so a .se1 ephemeris file is never opened
-    # as text. -n: line numbers. -P: PCRE, so "(?i)" and "\b" mean what the pattern table above
-    # assumes instead of being matched as literal text under the default POSIX BRE dialect.
-    # --no-color, -e per pattern: one `git grep` call checks every pattern in a single pass rather
-    # than one process per pattern.
-    $grepArgs = @('grep', '-nPI', '--no-color')
+    # -a ("--text"), not -I: -I skips both (a) any file git's own "does this look like text"
+    # heuristic calls binary, AND (b) any file an applicable .gitattributes entry marks `binary`
+    # or `-diff` -- confirmed by direct testing, both independently make a real text file
+    # invisible to -I regardless of what it actually contains. A tracked file saved as UTF-16LE,
+    # or plain UTF-8 with one stray embedded NUL byte (either one is one click away in a Windows
+    # editor's "Save as Unicode", or a copy-paste from a source that had one), trips git's
+    # heuristic; this repository's own .gitattributes already ships commented-out `binary`/`-diff`
+    # template blocks, so a future entry doing that deliberately is also one edit away. -a forces
+    # every tracked file to be scanned as text regardless of either signal, closing both at once;
+    # the only tracked binaries in this repository (Tests/SwissEphNet.Tests/files/*.se1) were
+    # confirmed by direct testing to produce no match and no error under -a.
+    # -n: line numbers. -P: PCRE, so "(?i)" and "\b" mean what the pattern table above assumes
+    # instead of being matched as literal text under the default POSIX BRE dialect. --no-color,
+    # -e per pattern: one `git grep` call checks every pattern in a single pass rather than one
+    # process per pattern.
+    $grepArgs = @('grep', '-nPa', '--no-color')
     foreach ($p in $patterns) { $grepArgs += @('-e', $p.Regex) }
     $grepArgs += @('--', '.', ':!external/*')
     # Only excludable when this script actually lives inside $RepoRoot -- e.g. a throwaway repo
@@ -161,6 +185,31 @@ try {
             # honors each pattern's own case-sensitivity exactly as written.
             if ([regex]::IsMatch($line, $p.Regex)) {
                 $failures.Add("tracked file $line -- matches $($p.Label)")
+                break
+            }
+        }
+    }
+
+    # ---------------------------------------------------------------------------------------
+    # 1b. Tracked files' paths themselves.
+    # ---------------------------------------------------------------------------------------
+    # `git grep` only ever emits a line for a match inside a file's *content* -- it has no mode
+    # that reports a match against the path alone, so a file named e.g.
+    # ".github/copilot-instructions.md" with entirely clean content never produces a line for the
+    # loop above to see, no matter how the patterns are written. That is a conventional filename
+    # (GitHub's own suggested name for repo-level Copilot instructions) that can land without
+    # anyone intending an attribution violation. `git ls-files` lists every tracked path
+    # regardless of content, so it is checked against the same pattern table separately.
+    $trackedPaths = & git ls-files -- '.' ':!external/*'
+    if ($LASTEXITCODE -ne 0) {
+        throw "git ls-files exited $LASTEXITCODE -- output above."
+    }
+    foreach ($path in @($trackedPaths)) {
+        if ([string]::IsNullOrWhiteSpace($path)) { continue }
+        if (-not $selfPath.StartsWith('..') -and $path -eq $selfPath) { continue }
+        foreach ($p in $patterns) {
+            if ([regex]::IsMatch($path, $p.Regex)) {
+                $failures.Add("tracked path '$path' -- matches $($p.Label)")
                 break
             }
         }
@@ -209,6 +258,58 @@ try {
         }
 
         Write-Host "Checked $($records.Count) commit message(s) in range $CommitRange."
+
+        # -----------------------------------------------------------------------------------
+        # 3. Lines added anywhere in -CommitRange's diff, not just what survives to HEAD.
+        # -----------------------------------------------------------------------------------
+        # Check 1 above only ever reads HEAD's own tracked content. A file added with a flagged
+        # phrase in one commit and deleted again in a later commit, both inside the same range
+        # (drafting and then removing a doc inside one PR/push is ordinary), is invisible to that
+        # check -- it was never in HEAD -- and invisible to check 2 as well, since a file's own
+        # content is not a commit message. The phrase still permanently exists in the published
+        # history, which is exactly what this script exists to prevent. `git log -p` walks every
+        # commit's own diff, so a line added in commit A of the range is seen when A is visited,
+        # independent of what any later commit in the same range does to it.
+        #
+        # A per-commit marker (the same record-separator technique as the message scan above)
+        # attributes each added line to the commit that introduced it. Only lines that are pure
+        # additions (a single leading '+', not the "+++ b/path" file-header line diff emits for
+        # every file) are scanned -- context lines and removals are not new content this range
+        # introduced. -a ("--text"): the same reasoning as check 1's -a applies to diff output
+        # too -- without it, a blob git's heuristic calls binary renders as "Binary files ...
+        # differ" with no +/- lines at all, silently skipping a NUL-byte-disguised addition.
+        $diffRecordSeparator = "`u{1E}"
+        $diffGrepArgs = @(
+            'log', $CommitRange, '-p', '-a', '--no-color',
+            "--format=format:$diffRecordSeparator%H",
+            '--', '.', ':!external/*')
+        if (-not $selfPath.StartsWith('..')) { $diffGrepArgs += ":!$selfPath" }
+        $diffRaw = & git @diffGrepArgs
+        if ($LASTEXITCODE -ne 0) {
+            throw "git log $CommitRange -p exited $LASTEXITCODE -- is the range valid and are both ends fetched?"
+        }
+        $diffText = ($diffRaw -join "`n")
+        $diffRecordBoundary = [regex]::Escape($diffRecordSeparator)
+        $diffRecords = @($diffText -split $diffRecordBoundary | Where-Object { $_.Trim() -ne '' })
+
+        foreach ($record in $diffRecords) {
+            $recordLines = $record -split "`n", 2
+            $sha = $recordLines[0].Trim()
+            $diffBody = if ($recordLines.Count -gt 1) { $recordLines[1] } else { '' }
+            if ([string]::IsNullOrWhiteSpace($sha)) { continue }
+            $shortSha = $sha.Substring(0, [Math]::Min(12, $sha.Length))
+
+            foreach ($diffLine in @($diffBody -split "`n")) {
+                if (-not $diffLine.StartsWith('+') -or $diffLine.StartsWith('+++')) { continue }
+                $added = $diffLine.Substring(1)
+                foreach ($p in $patterns) {
+                    if ([regex]::IsMatch($added, $p.Regex)) {
+                        $failures.Add("commit ${shortSha} added a line matching $($p.Label) -- `"$($added.Trim())`" (even if a later commit in the same range removed it, it is permanently in the published history)")
+                        break
+                    }
+                }
+            }
+        }
     }
     else {
         Write-Host 'No -CommitRange given; commit messages were not checked.'
