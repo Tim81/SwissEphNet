@@ -1,4 +1,4 @@
-﻿/*
+/*
    This is a port of the Swiss Ephemeris Free Edition, Version 2.00.00
    of Astrodienst AG, Switzerland from the original C Code to .Net. For
    copyright see the original copyright notices below and additional
@@ -457,13 +457,50 @@ namespace SwissEphNet
         // the exact bytes of an error message, not a functional one; left as-is rather
         // than special-casing the trailing-separator check for one platform's string,
         // consistent with DIR_GLUE's own existing "one value for every platform" choice.
+        //
+        // The non-Windows string carries upstream's three components in upstream's order,
+        // but joined with ';' where swephexp.h:403 writes ':'. That is not a typo and not
+        // a second guess at the C: it is forced by this port's own PATH_SEPARATOR, which
+        // is deliberately { ';' } on every platform (SwissEph.sweodef.h.cs, and
+        // docs/known-issues.md's "Three file-layer divergences") because a bare ':' cannot
+        // be added to a cross-platform cut-list without splitting a Windows drive letter.
+        // swi_fopen splits swed.ephepath on exactly that cut-list (Sweph.cs, sweph.c:2377),
+        // so upstream's colon-joined literal arrives as ONE component here, not three:
+        // ".:/users/ephe2/:/users/ephe/" is then used verbatim as a directory prefix and
+        // matches nothing, and in particular the "." component -- the current directory,
+        // which sweph.c:2381 maps to the empty prefix and which is the only one of the
+        // three that exists on a machine that is not Astrodienst's -- is lost. Measured
+        // with Programs/SweTest against this repository's own ephe/ directory, same path,
+        // separator the only difference: ';' reads the .se1 file and prints Sun
+        // 279.8584613 for 1.1.2000, ':' prints "using Moshier eph." and 279.8584626. So
+        // the colon form makes a caller who never calls swe_set_ephe_path silently
+        // compute from Moshier on Linux and macOS, where the C reads the file. Neither
+        // gate can see this: the characterization baseline is Moshier-only and never
+        // subscribes to file loading, and the conformance/oracle runs are Windows, whose
+        // literal has no separator in it at all. Joining with the separator this port
+        // actually splits on keeps the C's three components and the C's behaviour; the
+        // alternative -- widening PATH_SEPARATOR to ";:" off Windows -- would reverse a
+        // decision already taken and recorded, for a caller-supplied path rather than for
+        // this default.
+        // Split from the property so both branches are reachable from any platform. The
+        // property alone cannot be tested for this: the separator mistake it guards against
+        // is confined to the non-Windows literal, so a test reading DefaultEphePath on a
+        // Windows runner exercises the other branch and passes no matter what the non-Windows
+        // string says -- measured, by reintroducing the ':' form and watching the test stay
+        // green. Tests/SwissEphNet.Tests/DefaultEphePathSplitTest.cs calls this directly with
+        // both values instead.
+        internal static string DefaultEphePathFor(bool isWindows)
+        {
+            return isWindows
+                ? "\\sweph\\ephe\\"
+                : ".;/users/ephe2/;/users/ephe/";
+        }
+
         internal static string DefaultEphePath
         {
             get
             {
-                return RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                    ? "\\sweph\\ephe\\"
-                    : ".:/users/ephe2/:/users/ephe/";
+                return DefaultEphePathFor(RuntimeInformation.IsOSPlatform(OSPlatform.Windows));
             }
         }
 
