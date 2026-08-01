@@ -124,21 +124,27 @@ jobs:
         shell: pwsh
         run: pwsh scripts/verify-baseline.ps1
 
-  # Informational only, never a gate. The baseline is Windows-generated and this
-  # gate is deliberately locked to Windows: a measured Windows-vs-Linux run found
-  # 47,052 of 3.4M numeric fields differing (92.66% ULP noise already covered by the
-  # tolerance, 5.60% angle-wraparound now handled directly, 1.74% genuine
-  # divergence including one real numerical-stability bug -- see
-  # Tools/BaselineGen/README.md and docs/known-issues.md). A single tolerance loose
-  # enough to pass on Linux would need to be loose enough to hide real regressions,
-  # so instead of widening it, this job just tracks the drift over time in
-  # --report-only mode, which never fails by design. continue-on-error is still set
-  # as a backstop in case the test suite itself breaks on Linux for an unrelated
-  # reason (a real thing worth seeing), not because the report step could fail.
+  # Informational only for the cross-platform report; not for the whole job. The baseline is
+  # Windows-generated and this gate is deliberately locked to Windows: a measured Windows-vs-Linux
+  # run found 47,052 of 3.4M numeric fields differing (92.66% ULP noise already covered by the
+  # tolerance, 5.60% angle-wraparound now handled directly, 1.74% genuine divergence including one
+  # real numerical-stability bug -- see Tools/BaselineGen/README.md and docs/known-issues.md). A
+  # single tolerance loose enough to pass on Linux would need to be loose enough to hide real
+  # regressions, so instead of widening it, the report step below just tracks the drift over time
+  # in --report-only mode, which never fails by design.
+  #
+  # continue-on-error used to sit here, at job level -- the exact placement oracle.yml's
+  # header-flags-check job calls "the historical bug" for the same reason that job exists at all:
+  # job level absorbs every step in the job, not just the one the exemption was written for. Under
+  # that placement, "Run gate unit tests" below (BaselineVerify's own unit test suite, which has
+  # nothing to do with cross-platform ULP drift) silently reported success even when it genuinely
+  # failed on Linux, which is exactly the kind of break this job exists to catch, not to hide. The
+  # flag now sits only on the report step immediately below it, as a backstop in case the test
+  # suite itself breaks on Linux for an unrelated reason (a real thing worth seeing) -- not because
+  # that step's own drift report could ever fail; --report-only already guarantees it does not.
   verify-baseline-linux:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -155,4 +161,5 @@ jobs:
 
       - name: Report cross-platform divergence (never fails)
         shell: pwsh
+        continue-on-error: true
         run: pwsh scripts/verify-baseline.ps1 -ReportOnly
