@@ -11,7 +11,7 @@
     since the fork started, and by hand is not a gate: one commit message on this branch's history
     already carried a stray tool-authorship phrase before a manual scan happened to catch it.
 
-    Four independent checks, all driven by the same pattern table and, since all now use PCRE-
+    Five independent checks, all driven by the same pattern table and, since all now use PCRE-
     compatible regex semantics (git grep -P on one side, .NET's [regex] on the other), all give
     every pattern -- including the case-insensitive ones -- the same meaning:
 
@@ -28,6 +28,13 @@
       3. Every line added anywhere in -CommitRange's diff, if given, not just what survives to
          HEAD -- a file added with a flagged phrase and deleted again later in the same range is
          invisible to checks 1 and 2 otherwise, and is still permanently in the published history.
+      4. Every commit's author name, author email, committer name and committer email in
+         -CommitRange, if given -- checked against the same pattern table as commit messages. A
+         placeholder or bot identity reaching a commit (e.g. a tool stamping its own name/email
+         onto the commit it produced) is invisible to checks 1 through 3, which all read message
+         or file text, never identity fields; this repository's own history had a placeholder
+         author identity reach 36 commits across two separate occasions with none of those checks
+         noticing, because none of them looked at %an/%ae/%cn/%ce at all.
 
     Pattern design, and why each one is shaped the way it is:
 
@@ -219,8 +226,14 @@ try {
     # 2. Commit messages in -CommitRange.
     # ---------------------------------------------------------------------------------------
     if ($CommitRange) {
-        # %H%n%B<record separator>: one record per commit (sha, then full body), split on a
-        # delimiter no legitimate commit message would ever contain. `format:` (as opposed to the
+        # %H%n%an%n%ae%n%cn%n%ce%n%B<record separator>: one record per commit (sha, author name,
+        # author email, committer name, committer email, then full body), split on a delimiter no
+        # legitimate commit message would ever contain. Author/committer identity is scanned here
+        # too, not just message text -- automated commit tooling that stamps its own name/email
+        # onto a commit (e.g. a bot identity reading something like "Claude <noreply@anthropic.com>")
+        # previously reached this repository's history invisibly: this script read %B only, never
+        # %an/%ae/%cn/%ce, so a tool-authored identity on an otherwise clean commit message passed
+        # at exit 0 regardless of what the name or email address said. `format:` (as opposed to the
         # `tformat:` that a bare `--format=STRING` with no prefix defaults to) matters here: with
         # `tformat:`, git appends its own trailing newline after every record, including the
         # last, on top of the separator this script adds. With `format:`, git still inserts
@@ -232,7 +245,7 @@ try {
         # record but the first starting with a leftover leading blank line, which made its sha
         # parse as empty and silently drop the whole record from the scan below.
         $recordSeparator = "`u{1E}"
-        $raw = & git log $CommitRange "--format=format:%H%n%B$recordSeparator"
+        $raw = & git log $CommitRange "--format=format:%H%n%an%n%ae%n%cn%n%ce%n%B$recordSeparator"
         if ($LASTEXITCODE -ne 0) {
             throw "git log $CommitRange exited $LASTEXITCODE -- is the range valid and are both ends fetched?"
         }
@@ -241,11 +254,15 @@ try {
         $records = @($text -split $recordBoundary | Where-Object { $_.Trim() -ne '' })
 
         foreach ($record in $records) {
-            $recordLines = $record -split "`n", 2
+            $recordLines = $record -split "`n", 6
             $sha = $recordLines[0].Trim()
-            $body = if ($recordLines.Count -gt 1) { $recordLines[1] } else { '' }
             if ([string]::IsNullOrWhiteSpace($sha)) { continue }
             $shortSha = $sha.Substring(0, [Math]::Min(12, $sha.Length))
+            $authorName = if ($recordLines.Count -gt 1) { $recordLines[1] } else { '' }
+            $authorEmail = if ($recordLines.Count -gt 2) { $recordLines[2] } else { '' }
+            $committerName = if ($recordLines.Count -gt 3) { $recordLines[3] } else { '' }
+            $committerEmail = if ($recordLines.Count -gt 4) { $recordLines[4] } else { '' }
+            $body = if ($recordLines.Count -gt 5) { $recordLines[5] } else { '' }
 
             foreach ($p in $patterns) {
                 # [regex]::IsMatch here too -- see the identical comment on the tracked-file loop
@@ -255,9 +272,23 @@ try {
                     $failures.Add("commit ${shortSha}: matches $($p.Label) -- `"$($firstMatchLine.Trim())`"")
                 }
             }
+
+            foreach ($field in @(
+                    @{ Value = $authorName; Label = 'author name' },
+                    @{ Value = $authorEmail; Label = 'author email' },
+                    @{ Value = $committerName; Label = 'committer name' },
+                    @{ Value = $committerEmail; Label = 'committer email' }
+                )) {
+                if ([string]::IsNullOrWhiteSpace($field.Value)) { continue }
+                foreach ($p in $patterns) {
+                    if ([regex]::IsMatch($field.Value, $p.Regex)) {
+                        $failures.Add("commit ${shortSha}: $($field.Label) `"$($field.Value.Trim())`" matches $($p.Label)")
+                    }
+                }
+            }
         }
 
-        Write-Host "Checked $($records.Count) commit message(s) in range $CommitRange."
+        Write-Host "Checked $($records.Count) commit message(s) and author/committer identity in range $CommitRange."
 
         # -----------------------------------------------------------------------------------
         # 3. Lines added anywhere in -CommitRange's diff, not just what survives to HEAD.
