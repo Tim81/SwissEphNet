@@ -62,21 +62,45 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-if (-not $changedTsv) {
-    Write-Host "No Tests/baseline/*.tsv changes between $BaseRef and HEAD. Nothing to check."
+# Checked separately from $changedTsv: the append-only guarantee below has to hold whenever the
+# sidecar itself moved, not only on a commit that also touches a golden/waiver/row-count TSV. A
+# commit that guts the sidecar's whole log while leaving every *.tsv alone previously never even
+# ran this diff against the sidecar path, so it reported "Nothing to check" -- "nothing to check"
+# has to mean neither side changed, not just that the TSV side didn't.
+$changedSidecar = git -C $repoRoot diff --name-only "$BaseRef" HEAD -- 'Tests/baseline/baseline-*.env.txt'
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "git diff between '$BaseRef' and HEAD failed."
+    exit 1
+}
+
+if (-not $changedTsv -and -not $changedSidecar) {
+    Write-Host "No Tests/baseline/*.tsv or sidecar changes between $BaseRef and HEAD. Nothing to check."
     exit 0
 }
 
-Write-Host "Tests/baseline/*.tsv changed between $BaseRef and HEAD:"
-$changedTsv | ForEach-Object { Write-Host "  $_" }
-Write-Host ""
+if ($changedTsv) {
+    Write-Host "Tests/baseline/*.tsv changed between $BaseRef and HEAD:"
+    $changedTsv | ForEach-Object { Write-Host "  $_" }
+    Write-Host ""
+}
 
 $sidecars = @(Get-ChildItem $baselineDir -Filter 'baseline-*.env.txt' -ErrorAction SilentlyContinue)
 if ($sidecars.Count -ne 1) {
     Write-Error "Expected exactly one Tests/baseline/baseline-*.env.txt sidecar at HEAD (found $($sidecars.Count)). Cannot verify the regenerations log without it."
     exit 1
 }
-$headContent = Get-Content -Raw -Path $sidecars[0].FullName
+# Normalized to LF, not read as-is: Tests/baseline/baseline-*.env.txt is currently pinned to
+# `eol=lf` in .gitattributes, so this normalization is a no-op on every checkout today -- but it
+# is the only one of this repository's three log gates that relied on that external pin instead
+# of normalizing itself (verify-known-fail-log.ps1 and verify-freeze-log.ps1 both normalize their
+# own sidecars explicitly, precisely because their sidecars have no such pin). Should the
+# .gitattributes entry ever be removed or the pattern narrowed, a Windows checkout (or a Windows
+# CI runner) would check this file out as CRLF while `git show` below always returns the blob's
+# own stored content (LF), and every multi-line entry would then report as "edited" purely from a
+# line-ending difference that has nothing to do with the log's actual content -- the same failure
+# mode the siblings' own comments describe. Normalizing unconditionally, rather than trusting the
+# pin to always be there, matches both siblings and costs nothing when the pin already holds.
+$headContent = (Get-Content -Raw -Path $sidecars[0].FullName) -replace "`r`n", "`n" -replace "`r", "`n"
 $headSidecarRelPath = "Tests/baseline/$($sidecars[0].Name)"
 
 # Below this many letters/digits (numbering and punctuation stripped), a new entry is rejected as
@@ -170,7 +194,11 @@ else {
         Write-Error "Resolved sidecar path '$baseSidecarRelPath' at $BaseRef via git ls-tree, but 'git show' could not read it. This should not happen; investigate before trusting this check's result."
         exit 1
     }
-    $baseContent = $baseContentLines -join "`n"
+    # Normalized the same way as $headContent above (both sides must agree, or content is what's
+    # being compared -- not encoding) -- already LF-only in practice since `git show` returns the
+    # blob's stored content directly, but not assumed: see $headContent's own comment for why this
+    # gate normalizes explicitly instead of trusting the .gitattributes pin to always be there.
+    $baseContent = ($baseContentLines -join "`n") -replace "`r`n", "`n" -replace "`r", "`n"
 }
 
 # @() wraps deliberately: PowerShell unrolls a single-element array on return into a bare scalar,
@@ -185,7 +213,10 @@ $headEntries = @(Get-LogEntries $headContent)
 $baseCount = $baseEntries.Count
 $headCount = $headEntries.Count
 
-if ($headCount -le $baseCount) {
+# "Must gain a new entry" is conditional on the gated artifact ($changedTsv) actually having
+# changed -- a sidecar-only change (caught below, unconditionally, by the append-only prefix
+# check) does not by itself require a fresh entry.
+if ($changedTsv -and $headCount -le $baseCount) {
     # Tests/baseline/*.tsv sweeps up three different kinds of file: the golden
     # baseline-<area>.tsv files regenerate-baseline.ps1 writes, plus waivers.tsv and
     # row-counts.tsv, which land in the same glob deliberately (see
@@ -235,12 +266,23 @@ Tests/baseline/, not Tools/BaselineVerify/'.
     exit 1
 }
 
-# Append-only check: every entry that existed at -BaseRef must still read identically, in the
-# same position, at HEAD. A count that only goes up is not enough on its own -- see this file's
-# own header comment for the demonstrated bypass (delete one entry, add two, count still rises).
-for ($i = 0; $i -lt $baseCount; $i++) {
-    if ($headEntries[$i] -ne $baseEntries[$i]) {
-        Write-Error @"
+# Append-only check: run whenever the sidecar itself changed, not only when the gated artifact
+# also did -- gutting the log in a commit that touches no *.tsv is exactly the bypass this
+# unconditional-on-$changedSidecar placement exists to close (see the $changedSidecar comment
+# above). Every entry that existed at -BaseRef must still read identically, in the same position,
+# at HEAD. A count that only goes up is not enough on its own -- see this file's own header
+# comment for the demonstrated bypass (delete one entry, add two, count still rises).
+if ($changedSidecar) {
+    for ($i = 0; $i -lt $baseCount; $i++) {
+        # [string]::Equals(..., Ordinal): PowerShell's -ne on strings is culture-aware, so it
+        # reports two entries as equal when they differ only by case, by a soft hyphen or
+        # zero-width space, or by Unicode normalization form (NFD vs NFC) -- confirmed directly,
+        # rewriting an existing entry to uppercase and appending a valid new entry still printed
+        # "every prior entry unchanged" and exited 0. Ordinal comparison treats the entry as the
+        # exact sequence of code points it is, which an append-only log's "still reads identically"
+        # requirement means literally.
+        if (-not [string]::Equals($headEntries[$i], $baseEntries[$i], [StringComparison]::Ordinal)) {
+            Write-Error @"
 $headSidecarRelPath's '## Local regenerations' log is append-only, but entry #$($i + 1) differs
 between $BaseRef and HEAD -- it was edited, reordered or removed rather than left alone.
 
@@ -255,7 +297,8 @@ place -- an append-only log that gets edited is no longer append-only, and this 
 documents exactly this convention for entries 2 to 4 (left as originally written, with the
 misattribution noted afterward, rather than silently corrected).
 "@
-        exit 1
+            exit 1
+        }
     }
 }
 

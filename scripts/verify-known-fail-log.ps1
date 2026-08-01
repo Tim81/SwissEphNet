@@ -73,13 +73,26 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-if (-not $changed) {
-    Write-Host "No $manifestRelPath changes between $BaseRef and HEAD. Nothing to check."
+# Checked separately from $changed: the append-only guarantee below has to hold whenever the
+# sidecar itself moved, not only on a commit that also touches $manifestRelPath. A commit that
+# deletes most of the sidecar's entries while leaving $manifestRelPath alone previously never ran
+# this diff against the sidecar path at all, so it reported "Nothing to check" -- "nothing to
+# check" has to mean neither side changed, not just that the manifest side didn't.
+$changedSidecar = git -C $RepoRoot diff --name-only "$BaseRef" HEAD -- $sidecarRelPath
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "git diff between '$BaseRef' and HEAD failed."
+    exit 1
+}
+
+if (-not $changed -and -not $changedSidecar) {
+    Write-Host "No $manifestRelPath or $sidecarRelPath changes between $BaseRef and HEAD. Nothing to check."
     exit 0
 }
 
-Write-Host "$manifestRelPath changed between $BaseRef and HEAD."
-Write-Host ""
+if ($changed) {
+    Write-Host "$manifestRelPath changed between $BaseRef and HEAD."
+    Write-Host ""
+}
 
 # Below this many letters/digits (the date prefix and punctuation stripped), a new entry is
 # rejected as having no real content -- see the header comment's point 2. Chosen well under every
@@ -165,7 +178,10 @@ $headEntries = @(Get-LogEntries $headContent)
 $baseCount = $baseEntries.Count
 $headCount = $headEntries.Count
 
-if ($headCount -le $baseCount) {
+# "Must gain a new entry" is conditional on the gated artifact ($changed) actually having
+# changed -- a sidecar-only change (caught below, unconditionally, by the append-only prefix
+# check) does not by itself require a fresh entry.
+if ($changed -and $headCount -le $baseCount) {
     Write-Error @"
 $manifestRelPath changed between $BaseRef and HEAD, but $sidecarRelPath did not gain a new entry
 ($baseCount -> $headCount).
@@ -181,12 +197,23 @@ list".
     exit 1
 }
 
-# Append-only check: every entry that existed at -BaseRef must still read identically, in the same
-# position, at HEAD. A count that only goes up is not enough on its own -- see this file's own
-# header comment for the demonstrated bypass (delete one entry, add two, count still rises).
-for ($i = 0; $i -lt $baseCount; $i++) {
-    if ($headEntries[$i] -ne $baseEntries[$i]) {
-        Write-Error @"
+# Append-only check: run whenever the sidecar itself changed, not only when the gated artifact
+# also did -- gutting the log in a commit that touches no $manifestRelPath is exactly the bypass
+# this unconditional-on-$changedSidecar placement exists to close (see the $changedSidecar comment
+# above). Every entry that existed at -BaseRef must still read identically, in the same position,
+# at HEAD. A count that only goes up is not enough on its own -- see this file's own header
+# comment for the demonstrated bypass (delete one entry, add two, count still rises).
+if ($changedSidecar) {
+    for ($i = 0; $i -lt $baseCount; $i++) {
+        # [string]::Equals(..., Ordinal): PowerShell's -ne on strings is culture-aware, so it
+        # reports two entries as equal when they differ only by case, by a soft hyphen or
+        # zero-width space, or by Unicode normalization form (NFD vs NFC) -- confirmed directly,
+        # rewriting an existing entry to uppercase and appending a valid new entry still printed
+        # "every prior entry unchanged" and exited 0. Ordinal comparison treats the entry as the
+        # exact sequence of code points it is, which an append-only log's "still reads identically"
+        # requirement means literally.
+        if (-not [string]::Equals($headEntries[$i], $baseEntries[$i], [StringComparison]::Ordinal)) {
+            Write-Error @"
 $sidecarRelPath is append-only, but entry #$($i + 1) differs between $BaseRef and HEAD -- it was
 edited, reordered or removed rather than left alone.
 
@@ -201,7 +228,8 @@ place -- an append-only log that gets edited is no longer append-only, and this 
 already documents exactly this convention (the 2026-07-31 entry correcting the Phase 6 probe
 entry above it, left in place, rather than silently rewritten).
 "@
-        exit 1
+            exit 1
+        }
     }
 }
 
