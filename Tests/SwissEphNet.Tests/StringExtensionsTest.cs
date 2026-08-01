@@ -65,6 +65,14 @@ namespace SwissEphNet.Tests
             Assert.Equal(-1, "AcA".IndexOfFirstNot(charSet));
             Assert.Equal(0, "xyz".IndexOfFirstNot(charSet));
 
+            // An empty char set excludes nothing, so the first character of a non-empty string
+            // already qualifies and the answer is 0, not -1 (StringExtensions.cs's own comment on
+            // IndexOfFirstNot: "Must not early-return on chars.Length == 0"). None of the
+            // assertions above exercise this: every non-null, non-empty-string case here passes a
+            // non-empty charSet, and the only zero-argument call (line 56 above) is on a null s,
+            // where String.IsNullOrEmpty(s) short-circuits to -1 regardless of chars.
+            Assert.Equal(0, "xyz".IndexOfFirstNot());
+            Assert.Equal(0, "xyz".IndexOfFirstNot(Array.Empty<char>()));
         }
 
         [Fact]

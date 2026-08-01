@@ -45,7 +45,12 @@ public class ConformanceSuiteTests
         Assert.Equal(334_276, doc.TotalValueLineCount);
     }
 
-    [Fact]
+    // Generous, not tuned to today's actual runtime (a few seconds): this exists to catch a
+    // genuine hang (an accidental infinite loop in a future dispatch case, or a search function
+    // that stops converging for some future JD the matrix starts covering), not to flag normal
+    // slowness. xunit.v3-only -- see the SHOULD-FIX note this addresses for why
+    // Tests/SwissEphNet.Tests (xunit v2) needs a .runsettings instead.
+    [Fact(Timeout = 300_000)]
     public void PortMatchesKnownFailList()
     {
         var (_, results) = ConformanceRunner.Run();

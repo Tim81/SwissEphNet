@@ -45,6 +45,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>conformance\required-ephemeris-files.tsv</Link>
     </None>
+    <None Include="..\conformance\value-mismatch-triage.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>conformance\value-mismatch-triage.tsv</Link>
+    </None>
   </ItemGroup>
 
 </Project>

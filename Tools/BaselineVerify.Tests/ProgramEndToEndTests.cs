@@ -51,10 +51,16 @@ namespace BaselineVerify.Tests;
 /// specific test that claims to cover it, watch it fail with the corruption-fixture's own
 /// assertion (not just a changed exit code), then restore the line and watch the test pass
 /// again.
+///
+/// Every [Fact] below carries an explicit Timeout (xunit.v3-only), set to 330 seconds -- just
+/// above RunBaselineVerify's own 5-minute Process.WaitForExit bound, so a genuinely wedged
+/// subprocess still surfaces through that method's own "did not exit" assertion (with stdout/
+/// stderr attached) before xunit's own timeout would otherwise cut it off with a bare "test
+/// exceeded timeout" and no diagnostic content.
 /// </summary>
 public class ProgramEndToEndTests
 {
-    [Fact]
+    [Fact(Timeout = 330_000)]
     public void Main_CorruptedRowCount_ExitsNonZero()
     {
         var fixtureDir = CopyRealBaselineFixture();
@@ -89,7 +95,7 @@ public class ProgramEndToEndTests
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 330_000)]
     public void Main_StrayBaselineFile_ExitsNonZero()
     {
         var fixtureDir = CopyRealBaselineFixture();
@@ -112,7 +118,7 @@ public class ProgramEndToEndTests
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 330_000)]
     public void Main_StrayRowCountEntry_ExitsNonZero()
     {
         var fixtureDir = CopyRealBaselineFixture();
@@ -138,7 +144,7 @@ public class ProgramEndToEndTests
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 330_000)]
     public void Main_MissingBaselineFile_ExitsNonZero()
     {
         var fixtureDir = CopyRealBaselineFixture();
@@ -163,7 +169,7 @@ public class ProgramEndToEndTests
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 330_000)]
     public void Main_DuplicateCaseId_ReportsErrorAndExitsNonZero()
     {
         var fixtureDir = CopyRealBaselineFixture();
@@ -193,7 +199,7 @@ public class ProgramEndToEndTests
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 330_000)]
     public void Main_MatchingAssemblyIdentitySidecar_ExitsNonZero()
     {
         var fixtureDir = CopyRealBaselineFixture();
