@@ -161,10 +161,10 @@ internal static class Program
                     ProcessCalc(swe, caseId, func, fields, sidModeIndex: 11, writer);
                     break;
                 case "HOUSES":
-                    ProcessHouses(swe, caseId, fields, writer);
+                    ProcessHouses(swe, caseId, fields, sidModeIndex: 11, writer);
                     break;
                 case "HOUSES_ARMC":
-                    ProcessHousesArmc(swe, caseId, fields, writer);
+                    ProcessHousesArmc(swe, caseId, fields, sidModeIndex: 11, writer);
                     break;
                 case "SOLCROSS":
                 case "SOLCROSS_UT":
@@ -174,11 +174,11 @@ internal static class Program
                     break;
                 case "MOONCROSS_NODE":
                 case "MOONCROSS_NODE_UT":
-                    ProcessMoonCrossNode(swe, caseId, func, fields, writer);
+                    ProcessMoonCrossNode(swe, caseId, func, fields, sidModeIndex: 11, writer);
                     break;
                 case "HELIO_CROSS":
                 case "HELIO_CROSS_UT":
-                    ProcessHelioCross(swe, caseId, func, fields, x2crossIndex: 12, dirIndex: 13, writer);
+                    ProcessHelioCross(swe, caseId, func, fields, sidModeIndex: 11, x2crossIndex: 12, dirIndex: 13, writer);
                     break;
                 case "AYANAMSA":
                     ProcessAyanamsa(swe, caseId, fields, writer);
@@ -203,7 +203,7 @@ internal static class Program
                 case "FIXSTAR_UT":
                 case "FIXSTAR2":
                 case "FIXSTAR2_UT":
-                    ProcessFixstar(swe, caseId, func, fields, writer);
+                    ProcessFixstar(swe, caseId, func, fields, sidModeIndex: 9, writer);
                     break;
                 case "FIXSTAR_MAG":
                     ProcessFixstarMag(swe, caseId, fields, writer);
@@ -219,11 +219,11 @@ internal static class Program
                     break;
                 case "MOONCROSS_NODE":
                 case "MOONCROSS_NODE_UT":
-                    ProcessMoonCrossNode(swe, caseId, func, fields, writer);
+                    ProcessMoonCrossNode(swe, caseId, func, fields, sidModeIndex: 9, writer);
                     break;
                 case "HELIO_CROSS":
                 case "HELIO_CROSS_UT":
-                    ProcessHelioCross(swe, caseId, func, fields, x2crossIndex: 10, dirIndex: 11, writer);
+                    ProcessHelioCross(swe, caseId, func, fields, sidModeIndex: 9, x2crossIndex: 10, dirIndex: 11, writer);
                     break;
                 default:
                     throw new InvalidDataException($"unknown func '{func}' at case {caseId}");
@@ -261,6 +261,32 @@ internal static class Program
         var t0 = HasValue(fields[sidModeIndex + 3]) ? ParseDouble(fields[sidModeIndex + 3], caseId, "t0") : 0.0;
         var ayanT0 = HasValue(fields[sidModeIndex + 4]) ? ParseDouble(fields[sidModeIndex + 4], caseId, "ayan_t0") : 0.0;
         swe.swe_set_sid_mode(sidMode, t0, ayanT0);
+    }
+
+    // MOONCROSS_NODE(_UT), HELIO_CROSS(_UT), the FIXSTAR family (FIXSTAR/FIXSTAR_UT/FIXSTAR2/
+    // FIXSTAR2_UT) and HOUSES/HOUSES_ARMC never call ApplySidMode: none of the C functions behind
+    // them (swe_mooncross_node(_ut), swe_helio_cross(_ut), swe_fixstar(2)(_ut), swe_houses(_armc))
+    // takes a sidereal-frame parameter at all in Astrodienst's own API, so there is nothing for
+    // this driver to apply. Every grid row for these funcs is therefore expected to carry an empty
+    // sid_mode column -- and today, every one of them does (verified: this guard has never fired
+    // against Tools/OracleGrid/grid-analytic.tsv or grid-files.tsv).
+    //
+    // This hard-fails instead of silently ignoring a non-empty sid_mode, because "silently ignore
+    // it" is exactly the failure mode that made this a blind spot in the first place: a future
+    // sidereal MOONCROSS_NODE row would have both drivers ignore the column the same way, the row
+    // would compare bit-identical between them, and the comparison would prove nothing about
+    // either driver's (non-existent) sidereal handling for that func -- see this file's sibling
+    // check in Tools/CReference/sedump.c's refuse_if_sid_mode_set for the C side of the same guard.
+    private static void RefuseIfSidModeSet(string caseId, string func, string[] fields, int sidModeIndex)
+    {
+        if (HasValue(fields[sidModeIndex]))
+        {
+            throw new InvalidDataException(
+                $"{caseId}: func '{func}' has a non-empty sid_mode ('{fields[sidModeIndex]}'), but this driver never " +
+                $"calls ApplySidMode for it -- {func} has no sidereal-frame parameter in Astrodienst's C API. Either " +
+                "this row's sid_mode should be empty (a grid-generation defect), or ApplySidMode needs to be wired " +
+                "up for this func (an API change this driver has not caught up with).");
+        }
     }
 
     private static void ProcessCalc(SwissEph swe, string caseId, string func, string[] fields, int sidModeIndex, TextWriter writer)
@@ -342,8 +368,10 @@ internal static class Program
     // them untouched on every early ERR return, so zero-initializing here is what makes an
     // errored row's xlon/xlat columns a deterministic, comparable 0.0 on both sides instead of
     // comparing whatever each side's uninitialized local happened to hold.
-    private static void ProcessMoonCrossNode(SwissEph swe, string caseId, string func, string[] fields, TextWriter writer)
+    private static void ProcessMoonCrossNode(SwissEph swe, string caseId, string func, string[] fields, int sidModeIndex, TextWriter writer)
     {
+        RefuseIfSidModeSet(caseId, func, fields, sidModeIndex);
+
         var tjd = ParseDouble(fields[3], caseId, "tjd");
         var iflag = ParseInt(fields[4], caseId, "iflag");
 
@@ -369,8 +397,10 @@ internal static class Program
     // HELIO_CROSS, HELIO_CROSS_UT: the one pair among these eight with a real int retc (OK/ERR)
     // and an output parameter (jdCross) written only on the OK path -- zero-initialized here for
     // the same reason ProcessMoonCrossNode zero-initializes xlon/xlat.
-    private static void ProcessHelioCross(SwissEph swe, string caseId, string func, string[] fields, int x2crossIndex, int dirIndex, TextWriter writer)
+    private static void ProcessHelioCross(SwissEph swe, string caseId, string func, string[] fields, int sidModeIndex, int x2crossIndex, int dirIndex, TextWriter writer)
     {
+        RefuseIfSidModeSet(caseId, func, fields, sidModeIndex);
+
         var ipl = ParseInt(fields[2], caseId, "ipl");
         var x2cross = ParseDouble(fields[x2crossIndex], caseId, "x2cross");
         var tjd = ParseDouble(fields[3], caseId, "tjd");
@@ -437,8 +467,10 @@ internal static class Program
     // by gen-grid-files.ps1. swe_fixstar and its siblings can rewrite `star` in place with the
     // star's canonical name; this driver does not read it back afterward, matching sedump.c's own
     // process_fixstar.
-    private static void ProcessFixstar(SwissEph swe, string caseId, string func, string[] fields, TextWriter writer)
+    private static void ProcessFixstar(SwissEph swe, string caseId, string func, string[] fields, int sidModeIndex, TextWriter writer)
     {
+        RefuseIfSidModeSet(caseId, func, fields, sidModeIndex);
+
         var star = fields[5];
         var tjd = ParseDouble(fields[3], caseId, "tjd");
         var iflag = ParseInt(fields[4], caseId, "iflag");
@@ -499,8 +531,10 @@ internal static class Program
         writer.Write('\n');
     }
 
-    private static void ProcessHouses(SwissEph swe, string caseId, string[] fields, TextWriter writer)
+    private static void ProcessHouses(SwissEph swe, string caseId, string[] fields, int sidModeIndex, TextWriter writer)
     {
+        RefuseIfSidModeSet(caseId, "HOUSES", fields, sidModeIndex);
+
         var tjd = ParseDouble(fields[3], caseId, "tjd");
         var hsys = ParseHsys(fields[5], caseId);
         var geolon = ParseDouble(fields[6], caseId, "geolon");
@@ -513,8 +547,10 @@ internal static class Program
         WriteHousesRow(writer, caseId, retc, cusp, ascmc);
     }
 
-    private static void ProcessHousesArmc(SwissEph swe, string caseId, string[] fields, TextWriter writer)
+    private static void ProcessHousesArmc(SwissEph swe, string caseId, string[] fields, int sidModeIndex, TextWriter writer)
     {
+        RefuseIfSidModeSet(caseId, "HOUSES_ARMC", fields, sidModeIndex);
+
         var armc = ParseDouble(fields[9], caseId, "armc");
         var eps = ParseDouble(fields[10], caseId, "eps");
         var hsys = ParseHsys(fields[5], caseId);

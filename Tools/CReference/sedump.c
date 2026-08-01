@@ -315,6 +315,34 @@ static void apply_sid_mode(char *fields[], const char *case_id, int sid_mode_idx
 }
 
 /*
+ * MOONCROSS_NODE(_UT), HELIO_CROSS(_UT), the FIXSTAR family (FIXSTAR/FIXSTAR_UT/FIXSTAR2/
+ * FIXSTAR2_UT) and HOUSES/HOUSES_ARMC never call apply_sid_mode: none of the C functions behind
+ * them (swe_mooncross_node(_ut), swe_helio_cross(_ut), swe_fixstar(2)(_ut), swe_houses(_armc))
+ * takes a sidereal-frame parameter at all in Astrodienst's own API, so there is nothing for this
+ * driver to apply. Every grid row for these funcs is therefore expected to carry an empty
+ * sid_mode column -- and today, every one of them does (verified: this guard has never fired
+ * against Tools/OracleGrid/grid-analytic.tsv or grid-files.tsv).
+ *
+ * This hard-fails instead of silently ignoring a non-empty sid_mode, because "silently ignore
+ * it" is exactly the failure mode that made this a blind spot in the first place: a future
+ * sidereal MOONCROSS_NODE row would have both drivers ignore the column the same way, the row
+ * would compare bit-identical between them, and the comparison would prove nothing about either
+ * driver's (non-existent) sidereal handling for that func -- see this file's sibling check in
+ * Tools/OracleDump/Program.cs's RefuseIfSidModeSet for the .NET side of the same guard.
+ */
+static void refuse_if_sid_mode_set(const char *case_id, const char *func, char *fields[], int sid_mode_idx)
+{
+    if (has_value(fields[sid_mode_idx])) {
+        die("%s: func '%s' has a non-empty sid_mode ('%s'), but this driver never calls "
+            "apply_sid_mode for it -- %s has no sidereal-frame parameter in Astrodienst's C API. "
+            "Either this row's sid_mode should be empty (a grid-generation defect), or "
+            "apply_sid_mode needs to be wired up for this func (an API change this driver has not "
+            "caught up with).",
+            case_id, func, fields[sid_mode_idx], func);
+    }
+}
+
+/*
  * Shared by both grids: the two column layouts agree on ipl/tjd/iflag/geolon/geolat/height at
  * fields[2..8], and only disagree on where sid_mode lives (analytic's 12-column layout carries
  * hsys/armc/eps between height and sid_mode; the 10-column files layout does not) -- sid_mode_idx
@@ -355,7 +383,7 @@ static void process_calc(FILE *out, const char *case_id, const char *func, char 
  * in place with the star's canonical name -- STAR_BUF_LEN gives that write plenty of room, and
  * this driver does not read the buffer back afterward, matching Tools/OracleDump/Program.cs (see
  * its own comment on the same point). */
-static void process_fixstar(FILE *out, const char *case_id, const char *func, char *fields[])
+static void process_fixstar(FILE *out, const char *case_id, const char *func, char *fields[], int sid_mode_idx)
 {
     char star[STAR_BUF_LEN];
     double tjd = parse_double(fields[3], case_id, "tjd");
@@ -363,6 +391,8 @@ static void process_fixstar(FILE *out, const char *case_id, const char *func, ch
     double xx[6] = { 0 };
     char serr[AS_MAXCH];
     int retc, i;
+
+    refuse_if_sid_mode_set(case_id, func, fields, sid_mode_idx);
 
     strncpy(star, fields[5], sizeof star - 1);
     star[sizeof star - 1] = '\0';
@@ -420,15 +450,19 @@ static void process_name(FILE *out, const char *case_id, char *fields[])
     fputc('\n', out);
 }
 
-static void process_houses(FILE *out, const char *case_id, char *fields[])
+static void process_houses(FILE *out, const char *case_id, char *fields[], int sid_mode_idx)
 {
-    double tjd = parse_double(fields[3], case_id, "tjd");
-    int hsys = parse_hsys(fields[5], case_id);
-    double geolon = parse_double(fields[6], case_id, "geolon");
-    double geolat = parse_double(fields[7], case_id, "geolat");
+    double tjd, geolon, geolat;
+    int hsys, retc, i;
     double cusp[40] = { 0 };
     double ascmc[10] = { 0 };
-    int retc, i;
+
+    refuse_if_sid_mode_set(case_id, "HOUSES", fields, sid_mode_idx);
+
+    tjd = parse_double(fields[3], case_id, "tjd");
+    hsys = parse_hsys(fields[5], case_id);
+    geolon = parse_double(fields[6], case_id, "geolon");
+    geolat = parse_double(fields[7], case_id, "geolat");
 
     retc = swe_houses(tjd, geolat, geolon, hsys, cusp, ascmc);
 
@@ -438,15 +472,19 @@ static void process_houses(FILE *out, const char *case_id, char *fields[])
     fputc('\n', out);
 }
 
-static void process_houses_armc(FILE *out, const char *case_id, char *fields[])
+static void process_houses_armc(FILE *out, const char *case_id, char *fields[], int sid_mode_idx)
 {
-    double armc = parse_double(fields[9], case_id, "armc");
-    double eps = parse_double(fields[10], case_id, "eps");
-    int hsys = parse_hsys(fields[5], case_id);
-    double geolat = parse_double(fields[7], case_id, "geolat");
+    double armc, eps, geolat;
+    int hsys, retc, i;
     double cusp[40] = { 0 };
     double ascmc[10] = { 0 };
-    int retc, i;
+
+    refuse_if_sid_mode_set(case_id, "HOUSES_ARMC", fields, sid_mode_idx);
+
+    armc = parse_double(fields[9], case_id, "armc");
+    eps = parse_double(fields[10], case_id, "eps");
+    hsys = parse_hsys(fields[5], case_id);
+    geolat = parse_double(fields[7], case_id, "geolat");
 
     retc = swe_houses_armc(armc, geolat, eps, hsys, cusp, ascmc);
 
@@ -514,7 +552,7 @@ static void process_crossing_deg(FILE *out, const char *case_id, const char *fun
  * (xlon, xla) this driver zero-initializes before the call -- see this file's own top-of-file
  * comment.
  */
-static void process_mooncross_node(FILE *out, const char *case_id, const char *func, char *fields[])
+static void process_mooncross_node(FILE *out, const char *case_id, const char *func, char *fields[], int sid_mode_idx)
 {
 #ifdef SWISSEPH_HAS_CROSSING
     double tjd = parse_double(fields[3], case_id, "tjd");
@@ -523,6 +561,14 @@ static void process_mooncross_node(FILE *out, const char *case_id, const char *f
     double result, xlon = 0.0, xla = 0.0;
     int retc;
 
+    /* Runs regardless of SWISSEPH_HAS_CROSSING (see the #else branch below for the other half of
+     * this same call): a row's sid_mode column is a property of the grid row, not of which C
+     * version this translation unit is linked against, so the guard applies the same way whether
+     * this branch actually calls swe_mooncross_node(_ut) or the #else branch below takes the "not
+     * in 2.08" sentinel path instead. Placed after this branch's own declarations, not before
+     * them, to keep every declaration in this function preceding the first statement in its own
+     * block -- this file targets a C89-safe subset throughout. */
+    refuse_if_sid_mode_set(case_id, func, fields, sid_mode_idx);
     serr[0] = '\0';
 
     if (strcmp(func, "MOONCROSS_NODE") == 0)
@@ -540,8 +586,12 @@ static void process_mooncross_node(FILE *out, const char *case_id, const char *f
     fputc('\n', out);
 #else
     /* swe_mooncross_node(_ut) does not exist in 2.08 -- see this file's own top-of-file comment
-     * on SWISSEPH_HAS_CROSSING. */
+     * on SWISSEPH_HAS_CROSSING. The sid_mode guard still runs here (see the #ifdef branch above
+     * for why): a 2.08 build takes this sentinel path for every row regardless of sid_mode, but
+     * the grid row itself is still expected to carry an empty sid_mode column, the same as a
+     * 2.10.03 build would require. */
     char not_in_208_msg[AS_MAXCH];
+    refuse_if_sid_mode_set(case_id, func, fields, sid_mode_idx);
     sprintf(not_in_208_msg, "%s does not exist in Swiss Ephemeris 2.08", func);
     (void)fields;
     fprintf(out, "%s\t%d\t", case_id, NOT_IN_208_RETC);
@@ -558,7 +608,7 @@ static void process_mooncross_node(FILE *out, const char *case_id, const char *f
  * (OK/ERR) and an output parameter (jd_cross) written only on the OK path -- see this file's own
  * top-of-file comment.
  */
-static void process_helio_cross(FILE *out, const char *case_id, const char *func, char *fields[], int x2cross_idx, int dir_idx)
+static void process_helio_cross(FILE *out, const char *case_id, const char *func, char *fields[], int sid_mode_idx, int x2cross_idx, int dir_idx)
 {
 #ifdef SWISSEPH_HAS_CROSSING
     int ipl = (int)parse_int(fields[2], case_id, "ipl");
@@ -570,6 +620,11 @@ static void process_helio_cross(FILE *out, const char *case_id, const char *func
     double jd_cross = 0.0;
     int32 retc;
 
+    /* Runs regardless of SWISSEPH_HAS_CROSSING (see the #else branch below for the other half of
+     * this same call) -- see process_mooncross_node's identical comment above for why. Placed
+     * after this branch's own declarations to keep every declaration in this function preceding
+     * the first statement in its own block. */
+    refuse_if_sid_mode_set(case_id, func, fields, sid_mode_idx);
     serr[0] = '\0';
 
     if (strcmp(func, "HELIO_CROSS") == 0)
@@ -583,8 +638,10 @@ static void process_helio_cross(FILE *out, const char *case_id, const char *func
     fputc('\n', out);
 #else
     /* swe_helio_cross(_ut) does not exist in 2.08 -- see this file's own top-of-file comment on
-     * SWISSEPH_HAS_CROSSING. */
+     * SWISSEPH_HAS_CROSSING. The sid_mode guard still runs here -- see process_mooncross_node's
+     * identical #else comment above for why. */
     char not_in_208_msg[AS_MAXCH];
+    refuse_if_sid_mode_set(case_id, func, fields, sid_mode_idx);
     sprintf(not_in_208_msg, "%s does not exist in Swiss Ephemeris 2.08", func);
     (void)fields; (void)x2cross_idx; (void)dir_idx;
     fprintf(out, "%s\t%d\t", case_id, NOT_IN_208_RETC);
@@ -703,16 +760,16 @@ int main(int argc, char **argv)
             if (strcmp(func, "CALC") == 0 || strcmp(func, "CALC_UT") == 0) {
                 process_calc(out, case_id, func, fields, 11);
             } else if (strcmp(func, "HOUSES") == 0) {
-                process_houses(out, case_id, fields);
+                process_houses(out, case_id, fields, 11);
             } else if (strcmp(func, "HOUSES_ARMC") == 0) {
-                process_houses_armc(out, case_id, fields);
+                process_houses_armc(out, case_id, fields, 11);
             } else if (strcmp(func, "SOLCROSS") == 0 || strcmp(func, "SOLCROSS_UT") == 0
                        || strcmp(func, "MOONCROSS") == 0 || strcmp(func, "MOONCROSS_UT") == 0) {
                 process_crossing_deg(out, case_id, func, fields, 11, 12);
             } else if (strcmp(func, "MOONCROSS_NODE") == 0 || strcmp(func, "MOONCROSS_NODE_UT") == 0) {
-                process_mooncross_node(out, case_id, func, fields);
+                process_mooncross_node(out, case_id, func, fields, 11);
             } else if (strcmp(func, "HELIO_CROSS") == 0 || strcmp(func, "HELIO_CROSS_UT") == 0) {
-                process_helio_cross(out, case_id, func, fields, 12, 13);
+                process_helio_cross(out, case_id, func, fields, 11, 12, 13);
             } else if (strcmp(func, "AYANAMSA") == 0) {
                 process_ayanamsa(out, case_id, fields);
             } else if (strcmp(func, "AYANAMSA_EX") == 0 || strcmp(func, "AYANAMSA_EX_UT") == 0) {
@@ -725,7 +782,7 @@ int main(int argc, char **argv)
                 process_calc(out, case_id, func, fields, 9);
             } else if (strcmp(func, "FIXSTAR") == 0 || strcmp(func, "FIXSTAR_UT") == 0
                        || strcmp(func, "FIXSTAR2") == 0 || strcmp(func, "FIXSTAR2_UT") == 0) {
-                process_fixstar(out, case_id, func, fields);
+                process_fixstar(out, case_id, func, fields, 9);
             } else if (strcmp(func, "FIXSTAR_MAG") == 0) {
                 process_fixstar_mag(out, case_id, fields);
             } else if (strcmp(func, "GET_PLANET_NAME") == 0) {
@@ -734,9 +791,9 @@ int main(int argc, char **argv)
                        || strcmp(func, "MOONCROSS") == 0 || strcmp(func, "MOONCROSS_UT") == 0) {
                 process_crossing_deg(out, case_id, func, fields, 9, 10);
             } else if (strcmp(func, "MOONCROSS_NODE") == 0 || strcmp(func, "MOONCROSS_NODE_UT") == 0) {
-                process_mooncross_node(out, case_id, func, fields);
+                process_mooncross_node(out, case_id, func, fields, 9);
             } else if (strcmp(func, "HELIO_CROSS") == 0 || strcmp(func, "HELIO_CROSS_UT") == 0) {
-                process_helio_cross(out, case_id, func, fields, 10, 11);
+                process_helio_cross(out, case_id, func, fields, 9, 10, 11);
             } else {
                 die("unknown func '%s' at case %s", func, case_id);
             }
