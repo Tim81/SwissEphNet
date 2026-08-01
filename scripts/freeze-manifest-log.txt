@@ -18,21 +18,21 @@ SHA still on an open branch (see Tests/baseline/baseline-*.env.txt's own log for
 squash-merged PRs mean a SHA cited while a branch is still open names a commit that will
 not exist on the integration branch once it lands).
 
-1. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01: Restored
+1. PR #32 2026-08-01: Restored
    the SE_EPHE_PATH environment-variable priority in swe_set_ephe_path (sweph.c:1327-1337),
    which existed in this port but was commented out (Sweph.cs:1561-1573 before this change),
    so setting the variable had no effect. Fidelity fix, not a re-transliteration: no other
    line in SwissEphNet/CPort moved. SwissEphNet/CPort: 48411 -> 48419 lines, 1259 -> 1258
    trailing-whitespace lines (one commented C line's trailing space was trimmed while
    restoring it), sha256 6A8B1530... -> 6944FDFD....
-2. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01: Added the
+2. PR #32 2026-08-01: Added the
    JD-range guard sweph.c:994-1006 has on SE_INTP_PERG (interpolated lunar perigee), mirroring
    the SE_INTP_APOG guard already at Sweph.cs:1161-1168 just above it in the same file. Fidelity
    fix, not a re-transliteration: no other line in SwissEphNet/CPort moved. Flips suite 1
    testcase 1 iterations 377, 379, 383 and 385 in Tests/conformance/known-fail.tsv from failing
    to passing (via scripts/regenerate-known-fail.ps1 -PruneOnly, 1427 -> 1423 rows). SwissEphNet/
    CPort: 48419 -> 48427 lines, sha256 6944FDFD... -> 97CEB47C....
-3. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01: The four
+3. PR #32 2026-08-01: The four
    SwissEphNet/CPort/Sweph.cs sites that fell back to the default ephemeris path (Sweph.cs:167,
    1423, 1585, 1589) now read the new SwissEph.DefaultEphePath (SwissEph.swephexp.h.cs) instead
    of the public SwissEph.SE_EPHE_PATH constant, which keeps its "[ephe]" value unchanged for
@@ -46,7 +46,7 @@ not exist on the integration branch once it lands).
    Tests/baseline/baseline-2.8.0.2.env.txt's own "## Local regenerations" log): the previous
    "[ephe]" placeholder was frozen into hundreds of expected serr strings the baseline compares
    verbatim, so restoring the real default necessarily moves that text.
-4. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01: do_fread
+4. PR #32 2026-08-01: do_fread
    (Sweph.cs) tested `fp.Read(trg, 0, totsize) == 0`, which rejects only a zero-byte read.
    sweph.c:4915 and :4926 use `fread(targ, totsize, 1, fp) == 0`: fread's third argument is an
    item count of 1 (item size totsize), so fread returns 0 items on any short read, not only a
@@ -61,7 +61,7 @@ not exist on the integration branch once it lands).
    the queried date -- confirmed by reverting this fix and rerunning: swe_pheno(SE_CHIRON, ...)
    returns success (4) with a wrong attr[3] instead of ERR. SwissEphNet/CPort: 48427 -> 48435
    lines, sha256 26C28B33... -> 66866B61....
-5. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01: Not a change to
+5. PR #32 2026-08-01: Not a change to
    any frozen file -- scripts/verify-freeze.ps1's own hashing was wrong. Get-FrozenFile's
    directory branch called `[System.Array]::Sort($keys, $items, comparer)` with $keys typed
    [string[]] and $items [object[]], which PowerShell resolves to the generic
@@ -78,7 +78,7 @@ not exist on the integration branch once it lands).
    trailing_ws); only the enumeration order, and therefore the sha256, moved: SwissEphNet/CPort
    66866B61... -> 3E241AA5..., the two single-file frozen paths unchanged (a one-file directory
    has nothing to reorder).
-6. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01: read_const
+6. PR #32 2026-08-01: read_const
    (Sweph.cs) dereferenced fp.ReadLine()'s result with .Trim() unconditionally in the file-name
    section, unlike every sibling ReadLine call in the same function (:5277, :5320, :5331), which
    all null-check first, matching sweph.c:4553-4557's own `sp == NULL || ...` guard on the
@@ -92,7 +92,7 @@ not exist on the integration branch once it lands).
    3\r\n"-only sepl_18.se1 stream; reverting this fix and rerunning throws
    NullReferenceException on all three instead of returning ret=-1 "damaged". SwissEphNet/CPort:
    48435 -> 48448 lines, sha256 3E241AA5... -> 42A10A5B....
-7. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01: Two
+7. PR #32 2026-08-01: Two
    independent fidelity fixes to Programs/SweTest/Program.cs, landed together because both were
    found by the same review pass. First, the -p<seq> option handler: swetest.c:1120-1131
    declares spno as `char *`, sets it to the whole remainder of the argument (argv[i]+2), and
@@ -122,7 +122,7 @@ not exist on the integration branch once it lands).
    rows -- see Tests/swetest/regenerations.log's own entry. Programs/SweTest/Program.cs: 4963 ->
    4981 lines, 69 -> 68 trailing-whitespace lines (one commented C line's trailing space was
    trimmed while adding the fix comment next to it), sha256 B3DC53A7... -> 667C09F3....
-8. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01:
+8. PR #32 2026-08-01:
    swe_lun_occult_when_glob and swe_lun_occult_when_loc (SwissEphNet/CPort/SweCL.cs) took `bool
    backward` where swephexp.h declares `int32 backward` for both -- a bitfield: bit 0 selects
    search direction and OR-ing in SE_ECL_ONE_TRY (32768) limits a global-occultation search to
@@ -147,7 +147,7 @@ not exist on the integration branch once it lands).
    overload cannot request SE_ECL_ONE_TRY. SwissEphNet/CPort: 48448 -> 48460 lines, sha256
    42A10A5B... -> D87C454F.... Programs/SweTest/Program.cs: 4981 -> 4989 lines, sha256
    667C09F3... -> 873AADAC....
-9. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01: Three
+9. PR #32 2026-08-01: Three
    fidelity fixes landed together, found by the same review pass. First,
    Programs/SweMini/Program.cs:104 used Regex.Match(@"(\d+)\.(\d+)\.(\d+)") where
    swemini.c:42 is sscanf(sdate, "%d%*c%d%*c%d", &jday,&jmon,&jyear): three decimal fields
@@ -182,7 +182,7 @@ not exist on the integration branch once it lands).
    SwissEphNet/CPort moved. SwissEphNet/CPort: 48460 -> 48476 lines, sha256 D87C454F... ->
    0AEEA27E.... Programs/SweMini/Program.cs: 164 -> 165 lines, sha256 075ABEEC... ->
    D1274D16....
-10. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01: One
+10. PR #32 2026-08-01: One
    fidelity fix. Programs/SweMini/Program.cs:125 wrote its column header with
    Console.WriteLine, where swemini.c:52 is printf("planet     	longitude	latitude	
    distance	speed long.
