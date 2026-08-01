@@ -66,6 +66,11 @@
 .PARAMETER RepoRoot
     Repository root. Defaults to the checkout containing this script.
 
+.PARAMETER SelfTest
+    Plant each bypass this check was measured to have into a throwaway document, run the check
+    against it, and assert it fails -- plus the exemptions it must keep honouring, and assert those
+    pass. Touches nothing outside a temporary directory.
+
 .NOTES
     Vacuity floor: $currentUsageDocs is filtered through Where-Object { Test-Path ... }, so a
     renamed or deleted README.md (this repository's only current-usage doc today) makes that list
@@ -80,7 +85,8 @@
 #>
 [CmdletBinding()]
 param(
-    [string] $RepoRoot = (Split-Path -Parent $PSScriptRoot)
+    [string] $RepoRoot = (Split-Path -Parent $PSScriptRoot),
+    [switch] $SelfTest
 )
 
 Set-StrictMode -Version Latest
@@ -131,176 +137,182 @@ $RemovedApiPatterns = @{
 # or shallower level appears that does not itself match.
 $historicalHeadingPattern = '(?i)\b(Breaking changes|Upgrading from|Migration|Change ?log|History|Release notes)\b'
 
-# Kept separately from $currentUsageDocs (below) so the vacuity-floor error message at the bottom
-# of this script can name what it looked for even when every one of those paths turned out not to
-# exist -- the filtered list itself would just be empty at that point.
-$docCandidateNames = @('README.md')
-$currentUsageDocs = $docCandidateNames | ForEach-Object { Join-Path $RepoRoot $_ } |
-    Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }
+function Invoke-RemovedApiScan {
+    # The whole check, in a function so -SelfTest below can drive it against a throwaway document
+    # tree instead of this checkout. The `exit` statements inside are unchanged and still terminate
+    # the script, so the exit codes a caller (and CI) sees are exactly what they were.
+    param([Parameter(Mandatory)][string] $RepoRoot)
 
-$failures = [System.Collections.Generic.List[string]]::new()
-$checkedFiles = 0
+    # Kept separately from $currentUsageDocs (below) so the vacuity-floor error message at the bottom
+    # of this script can name what it looked for even when every one of those paths turned out not to
+    # exist -- the filtered list itself would just be empty at that point.
+    $docCandidateNames = @('README.md')
+    $currentUsageDocs = $docCandidateNames | ForEach-Object { Join-Path $RepoRoot $_ } |
+        Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }
 
-foreach ($docPath in $currentUsageDocs) {
-    $checkedFiles++
-    $relPath = [System.IO.Path]::GetRelativePath($RepoRoot, $docPath).Replace('\', '/')
-    $lines = Get-Content -LiteralPath $docPath
+    $failures = [System.Collections.Generic.List[string]]::new()
+    $checkedFiles = 0
 
-    $inHistorical = $false
-    $historicalStartLevel = 0
-    $inFence = $false
-    $fenceChar = $null   # backtick or tilde that opened the current fence; $null when $inFence is false
-    $fenceLen = 0        # length of the run that opened it
-    $inPre = $false
-    $prevCodeLine = $null   # the immediately preceding CODE line's own text, for the split-name check below
+    foreach ($docPath in $currentUsageDocs) {
+        $checkedFiles++
+        $relPath = [System.IO.Path]::GetRelativePath($RepoRoot, $docPath).Replace('\', '/')
+        $lines = Get-Content -LiteralPath $docPath
 
-    for ($i = 0; $i -lt $lines.Count; $i++) {
-        $line = $lines[$i]
-        $lineNumber = $i + 1
+        $inHistorical = $false
+        $historicalStartLevel = 0
+        $inFence = $false
+        $fenceChar = $null   # backtick or tilde that opened the current fence; $null when $inFence is false
+        $fenceLen = 0        # length of the run that opened it
+        $inPre = $false
+        $prevCodeLine = $null   # the immediately preceding CODE line's own text, for the split-name check below
 
-        # Fenced code blocks (``` or ~~~) are tested before the heading test, not after: a shell,
-        # yaml or python comment ("# Migration steps for the CLI") inside a fenced sample used to
-        # parse as a markdown heading and open a historical region for the rest of the document,
-        # exempting everything after it -- including a second, unrelated fenced sample later in
-        # the same file. A line that opens or closes a fence is delimiter syntax, not code content
-        # to scan, so it still just toggles state and moves on.
-        #
-        # The delimiter's character AND length are tracked, not just "was a fence-looking line
-        # seen" -- CommonMark's own rule is that a fence only closes on a run of the SAME
-        # character, at least as long as the one that opened it. Measured: a naive toggle-on-any-
-        # fence-looking-line (the previous version of this check) mistakes a literal ``` shown as
-        # *content* inside an outer ~~~~-fenced block for a close, flipping $inFence false right
-        # before the line that actually needed scanning. `(?:>\s?)*` also tolerates one or more
-        # leading blockquote markers, so a fenced sample quoted inside a `>` blockquote -- which
-        # CommonMark itself renders as a real, nested fenced code block -- is recognized as a
-        # fence at all; without it, a blockquoted removed-API sample was never classified as code
-        # in the first place, so the removed-API scan below never got the chance to see it, and it
-        # silently passed no matter what it contained.
-        if ($inFence) {
-            if ($line -match '^(?:>\s?)*\s{0,3}(`{3,}|~{3,})\s*$' -and
-                $Matches[1][0] -eq $fenceChar -and $Matches[1].Length -ge $fenceLen) {
-                $inFence = $false
-                $fenceChar = $null
-                $fenceLen = 0
+        for ($i = 0; $i -lt $lines.Count; $i++) {
+            $line = $lines[$i]
+            $lineNumber = $i + 1
+
+            # Fenced code blocks (``` or ~~~) are tested before the heading test, not after: a shell,
+            # yaml or python comment ("# Migration steps for the CLI") inside a fenced sample used to
+            # parse as a markdown heading and open a historical region for the rest of the document,
+            # exempting everything after it -- including a second, unrelated fenced sample later in
+            # the same file. A line that opens or closes a fence is delimiter syntax, not code content
+            # to scan, so it still just toggles state and moves on.
+            #
+            # The delimiter's character AND length are tracked, not just "was a fence-looking line
+            # seen" -- CommonMark's own rule is that a fence only closes on a run of the SAME
+            # character, at least as long as the one that opened it. Measured: a naive toggle-on-any-
+            # fence-looking-line (the previous version of this check) mistakes a literal ``` shown as
+            # *content* inside an outer ~~~~-fenced block for a close, flipping $inFence false right
+            # before the line that actually needed scanning. `(?:>\s?)*` also tolerates one or more
+            # leading blockquote markers, so a fenced sample quoted inside a `>` blockquote -- which
+            # CommonMark itself renders as a real, nested fenced code block -- is recognized as a
+            # fence at all; without it, a blockquoted removed-API sample was never classified as code
+            # in the first place, so the removed-API scan below never got the chance to see it, and it
+            # silently passed no matter what it contained.
+            if ($inFence) {
+                if ($line -match '^(?:>\s?)*\s{0,3}(`{3,}|~{3,})\s*$' -and
+                    $Matches[1][0] -eq $fenceChar -and $Matches[1].Length -ge $fenceLen) {
+                    $inFence = $false
+                    $fenceChar = $null
+                    $fenceLen = 0
+                    $prevCodeLine = $null
+                    continue
+                }
+                # Else: a fence-looking line of the wrong character, too short, or with trailing
+                # content after it -- not a close, so it is fence *content* and falls through to be
+                # scanned as code below, same as any other line inside the fence.
+            }
+            elseif ($line -match '^(?:>\s?)*\s{0,3}(`{3,}|~{3,})') {
+                $fenceChar = $Matches[1][0]
+                $fenceLen = $Matches[1].Length
+                $inFence = $true
                 $prevCodeLine = $null
                 continue
             }
-            # Else: a fence-looking line of the wrong character, too short, or with trailing
-            # content after it -- not a close, so it is fence *content* and falls through to be
-            # scanned as code below, same as any other line inside the fence.
-        }
-        elseif ($line -match '^(?:>\s?)*\s{0,3}(`{3,}|~{3,})') {
-            $fenceChar = $Matches[1][0]
-            $fenceLen = $Matches[1].Length
-            $inFence = $true
-            $prevCodeLine = $null
-            continue
-        }
 
-        # Raw HTML <pre>...</pre> is markdown's third way of showing a code sample (the other two
-        # are the fence above and the indented block below). Approximate, not a full HTML parser:
-        # an opening or closing tag toggles state, and either tag's own line is itself treated as
-        # code content (not skipped) so `<pre><code>OnLoadFile();</code></pre>` written on one
-        # line is still caught.
-        $preOpensHere = $line -match '(?i)<pre\b'
-        $preClosesHere = $line -match '(?i)</pre\s*>'
-        $inPreLine = $inPre -or $preOpensHere -or $preClosesHere
-        if ($preOpensHere -and -not $preClosesHere) { $inPre = $true }
-        if ($preClosesHere) { $inPre = $false }
+            # Raw HTML <pre>...</pre> is markdown's third way of showing a code sample (the other two
+            # are the fence above and the indented block below). Approximate, not a full HTML parser:
+            # an opening or closing tag toggles state, and either tag's own line is itself treated as
+            # code content (not skipped) so `<pre><code>OnLoadFile();</code></pre>` written on one
+            # line is still caught.
+            $preOpensHere = $line -match '(?i)<pre\b'
+            $preClosesHere = $line -match '(?i)</pre\s*>'
+            $inPreLine = $inPre -or $preOpensHere -or $preClosesHere
+            if ($preOpensHere -and -not $preClosesHere) { $inPre = $true }
+            if ($preClosesHere) { $inPre = $false }
 
-        if (-not $inFence -and -not $inPreLine -and $line -match '^(#+)\s+(.*)$') {
-            $level = $Matches[1].Length
-            $text = $Matches[2]
-            if ($text -match $historicalHeadingPattern) {
-                $inHistorical = $true
-                $historicalStartLevel = $level
+            if (-not $inFence -and -not $inPreLine -and $line -match '^(#+)\s+(.*)$') {
+                $level = $Matches[1].Length
+                $text = $Matches[2]
+                if ($text -match $historicalHeadingPattern) {
+                    $inHistorical = $true
+                    $historicalStartLevel = $level
+                }
+                elseif ($inHistorical -and $level -le $historicalStartLevel) {
+                    $inHistorical = $false
+                    $historicalStartLevel = 0
+                }
+                continue
             }
-            elseif ($inHistorical -and $level -le $historicalStartLevel) {
-                $inHistorical = $false
-                $historicalStartLevel = 0
+
+            # Indented code block: 4+ spaces or a leading tab, CommonMark's other standard way to mark
+            # a line as code with no delimiter at all. Judged per line, not as an open/close region
+            # like the two block styles above -- there is no delimiter to track state from, only the
+            # line's own leading whitespace. This is a heuristic, not a CommonMark parser: it does not
+            # account for list-item continuation indentation, so a deeply nested list item could in
+            # principle be misread as code. Accepted, because this repository's current documentation
+            # has no such nesting and the alternative (ignoring indented samples entirely) is the
+            # actual bypass this exists to close.
+            $isIndentedCode = $line -match '^(\t| {4,})\S'
+
+            $isCodeLine = $inFence -or $inPreLine -or $isIndentedCode
+            if (-not $isCodeLine -or $inHistorical) {
+                $prevCodeLine = $null
+                continue
             }
-            continue
+
+            foreach ($api in $RemovedApis.Keys) {
+                $pattern = if ($RemovedApiPatterns.ContainsKey($api)) { $RemovedApiPatterns[$api] } else { "\b$([regex]::Escape($api))\b" }
+                if ($line -match $pattern) {
+                    $failures.Add(
+                        "${relPath}:${lineNumber}: code sample outside any historical section names " +
+                        "'$api', which no longer exists. Replace it with $($RemovedApis[$api]), or, if this " +
+                        "genuinely is a historical before/after sample, move it under a heading this script " +
+                        "recognizes as historical ($historicalHeadingPattern).")
+                }
+                # An identifier split across a line break (rare, but a real code sample can wrap one)
+                # never matches on either line alone. Checked as a second pass against the immediately
+                # preceding code line's text concatenated directly with this one -- exactly how the
+                # two lines join once whatever hard-wrapped them is undone -- and only reported when
+                # that combination matches but this line alone did not, so an ordinary same-line match
+                # (already reported above) is never double-counted.
+                elseif ($prevCodeLine -and "$prevCodeLine$line" -match $pattern) {
+                    $failures.Add(
+                        "${relPath}:$($lineNumber - 1)-${lineNumber}: '$api', which no longer exists, appears to be " +
+                        "split across these two lines of a code sample outside any historical section. Replace it " +
+                        "with $($RemovedApis[$api]), or move the sample under a heading this script recognizes as " +
+                        "historical ($historicalHeadingPattern).")
+                }
+            }
+            $prevCodeLine = $line
         }
 
-        # Indented code block: 4+ spaces or a leading tab, CommonMark's other standard way to mark
-        # a line as code with no delimiter at all. Judged per line, not as an open/close region
-        # like the two block styles above -- there is no delimiter to track state from, only the
-        # line's own leading whitespace. This is a heuristic, not a CommonMark parser: it does not
-        # account for list-item continuation indentation, so a deeply nested list item could in
-        # principle be misread as code. Accepted, because this repository's current documentation
-        # has no such nesting and the alternative (ignoring indented samples entirely) is the
-        # actual bypass this exists to close.
-        $isIndentedCode = $line -match '^(\t| {4,})\S'
-
-        $isCodeLine = $inFence -or $inPreLine -or $isIndentedCode
-        if (-not $isCodeLine -or $inHistorical) {
-            $prevCodeLine = $null
-            continue
+        if ($inFence -or $inPre) {
+            $failures.Add(
+                "${relPath}: ends with an unbalanced code block (an odd number of fence delimiters, or " +
+                "an unclosed <pre>). This script cannot reliably tell code from prose for the rest of " +
+                "the file once that happens -- fix the unbalanced delimiter rather than trust this check's " +
+                "verdict on whatever comes after it.")
         }
 
-        foreach ($api in $RemovedApis.Keys) {
-            $pattern = if ($RemovedApiPatterns.ContainsKey($api)) { $RemovedApiPatterns[$api] } else { "\b$([regex]::Escape($api))\b" }
-            if ($line -match $pattern) {
-                $failures.Add(
-                    "${relPath}:${lineNumber}: code sample outside any historical section names " +
-                    "'$api', which no longer exists. Replace it with $($RemovedApis[$api]), or, if this " +
-                    "genuinely is a historical before/after sample, move it under a heading this script " +
-                    "recognizes as historical ($historicalHeadingPattern).")
-            }
-            # An identifier split across a line break (rare, but a real code sample can wrap one)
-            # never matches on either line alone. Checked as a second pass against the immediately
-            # preceding code line's text concatenated directly with this one -- exactly how the
-            # two lines join once whatever hard-wrapped them is undone -- and only reported when
-            # that combination matches but this line alone did not, so an ordinary same-line match
-            # (already reported above) is never double-counted.
-            elseif ($prevCodeLine -and "$prevCodeLine$line" -match $pattern) {
-                $failures.Add(
-                    "${relPath}:$($lineNumber - 1)-${lineNumber}: '$api', which no longer exists, appears to be " +
-                    "split across these two lines of a code sample outside any historical section. Replace it " +
-                    "with $($RemovedApis[$api]), or move the sample under a heading this script recognizes as " +
-                    "historical ($historicalHeadingPattern).")
-            }
+        if ($inHistorical) {
+            $failures.Add(
+                "${relPath}: a historical/migration heading is still open at end of file (no later heading at " +
+                "the same or a shallower level closed it). Everything from that heading to end of file was " +
+                "exempted from the removed-API scan on that basis alone -- the same 'cannot reliably tell past " +
+                "this point' reasoning as an unbalanced fence above. Add a closing heading (any heading at that " +
+                "level or shallower whose text does not itself match $historicalHeadingPattern), or restructure " +
+                "so the historical section is not left open at end of file.")
         }
-        $prevCodeLine = $line
     }
 
-    if ($inFence -or $inPre) {
-        $failures.Add(
-            "${relPath}: ends with an unbalanced code block (an odd number of fence delimiters, or " +
-            "an unclosed <pre>). This script cannot reliably tell code from prose for the rest of " +
-            "the file once that happens -- fix the unbalanced delimiter rather than trust this check's " +
-            "verdict on whatever comes after it.")
+    Write-Host "Checked $checkedFiles current-usage documentation file(s) for $($RemovedApis.Count) removed API name(s)."
+
+    if ($failures.Count -gt 0) {
+        Write-Host ''
+        foreach ($failure in $failures) { Write-Host "  $failure" }
+        Write-Host ''
+        Write-Host 'FAIL: current-usage documentation teaches an API this library no longer exposes.'
+        exit 1
     }
 
-    if ($inHistorical) {
-        $failures.Add(
-            "${relPath}: a historical/migration heading is still open at end of file (no later heading at " +
-            "the same or a shallower level closed it). Everything from that heading to end of file was " +
-            "exempted from the removed-API scan on that basis alone -- the same 'cannot reliably tell past " +
-            "this point' reasoning as an unbalanced fence above. Add a closing heading (any heading at that " +
-            "level or shallower whose text does not itself match $historicalHeadingPattern), or restructure " +
-            "so the historical section is not left open at end of file.")
-    }
-}
-
-Write-Host "Checked $checkedFiles current-usage documentation file(s) for $($RemovedApis.Count) removed API name(s)."
-
-if ($failures.Count -gt 0) {
-    Write-Host ''
-    foreach ($failure in $failures) { Write-Host "  $failure" }
-    Write-Host ''
-    Write-Host 'FAIL: current-usage documentation teaches an API this library no longer exposes.'
-    exit 1
-}
-
-# Vacuity floor: a PASS with zero files checked is not a pass, it is this check silently doing
-# nothing -- see the .NOTES section above for how that happens ($currentUsageDocs' Test-Path
-# filter finding none of the paths it looked for) and why it matters specifically on this
-# script's ubuntu-latest runner. Every other gate in this repository that can legitimately find
-# nothing to check (verify-freeze-log.ps1, verify-baseline-log.ps1) still requires the *files it
-# is comparing* to exist; this is the one check the review found with no equivalent floor.
-if ($checkedFiles -eq 0) {
-    Write-Error @"
+    # Vacuity floor: a PASS with zero files checked is not a pass, it is this check silently doing
+    # nothing -- see the .NOTES section above for how that happens ($currentUsageDocs' Test-Path
+    # filter finding none of the paths it looked for) and why it matters specifically on this
+    # script's ubuntu-latest runner. Every other gate in this repository that can legitimately find
+    # nothing to check (verify-freeze-log.ps1, verify-baseline-log.ps1) still requires the *files it
+    # is comparing* to exist; this is the one check the review found with no equivalent floor.
+    if ($checkedFiles -eq 0) {
+        Write-Error @"
 Checked zero current-usage documentation file(s) -- none of $($docCandidateNames -join ', ') exist
 at $RepoRoot. A run that scanned nothing is not a
 pass: on this script's own case-sensitive runner (ubuntu-latest), a README.md silently renamed to
@@ -309,8 +321,256 @@ report PASS having verified nothing. If README.md was deliberately renamed or re
 `$currentUsageDocs list above (SwissEphNet.csproj's PackageReadmeFile is the source of truth for
 what actually ships); if not, restore it.
 "@
+        exit 1
+    }
+
+    Write-Host 'PASS: no current-usage documentation instructs a reader to use a removed API.'
+    exit 0
+}
+
+# ---------------------------------------------------------------------------------------------
+
+if (-not $SelfTest) {
+    Invoke-RemovedApiScan -RepoRoot $RepoRoot
+    # Unreachable: Invoke-RemovedApiScan always exits. Present so that a future edit which turns one
+    # of those exits into a return cannot silently make this script pass by falling off the end.
     exit 1
 }
 
-Write-Host 'PASS: no current-usage documentation instructs a reader to use a removed API.'
+# ---------------------------------------------------------------------------------------------
+# Self-test. Nothing covered this check before, and it was bypassed twice during review; each case
+# below is a document that was planted, run, and SEEN to produce the stated exit code, not a case
+# that has only ever been green. Cases 1-8 must fail; 9-12 must pass, and are here because an
+# over-eager future tightening is just as much a defect as the bypasses above.
+
+$failures = 0
+$pwshExe = (Get-Process -Id $PID).Path
+$root = Join-Path ([System.IO.Path]::GetTempPath()) ("doc-removed-apis-selftest-" + [System.Guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $root -Force | Out-Null
+
+function New-DocLab {
+    # A throwaway repo root holding one README.md -- the only current-usage document this check
+    # scans. $Readme left empty creates the directory with no README.md at all, which is the
+    # vacuity case.
+    param([string] $Name, [string] $Readme = '')
+    $dir = Join-Path $root $Name
+    New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    if ($Readme -ne '') {
+        [System.IO.File]::WriteAllText((Join-Path $dir 'README.md'), $Readme)
+    }
+    return $dir
+}
+
+function Assert-Gate {
+    # Runs this script's own normal path in a CHILD process, the way CI invokes it, and asserts the
+    # exit code. A child process rather than an in-process call, for two reasons: the checks under
+    # test report their verdict by calling `exit`, and the vacuity floor reports its own with a
+    # terminating Write-Error, which in-process would abort the self-test itself instead of being
+    # observable as a code. The exit code is read straight from $LASTEXITCODE with no pipeline
+    # between -- piping would make it report the last stage of the pipe instead of the gate.
+    param(
+        [string] $Case,
+        [ValidateSet('fails', 'passes')][string] $Expect,
+        [string] $LabRoot)
+
+    $output = & $pwshExe -NoProfile -File $PSCommandPath -RepoRoot $LabRoot *>&1
+    $code = $LASTEXITCODE
+    $ok = if ($Expect -eq 'fails') { $code -ne 0 } else { $code -eq 0 }
+    if ($ok) {
+        Write-Host ("  PASS  {0} (gate {1}, exit {2})" -f $Case, $Expect, $code)
+    }
+    else {
+        Write-Host ("  FAIL  {0}`n          expected the gate to {1}, got exit {2}" -f $Case, $Expect, $code)
+        foreach ($line in @($output)) { Write-Host "            | $line" }
+        $script:failures++
+    }
+}
+
+Write-Host 'verify-doc-no-removed-apis self-test'
+Write-Host ''
+
+# The document every plant below is grafted onto: prose naming a removed API (legitimate), a
+# current sample that names none (legitimate), and a deliberate before/after sample under a
+# historical heading (legitimate). It must pass on its own -- case 9.
+$cleanDoc = @'
+# SwissEphNet
+
+`OnLoadFile` was removed in 2.10.3. Saying so in prose is not an instruction to call it.
+
+## Loading files
+
+```csharp
+swe.FileProvider = new MyProvider();
+```
+
+    // an indented sample naming nothing removed
+    swe.FileProvider = new MyProvider();
+
+<pre><code>swe.FileProvider = new MyProvider();</code></pre>
+
+## Breaking changes
+
+### V:2.10.3
+
+```csharp
+swe.OnLoadFile += (s, e) => { };   // the old way, shown historically on purpose
+```
+
+## Building
+'@
+
+# 1. The original defect: a fenced sample outside any historical section telling a reader to
+#    subscribe to an event that no longer exists. This is what shipped to the package page.
+$doc = $cleanDoc -replace '## Building', @'
+## Loading files, the old tutorial
+
+```csharp
+swe.OnLoadFile += (s, e) => { e.File = File.OpenRead(e.FileName); };
+```
+
+## Building
+'@
+Assert-Gate 'a fenced sample naming a removed API outside a historical section' 'fails' (New-DocLab 'fenced' $doc)
+
+# 2. The same sample shown as a 4-space indented block instead of a fenced one. Ignoring indented
+#    samples entirely (the earlier behaviour) left markdown's second standard code form unchecked.
+$doc = $cleanDoc -replace '## Building', @'
+## Loading files, the old tutorial
+
+    swe.OnLoadFile += (s, e) => { };
+
+## Building
+'@
+Assert-Gate 'a 4-space indented sample naming a removed API' 'fails' (New-DocLab 'indented' $doc)
+
+# 3. Markdown's third code form: a raw <pre> block, which neither the fence tracker nor the
+#    indent test sees.
+$doc = $cleanDoc -replace '## Building', @'
+## Loading files, the old tutorial
+
+<pre><code>swe.OnLoadFile += (s, e) => { };</code></pre>
+
+## Building
+'@
+Assert-Gate 'a raw <pre> block naming a removed API' 'fails' (New-DocLab 'pre-block' $doc)
+
+# 4. The heading-inside-a-fence bypass: a shell comment inside a fenced sample starts with '#'
+#    exactly like a markdown heading. Testing headings before fences let that comment open a
+#    historical region that exempted the REST OF THE DOCUMENT, including the unrelated offending
+#    sample further down. The fence test running first is what closes it.
+$doc = $cleanDoc -replace '## Building', @'
+## Regenerating the corpus
+
+```bash
+# Migration steps for the CLI
+swetest -p0 -b1.1.2000
+```
+
+## Loading files, the old tutorial
+
+```csharp
+swe.OnLoadFile += (s, e) => { };
+```
+
+## Building
+'@
+Assert-Gate 'a heading-shaped comment inside a fence does not exempt the rest of the file' 'fails' (New-DocLab 'fence-comment-heading' $doc)
+
+# 5. Nested fences. A literal ``` shown as CONTENT inside a longer ~~~~ fence is not a close --
+#    CommonMark closes a fence only on a run of the same character at least as long as the opener.
+#    A naive toggle-on-any-fence-looking-line flipped state early and left the offending line
+#    classified as prose.
+$doc = $cleanDoc -replace '## Building', @'
+## Loading files, the old tutorial
+
+~~~~
+```
+swe.OnLoadFile += (s, e) => { };
+```
+~~~~
+
+## Building
+'@
+Assert-Gate 'a fence nested inside a longer fence of the other character' 'fails' (New-DocLab 'nested-fence' $doc)
+
+# 6. A fenced sample quoted inside a `>` blockquote, which CommonMark renders as a real fenced
+#    code block. Without the leading-blockquote allowance the sample was never classified as code
+#    at all, so the removed-API scan never got to look at it.
+$doc = $cleanDoc -replace '## Building', @'
+## Loading files, the old tutorial
+
+> ```csharp
+> swe.OnLoadFile += (s, e) => { };
+> ```
+
+## Building
+'@
+Assert-Gate 'a fenced sample inside a blockquote' 'fails' (New-DocLab 'blockquote-fence' $doc)
+
+# 7. The API name hard-wrapped across two lines of a code sample. It matches on neither line
+#    alone; only the join of each code line with the one before it sees it.
+$doc = $cleanDoc -replace '## Building', @'
+## Loading files, the old tutorial
+
+```csharp
+swe.OnLoad
+File += (s, e) => { };
+```
+
+## Building
+'@
+Assert-Gate 'a removed API name split across two lines of a sample' 'fails' (New-DocLab 'split-name' $doc)
+
+# 8. The vacuity case: no README.md at all. Before the $checkedFiles floor this printed
+#    "Checked 0 current-usage documentation file(s)" and exited 0 -- a PASS having read nothing,
+#    which is exactly what a README.md renamed to Readme.md looks like on the case-sensitive
+#    runner this check actually runs on.
+Assert-Gate 'a scan that finds zero documents to check' 'fails' (New-DocLab 'vacuous')
+
+# 9. The clean document -- prose mentions, a current sample, and a historical before/after sample
+#    -- must pass. Without this, every case above could be satisfied by a check that fails on
+#    everything.
+Assert-Gate 'the clean document (prose mention + current sample + historical sample)' 'passes' (New-DocLab 'clean' $cleanDoc)
+
+# 10. An unbalanced fence is a hard failure in its own right, not a silent parity flip: past it
+#     this script cannot tell code from prose, so it must say so rather than pass.
+$doc = $cleanDoc -replace '## Building', @'
+## Loading files, the old tutorial
+
+```csharp
+swe.FileProvider = new MyProvider();
+
+## Building
+'@
+Assert-Gate 'an unbalanced fence' 'fails' (New-DocLab 'unbalanced-fence' $doc)
+
+# 11. A historical heading still open at end of file exempted everything after it from the scan on
+#     that basis alone. Same reasoning as case 10: report it rather than trust the verdict.
+$doc = $cleanDoc -replace '## Building', @'
+## Migration
+'@
+Assert-Gate 'a historical heading left open at end of file' 'fails' (New-DocLab 'open-historical' $doc)
+
+# 12. The one deliberate carve-out: `Assembly.LoadFile` is an unrelated BCL API a legitimate
+#     current sample may genuinely call, and the default whole-word match on the removed
+#     `SwissEph.LoadFile` would otherwise flag it. It must still pass.
+$doc = $cleanDoc -replace '## Building', @'
+## Loading a plugin
+
+```csharp
+var asm = Assembly.LoadFile(path);
+```
+
+## Building
+'@
+Assert-Gate 'Assembly.LoadFile in a current sample (the BCL name collision)' 'passes' (New-DocLab 'assembly-loadfile' $doc)
+
+Write-Host ''
+Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+
+if ($failures -gt 0) {
+    Write-Host "FAIL: $failures self-test case(s) failed."
+    exit 1
+}
+Write-Host 'PASS: all verify-doc-no-removed-apis self-test cases passed.'
 exit 0
