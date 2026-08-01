@@ -170,6 +170,29 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $project = Join-Path $repoRoot 'Tools\BaselineGen\BaselineGen.csproj'
 $baselineDir = Join-Path $repoRoot 'Tests\baseline'
 
+# Local-mode preconditions, checked here -- before anything is built, generated, or written --
+# not only later, deep inside the local-mode branch that actually appends the provenance entry
+# (originally around where $existingSidecars is first read, well after the golden TSVs and
+# row-counts.tsv were already overwritten under Tests/baseline/ at :280-315 below). Checking only
+# there meant a missing or malformed sidecar was discovered only after every baseline-*.tsv file
+# had already been replaced on disk: exactly the unlogged rebaseline scripts/verify-baseline-log.ps1
+# exists to catch, since a run that failed this way left Tests/baseline/ genuinely changed with no
+# way for this script to have appended the required "Local regenerations" entry. Reference mode
+# has no equivalent precondition -- it does not touch or depend on an existing sidecar's shape --
+# so this block only ever applies under -FromLocal.
+if ($FromLocal) {
+    $preflightSidecars = @(Get-ChildItem $baselineDir -Filter 'baseline-*.env.txt' -ErrorAction SilentlyContinue)
+    if ($preflightSidecars.Count -ne 1) {
+        Write-Error "Expected exactly one existing baseline-*.env.txt under $baselineDir to append provenance to (found $($preflightSidecars.Count)). Local-mode regeneration requires a prior reference-mode baseline; run without -FromLocal first. Checked before building or generating anything, so nothing under $baselineDir has been touched by this run."
+        exit 1
+    }
+    $preflightContent = Get-Content -Raw -Path $preflightSidecars[0].FullName
+    if ($preflightContent -notmatch '(?m)^SwissEphModuleVersionId=' -or $preflightContent -notmatch '(?m)^SwissEphAssemblySha256=') {
+        Write-Error "$($preflightSidecars[0].FullName) does not look like a Describe()-shaped sidecar (missing SwissEphModuleVersionId=/SwissEphAssemblySha256=). Refusing to append provenance to it. Checked before building or generating anything, so nothing under $baselineDir has been touched by this run."
+        exit 1
+    }
+}
+
 $modeArgs = @()
 if ($FromLocal) {
     Write-Host "Mode: LOCAL (in-repo SwissEphNet project via ProjectReference)."
@@ -201,10 +224,26 @@ dotnet run --project $project -c Release @modeArgs --no-build -- $runB
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host "Comparing run A and run B for reproducibility..."
-$namesA = (Get-ChildItem $runA -File | Sort-Object Name | Select-Object -ExpandProperty Name) -join ','
-$namesB = (Get-ChildItem $runB -File | Sort-Object Name | Select-Object -ExpandProperty Name) -join ','
+$filesA = @(Get-ChildItem $runA -File | Sort-Object Name)
+$filesB = @(Get-ChildItem $runB -File | Sort-Object Name)
+$namesA = ($filesA | Select-Object -ExpandProperty Name) -join ','
+$namesB = ($filesB | Select-Object -ExpandProperty Name) -join ','
 if ($namesA -ne $namesB) {
     Write-Error "Run A and run B produced a different set of files ($namesA) vs ($namesB)."
+    exit 1
+}
+
+# Vacuity floor: two runs that both produced zero files agree with each other trivially -- $namesA
+# and $namesB are both the empty string, so the check above passes and the byte-for-byte loop
+# below has nothing to iterate over, so $mismatch never gets set either. Both empty runs would
+# otherwise be certified "Reproducible: run A and run B are byte-identical" and go on to wipe
+# every committed baseline-*.tsv file (see the Copy-Item below, which deletes every existing
+# baseline-*.tsv before copying $runA's -- itself empty) -- an empty BaselineGen run silently
+# produces an empty Tests/baseline/, not a refusal. This is not hypothetical: BaselineGen writing
+# zero files is exactly the shape a build succeeding but Areas.All resolving to nothing, or a
+# silently swallowed exception before the first file is written, would take.
+if ($filesA.Count -eq 0) {
+    Write-Error "Run A and run B both produced zero files. Two empty runs are trivially 'identical', but a run that generated nothing is not reproducible in any meaningful sense -- see Tools/BaselineGen's own project for why this build could complete with no output (e.g. Areas.All resolving to nothing). Not touching Tests/baseline/."
     exit 1
 }
 
@@ -366,6 +405,11 @@ try {
         # provenance entry to it instead. The freshly generated sidecar in $runA
         # describes *this* (local) build and is deliberately discarded; keeping it
         # would poison the assembly-identity check BaselineVerify relies on.
+        #
+        # Re-checked here, not just trusted from the preflight check near the top of this script:
+        # this is still the last line of defense against writing $baselineDir's sidecar in a shape
+        # BaselineVerify cannot read, even though the preflight check should already have caught
+        # any problem before the golden TSVs above were ever touched.
         $existingSidecars = @(Get-ChildItem $baselineDir -Filter 'baseline-*.env.txt' -ErrorAction SilentlyContinue)
         if ($existingSidecars.Count -ne 1) {
             Write-Error "Expected exactly one existing baseline-*.env.txt under $baselineDir to append provenance to (found $($existingSidecars.Count)). Local-mode regeneration requires a prior reference-mode baseline; run without -FromLocal first."

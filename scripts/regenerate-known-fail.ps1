@@ -174,6 +174,27 @@ if ($PruneOnly) {
         $current = Read-KnownFailTable -Path $knownFailPath
         $fresh = Read-KnownFailTable -Path $tempPath
 
+        # Vacuity floor: $fresh with zero rows and $current with more than zero looks exactly like
+        # "every known failure now passes" to the logic below -- $added and $changed both stay
+        # empty (nothing in $fresh to iterate), so the refusal a few lines down never fires, and
+        # every surviving-row check afterward finds nothing in $fresh to survive, pruning the
+        # entire list. That is indistinguishable, from this script's point of view, from the
+        # generator having silently failed to dispatch the corpus at all (a crash before the first
+        # entry was added, a misconfigured environment producing zero results) -- and the whole
+        # point of -PruneOnly is that it should never need a human to eyeball the result before
+        # trusting it. Refusing here is a deliberate choice, not an oversight: if the port
+        # genuinely reaches zero outstanding known failures, that transition is worth a
+        # human-reviewed -Reason in the default (full regenerate) mode below, the same way any
+        # other change this large already requires one, rather than passing silently through the
+        # one mode designed to need no review at all.
+        if ($fresh.Count -eq 0 -and $current.Count -gt 0) {
+            Write-Host ""
+            Write-Host "-PruneOnly refuses: the current run produced zero known-fail rows across the entire corpus dispatch, while $knownFailPath currently has $($current.Count)." -ForegroundColor Red
+            Write-Host "Treating this as 'everything now passes' and pruning the whole list is indistinguishable here from the generator run having failed to actually dispatch the corpus -- see this script's own comment above this check." -ForegroundColor Red
+            Write-Host "known-fail.tsv was NOT modified. If the port genuinely has zero outstanding known failures now, use the full regenerate (scripts/regenerate-known-fail.ps1 -Reason `"...`") instead, which requires a human-reviewed reason for a change this size."
+            exit 1
+        }
+
         $added = @()
         $changed = @()
         foreach ($key in $fresh.Keys) {
@@ -257,36 +278,55 @@ if ($PruneOnly) {
 
 $beforeCount = Get-RowCount -Path $knownFailPath
 
-Write-Host "Running the conformance oracle against the current build (this dispatches all 12,757 iterations; expect a few minutes)..."
-$stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-dotnet run --project $genProject -c Release --no-build -- $knownFailPath
-$exitCode = $LASTEXITCODE
-$stopwatch.Stop()
-if ($exitCode -ne 0) { exit $exitCode }
+# Staged to a temp file, then moved over $knownFailPath only once the generator has exited 0 --
+# matching -PruneOnly's own $tempPath pattern above, rather than the generator writing straight
+# over the committed file the way this block used to. dotnet run passed $knownFailPath directly
+# meant the committed file was the generator's own output target: a crash partway through writing
+# it (an unhandled exception after KnownFailList.Save has started, an OOM, a killed process, a
+# disk-full condition) left a truncated or corrupted file sitting in the working tree with no
+# original content to fall back to -- there was nothing to revert to, because the original had
+# already been overwritten in place. Generating into a temp path first means a failed run leaves
+# $knownFailPath completely untouched, exactly like -PruneOnly already guarantees.
+$tempKnownFailPath = [System.IO.Path]::GetTempFileName()
+try {
+    Write-Host "Running the conformance oracle against the current build (this dispatches all 12,757 iterations; expect a few minutes)..."
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    dotnet run --project $genProject -c Release --no-build -- $tempKnownFailPath
+    $exitCode = $LASTEXITCODE
+    $stopwatch.Stop()
+    if ($exitCode -ne 0) { exit $exitCode }
 
-Write-Host ("Regeneration run took {0:F1}s wall-clock." -f $stopwatch.Elapsed.TotalSeconds)
+    Write-Host ("Regeneration run took {0:F1}s wall-clock." -f $stopwatch.Elapsed.TotalSeconds)
 
-$afterCount = Get-RowCount -Path $knownFailPath
-$delta = $afterCount - $beforeCount
-$deltaDescription = if ($delta -eq 0) { "no change in row count" }
-elseif ($delta -lt 0) { "$([Math]::Abs($delta)) fewer rows" }
-else { "$delta more rows" }
+    $afterCount = Get-RowCount -Path $tempKnownFailPath
+    $delta = $afterCount - $beforeCount
+    $deltaDescription = if ($delta -eq 0) { "no change in row count" }
+    elseif ($delta -lt 0) { "$([Math]::Abs($delta)) fewer rows" }
+    else { "$delta more rows" }
 
-$date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
-$prCitation = if ($PR) { "PR #$PR" } else { "(no PR yet -- fill in `"PR #N`" before merging, per CONTRIBUTING.md)" }
-$epheDescription = Get-EpheDescription
+    $date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
+    $prCitation = if ($PR) { "PR #$PR" } else { "(no PR yet -- fill in `"PR #N`" before merging, per CONTRIBUTING.md)" }
+    $epheDescription = Get-EpheDescription
 
-$logEntry = "$date $prCitation ($beforeCount -> $afterCount, $deltaDescription) [$epheDescription]: $Reason"
-Add-Content -Path $logPath -Value $logEntry -Encoding utf8NoBOM
+    # Only now, with a complete and exit-0 generator run sitting safely in a temp file, does
+    # anything under Tests/conformance/ get touched.
+    Copy-Item -LiteralPath $tempKnownFailPath -Destination $knownFailPath -Force
 
-Write-Host ""
-Write-Host "Done. $beforeCount -> $afterCount rows ($deltaDescription)."
-Write-Host "Logged to $logPath"
-Write-Host ""
-Write-Host "Review the diff (git diff Tests/conformance/known-fail.tsv) before committing:"
-Write-Host "  - Rows removed only: progress. Confirm the removed iterations actually pass now, not that a"
-Write-Host "    Check* call quietly stopped comparing them (dotnet test Tests/SwissEphNet.Conformance.Tests"
-Write-Host "    would already have failed on that -- see the completeness guard in ConformanceRunner.Run)."
-Write-Host "  - Rows added: a regression, or an iteration this run newly covers. Needs -Reason above to already"
-Write-Host "    explain it, and a reviewer to agree before this merges (CODEOWNERS). Prefer -PruneOnly instead"
-Write-Host "    of this default mode when all you actually did was remove rows -- it cannot add one by accident."
+    $logEntry = "$date $prCitation ($beforeCount -> $afterCount, $deltaDescription) [$epheDescription]: $Reason"
+    Add-Content -Path $logPath -Value $logEntry -Encoding utf8NoBOM
+
+    Write-Host ""
+    Write-Host "Done. $beforeCount -> $afterCount rows ($deltaDescription)."
+    Write-Host "Logged to $logPath"
+    Write-Host ""
+    Write-Host "Review the diff (git diff Tests/conformance/known-fail.tsv) before committing:"
+    Write-Host "  - Rows removed only: progress. Confirm the removed iterations actually pass now, not that a"
+    Write-Host "    Check* call quietly stopped comparing them (dotnet test Tests/SwissEphNet.Conformance.Tests"
+    Write-Host "    would already have failed on that -- see the completeness guard in ConformanceRunner.Run)."
+    Write-Host "  - Rows added: a regression, or an iteration this run newly covers. Needs -Reason above to already"
+    Write-Host "    explain it, and a reviewer to agree before this merges (CODEOWNERS). Prefer -PruneOnly instead"
+    Write-Host "    of this default mode when all you actually did was remove rows -- it cannot add one by accident."
+}
+finally {
+    Remove-Item -Path $tempKnownFailPath -ErrorAction SilentlyContinue
+}
