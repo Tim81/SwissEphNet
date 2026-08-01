@@ -40,15 +40,18 @@ full parity with 2.10.03; it is not, and the next section says by how much.
 | Platform | C reference | Result |
 |---|---|---|
 | Windows x64 | MSVC 19.51.36248, `/O2 /fp:precise /MD` | 17,064 of 17,064 oracle rows bit-identical (gated) |
-| Linux x64, Ubuntu 24.04.4 | gcc 13.3.0, `-O2` | 17,064 of 17,064 oracle rows bit-identical (measured once, not gated) |
+| Linux x64, Ubuntu 24.04.4 | gcc 13.3.0, `-O2` | 17,064 of 17,064 oracle rows bit-identical (gated) |
 | macOS arm64 (Apple libSystem) | clang, `-O2 -ffp-contract=off -fno-builtin` | 17,064 of 17,064 oracle rows bit-identical (gated) |
 
 Windows is gated by `oracle-dump`, the `.github/workflows/oracle.yml` job that replays this grid
-end to end on every push and pull request; macOS is gated the same way by `macos-exactness`. The
-Linux row came from one full run of the grid, done by hand, with nothing re-running it
-automatically -- see `README.md`'s "Numerical compatibility" section for what the other Windows
-jobs in that workflow (`crt-parity`, `c-reference-validate`, `swetest-diff`) check instead, since
-none of them replay this grid.
+end to end on every push and pull request; Linux is gated the same way by `linux-exactness`, and
+macOS by `macos-exactness`. The Linux row was originally a single hand-run of the grid in a WSL2
+Docker container, with nothing re-running it automatically; `linux-exactness` replaced that with a
+CI job that rebuilds the C reference with gcc and replays both grids on every push and pull
+request, the same way `oracle-dump` and `macos-exactness` already did for their platforms -- see
+`README.md`'s "Numerical compatibility" section for what the other Windows jobs in that workflow
+(`crt-parity`, `c-reference-validate`, `swetest-diff`) check instead, since none of them replay
+this grid.
 
 17,064<!--doccount:grid-total-combined--> is the sum of the two grids, and neither is a single homogeneous function. Recounted by
 `func` column rather than trusted from an earlier draft of this document:
@@ -67,11 +70,23 @@ reading the shipped `.se1` files), 200<!--doccount:grid-files-fixstar-family-tot
 across both grids combined. Both `Tests/oracle/known-diff.tsv` and `Tests/oracle/known-diff-files.tsv`
 are empty (0<!--doccount:oracle-known-diff-analytic--> and 0<!--doccount:oracle-known-diff-files--> rows respectively): there is no recorded exception on either grid, on any platform.
 
-The Linux run reused both grids and both drivers unchanged; `sedump.c` needed only
-`-DSWISSEPH_HAS_CROSSING=1` and an explicit source list to build there, the same macro the
-Windows build already sets (`scripts/run-oracle-dump.ps1`). Both grids produced exactly 14,820
-and 2,244 rows on Linux, matching Windows row for row, and every row matched Astrodienst's own C
-bit for bit, matching the Windows result.
+**Linux is now gated too, by `linux-exactness` in `.github/workflows/oracle.yml`.** It reuses both
+grids and both drivers unchanged; `sedump.c` needs only `-DSWISSEPH_HAS_CROSSING=1` and an
+explicit source list to build there, the same macro the Windows build already sets
+(`scripts/run-oracle-dump.ps1`). Both grids produce exactly 14,820 and 2,244 rows on Linux,
+matching Windows row for row, and every row matches Astrodienst's own C bit for bit, on
+`ubuntu-latest` (gcc 13.3.0, glibc), matching the Windows and macOS results. Unlike macOS, the gate
+build needs neither `-ffp-contract=off` nor `-fno-builtin`: base x86-64 has no FMA3 encoding at
+all (`linux-exactness`'s own `objdump` check, mirroring `macos-exactness`'s `otool` check, finds
+zero fused multiply-add instructions at plain `-O2`), and although gcc does substitute glibc's
+`sincos` for an adjacent `sin`/`cos` call even without `-fno-builtin` -- confirmed with `nm`,
+the same class of substitution that breaks macOS's bit-exactness -- glibc's `sincos` returns
+bit-identically to calling the two functions separately, unlike Apple's. A second build adding
+both flags is kept alongside as a diagnostic, the same way `macos-exactness` keeps its
+builtins-on build, and currently shows zero rows differing from the plain `-O2` gate build on
+either grid, confirming the flags make no difference on this glibc. Before this job existed, the
+Linux result came from a single hand-run of the grid in a WSL2 Docker container, with nothing
+re-checking it; `linux-exactness` replays it on every push and pull request instead.
 
 **macOS is now measured, gated on `-fno-builtin`.** `.github/workflows/oracle.yml`'s
 `macos-exactness` job builds Astrodienst's C with clang on macOS arm64 (Apple's libSystem, a

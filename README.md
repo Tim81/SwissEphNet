@@ -414,7 +414,7 @@ platform:
 | Platform | C reference | Result |
 |---|---|---|
 | Windows x64 | MSVC 19.51, `/O2 /fp:precise /MD` | 17,064 of 17,064 rows bit-identical (gated) |
-| Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | 17,064 of 17,064 rows bit-identical (measured once, not gated) |
+| Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | 17,064 of 17,064 rows bit-identical (gated) |
 | macOS arm64 | clang, `-O2 -ffp-contract=off -fno-builtin` | 17,064 of 17,064 rows bit-identical (gated) |
 
 The characterization baseline (`scripts/verify-baseline.ps1`) separately runs on both `net8.0` and
@@ -433,19 +433,27 @@ CRT value table, `c-reference-validate` compares the MSVC C build against pyswis
 build that a future toolchain bump could shift without the port changing (see that workflow's own
 header comment, and `docs/compliance-2.10.03.md`'s "4. SweTest text-output comparison" for the
 same exemption stated in full). `macos-exactness` covers macOS the same way `oracle-dump` covers
-Windows. `header-flags-check` does run on `ubuntu-latest`, but it checks this workflow file's own
-header comment against its own `continue-on-error` flags rather than any of Astrodienst's C, so
-while a job in this file does run on Linux, none of the four that build or compare against
-Astrodienst's C do. The Linux row came from one full run of the grid, done by hand; all 17,064
-rows matched bit for bit. Nothing re-runs it automatically, so a regression specific to glibc
-would sit unnoticed until someone measures it again.
+Windows, and `linux-exactness` covers Linux the same way: it builds Astrodienst's C with gcc on
+`ubuntu-latest`, replays both grids against it, and fails the workflow on any mismatch, on every
+push and pull request. `header-flags-check` also runs on `ubuntu-latest`, but it checks this
+workflow file's own header comment against its own `continue-on-error` flags rather than any of
+Astrodienst's C, so it does not count toward this. Before `linux-exactness` existed, the Linux row
+came from one full run of the grid, done by hand in a WSL2 Docker container; all 17,064 rows
+matched bit for bit, but nothing re-ran it automatically, so a regression specific to glibc would
+have sat unnoticed until someone measured it again. That gap is what `linux-exactness` closes.
 
 The agreement is exact rather than close because the port and the C reference call the same libm
 on a given platform: `ucrtbase.dll` on Windows, glibc on Linux, Apple's libSystem on macOS. The
 macOS build needs `-fno-builtin`: without it, clang substitutes its own math builtins for some
 libm calls (fusing an adjacent `sin`/`cos` pair into one `__sincos`, for instance), and Apple's
 `__sincos` does not return bit-identically to calling the two functions separately the way the
-port does. With `-fno-builtin`, both grids are bit-identical there too.
+port does. With `-fno-builtin`, both grids are bit-identical there too. gcc on Linux x64 needs
+neither flag `macos-exactness` does: base x86-64 has no FMA3 encoding at all, so
+`-ffp-contract=off` has nothing to turn off (`linux-exactness` confirms this by disassembly, the
+same way `macos-exactness` does for arm64), and although gcc does substitute glibc's `sincos` for
+an adjacent `sin`/`cos` pair even without `-fno-builtin`, glibc's `sincos` returns bit-identically
+to calling the two functions separately, unlike Apple's -- measured by building both ways and
+replaying both grids through each, with no difference either way.
 
 Windows and Linux do not produce the same numbers as each other, and cannot be made to. `Math.Sin`
 and its siblings bind to whatever libm the platform provides, at run time, so this is the same
