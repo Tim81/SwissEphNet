@@ -957,8 +957,10 @@ baseline (`Tests/baseline/`) is unchanged to the byte across all 19 areas on bot
 choke point every `new SwissEph()` in the several-hundred-call-site matrix goes through), so the
 matrix stays Moshier-only exactly as it was when nothing subscribed to `OnLoadFile`, rather than
 starting to find whatever ephemeris files happen to be present on the machine that runs it. The
-bit-exact oracle (`Tests/SwissEphNet.Conformance.Tests`, `scripts/verify-oracle.ps1`) stays at
-14,820 + 2,244 rows, all bit-identical against MSVC-built 2.10.03 C, both `known-diff.tsv` lists
+bit-exact oracle (`Tools/OracleGrid`, `Tools/OracleDump`, `Tools/OracleVerify`,
+`scripts/verify-oracle.ps1` -- not `Tests/SwissEphNet.Conformance.Tests`, which is the
+correctness oracle, a different instrument) stays at 15,820 + 2,244 rows, all bit-identical
+against MSVC-built 2.10.03 C, both `known-diff.tsv` lists
 empty -- including the files grid, which exercises real path resolution through
 `SwissEph.OpenBinary`'s filesystem branch for the first time.
 
@@ -1112,7 +1114,7 @@ the four fixed-star entry points, as recorded above.
 
 ## What the oracle grids do not cover in the house code
 
-The bit-exact comparison reports 14,220 of 14,220 analytic-grid rows matching MSVC-built
+The bit-exact comparison reports 15,820 of 15,820 analytic-grid rows matching MSVC-built
 2.10.03 C. That is a real result and it is narrower than it sounds, so this records what it
 does and does not establish, to stop it being cited for things it never touched.
 

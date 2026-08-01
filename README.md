@@ -37,12 +37,16 @@ Swiss Ephemeris, and therefore this library, is dual-licensed. You must choose o
   [Astrodienst](http://www.astro.com/swisseph/) that does not carry the AGPL's source-disclosure
   obligation. Contact Astrodienst directly to obtain one.
 
-See [`LICENSE`](LICENSE) for the full license conditions, [`agpl-3.0.txt`](agpl-3.0.txt) for the
-AGPL text, and [`NOTICE`](NOTICE) for attribution.
+See [`LICENSE`](https://github.com/Tim81/SwissEphNet/blob/main/LICENSE) for the full license
+conditions, [`agpl-3.0.txt`](https://github.com/Tim81/SwissEphNet/blob/main/agpl-3.0.txt) for the
+AGPL text, and [`NOTICE`](https://github.com/Tim81/SwissEphNet/blob/main/NOTICE) for attribution.
+These links are absolute rather than relative because this section also renders on nuget.org's
+package page, where a relative link to a file in this repository does not resolve.
 
-The library targets 3 frameworks: `netstandard2.0`, `net8.0` and `net10.0`. Publication to NuGet,
-under the `SwissEphSharp` package ID, is planned but has not happened yet (see the versioning note
-in `SwissEphNet.csproj`); until it does, build it from source or reference the project directly.
+The library targets 3 frameworks: `netstandard2.0`, `net8.0` and `net10.0`, packaged under the
+`SwissEphSharp` NuGet ID (see the versioning note in `SwissEphNet.csproj` for why the ID differs
+from the upstream `SwissEphNet` package). Working from this repository rather than the published
+package also works: build from source or reference the project directly.
 
 The programs SweMini and SweTest target `net10.0`.
 
@@ -147,9 +151,9 @@ staying hidden.
 reads it as a single `char` needs to index `[0]` instead.
 
 One more thing worth flagging here even though it is not a source-level break like the four
-above: the NuGet package ID will change to `SwissEphSharp` once this fork publishes, while the
-namespace and every type name stay `SwissEphNet`. See "Package name" below for the full picture
-and what migrating will involve once that release exists.
+above: the NuGet package ID is `SwissEphSharp`, not `SwissEphNet`, while the namespace and every
+type name stay `SwissEphNet`. See "Package name" below for the full picture and what migrating
+from the original `SwissEphNet` package involves.
 
 ## What you gain
 
@@ -219,14 +223,16 @@ Separately, the port's output is checked against Astrodienst's own 2.10.03 test 
 12,757 iterations across ten functional areas. 1,423<!--doccount:known-fail-total--> of those still fail: 664<!--doccount:known-fail-value-mismatch--> because the answer
 is outside the tolerance Astrodienst's own suite allows, and 759<!--doccount:known-fail-data-missing--> because a required data file (a
 JPL ephemeris, a per-asteroid or `ephe/sat/` file, or an ephemeris era this repository does not
-ship, roughly years 1200 to 2399) is not present, not because the answer is wrong. Of those 664,
-`Tests/conformance/value-mismatch-triage.tsv` drives Astrodienst's own MSVC-built 2.10.03 C
-through the identical inputs and finds only 4 are a confirmed port defect (a missing JD-range
-guard on interpolated lunar perigee, `docs/compliance-2.10.03.md` section 3a); the rest reproduce
-the port's own output rather than the reference corpus's, i.e. drift between this build's
-toolchain/environment and whatever produced `setest`'s reference values, not a wrong answer. That
-is the honest state of it: strong on everything it has been checked against, not yet at full
-parity with Astrodienst's own reference corpus.
+ship, roughly years 1200 to 2399) is not present, not because the answer is wrong.
+`Tests/conformance/value-mismatch-triage.tsv` drove Astrodienst's own MSVC-built 2.10.03 C through
+the identical inputs for all 668 `VALUE-MISMATCH` rows at the time it ran, and found 4 confirmed
+port defects, all a missing JD-range guard on interpolated lunar perigee (`docs/compliance-2.10.03.md`
+section 3a). That guard is fixed now and the four rows are pruned, so of the 664 remaining, none
+is a port defect anyone has demonstrated: each reproduces the port's own output rather than the
+reference corpus's, i.e. drift between this build's toolchain/environment and whatever produced
+`setest`'s reference values, not a wrong answer. That is the honest state of it: strong on
+everything it has been checked against, not yet at full parity with Astrodienst's own reference
+corpus.
 
 # Breaking changes
 
@@ -490,11 +496,12 @@ continue to exist in parallel :
 
 # Usage
 
-This fork has not published a NuGet package yet; the `SwissEphSharp` package ID is claimed for
-that release (see the versioning note in `SwissEphNet.csproj`). An older release of the upstream
-project is available as a [Nuget package](https://www.nuget.org/packages/SwissEphNet), but it
-predates this fork's retarget and bug fixes. Build from source or reference
-`SwissEphNet/SwissEphNet.csproj` directly until this fork's own package exists.
+This fork is packaged under the `SwissEphSharp` NuGet ID (see the versioning note in
+`SwissEphNet.csproj`). An older release of the upstream project is available separately as a
+[NuGet package](https://www.nuget.org/packages/SwissEphNet), under the original `SwissEphNet` ID,
+but it predates this fork's retarget and bug fixes. Working from this repository rather than the
+published package also works: build from source or reference `SwissEphNet/SwissEphNet.csproj`
+directly.
 
 SwissEphNet targets `netstandard2.0`, `net8.0` and `net10.0`.
 
@@ -509,9 +516,9 @@ platform:
 
 | Platform | C reference | Result |
 |---|---|---|
-| Windows x64 | MSVC 19.51, `/O2 /fp:precise /MD` | 17,064 of 17,064 rows bit-identical (gated) |
-| Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | 17,064 of 17,064 rows bit-identical (gated) |
-| macOS arm64 | clang, `-O2 -ffp-contract=off -fno-builtin` | 17,064 of 17,064 rows bit-identical (gated) |
+| Windows x64 | MSVC 19.51, `/O2 /fp:precise /MD` | 18,064<!--doccount:grid-total-combined--> of 18,064 rows bit-identical (gated) |
+| Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | 18,064 of 18,064 rows bit-identical (gated) |
+| macOS arm64 | clang, `-O2 -ffp-contract=off -fno-builtin` | 18,064 of 18,064 rows bit-identical (gated) |
 
 The characterization baseline (`scripts/verify-baseline.ps1`) separately runs on both `net8.0` and
 `net10.0` and reports them field-identical to each other on the platform that generated it. That
@@ -519,7 +526,7 @@ corroborates `net8.0` from a different instrument, but it is a weaker claim than
 self-consistency between two TFMs of this port rather than agreement with the C reference.
 
 "Gated" on the Windows row means `oracle-dump`, the `.github/workflows/oracle.yml` job that
-replays this exact 17,064-row grid, re-runs the comparison end to end on every push and pull
+replays this exact 18,064-row grid, re-runs the comparison end to end on every push and pull
 request and fails the workflow on any mismatch. Three more jobs also run on Windows in that file
 but check different things than this grid: `crt-parity` compares MSVC C against .NET on a fixed
 CRT value table, `c-reference-validate` compares the MSVC C build against pyswisseph 2.10.03, and
@@ -583,13 +590,12 @@ behind it and what it proves that the other two verification instruments in this
 ## Package name
 
 This project carries three names, and meeting them separately can look like something is broken.
-It isn't; one of the three has not shipped yet:
+It isn't:
 
 - The **repository** is `Tim81/SwissEphNet`, a fork of `ygrenier/SwissEphNet`, and keeps that
   name.
-- The **NuGet package ID**, once this fork publishes, will be `SwissEphSharp`. The `SwissEphNet`
-  ID on nuget.org already belongs to the upstream author's own release, so this fork cannot
-  publish under it.
+- The **NuGet package ID** is `SwissEphSharp`. The `SwissEphNet` ID on nuget.org already belongs
+  to the upstream author's own release, so this fork cannot publish under it.
 - The **assembly** is now `SwissEphSharp.dll`, matching the package ID, so this package and the
   original `SwissEphNet` package can be referenced together without one silently displacing the
   other; see the "V:2.10.3" section above for what that collision used to look like.
@@ -598,10 +604,10 @@ It isn't; one of the three has not shipped yet:
   touch every one of those frozen files for a cosmetic reason. Keeping it also means the library
   stays source-compatible with code written against the original namespace.
 
-Publication has not happened yet (see the versioning note in `SwissEphNet.csproj`); until it does,
-build from source or reference `SwissEphNet/SwissEphNet.csproj` directly. Migrating from the old
-package, once this fork's release exists, is mostly the one line it sounds like: replace the
-`PackageReference` for `SwissEphNet` with one for `SwissEphSharp`. `using SwissEphNet;` and every
+Working from this repository rather than the published package also works: build from source or
+reference `SwissEphNet/SwissEphNet.csproj` directly (see the versioning note in
+`SwissEphNet.csproj`). Migrating from the old package is mostly the one line it sounds like:
+replace the `PackageReference` for `SwissEphNet` with one for `SwissEphSharp`. `using SwissEphNet;` and every
 type name are unaffected, so source that only calls the public API needs no other change. Anything
 that calls `Assembly.Load("SwissEphNet")` by literal string, carries a binding redirect naming
 `SwissEphNet`, or otherwise hardcodes the DLL filename needs to be updated to `SwissEphSharp`
@@ -699,7 +705,7 @@ Astrodienst's own reference values, not against the port's own prior output.
 The reference corpus is Swiss Ephemeris **2.10.03**'s `setest` test suite
 (12,757 iterations, ~321K asserted values across 10 functional areas). Even though the port has
 now landed the whole 2.10.03 delta file by file, it is not at full parity: `known-fail.tsv` still
-lists 1,423<!--doccount:known-fail-total--> failing iterations (11,330 passing, 88.8%), and the known-fail list remains the work
+lists 1,423<!--doccount:known-fail-total--> failing iterations (11,334 passing, 88.8%), and the known-fail list remains the work
 queue for the remainder. Each porting PR should remove entries from it; any entry that reappears
 is a regression.
 

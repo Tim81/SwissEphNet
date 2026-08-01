@@ -312,8 +312,8 @@ up-to-date build recompiles nothing and silently reports zero, so always
 force a clean rebuild when counting):
 
 - `SwissEphNet.sln`: 16 warnings across 9 distinct sites. 6 of those sites are inside
-  `CPort/` (`Sweph.h.cs:818`, `Sweph.cs:7208`, `Sweph.cs:7457`, `Sweph.cs:7479`,
-  `Sweph.cs:8830`, `SwephLib.cs:4693`); the remaining 3 are outside it, all in the other two
+  `CPort/` (`Sweph.h.cs:818`, `Sweph.cs:7232`, `Sweph.cs:7481`, `Sweph.cs:7503`,
+  `Sweph.cs:8854`, `SwephLib.cs:4693`); the remaining 3 are outside it, all in the other two
   frozen, transliterated files: `Programs/SweTest/Program.cs:758` and `:804`
   (`CS0414`), and `Programs/SweMini/Program.cs:155` (`CS0162`). `Tests/SwissEphNet.Tests`
   and `Programs/SweWin` currently contribute zero.
@@ -442,7 +442,7 @@ porting work queue) and **parked** (every non-passing iteration in that
 testcase is `NOT-IMPLEMENTED`, `DATA-MISSING`, or `UNREPRODUCIBLE` -- blocked
 on something other than the port's logic: a 2.10-only API (currently none;
 the category is empty), a data file this repo doesn't ship, or a structural
-gap). As of this writing that split is 34 actionable / 26 parked out of 60. A porting PR should
+gap). As of this writing that split is 31 actionable / 29 parked out of 60. A porting PR should
 be shrinking the actionable list's mismatch/error counts, or moving a testcase
 from actionable to fully passing -- not touching the parked list, which
 changes only when a 2.10 API gets implemented or a data-file constraint is

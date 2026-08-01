@@ -185,9 +185,9 @@ across 10 functional areas, checked against `external/swisseph/setest/t.exp` wit
 tolerances `setest/t.fix` itself ships. `Tests/conformance/known-fail.tsv` is the work queue: one
 row per iteration the port does not currently match.
 
-As of this record, `known-fail.tsv` carries 1,423<!--doccount:known-fail-total--> rows, so 11,330 of 12,757 iterations pass
+As of this record, `known-fail.tsv` carries 1,423<!--doccount:known-fail-total--> rows, so 11,334 of 12,757 iterations pass
 (88.8%). That is down from 4,382 rows when the oracle was first wired up (commit `835a6c6`) --
-the 2.10.03 port has closed 2,955 of the iterations it started 4,382 behind on.
+the 2.10.03 port has closed 2,959 of the iterations it started 4,382 behind on.
 
 The 1,423<!--doccount:known-fail-total--> remaining rows split into two categories, with 0<!--doccount:known-fail-error--> in
 `ERROR`, 0<!--doccount:known-fail-unreproducible--> in `UNREPRODUCIBLE`, and 0<!--doccount:known-fail-not-implemented--> in
@@ -294,7 +294,7 @@ the matching `serr`, exactly matching `t.exp`; the port returns a computed (wron
 position instead.
 
 Not fixed by the triage itself, which scoped to `Tests/SwissEphNet.Conformance.Tests/` rather than
-`SwissEphNet/CPort/`. Fixed afterwards in `26e2f05`, which mirrored the `SE_INTP_APOG` guard down
+`SwissEphNet/CPort/`. Fixed afterwards in `b5af491`, which mirrored the `SE_INTP_APOG` guard down
 into the `SE_INTP_PERG` branch and pruned these four rows, taking `VALUE-MISMATCH` from 668 to 664
 and the known-fail total from 1,427 to 1,423. So of the 668 rows this triage examined, none now
 remain that anyone has shown the port gets wrong.
@@ -313,10 +313,10 @@ does not match, checked by category so a listed row whose difference has changed
 fails the gate.
 
 **This is the one instrument in this document that is not currently clean.**
-`Tests/swetest/known-diff.tsv` carries 15<!--doccount:swetest-known-diff--> rows, all category `OUTPUT-DIFFERS`, so 231 of 252
-argument strings (91.7%) produce output that matches Astrodienst's C exactly. Of the 21:
+`Tests/swetest/known-diff.tsv` carries 15<!--doccount:swetest-known-diff--> rows, all category `OUTPUT-DIFFERS`, so 237 of 252
+argument strings (94.0%) produce output that matches Astrodienst's C exactly. Of the 15:
 
-- **17 are path-separator or placeholder cosmetics, not computational divergence.** Most print an
+- **12 are path-separator or placeholder cosmetics, not computational divergence.** Most print an
   ephemeris-file-not-found message that embeds the search path; the C reports it with `\`
   (`'<ephe-dir>\'`) and the port with `/` (`'<ephe-dir>/'`), or the C reports a literal directory
   where the port reports the `[ephe]` placeholder token this comparison substitutes for the
@@ -327,7 +327,7 @@ argument strings (91.7%) produce output that matches Astrodienst's C exactly. Of
   prints one, per `known-diff.tsv`'s own recorded reason (`"10 C line(s) vs 1 .NET line(s)"`, and
   similarly for the other two).
 
-None of the 21 rows is `Tests/swetest/known-diff.tsv`-invisible: every one is category
+None of the 15 rows is `Tests/swetest/known-diff.tsv`-invisible: every one is category
 `OUTPUT-DIFFERS` and none is `ERROR` or unrecognized. `.github/workflows/oracle.yml`'s
 `swetest-diff` job carries `continue-on-error` on the comparison step alone (not on the gitlink
 assertion, submodule checkout, or C build before it) because `known-diff.tsv` records printed
