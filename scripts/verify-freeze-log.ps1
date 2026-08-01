@@ -131,7 +131,16 @@ if (-not (Test-Path -LiteralPath $sidecarFullPath -PathType Leaf)) {
     Write-Error "$sidecarRelPath not found at HEAD. Cannot verify the manifest-updates log without it."
     exit 1
 }
-$headContent = Get-Content -Raw -LiteralPath $sidecarFullPath
+# Normalized to LF, not read as-is: scripts/freeze-manifest-log.txt has no `eol=lf` pin in
+# .gitattributes, so a working-tree checkout that converts LF to CRLF (a Windows clone or a
+# Windows CI runner; `core.autocrlf=true` reproduces this on any fresh `git worktree add`, not
+# only the original clone) disagrees with `git show`'s always-LF blob content below. Without this,
+# every multi-line entry in this sidecar's numbered list reports as edited between $BaseRef and
+# HEAD purely from a line-ending difference that has nothing to do with its actual text --
+# confirmed directly: entry text that read identically in Write-Host still failed string equality
+# on a fresh Windows worktree checkout until this normalization was added. Both sides are
+# normalized the same way so the comparison is content, not encoding.
+$headContent = (Get-Content -Raw -LiteralPath $sidecarFullPath) -replace "`r`n", "`n" -replace "`r", "`n"
 
 # Resolved separately at $BaseRef via `git show`, not assumed to exist there: the sidecar itself
 # might not have existed yet at $BaseRef (the commit that first added this log), in which case 0
@@ -145,13 +154,14 @@ else {
     # PowerShell captures external-command output as a string array (one element per line);
     # passing that straight into a [string] parameter coerces it via $OFS space-joining, which
     # discards every real line break -- the (?m)^ anchors in Get-LogEntryCount would then only
-    # ever match at the very start of the whole blob. -join "`n" restores real newlines first.
+    # ever match at the very start of the whole blob. -join "`n" restores real newlines first,
+    # already LF-only (see $headContent's own comment above for why that side is normalized too).
     $baseContentLines = git -C $RepoRoot show "${BaseRef}:${sidecarRelPath}" 2>$null
     if ($LASTEXITCODE -ne 0) {
         Write-Error "'$sidecarRelPath' exists at $BaseRef per git cat-file, but 'git show' could not read it. This should not happen; investigate before trusting this check's result."
         exit 1
     }
-    $baseContent = $baseContentLines -join "`n"
+    $baseContent = ($baseContentLines -join "`n") -replace "`r`n", "`n" -replace "`r", "`n"
 }
 
 # @() wraps deliberately: PowerShell unrolls a single-element array on return into a bare scalar,
