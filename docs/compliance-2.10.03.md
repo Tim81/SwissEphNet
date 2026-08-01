@@ -147,17 +147,17 @@ across 10 functional areas, checked against `external/swisseph/setest/t.exp` wit
 tolerances `setest/t.fix` itself ships. `Tests/conformance/known-fail.tsv` is the work queue: one
 row per iteration the port does not currently match.
 
-As of this record, `known-fail.tsv` carries 1,427<!--doccount:known-fail-total--> rows, so 11,330 of 12,757 iterations pass
+As of this record, `known-fail.tsv` carries 1,423<!--doccount:known-fail-total--> rows, so 11,330 of 12,757 iterations pass
 (88.8%). That is down from 4,382 rows when the oracle was first wired up (commit `835a6c6`) --
 the 2.10.03 port has closed 2,955 of the iterations it started 4,382 behind on.
 
-The 1,427<!--doccount:known-fail-total--> remaining rows split into two categories, with 0<!--doccount:known-fail-error--> in
+The 1,423<!--doccount:known-fail-total--> remaining rows split into two categories, with 0<!--doccount:known-fail-error--> in
 `ERROR`, 0<!--doccount:known-fail-unreproducible--> in `UNREPRODUCIBLE`, and 0<!--doccount:known-fail-not-implemented--> in
 `NOT-IMPLEMENTED` at present:
 
 | Category | Rows | What it means |
 |---|---|---|
-| `VALUE-MISMATCH` | 668<!--doccount:known-fail-value-mismatch--> | The port ran and produced an answer outside `t.fix` tolerance -- the actual porting work queue. |
+| `VALUE-MISMATCH` | 664<!--doccount:known-fail-value-mismatch--> | The port ran and produced an answer outside `t.fix` tolerance -- the actual porting work queue. |
 | `DATA-MISSING` | 759<!--doccount:known-fail-data-missing--> | A required data file (a JPL DE ephemeris, a pre-1200/post-2399 era `.se1` file, `ephe/sat/`, or a per-asteroid file) is not shipped by this repo, so the iteration was not run at all. |
 
 **157 of the 759 `DATA-MISSING` rows are `SEFLG_SWIEPH` calls for a date outside the era this
@@ -213,7 +213,11 @@ best-effort commentary.
 
 ## 3a. VALUE-MISMATCH triage against Astrodienst's own C
 
-The 668 `VALUE-MISMATCH` rows above are the porting work queue in name, but a queue entry is only
+This triage ran against 668 `VALUE-MISMATCH` rows, the count at the time. The table above says 664
+because the four defects the triage found have since been fixed and pruned; the numbers below are
+the triage's own, and are left as it measured them.
+
+Those rows are the porting work queue in name, but a queue entry is only
 actionable if the port is actually wrong. `Tests/conformance/value-mismatch-triage.tsv` checks
 that directly, for every row: it drives Astrodienst's own MSVC-built 2.10.03 C
 (`external/.c-reference/build-2.10.03/libswe-2.10.03.lib`, the same library the bit-exact oracle
@@ -249,8 +253,13 @@ such check -- its sibling `SE_INTP_APOG` branch immediately above (:1152-1178) d
 (:1161-1168), so this reads as the same guard simply not copied down to the next `else if`. The C
 reference (built independently from the same pinned `external/swisseph` commit) returns `ERR` and
 the matching `serr`, exactly matching `t.exp`; the port returns a computed (wrong, out-of-range)
-position instead. Not fixed here: `Tests/SwissEphNet.Conformance.Tests/` is this triage's own
-scope, `SwissEphNet/CPort/` is not.
+position instead.
+
+Not fixed by the triage itself, which scoped to `Tests/SwissEphNet.Conformance.Tests/` rather than
+`SwissEphNet/CPort/`. Fixed afterwards in `26e2f05`, which mirrored the `SE_INTP_APOG` guard down
+into the `SE_INTP_PERG` branch and pruned these four rows, taking `VALUE-MISMATCH` from 668 to 664
+and the known-fail total from 1,427 to 1,423. So of the 668 rows this triage examined, none now
+remain that anyone has shown the port gets wrong.
 
 Suites reached: all nine that carry a `VALUE-MISMATCH` row (1, 2, 4, 5, 6, 7, 8, 9, 10) -- every
 row was driven, none skipped for reach reasons. Suite 3 carries zero `VALUE-MISMATCH` rows and was
@@ -266,7 +275,7 @@ does not match, checked by category so a listed row whose difference has changed
 fails the gate.
 
 **This is the one instrument in this document that is not currently clean.**
-`Tests/swetest/known-diff.tsv` carries 21<!--doccount:swetest-known-diff--> rows, all category `OUTPUT-DIFFERS`, so 231 of 252
+`Tests/swetest/known-diff.tsv` carries 15<!--doccount:swetest-known-diff--> rows, all category `OUTPUT-DIFFERS`, so 231 of 252
 argument strings (91.7%) produce output that matches Astrodienst's C exactly. Of the 21:
 
 - **17 are path-separator or placeholder cosmetics, not computational divergence.** Most print an

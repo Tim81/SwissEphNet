@@ -422,7 +422,7 @@ both run the library against a reference and report PASS/FAIL. Their
 *expected* results are opposites. The baseline expects **zero** diffs --
 anything else means a change altered something it should not have. This
 oracle expects **some iterations to still fail** -- the 2.10.03 delta has
-landed file by file, but `known-fail.tsv` still lists 1,427<!--doccount:known-fail-total--> of 12,757
+landed file by file, but `known-fail.tsv` still lists 1,423<!--doccount:known-fail-total--> of 12,757
 iterations (88.8% passing), and closing the rest is incremental porting
 work, not something a single PR finishes. A red oracle run is not evidence
 anything is broken; a green one (all 12,757 passing with an empty

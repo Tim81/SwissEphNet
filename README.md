@@ -216,10 +216,10 @@ each platform's own math library disagreeing with itself in the last few bits, t
 independently built C programs would show; it is not evidence against the port.
 
 Separately, the port's output is checked against Astrodienst's own 2.10.03 test suite (`setest`),
-12,757 iterations across ten functional areas. 1,427<!--doccount:known-fail-total--> of those still fail: 668<!--doccount:known-fail-value-mismatch--> because the answer
+12,757 iterations across ten functional areas. 1,423<!--doccount:known-fail-total--> of those still fail: 664<!--doccount:known-fail-value-mismatch--> because the answer
 is outside the tolerance Astrodienst's own suite allows, and 759<!--doccount:known-fail-data-missing--> because a required data file (a
 JPL ephemeris, a per-asteroid or `ephe/sat/` file, or an ephemeris era this repository does not
-ship, roughly years 1200 to 2399) is not present, not because the answer is wrong. Of those 668,
+ship, roughly years 1200 to 2399) is not present, not because the answer is wrong. Of those 664,
 `Tests/conformance/value-mismatch-triage.tsv` drives Astrodienst's own MSVC-built 2.10.03 C
 through the identical inputs and finds only 4 are a confirmed port defect (a missing JD-range
 guard on interpolated lunar perigee, `docs/compliance-2.10.03.md` section 3a); the rest reproduce
@@ -663,7 +663,7 @@ Astrodienst's own reference values, not against the port's own prior output.
 The reference corpus is Swiss Ephemeris **2.10.03**'s `setest` test suite
 (12,757 iterations, ~321K asserted values across 10 functional areas). Even though the port has
 now landed the whole 2.10.03 delta file by file, it is not at full parity: `known-fail.tsv` still
-lists 1,427<!--doccount:known-fail-total--> failing iterations (11,330 passing, 88.8%), and the known-fail list remains the work
+lists 1,423<!--doccount:known-fail-total--> failing iterations (11,330 passing, 88.8%), and the known-fail list remains the work
 queue for the remainder. Each porting PR should remove entries from it; any entry that reappears
 is a regression.
 
