@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
-    <AssemblyName>SwissEphNet</AssemblyName>
+    <AssemblyName>SwissEphSharp</AssemblyName>
     <RootNamespace>SwissEphNet</RootNamespace>
     <PackageId>SwissEphSharp</PackageId>
     <!--
@@ -23,7 +23,7 @@
     <Company>Yan Grenier</Company>
     <Product>SwissEphSharp</Product>
     <Title>SwissEphSharp</Title>
-    <Description>Swiss Ephemeris .Net portage. SwissEphSharp is the package ID under which this project will be distributed: a fork of Yan Grenier's SwissEphNet, tracking Swiss Ephemeris 2.10.03. The assembly name and namespace remain SwissEphNet, so existing code that references the original port needs no source changes beyond the PackageReference itself. Not published or endorsed by Yan Grenier or Astrodienst.</Description>
+    <Description>Swiss Ephemeris .Net portage. SwissEphSharp is the package ID under which this project will be distributed: a fork of Yan Grenier's SwissEphNet, tracking Swiss Ephemeris 2.10.03. The assembly is now named SwissEphSharp too, so it can coexist with the original SwissEphNet package; the namespace stays SwissEphNet, so source that only uses the public API needs no changes beyond the PackageReference itself. Callers of the removed OnLoadFile event still need to migrate to SwissEph.FileProvider. Not published or endorsed by Yan Grenier or Astrodienst.</Description>
     <Copyright>Copyright (C) 1997-2021 Astrodienst AG; (C) 2014-2019 Yan Grenier; (C) 2026 Timothy van der Ham</Copyright>
     <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/Tim81/SwissEphNet</PackageProjectUrl>
@@ -42,6 +42,17 @@ SwissEphNet):
 - New API surface: swe_houses_ex2, swe_houses_armc_ex2, swe_calc_pctr, swe_get_current_file_data.
 - OnLoadFile is gone; ephemeris files are read from disk by default through the new
   SwissEph.FileProvider (IEphemerisFileProvider).
+- The assembly is now named SwissEphSharp (was SwissEphNet), so this package can coexist in one
+  dependency graph with the original SwissEphNet 2.8.0.2 instead of silently colliding with it at
+  build time and crashing at runtime. The namespace stays SwissEphNet.
+- 2.10.3 is the last release to ship netstandard2.0; net8.0 or later will be required starting
+  with the next release. Consumers on .NET Framework 4.6.1+ can still take 2.10.3, but should
+  not expect the one after it to carry netstandard2.0. netstandard2.0 is a compatibility target,
+  not a correctness one: measured on .NET Framework 4.8 against .NET 10, the same asset's
+  swe_calc differs on 21 of 111 calls (37 bodies, 3 epochs; worst case SE_TRUE_NODE longitude
+  speed, 1.33e-7 relative), while net8.0 and net10.0 agree on all 111. The cause is .NET
+  Framework 4.8's less accurate Math.Sin/Math.Tan near pi, not this port; see the "V:2.10.3"
+  section of README.md for the full measurement.
 - Numerous port bug fixes surfaced by the 2.10.03 work, several of them upstream C bugs Astrodienst
   fixed between 2.08 and 2.10.03 that this port now also carries: swe_nod_aps/swe_nod_aps_ut
   returning all-zero nodes and apsides, an obliquity read that affected every SEFLG_SWIEPH
