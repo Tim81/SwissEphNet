@@ -45,9 +45,10 @@
     Python executable to run pyswisseph under. Defaults to 'python'.
 
 .NOTES
-    Not run in CI. It needs a local Python with pyswisseph installed, and the local MSVC build
-    Tools/CReference/build-c.ps1 produces. Run by hand after any change to that build or to this
-    script itself.
+    Run in CI: .github/workflows/oracle.yml's c-reference-validate job installs pyswisseph and
+    runs this script as a gate after Tools/CReference/build-c.ps1's MSVC build. Also run by hand
+    locally (Python with pyswisseph installed, plus the local MSVC build
+    Tools/CReference/build-c.ps1 produces) after any change to that build or to this script itself.
 #>
 [CmdletBinding()]
 param(
