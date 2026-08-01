@@ -63,7 +63,13 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$baselineDir = Join-Path $RepoRoot 'Tests\baseline'
+# Forward slash, not 'Tests\baseline'. A backslash is a literal path character on Linux rather
+# than a separator, so Join-Path yields "<root>/Tests\baseline", Get-ChildItem below finds no
+# sidecar, and the gate hard-fails with "Expected exactly one sidecar (found 0)" on any non-Windows
+# runner. This gate runs on windows-latest today, which is the only reason that has never fired;
+# baseline.yml already has an ubuntu-latest job, and the -SelfTest switch is wired into CI, so the
+# latent form of this is one workflow edit away. PowerShell accepts forward slashes on Windows.
+$baselineDir = Join-Path $RepoRoot 'Tests/baseline'
 
 # ---------------------------------------------------------------------------------------------
 # Self-test. Placed ahead of the gate body rather than wrapping it, so the gate itself stays
