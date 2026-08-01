@@ -58,16 +58,36 @@ internal static class UlpMath
 
     public static ulong Distance(double a, double b)
     {
-        // double.Equals (unlike ==) treats NaN as equal to NaN and -0.0 as equal to 0.0, which is
-        // exactly the pair of special cases this function needs handled before the bit transform
-        // below, which has no representation for "these are the same point" when both sides are NaN.
-        if (a.Equals(b))
+        // Bit-pattern equality, not double.Equals: this comparer's whole job is to answer "does
+        // every hex column agree" (see Program.cs's and DumpRow.cs's own header comments), and
+        // double.Equals answers a different question -- it treats -0.0 as equal to +0.0 and, more
+        // surprisingly, treats every NaN as equal to every other NaN regardless of payload bits.
+        // Both are numerically-correct equalities but neither is a hex-identity check: -0.0 and
+        // +0.0 decode from different hex (0x8000000000000000 vs 0x0000000000000000), and two NaN
+        // payloads that differ only in their mantissa bits decode from different hex too. Using
+        // double.Equals here as the short-circuit made this function -- and RowComparer.Compare's
+        // `if (ulp != 0)` field-diff gate, which is built entirely on this function's return value
+        // -- silently agree that -0.0/+0.0 and any two NaNs never differ, even when their hex does.
+        // Demonstrated: flipping a dump row's hex from 0000000000000000 to 8000000000000000 (the
+        // same value, sign flipped) produced zero detected field diffs under the old double.Equals
+        // check. Comparing the raw 64-bit patterns instead is exactly equivalent to comparing the
+        // hex text on disk (DumpRow.Parse's ulong.TryParse/BitConverter.UInt64BitsToDouble round
+        // trip is lossless, so the decoded double's bits are always the same 64 bits the hex column
+        // spelled), without needing DumpRow to keep the original hex strings around separately.
+        var bitsA = unchecked((ulong)BitConverter.DoubleToInt64Bits(a));
+        var bitsB = unchecked((ulong)BitConverter.DoubleToInt64Bits(b));
+        if (bitsA == bitsB)
         {
             return 0;
         }
 
         if (double.IsNaN(a) || double.IsNaN(b))
         {
+            // Reached for a one-NaN/one-finite pair (the original case this branch existed for)
+            // and now also for a two-different-NaN-payload pair, which used to be swallowed by the
+            // double.Equals check above before it ever got here. Both are "not comparable as points
+            // on the same ordered line" in exactly the same sense -- see this type's own remarks
+            // header -- so both are reported as categorical rather than as a totalOrder distance.
             return CategoricalDistance;
         }
 
