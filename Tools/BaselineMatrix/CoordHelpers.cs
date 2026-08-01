@@ -10,10 +10,24 @@ internal static class CoordHelpers
     private static readonly double[] Lats = [-89, -45, 0, 45, 89];
     private static readonly double[] Epsilons = [23.4392911, 0.0, 40.0];
 
+    // swe_cotrans forces xpn[2] = xpo[2] (sweph.c's swe_cotrans just copies the
+    // radius component through verbatim; only xpn[0]/xpn[1] are recomputed from
+    // the rotation) -- swe_cotrans_sp does the same for both xpo[2] and xpo[5].
+    // AddCotrans/AddCotransSp below always pass 1.0, so that passthrough was
+    // never actually exercised: a broken copy (e.g. a hardcoded 1.0 written back
+    // instead of the real xpo[2]) would pass unnoticed as long as the caller also
+    // happened to pass 1.0. This dedicated sweep varies the radius so the
+    // passthrough itself is observed, without touching AddCotrans/AddCotransSp's
+    // own existing rows (a distinct "CTR"/"CTSR" case id prefix, added
+    // alongside them, keeps every pre-existing "CT"/"CTS" row byte-identical).
+    private static readonly double[] Radii = [1.0, 2.5];
+
     public static void AddRows(List<string> rows)
     {
         AddCotrans(rows);
         AddCotransSp(rows);
+        AddCotransRadius(rows);
+        AddCotransSpRadius(rows);
         AddAzalt(rows);
         AddAzaltRev(rows);
     }
@@ -55,6 +69,50 @@ internal static class CoordHelpers
                         double[] xpo = [lon, lat, 1.0, 1.0, 0.1, 0.01];
                         var xpn = new double[6];
                         swe.swe_cotrans_sp(xpo, xpn, eps);
+                        return [D(xpn[0]), D(xpn[1]), D(xpn[2]), D(xpn[3]), D(xpn[4]), D(xpn[5])];
+                    }));
+                }
+            }
+        }
+    }
+
+    private static void AddCotransRadius(List<string> rows)
+    {
+        foreach (var lon in Lons)
+        {
+            foreach (var lat in Lats)
+            {
+                foreach (var radius in Radii)
+                {
+                    var caseId = $"CTR|{D(lon)}|{D(lat)}|{D(radius)}";
+                    rows.Add(SafeRow(caseId, () =>
+                    {
+                        using var swe = new SwissEph();
+                        double[] xpo = [lon, lat, radius];
+                        var xpn = new double[3];
+                        swe.swe_cotrans(xpo, xpn, Epsilons[0]);
+                        return [D(xpn[0]), D(xpn[1]), D(xpn[2])];
+                    }));
+                }
+            }
+        }
+    }
+
+    private static void AddCotransSpRadius(List<string> rows)
+    {
+        foreach (var lon in Lons)
+        {
+            foreach (var lat in Lats)
+            {
+                foreach (var radius in Radii)
+                {
+                    var caseId = $"CTSR|{D(lon)}|{D(lat)}|{D(radius)}";
+                    rows.Add(SafeRow(caseId, () =>
+                    {
+                        using var swe = new SwissEph();
+                        double[] xpo = [lon, lat, radius, 1.0, 0.1, radius * 0.01];
+                        var xpn = new double[6];
+                        swe.swe_cotrans_sp(xpo, xpn, Epsilons[0]);
                         return [D(xpn[0]), D(xpn[1]), D(xpn[2]), D(xpn[3]), D(xpn[4]), D(xpn[5])];
                     }));
                 }

@@ -29,6 +29,17 @@ internal static class AstroModels
     private static readonly int[] CalcBodies = [SwissEph.SE_SUN, SwissEph.SE_MOON];
     private static readonly double[] CalcJds = Grids.JdSpread(2);
 
+    // AMSDT's own dedicated JD list. CalcJds (JD 1,000,000 and 2,600,000, used for
+    // AMSAYA/AMSCALC too) never lands inside SwephLib.cs:2756's "deltat_model ==
+    // SEMOD_DELTAT_STEPHENSON_MORRISON_1984 && Y < 1620" window -- that branch is
+    // gated on a conjunction of model *and* year, and no other sweep in this matrix
+    // varies deltat_model at all, so it stayed dead regardless of which model value
+    // the DELTAT dimension swept. JD 2,159,345.0 is year ~1200 by calc_deltat's own
+    // Y formula (Y = 2000 + (tjd - J2000) / 365.25, J2000 = 2451545.0), comfortably
+    // inside [948, 1620). Scoped to AMSDT only (not AMSAYA/AMSCALC) to keep this
+    // additive: every existing AMSAYA/AMSCALC row is untouched.
+    private static readonly double[] AmsdtJds = [.. CalcJds, 2_159_345.0];
+
     // (dimension name, SE_MODEL_* index, values to try -- 0 always means "default")
     private static readonly (string Name, int ModelIndex, int[] Values)[] Dimensions =
     [
@@ -89,15 +100,6 @@ internal static class AstroModels
                 return [I(retc), D(daya), S(serr)];
             }));
 
-            rows.Add(SafeRow($"AMSDT|{dimName}|{I(value)}|{D(jd)}", () =>
-            {
-                using var swe = new SwissEph();
-                swe.swe_set_astro_models(samod, 0);
-                string? serr = null;
-                var dt = swe.swe_deltat_ex(jd, MOSEPH, ref serr);
-                return [D(dt), S(serr)];
-            }));
-
             foreach (var ipl in CalcBodies)
             {
                 rows.Add(SafeRow($"AMSCALC|{dimName}|{I(value)}|{I(ipl)}|{D(jd)}", () =>
@@ -110,6 +112,18 @@ internal static class AstroModels
                     return [I(retc), D(xx[0]), D(xx[1]), D(xx[2]), D(xx[3]), D(xx[4]), D(xx[5]), S(serr)];
                 }));
             }
+        }
+
+        foreach (var jd in AmsdtJds)
+        {
+            rows.Add(SafeRow($"AMSDT|{dimName}|{I(value)}|{D(jd)}", () =>
+            {
+                using var swe = new SwissEph();
+                swe.swe_set_astro_models(samod, 0);
+                string? serr = null;
+                var dt = swe.swe_deltat_ex(jd, MOSEPH, ref serr);
+                return [D(dt), S(serr)];
+            }));
         }
     }
 
@@ -152,11 +166,51 @@ internal static class AstroModels
                     rows.Add(SafeRow(caseId, () =>
                     {
                         using var swe = new SwissEph();
+
+                        // Warm-up call, result discarded, at a jd far outside the
+                        // one-day window the two recorded calls below live in:
+                        // swi_init_swed_if_start (sweph.c:1181-1192, mirrored in
+                        // Sweph.cs) does an unconditional memset(&swed, 0, ...)
+                        // the *first* time anything triggers it, which wipes
+                        // do_interpolate_nut straight back to false if it was set
+                        // beforehand -- this is genuine reference behavior, not a
+                        // port quirk. Calling swe_set_interpolate_nut before any
+                        // swe_calc (the ordering this sweep used to use) therefore
+                        // had no effect at all: AMNUT|True and AMNUT|False were
+                        // byte-identical for every jd/ipl before this fix, not
+                        // just the quadratic_intp sub-branch within the "true"
+                        // path -- the outer do_interpolate_nut branch itself was
+                        // never reachable either. This warm-up call forces that
+                        // one-time reset to happen before we set the flag. It
+                        // must land on a different jd than the first recorded
+                        // call below: swe_calc caches the last-computed position
+                        // per instance and returns it without ever reaching
+                        // swi_nutation again for a repeated identical jd, which
+                        // would otherwise silently prevent the first recorded
+                        // call from ever (re-)seeding interpol.tjd_nut0/tjd_nut2.
+                        var warmupXx = new double[6];
+                        string? warmupSerr = null;
+                        swe.swe_calc(jd - 5000.0, ipl, MOSEPH, warmupXx, ref warmupSerr);
+
                         swe.swe_set_interpolate_nut(doInterpolate);
+
                         var xx = new double[6];
                         string? serr = null;
                         var retc = swe.swe_calc(jd, ipl, MOSEPH, xx, ref serr);
-                        return [I(retc), D(xx[0]), D(xx[1]), D(xx[2]), S(serr)];
+
+                        // A second call within one day of the first, on the SAME
+                        // instance and with do_interpolate_nut still set, is what
+                        // makes swi_nutation's quadratic_intp branch
+                        // (SwephLib.cs:2202-2205) reachable at all: it interpolates
+                        // from the immediately preceding call's cached nutation
+                        // data points rather than recomputing. Its result (xx2),
+                        // not the first call's (xx), is what a hardcoded-zero
+                        // stand-in for that branch would get wrong.
+                        var xx2 = new double[6];
+                        string? serr2 = null;
+                        var retc2 = swe.swe_calc(jd + 0.5, ipl, MOSEPH, xx2, ref serr2);
+                        return [I(retc), D(xx[0]), D(xx[1]), D(xx[2]), S(serr),
+                                I(retc2), D(xx2[0]), D(xx2[1]), D(xx2[2]), S(serr2)];
                     }));
                 }
             }
