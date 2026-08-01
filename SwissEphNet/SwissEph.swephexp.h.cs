@@ -93,6 +93,7 @@ namespace SwissEphNet
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Runtime.InteropServices;
     using System.Text;
 
     /// <summary>
@@ -424,6 +425,47 @@ namespace SwissEphNet
         /// SweNet : We create a pseudo constant for detect ephemeris path when loading
         /// </summary>
         public const String SE_EPHE_PATH = "[ephe]";
+
+        // SE_EPHE_PATH above is public API and a const, so its VALUE cannot change here:
+        // const fields are inlined into every caller at THAT caller's compile time, not
+        // looked up at run time, so changing the literal would silently desync anything
+        // already compiled against "[ephe]" from what this library actually does --
+        // binary-breaking in a way a version bump alone does not fix. The real default
+        // swe_set_ephe_path (and swi_init_swed_if_start) fall back to when no path is
+        // configured lives here instead, as a member the constant does not gate: the
+        // constant stays public API, the behaviour is not.
+        //
+        // swephexp.h:399-408 picks that default with a compile-time #if MSDOS, and MSDOS
+        // there is also defined true for any _WIN32/WIN32 build (sweodef.h:96-98), so
+        // upstream's real split is "Windows" vs. "everything else", not literally
+        // MS-DOS. This port ships one assembly for Windows, Linux and macOS rather than
+        // compiling per platform, so matching the C's #if by its letter is not available;
+        // resolving the same split at run time instead of compile time is a deliberate
+        // divergence from a literal transliteration, made because it matches the C's
+        // intent on every platform this port targets, rather than matching its letter on
+        // only one.
+        //
+        // Windows keeps upstream's own literal, backslash-terminated string. Combined
+        // with swe_set_ephe_path's own trailing-separator check (Sweph.cs, "sweph.c:1339
+        // compares..."), which tests only against DIR_GLUE and DIR_GLUE is '/' on every
+        // platform this port targets (see the DIR_GLUE comment above), a Windows caller
+        // who never configures a path gets "\sweph\ephe\/" -- a redundant trailing '/'
+        // after the literal backslash -- where the C itself produces exactly
+        // "\sweph\ephe\" (its own DIR_GLUE is '\\' on Windows, already matching the
+        // string's own trailing character, so its check never appends). Windows accepts
+        // both separators interchangeably in a path, so this is a cosmetic mismatch in
+        // the exact bytes of an error message, not a functional one; left as-is rather
+        // than special-casing the trailing-separator check for one platform's string,
+        // consistent with DIR_GLUE's own existing "one value for every platform" choice.
+        internal static string DefaultEphePath
+        {
+            get
+            {
+                return RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    ? "\\sweph\\ephe\\"
+                    : ".:/users/ephe2/:/users/ephe/";
+            }
+        }
 
 
         /* defines for function swe_split_deg() (in swephlib.c) */

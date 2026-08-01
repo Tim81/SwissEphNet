@@ -1,15 +1,15 @@
 PHACHIRON|15|1967600.5	-1	0	0	0	0	0	0	Chiron's ephemeris is restricted to JD 1967601.5 - JD 3419437.5
-PHACHIRON|15|1967601.5	-1	0	0	0	0	0	0	SwissEph file 'seas_06.se1' not found in PATH '[ephe]'
-PHACHIRON|15|1967602.5	-1	0	0	0	0	0	0	SwissEph file 'seas_06.se1' not found in PATH '[ephe]'
+PHACHIRON|15|1967601.5	-1	0	0	0	0	0	0	SwissEph file 'seas_06.se1' not found in PATH '\\sweph\\ephe\\'
+PHACHIRON|15|1967602.5	-1	0	0	0	0	0	0	SwissEph file 'seas_06.se1' not found in PATH '\\sweph\\ephe\\'
 PHACHIRON|15|3419436.5	-1	0	0	0	0	0	0	jd 3419436.500000 outside Moshier planet range 625000.50 .. 2818000.50 
 PHACHIRON|15|3419437.5	-1	0	0	0	0	0	0	jd 3419437.500000 outside Moshier planet range 625000.50 .. 2818000.50 
 PHACHIRON|15|3419438.5	-1	0	0	0	0	0	0	Chiron's ephemeris is restricted to JD 1967601.5 - JD 3419437.5
-PHAFILE|16|1000000	-1	0	0	0	0	0	0	SwissEph file 'seasm24.se1' not found in PATH '[ephe]'
-PHAFILE|16|1177777.777777778	-1	0	0	0	0	0	0	SwissEph file 'seasm18.se1' not found in PATH '[ephe]'
-PHAFILE|16|1355555.555555556	-1	0	0	0	0	0	0	SwissEph file 'seasm12.se1' not found in PATH '[ephe]'
-PHAFILE|16|1533333.333333333	-1	0	0	0	0	0	0	SwissEph file 'seasm06.se1' not found in PATH '[ephe]'
-PHAFILE|16|1888888.888888889	-1	0	0	0	0	0	0	SwissEph file 'seas_00.se1' not found in PATH '[ephe]'
-PHAFILE|16|2066666.666666667	-1	0	0	0	0	0	0	SwissEph file 'seas_06.se1' not found in PATH '[ephe]'
-PHAFILE|16|2244444.444444444	-1	0	0	0	0	0	0	SwissEph file 'seas_12.se1' not found in PATH '[ephe]'
-PHAFILE|16|2422222.222222222	-1	0	0	0	0	0	0	SwissEph file 'seas_18.se1' not found in PATH '[ephe]'
-PHAFILE|16|2600000	-1	0	0	0	0	0	0	SwissEph file 'seas_24.se1' not found in PATH '[ephe]'
+PHAFILE|16|1000000	-1	0	0	0	0	0	0	SwissEph file 'seasm24.se1' not found in PATH '\\sweph\\ephe\\'
+PHAFILE|16|1177777.777777778	-1	0	0	0	0	0	0	SwissEph file 'seasm18.se1' not found in PATH '\\sweph\\ephe\\'
+PHAFILE|16|1355555.555555556	-1	0	0	0	0	0	0	SwissEph file 'seasm12.se1' not found in PATH '\\sweph\\ephe\\'
+PHAFILE|16|1533333.333333333	-1	0	0	0	0	0	0	SwissEph file 'seasm06.se1' not found in PATH '\\sweph\\ephe\\'
+PHAFILE|16|1888888.888888889	-1	0	0	0	0	0	0	SwissEph file 'seas_00.se1' not found in PATH '\\sweph\\ephe\\'
+PHAFILE|16|2066666.666666667	-1	0	0	0	0	0	0	SwissEph file 'seas_06.se1' not found in PATH '\\sweph\\ephe\\'
+PHAFILE|16|2244444.444444444	-1	0	0	0	0	0	0	SwissEph file 'seas_12.se1' not found in PATH '\\sweph\\ephe\\'
+PHAFILE|16|2422222.222222222	-1	0	0	0	0	0	0	SwissEph file 'seas_18.se1' not found in PATH '\\sweph\\ephe\\'
+PHAFILE|16|2600000	-1	0	0	0	0	0	0	SwissEph file 'seas_24.se1' not found in PATH '\\sweph\\ephe\\'

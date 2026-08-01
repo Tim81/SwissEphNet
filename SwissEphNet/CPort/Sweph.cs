@@ -164,7 +164,7 @@ namespace SwissEphNet.CPort
             jpl_file_is_open = false,
             fixfp = null,
             //#if 0
-            ephepath = SwissEph.SE_EPHE_PATH,
+            ephepath = SwissEph.DefaultEphePath,
             jplfnam = SwissEph.SE_FNAME_DFT,
             //#else
             //ephepath = "",
@@ -1420,7 +1420,7 @@ namespace SwissEphNet.CPort
             if (!swed.swed_is_initialised)
             {
                 swed = new swe_data();
-                swed.ephepath = SwissEph.SE_EPHE_PATH;
+                swed.ephepath = SwissEph.DefaultEphePath;
                 swed.jplfnam = SwissEph.SE_FNAME_DFT;
                 SE.swe_set_tid_acc(SwissEph.SE_TIDAL_AUTOMATIC);
                 swed.swed_is_initialised = true;
@@ -1582,11 +1582,11 @@ namespace SwissEphNet.CPort
             if (!String.IsNullOrEmpty(sp) && sp.Length <= SwissEph.AS_MAXCH - 1 - 13)
                 s = sp;
             else if (String.IsNullOrEmpty(path))
-                s = SwissEph.SE_EPHE_PATH;
+                s = SwissEph.DefaultEphePath;
             else if (path.Length <= SwissEph.AS_MAXCH - 1 - 13)
                 s = path;
             else
-                s = SwissEph.SE_EPHE_PATH;
+                s = SwissEph.DefaultEphePath;
             i = s.Length;
             //  if (*(s + i - 1) != *DIR_GLUE && *s != '\0')
             //    s+= DIR_GLUE;

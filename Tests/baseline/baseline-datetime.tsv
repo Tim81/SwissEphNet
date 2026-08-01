@@ -401,21 +401,21 @@ ST|2257142.8571428573	9.13915873843583
 ST|2371428.5714285714	23.97515078868813
 ST|2485714.2857142854	14.81201795719266
 ST|2600000	5.6499494554590735
-TE|1000000	0	0.00658004927881832	SwissEph file 'seplm24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
-TE|1114285.7142857143	0	0.002677629366596395	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
-TE|1228571.4285714286	0	-0.001278966560145673	SwissEph file 'seplm18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
-TE|1342857.1428571427	0	0.0010897534703528007	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
-TE|1457142.8571428573	0	0.005972512463835263	SwissEph file 'seplm12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
-TE|1571428.5714285714	0	0.004314974095985965	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
-TE|1685714.2857142857	0	-0.0041942856985874265	SwissEph file 'seplm06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
-TE|1800000	0	-0.011427464139952943	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
-TE|1914285.7142857143	0	-0.008428805327514194	SwissEph file 'sepl_00.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
-TE|2028571.4285714286	0	0.0035581140005932514	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
-TE|2142857.1428571427	0	0.010756744235142435	SwissEph file 'sepl_06.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
-TE|2257142.8571428573	0	0.006876723446354226	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
-TE|2371428.5714285714	0	-0.0011777174964932	SwissEph file 'sepl_12.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
-TE|2485714.2857142854	0	-0.004576255128003008	SwissEph file 'sepl_18.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
-TE|2600000	0	-0.0010912127201966844	SwissEph file 'sepl_24.se1' not found in PATH '[ephe]/' \nusing Moshier eph.; 
+TE|1000000	0	0.00658004927881832	SwissEph file 'seplm24.se1' not found in PATH '\\sweph\\ephe\\/' \nusing Moshier eph.; 
+TE|1114285.7142857143	0	0.002677629366596395	SwissEph file 'seplm18.se1' not found in PATH '\\sweph\\ephe\\/' \nusing Moshier eph.; 
+TE|1228571.4285714286	0	-0.001278966560145673	SwissEph file 'seplm18.se1' not found in PATH '\\sweph\\ephe\\/' \nusing Moshier eph.; 
+TE|1342857.1428571427	0	0.0010897534703528007	SwissEph file 'seplm12.se1' not found in PATH '\\sweph\\ephe\\/' \nusing Moshier eph.; 
+TE|1457142.8571428573	0	0.005972512463835263	SwissEph file 'seplm12.se1' not found in PATH '\\sweph\\ephe\\/' \nusing Moshier eph.; 
+TE|1571428.5714285714	0	0.004314974095985965	SwissEph file 'seplm06.se1' not found in PATH '\\sweph\\ephe\\/' \nusing Moshier eph.; 
+TE|1685714.2857142857	0	-0.0041942856985874265	SwissEph file 'seplm06.se1' not found in PATH '\\sweph\\ephe\\/' \nusing Moshier eph.; 
+TE|1800000	0	-0.011427464139952943	SwissEph file 'sepl_00.se1' not found in PATH '\\sweph\\ephe\\/' \nusing Moshier eph.; 
+TE|1914285.7142857143	0	-0.008428805327514194	SwissEph file 'sepl_00.se1' not found in PATH '\\sweph\\ephe\\/' \nusing Moshier eph.; 
+TE|2028571.4285714286	0	0.0035581140005932514	SwissEph file 'sepl_06.se1' not found in PATH '\\sweph\\ephe\\/' \nusing Moshier eph.; 
+TE|2142857.1428571427	0	0.010756744235142435	SwissEph file 'sepl_06.se1' not found in PATH '\\sweph\\ephe\\/' \nusing Moshier eph.; 
+TE|2257142.8571428573	0	0.006876723446354226	SwissEph file 'sepl_12.se1' not found in PATH '\\sweph\\ephe\\/' \nusing Moshier eph.; 
+TE|2371428.5714285714	0	-0.0011777174964932	SwissEph file 'sepl_12.se1' not found in PATH '\\sweph\\ephe\\/' \nusing Moshier eph.; 
+TE|2485714.2857142854	0	-0.004576255128003008	SwissEph file 'sepl_18.se1' not found in PATH '\\sweph\\ephe\\/' \nusing Moshier eph.; 
+TE|2600000	0	-0.0010912127201966844	SwissEph file 'sepl_24.se1' not found in PATH '\\sweph\\ephe\\/' \nusing Moshier eph.; 
 TIDACC|-23.8946|2415020	-23.8946	-2.3059365934987367E-05
 TIDACC|-23.8946|2451545	-23.8946	0.00073876058949334
 TIDACC|-23.8946|2460000	-23.8946	0.0008005763867809852

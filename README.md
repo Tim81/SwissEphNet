@@ -386,19 +386,31 @@ Source-level and reflection-based consumers can be affected:
   fix, and it can surprise a caller who has that variable set for an unrelated Swiss
   Ephemeris install on the same machine -- their explicit `swe_set_ephe_path` call is now
   silently overridden by it.
-- **The default ephemeris path is now upstream's, not the `[ephe]` placeholder.**
-  `SwissEph.SE_EPHE_PATH` used to be the literal string `"[ephe]"`, a pseudo constant
-  meant to be detected while `OnLoadFile` intercepted every file read; nothing in the
-  library ever detected it. With `OnLoadFile` gone and a null `FileProvider` reading the
-  real filesystem by default, it had become a non-existent relative directory that leaked
-  into user-facing error text. It is now upstream's own default (`swephexp.h:399-408`),
+- **The default ephemeris path `swe_set_ephe_path` falls back to is now upstream's, not
+  the `"[ephe]"` placeholder -- but `SwissEph.SE_EPHE_PATH` itself is unchanged.** Before
+  this release, nothing in the library ever detected the `"[ephe]"` placeholder
+  `SwissEph.SE_EPHE_PATH` held; it was meant to be recognized while `OnLoadFile`
+  intercepted every file read, and with `OnLoadFile` gone and a null `FileProvider`
+  reading the real filesystem by default, it had become a non-existent relative
+  directory that leaked into user-facing error text. Fixing the actual default could not
+  touch the public constant's value: `SwissEph.SE_EPHE_PATH` is `const`, which the C#
+  compiler inlines into every caller at that caller's own compile time rather than
+  looking it up at run time, so changing the literal would silently desync anything
+  already compiled against `"[ephe]"` from what this library now does -- binary-breaking
+  in a way a version bump does not fix. `SwissEph.SE_EPHE_PATH` therefore keeps its
+  `"[ephe]"` value exactly as before; code that reads it directly still sees that
+  placeholder. The real default is resolved internally instead, at every point
+  `swe_set_ephe_path` and the library's own initialization previously read the constant,
   chosen at run time rather than compile time because this port ships one assembly for
-  Windows, Linux and macOS rather than compiling per platform: `\sweph\ephe\` on Windows,
-  `.:/users/ephe2/:/users/ephe/` everywhere else, matching the C's own `#if MSDOS` branch
-  (which upstream also takes for ordinary Win32/Win64 builds, not only legacy MS-DOS
-  ones). This only affects callers who pass `null` or an empty string to
-  `swe_set_ephe_path`, or never call it at all: a non-blank argument has always won, at
-  `Sweph.cs:1573`.
+  Windows, Linux and macOS rather than compiling per platform: upstream's own
+  `\sweph\ephe\` on Windows, `.:/users/ephe2/:/users/ephe/` everywhere else, matching the
+  C's own `#if MSDOS` branch (`swephexp.h:399-408`), which upstream also takes for
+  ordinary Win32/Win64 builds, not only legacy MS-DOS ones (`sweodef.h:96-98`). This only
+  affects callers who pass `null` or an empty string to `swe_set_ephe_path`, or never
+  call it at all: a non-blank argument has always won. On Windows, the resolved value is
+  `\sweph\ephe\/` rather than the C's own `\sweph\ephe\`: a redundant trailing `/` after
+  the literal backslash, because this port's own `DIR_GLUE` is always `/`. Cosmetic --
+  Windows accepts both separators in a path -- not a functional difference.
 - **2.10.3 is the last release to ship `netstandard2.0`.** Releases after this one will
   require `net8.0` or later. Consumers on .NET Framework 4.6.1+ can take 2.10.3 as-is: the
   `netstandard2.0` asset is in this release and works. They should just not expect the

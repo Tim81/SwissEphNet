@@ -32,3 +32,17 @@ not exist on the integration branch once it lands).
    testcase 1 iterations 377, 379, 383 and 385 in Tests/conformance/known-fail.tsv from failing
    to passing (via scripts/regenerate-known-fail.ps1 -PruneOnly, 1427 -> 1423 rows). SwissEphNet/
    CPort: 48419 -> 48427 lines, sha256 6944FDFD... -> 97CEB47C....
+3. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01: The four
+   SwissEphNet/CPort/Sweph.cs sites that fell back to the default ephemeris path (Sweph.cs:167,
+   1423, 1585, 1589) now read the new SwissEph.DefaultEphePath (SwissEph.swephexp.h.cs) instead
+   of the public SwissEph.SE_EPHE_PATH constant, which keeps its "[ephe]" value unchanged for
+   binary compatibility (const fields are inlined into callers at their own compile time).
+   DefaultEphePath resolves upstream's real default at run time: "\sweph\ephe\" on Windows,
+   ".:/users/ephe2/:/users/ephe/" elsewhere, matching swephexp.h:399-408's #if MSDOS branch,
+   which upstream also takes for ordinary Win32/Win64 builds (sweodef.h:96-98), not only
+   MS-DOS. Fidelity fix, not a re-transliteration: line count in SwissEphNet/CPort is unchanged
+   (only right-hand-side expressions moved), sha256 97CEB47C... -> 26C28B33.... Paired with a
+   deliberate, reviewed characterization-baseline regeneration (see
+   Tests/baseline/baseline-2.8.0.2.env.txt's own "## Local regenerations" log): the previous
+   "[ephe]" placeholder was frozen into hundreds of expected serr strings the baseline compares
+   verbatim, so restoring the real default necessarily moves that text.
