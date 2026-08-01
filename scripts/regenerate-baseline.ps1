@@ -167,8 +167,8 @@ where PowerShell parses the comma as a real array before the script runs), or pa
 }
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$project = Join-Path $repoRoot 'Tools\BaselineGen\BaselineGen.csproj'
-$baselineDir = Join-Path $repoRoot 'Tests\baseline'
+$project = Join-Path $repoRoot 'Tools/BaselineGen/BaselineGen.csproj'
+$baselineDir = Join-Path $repoRoot 'Tests/baseline'
 
 # Local-mode preconditions, checked here -- before anything is built, generated, or written --
 # not only later, deep inside the local-mode branch that actually appends the provenance entry
@@ -273,7 +273,7 @@ Write-Host "Reproducible: run A and run B are byte-identical."
 # reuses rather than reimplementing.
 Write-Host ""
 Write-Host "Checking regeneration scope against -ExpectedScope ($($ExpectedScope -join ', '))..."
-$verifyProject = Join-Path $repoRoot 'Tools\BaselineVerify\BaselineVerify.csproj'
+$verifyProject = Join-Path $repoRoot 'Tools/BaselineVerify/BaselineVerify.csproj'
 dotnet build $verifyProject -c Release -f net10.0
 if ($LASTEXITCODE -ne 0) {
     Remove-Item $runA, $runB -Recurse -Force -ErrorAction SilentlyContinue

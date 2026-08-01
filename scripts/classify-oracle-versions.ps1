@@ -57,9 +57,9 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$verifyProject = Join-Path $repoRoot 'Tools\OracleVerify\OracleVerify.csproj'
-$dumpScript = Join-Path $repoRoot 'scripts\run-oracle-dump.ps1'
-$oracleDir = Join-Path $repoRoot 'Tests\oracle'
+$verifyProject = Join-Path $repoRoot 'Tools/OracleVerify/OracleVerify.csproj'
+$dumpScript = Join-Path $repoRoot 'scripts/run-oracle-dump.ps1'
+$oracleDir = Join-Path $repoRoot 'Tests/oracle'
 $logPath = Join-Path $oracleDir 'version-classification-regenerations.log'
 
 function Get-GridPaths {
@@ -68,17 +68,17 @@ function Get-GridPaths {
         return [pscustomobject]@{
             Name             = 'Analytic'
             OutputPath       = Join-Path $oracleDir 'version-classification.tsv'
-            C210DumpPath     = Join-Path $repoRoot 'external\.c-reference\dump-c-2.10.03.tsv'
-            C208DumpPath     = Join-Path $repoRoot 'external\.c-reference\dump-c-2.08.tsv'
-            NetDumpPath      = Join-Path $repoRoot 'external\.c-reference\dump-net.tsv'
+            C210DumpPath     = Join-Path $repoRoot 'external/.c-reference/dump-c-2.10.03.tsv'
+            C208DumpPath     = Join-Path $repoRoot 'external/.c-reference/dump-c-2.08.tsv'
+            NetDumpPath      = Join-Path $repoRoot 'external/.c-reference/dump-net.tsv'
         }
     }
     return [pscustomobject]@{
         Name             = 'Files'
         OutputPath       = Join-Path $oracleDir 'version-classification-files.tsv'
-        C210DumpPath     = Join-Path $repoRoot 'external\.c-reference\dump-c-2.10.03-files.tsv'
-        C208DumpPath     = Join-Path $repoRoot 'external\.c-reference\dump-c-2.08-files.tsv'
-        NetDumpPath      = Join-Path $repoRoot 'external\.c-reference\dump-net-files.tsv'
+        C210DumpPath     = Join-Path $repoRoot 'external/.c-reference/dump-c-2.10.03-files.tsv'
+        C208DumpPath     = Join-Path $repoRoot 'external/.c-reference/dump-c-2.08-files.tsv'
+        NetDumpPath      = Join-Path $repoRoot 'external/.c-reference/dump-net-files.tsv'
     }
 }
 

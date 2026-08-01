@@ -107,8 +107,8 @@ if (-not $PruneOnly -and [string]::IsNullOrWhiteSpace($Reason)) {
 }
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$genProject = Join-Path $repoRoot 'Tools\ConformanceKnownFailGen\ConformanceKnownFailGen.csproj'
-$conformanceDir = Join-Path $repoRoot 'Tests\conformance'
+$genProject = Join-Path $repoRoot 'Tools/ConformanceKnownFailGen/ConformanceKnownFailGen.csproj'
+$conformanceDir = Join-Path $repoRoot 'Tests/conformance'
 $knownFailPath = Join-Path $conformanceDir 'known-fail.tsv'
 $logPath = Join-Path $conformanceDir 'regenerations.log'
 
@@ -129,7 +129,7 @@ function Get-EpheDescription {
     # so by the time a log entry is written, it is always describing the declared set --
     # this just names the count for a reader who has not read that source.
     $epheDir = $env:SWISSEPH_CONFORMANCE_EPHE
-    if (-not $epheDir) { $epheDir = Join-Path $repoRoot 'external\swisseph\ephe' }
+    if (-not $epheDir) { $epheDir = Join-Path $repoRoot 'external/swisseph/ephe' }
     $count = 0
     if (Test-Path $epheDir) {
         $count = (Get-ChildItem -Path $epheDir -File | Measure-Object).Count

@@ -40,7 +40,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$project = Join-Path $repoRoot 'Tools\BaselineVerify\BaselineVerify.csproj'
+$project = Join-Path $repoRoot 'Tools/BaselineVerify/BaselineVerify.csproj'
 
 # Keep in sync with BaselineVerify.csproj's <TargetFrameworks>. netstandard2.0
 # is not included: any modern host resolves net8.0 or net10.0 in preference to
