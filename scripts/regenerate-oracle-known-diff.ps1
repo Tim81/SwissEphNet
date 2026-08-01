@@ -129,8 +129,18 @@ function Read-KnownDiffTable {
     # Tools/OracleVerify/KnownDiffList.cs) for a row where at least one field differs by a NaN on
     # one side and a finite value on the other. That state has no magnitude to compare against a
     # later run's, so it is tracked separately as IsCategorical rather than coerced to a number.
+    #
+    # Keyed with an ordinal (case-sensitive) comparer, not PowerShell's `@{}` default
+    # (case-insensitive, culture-aware) -- the same case_id namespace classify-oracle-versions.ps1's
+    # Read-ClassificationTable already keys this way, for the same reason: case_id legitimately
+    # differs only by case for some rows (e.g. HOUSESARMC|I|... vs HOUSESARMC|i|...), and a
+    # case-insensitive table silently collapses those into one, last-write-wins. Measured against
+    # Tests/oracle/grid-analytic.tsv: 15,916 ordinal-distinct case_ids collapse to 15,520 under the
+    # default comparer -- 396 case-only collisions. This table backs -PruneOnly's refusal guard
+    # (added/recategorized/worsened rows), so a collapsed key means a row that should have blocked
+    # -PruneOnly silently doesn't, or a row's real prior state is compared against the wrong sibling.
     param([string]$Path)
-    $table = @{}
+    $table = [System.Collections.Generic.Dictionary[string, object]]::new([System.StringComparer]::Ordinal)
     if (-not (Test-Path $Path)) { return $table }
     $lines = Get-Content $Path
     for ($i = 1; $i -lt $lines.Count; $i++) {
