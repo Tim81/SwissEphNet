@@ -16,9 +16,8 @@ namespace SwissEphNet.Tests
             using (var swe = new SwissEph())
             {
                 swe.FileProvider = new DelegateFileProvider(path => {
-                    var asm = this.GetType().GetAssembly();
-                    String sr = path.Replace("[ephe]", @"SwissEphNet.Tests.files", StringComparison.Ordinal).Replace("/", ".", StringComparison.Ordinal).Replace("\\", ".", StringComparison.Ordinal);
-                    return asm.GetManifestResourceStream(sr);
+                    string fn = ResourceFileHelpers.GetPortableFileName(path);
+                    return ResourceFileHelpers.OpenResourceFile(fn);
                 });
 
                 double tjd = swe.swe_julday(1974, 8, 16, 0.5, SwissEph.SE_GREG_CAL);

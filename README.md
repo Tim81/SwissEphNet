@@ -411,6 +411,23 @@ Source-level and reflection-based consumers can be affected:
   `\sweph\ephe\/` rather than the C's own `\sweph\ephe\`: a redundant trailing `/` after
   the literal backslash, because this port's own `DIR_GLUE` is always `/`. Cosmetic --
   Windows accepts both separators in a path -- not a functional difference.
+- **`IEphemerisFileProvider.Open(string path)` receives a different `path` as a result,
+  for any caller that never calls `swe_set_ephe_path`.** It used to begin with the
+  `"[ephe]"` sentinel (the bullet above); it now begins with upstream's real default for
+  the running OS. A provider that matched the old prefix by equality -- `path ==
+  "[ephe]/sefstars.txt"`, say -- now gets a `path` starting with `\sweph\ephe\` on
+  Windows instead, the equality check fails, `Open` returns `null`, and every ephemeris
+  file this library asks for appears missing. That is exactly what broke eight of this
+  project's own tests the moment the default changed, across `SwissEphTest.cs`,
+  `SwissEphTest.Date.cs`, `SwissEphTest.swe_fixstar.cs` and `Issue18Test.cs` -- the
+  strongest evidence that a real consumer's provider hits the same failure. Two fixes,
+  either is sufficient: match on the trailing filename
+  instead of the full path, or call `swe_set_ephe_path` explicitly so the prefix is one
+  your own code chose rather than upstream's OS default. Watch for a related trap while
+  doing either: paths are mixed-separator (e.g. `Z:\some\dir/sedeltat.txt`) because this
+  port's own `DIR_GLUE` join is always `/` regardless of what separator convention the
+  caller's configured path used, so a provider that splits the filename off by looking
+  only for `\` breaks on that join.
 - **2.10.3 is the last release to ship `netstandard2.0`.** Releases after this one will
   require `net8.0` or later. Consumers on .NET Framework 4.6.1+ can take 2.10.3 as-is: the
   `netstandard2.0` asset is in this release and works. They should just not expect the

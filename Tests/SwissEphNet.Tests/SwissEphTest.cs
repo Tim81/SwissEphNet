@@ -69,7 +69,7 @@ namespace SwissEphNet.Tests
             // FileProvider configured
             using (var target = new SwissEph()) {
                 target.FileProvider = new DelegateFileProvider(path => {
-                    if (path == "[ephe]/seasnam.txt") {
+                    if (ResourceFileHelpers.GetPortableFileName(path) == "seasnam.txt") {
                         return new System.IO.MemoryStream(System.Text.Encoding.ASCII.GetBytes(@"
 000096  Aegle
 000097  Klotho
@@ -105,7 +105,7 @@ namespace SwissEphNet.Tests
                 SwissEph.DefaultEncoding = System.Text.Encoding.GetEncoding("ISO-8859-1");
                 using (var target = new SwissEph()) {
                     target.FileProvider = new DelegateFileProvider(path => {
-                        if (path == "[ephe]/seasnam.txt") {
+                        if (ResourceFileHelpers.GetPortableFileName(path) == "seasnam.txt") {
                             // 0xE9 is Windows-1252 (and Latin-1) for é; decoded as UTF-8 on its
                             // own it is an invalid lead byte, so if DefaultEncoding were ignored
                             // (falling back to UTF-8), this would read back as "Kor�", not "Koré".

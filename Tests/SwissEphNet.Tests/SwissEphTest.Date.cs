@@ -101,12 +101,10 @@ namespace SwissEphNet.Tests
                 bool isLoaded = false;
                 swe.FileProvider = new DelegateFileProvider(path =>
                 {
-                    if (path == "[ephe]/sedeltat.txt")
+                    if (ResourceFileHelpers.GetPortableFileName(path) == "sedeltat.txt")
                     {
-                        var asm = this.GetType().GetAssembly();
-                        String sr = path.Replace("[ephe]", @"SwissEphNet.Tests.files", StringComparison.Ordinal).Replace("/", ".", StringComparison.Ordinal).Replace("\\", ".", StringComparison.Ordinal);
                         isLoaded = true;
-                        return asm.GetManifestResourceStream(sr);
+                        return ResourceFileHelpers.OpenResourceFile("sedeltat.txt");
                     }
                     return null;
                 });
@@ -544,7 +542,7 @@ namespace SwissEphNet.Tests
             serr = null;
             using (var swe = new SwissEph()) {
                 swe.FileProvider = new DelegateFileProvider(path => {
-                    if (path == "[ephe]/seleapsec.txt") {
+                    if (ResourceFileHelpers.GetPortableFileName(path) == "seleapsec.txt") {
                         return new System.IO.MemoryStream(Encoding.ASCII.GetBytes(content));
                     }
                     return null;
@@ -569,7 +567,7 @@ namespace SwissEphNet.Tests
             serr = null;
             using (var swe = new SwissEph()) {
                 swe.FileProvider = new DelegateFileProvider(path => {
-                    if (path == "[ephe]/seleapsec.txt") {
+                    if (ResourceFileHelpers.GetPortableFileName(path) == "seleapsec.txt") {
                         return new System.IO.MemoryStream(Encoding.ASCII.GetBytes(content));
                     }
                     return null;

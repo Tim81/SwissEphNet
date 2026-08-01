@@ -17,11 +17,16 @@ namespace SwissEphNet.Tests
 
                 int iflag = swe.swe_fixstar(ref name, tjd, SwissEph.SEFLG_MOSEPH, xx, ref serr);
                 Assert.Equal(SwissEph.ERR, iflag);
-                Assert.Equal("SwissEph file 'sefstars.txt' not found in PATH '[ephe]'", serr);
+                // The PATH segment is SwissEph.DefaultEphePath, which resolves by OS at run
+                // time (Sweph.cs, see the "[ephe]" sentinel retirement) and is not reachable
+                // from the test project (internal, no InternalsVisibleTo). Assert the shape
+                // around it rather than the platform-specific value itself.
+                Assert.StartsWith("SwissEph file 'sefstars.txt' not found in PATH '", serr, StringComparison.Ordinal);
+                Assert.EndsWith("'", serr, StringComparison.Ordinal);
 
                 swe.FileProvider = new DelegateFileProvider(path =>
                 {
-                    if (string.Equals(path, "[ephe]/sefstars.txt", StringComparison.OrdinalIgnoreCase))
+                    if (ResourceFileHelpers.GetPortableFileName(path).Equals("sefstars.txt", StringComparison.OrdinalIgnoreCase))
                     {
                         return ResourceFileHelpers.OpenResourceFile("sefstars.txt");
                     }
@@ -73,7 +78,7 @@ namespace SwissEphNet.Tests
 
                 swe.FileProvider = new DelegateFileProvider(path =>
                 {
-                    if (string.Equals(path, "[ephe]/sefstars.txt", StringComparison.OrdinalIgnoreCase))
+                    if (ResourceFileHelpers.GetPortableFileName(path).Equals("sefstars.txt", StringComparison.OrdinalIgnoreCase))
                     {
                         return ResourceFileHelpers.OpenResourceFile("sefstars.txt");
                     }
@@ -113,7 +118,7 @@ namespace SwissEphNet.Tests
 
                 swe.FileProvider = new DelegateFileProvider(path =>
                 {
-                    if (string.Equals(path, "[ephe]/sefstars.txt", StringComparison.OrdinalIgnoreCase))
+                    if (ResourceFileHelpers.GetPortableFileName(path).Equals("sefstars.txt", StringComparison.OrdinalIgnoreCase))
                     {
                         return ResourceFileHelpers.OpenResourceFile("sefstars.txt");
                     }
@@ -140,7 +145,7 @@ namespace SwissEphNet.Tests
             {
                 swe.FileProvider = new DelegateFileProvider(path =>
                 {
-                    if (string.Equals(path, "[ephe]/sefstars.txt", StringComparison.OrdinalIgnoreCase))
+                    if (ResourceFileHelpers.GetPortableFileName(path).Equals("sefstars.txt", StringComparison.OrdinalIgnoreCase))
                     {
                         return ResourceFileHelpers.OpenResourceFile("sefstars.txt");
                     }
