@@ -36,7 +36,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using SwissEphNet;
 using System.IO;
-using System.Text.RegularExpressions;
 
 namespace SweMini
 {
@@ -94,24 +93,26 @@ namespace SweMini
                 iflag = SwissEph.SEFLG_SPEED;
                 while (true)
                 {
-                    Console.Write("\nDate (d.m.y) ? ");
+                    Console.Write("\nDate (d.m.y) ?");
                     sdate = Console.ReadLine();
                     // stop if a period . is entered
                     // swemini.c:40 tests *sdate == '.', a single-byte comparison; StartsWith
                     // without StringComparison is culture-sensitive, so make it ordinal.
                     if (sdate != null && sdate.StartsWith(".", StringComparison.Ordinal))
                         return SwissEph.OK;
-                    var match = Regex.Match(sdate ?? String.Empty, @"(\d+)\.(\d+)\.(\d+)");
-                    // we have day, month and year and convert to Julian day number
-                    if (match.Success)
-                    {
-                        // swemini.c:42 (sscanf(sdate, "%d%*c%d%*c%d", ...)) parses ASCII
-                        // digits regardless of locale; int.Parse without a format provider
-                        // is culture-sensitive, so make it invariant.
-                        jday = int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
-                        jmon = int.Parse(match.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture);
-                        jyear = int.Parse(match.Groups[3].Value, System.Globalization.CultureInfo.InvariantCulture);
-                    }
+                    // swemini.c:42 is sscanf(sdate, "%d%*c%d%*c%d", &jday,&jmon,&jyear):
+                    // three decimal fields separated by any single byte each (%*c,
+                    // assignment suppressed), with each field left at its prior value
+                    // (the loop's previous iteration, or the 1/1/2022 default) when its
+                    // own scan fails -- sscanf's normal partial-assignment behavior.
+                    // Regex.Match(@"(\d+)\.(\d+)\.(\d+)") diverged from that on inputs
+                    // like "5/3/2024", "5-3-2024" or "5 3 2024" (fell back to the
+                    // defaults instead of parsing), "5" or "5.3" alone (no partial
+                    // assignment), "-5.3.2024" (lost its sign) and "v1.2.3 rc" (matched
+                    // mid-string where C parses nothing). C.sscanf already implements
+                    // sscanf's field-width and assignment-suppression semantics and
+                    // reproduces the C parser's results exactly.
+                    C.sscanf(sdate ?? String.Empty, "%d%*c%d%*c%d", ref jday, ref jmon, ref jyear);
                     if (jmon < 1 || jmon > 12)
                     {
                         printf("illegal month %d\n", jmon);

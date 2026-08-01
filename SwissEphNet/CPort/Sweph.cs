@@ -1666,7 +1666,13 @@ namespace SwissEphNet.CPort
                 // sweph.c:1421-1423 uses atoi(cpos[0])/atoi(cpos[3]), which return 0 for
                 // an unparseable field instead of throwing; the eop file's own header
                 // lines rely on atoi(cpos[0]) == 0 to fall through the `continue` above.
-                if ((iyear = atoi(cpos[0])) == 0)
+                // swi_cutstr (swephlib.c:3707) always sets cpos[0] = s, even for a blank
+                // line (cpos[0] then the empty string, and atoi returns 0); Split with
+                // RemoveEmptyEntries instead drops that field entirely for a blank or
+                // all-delimiter line, leaving a zero-length array and turning cpos[0]
+                // into an IndexOutOfRangeException instead of the atoi(cpos[0]) == 0
+                // fallthrough C relies on to skip such lines.
+                if ((iyear = cpos.Length == 0 ? 0 : atoi(cpos[0])) == 0)
                     continue;
                 mjd = atoi(cpos[3]);
                 /* is file in one-day steps? */
@@ -1696,7 +1702,12 @@ namespace SwissEphNet.CPort
                 return; /* return without error as existence of file is not mandatory */
             while ((s = fp.ReadLine()) != null)
             {
-                mjd = atoi(s.Substring(7));
+                // sweph.c:1432 is atoi(s + 7): reading past a short line's NUL terminator
+                // inside its AS_MAXCH buffer is benign in C (atoi("") == 0); s.Substring(7)
+                // throws ArgumentOutOfRangeException on any line shorter than 7 chars.
+                // Substr(7) is this file's own "check limits" substring and returns ""
+                // instead, matching atoi's own empty-string-to-0 behavior.
+                mjd = atoi(s.Substr(7));
                 if (mjd + TJDOFS <= swed.eop_tjd_end)
                     continue;
                 if (n >= Sweph.SWE_DATA_DPSI_DEPS)
@@ -1711,13 +1722,18 @@ namespace SwissEphNet.CPort
                     return;
                 }
                 /* dpsi, deps Bulletin B */
-                dpsi = atof(s.Substring(168));
-                deps = atof(s.Substring(178));
+                // sweph.c:1445-1446/1449-1450 are atof(s + 168) etc. into a 256-byte
+                // buffer: reading past a short line's NUL terminator, still inside that
+                // buffer, is benign in C (atof("") == 0). s.Substring(N) throws
+                // ArgumentOutOfRangeException on any line shorter than N chars; Substr(N)
+                // returns "" instead, matching atof's own empty-string-to-0 behavior.
+                dpsi = atof(s.Substr(168));
+                deps = atof(s.Substr(178));
                 if (dpsi == 0)
                 {
                     /* try dpsi, deps Bulletin A */
-                    dpsi = atof(s.Substring(99));
-                    deps = atof(s.Substring(118));
+                    dpsi = atof(s.Substr(99));
+                    deps = atof(s.Substr(118));
                 }
                 if (dpsi == 0)
                 {

@@ -147,3 +147,38 @@ not exist on the integration branch once it lands).
    overload cannot request SE_ECL_ONE_TRY. SwissEphNet/CPort: 48448 -> 48460 lines, sha256
    42A10A5B... -> D87C454F.... Programs/SweTest/Program.cs: 4981 -> 4989 lines, sha256
    667C09F3... -> 873AADAC....
+9. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01: Three
+   fidelity fixes landed together, found by the same review pass. First,
+   Programs/SweMini/Program.cs:104 used Regex.Match(@"(\d+)\.(\d+)\.(\d+)") where
+   swemini.c:42 is sscanf(sdate, "%d%*c%d%*c%d", &jday,&jmon,&jyear): three decimal fields
+   each separated by any single byte (%*c, assignment-suppressed), with each field left at
+   its prior value on its own scan failure (sscanf's normal partial-assignment behavior).
+   Driven against MSVC-built C (external/swisseph, cl.exe 14.51.36231) over 11 inputs, the
+   two diverged on six: "5/3/2024", "5-3-2024" and "5 3 2024" parsed in C and fell back to
+   the 1/1/2022 default in the port; bare "5" and "5.3" did partial assignment in C and none
+   in the port; "-5.3.2024" kept its sign in C and lost it in the port; "v1.2.3 rc" matched
+   mid-string in the port where C parsed nothing. Replaced with C.sscanf (Tools/C.scanf.cs),
+   which already implements assignment suppression and reproduced the C's rc/jday/jmon/jyear
+   on all 11 inputs bit-for-bit once substituted. Same file, :97: "\nDate (d.m.y) ? " carried
+   a trailing space swemini.c:37 does not have; removed. Second and third,
+   SwissEphNet/CPort/Sweph.cs's load_dpsi_deps, reached only via swe_set_jpl_file when the
+   opened JPL ephemeris reports jpldenum >= 403 (Sweph.cs:1782) -- unreachable by any fixture
+   in this repo, so driven by constructing a minimal synthetic DE-format binary header
+   (single body group, one data segment, numde=431) served through the FileProvider seam,
+   confirming both defects live before fixing them and confirming the fixes clear them
+   after. :1665 (now :1669) split a blank line with s.Split(' ', RemoveEmptyEntries) and
+   indexed cpos[0]; sweph.c:1404-1405's swi_cutstr (swephlib.c:3707) always sets
+   cpos[0] = s, so a blank line makes atoi(cpos[0]) == 0 and `continue`s, where
+   RemoveEmptyEntries instead produced a zero-length array and threw
+   IndexOutOfRangeException -- reproduced directly (a blank first line in the synthetic
+   eop_1962_today.txt fixture crashed swe_set_jpl_file before this fix, completed normally
+   after). :1699 and :1714-1720 read s.Substring(7/99/118/168/178), where sweph.c:1432 and
+   :1446-1451 read atoi(s+7)/atof(s+168) etc. into a 256-byte buffer -- a benign past-NUL
+   read in C on a short line, and an ArgumentOutOfRangeException in .NET; replaced with this
+   file's own Substr(N), which already returns "" past the string's end the same way atoi/
+   atof already treat "" as 0. Reproduced the same way: a short (16-byte) synthetic
+   eop_finals.txt prediction line crashed at Substring(168) before this fix, completed
+   normally after. Neither Sweph.cs fix is a re-transliteration: no other line in
+   SwissEphNet/CPort moved. SwissEphNet/CPort: 48460 -> 48476 lines, sha256 D87C454F... ->
+   0AEEA27E.... Programs/SweMini/Program.cs: 164 -> 165 lines, sha256 075ABEEC... ->
+   D1274D16....

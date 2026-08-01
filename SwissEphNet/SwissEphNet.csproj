@@ -172,6 +172,17 @@ SwissEphNet):
     <AssemblyMetadata Include="UpstreamSwissEphemerisTag" Value="v2.10.3final" />
   </ItemGroup>
 
+  <!--
+    StringExtensions and TypeExtensions are internal (see the remarks on each type):
+    these three assemblies call them directly rather than only through the CPort code
+    that already sits inside this assembly.
+  -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="SwissEphNet.Tests" />
+    <InternalsVisibleTo Include="NetStandard20Smoke.Tests" />
+    <InternalsVisibleTo Include="SweTest" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Include="..\LICENSE">
       <Pack>True</Pack>
