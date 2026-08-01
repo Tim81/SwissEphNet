@@ -307,6 +307,25 @@ def main() -> int:
         if len(disagreed) > 30:
             print(f"  ... and {len(disagreed) - 30} more")
 
+    # Vacuity floor: "Compared: 0" was previously indistinguishable from a genuine, fully-agreeing
+    # run -- both print no disagreements and, before this check existed, both returned 0. A wrong
+    # --ephe path produces exactly this: every iteration's swe.calc/swe.houses call raises the
+    # "missing supplementary data file" exception this script already treats as a skip (see
+    # run_suite1_testcase1's except clause), so `compared` silently empties out instead of failing
+    # loudly. This script exists to say something about pyswisseph's agreement with t.exp; zero
+    # comparisons is not that, and must not report the same exit code as 3,508 agreeing ones.
+    if not compared:
+        print(
+            "FAIL: zero iterations were actually compared (Compared: 0). This usually means --ephe "
+            "pointed at the wrong directory (every iteration skipped as a missing supplementary "
+            "data file), external/swisseph/setest/t.exp does not contain the expected suite "
+            "1/testcase 1 or suite 6/testcase 1 sample, or pyswisseph itself is misconfigured. "
+            "Fix the underlying cause and re-run -- do not treat a passing exit code here as a real "
+            "agreement result.",
+            file=sys.stderr,
+        )
+        return 2
+
     return 0 if not disagreed else 1
 
 
