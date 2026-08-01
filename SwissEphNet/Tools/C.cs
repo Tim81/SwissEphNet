@@ -105,7 +105,18 @@ namespace SwissEphNet
 
         public static void qsort<T>(CPointer<T> array, int n, Comparison<T> compare)
         {
-            var list = new List<T>(array.ToArray().Take(n));
+            // The real C qsort(3) does nothing when nmemb (n) is 0, without ever
+            // dereferencing base -- so a possibly-NULL base pointer is harmless in that case. This
+            // used to call array.ToArray() unconditionally first, and CPointer<T>.ToArray() returns
+            // null when the pointer has no backing array (Tools/CPointer.cs), so Take(n) on that
+            // null threw instead of doing nothing. Reached from
+            // SwissEphNet/CPort/Sweph.cs's load_all_fixed_stars (sweph.c:6392) by swe_fixstar2 on any
+            // SwissEph with no OnLoadFile handler attached (the default), where no star data is ever
+            // loaded and n is 0.
+            if (n <= 0) return;
+            var arr = array.ToArray();
+            if (arr == null) return;
+            var list = new List<T>(arr.Take(n));
             list.Sort(compare);
             for (int i = 0; i < list.Count; i++)
                 array[i] = list[i];
