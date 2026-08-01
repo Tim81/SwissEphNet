@@ -320,6 +320,22 @@ function New-PatchedSwetestSource {
     if ($gethostnameCount -ne 1) {
         Fail "swetest.c: expected exactly one unguarded gethostname block to guard, found $gethostnameCount. If upstream now guards it itself, drop this patch instead of applying it on top."
     }
+
+    # The count above cannot detect upstream guarding the call, despite what that message says.
+    # $gethostnamePattern anchors on the three body lines only, so it matches whether or not those
+    # lines sit inside a preprocessor conditional: measured against a copy carrying upstream's own
+    # fix, the count is 1 exactly as it is for the unguarded original. Without the check below, a
+    # future tag that fixes this would be patched anyway, nesting our #if HPUNIX inside upstream's
+    # guard. That nests harmlessly rather than miscompiling, which is worse for our purposes than
+    # breaking, because the whole reason this assertion exists is to notice when upstream moves.
+    #
+    # Upstream's fix, as described by Astrodienst, is #ifndef _WINDOWS around the call plus
+    # #define _WINDOWS under #ifdef _WIN32 in sweodef.h. Only the first is visible in this file, so
+    # that is what this looks for: any preprocessor conditional immediately above the call.
+    $gethostnameGuardedPattern = '(?m)^#\s*(if|ifdef|ifndef)\b[^\r\n]*\r?\n  gethostname \(hostname, 80\);'
+    if ($text -match $gethostnameGuardedPattern) {
+        Fail 'swetest.c: the gethostname call is already inside a preprocessor conditional, so upstream has fixed this itself. Drop this patch rather than applying it on top, and re-check whether the spmoon patch above is still needed too.'
+    }
     $text = [regex]::Replace($text, $gethostnamePattern,
         "#if HPUNIX`n  gethostname (hostname, 80);`n  if (strstr(hostname, `"as80`") != NULL)`n    line_limit = 2 * 36525;`n#endif")
 
