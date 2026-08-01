@@ -96,9 +96,11 @@ SwissEphNet):
 - The assembly is now named SwissEphSharp (was SwissEphNet), so this package can coexist in one
   dependency graph with the original SwissEphNet 2.8.0.2 instead of silently colliding with it at
   build time and crashing at runtime. The namespace stays SwissEphNet.
-- 2.10.3 is the last release to ship netstandard2.0; net8.0 or later will be required starting
-  with the next release. Consumers on .NET Framework 4.6.1+ can still take 2.10.3, but should
-  not expect the one after it to carry netstandard2.0. netstandard2.0 is a compatibility target,
+- 2.10.3 is the only release that ships netstandard2.0, not the last of several. 2.8.0.2 shipped
+  net40 and netstandard1.0 and never carried netstandard2.0, and net8.0 or later will be required
+  from the next release on, so the window in which this library is reachable from .NET Framework
+  is this one version. Consumers on .NET Framework 4.6.1+ can take 2.10.3 and should pin to it
+  deliberately rather than expect it to persist. netstandard2.0 is a compatibility target,
   not a correctness one: measured on .NET Framework 4.8 against .NET 10, the same asset's
   swe_calc differs on 21 of 111 calls (37 bodies, 3 epochs; worst case SE_TRUE_NODE longitude
   speed, 1.33e-7 relative), while net8.0 and net10.0 agree on all 111. The cause is .NET

@@ -519,10 +519,13 @@ Source-level and reflection-based consumers can be affected:
   port's own `DIR_GLUE` join is always `/` regardless of what separator convention the
   caller's configured path used, so a provider that splits the filename off by looking
   only for `\` breaks on that join.
-- **2.10.3 is the last release to ship `netstandard2.0`.** Releases after this one will
-  require `net8.0` or later. Consumers on .NET Framework 4.6.1+ can take 2.10.3 as-is: the
-  `netstandard2.0` asset is in this release and works. They should just not expect the
-  next one to still carry it. The reason is measured, not a preference:
+- **2.10.3 is the only release that ships `netstandard2.0`.** Not the last of several: the
+  one. 2.8.0.2 shipped `net40` and `netstandard1.0` and never carried `netstandard2.0` at
+  all, and releases after this one will require `net8.0` or later. So the window in which
+  this library is reachable from .NET Framework is this single version, and anyone who
+  needs it should pin to it deliberately rather than expect it to persist. Consumers on
+  .NET Framework 4.6.1+ can take 2.10.3 as-is: the `netstandard2.0` asset is in this
+  release and works. The reason it goes away is measured, not a preference:
   `netstandard2.0` is a compatibility target, not a correctness one, and bit-exactness
   against Astrodienst's C (see "Numerical compatibility" below) is claimed for `net8.0`
   and later only. Measured directly for this note: running the same `netstandard2.0`
