@@ -15,8 +15,12 @@ name: Oracle build gates
 # that build or compare against Astrodienst's C (the four MSVC-script jobs above, plus
 # macos-exactness and linux-exactness).
 #
-# A seventh job, header-flags-check, builds nothing and is not part of those six -- it is a
-# self-check on this file's own header comment below, not on Astrodienst's C.
+# Two further jobs build nothing and are not part of those six. header-flags-check is a
+# self-check on this file's own header comment below, not on Astrodienst's C. verify-gen-delta
+# compares the 2.08 baseline against the 2.10.3 submodule directly (scripts/gen-delta.ps1's own
+# renderer, verified byte-exact by scripts/verify-gen-delta.ps1) -- no MSVC, no C build, but the
+# same submodule and 2.08-baseline inputs the four MSVC-script jobs need, so it reuses their
+# cache keys rather than fetching either a third time.
 #
 # The submodule checkout below (sparse, cached on the pinned commit SHA) is copied from
 # .github/workflows/conformance.yml rather than rebuilt from scratch, cache key included, so a
@@ -307,6 +311,91 @@ jobs:
       - name: Validate C reference build against pyswisseph 2.10.03
         shell: pwsh
         run: pwsh scripts/validate-c-reference.ps1
+
+  # Gate. Wires scripts/verify-gen-delta.ps1 into this workflow for the first time -- until now it
+  # ran only when a contributor remembered to invoke it by hand, despite being the strongest check
+  # in this repo of the tool every commit of the 2.10.03 port is transcribed from
+  # (scripts/gen-delta.ps1). For every hunk gen-delta renders, it indexes into the real 2.08 and
+  # 2.10.3 files at the citation's own coordinates and compares case-sensitively (`-ceq`), plus an
+  # external per-file hunk-count pin (scripts/gen-delta-hunk-counts.tsv) so a whole dropped hunk
+  # cannot pass unnoticed, a body-length assertion independent of gen-delta's own `filtered=N`
+  # count (so the oracle cannot agree with the defect it is supposed to catch), and an orphan-pin
+  # sweep for a file that left one of the two trees. See that script's own header for the four
+  # review rounds and three perturbation tests this design closes.
+  #
+  # No MSVC needed -- gen-delta.ps1 and verify-gen-delta.ps1 are pure PowerShell text comparison,
+  # nothing here compiles C -- but the inputs are the same submodule and 2.08 baseline the
+  # Windows-only jobs above already fetch, so this job reuses their exact cache keys (submodule
+  # and pyswisseph-208) rather than cutting a third, redundant copy of either.
+  verify-gen-delta:
+    name: "Gate: gen-delta.ps1 renders byte-exact hunks (verify-gen-delta.ps1)"
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assert the pinned submodule SHA matches the gitlink
+        shell: pwsh
+        run: |
+          $pinnedSha = "af9823fe7b06ffefe3d3968fdc5680be8b5eec5f"
+          $line = git ls-tree HEAD external/swisseph
+          $actual = ($line -split '\s+')[2]
+          if ($actual -ne $pinnedSha) {
+            Write-Error "external/swisseph's gitlink is $actual but this job is hardcoded to $pinnedSha. Update this occurrence and every other one listed in this file's own header comment."
+            exit 1
+          }
+          Write-Host "OK: external/swisseph's gitlink ($actual) matches this job's pinned SHA."
+
+      - name: Cache external/swisseph submodule
+        id: submodule-cache
+        uses: actions/cache@v4
+        with:
+          path: external/swisseph
+          key: swisseph-submodule-af9823fe7b06ffefe3d3968fdc5680be8b5eec5f
+
+      - name: Checkout external/swisseph submodule (sparse, ~25 MB)
+        if: steps.submodule-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $pinnedSha = "af9823fe7b06ffefe3d3968fdc5680be8b5eec5f"
+          git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
+          Push-Location external/swisseph
+          git config core.autocrlf false
+          git sparse-checkout init --no-cone
+          @(
+            '/*.c'
+            '/*.h'
+            '/Makefile'
+            '/LICENSE'
+            '/setest/*'
+            '/ephe/seas_12.se1'
+            '/ephe/semo_12.se1'
+            '/ephe/sepl_12.se1'
+            '/ephe/seas_18.se1'
+            '/ephe/semo_18.se1'
+            '/ephe/sepl_18.se1'
+            '/ephe/sefstars.txt'
+            '/ephe/seorbel.txt'
+            '/seleapsec.txt'
+          ) | Set-Content .git/info/sparse-checkout
+          git checkout $pinnedSha
+          Pop-Location
+
+      - name: Cache external/pyswisseph-2.08 (2.08 C baseline)
+        id: pyswisseph208-cache
+        uses: actions/cache@v4
+        with:
+          path: external/pyswisseph-2.08
+          key: pyswisseph-208-${{ hashFiles('scripts/fetch-2.08-baseline.ps1', 'scripts/pyswisseph-2.08.manifest.tsv') }}
+
+      - name: Fetch 2.08 C baseline (pyswisseph sdist, hash-verified)
+        if: steps.pyswisseph208-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: pwsh scripts/fetch-2.08-baseline.ps1
+
+      - name: Verify gen-delta renders byte-exact hunks
+        shell: pwsh
+        run: pwsh scripts/verify-gen-delta.ps1
 
   # Gates end to end. run-oracle-dump.ps1 builds and runs both C drivers (2.10.03 and 2.08, the
   # "both submodule trees" this job needs) and the .NET driver, and its own row-count guards are a
