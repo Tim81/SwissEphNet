@@ -75,6 +75,21 @@
     this repository, `Tests/SwissEphNet.Tests/files/*.se1`, were confirmed by direct testing to
     produce no match and no error under -a.
 
+    -a is not the whole answer, though, and the sentence above used to be read as if it were.
+    Skipping a file and reading one are different problems: `git grep` matches raw BYTES, so an
+    ASCII pattern cannot occur in a UTF-16-encoded file at all, whatever flags git is given --
+    every character is stored as two bytes. Measured: a tracked file containing a vendor product
+    name saved as UTF-16LE matched nothing under -a, under -I, or with no flag, and this gate
+    exited 0 on it. -a genuinely does close the other two cases (an embedded NUL byte, and a
+    .gitattributes `binary`/`-diff` entry), because in both of those the text really is still
+    ASCII bytes. The UTF-16 case is closed separately, by Get-Utf16DecodedLine below.
+
+    That closes it for checks 1 and 1b, which read the tree. Check 3, which reads `git log -p`
+    output, still sees a UTF-16 blob's added lines as bytes and cannot match them -- so a file
+    added and deleted again inside the same range, in that encoding, remains a false negative.
+    Recorded rather than fixed: it needs decoding diff hunks rather than files, and every such
+    file is caught by check 1 for as long as it exists in the tree.
+
     docs/upstream/ is untracked, so `git grep` (which searches the index, not the working tree)
     never sees it regardless of any explicit exclusion.
 
@@ -92,319 +107,720 @@
     A git revision range (e.g. "origin/release/2.10.03..HEAD") whose commit messages are also
     checked. Typically the range a pull request actually introduces -- see the CI workflow for how
     it is resolved. Omit to check tracked files only.
+
+.PARAMETER SelfTest
+    Build throwaway repositories, plant one violation of each kind this scan is supposed to catch
+    -- and one of each kind it must not fire on -- and assert the exit code and failure message for
+    each. Touches nothing outside a temporary directory.
 #>
 [CmdletBinding()]
 param(
     [string] $RepoRoot = (Split-Path -Parent $PSScriptRoot),
-    [string] $CommitRange
+    [string] $CommitRange,
+    [switch] $SelfTest
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 
-Push-Location $RepoRoot
-try {
-    # This script's own path, relative to the repo root, in the form `git grep` reports it --
-    # the one file allowed to contain the literal pattern text below.
-    $selfPath = [System.IO.Path]::GetRelativePath($RepoRoot, $PSCommandPath).Replace('\', '/')
+function Get-Utf16DecodedLine {
+    # Yields "path:lineno:text" -- the shape `git grep -n` emits -- for every line of every file in
+    # $Paths that is actually UTF-16 encoded, and nothing at all for the rest.
+    #
+    # This exists because `git grep` matches raw BYTES, and the -a flag below does less than the
+    # comment on it used to claim. -a stops git SKIPPING a file; it does not let git READ one. A
+    # file saved as UTF-16LE stores every ASCII character as two bytes, so an ASCII pattern simply
+    # does not occur anywhere in its bytes: measured directly, a tracked file containing a vendor
+    # product name in UTF-16LE produced no match under -a, under -I, or with no flag at all, and
+    # this gate exited 0 on it. "Save as Unicode" in a Windows editor is one click away, so this is
+    # not an exotic file to end up with.
+    #
+    # Deliberately narrow, so that adding this cannot introduce a false positive: a file qualifies
+    # only on a byte-order mark, or on ASCII-in-UTF-16's unmistakable every-other-byte-is-NUL
+    # signature (half the sampled bytes NUL on one parity, essentially none on the other). A binary
+    # file has NUL bytes on both parities and is not matched -- measured across all 307 tracked
+    # files in this repository, including the two tracked .se1 ephemeris binaries: none qualify, so
+    # this yields nothing at all here today and can only start yielding when such a file appears.
+    #
+    # A UTF-8 file with one stray embedded NUL byte is a different case and needs none of this:
+    # its text is still ASCII bytes, so -a alone is enough, confirmed by the same testing.
+    #
+    # scripts/verify-doc-counts.ps1 carries its own copy of this function, for the same reason and
+    # against the same measurement; the two are independent on purpose, since neither script takes
+    # a dependency on the other.
+    param([string] $RepoRoot, [string[]] $Paths)
 
-    # git grep's default regex dialect is POSIX BRE, which has no "(?i)" -- it is matched as four
-    # literal characters, so every case-insensitive pattern below silently became a case-sensitive
-    # one. Measured: a tracked file containing "Copilot" passed this gate at exit 0 before this
-    # check existed. -P switches git grep to PCRE, which (like .NET's own regex engine used on the
-    # commit-message side below) understands "(?i)" and "\b" the way every pattern here assumes.
-    # Fail loudly, not with a confusing later mismatch, if this git build was not compiled with
-    # PCRE support (a git grep -P call always exits non-zero without it). Probes against pathspec
-    # "." (the whole of $RepoRoot, already the current location) rather than $selfPath, which may
-    # sit outside $RepoRoot -- see the "throwaway repo" comment below -- and would make git grep
-    # refuse with exit 128 for a reason that has nothing to do with PCRE support. A match is not
-    # required (an empty repo legitimately exits 1, "no match"); only "git refused to run this
-    # regex dialect at all" (anything past 1) means PCRE is unavailable.
-    $null = & git grep -P -q '(?i)^' -- . 2>&1
-    if ($LASTEXITCODE -gt 1) {
-        throw "git grep -P (PCRE) is required by this script's pattern table but this git build does not support it (exit $LASTEXITCODE). Install a git built with PCRE2 support."
-    }
+    foreach ($rel in $Paths) {
+        if ([string]::IsNullOrWhiteSpace($rel)) { continue }
+        $full = Join-Path $RepoRoot $rel
+        if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { continue }
 
-    # Each pattern paired with a human-readable label for the failure message. Patterns are PCRE
-    # (git grep -P) on the tracked-file side and .NET regex (see part 2 below) on the
-    # commit-message side -- the same syntax for everything used here, so one pattern table serves
-    # both. A leading "(?i)" makes that one pattern case-insensitive, its absence means
-    # case-sensitive -- see the .DESCRIPTION for why each choice was made.
-    $patterns = @(
-        @{ Regex = '\bClaude\b'; Label = "product name 'Claude'" }
-        @{ Regex = '\bAnthropic\b'; Label = "company name 'Anthropic'" }
-        @{ Regex = '\bChatGPT\b'; Label = "product name 'ChatGPT'" }
-        @{ Regex = '(?i)\bcopilot\b'; Label = "'copilot'" }
-        @{ Regex = '(?i)\bchatbot\b'; Label = "'chatbot'" }
-        @{ Regex = '(?i)\bassistant\b'; Label = "'assistant'" }
-        @{ Regex = 'Co-Authored-By'; Label = "'Co-Authored-By' trailer" }
-        @{ Regex = 'Claude-Session'; Label = "'Claude-Session' trailer" }
-        @{ Regex = '\bGenerated with\b'; Label = "'Generated with' footer phrase" }
-    )
+        $stream = [System.IO.File]::OpenRead($full)
+        try {
+            $buffer = New-Object byte[] 4096
+            $read = $stream.Read($buffer, 0, $buffer.Length)
+        }
+        finally { $stream.Dispose() }
+        if ($read -lt 2) { continue }
 
-    # Reserved-domain table, used only by the identity scan in section 2 and deliberately kept out
-    # of $patterns above -- see the comment at its use site for why mixing the two would break the
-    # tracked-file scan.
-    $reservedIdentityDomains = @(
-        @{ Regex = '(?i)\.invalid$'; Label = "the reserved TLD '.invalid'" }
-        @{ Regex = '(?i)\.example$'; Label = "the reserved TLD '.example'" }
-        @{ Regex = '(?i)\.test$'; Label = "the reserved TLD '.test'" }
-        @{ Regex = '(?i)\.localhost$'; Label = "the reserved TLD '.localhost'" }
-        @{ Regex = '(?i)@localhost$'; Label = "the reserved name 'localhost'" }
-        @{ Regex = '(?i)@example\.(com|net|org)$'; Label = "a reserved example.* domain" }
-    )
-
-    $failures = [System.Collections.Generic.List[string]]::new()
-
-    # ---------------------------------------------------------------------------------------
-    # 1. Tracked files' content.
-    # ---------------------------------------------------------------------------------------
-    # -a ("--text"), not -I: -I skips both (a) any file git's own "does this look like text"
-    # heuristic calls binary, AND (b) any file an applicable .gitattributes entry marks `binary`
-    # or `-diff` -- confirmed by direct testing, both independently make a real text file
-    # invisible to -I regardless of what it actually contains. A tracked file saved as UTF-16LE,
-    # or plain UTF-8 with one stray embedded NUL byte (either one is one click away in a Windows
-    # editor's "Save as Unicode", or a copy-paste from a source that had one), trips git's
-    # heuristic; this repository's own .gitattributes already ships commented-out `binary`/`-diff`
-    # template blocks, so a future entry doing that deliberately is also one edit away. -a forces
-    # every tracked file to be scanned as text regardless of either signal, closing both at once;
-    # the only tracked binaries in this repository (Tests/SwissEphNet.Tests/files/*.se1) were
-    # confirmed by direct testing to produce no match and no error under -a.
-    # -n: line numbers. -P: PCRE, so "(?i)" and "\b" mean what the pattern table above assumes
-    # instead of being matched as literal text under the default POSIX BRE dialect. --no-color,
-    # -e per pattern: one `git grep` call checks every pattern in a single pass rather than one
-    # process per pattern.
-    $grepArgs = @('grep', '-nPa', '--no-color')
-    foreach ($p in $patterns) { $grepArgs += @('-e', $p.Regex) }
-    $grepArgs += @('--', '.', ':!external/*')
-    # Only excludable when this script actually lives inside $RepoRoot -- e.g. a throwaway repo
-    # built to exercise this script from outside its own checkout has nothing at $selfPath to
-    # exclude, and a pathspec pointing outside the repo makes `git grep` refuse to run at all.
-    if (-not $selfPath.StartsWith('..')) {
-        $grepArgs += @(":!$selfPath")
-    }
-
-    $grepOutput = & git @grepArgs
-    if ($LASTEXITCODE -eq 128) {
-        throw "git grep exited 128 (not a git repository, or an invalid pathspec) -- output above."
-    }
-    # git grep exits 1 when nothing matched, which is the expected, good outcome here -- not an
-    # error condition for this script.
-
-    foreach ($line in @($grepOutput)) {
-        if ([string]::IsNullOrWhiteSpace($line)) { continue }
-        foreach ($p in $patterns) {
-            # [regex]::IsMatch, not PowerShell's -match operator: -match is case-insensitive by
-            # default regardless of what the pattern string itself says, which silently defeated
-            # every pattern above that omits an explicit "(?i)" and relies on being
-            # case-sensitive (Claude, Anthropic, ChatGPT, Co-Authored-By, Claude-Session, and
-            # critically "Generated with", whose whole point is to NOT match the lowercase
-            # "generated with" this repository's own prose legitimately uses). [regex]::IsMatch
-            # honors each pattern's own case-sensitivity exactly as written.
-            if ([regex]::IsMatch($line, $p.Regex)) {
-                $failures.Add("tracked file $line -- matches $($p.Label)")
-                break
+        $encoding = $null
+        if ($buffer[0] -eq 0xFF -and $buffer[1] -eq 0xFE) { $encoding = [System.Text.Encoding]::Unicode }
+        elseif ($buffer[0] -eq 0xFE -and $buffer[1] -eq 0xFF) { $encoding = [System.Text.Encoding]::BigEndianUnicode }
+        else {
+            $pairs = [Math]::Floor($read / 2)
+            if ($pairs -lt 8) { continue }
+            $evenNuls = 0
+            $oddNuls = 0
+            for ($i = 0; $i -lt $pairs * 2; $i += 2) {
+                if ($buffer[$i] -eq 0) { $evenNuls++ }
+                if ($buffer[$i + 1] -eq 0) { $oddNuls++ }
             }
+            if ($oddNuls -ge $pairs * 0.5 -and $evenNuls -le $pairs * 0.02) { $encoding = [System.Text.Encoding]::Unicode }
+            elseif ($evenNuls -ge $pairs * 0.5 -and $oddNuls -le $pairs * 0.02) { $encoding = [System.Text.Encoding]::BigEndianUnicode }
+        }
+        if (-not $encoding) { continue }
+
+        $lineNumber = 0
+        foreach ($line in ([System.IO.File]::ReadAllText($full, $encoding) -split "`r`n|`n|`r")) {
+            $lineNumber++
+            Write-Output "${rel}:${lineNumber}:$line"
         }
     }
+}
 
-    # ---------------------------------------------------------------------------------------
-    # 1b. Tracked files' paths themselves.
-    # ---------------------------------------------------------------------------------------
-    # `git grep` only ever emits a line for a match inside a file's *content* -- it has no mode
-    # that reports a match against the path alone, so a file named e.g.
-    # ".github/copilot-instructions.md" with entirely clean content never produces a line for the
-    # loop above to see, no matter how the patterns are written. That is a conventional filename
-    # (GitHub's own suggested name for repo-level Copilot instructions) that can land without
-    # anyone intending an attribution violation. `git ls-files` lists every tracked path
-    # regardless of content, so it is checked against the same pattern table separately.
-    $trackedPaths = & git ls-files -- '.' ':!external/*'
-    if ($LASTEXITCODE -ne 0) {
-        throw "git ls-files exited $LASTEXITCODE -- output above."
-    }
-    foreach ($path in @($trackedPaths)) {
-        if ([string]::IsNullOrWhiteSpace($path)) { continue }
-        if (-not $selfPath.StartsWith('..') -and $path -eq $selfPath) { continue }
-        foreach ($p in $patterns) {
-            if ([regex]::IsMatch($path, $p.Regex)) {
-                $failures.Add("tracked path '$path' -- matches $($p.Label)")
-                break
-            }
+function Invoke-AttributionScan {
+    # The whole check, in a function so -SelfTest below can drive it against throwaway repositories.
+    # The `exit` statements inside are unchanged and still terminate the script, so CI sees exactly
+    # the codes it saw before.
+    param([Parameter(Mandatory)][string] $RepoRoot, [string] $CommitRange)
+
+    Push-Location $RepoRoot
+    try {
+        # This script's own path, relative to the repo root, in the form `git grep` reports it --
+        # the one file allowed to contain the literal pattern text below.
+        $selfPath = [System.IO.Path]::GetRelativePath($RepoRoot, $PSCommandPath).Replace('\', '/')
+
+        # git grep's default regex dialect is POSIX BRE, which has no "(?i)" -- it is matched as four
+        # literal characters, so every case-insensitive pattern below silently became a case-sensitive
+        # one. Measured: a tracked file containing "Copilot" passed this gate at exit 0 before this
+        # check existed. -P switches git grep to PCRE, which (like .NET's own regex engine used on the
+        # commit-message side below) understands "(?i)" and "\b" the way every pattern here assumes.
+        # Fail loudly, not with a confusing later mismatch, if this git build was not compiled with
+        # PCRE support (a git grep -P call always exits non-zero without it). Probes against pathspec
+        # "." (the whole of $RepoRoot, already the current location) rather than $selfPath, which may
+        # sit outside $RepoRoot -- see the "throwaway repo" comment below -- and would make git grep
+        # refuse with exit 128 for a reason that has nothing to do with PCRE support. A match is not
+        # required (an empty repo legitimately exits 1, "no match"); only "git refused to run this
+        # regex dialect at all" (anything past 1) means PCRE is unavailable.
+        $null = & git grep -P -q '(?i)^' -- . 2>&1
+        if ($LASTEXITCODE -gt 1) {
+            throw "git grep -P (PCRE) is required by this script's pattern table but this git build does not support it (exit $LASTEXITCODE). Install a git built with PCRE2 support."
         }
-    }
 
-    # ---------------------------------------------------------------------------------------
-    # 2. Commit messages in -CommitRange.
-    # ---------------------------------------------------------------------------------------
-    if ($CommitRange) {
-        # %H%n%an%n%ae%n%cn%n%ce%n%B<record separator>: one record per commit (sha, author name,
-        # author email, committer name, committer email, then full body), split on a delimiter no
-        # legitimate commit message would ever contain. Author/committer identity is scanned here
-        # too, not just message text -- automated commit tooling that stamps its own name/email
-        # onto a commit (e.g. a bot identity reading something like "Claude <noreply@anthropic.com>")
-        # previously reached this repository's history invisibly: this script read %B only, never
-        # %an/%ae/%cn/%ce, so a tool-authored identity on an otherwise clean commit message passed
-        # at exit 0 regardless of what the name or email address said. `format:` (as opposed to the
-        # `tformat:` that a bare `--format=STRING` with no prefix defaults to) matters here: with
-        # `tformat:`, git appends its own trailing newline after every record, including the
-        # last, on top of the separator this script adds. With `format:`, git still inserts
-        # exactly one newline *between* records -- "separator" semantics separate, they do not
-        # vanish -- but adds nothing after the final record. Either way, a record boundary in the
-        # raw output is the literal separator character optionally followed by one newline
-        # (present between records, absent after the last one), which is exactly what the split
-        # pattern below matches; splitting on the bare separator character alone left every
-        # record but the first starting with a leftover leading blank line, which made its sha
-        # parse as empty and silently drop the whole record from the scan below.
-        $recordSeparator = "`u{1E}"
-        $raw = & git log $CommitRange "--format=format:%H%n%an%n%ae%n%cn%n%ce%n%B$recordSeparator"
+        # Each pattern paired with a human-readable label for the failure message. Patterns are PCRE
+        # (git grep -P) on the tracked-file side and .NET regex (see part 2 below) on the
+        # commit-message side -- the same syntax for everything used here, so one pattern table serves
+        # both. A leading "(?i)" makes that one pattern case-insensitive, its absence means
+        # case-sensitive -- see the .DESCRIPTION for why each choice was made.
+        $patterns = @(
+            @{ Regex = '\bClaude\b'; Label = "product name 'Claude'" }
+            @{ Regex = '\bAnthropic\b'; Label = "company name 'Anthropic'" }
+            @{ Regex = '\bChatGPT\b'; Label = "product name 'ChatGPT'" }
+            @{ Regex = '(?i)\bcopilot\b'; Label = "'copilot'" }
+            @{ Regex = '(?i)\bchatbot\b'; Label = "'chatbot'" }
+            @{ Regex = '(?i)\bassistant\b'; Label = "'assistant'" }
+            @{ Regex = 'Co-Authored-By'; Label = "'Co-Authored-By' trailer" }
+            @{ Regex = 'Claude-Session'; Label = "'Claude-Session' trailer" }
+            @{ Regex = '\bGenerated with\b'; Label = "'Generated with' footer phrase" }
+        )
+
+        # Reserved-domain table, used only by the identity scan in section 2 and deliberately kept out
+        # of $patterns above -- see the comment at its use site for why mixing the two would break the
+        # tracked-file scan.
+        $reservedIdentityDomains = @(
+            @{ Regex = '(?i)\.invalid$'; Label = "the reserved TLD '.invalid'" }
+            @{ Regex = '(?i)\.example$'; Label = "the reserved TLD '.example'" }
+            @{ Regex = '(?i)\.test$'; Label = "the reserved TLD '.test'" }
+            @{ Regex = '(?i)\.localhost$'; Label = "the reserved TLD '.localhost'" }
+            @{ Regex = '(?i)@localhost$'; Label = "the reserved name 'localhost'" }
+            @{ Regex = '(?i)@example\.(com|net|org)$'; Label = "a reserved example.* domain" }
+        )
+
+        $failures = [System.Collections.Generic.List[string]]::new()
+
+        # ---------------------------------------------------------------------------------------
+        # 1. Tracked files' content.
+        # ---------------------------------------------------------------------------------------
+        # -a ("--text"), not -I: -I skips both (a) any file git's own "does this look like text"
+        # heuristic calls binary, AND (b) any file an applicable .gitattributes entry marks `binary`
+        # or `-diff` -- confirmed by direct testing, both independently make a real text file
+        # invisible to -I regardless of what it actually contains. A tracked file saved as UTF-16LE,
+        # or plain UTF-8 with one stray embedded NUL byte (either one is one click away in a Windows
+        # editor's "Save as Unicode", or a copy-paste from a source that had one), trips git's
+        # heuristic; this repository's own .gitattributes already ships commented-out `binary`/`-diff`
+        # template blocks, so a future entry doing that deliberately is also one edit away. -a forces
+        # every tracked file to be scanned as text regardless of either signal, closing both at once;
+        # the only tracked binaries in this repository (Tests/SwissEphNet.Tests/files/*.se1) were
+        # confirmed by direct testing to produce no match and no error under -a.
+        # -n: line numbers. -P: PCRE, so "(?i)" and "\b" mean what the pattern table above assumes
+        # instead of being matched as literal text under the default POSIX BRE dialect. --no-color,
+        # -e per pattern: one `git grep` call checks every pattern in a single pass rather than one
+        # process per pattern.
+        # One pathspec, shared by the byte-level `git grep` and the UTF-16 pass after it, so the two
+        # cannot drift into scanning different sets of files.
+        $contentPathspec = @('--', '.', ':!external/*')
+        # Only excludable when this script actually lives inside $RepoRoot -- e.g. a throwaway repo
+        # built to exercise this script from outside its own checkout has nothing at $selfPath to
+        # exclude, and a pathspec pointing outside the repo makes `git grep` refuse to run at all.
+        if (-not $selfPath.StartsWith('..')) {
+            $contentPathspec += ":!$selfPath"
+        }
+
+        $grepArgs = @('grep', '-nPa', '--no-color')
+        foreach ($p in $patterns) { $grepArgs += @('-e', $p.Regex) }
+        $grepArgs += $contentPathspec
+
+        $grepOutput = & git @grepArgs
+        if ($LASTEXITCODE -eq 128) {
+            throw "git grep exited 128 (not a git repository, or an invalid pathspec) -- output above."
+        }
+        # git grep exits 1 when nothing matched, which is the expected, good outcome here -- not an
+        # error condition for this script.
+
+        # The tracked files git grep cannot read at all, decoded and fed through the same pattern loop.
+        # A UTF-16-encoded file stores every ASCII character as two bytes, so no pattern in the table
+        # above can occur in its bytes whatever flags git is given -- see Get-Utf16DecodedLine, which
+        # qualifies none of this repository's tracked files today and so contributes nothing here until
+        # such a file appears.
+        $utf16ScanPaths = & git ls-files @contentPathspec
         if ($LASTEXITCODE -ne 0) {
-            throw "git log $CommitRange exited $LASTEXITCODE -- is the range valid and are both ends fetched?"
+            throw "git ls-files exited $LASTEXITCODE while listing files for the UTF-16 content scan -- output above."
         }
-        $text = ($raw -join "`n")
-        $recordBoundary = [regex]::Escape($recordSeparator) + '\n?'
-        $records = @($text -split $recordBoundary | Where-Object { $_.Trim() -ne '' })
+        $grepOutput = @($grepOutput) + @(Get-Utf16DecodedLine -RepoRoot $RepoRoot -Paths @($utf16ScanPaths))
 
-        foreach ($record in $records) {
-            $recordLines = $record -split "`n", 6
-            $sha = $recordLines[0].Trim()
-            if ([string]::IsNullOrWhiteSpace($sha)) { continue }
-            $shortSha = $sha.Substring(0, [Math]::Min(12, $sha.Length))
-            $authorName = if ($recordLines.Count -gt 1) { $recordLines[1] } else { '' }
-            $authorEmail = if ($recordLines.Count -gt 2) { $recordLines[2] } else { '' }
-            $committerName = if ($recordLines.Count -gt 3) { $recordLines[3] } else { '' }
-            $committerEmail = if ($recordLines.Count -gt 4) { $recordLines[4] } else { '' }
-            $body = if ($recordLines.Count -gt 5) { $recordLines[5] } else { '' }
-
+        foreach ($line in @($grepOutput)) {
+            if ([string]::IsNullOrWhiteSpace($line)) { continue }
             foreach ($p in $patterns) {
-                # [regex]::IsMatch here too -- see the identical comment on the tracked-file loop
-                # above for why -match's default case-insensitivity is unsafe for this table.
-                if ([regex]::IsMatch($body, $p.Regex)) {
-                    $firstMatchLine = (@($body -split "`n") | Where-Object { [regex]::IsMatch($_, $p.Regex) } | Select-Object -First 1)
-                    $failures.Add("commit ${shortSha}: matches $($p.Label) -- `"$($firstMatchLine.Trim())`"")
-                }
-            }
-
-            foreach ($field in @(
-                    @{ Value = $authorName; Label = 'author name' },
-                    @{ Value = $authorEmail; Label = 'author email' },
-                    @{ Value = $committerName; Label = 'committer name' },
-                    @{ Value = $committerEmail; Label = 'committer email' }
-                )) {
-                if ([string]::IsNullOrWhiteSpace($field.Value)) { continue }
-                foreach ($p in $patterns) {
-                    if ([regex]::IsMatch($field.Value, $p.Regex)) {
-                        $failures.Add("commit ${shortSha}: $($field.Label) `"$($field.Value.Trim())`" matches $($p.Label)")
-                    }
-                }
-            }
-
-            # A placeholder identity and a tool identity are two different failure modes, and the
-            # table above only covers the second. $patterns matches product and company names, so
-            # it catches a commit authored by "Claude <noreply@anthropic.com>" and nothing at all
-            # about "test <test@example.invalid>", which names no vendor and matches no entry in
-            # it. That is not hypothetical: that exact address reached 14 commits on this branch
-            # and this script still exited 0 on the range, with the identity scan above already in
-            # place. The scan read the right four fields; the table it consulted simply had no rule
-            # those values could match, so looking at %an/%ae/%cn/%ce bought nothing on its own.
-            #
-            # The rule here is the reserved-domain list from RFC 2606 and RFC 6761, which set aside
-            # .test, .example, .invalid and .localhost, plus example.com/.net/.org, precisely so
-            # they can be used in documentation and testing with a guarantee that they never
-            # resolve. An address in one of them is a placeholder by construction, which is what
-            # makes this safe to fail on: unlike a name-shaped heuristic ("does this look like a
-            # bot?"), it cannot fire on a real contributor's address, because no real address can
-            # live there.
-            #
-            # Email fields only, and identity only. Reserved domains are the correct thing to write
-            # in prose -- this comment writes several -- so folding them into $patterns would make
-            # the tracked-file scan fail on the paragraph you are reading. The names are left alone
-            # for the same reason in reverse: "test" is an ordinary English word and an ordinary
-            # surname, and a placeholder identity always carries the address too.
-            foreach ($emailField in @(
-                    @{ Value = $authorEmail; Label = 'author email' },
-                    @{ Value = $committerEmail; Label = 'committer email' }
-                )) {
-                $address = $emailField.Value.Trim()
-                if ([string]::IsNullOrWhiteSpace($address)) { continue }
-                foreach ($d in $reservedIdentityDomains) {
-                    if ([regex]::IsMatch($address, $d.Regex)) {
-                        $failures.Add("commit ${shortSha}: $($emailField.Label) `"$address`" is a placeholder address in $($d.Label), reserved by RFC 2606/6761 and never valid in published history")
-                        break
-                    }
+                # [regex]::IsMatch, not PowerShell's -match operator: -match is case-insensitive by
+                # default regardless of what the pattern string itself says, which silently defeated
+                # every pattern above that omits an explicit "(?i)" and relies on being
+                # case-sensitive (Claude, Anthropic, ChatGPT, Co-Authored-By, Claude-Session, and
+                # critically "Generated with", whose whole point is to NOT match the lowercase
+                # "generated with" this repository's own prose legitimately uses). [regex]::IsMatch
+                # honors each pattern's own case-sensitivity exactly as written.
+                if ([regex]::IsMatch($line, $p.Regex)) {
+                    $failures.Add("tracked file $line -- matches $($p.Label)")
+                    break
                 }
             }
         }
 
-        Write-Host "Checked $($records.Count) commit message(s) and author/committer identity in range $CommitRange."
-
-        # -----------------------------------------------------------------------------------
-        # 3. Lines added anywhere in -CommitRange's diff, not just what survives to HEAD.
-        # -----------------------------------------------------------------------------------
-        # Check 1 above only ever reads HEAD's own tracked content. A file added with a flagged
-        # phrase in one commit and deleted again in a later commit, both inside the same range
-        # (drafting and then removing a doc inside one PR/push is ordinary), is invisible to that
-        # check -- it was never in HEAD -- and invisible to check 2 as well, since a file's own
-        # content is not a commit message. The phrase still permanently exists in the published
-        # history, which is exactly what this script exists to prevent. `git log -p` walks every
-        # commit's own diff, so a line added in commit A of the range is seen when A is visited,
-        # independent of what any later commit in the same range does to it.
-        #
-        # A per-commit marker (the same record-separator technique as the message scan above)
-        # attributes each added line to the commit that introduced it. Only lines that are pure
-        # additions (a single leading '+', not the "+++ b/path" file-header line diff emits for
-        # every file) are scanned -- context lines and removals are not new content this range
-        # introduced. -a ("--text"): the same reasoning as check 1's -a applies to diff output
-        # too -- without it, a blob git's heuristic calls binary renders as "Binary files ...
-        # differ" with no +/- lines at all, silently skipping a NUL-byte-disguised addition.
-        $diffRecordSeparator = "`u{1E}"
-        $diffGrepArgs = @(
-            'log', $CommitRange, '-p', '-a', '--no-color',
-            "--format=format:$diffRecordSeparator%H",
-            '--', '.', ':!external/*')
-        if (-not $selfPath.StartsWith('..')) { $diffGrepArgs += ":!$selfPath" }
-        $diffRaw = & git @diffGrepArgs
+        # ---------------------------------------------------------------------------------------
+        # 1b. Tracked files' paths themselves.
+        # ---------------------------------------------------------------------------------------
+        # `git grep` only ever emits a line for a match inside a file's *content* -- it has no mode
+        # that reports a match against the path alone, so a file named e.g.
+        # ".github/copilot-instructions.md" with entirely clean content never produces a line for the
+        # loop above to see, no matter how the patterns are written. That is a conventional filename
+        # (GitHub's own suggested name for repo-level Copilot instructions) that can land without
+        # anyone intending an attribution violation. `git ls-files` lists every tracked path
+        # regardless of content, so it is checked against the same pattern table separately.
+        $trackedPaths = & git ls-files -- '.' ':!external/*'
         if ($LASTEXITCODE -ne 0) {
-            throw "git log $CommitRange -p exited $LASTEXITCODE -- is the range valid and are both ends fetched?"
+            throw "git ls-files exited $LASTEXITCODE -- output above."
         }
-        $diffText = ($diffRaw -join "`n")
-        $diffRecordBoundary = [regex]::Escape($diffRecordSeparator)
-        $diffRecords = @($diffText -split $diffRecordBoundary | Where-Object { $_.Trim() -ne '' })
+        foreach ($path in @($trackedPaths)) {
+            if ([string]::IsNullOrWhiteSpace($path)) { continue }
+            if (-not $selfPath.StartsWith('..') -and $path -eq $selfPath) { continue }
+            foreach ($p in $patterns) {
+                if ([regex]::IsMatch($path, $p.Regex)) {
+                    $failures.Add("tracked path '$path' -- matches $($p.Label)")
+                    break
+                }
+            }
+        }
 
-        foreach ($record in $diffRecords) {
-            $recordLines = $record -split "`n", 2
-            $sha = $recordLines[0].Trim()
-            $diffBody = if ($recordLines.Count -gt 1) { $recordLines[1] } else { '' }
-            if ([string]::IsNullOrWhiteSpace($sha)) { continue }
-            $shortSha = $sha.Substring(0, [Math]::Min(12, $sha.Length))
+        # ---------------------------------------------------------------------------------------
+        # 2. Commit messages in -CommitRange.
+        # ---------------------------------------------------------------------------------------
+        if ($CommitRange) {
+            # %H%n%an%n%ae%n%cn%n%ce%n%B<record separator>: one record per commit (sha, author name,
+            # author email, committer name, committer email, then full body), split on a delimiter no
+            # legitimate commit message would ever contain. Author/committer identity is scanned here
+            # too, not just message text -- automated commit tooling that stamps its own name/email
+            # onto a commit (e.g. a bot identity reading something like "Claude <noreply@anthropic.com>")
+            # previously reached this repository's history invisibly: this script read %B only, never
+            # %an/%ae/%cn/%ce, so a tool-authored identity on an otherwise clean commit message passed
+            # at exit 0 regardless of what the name or email address said. `format:` (as opposed to the
+            # `tformat:` that a bare `--format=STRING` with no prefix defaults to) matters here: with
+            # `tformat:`, git appends its own trailing newline after every record, including the
+            # last, on top of the separator this script adds. With `format:`, git still inserts
+            # exactly one newline *between* records -- "separator" semantics separate, they do not
+            # vanish -- but adds nothing after the final record. Either way, a record boundary in the
+            # raw output is the literal separator character optionally followed by one newline
+            # (present between records, absent after the last one), which is exactly what the split
+            # pattern below matches; splitting on the bare separator character alone left every
+            # record but the first starting with a leftover leading blank line, which made its sha
+            # parse as empty and silently drop the whole record from the scan below.
+            $recordSeparator = "`u{1E}"
+            $raw = & git log $CommitRange "--format=format:%H%n%an%n%ae%n%cn%n%ce%n%B$recordSeparator"
+            if ($LASTEXITCODE -ne 0) {
+                throw "git log $CommitRange exited $LASTEXITCODE -- is the range valid and are both ends fetched?"
+            }
+            $text = ($raw -join "`n")
+            $recordBoundary = [regex]::Escape($recordSeparator) + '\n?'
+            $records = @($text -split $recordBoundary | Where-Object { $_.Trim() -ne '' })
 
-            foreach ($diffLine in @($diffBody -split "`n")) {
-                if (-not $diffLine.StartsWith('+') -or $diffLine.StartsWith('+++')) { continue }
-                $added = $diffLine.Substring(1)
+            foreach ($record in $records) {
+                $recordLines = $record -split "`n", 6
+                $sha = $recordLines[0].Trim()
+                if ([string]::IsNullOrWhiteSpace($sha)) { continue }
+                $shortSha = $sha.Substring(0, [Math]::Min(12, $sha.Length))
+                $authorName = if ($recordLines.Count -gt 1) { $recordLines[1] } else { '' }
+                $authorEmail = if ($recordLines.Count -gt 2) { $recordLines[2] } else { '' }
+                $committerName = if ($recordLines.Count -gt 3) { $recordLines[3] } else { '' }
+                $committerEmail = if ($recordLines.Count -gt 4) { $recordLines[4] } else { '' }
+                $body = if ($recordLines.Count -gt 5) { $recordLines[5] } else { '' }
+
                 foreach ($p in $patterns) {
-                    if ([regex]::IsMatch($added, $p.Regex)) {
-                        $failures.Add("commit ${shortSha} added a line matching $($p.Label) -- `"$($added.Trim())`" (even if a later commit in the same range removed it, it is permanently in the published history)")
-                        break
+                    # [regex]::IsMatch here too -- see the identical comment on the tracked-file loop
+                    # above for why -match's default case-insensitivity is unsafe for this table.
+                    if ([regex]::IsMatch($body, $p.Regex)) {
+                        $firstMatchLine = (@($body -split "`n") | Where-Object { [regex]::IsMatch($_, $p.Regex) } | Select-Object -First 1)
+                        $failures.Add("commit ${shortSha}: matches $($p.Label) -- `"$($firstMatchLine.Trim())`"")
+                    }
+                }
+
+                foreach ($field in @(
+                        @{ Value = $authorName; Label = 'author name' },
+                        @{ Value = $authorEmail; Label = 'author email' },
+                        @{ Value = $committerName; Label = 'committer name' },
+                        @{ Value = $committerEmail; Label = 'committer email' }
+                    )) {
+                    if ([string]::IsNullOrWhiteSpace($field.Value)) { continue }
+                    foreach ($p in $patterns) {
+                        if ([regex]::IsMatch($field.Value, $p.Regex)) {
+                            $failures.Add("commit ${shortSha}: $($field.Label) `"$($field.Value.Trim())`" matches $($p.Label)")
+                        }
+                    }
+                }
+
+                # A placeholder identity and a tool identity are two different failure modes, and the
+                # table above only covers the second. $patterns matches product and company names, so
+                # it catches a commit authored by "Claude <noreply@anthropic.com>" and nothing at all
+                # about "test <test@example.invalid>", which names no vendor and matches no entry in
+                # it. That is not hypothetical: that exact address reached 14 commits on this branch
+                # and this script still exited 0 on the range, with the identity scan above already in
+                # place. The scan read the right four fields; the table it consulted simply had no rule
+                # those values could match, so looking at %an/%ae/%cn/%ce bought nothing on its own.
+                #
+                # The rule here is the reserved-domain list from RFC 2606 and RFC 6761, which set aside
+                # .test, .example, .invalid and .localhost, plus example.com/.net/.org, precisely so
+                # they can be used in documentation and testing with a guarantee that they never
+                # resolve. An address in one of them is a placeholder by construction, which is what
+                # makes this safe to fail on: unlike a name-shaped heuristic ("does this look like a
+                # bot?"), it cannot fire on a real contributor's address, because no real address can
+                # live there.
+                #
+                # Email fields only, and identity only. Reserved domains are the correct thing to write
+                # in prose -- this comment writes several -- so folding them into $patterns would make
+                # the tracked-file scan fail on the paragraph you are reading. The names are left alone
+                # for the same reason in reverse: "test" is an ordinary English word and an ordinary
+                # surname, and a placeholder identity always carries the address too.
+                foreach ($emailField in @(
+                        @{ Value = $authorEmail; Label = 'author email' },
+                        @{ Value = $committerEmail; Label = 'committer email' }
+                    )) {
+                    $address = $emailField.Value.Trim()
+                    if ([string]::IsNullOrWhiteSpace($address)) { continue }
+                    foreach ($d in $reservedIdentityDomains) {
+                        if ([regex]::IsMatch($address, $d.Regex)) {
+                            $failures.Add("commit ${shortSha}: $($emailField.Label) `"$address`" is a placeholder address in $($d.Label), reserved by RFC 2606/6761 and never valid in published history")
+                            break
+                        }
+                    }
+                }
+            }
+
+            Write-Host "Checked $($records.Count) commit message(s) and author/committer identity in range $CommitRange."
+
+            # -----------------------------------------------------------------------------------
+            # 3. Lines added anywhere in -CommitRange's diff, not just what survives to HEAD.
+            # -----------------------------------------------------------------------------------
+            # Check 1 above only ever reads HEAD's own tracked content. A file added with a flagged
+            # phrase in one commit and deleted again in a later commit, both inside the same range
+            # (drafting and then removing a doc inside one PR/push is ordinary), is invisible to that
+            # check -- it was never in HEAD -- and invisible to check 2 as well, since a file's own
+            # content is not a commit message. The phrase still permanently exists in the published
+            # history, which is exactly what this script exists to prevent. `git log -p` walks every
+            # commit's own diff, so a line added in commit A of the range is seen when A is visited,
+            # independent of what any later commit in the same range does to it.
+            #
+            # A per-commit marker (the same record-separator technique as the message scan above)
+            # attributes each added line to the commit that introduced it. Only lines that are pure
+            # additions (a single leading '+', not the "+++ b/path" file-header line diff emits for
+            # every file) are scanned -- context lines and removals are not new content this range
+            # introduced. -a ("--text"): the same reasoning as check 1's -a applies to diff output
+            # too -- without it, a blob git's heuristic calls binary renders as "Binary files ...
+            # differ" with no +/- lines at all, silently skipping a NUL-byte-disguised addition.
+            $diffRecordSeparator = "`u{1E}"
+            $diffGrepArgs = @(
+                'log', $CommitRange, '-p', '-a', '--no-color',
+                "--format=format:$diffRecordSeparator%H",
+                '--', '.', ':!external/*')
+            if (-not $selfPath.StartsWith('..')) { $diffGrepArgs += ":!$selfPath" }
+            $diffRaw = & git @diffGrepArgs
+            if ($LASTEXITCODE -ne 0) {
+                throw "git log $CommitRange -p exited $LASTEXITCODE -- is the range valid and are both ends fetched?"
+            }
+            $diffText = ($diffRaw -join "`n")
+            $diffRecordBoundary = [regex]::Escape($diffRecordSeparator)
+            $diffRecords = @($diffText -split $diffRecordBoundary | Where-Object { $_.Trim() -ne '' })
+
+            foreach ($record in $diffRecords) {
+                $recordLines = $record -split "`n", 2
+                $sha = $recordLines[0].Trim()
+                $diffBody = if ($recordLines.Count -gt 1) { $recordLines[1] } else { '' }
+                if ([string]::IsNullOrWhiteSpace($sha)) { continue }
+                $shortSha = $sha.Substring(0, [Math]::Min(12, $sha.Length))
+
+                foreach ($diffLine in @($diffBody -split "`n")) {
+                    if (-not $diffLine.StartsWith('+') -or $diffLine.StartsWith('+++')) { continue }
+                    $added = $diffLine.Substring(1)
+                    foreach ($p in $patterns) {
+                        if ([regex]::IsMatch($added, $p.Regex)) {
+                            $failures.Add("commit ${shortSha} added a line matching $($p.Label) -- `"$($added.Trim())`" (even if a later commit in the same range removed it, it is permanently in the published history)")
+                            break
+                        }
                     }
                 }
             }
         }
+        else {
+            Write-Host 'No -CommitRange given; commit messages were not checked.'
+        }
+
+        if ($failures.Count -gt 0) {
+            Write-Host ''
+            foreach ($failure in $failures) { Write-Host "  $failure" }
+            Write-Host ''
+            Write-Host 'FAIL: tooling-authorship text found. Remove it from the tracked file or, for a commit message, amend/reword the offending commit before merging.'
+            exit 1
+        }
+
+        Write-Host 'PASS: no tooling-authorship text found in tracked files or the checked commit range.'
+        exit 0
+    }
+    finally {
+        Pop-Location
+    }
+}
+
+# ---------------------------------------------------------------------------------------------
+
+if (-not $SelfTest) {
+    Invoke-AttributionScan -RepoRoot $RepoRoot -CommitRange $CommitRange
+    # Unreachable: Invoke-AttributionScan always exits. Present so that a future edit turning one
+    # of those exits into a return cannot make this script pass by falling off the end.
+    exit 1
+}
+
+# ---------------------------------------------------------------------------------------------
+# Self-test. This gate was bypassed three times during review, more than any other in this
+# repository, and every bypass had the same shape: the scan looked in the right place with the
+# wrong reach. Each case below is one of those, reduced to a plant, run, and SEEN to produce the
+# stated exit code AND the stated failure message.
+#
+# The message assertion matters here for the same reason it does in verify-doc-counts.ps1: with
+# nine patterns, four scans and two identity rules all reporting through one exit code, a case can
+# very easily go red for a reason that has nothing to do with what it claims to test.
+#
+# This script excludes its own path from its own scans, which is why the comments here and above
+# may name the vendor strings they search for.
+
+$failures = 0
+$pwshExe = (Get-Process -Id $PID).Path
+$root = Join-Path ([System.IO.Path]::GetTempPath()) ("attribution-selftest-" + [System.Guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $root -Force | Out-Null
+
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+
+# The identity every lab commit uses unless a case deliberately replaces it: the fork's own, which
+# matches no pattern in the table and sits in no reserved domain.
+$cleanName = 'Timothy van der Ham'
+$cleanEmail = 'tvdham@hotmail.com'
+
+function Set-LabFile {
+    param([string] $LabRoot, [string] $RelPath, [string[]] $Lines, [System.Text.Encoding] $Encoding)
+
+    if (-not $Encoding) { $Encoding = $utf8NoBom }
+    $full = Join-Path $LabRoot $RelPath
+    New-Item -ItemType Directory -Path (Split-Path -Parent $full) -Force | Out-Null
+    [System.IO.File]::WriteAllText($full, (($Lines -join "`n") + "`n"), $Encoding)
+}
+
+function Add-LabCommit {
+    # Stages the named paths and commits them. Named paths only, never `git add -A`. -AuthorName /
+    # -AuthorEmail override the author alone; -CommitterName / -CommitterEmail override the
+    # committer alone, which is how the two identity cases below tell those four fields apart.
+    param(
+        [string] $LabRoot,
+        [string] $Message,
+        [string[]] $Paths,
+        [string] $AuthorName = $cleanName,
+        [string] $AuthorEmail = $cleanEmail,
+        [string] $CommitterName = $cleanName,
+        [string] $CommitterEmail = $cleanEmail)
+
+    foreach ($path in $Paths) { & git -C $LabRoot add -- $path 2>&1 | Out-Null }
+    $env:GIT_COMMITTER_NAME = $CommitterName
+    $env:GIT_COMMITTER_EMAIL = $CommitterEmail
+    try {
+        & git -C $LabRoot -c "user.name=$AuthorName" -c "user.email=$AuthorEmail" commit -q -m $Message 2>&1 | Out-Null
+    }
+    finally {
+        Remove-Item Env:\GIT_COMMITTER_NAME -ErrorAction SilentlyContinue
+        Remove-Item Env:\GIT_COMMITTER_EMAIL -ErrorAction SilentlyContinue
+    }
+}
+
+function New-AttributionLab {
+    # A repository with one clean tracked file and one clean commit. Returns its path; the seed
+    # commit is the base every -CommitRange case diffs from.
+    param([string] $Name)
+    $dir = Join-Path $root $Name
+    New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    & git init -q $dir 2>&1 | Out-Null
+    Set-LabFile $dir 'README.md' @('# Lab', '', 'An ephemeris port, ported by hand.')
+    Add-LabCommit -LabRoot $dir -Message 'seed the lab' -Paths @('README.md')
+    return $dir
+}
+
+function Get-LabHead {
+    param([string] $LabRoot)
+    return (& git -C $LabRoot rev-parse HEAD).Trim()
+}
+
+function Assert-Gate {
+    # Runs this script's own normal path in a CHILD process, the way CI invokes it, and asserts the
+    # exit code -- read straight from $LASTEXITCODE with no pipeline in between, which would report
+    # the pipe's last stage instead of the gate's own code. -Matching additionally requires the
+    # failure output to say what the case claims it says.
+    param(
+        [string] $Case,
+        [ValidateSet('fails', 'passes')][string] $Expect,
+        [string] $LabRoot,
+        [string] $CommitRange,
+        [string] $Matching)
+
+    if ($CommitRange) {
+        $output = & $pwshExe -NoProfile -File $PSCommandPath -RepoRoot $LabRoot -CommitRange $CommitRange *>&1
     }
     else {
-        Write-Host 'No -CommitRange given; commit messages were not checked.'
+        $output = & $pwshExe -NoProfile -File $PSCommandPath -RepoRoot $LabRoot *>&1
+    }
+    $code = $LASTEXITCODE
+    $text = (@($output) -join "`n")
+
+    $problem = $null
+    if ($Expect -eq 'fails' -and $code -eq 0) { $problem = 'expected the gate to fail, got exit 0' }
+    elseif ($Expect -eq 'passes' -and $code -ne 0) { $problem = "expected the gate to pass, got exit $code" }
+    elseif ($Matching -and $text -notmatch $Matching) {
+        $problem = "gate exited $code as expected, but for the wrong reason: nothing in its output matched /$Matching/"
     }
 
-    if ($failures.Count -gt 0) {
-        Write-Host ''
-        foreach ($failure in $failures) { Write-Host "  $failure" }
-        Write-Host ''
-        Write-Host 'FAIL: tooling-authorship text found. Remove it from the tracked file or, for a commit message, amend/reword the offending commit before merging.'
-        exit 1
+    if (-not $problem) {
+        Write-Host ("  PASS  {0} (gate {1}, exit {2})" -f $Case, $Expect, $code)
     }
+    else {
+        Write-Host ("  FAIL  {0}`n          {1}" -f $Case, $problem)
+        foreach ($line in @($output)) { Write-Host "            | $line" }
+        $script:failures++
+    }
+}
 
-    Write-Host 'PASS: no tooling-authorship text found in tracked files or the checked commit range.'
-    exit 0
+Write-Host 'verify-no-tooling-attribution self-test'
+Write-Host ''
+
+# 1-9. One case per pattern in the table, each planted in a tracked file. All nine together, not a
+#      representative sample: the table is the whole substance of this check, and the two defects
+#      it has actually had were both "some patterns silently stopped meaning what they say" --
+#      git grep's default POSIX BRE dialect matched "(?i)" as four literal characters, and
+#      PowerShell's -match operator is case-insensitive whatever the pattern says, which defeated
+#      the opposite half of the table. Either one leaves the other patterns working, so a sample
+#      would have missed it. The case-insensitive entries are planted in a case the pattern does
+#      not literally spell, and the case-sensitive ones in the exact case they do.
+$patternPlants = @(
+    @{ Case = "the product name 'Claude'"; Text = 'Written with help from Claude, apparently.'; Matching = "product name 'Claude'" }
+    @{ Case = "the company name 'Anthropic'"; Text = 'Contributed by Anthropic.'; Matching = "company name 'Anthropic'" }
+    @{ Case = "the product name 'ChatGPT'"; Text = 'Drafted in ChatGPT and pasted in.'; Matching = "product name 'ChatGPT'" }
+    @{ Case = "'copilot', planted as 'Copilot' to prove the pattern is case-insensitive"; Text = 'Suggested by Copilot.'; Matching = "'copilot'" }
+    @{ Case = "'chatbot', planted as 'ChatBot'"; Text = 'Explained by a ChatBot.'; Matching = "'chatbot'" }
+    @{ Case = "'assistant', planted as 'Assistant'"; Text = 'Reviewed by an Assistant.'; Matching = "'assistant'" }
+    @{ Case = "the 'Co-Authored-By' trailer"; Text = 'Co-Authored-By: someone <someone@example.org>'; Matching = "'Co-Authored-By' trailer" }
+    # Reported under the 'Claude' label, not its own: the content loop stops at the first pattern
+    # that matches a line, and '\bClaude\b' matches "Claude-Session" (the '-' is a word boundary)
+    # before the trailer pattern is reached. So this case asserts the offending LINE is flagged
+    # rather than which label it is flagged under -- the table entry is genuinely unreachable here,
+    # being wholly subsumed by the broader name. Case 10 below exercises the entry itself, in the
+    # commit-message scan, which reports every matching pattern instead of stopping at the first.
+    @{ Case = "the 'Claude-Session' trailer"; Text = 'Claude-Session: https://example.org/session'; Matching = 'tracked file docs/notes\.md:3:Claude-Session' }
+    @{ Case = "the 'Generated with' footer, capital G"; Text = 'Generated with a tool.'; Matching = "'Generated with' footer phrase" }
+)
+$plantIndex = 0
+foreach ($plant in $patternPlants) {
+    $plantIndex++
+    $lab = New-AttributionLab ("pattern-$plantIndex")
+    Set-LabFile $lab 'docs/notes.md' @('# Notes', '', $plant.Text)
+    Add-LabCommit -LabRoot $lab -Message 'add a note' -Paths @('docs/notes.md')
+    Assert-Gate ("a tracked file containing " + $plant.Case) 'fails' $lab -Matching $plant.Matching
 }
-finally {
-    Pop-Location
+
+# 10. The 'Claude-Session' entry under its own label. It cannot be reached in the tracked-file scan
+#     at all (see the note in the table above), so without this the entry could be deleted outright
+#     and every case here would stay green. The commit-message scan reports every pattern a record
+#     matches rather than stopping at the first, so both labels appear there and this one is
+#     verifiable.
+$lab = New-AttributionLab 'session-trailer-message'
+$base = Get-LabHead $lab
+Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'A note.')
+Add-LabCommit -LabRoot $lab -Message "Add a note`n`nClaude-Session: https://example.org/session" -Paths @('docs/notes.md')
+Assert-Gate "the 'Claude-Session' trailer under its own label, in a commit message" 'fails' $lab -CommitRange "$base..HEAD" -Matching "matches 'Claude-Session' trailer"
+
+# 11. The lowercase "generated with" the 'Generated with' pattern deliberately does NOT match. This
+#     repository's own prose uses it legitimately throughout ("t.exp was generated with setest"),
+#     and widening the pattern to case-insensitive would turn every one of those into a failure --
+#     which is how a check like this gets switched off. The carve-out has to stay verified, not
+#     just documented.
+$lab = New-AttributionLab 'lowercase-generated-with'
+Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'The corpus was generated with setest, then regenerated with -ExpectedScope.')
+Add-LabCommit -LabRoot $lab -Message 'add a note' -Paths @('docs/notes.md')
+Assert-Gate 'the legitimate lowercase "generated with" (must not fire)' 'passes' $lab
+
+# 11-12. A violation in a commit message, in the subject and in the body separately. The body case
+#        is the one that matters: a trailer appended by tooling lands there, several lines below a
+#        subject that reads perfectly clean, and a scan reading only the subject sees nothing.
+$lab = New-AttributionLab 'message-subject'
+$base = Get-LabHead $lab
+Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'A note.')
+Add-LabCommit -LabRoot $lab -Message 'Generated with a tool' -Paths @('docs/notes.md')
+Assert-Gate 'a violation in a commit subject' 'fails' $lab -CommitRange "$base..HEAD" -Matching "matches 'Generated with' footer phrase"
+
+$lab = New-AttributionLab 'message-body'
+$base = Get-LabHead $lab
+Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'A note.')
+Add-LabCommit -LabRoot $lab -Message "Add a note`n`nAn ordinary body paragraph.`n`nCo-Authored-By: someone <someone@example.org>" -Paths @('docs/notes.md')
+Assert-Gate 'a violation in a commit body, several lines below a clean subject' 'fails' $lab -CommitRange "$base..HEAD" -Matching "matches 'Co-Authored-By' trailer"
+
+# 13. A merge commit in the range. `git log <range>` walks both parents, so the offending commit on
+#     the side branch is visited on its own -- but a range whose only new commit is the merge, with
+#     the violation on the branch it merges, is exactly the shape a first-parent-only or
+#     diff-of-the-merge-alone reading would miss.
+$lab = New-AttributionLab 'merge-commit'
+$base = Get-LabHead $lab
+& git -C $lab checkout -q -b side
+Set-LabFile $lab 'docs/side.md' @('# Side', '', 'Suggested by Copilot.')
+Add-LabCommit -LabRoot $lab -Message 'add a side note' -Paths @('docs/side.md')
+& git -C $lab checkout -q -
+& git -C $lab merge -q --no-ff side -m 'merge the side branch' 2>&1 | Out-Null
+Assert-Gate 'a violation reachable only through a merge commit' 'fails' $lab -CommitRange "$base..HEAD" -Matching "'copilot'"
+
+# 14. A file added and deleted again inside the same range. It never reaches HEAD, so the
+#     tracked-file scan cannot see it and the commit-message scan has nothing to read -- yet the
+#     text is permanently in the published history, which is the whole point of the check. Only the
+#     per-commit diff scan sees it.
+$lab = New-AttributionLab 'added-then-deleted'
+$base = Get-LabHead $lab
+Set-LabFile $lab 'docs/draft.md' @('# Draft', '', 'Drafted in ChatGPT and pasted in.')
+Add-LabCommit -LabRoot $lab -Message 'add a draft' -Paths @('docs/draft.md')
+Remove-Item -LiteralPath (Join-Path $lab 'docs/draft.md') -Force
+Add-LabCommit -LabRoot $lab -Message 'drop the draft' -Paths @('docs/draft.md')
+Assert-Gate 'a file added and deleted again inside one range' 'fails' $lab -CommitRange "$base..HEAD" -Matching 'added a line matching'
+
+# 15. A violation in a path with entirely clean content. `git grep` has no mode that reports a
+#     match against a path, so the content scan cannot produce a line for this however the patterns
+#     are written -- and this is a conventional filename that can land without anyone intending an
+#     attribution claim at all.
+$lab = New-AttributionLab 'path-only'
+Set-LabFile $lab '.github/copilot-instructions.md' @('# Instructions', '', 'Build with dotnet build.')
+Add-LabCommit -LabRoot $lab -Message 'add instructions' -Paths @('.github/copilot-instructions.md')
+Assert-Gate 'a violation in a path whose content is clean' 'fails' $lab -Matching "tracked path '.github/copilot-instructions.md'"
+
+# 16. A tracked file saved as UTF-16LE. git grep matches bytes and UTF-16 stores every ASCII
+#     character as two of them, so no flag makes the pattern occur in that file -- -a stops git
+#     skipping a file, which is not the same as being able to read one. Measured: this exited 0.
+$lab = New-AttributionLab 'utf16-content'
+Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'Written with help from Claude, apparently.') ([System.Text.Encoding]::Unicode)
+Add-LabCommit -LabRoot $lab -Message 'add a note' -Paths @('docs/notes.md')
+Assert-Gate 'a tracked file saved as UTF-16LE' 'fails' $lab -Matching "product name 'Claude'"
+
+# 17. A UTF-16LE file with clean content must still pass, so that the decode pass added for case 16
+#     stays a content check rather than an encoding policy.
+$lab = New-AttributionLab 'utf16-clean'
+Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'An ordinary note, written by hand.') ([System.Text.Encoding]::Unicode)
+Add-LabCommit -LabRoot $lab -Message 'add a note' -Paths @('docs/notes.md')
+Assert-Gate 'a UTF-16LE file with clean content (must not fire)' 'passes' $lab
+
+# 18. One stray embedded NUL byte in an otherwise ordinary UTF-8 file. That alone makes git's
+#     content heuristic call the file binary, and -I skipped it entirely; the text around the NUL
+#     is still ASCII, so -a is genuinely sufficient here, unlike case 16.
+$lab = New-AttributionLab 'embedded-nul'
+$nulPath = Join-Path $lab 'docs/notes.md'
+New-Item -ItemType Directory -Path (Split-Path -Parent $nulPath) -Force | Out-Null
+[System.IO.File]::WriteAllBytes($nulPath, [byte[]] (
+    [System.Text.Encoding]::ASCII.GetBytes("# Notes`n`nWritten with help from Claude.") +
+    [byte[]] @(0) +
+    [System.Text.Encoding]::ASCII.GetBytes("`n")))
+Add-LabCommit -LabRoot $lab -Message 'add a note' -Paths @('docs/notes.md')
+Assert-Gate 'a file with one stray embedded NUL byte' 'fails' $lab -Matching "product name 'Claude'"
+
+# 19-20. A .gitattributes entry marking an ordinary text file `binary`, and one marking it `-diff`.
+#        This is the second, independent way -I skipped a file: not the content at all, but an
+#        attribute someone can add in one line, to a file that stays plain UTF-8 text. This
+#        repository's own .gitattributes already ships commented-out template blocks for both.
+foreach ($attr in @('binary', '-diff')) {
+    $lab = New-AttributionLab ("gitattributes-" + $attr.Trim('-'))
+    Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'Written with help from Claude, apparently.')
+    Set-LabFile $lab '.gitattributes' @("docs/notes.md $attr")
+    Add-LabCommit -LabRoot $lab -Message 'add a note' -Paths @('docs/notes.md', '.gitattributes')
+    Assert-Gate "a text file marked ``$attr`` in .gitattributes" 'fails' $lab -Matching "product name 'Claude'"
 }
+
+# 21-22. An author identity, and a committer identity, that are not the fork's. The pattern table
+#        cannot catch these: it matches vendor and product names, and a placeholder address names
+#        no vendor. That exact address reached 14 commits on this branch with the identity scan
+#        already in place and this script still exiting 0 -- the scan read the right four fields,
+#        the table it consulted simply had no rule they could match. The rule that does catch them
+#        is RFC 2606/6761's reserved domains, which exist so they can never resolve, so no real
+#        contributor's address can live there. Author and committer are separate cases because
+#        they are separate fields, and a commit can carry a clean one of each with the other wrong.
+$lab = New-AttributionLab 'author-identity'
+$base = Get-LabHead $lab
+Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'A note.')
+Add-LabCommit -LabRoot $lab -Message 'add a note' -Paths @('docs/notes.md') -AuthorName 'test' -AuthorEmail 'test@example.invalid'
+Assert-Gate 'a placeholder author identity' 'fails' $lab -CommitRange "$base..HEAD" -Matching 'author email .* is a placeholder address'
+
+$lab = New-AttributionLab 'committer-identity'
+$base = Get-LabHead $lab
+Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'A note.')
+Add-LabCommit -LabRoot $lab -Message 'add a note' -Paths @('docs/notes.md') -CommitterName 'test' -CommitterEmail 'test@example.com'
+Assert-Gate 'a placeholder committer identity, with a clean author' 'fails' $lab -CommitRange "$base..HEAD" -Matching 'committer email .* is a placeholder address'
+
+# 23. A clean range. Without this every case above could be satisfied by a check that fails on
+#     everything -- and this one exercises the range legs too, which the tracked-file cases skip.
+$lab = New-AttributionLab 'clean'
+$base = Get-LabHead $lab
+Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'An ordinary note about ephemeris files.')
+Add-LabCommit -LabRoot $lab -Message "Add a note`n`nAn ordinary body paragraph, written by hand." -Paths @('docs/notes.md')
+Assert-Gate 'a clean range' 'passes' $lab -CommitRange "$base..HEAD"
+
+Write-Host ''
+Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+
+if ($failures -gt 0) {
+    Write-Host "FAIL: $failures self-test case(s) failed."
+    exit 1
+}
+Write-Host 'PASS: all verify-no-tooling-attribution self-test cases passed.'
+exit 0
