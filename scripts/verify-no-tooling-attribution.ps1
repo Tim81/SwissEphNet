@@ -143,6 +143,18 @@ try {
         @{ Regex = '\bGenerated with\b'; Label = "'Generated with' footer phrase" }
     )
 
+    # Reserved-domain table, used only by the identity scan in section 2 and deliberately kept out
+    # of $patterns above -- see the comment at its use site for why mixing the two would break the
+    # tracked-file scan.
+    $reservedIdentityDomains = @(
+        @{ Regex = '(?i)\.invalid$'; Label = "the reserved TLD '.invalid'" }
+        @{ Regex = '(?i)\.example$'; Label = "the reserved TLD '.example'" }
+        @{ Regex = '(?i)\.test$'; Label = "the reserved TLD '.test'" }
+        @{ Regex = '(?i)\.localhost$'; Label = "the reserved TLD '.localhost'" }
+        @{ Regex = '(?i)@localhost$'; Label = "the reserved name 'localhost'" }
+        @{ Regex = '(?i)@example\.(com|net|org)$'; Label = "a reserved example.* domain" }
+    )
+
     $failures = [System.Collections.Generic.List[string]]::new()
 
     # ---------------------------------------------------------------------------------------
@@ -283,6 +295,42 @@ try {
                 foreach ($p in $patterns) {
                     if ([regex]::IsMatch($field.Value, $p.Regex)) {
                         $failures.Add("commit ${shortSha}: $($field.Label) `"$($field.Value.Trim())`" matches $($p.Label)")
+                    }
+                }
+            }
+
+            # A placeholder identity and a tool identity are two different failure modes, and the
+            # table above only covers the second. $patterns matches product and company names, so
+            # it catches a commit authored by "Claude <noreply@anthropic.com>" and nothing at all
+            # about "test <test@example.invalid>", which names no vendor and matches no entry in
+            # it. That is not hypothetical: that exact address reached 14 commits on this branch
+            # and this script still exited 0 on the range, with the identity scan above already in
+            # place. The scan read the right four fields; the table it consulted simply had no rule
+            # those values could match, so looking at %an/%ae/%cn/%ce bought nothing on its own.
+            #
+            # The rule here is the reserved-domain list from RFC 2606 and RFC 6761, which set aside
+            # .test, .example, .invalid and .localhost, plus example.com/.net/.org, precisely so
+            # they can be used in documentation and testing with a guarantee that they never
+            # resolve. An address in one of them is a placeholder by construction, which is what
+            # makes this safe to fail on: unlike a name-shaped heuristic ("does this look like a
+            # bot?"), it cannot fire on a real contributor's address, because no real address can
+            # live there.
+            #
+            # Email fields only, and identity only. Reserved domains are the correct thing to write
+            # in prose -- this comment writes several -- so folding them into $patterns would make
+            # the tracked-file scan fail on the paragraph you are reading. The names are left alone
+            # for the same reason in reverse: "test" is an ordinary English word and an ordinary
+            # surname, and a placeholder identity always carries the address too.
+            foreach ($emailField in @(
+                    @{ Value = $authorEmail; Label = 'author email' },
+                    @{ Value = $committerEmail; Label = 'committer email' }
+                )) {
+                $address = $emailField.Value.Trim()
+                if ([string]::IsNullOrWhiteSpace($address)) { continue }
+                foreach ($d in $reservedIdentityDomains) {
+                    if ([regex]::IsMatch($address, $d.Regex)) {
+                        $failures.Add("commit ${shortSha}: $($emailField.Label) `"$address`" is a placeholder address in $($d.Label), reserved by RFC 2606/6761 and never valid in published history")
+                        break
                     }
                 }
             }
