@@ -31,9 +31,19 @@
     fenced sample (`# Migration steps for the CLI`) starts with `#` like a markdown heading does,
     and testing headings first let it open a historical region for the rest of the document,
     exempting everything after it -- including an unrelated fenced sample later in the same file.
-    An unbalanced fence or unclosed `<pre>` (an odd number of delimiters) is a hard failure in its
-    own right, not a silent parity flip for the remainder of the file: this script cannot tell code
-    from prose past that point, so it says so rather than guessing.
+    An unbalanced fence or unclosed `<pre>` (an odd number of delimiters), or a historical heading
+    still open at end of file (no later heading at the same or a shallower level closed it), is a
+    hard failure in its own right, not a silent parity flip or exemption for the remainder of the
+    file: this script cannot tell code from prose (or "still historical" from "current again") past
+    that point, so it says so rather than guessing.
+
+    A fence only closes on a run of the same character (backtick or tilde) at least as long as the
+    one that opened it -- CommonMark's own rule, tracked here rather than toggling on any
+    fence-looking line, so a literal ``` shown as content inside an outer ~~~~-fenced block does not
+    flip the state early. A fenced sample nested inside a `>` blockquote is recognized as a fence
+    too, the same way CommonMark itself renders one. A removed API's name split across a hard-wrapped
+    line boundary inside a code sample is also caught, by checking the join of each code line with
+    the one before it in addition to each line alone.
 
     This is a deliberately narrow signal, chosen over a broader "flag any mention outside a
     historical section" rule specifically because the broader rule produces a false positive on
@@ -66,9 +76,14 @@ $ErrorActionPreference = 'Stop'
 
 # Symbol name -> what replaced it, for the failure message. Extend this table, not the logic
 # below, when a future release removes another public API that documentation could still be
-# teaching. A reflection diff of the shipped 2.8.0.2 package against the current build surfaces
-# 32 removed public entries across three top-level names; only the first two were listed here
-# until this check was added.
+# teaching. A reflection diff of the shipped 2.8.0.2 package against the current build, re-derived
+# directly (a MetadataLoadContext comparison of every publicly-reachable member -- public, plus
+# protected/protected internal, since those are just as visible to a consumer who subclasses
+# SwissEph as a fully public member is -- excluding the enum's compiler-generated `value__`
+# backing field), surfaces 25 removed entries across FOUR top-level names, not the three this
+# table used to list: OnLoadFile, LoadFileEventArgs and TypeCode were here; `SwissEph.LoadFile`
+# (protected internal in 2.8.0.2, gone entirely from the current build, not merely narrowed) was
+# missing until this check was added.
 $RemovedApis = [ordered]@{
     'OnLoadFile'        = 'SwissEph.FileProvider (an IEphemerisFileProvider)'
     'LoadFileEventArgs' = 'no replacement -- IEphemerisFileProvider.Open returns a Stream directly'
@@ -79,6 +94,24 @@ $RemovedApis = [ordered]@{
     'TypeCode'          = 'System.TypeCode -- the conditionally-compiled SwissEphNet.TypeCode ' +
                           '(shipped in 2.8.0.2 for target frameworks lacking System.TypeCode) was ' +
                           'dropped once every shipped target framework has the BCL one'
+    # `SwissEph.LoadFile(string)` was `protected internal` in 2.8.0.2 -- reachable from a subclass
+    # in any assembly, so a "here is how to override file loading" sample could genuinely call it
+    # -- and no longer exists at all in the current build. Unlike the three entries above, its
+    # bare name collides with a real, unrelated BCL API a legitimate sample might call:
+    # `System.Reflection.Assembly.LoadFile(path)`. The default `\b<name>\b` matching every other
+    # entry uses would flag that call too, so this entry gets its own pattern below instead of the
+    # default one: `\bLoadFile\b` still fires on a bare or `this.`/`base.`/`swissEph.`-qualified
+    # call (SwissEph's own method was never callable through the BCL type's own qualifier), but
+    # not when the name is directly preceded by "Assembly." -- the one concrete collision a code
+    # sample in this README could plausibly contain.
+    'LoadFile'          = 'no replacement -- SwissEph no longer opens ephemeris files through an overridable method; provide an IEphemerisFileProvider instead'
+}
+
+# Per-API override for the match pattern used below, keyed by the same name as $RemovedApis.
+# Every entry not listed here uses the default `\b<name>\b`; only entries whose bare name
+# collides with an unrelated, legitimate API need a narrower pattern.
+$RemovedApiPatterns = @{
+    'LoadFile' = '(?<!Assembly\.)\bLoadFile\b'
 }
 
 # Headings that open a historical/migration region. Matched against heading text case-insensitively;
@@ -100,7 +133,10 @@ foreach ($docPath in $currentUsageDocs) {
     $inHistorical = $false
     $historicalStartLevel = 0
     $inFence = $false
+    $fenceChar = $null   # backtick or tilde that opened the current fence; $null when $inFence is false
+    $fenceLen = 0        # length of the run that opened it
     $inPre = $false
+    $prevCodeLine = $null   # the immediately preceding CODE line's own text, for the split-name check below
 
     for ($i = 0; $i -lt $lines.Count; $i++) {
         $line = $lines[$i]
@@ -112,8 +148,36 @@ foreach ($docPath in $currentUsageDocs) {
         # exempting everything after it -- including a second, unrelated fenced sample later in
         # the same file. A line that opens or closes a fence is delimiter syntax, not code content
         # to scan, so it still just toggles state and moves on.
-        if ($line -match '^\s*(```|~~~)') {
-            $inFence = -not $inFence
+        #
+        # The delimiter's character AND length are tracked, not just "was a fence-looking line
+        # seen" -- CommonMark's own rule is that a fence only closes on a run of the SAME
+        # character, at least as long as the one that opened it. Measured: a naive toggle-on-any-
+        # fence-looking-line (the previous version of this check) mistakes a literal ``` shown as
+        # *content* inside an outer ~~~~-fenced block for a close, flipping $inFence false right
+        # before the line that actually needed scanning. `(?:>\s?)*` also tolerates one or more
+        # leading blockquote markers, so a fenced sample quoted inside a `>` blockquote -- which
+        # CommonMark itself renders as a real, nested fenced code block -- is recognized as a
+        # fence at all; without it, a blockquoted removed-API sample was never classified as code
+        # in the first place, so the removed-API scan below never got the chance to see it, and it
+        # silently passed no matter what it contained.
+        if ($inFence) {
+            if ($line -match '^(?:>\s?)*\s{0,3}(`{3,}|~{3,})\s*$' -and
+                $Matches[1][0] -eq $fenceChar -and $Matches[1].Length -ge $fenceLen) {
+                $inFence = $false
+                $fenceChar = $null
+                $fenceLen = 0
+                $prevCodeLine = $null
+                continue
+            }
+            # Else: a fence-looking line of the wrong character, too short, or with trailing
+            # content after it -- not a close, so it is fence *content* and falls through to be
+            # scanned as code below, same as any other line inside the fence.
+        }
+        elseif ($line -match '^(?:>\s?)*\s{0,3}(`{3,}|~{3,})') {
+            $fenceChar = $Matches[1][0]
+            $fenceLen = $Matches[1].Length
+            $inFence = $true
+            $prevCodeLine = $null
             continue
         }
 
@@ -153,17 +217,35 @@ foreach ($docPath in $currentUsageDocs) {
         $isIndentedCode = $line -match '^(\t| {4,})\S'
 
         $isCodeLine = $inFence -or $inPreLine -or $isIndentedCode
-        if (-not $isCodeLine -or $inHistorical) { continue }
+        if (-not $isCodeLine -or $inHistorical) {
+            $prevCodeLine = $null
+            continue
+        }
 
         foreach ($api in $RemovedApis.Keys) {
-            if ($line -match "\b$([regex]::Escape($api))\b") {
+            $pattern = if ($RemovedApiPatterns.ContainsKey($api)) { $RemovedApiPatterns[$api] } else { "\b$([regex]::Escape($api))\b" }
+            if ($line -match $pattern) {
                 $failures.Add(
                     "${relPath}:${lineNumber}: code sample outside any historical section names " +
                     "'$api', which no longer exists. Replace it with $($RemovedApis[$api]), or, if this " +
                     "genuinely is a historical before/after sample, move it under a heading this script " +
                     "recognizes as historical ($historicalHeadingPattern).")
             }
+            # An identifier split across a line break (rare, but a real code sample can wrap one)
+            # never matches on either line alone. Checked as a second pass against the immediately
+            # preceding code line's text concatenated directly with this one -- exactly how the
+            # two lines join once whatever hard-wrapped them is undone -- and only reported when
+            # that combination matches but this line alone did not, so an ordinary same-line match
+            # (already reported above) is never double-counted.
+            elseif ($prevCodeLine -and "$prevCodeLine$line" -match $pattern) {
+                $failures.Add(
+                    "${relPath}:$($lineNumber - 1)-${lineNumber}: '$api', which no longer exists, appears to be " +
+                    "split across these two lines of a code sample outside any historical section. Replace it " +
+                    "with $($RemovedApis[$api]), or move the sample under a heading this script recognizes as " +
+                    "historical ($historicalHeadingPattern).")
+            }
         }
+        $prevCodeLine = $line
     }
 
     if ($inFence -or $inPre) {
@@ -172,6 +254,16 @@ foreach ($docPath in $currentUsageDocs) {
             "an unclosed <pre>). This script cannot reliably tell code from prose for the rest of " +
             "the file once that happens -- fix the unbalanced delimiter rather than trust this check's " +
             "verdict on whatever comes after it.")
+    }
+
+    if ($inHistorical) {
+        $failures.Add(
+            "${relPath}: a historical/migration heading is still open at end of file (no later heading at " +
+            "the same or a shallower level closed it). Everything from that heading to end of file was " +
+            "exempted from the removed-API scan on that basis alone -- the same 'cannot reliably tell past " +
+            "this point' reasoning as an unbalanced fence above. Add a closing heading (any heading at that " +
+            "level or shallower whose text does not itself match $historicalHeadingPattern), or restructure " +
+            "so the historical section is not left open at end of file.")
     }
 }
 
