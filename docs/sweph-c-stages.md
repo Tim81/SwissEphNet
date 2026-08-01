@@ -26,7 +26,7 @@ kept the gates green, and so a bisect after a numeric regression stayed cheap. `
 now complete; this section is kept as a record of how the work divided; each subsection
 cites the commit that landed it.
 
-### A. Ephemeris file layer (~23 hunks) -- `276fc5b`
+### A. Ephemeris file layer (~23 hunks) -- `b75bddd`
 
 `read_const` (12), `swe_set_ephe_path` (3), `swi_get_denum` (2), `do_fread`,
 `get_new_segment`, `rot_back`, `free_planets`.
@@ -50,7 +50,7 @@ visible. The file-backed oracle grid went from 791 of 2,024 bit-identical to 1,9
 `grid-files.tsv` stood at the time -- before the crossing functions added 220 more rows to it;
 see `README.md`'s "Bit-exact oracle" section for the grid's current, marked total.
 
-### B. Position pipeline (~40 hunks) -- `83c0363`
+### B. Position pipeline (~40 hunks) -- `36f7b99`
 
 `app_pos_etc_plan` (10), `lunar_osc_elem` (9), `main_planet` (3), `swi_deflect_light` (3),
 `main_planet_bary` (2), `app_pos_etc_sun` (2), `app_pos_etc_mean` (2), plus single hunks in
@@ -75,7 +75,7 @@ port, so they appeared inside hunks attributed to whichever function precedes th
 under their own names. All three now exist. `NOT-IMPLEMENTED` became empty here: every
 function the 2.10.03 API surface declares is implemented.
 
-### D. Fixed stars (~15 hunks) -- `63cd024`
+### D. Fixed stars (~15 hunks) -- `5580e97`
 
 `swi_fixstar_calc_from_record` (4), `fixstar_cut_string` (3), `load_all_fixed_stars` (3),
 `fixstar_calc_from_struct` (2), `swi_fixstar_load_record` (2), `swe_get_planet_name` (2),

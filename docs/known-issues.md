@@ -77,12 +77,12 @@ does that error surface through `retc` there but not here?
 2.08.** So this is upgrade work, not a defect to fix against the version the port
 currently tracks.
 
-Measured by the bit-exact comparison harness: 176 of the 14,220 analytic-grid rows
-return a different `retc` against 2.10.03 C, all `swe_houses_armc` at `eps=0`, 88
-with `hsys = 'G'` and 88 with `hsys = 'P'`. Against **2.08** C all 176 match
-exactly -- `Tests/oracle/version-classification.tsv` classifies every one of them
-`TRACKS-2.08` with `port_vs_2.08 = MATCH`. 2.08 returns `OK` with NaN cusps, which
-is precisely what the port does.
+Measured by the bit-exact comparison harness against the 14,220-row analytic grid of
+the time: 176 rows returned a different `retc` from 2.10.03 C, all `swe_houses_armc`
+at `eps=0`, 88 with `hsys = 'G'` and 88 with `hsys = 'P'`. Against **2.08** C all 176
+matched exactly, and `Tests/oracle/version-classification.tsv` classified every one of
+them `TRACKS-2.08` with `port_vs_2.08 = MATCH`. 2.08 returns `OK` with NaN cusps,
+which is what the port did at that point.
 
 The mechanism is in the C. 2.10.03 adds `int niter_max = 100`
 (`external/swisseph/swehouse.c:940`) and caps the Placidus and Gauquelin pole-height
@@ -102,6 +102,21 @@ anywhere in `external/pyswisseph-2.08/swehouse.c`, and that file has three
 C bit for bit; `Tests/oracle/known-diff.tsv` is empty. The rows had also carried 33
 to 34 cusp fields that were NaN on the port's side and finite on 2.10.03's, from the
 Porphyry fallback, and those agree too.
+
+Read the paragraph above as a record of a past state, not a current one: the
+`TRACKS-2.08` classification it cites no longer exists anywhere in the file. Measured on
+the committed classification with
+
+```powershell
+Get-Content Tests/oracle/version-classification.tsv |
+    Where-Object { $_ -notmatch '^#' } | Select-Object -Skip 1 |
+    ForEach-Object { ($_ -split "`t")[1] } | Group-Object | Select-Object Count, Name
+```
+
+every data row is `AGREES-BOTH` or `TRACKS-2.10.03`, and zero are `TRACKS-2.08`; the
+same holds for `version-classification-files.tsv`. That file is regenerated and diffed
+against what is committed by `.github/workflows/oracle.yml`, so it tracks the port
+rather than the moment someone last looked at it.
 
 An earlier revision of this paragraph said the port "swallows" an error the C
 reports, which was wrong in the way that costs time: it would have sent someone to
@@ -1026,7 +1041,7 @@ it currently tracks, so it can be fixed without waiting for the swetest.c re-tra
 Fixing it in `Programs/SweTest/Program.cs` is a freeze-permitted correction of a divergence from
 the C, the same standing as the six that have already landed: cite the C file and line.
 
-**Closed, all ten sites.** Commit `2b7e896` fixed the eight pointer-arithmetic sites (`-ay`,
+**Closed, all ten sites.** Commit `44d434c` fixed the eight pointer-arithmetic sites (`-ay`,
 `-sidt0`, `-sidsp`, `-sid`, `-j`, `-helflag`, `-amod`, `-tidacc`, citing the 2.08 `swetest.c` line
 each one corresponds to) and the two unrelated crashes recorded above (`-house`, `-utc`) in the
 same change. The 150-row `Tests/swetest/known-diff.tsv` grid moved from 70 to 80 identical rows,
@@ -1082,7 +1097,7 @@ than "the file layer" suggested -- but `main_planet` was not, in the end, where 
 **Closed, and `rot_back` was the fifth function this paragraph cleared too soon.** The actual
 defect was in `rot_back`, not `main_planet`: it read `swed.oec2000.seps`/`.ceps`, which nothing in
 this port ever populates, so every position rotated back through it used a J2000 obliquity of
-zero (commit `276fc5b`, part of the `sweph.c` file-layer slice). `main_planet` reads Earth's
+zero (commit `b75bddd`, part of the `sweph.c` file-layer slice). `main_planet` reads Earth's
 position via `rot_back` on the way out, which is why the divergence looked like it belonged to
 `main_planet` from this grid's evidence alone -- the wrong function was simply downstream of the
 right one. Every `SEFLG_SWIEPH` position was affected, not only Earth's, since `rot_back` is on
@@ -1266,7 +1281,7 @@ would never observe it.
 **The real evidence is six conformance rows in suite 8**, not the 380 baseline rows. Astrodienst's
 own reference values in `t.exp` expect `xxattr[0]`/`xxattr[2]` to be `1`; before this fix the port
 returned `100` for genuine eclipse computations, not just the error path. Diffing
-`Tests/conformance/known-fail.tsv` at the deviation 19 landing commit (`01cec05`): three
+`Tests/conformance/known-fail.tsv` at the deviation 19 landing commit (`ec7cb75`): three
 iterations -- 8.6.2, 8.7.5, 8.7.7 -- had their *entire* mismatch resolved by this one change and
 were pruned, now fully passing. Three more -- 8.6.1, 8.7.1, 8.7.3 -- had the `xxattr[0]`/`xxattr[2]`
 component of their mismatch resolved (their reason string no longer mentions `attr[0]`/`attr[2]`

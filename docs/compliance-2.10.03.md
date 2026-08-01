@@ -186,8 +186,10 @@ tolerances `setest/t.fix` itself ships. `Tests/conformance/known-fail.tsv` is th
 row per iteration the port does not currently match.
 
 As of this record, `known-fail.tsv` carries 1,423<!--doccount:known-fail-total--> rows, so 11,334 of 12,757 iterations pass
-(88.8%). That is down from 4,382 rows when the oracle was first wired up (commit `835a6c6`) --
-the 2.10.03 port has closed 2,959 of the iterations it started 4,382 behind on.
+(88.8%). That is down from 3,291 rows when the oracle landed (commit `7013ed7`) -- the 2.10.03
+port has closed 1,868 of the iterations it started behind on. An earlier revision of this
+paragraph cited a development commit that never reached this branch's history, and its 4,382-row
+figure with it; both are unreachable for anyone reading from a clone.
 
 The 1,423<!--doccount:known-fail-total--> remaining rows split into two categories, with 0<!--doccount:known-fail-error--> in
 `ERROR`, 0<!--doccount:known-fail-unreproducible--> in `UNREPRODUCIBLE`, and 0<!--doccount:known-fail-not-implemented--> in
