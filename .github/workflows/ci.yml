@@ -194,21 +194,22 @@ jobs:
   # for no new coverage. See scripts/verify-no-tooling-attribution.ps1's own header for the
   # pattern table and why each pattern is shaped the way it is.
   #
-  # The base-ref step below widens the scanned range for push events past what
-  # github.event.before alone gives: this workflow's own concurrency group is keyed on
-  # github.ref for a push with no open pull request, with cancel-in-progress true, so push N's
-  # run can be cancelled by push N+1 before it finishes. Push N+1's own before is push N's tip, so
-  # a before-based range only ever covers the commits the *surviving* run's push introduced --
-  # push N's commits, scanned only by the run that got cancelled, are never covered by any run
-  # that actually completes. A pull_request run backs this up when a PR is open (it runs in a
-  # separate, PR-numbered concurrency group untouched by push cancellation, and diffs the whole PR
-  # range), but a direct push with no PR yet -- pushing straight to a long-lived branch mid-series,
-  # exactly how this repository's own commits land -- has no such backstop. The widening step
-  # additionally resolves merge-base(HEAD, integration branch) and uses it instead whenever it
-  # reaches further back than the before-based range, without changing resolve-log-base.ps1 itself
-  # (baseline.yml's own use of it is unaffected) and without breaking an ordinary push landing
-  # directly on the integration branch, where that merge-base resolution has no fork point to
-  # offer and the before-based range is left untouched.
+  # The base-ref step below passes -WidenPastCancellation for push events, widening the scanned
+  # range past what github.event.before alone gives: this workflow's own concurrency group is
+  # keyed on github.ref for a push with no open pull request, with cancel-in-progress true, so
+  # push N's run can be cancelled by push N+1 before it finishes. Push N+1's own before is push
+  # N's tip, so a before-based range only ever covers the commits the *surviving* run's push
+  # introduced -- push N's commits, scanned only by the run that got cancelled, are never covered
+  # by any run that actually completes. A pull_request run backs this up when a PR is open (it
+  # runs in a separate, PR-numbered concurrency group untouched by push cancellation, and diffs
+  # the whole PR range), but a direct push with no PR yet -- pushing straight to a long-lived
+  # branch mid-series, exactly how this repository's own commits land -- has no such backstop.
+  # -WidenPastCancellation is implemented, and self-tested (scripts/resolve-log-base.ps1
+  # -SelfTest, which baseline.yml's own log-check job runs on every push and pull_request), inside
+  # resolve-log-base.ps1 itself rather than as a second copy of this widening logic inline here --
+  # this resolver was inline bash before it existed at all and shipped two permissive defects in a
+  # row for exactly that reason (see the script's own header). baseline.yml's log-check job passes
+  # the same flag, so both consumers get identical, tested behavior from one place.
   verify-no-tooling-attribution:
     name: No tooling-authorship text in tracked files or new commits
     runs-on: ubuntu-latest
@@ -230,36 +231,29 @@ jobs:
         id: base-ref
         shell: pwsh
         run: |
-          $base = pwsh scripts/resolve-log-base.ps1 `
-            -EventName '${{ github.event_name }}' `
-            -BeforeSha '${{ github.event.before }}' `
-            -PrBaseSha '${{ github.event.pull_request.base.sha }}'
-          if ($LASTEXITCODE -ne 0) { exit 1 }
+          # Never $true here regardless of the runner's ambient default: without pinning this,
+          # `git merge-base` and other native commands called elsewhere in this job's steps would
+          # throw NativeCommandExitException on an ordinary non-zero-but-expected exit -- an
+          # earlier attempt at this same widening logic caused exactly that regression once. Pinned
+          # explicitly rather than relied upon, the same as scripts/verify-no-tooling-attribution.ps1
+          # itself pins it (see that script's own line near the top).
+          $PSNativeCommandUseErrorActionPreference = $false
 
-          # Widen against the concurrency-cancellation gap this job's own comment above explains,
-          # for push events only: also resolve the merge-base-with-integration-branch range (the
-          # same range a pull_request run would diff) and prefer it over the before-based range
-          # just above whenever it reaches further back, since that range is then a superset that
-          # also covers whatever a cancelled earlier push's run never finished scanning. This does
-          # not change resolve-log-base.ps1 itself (still $base, above, unmodified -- so
-          # baseline.yml's own use of it is unaffected) and does not touch the ordinary
-          # fast-forward push case: a push landing directly on the integration branch resolves
-          # $wideBase to $base's own value there (HEAD has no fork point from itself), or fails to
-          # resolve at all, either of which just keeps $base as already computed.
+          # Built as an argument list and splatted, not a trailing bare token appended to the
+          # named-parameter call: resolve-log-base.ps1 is invoked as a separate child process here
+          # (this is `pwsh <script>`, not a direct cmdlet call in this same session), so a stray
+          # empty-string argument would still occupy a positional slot on that process's own
+          # command line and silently bind to -IntegrationRef (the next declared parameter after
+          # -PrBaseSha), not to -WidenPastCancellation, which is a real risk here.
+          $resolveArgs = @(
+            '-EventName', '${{ github.event_name }}',
+            '-BeforeSha', '${{ github.event.before }}',
+            '-PrBaseSha', '${{ github.event.pull_request.base.sha }}'
+          )
+          if ('${{ github.event_name }}' -eq 'push') { $resolveArgs += '-WidenPastCancellation' }
+          $base = pwsh scripts/resolve-log-base.ps1 @resolveArgs
+          if ($LASTEXITCODE -ne 0) { exit 1 }
           $base = $base.Trim()
-          if ('${{ github.event_name }}' -eq 'push') {
-            $wideBase = pwsh scripts/resolve-log-base.ps1 -EventName push -PrBaseSha '' 2>$null
-            if ($LASTEXITCODE -eq 0 -and $wideBase) {
-              $wideBase = $wideBase.Trim()
-              if ($wideBase -ne $base) {
-                git merge-base --is-ancestor $wideBase $base 2>$null
-                if ($LASTEXITCODE -eq 0) {
-                  Write-Host "Widening scan base from $base to $wideBase (merge-base with the integration branch reaches further back)."
-                  $base = $wideBase
-                }
-              }
-            }
-          }
 
           "sha=$base" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           Write-Host "Resolved commit-message scan base: $base"

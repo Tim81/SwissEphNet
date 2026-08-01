@@ -60,11 +60,35 @@ jobs:
         id: base-ref
         shell: pwsh
         run: |
-          $base = pwsh scripts/resolve-log-base.ps1 `
-            -EventName '${{ github.event_name }}' `
-            -BeforeSha '${{ github.event.before }}' `
-            -PrBaseSha '${{ github.event.pull_request.base.sha }}'
+          # $PSNativeCommandUseErrorActionPreference = $false: without pinning this explicitly,
+          # this step's non-zero-but-expected native-command exits (inside
+          # resolve-log-base.ps1 -WidenPastCancellation, via `git merge-base`) would throw
+          # NativeCommandExitException the day the runner's ambient default ever flips, the same
+          # regression an earlier attempt at this widening caused once in ci.yml. Pinned the same
+          # way scripts/verify-no-tooling-attribution.ps1 pins it.
+          $PSNativeCommandUseErrorActionPreference = $false
+
+          # -WidenPastCancellation for push events: this job's own concurrency group (top of this
+          # file) is keyed on github.ref for a push with no open pull request, cancel-in-progress
+          # true, so push N's run can be cancelled by push N+1 before it finishes -- and push N+1's
+          # own github.event.before is push N's tip, so a before-based range alone never covers the
+          # commits *push N itself* introduced. A push changing a golden Tests/baseline/*.tsv file
+          # without a sidecar log entry, right before its own run gets cancelled, would otherwise
+          # never be checked by any run that actually completes -- ci.yml's
+          # verify-no-tooling-attribution job already carries this same widening (see its own
+          # comment) for exactly this reason; this job guards the golden baseline files themselves,
+          # so leaving it unwidened here left the more important of the two gates with the gap.
+          # Implemented, and self-tested, inside resolve-log-base.ps1 itself (see the "Verify the
+          # base resolver itself" step above, which exercises it) rather than duplicated here.
+          $resolveArgs = @(
+            '-EventName', '${{ github.event_name }}',
+            '-BeforeSha', '${{ github.event.before }}',
+            '-PrBaseSha', '${{ github.event.pull_request.base.sha }}'
+          )
+          if ('${{ github.event_name }}' -eq 'push') { $resolveArgs += '-WidenPastCancellation' }
+          $base = pwsh scripts/resolve-log-base.ps1 @resolveArgs
           if ($LASTEXITCODE -ne 0) { exit 1 }
+          $base = $base.Trim()
           "sha=$base" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           Write-Host "Resolved baseline-log base: $base"
 

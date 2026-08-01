@@ -54,6 +54,30 @@
     Ordered candidate integration refs. The first that exists is used. Defaults to the fork's
     integration branch then trunk.
 
+.PARAMETER WidenPastCancellation
+    Push only; ignored for pull_request. After resolving $before normally above, also resolve
+    where $before itself forks from the integration branch, and prefer that fork point whenever
+    it is older than $before.
+
+    Why this exists: this repository's own workflows run with `cancel-in-progress: true` in a
+    concurrency group keyed on the branch ref for a push with no open pull request. Push N's own
+    CI run can be cancelled by push N+1 before it finishes. Push N+1's own github.event.before is
+    push N's tip, so a before-based range alone only ever covers what push N+1 itself introduced
+    -- push N's own commits, checked only by the run that got cancelled, are never covered by any
+    run that actually completes. Reaching back to $before's own fork point recovers them.
+
+    Computed from $before, not from HEAD: a wider-fork-point search rooted at HEAD would let a
+    merge commit in *this* push (one that pulls the integration branch's current tip in) drag the
+    fork point forward past $before -- past the very thing this is supposed to widen -- silently
+    disabling the widening in exactly the push where the concurrency gap is most likely (multiple
+    concurrent pushes to the same integration branch, one of them a merge). merge-base($before,
+    ref) is always an ancestor of, or equal to, $before itself, so this only ever widens the
+    range, never narrows past what $before alone already covered. A push landing directly on the
+    integration branch (where $before already equals its own fork point, so there is nothing
+    further back to reach) is correctly left unwidened rather than refused: unlike the "no usable
+    before" fallback below, a valid $before already exists here, so there is no reason to fail
+    closed.
+
 .PARAMETER SelfTest
     Build throwaway repositories covering every rule above and assert the resolved base.
     Touches nothing outside a temporary directory.
@@ -64,6 +88,7 @@ param(
     [string] $BeforeSha,
     [string] $PrBaseSha,
     [string[]] $IntegrationRef = @('origin/release/2.10.03', 'origin/main'),
+    [switch] $WidenPastCancellation,
     [switch] $SelfTest
 )
 
@@ -79,12 +104,29 @@ function Test-Commit {
     return $LASTEXITCODE -eq 0
 }
 
+function Resolve-IntegrationForkPoint {
+    # Returns the merge-base of $From with the first reachable ref in $IntegrationRef, or $null
+    # if none of them exist in this clone or none share history with $From. Never throws --
+    # unlike the "no usable before" fallback in Resolve-LogBase below, a caller of this function
+    # already has a valid base to fall back to (the widening in Resolve-LogBase is optional), so
+    # "could not find a wider base" is a normal, silent no-op here, not a failure.
+    param([string] $From, [string[]] $IntegrationRef)
+    foreach ($ref in $IntegrationRef) {
+        if (-not (Test-Commit $ref)) { continue }
+        $mb = (git merge-base $From $ref 2>$null)
+        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($mb)) { continue }
+        return $mb.Trim()
+    }
+    return $null
+}
+
 function Resolve-LogBase {
     param(
         [string] $EventName,
         [string] $BeforeSha,
         [string] $PrBaseSha,
-        [string[]] $IntegrationRef
+        [string[]] $IntegrationRef,
+        [switch] $WidenPastCancellation
     )
 
     $head = (git rev-parse HEAD).Trim()
@@ -101,6 +143,12 @@ function Resolve-LogBase {
     if ($BeforeSha -and $BeforeSha -ne $ZeroSha -and (Test-Commit $BeforeSha)) {
         $before = $BeforeSha.Trim()
         if ($before -ne $head) {
+            if ($WidenPastCancellation) {
+                $forkPoint = Resolve-IntegrationForkPoint -From $before -IntegrationRef $IntegrationRef
+                if ($forkPoint -and $forkPoint -ne $before) {
+                    return $forkPoint
+                }
+            }
             return $before
         }
         # before == HEAD means the push moved nothing. Nothing to diff, and returning HEAD
@@ -152,7 +200,7 @@ against an explicit base.
 # ---------------------------------------------------------------------------------------------
 
 if (-not $SelfTest) {
-    $base = Resolve-LogBase -EventName $EventName -BeforeSha $BeforeSha -PrBaseSha $PrBaseSha -IntegrationRef $IntegrationRef
+    $base = Resolve-LogBase -EventName $EventName -BeforeSha $BeforeSha -PrBaseSha $PrBaseSha -IntegrationRef $IntegrationRef -WidenPastCancellation:$WidenPastCancellation
     Write-Output $base
     exit 0
 }
@@ -341,6 +389,81 @@ else {
     Write-Host ("  FAIL  before == HEAD says so explicitly, on stderr, instead of resolving silently`n" +
         "          expected stderr to mention 'equals HEAD', got: [$($capturedStderr.ToString())]")
     $script:failures++
+}
+Pop-Location
+
+# 9. -WidenPastCancellation recovers a cancelled push's own commits: push N's commits (between
+#    the fork point and push N's own tip) must still be covered when push N+1's github.event.before
+#    is push N's tip -- which alone only bounds push N+1's own new commits, not push N's.
+$lab = New-Lab 'widen-recovers-cancelled-push'
+git checkout -q -b feature
+'push-n' | Set-Content 'Tests/baseline/x.tsv'
+git commit -q -am 'push N (would have been cancelled)'
+git push -q origin feature 2>$null
+$beforeForPushNPlus1 = (git rev-parse HEAD).Trim()
+'push-n-plus-1' | Set-Content 'Tests/baseline/x.tsv'
+git commit -q -am 'push N+1 (the surviving run)'
+git push -q origin feature 2>$null
+git fetch -q origin '+refs/heads/*:refs/remotes/origin/*' 2>$null
+$fork = (git merge-base $beforeForPushNPlus1 origin/release/2.10.03).Trim()
+$gotUnwidened = Resolve-LogBase -EventName 'push' -BeforeSha $beforeForPushNPlus1 -PrBaseSha '' -IntegrationRef @('origin/release/2.10.03', 'origin/main')
+Assert-Base 'without -WidenPastCancellation, still just github.event.before (unchanged default)' $beforeForPushNPlus1 $gotUnwidened
+$gotWidened = Resolve-LogBase -EventName 'push' -BeforeSha $beforeForPushNPlus1 -PrBaseSha '' -IntegrationRef @('origin/release/2.10.03', 'origin/main') -WidenPastCancellation
+Assert-Base '-WidenPastCancellation reaches back to the fork point, covering push N too' $fork $gotWidened
+Pop-Location
+
+# 10. -WidenPastCancellation on a push landing directly on the integration branch: $before already
+#     equals its own fork point (there is no earlier history to reach), so this must return $before
+#     unchanged rather than throw -- unlike the "no usable before" fallback's refusal, a valid
+#     $before already exists here.
+$lab = New-Lab 'widen-on-integration-branch-noop'
+git checkout -q -B 'release/2.10.03' origin/release/2.10.03 2>$null
+$beforeOnIntegration = (git rev-parse HEAD).Trim()
+'on-integration' | Set-Content 'Tests/baseline/x.tsv'
+git commit -q -am 'direct push to the integration branch'
+git push -q origin 'release/2.10.03' 2>$null
+git fetch -q origin '+refs/heads/*:refs/remotes/origin/*' 2>$null
+$got = Resolve-LogBase -EventName 'push' -BeforeSha $beforeOnIntegration -PrBaseSha '' -IntegrationRef @('origin/release/2.10.03', 'origin/main') -WidenPastCancellation
+Assert-Base 'widening on a push to the integration branch itself is a no-op, not a refusal' $beforeOnIntegration $got
+Pop-Location
+
+# 11. -WidenPastCancellation survives a push that merges the integration branch in -- the second
+#     scenario a HEAD-rooted fork-point search would get wrong: after the merge, HEAD's own
+#     merge-base with the integration branch is the integration branch's *current* tip, which can
+#     be newer than $before if anyone else advanced the integration branch meanwhile, silently
+#     disabling the widening in exactly the push where the concurrency gap is most likely. Rooting
+#     the search at $before instead of HEAD must stay unaffected by this push's own merge commit.
+$lab = New-Lab 'widen-survives-merge-commit'
+git checkout -q -b feature
+'feature-work' | Set-Content 'Tests/baseline/x.tsv'
+git commit -q -am 'feature branch diverges'
+git push -q origin feature 2>$null
+$beforeMerge = (git rev-parse HEAD).Trim()
+$originalFork = (git merge-base $beforeMerge origin/release/2.10.03).Trim()
+# Someone else advances the integration branch after the feature branch forked. `git add -A`,
+# not just `commit -am`: -am only stages *modified tracked* files, and this is a brand new,
+# still-untracked file -- without the explicit add, this commit silently had nothing staged and
+# the integration branch never actually advanced, which made this whole scenario a no-op.
+git checkout -q -B 'release/2.10.03' origin/release/2.10.03 2>$null
+'someone-elses-work' | Set-Content 'Tests/baseline/other.tsv'
+git add -A
+git commit -q -m 'unrelated commit landing on the integration branch'
+git push -q origin 'release/2.10.03' 2>$null
+git fetch -q origin '+refs/heads/*:refs/remotes/origin/*' 2>$null
+# The feature branch's next push merges the now-advanced integration branch in. --no-ff: the
+# feature branch is otherwise a strict ancestor of the now-advanced integration branch, so a
+# plain merge would fast-forward instead of creating the real merge commit this scenario needs.
+git checkout -q feature
+git merge -q --no-ff origin/release/2.10.03 -m 'merge the integration branch in' 2>$null
+git push -q origin feature 2>$null
+git fetch -q origin '+refs/heads/*:refs/remotes/origin/*' 2>$null
+$headRootedForkPoint = (git merge-base HEAD origin/release/2.10.03).Trim()
+if ($headRootedForkPoint -eq $originalFork) {
+    Write-Host '  SKIP  widen-survives-merge-commit (this git merged fast-forward with nothing to distinguish HEAD-rooted from before-rooted; the scenario needs a real merge commit)'
+}
+else {
+    $got = Resolve-LogBase -EventName 'push' -BeforeSha $beforeMerge -PrBaseSha '' -IntegrationRef @('origin/release/2.10.03', 'origin/main') -WidenPastCancellation
+    Assert-Base 'widening rooted at $before is unaffected by this push''s own merge of the integration branch' $originalFork $got
 }
 Pop-Location
 
