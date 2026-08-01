@@ -15,7 +15,7 @@
     read and replay -- neither driver builds a grid of its own; both are interpreters over these
     rows. Extending coverage later means adding rows here, not editing two programs in step.
 
-    Covers two function families, chosen because between them they are roughly 90% of the
+    Covers three function families, chosen because between them they are roughly 90% of the
     conformance corpus (Tests/SwissEphNet.Conformance.Tests) and the bulk of the numeric porting
     work:
 
@@ -26,9 +26,10 @@
                                   every one of them, so every result depends on no ephemeris data
                                   file and is reproducible on any machine -- a file-backed grid is
                                   a later, separate stage. The TOPOCTR combination additionally
-                                  carries a fixed geoposition and the SIDEREAL combination a fixed
-                                  sid mode, each applied via its own swe_set_* call before that
-                                  row's swe_calc/swe_calc_ut runs.
+                                  carries a fixed geoposition and the SIDEREAL combination a sid
+                                  mode drawn from Get-NextSidMode's cycle (every predefined mode
+                                  0..46 in turn, not one fixed mode), each applied via its own
+                                  swe_set_* call before that row's swe_calc/swe_calc_ut runs.
 
       swe_houses / swe_houses_armc -- every house-system letter this port actually implements
                                   (SwissEphNet/CPort/SweHouse.cs's switch statements). Upstream
@@ -69,6 +70,19 @@
                                   row in this whole grid to open one -- see gen-grid-files.ps1,
                                   where it is covered against the real files instead.
 
+      swe_get_ayanamsa / swe_get_ayanamsa_ex / swe_get_ayanamsa_ex_ut -- direct coverage of the
+                                  ayanamsa machinery itself. Before this addition, every sid_mode
+                                  this grid carried was exercised only indirectly, through a
+                                  SEFLG_SIDEREAL swe_calc/crossing row -- proof the ayanamsa was
+                                  applied to something, never a comparison of the ayanamsa value
+                                  itself. Crossed with all 47 predefined modes (0..46) and, for
+                                  swe_get_ayanamsa_ex/_ex_ut, two iflag combinations (0, NONUT);
+                                  also carries SE_SIDM_USER (mode 255) with three t0/ayan_t0 pairs,
+                                  the one sid mode this grid could not express at all before the
+                                  t0/ayan_t0 columns below were added -- see $AyanamsaUserParams.
+                                  None of the three opens an ephemeris file, so all three belong
+                                  here rather than in gen-grid-files.ps1.
+
     A FRESH LIBRARY INSTANCE PER ROW (both drivers, not this script)
 
     swe_houses_armc carries a hidden field emulating a C static (saved_sundec, see
@@ -87,11 +101,13 @@
     out from under them. Empty string means "does not apply to this row's func":
 
       case_id, func, ipl, tjd, iflag, hsys, geolon, geolat, height, armc, eps, sid_mode, x2cross,
-      dir
+      dir, t0, ayan_t0
 
-    x2cross and dir are appended after sid_mode, not interleaved among the original twelve
-    columns, so every existing column keeps the same index it always had -- the crossing rows are
-    additive, not a renumbering.
+    x2cross and dir are appended after sid_mode, and t0/ayan_t0 after those, not interleaved among
+    the original twelve columns, so every existing column keeps the same index it always had --
+    both additions are additive, not a renumbering. t0/ayan_t0 carry swe_set_sid_mode's own
+    SE_SIDM_USER parameters (empty means 0.0, the same default an absent sid_mode already implied
+    for every non-USER row) -- see $AyanamsaUserParams and New-AyanamsaRow/New-AyanamsaExRow.
 
 .NOTES
     Deterministic by construction: no timestamps, no randomness, no machine-dependent state.
@@ -126,6 +142,15 @@ $SEFLG_BARYCTR    = 16 * 1024
 $SEFLG_TOPOCTR    = 32 * 1024
 $SEFLG_SIDEREAL   = 64 * 1024
 $SE_SIDM_LAHIRI   = 1
+$SE_SIDM_USER     = 255
+# Deliberately a literal, not read off any assembly's SwissEph.SE_NSIDM_PREDEF -- this script
+# runs standalone PowerShell and loads no .NET assembly at all, so there is nothing to read the
+# constant off in the first place, but the value is pinned here for the same reason
+# Tools/BaselineMatrix/Ayanamsa.cs's own SidModeSweepCount is a literal: the sid-mode sweep below
+# is a property of what this grid deliberately covers, not of whichever local build happens to
+# define SE_NSIDM_PREDEF. See that file's own comment for the 47-vs-43 (port vs. SwissEphNet
+# 2.8.0.2 NuGet package) divergence this sidesteps.
+$SidModeSweepCount = 47
 
 # ---------------------------------------------------------------------------------------
 # Formatting -- matches Tools/BaselineMatrix/Format.cs's D()/I(): invariant culture, "R"
@@ -156,6 +181,26 @@ function Get-JdSpread {
     return $values
 }
 
+# Cycles deterministically through the 47 predefined sidereal modes (0..46), one call per row
+# that needs a sid_mode -- replaces every prior hardcoded $SE_SIDM_LAHIRI at a SIDEREAL row site,
+# so the SEFLG_SIDEREAL rows this grid already had (swe_calc/swe_calc_ut and the solar/lunar
+# crossing functions) sweep the same 47-mode space Tools/BaselineMatrix/Ayanamsa.cs sweeps for
+# direct ayanamsa coverage, instead of exercising the sidereal machinery through one mode only.
+# Deliberately NOT crossed with every existing dimension (body x date x flag x mode would multiply
+# row count by 47) -- see this script's own header for why: the sidereal correction is applied
+# uniformly regardless of body, so one mode per existing row is enough to prove every mode's
+# arithmetic is reachable through swe_calc/the crossing functions, and the dedicated AYANAMSA
+# rows below are where the full mode x date cross product actually lives. SE_SIDM_USER is
+# deliberately excluded from this cycle (predefined modes only): it has its own dedicated
+# coverage below via the AYANAMSA family, which is a more direct way to pin it than folding a
+# 255th value into a cycle sized for 47.
+$script:sidModeCycleNext = 0
+function Get-NextSidMode {
+    $mode = $script:sidModeCycleNext % $SidModeSweepCount
+    $script:sidModeCycleNext++
+    return $mode
+}
+
 # ---------------------------------------------------------------------------------------
 # Row builders
 # ---------------------------------------------------------------------------------------
@@ -171,16 +216,21 @@ function New-CalcRow {
         $GeoLon,
         $GeoLat,
         $Height,
-        $SidMode
+        $SidMode,
+        $T0,
+        $AyanT0
     )
     $caseId = "$Prefix|$(FmtI $Ipl)|$(Fmt $Tjd)|$FlagName"
     $geolonField  = if ($null -eq $GeoLon)  { '' } else { Fmt ([double]$GeoLon) }
     $geolatField  = if ($null -eq $GeoLat)  { '' } else { Fmt ([double]$GeoLat) }
     $heightField  = if ($null -eq $Height)  { '' } else { Fmt ([double]$Height) }
     $sidModeField = if ($null -eq $SidMode) { '' } else { FmtI ([int]$SidMode) }
+    $t0Field      = if ($null -eq $T0)      { '' } else { Fmt ([double]$T0) }
+    $ayanT0Field  = if ($null -eq $AyanT0)  { '' } else { Fmt ([double]$AyanT0) }
     $fields = @(
         $caseId, $Func, (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
-        $geolonField, $geolatField, $heightField, '', '', $sidModeField, '', ''
+        $geolonField, $geolatField, $heightField, '', '', $sidModeField, '', '',
+        $t0Field, $ayanT0Field
     )
     return ($fields -join "`t")
 }
@@ -190,7 +240,7 @@ function New-HousesRow {
     $caseId = "HOUSES|$Hsys|$(Fmt $GeoLat)|$(Fmt $GeoLon)|$(Fmt $Tjd)"
     $fields = @(
         $caseId, 'HOUSES', '', (Fmt $Tjd), '', "$Hsys",
-        (Fmt $GeoLon), (Fmt $GeoLat), '', '', '', '', '', ''
+        (Fmt $GeoLon), (Fmt $GeoLat), '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -200,7 +250,7 @@ function New-HousesArmcRow {
     $caseId = "HOUSESARMC|$Hsys|$(Fmt $GeoLat)|$(Fmt $Eps)|$(Fmt $Armc)"
     $fields = @(
         $caseId, 'HOUSES_ARMC', '', '', '', "$Hsys",
-        '', (Fmt $GeoLat), '', (Fmt $Armc), (Fmt $Eps), '', '', ''
+        '', (Fmt $GeoLat), '', (Fmt $Armc), (Fmt $Eps), '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -222,7 +272,7 @@ function New-SolarLunarCrossRow {
     $sidModeField = if ($null -eq $SidMode) { '' } else { FmtI ([int]$SidMode) }
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
-        '', '', '', '', '', $sidModeField, (Fmt $X2Cross), ''
+        '', '', '', '', '', $sidModeField, (Fmt $X2Cross), '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -241,7 +291,7 @@ function New-MoonCrossNodeRow {
     $caseId = "$Prefix|$(Fmt $Tjd)|$FlagName"
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
-        '', '', '', '', '', '', '', ''
+        '', '', '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -262,7 +312,38 @@ function New-HelioCrossRow {
     $caseId = "$Prefix|$(FmtI $Ipl)|$(Fmt $X2Cross)|$(Fmt $Tjd)|$FlagName|$(FmtI $Dir)"
     $fields = @(
         $caseId, $Func, (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
-        '', '', '', '', '', '', (Fmt $X2Cross), (FmtI $Dir)
+        '', '', '', '', '', '', (Fmt $X2Cross), (FmtI $Dir), '', ''
+    )
+    return ($fields -join "`t")
+}
+
+# swe_get_ayanamsa / swe_get_ayanamsa_ex / swe_get_ayanamsa_ex_ut -- direct ayanamsa coverage (see
+# this script's own .DESCRIPTION for why the oracle previously exercised this machinery only
+# indirectly, through SEFLG_SIDEREAL swe_calc/crossing rows). None of the three opens an ephemeris
+# data file, so all three belong here, not in gen-grid-files.ps1. IsUser controls only the case_id
+# shape (SE_SIDM_USER's t0/ayan_t0 need to be in the id for uniqueness across the three UserModeParams
+# pairs below; a predefined mode's id is unique on sid_mode alone) -- the row itself always carries
+# whatever T0/AyanT0 the caller passes (0/0 for a predefined mode, via apply_sid_mode's own
+# has_value/empty-means-zero convention on the driver side).
+function New-AyanamsaRow {
+    param([int] $SidMode, [double] $Tjd, [double] $T0, [double] $AyanT0, [bool] $IsUser)
+    $caseId = if ($IsUser) { "AYANAMSA|USER|$(Fmt $T0)|$(Fmt $AyanT0)|$(Fmt $Tjd)" } else { "AYANAMSA|$(FmtI $SidMode)|$(Fmt $Tjd)" }
+    $fields = @(
+        $caseId, 'AYANAMSA', '', (Fmt $Tjd), '', '',
+        '', '', '', '', '', (FmtI $SidMode), '', '',
+        (Fmt $T0), (Fmt $AyanT0)
+    )
+    return ($fields -join "`t")
+}
+
+function New-AyanamsaExRow {
+    param([string] $Func, [int] $SidMode, [double] $Tjd, [string] $FlagName, [int] $IFlag, [double] $T0, [double] $AyanT0, [bool] $IsUser)
+    $prefix = if ($Func -eq 'AYANAMSA_EX') { 'AYANAMSAEX' } else { 'AYANAMSAEXUT' }
+    $caseId = if ($IsUser) { "$prefix|USER|$(Fmt $T0)|$(Fmt $AyanT0)|$(Fmt $Tjd)|$FlagName" } else { "$prefix|$(FmtI $SidMode)|$(Fmt $Tjd)|$FlagName" }
+    $fields = @(
+        $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
+        '', '', '', '', '', (FmtI $SidMode), '', '',
+        (Fmt $T0), (Fmt $AyanT0)
     )
     return ($fields -join "`t")
 }
@@ -371,10 +452,10 @@ $CrossTjd = @(1200000.0, 2400000.0)
 # a slow or degenerate result, so it cannot be a grid row: a case this driver can never finish is
 # not a test case, it is a way to make every future run of this harness never complete either.
 $SolCrossFlagCombos = @(
-    [pscustomobject]@{ Name = 'PLAIN';    Flag = 0;              SidMode = $null }
-    [pscustomobject]@{ Name = 'TRUEPOS';  Flag = $SEFLG_TRUEPOS; SidMode = $null }
-    [pscustomobject]@{ Name = 'NONUT';    Flag = $SEFLG_NONUT;   SidMode = $null }
-    [pscustomobject]@{ Name = 'SIDEREAL'; Flag = $SEFLG_SIDEREAL; SidMode = $SE_SIDM_LAHIRI }
+    [pscustomobject]@{ Name = 'PLAIN';    Flag = 0;               NeedsSid = $false }
+    [pscustomobject]@{ Name = 'TRUEPOS';  Flag = $SEFLG_TRUEPOS;  NeedsSid = $false }
+    [pscustomobject]@{ Name = 'NONUT';    Flag = $SEFLG_NONUT;    NeedsSid = $false }
+    [pscustomobject]@{ Name = 'SIDEREAL'; Flag = $SEFLG_SIDEREAL; NeedsSid = $true }
 )
 
 # swe_mooncross/swe_mooncross_ut's own doc comments (external/swisseph/sweph.c:8380-8383,
@@ -382,10 +463,10 @@ $SolCrossFlagCombos = @(
 # the way swe_solcross does (a heliocentric Moon has no defined meaning), so this list omits it
 # rather than exercising a combination outside either function's documented contract.
 $MoonCrossFlagCombos = @(
-    [pscustomobject]@{ Name = 'PLAIN';    Flag = 0;              SidMode = $null }
-    [pscustomobject]@{ Name = 'TRUEPOS';  Flag = $SEFLG_TRUEPOS; SidMode = $null }
-    [pscustomobject]@{ Name = 'NONUT';    Flag = $SEFLG_NONUT;   SidMode = $null }
-    [pscustomobject]@{ Name = 'SIDEREAL'; Flag = $SEFLG_SIDEREAL; SidMode = $SE_SIDM_LAHIRI }
+    [pscustomobject]@{ Name = 'PLAIN';    Flag = 0;               NeedsSid = $false }
+    [pscustomobject]@{ Name = 'TRUEPOS';  Flag = $SEFLG_TRUEPOS;  NeedsSid = $false }
+    [pscustomobject]@{ Name = 'NONUT';    Flag = $SEFLG_NONUT;    NeedsSid = $false }
+    [pscustomobject]@{ Name = 'SIDEREAL'; Flag = $SEFLG_SIDEREAL; NeedsSid = $true }
 )
 
 # swe_mooncross_node/_ut find a zero-*latitude* crossing, not a longitude target -- SEFLG_SIDEREAL
@@ -436,6 +517,38 @@ $HelioCrossFlagCombos = @(
 )
 
 # ---------------------------------------------------------------------------------------
+# swe_get_ayanamsa / swe_get_ayanamsa_ex / swe_get_ayanamsa_ex_ut grid values -- direct coverage
+# of the ayanamsa machinery itself, closing the gap the rest of this grid only ever exercised
+# indirectly (a SEFLG_SIDEREAL swe_calc/crossing row proves the ayanamsa was applied to something,
+# never what value it actually was). Four Jds, not $CalcJds' twelve: mirrors
+# Tools/BaselineMatrix/Ayanamsa.cs's own Jds count (8, here 4 -- half, since this sweep is also
+# crossed with $SidModeSweepCount modes where Ayanamsa.cs sweeps the same 47 but does not also
+# carry this grid's SE_SIDM_USER sub-sweep on top), keeping the sid_mode x date cross product
+# bounded rather than reusing the full twelve-point Moshier-window spread every other swe_calc row
+# in this grid already uses.
+# ---------------------------------------------------------------------------------------
+
+$AyanamsaJds = Get-JdSpread -Count 4 -Lo 1000000 -Hi 2600000
+
+# Matches Tools/BaselineMatrix/Ayanamsa.cs's own ExIflagCombos: swe_get_ayanamsa_ex(_ut) takes an
+# iflag (unlike plain swe_get_ayanamsa/_ut, which do not), and SEFLG_NONUT is the one bit whose
+# effect on the ayanamsa value itself is worth freezing on its own.
+$AyanamsaExIflagCombos = @(
+    [pscustomobject]@{ Name = '0';     Flag = 0 }
+    [pscustomobject]@{ Name = 'NONUT'; Flag = $SEFLG_NONUT }
+)
+
+# Three t0/ayan_t0 pairs for SE_SIDM_USER -- matches Tools/BaselineMatrix/Ayanamsa.cs's own
+# UserModeParams exactly (a J2000.0 epoch with a zero ayanamsa, a B1950-ish epoch with a nonzero
+# positive ayanamsa, and a pre-Gregorian epoch with a negative ayanamsa), so both the baseline and
+# this oracle pin the same three points in SE_SIDM_USER's (t0, ayan_t0) input space.
+$AyanamsaUserParams = @(
+    [pscustomobject]@{ T0 = 2451545.0; AyanT0 = 0.0 }
+    [pscustomobject]@{ T0 = 2415020.0; AyanT0 = 24.0 }
+    [pscustomobject]@{ T0 = 2299160.5; AyanT0 = -5.5 }
+)
+
+# ---------------------------------------------------------------------------------------
 # Build rows
 # ---------------------------------------------------------------------------------------
 
@@ -452,6 +565,9 @@ $moonCrossNodeCount = 0
 $moonCrossNodeUtCount = 0
 $helioCrossCount = 0
 $helioCrossUtCount = 0
+$ayanamsaCount = 0
+$ayanamsaExCount = 0
+$ayanamsaExUtCount = 0
 
 foreach ($ipl in $Bodies) {
     foreach ($tjd in $CalcJds) {
@@ -460,7 +576,8 @@ foreach ($ipl in $Bodies) {
             $geolon  = if ($combo.NeedsTopo) { $TopoGeoLon } else { $null }
             $geolat  = if ($combo.NeedsTopo) { $TopoGeoLat } else { $null }
             $height  = if ($combo.NeedsTopo) { $TopoHeight } else { $null }
-            $sidMode = if ($combo.NeedsSid)  { $SE_SIDM_LAHIRI } else { $null }
+            # Cycled, not pinned to $SE_SIDM_LAHIRI -- see Get-NextSidMode's own comment.
+            $sidMode = if ($combo.NeedsSid)  { Get-NextSidMode } else { $null }
 
             $rows.Add((New-CalcRow -Prefix 'CALC' -Func 'CALC' -Ipl $ipl -Tjd $tjd `
                 -FlagName $combo.Name -IFlag $iflag `
@@ -501,24 +618,29 @@ foreach ($x2 in $CrossX2) {
     foreach ($tjd in $CrossTjd) {
         foreach ($combo in $SolCrossFlagCombos) {
             $iflag = $SEFLG_MOSEPH -bor $combo.Flag
+            # Cycled, not pinned to $SE_SIDM_LAHIRI -- see Get-NextSidMode's own comment. Computed
+            # once per combo occurrence and reused for both the ET and UT row below, matching how
+            # the prior fixed $combo.SidMode was shared between them.
+            $sidMode = if ($combo.NeedsSid) { Get-NextSidMode } else { $null }
 
             $rows.Add((New-SolarLunarCrossRow -Prefix 'SOLCROSS' -Func 'SOLCROSS' -X2Cross $x2 -Tjd $tjd `
-                -FlagName $combo.Name -IFlag $iflag -SidMode $combo.SidMode))
+                -FlagName $combo.Name -IFlag $iflag -SidMode $sidMode))
             $solCrossCount++
 
             $rows.Add((New-SolarLunarCrossRow -Prefix 'SOLCROSSUT' -Func 'SOLCROSS_UT' -X2Cross $x2 -Tjd $tjd `
-                -FlagName $combo.Name -IFlag $iflag -SidMode $combo.SidMode))
+                -FlagName $combo.Name -IFlag $iflag -SidMode $sidMode))
             $solCrossUtCount++
         }
         foreach ($combo in $MoonCrossFlagCombos) {
             $iflag = $SEFLG_MOSEPH -bor $combo.Flag
+            $sidMode = if ($combo.NeedsSid) { Get-NextSidMode } else { $null }
 
             $rows.Add((New-SolarLunarCrossRow -Prefix 'MOONCROSS' -Func 'MOONCROSS' -X2Cross $x2 -Tjd $tjd `
-                -FlagName $combo.Name -IFlag $iflag -SidMode $combo.SidMode))
+                -FlagName $combo.Name -IFlag $iflag -SidMode $sidMode))
             $moonCrossCount++
 
             $rows.Add((New-SolarLunarCrossRow -Prefix 'MOONCROSSUT' -Func 'MOONCROSS_UT' -X2Cross $x2 -Tjd $tjd `
-                -FlagName $combo.Name -IFlag $iflag -SidMode $combo.SidMode))
+                -FlagName $combo.Name -IFlag $iflag -SidMode $sidMode))
             $moonCrossUtCount++
         }
     }
@@ -558,10 +680,45 @@ foreach ($ipl in $HelioCrossIpl) {
     }
 }
 
+foreach ($sidMode in 0..($SidModeSweepCount - 1)) {
+    foreach ($tjd in $AyanamsaJds) {
+        $rows.Add((New-AyanamsaRow -SidMode $sidMode -Tjd $tjd -T0 0.0 -AyanT0 0.0 -IsUser:$false))
+        $ayanamsaCount++
+
+        foreach ($combo in $AyanamsaExIflagCombos) {
+            $rows.Add((New-AyanamsaExRow -Func 'AYANAMSA_EX' -SidMode $sidMode -Tjd $tjd `
+                -FlagName $combo.Name -IFlag $combo.Flag -T0 0.0 -AyanT0 0.0 -IsUser:$false))
+            $ayanamsaExCount++
+
+            $rows.Add((New-AyanamsaExRow -Func 'AYANAMSA_EX_UT' -SidMode $sidMode -Tjd $tjd `
+                -FlagName $combo.Name -IFlag $combo.Flag -T0 0.0 -AyanT0 0.0 -IsUser:$false))
+            $ayanamsaExUtCount++
+        }
+    }
+}
+
+foreach ($p in $AyanamsaUserParams) {
+    foreach ($tjd in $AyanamsaJds) {
+        $rows.Add((New-AyanamsaRow -SidMode $SE_SIDM_USER -Tjd $tjd -T0 $p.T0 -AyanT0 $p.AyanT0 -IsUser:$true))
+        $ayanamsaCount++
+
+        foreach ($combo in $AyanamsaExIflagCombos) {
+            $rows.Add((New-AyanamsaExRow -Func 'AYANAMSA_EX' -SidMode $SE_SIDM_USER -Tjd $tjd `
+                -FlagName $combo.Name -IFlag $combo.Flag -T0 $p.T0 -AyanT0 $p.AyanT0 -IsUser:$true))
+            $ayanamsaExCount++
+
+            $rows.Add((New-AyanamsaExRow -Func 'AYANAMSA_EX_UT' -SidMode $SE_SIDM_USER -Tjd $tjd `
+                -FlagName $combo.Name -IFlag $combo.Flag -T0 $p.T0 -AyanT0 $p.AyanT0 -IsUser:$true))
+            $ayanamsaExUtCount++
+        }
+    }
+}
+
 $totalRows = $rows.Count
 $expectedTotal = $calcCount + $calcUtCount + $housesCount + $housesArmcCount +
     $solCrossCount + $solCrossUtCount + $moonCrossCount + $moonCrossUtCount +
-    $moonCrossNodeCount + $moonCrossNodeUtCount + $helioCrossCount + $helioCrossUtCount
+    $moonCrossNodeCount + $moonCrossNodeUtCount + $helioCrossCount + $helioCrossUtCount +
+    $ayanamsaCount + $ayanamsaExCount + $ayanamsaExUtCount
 if ($totalRows -ne $expectedTotal) {
     throw 'Row count bookkeeping is inconsistent -- this is a bug in this script, not a data problem.'
 }
@@ -655,10 +812,24 @@ $headerLines = @(
     '#              MOONCROSS_UT, HELIO_CROSS, HELIO_CROSS_UT]'
     '#   dir        swe_helio_cross(_ut) search direction: >= 0 forward, < 0 backward'
     '#              [HELIO_CROSS, HELIO_CROSS_UT]'
+    '#   t0         SE_SIDM_USER reference epoch, TT (swe_set_sid_mode''s own t0 parameter);'
+    '#              empty means 0.0, which is also what an absent sid_mode implies (no'
+    '#              swe_set_sid_mode call at all) [CALC/CALC_UT/SOLCROSS/SOLCROSS_UT/MOONCROSS/'
+    '#              MOONCROSS_UT/AYANAMSA/AYANAMSA_EX/AYANAMSA_EX_UT rows whose sid_mode is'
+    '#              SE_SIDM_USER]'
+    '#   ayan_t0    SE_SIDM_USER ayanamsa at t0, degrees (swe_set_sid_mode''s own ayan_t0'
+    '#              parameter); same emptiness convention as t0 [same rows as t0]'
     '#'
-    '# x2cross and dir are appended after sid_mode rather than interleaved among the original'
-    '# twelve columns, so every column HOUSES/HOUSES_ARMC/CALC/CALC_UT rows already used keeps the'
-    '# same index it always had.'
+    '# x2cross and dir are appended after sid_mode, and t0/ayan_t0 after those, rather than'
+    '# interleaved among the original twelve columns, so every column HOUSES/HOUSES_ARMC/CALC/'
+    '# CALC_UT rows already used keeps the same index it always had -- additive, not a renumbering,'
+    '# the same choice x2cross/dir themselves made when they were added.'
+    '#'
+    '# AYANAMSA / AYANAMSA_EX / AYANAMSA_EX_UT: swe_get_ayanamsa/_ex/_ex_ut direct coverage. tjd is'
+    '# ET for AYANAMSA/AYANAMSA_EX, UT for AYANAMSA_EX_UT; iflag applies to the _EX variants only'
+    '# (plain swe_get_ayanamsa takes no iflag); sid_mode is always present on these rows (every'
+    '# predefined mode 0..46, plus SE_SIDM_USER with t0/ayan_t0 set). AYANAMSA has no serr output'
+    '# parameter -- its err column stays empty, the same convention HOUSES/HOUSES_ARMC already use.'
     '#'
     '# A row with a non-empty geolon/geolat/height needs swe_set_topo called first; a row with a'
     '# non-empty sid_mode needs swe_set_sid_mode called first -- both are per-row setup on that'
@@ -671,7 +842,7 @@ $headerLines = @(
 )
 $columnHeader = 'case_id' + "`t" + 'func' + "`t" + 'ipl' + "`t" + 'tjd' + "`t" + 'iflag' + "`t" +
     'hsys' + "`t" + 'geolon' + "`t" + 'geolat' + "`t" + 'height' + "`t" + 'armc' + "`t" + 'eps' + "`t" + 'sid_mode' + "`t" +
-    'x2cross' + "`t" + 'dir'
+    'x2cross' + "`t" + 'dir' + "`t" + 't0' + "`t" + 'ayan_t0'
 
 $writer = [System.IO.StreamWriter]::new($outputPath, $false, [System.Text.UTF8Encoding]::new($false))
 try {
@@ -697,3 +868,6 @@ Write-Host "  MOONCROSS_NODE     $moonCrossNodeCount"
 Write-Host "  MOONCROSS_NODE_UT  $moonCrossNodeUtCount"
 Write-Host "  HELIO_CROSS        $helioCrossCount"
 Write-Host "  HELIO_CROSS_UT     $helioCrossUtCount"
+Write-Host "  AYANAMSA           $ayanamsaCount"
+Write-Host "  AYANAMSA_EX        $ayanamsaExCount"
+Write-Host "  AYANAMSA_EX_UT     $ayanamsaExUtCount"

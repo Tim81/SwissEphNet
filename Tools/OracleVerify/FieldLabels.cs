@@ -18,6 +18,13 @@ namespace OracleVerify;
 /// five's synthetic one both land in the shared retc column rather than as a value field.
 /// MOONCROSSNODE/MOONCROSSNODEUT carry three: jd_cross, then the ecliptic longitude/latitude
 /// (xlon, xlat) swe_mooncross_node(_ut) writes through its own output parameters at the crossing.
+///
+/// AYANAMSA/AYANAMSAEX/AYANAMSAEXUT (Tools/OracleGrid/grid-analytic.tsv only) carry a single
+/// value, the ayanamsa itself (daya for the _EX/_EX_UT forms, the bare return value for plain
+/// AYANAMSA) -- see gen-grid-analytic.ps1's header for why these three func tokens exist and
+/// Tools/CReference/sedump.c's process_ayanamsa/process_ayanamsa_ex for why AYANAMSA's own err
+/// column is always empty (swe_get_ayanamsa has no serr parameter) rather than repurposed the way
+/// NAME's is.
 /// </summary>
 internal static class FieldLabels
 {
@@ -29,6 +36,8 @@ internal static class FieldLabels
     private static readonly string[] NameLabels = [];
     private static readonly string[] JdCrossLabels = ["jd_cross"];
     private static readonly string[] MoonCrossNodeLabels = ["jd_cross", "xlon", "xlat"];
+    private static readonly string[] AyanamsaLabels = ["ayanamsa"];
+    private static readonly string[] AyanamsaExLabels = ["daya"];
 
     public static IReadOnlyList<string> For(string func, string caseId) => func switch
     {
@@ -39,6 +48,8 @@ internal static class FieldLabels
         "NAME" => NameLabels,
         "SOLCROSS" or "SOLCROSSUT" or "MOONCROSS" or "MOONCROSSUT" or "HELIOCROSS" or "HELIOCROSSUT" => JdCrossLabels,
         "MOONCROSSNODE" or "MOONCROSSNODEUT" => MoonCrossNodeLabels,
+        "AYANAMSA" => AyanamsaLabels,
+        "AYANAMSAEX" or "AYANAMSAEXUT" => AyanamsaExLabels,
         _ => throw new FormatException($"case {caseId}: unrecognized func token '{func}' at the start of case_id."),
     };
 

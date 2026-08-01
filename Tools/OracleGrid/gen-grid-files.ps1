@@ -99,11 +99,16 @@
     the first non-comment line is the column-name header, which both drivers assert against
     verbatim. Empty string means "does not apply to this row's func":
 
-      case_id, func, ipl, tjd, iflag, star, geolon, geolat, height, sid_mode, x2cross, dir
+      case_id, func, ipl, tjd, iflag, star, geolon, geolat, height, sid_mode, x2cross, dir, t0,
+      ayan_t0
 
-    Twelve columns, not grid-analytic.tsv's fourteen: there is no house system here, so hsys, armc
-    and eps are dropped, and a star column takes their place; x2cross and dir are appended after
-    sid_mode for the same reason and in the same position gen-grid-analytic.ps1 appends them.
+    Fourteen columns, not grid-analytic.tsv's sixteen: there is no house system here, so hsys, armc
+    and eps are dropped, and a star column takes their place; x2cross, dir, t0 and ayan_t0 are
+    appended after sid_mode for the same reason and in the same relative position
+    gen-grid-analytic.ps1 appends them. t0/ayan_t0 carry swe_set_sid_mode's SE_SIDM_USER
+    parameters; this grid's own SIDEREAL rows never use SE_SIDM_USER (predefined modes only, via
+    Get-NextSidMode's cycle), so both columns are always empty here today, but the columns exist so
+    a driver reading this grid does not need a schema that differs from grid-analytic.tsv's.
 
 .NOTES
     Deterministic by construction: no timestamps, no randomness, no machine-dependent state (the
@@ -132,6 +137,12 @@ $SEFLG_BARYCTR    = 16 * 1024
 $SEFLG_TOPOCTR    = 32 * 1024
 $SEFLG_SIDEREAL   = 64 * 1024
 $SE_SIDM_LAHIRI   = 1
+# Deliberately a literal, not read off any assembly's SwissEph.SE_NSIDM_PREDEF -- see
+# gen-grid-analytic.ps1's own copy of this constant and comment for why (this script runs
+# standalone PowerShell and loads no .NET assembly, so there is nothing to read the constant off
+# in the first place; the value is pinned here anyway, matching Tools/BaselineMatrix/Ayanamsa.cs's
+# own literal, since the sid-mode sweep below is a property of what this grid covers).
+$SidModeSweepCount = 47
 
 # ---------------------------------------------------------------------------------------
 # Formatting -- matches gen-grid-analytic.ps1's Fmt/FmtI: invariant culture, "R" round-trip
@@ -165,6 +176,19 @@ function Get-Jdn {
     return [double]$jdn
 }
 
+# Cycles deterministically through the 47 predefined sidereal modes (0..46) -- see
+# gen-grid-analytic.ps1's own copy of this function and its comment for the full reasoning (widens
+# the SEFLG_SIDEREAL CALC/CALC_UT rows this grid already had beyond the single hardcoded
+# $SE_SIDM_LAHIRI they used before, without multiplying row count by 47). A separate counter from
+# gen-grid-analytic.ps1's own: the two scripts run as separate processes over separate grids, so
+# there is no shared state to keep in sync between them.
+$script:sidModeCycleNext = 0
+function Get-NextSidMode {
+    $mode = $script:sidModeCycleNext % $SidModeSweepCount
+    $script:sidModeCycleNext++
+    return $mode
+}
+
 # ---------------------------------------------------------------------------------------
 # Row builders
 # ---------------------------------------------------------------------------------------
@@ -179,7 +203,9 @@ function New-CalcFileRow {
         $GeoLon,
         $GeoLat,
         $Height,
-        $SidMode
+        $SidMode,
+        $T0,
+        $AyanT0
     )
     $prefix = if ($Func -eq 'CALC') { 'CALC' } else { 'CALCUT' }
     $caseId = "$prefix|$(FmtI $Ipl)|$(Fmt $Tjd)|$FlagName"
@@ -187,9 +213,12 @@ function New-CalcFileRow {
     $geolatField  = if ($null -eq $GeoLat)  { '' } else { Fmt ([double]$GeoLat) }
     $heightField  = if ($null -eq $Height)  { '' } else { Fmt ([double]$Height) }
     $sidModeField = if ($null -eq $SidMode) { '' } else { FmtI ([int]$SidMode) }
+    $t0Field      = if ($null -eq $T0)      { '' } else { Fmt ([double]$T0) }
+    $ayanT0Field  = if ($null -eq $AyanT0)  { '' } else { Fmt ([double]$AyanT0) }
     $fields = @(
         $caseId, $Func, (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
-        $geolonField, $geolatField, $heightField, $sidModeField, '', ''
+        $geolonField, $geolatField, $heightField, $sidModeField, '', '',
+        $t0Field, $ayanT0Field
     )
     return ($fields -join "`t")
 }
@@ -206,7 +235,7 @@ function New-FixstarRow {
     $caseId = "$Prefix|$Star|$(Fmt $Tjd)|$FlagName"
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), $Star,
-        '', '', '', '', '', ''
+        '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -216,7 +245,7 @@ function New-FixstarMagRow {
     $caseId = "FIXSTARMAG|$Star"
     $fields = @(
         $caseId, 'FIXSTAR_MAG', '', '', '', $Star,
-        '', '', '', '', '', ''
+        '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -226,7 +255,7 @@ function New-NameRow {
     $caseId = "NAME|$(FmtI $Ipl)"
     $fields = @(
         $caseId, 'GET_PLANET_NAME', (FmtI $Ipl), '', '', '',
-        '', '', '', '', '', ''
+        '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -247,7 +276,7 @@ function New-SolarLunarCrossRow {
     $caseId = "$Prefix|$(Fmt $X2Cross)|$(Fmt $Tjd)|$FlagName"
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
-        '', '', '', '', (Fmt $X2Cross), ''
+        '', '', '', '', (Fmt $X2Cross), '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -266,7 +295,7 @@ function New-MoonCrossNodeRow {
     $caseId = "$Prefix|$(Fmt $Tjd)|$FlagName"
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
-        '', '', '', '', '', ''
+        '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -287,7 +316,7 @@ function New-HelioCrossRow {
     $caseId = "$Prefix|$(FmtI $Ipl)|$(Fmt $X2Cross)|$(Fmt $Tjd)|$FlagName|$(FmtI $Dir)"
     $fields = @(
         $caseId, $Func, (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
-        '', '', '', '', (Fmt $X2Cross), (FmtI $Dir)
+        '', '', '', '', (Fmt $X2Cross), (FmtI $Dir), '', ''
     )
     return ($fields -join "`t")
 }
@@ -478,7 +507,8 @@ foreach ($ipl in $Bodies) {
             $geolon  = if ($combo.NeedsTopo) { $TopoGeoLon } else { $null }
             $geolat  = if ($combo.NeedsTopo) { $TopoGeoLat } else { $null }
             $height  = if ($combo.NeedsTopo) { $TopoHeight } else { $null }
-            $sidMode = if ($combo.NeedsSid)  { $SE_SIDM_LAHIRI } else { $null }
+            # Cycled, not pinned to $SE_SIDM_LAHIRI -- see Get-NextSidMode's own comment.
+            $sidMode = if ($combo.NeedsSid)  { Get-NextSidMode } else { $null }
 
             $rows.Add((New-CalcFileRow -Func 'CALC' -Ipl $ipl -Tjd $tjd `
                 -FlagName $combo.Name -IFlag $iflag `
@@ -667,15 +697,21 @@ $headerLines = @(
     '#   geolon     geographic longitude, degrees east                 [CALC/CALC_UT topo rows only]'
     '#   geolat     geographic latitude, degrees north                 [CALC/CALC_UT topo rows only]'
     '#   height     observer height above sea level, metres            [CALC/CALC_UT topo rows only]'
-    '#   sid_mode   swe_set_sid_mode mode, applied before the row runs [CALC/CALC_UT rows whose iflag carries SEFLG_SIDEREAL]'
+    '#   sid_mode   swe_set_sid_mode mode, applied before the row runs [CALC/CALC_UT rows whose iflag carries SEFLG_SIDEREAL];'
+    '#              cycled across all 47 predefined modes (Get-NextSidMode), not pinned to one'
     '#   x2cross    target ecliptic longitude to cross, degrees        [SOLCROSS, SOLCROSS_UT,'
     '#              MOONCROSS, MOONCROSS_UT, HELIO_CROSS, HELIO_CROSS_UT]'
     '#   dir        swe_helio_cross(_ut) search direction: >= 0 forward, < 0 backward'
     '#              [HELIO_CROSS, HELIO_CROSS_UT]'
+    '#   t0         SE_SIDM_USER reference epoch, TT; always empty in this grid today (this grid''s'
+    '#              own SIDEREAL rows use only predefined modes) -- present so the schema matches'
+    '#              gen-grid-analytic.ps1''s, which does use it'
+    '#   ayan_t0    SE_SIDM_USER ayanamsa at t0, degrees; same emptiness note as t0'
     '#'
-    '# x2cross and dir are appended after sid_mode rather than interleaved among the original ten'
-    '# columns, so every column this grid''s other funcs already used keeps the same index it'
-    '# always had -- the same additive-not-renumbering choice gen-grid-analytic.ps1 makes.'
+    '# x2cross and dir are appended after sid_mode, and t0/ayan_t0 after those, rather than'
+    '# interleaved among the original ten columns, so every column this grid''s other funcs already'
+    '# used keeps the same index it always had -- the same additive-not-renumbering choice'
+    '# gen-grid-analytic.ps1 makes.'
     '#'
     '# Lines starting with ''#'' are comments. The first non-comment line is the column-name header'
     '# below and is not a data row -- both drivers assert it matches verbatim before reading any'
@@ -683,7 +719,7 @@ $headerLines = @(
 )
 $columnHeader = 'case_id' + "`t" + 'func' + "`t" + 'ipl' + "`t" + 'tjd' + "`t" + 'iflag' + "`t" +
     'star' + "`t" + 'geolon' + "`t" + 'geolat' + "`t" + 'height' + "`t" + 'sid_mode' + "`t" +
-    'x2cross' + "`t" + 'dir'
+    'x2cross' + "`t" + 'dir' + "`t" + 't0' + "`t" + 'ayan_t0'
 
 $writer = [System.IO.StreamWriter]::new($outputPath, $false, [System.Text.UTF8Encoding]::new($false))
 try {

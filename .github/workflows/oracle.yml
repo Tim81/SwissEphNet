@@ -323,7 +323,7 @@ jobs:
   # First, the exemption's premise no longer holds. It was justified by Tests/oracle/known-diff*.tsv
   # recording ULP distances captured from one specific compiler, which a future windows-latest MSVC
   # could shift without any change to this port. Both lists are now header-only: every one of the
-  # 14,820<!--doccount:grid-analytic-total--> analytic and 2,244<!--doccount:grid-files-total--> file-backed rows is required to be bit-identical, so there is no
+  # 15,820<!--doccount:grid-analytic-total--> analytic and 2,244<!--doccount:grid-files-total--> file-backed rows is required to be bit-identical, so there is no
   # recorded toolchain-sensitive value left to protect.
   #
   # Second, verify-oracle.ps1 does far more than that comparison. It exits 1 on a missing or

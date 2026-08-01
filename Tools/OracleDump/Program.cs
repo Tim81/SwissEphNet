@@ -43,19 +43,21 @@ namespace OracleDump;
 
 internal static class Program
 {
-    private const int AnalyticColumns = 14;
-    private const int FilesColumns = 12;
+    private const int AnalyticColumns = 16;
+    private const int FilesColumns = 14;
     private const int CuspCount = 37; // cusp[0..36]
     private const int AscmcCount = 10; // ascmc[0..9]
 
-    // x2cross and dir are appended after sid_mode in both headers, not interleaved among the
-    // original columns, so every column this file's other Process* methods already index by a
-    // fixed offset keeps that same offset -- matches Tools/CReference/sedump.c's identical choice.
+    // x2cross, dir, t0 and ayan_t0 are appended after sid_mode in both headers, not interleaved
+    // among the original columns, so every column this file's other Process* methods already
+    // index by a fixed offset keeps that same offset -- matches Tools/CReference/sedump.c's
+    // identical choice. t0/ayan_t0 carry swe_set_sid_mode's own SE_SIDM_USER parameters -- see
+    // ApplySidMode.
     private static readonly string ExpectedHeaderAnalytic = string.Join('\t',
-        "case_id", "func", "ipl", "tjd", "iflag", "hsys", "geolon", "geolat", "height", "armc", "eps", "sid_mode", "x2cross", "dir");
+        "case_id", "func", "ipl", "tjd", "iflag", "hsys", "geolon", "geolat", "height", "armc", "eps", "sid_mode", "x2cross", "dir", "t0", "ayan_t0");
 
     private static readonly string ExpectedHeaderFiles = string.Join('\t',
-        "case_id", "func", "ipl", "tjd", "iflag", "star", "geolon", "geolat", "height", "sid_mode", "x2cross", "dir");
+        "case_id", "func", "ipl", "tjd", "iflag", "star", "geolon", "geolat", "height", "sid_mode", "x2cross", "dir", "t0", "ayan_t0");
 
     private enum GridMode { Analytic, Files }
 
@@ -178,6 +180,13 @@ internal static class Program
                 case "HELIO_CROSS_UT":
                     ProcessHelioCross(swe, caseId, func, fields, x2crossIndex: 12, dirIndex: 13, writer);
                     break;
+                case "AYANAMSA":
+                    ProcessAyanamsa(swe, caseId, fields, writer);
+                    break;
+                case "AYANAMSA_EX":
+                case "AYANAMSA_EX_UT":
+                    ProcessAyanamsaEx(swe, caseId, func, fields, writer);
+                    break;
                 default:
                     throw new InvalidDataException($"unknown func '{func}' at case {caseId}");
             }
@@ -236,6 +245,24 @@ internal static class Program
         swe.swe_set_ephe_path(epheDir);
     }
 
+    // t0/ayan_t0 (swe_set_sid_mode's own SE_SIDM_USER parameters) always sit exactly 3 and 4
+    // columns after sid_mode in both grids -- sid_mode, x2cross, dir, t0, ayan_t0, in that fixed
+    // relative order -- matching Tools/CReference/sedump.c's identical apply_sid_mode. A row with
+    // no sid_mode never reads t0/ayan_t0 at all; an empty t0/ayan_t0 on a row that does set
+    // sid_mode means 0.0, the same default swe_set_sid_mode(sidMode, 0, 0) always passed before
+    // this driver could express SE_SIDM_USER at all.
+    private static void ApplySidMode(SwissEph swe, string[] fields, string caseId, int sidModeIndex)
+    {
+        if (!HasValue(fields[sidModeIndex]))
+        {
+            return;
+        }
+        var sidMode = ParseInt(fields[sidModeIndex], caseId, "sid_mode");
+        var t0 = HasValue(fields[sidModeIndex + 3]) ? ParseDouble(fields[sidModeIndex + 3], caseId, "t0") : 0.0;
+        var ayanT0 = HasValue(fields[sidModeIndex + 4]) ? ParseDouble(fields[sidModeIndex + 4], caseId, "ayan_t0") : 0.0;
+        swe.swe_set_sid_mode(sidMode, t0, ayanT0);
+    }
+
     private static void ProcessCalc(SwissEph swe, string caseId, string func, string[] fields, int sidModeIndex, TextWriter writer)
     {
         var ipl = ParseInt(fields[2], caseId, "ipl");
@@ -249,11 +276,7 @@ internal static class Program
             var height = ParseDouble(fields[8], caseId, "height");
             swe.swe_set_topo(geolon, geolat, height);
         }
-        if (HasValue(fields[sidModeIndex]))
-        {
-            var sidMode = ParseInt(fields[sidModeIndex], caseId, "sid_mode");
-            swe.swe_set_sid_mode(sidMode, 0, 0);
-        }
+        ApplySidMode(swe, fields, caseId, sidModeIndex);
 
         var xx = new double[6];
         string? serr = null;
@@ -291,11 +314,7 @@ internal static class Program
         var tjd = ParseDouble(fields[3], caseId, "tjd");
         var iflag = ParseInt(fields[4], caseId, "iflag");
 
-        if (HasValue(fields[sidModeIndex]))
-        {
-            var sidMode = ParseInt(fields[sidModeIndex], caseId, "sid_mode");
-            swe.swe_set_sid_mode(sidMode, 0, 0);
-        }
+        ApplySidMode(swe, fields, caseId, sidModeIndex);
 
         string? serr = null;
         var result = func switch
@@ -370,6 +389,47 @@ internal static class Program
         writer.Write('\t');
         writer.Write(EscapeErr(serr));
         EmitValue(writer, jdCross);
+        writer.Write('\n');
+    }
+
+    // grid-analytic.tsv only: direct coverage of swe_get_ayanamsa/_ex/_ex_ut -- see this file's
+    // own top-of-file comment. sidModeIndex is always 11, the analytic grid's own fixed sid_mode
+    // column position; these func tokens never appear in a grid-files.tsv row.
+    //
+    // AYANAMSA has no serr output parameter -- swe_get_ayanamsa returns a bare double with no
+    // error signal at all -- so its retc is a fixed SwissEph.OK and its err column stays empty,
+    // the same convention WriteHousesRow already uses for a .NET API with nothing to report there.
+    private static void ProcessAyanamsa(SwissEph swe, string caseId, string[] fields, TextWriter writer)
+    {
+        var tjd = ParseDouble(fields[3], caseId, "tjd");
+        ApplySidMode(swe, fields, caseId, sidModeIndex: 11);
+        var value = swe.swe_get_ayanamsa(tjd);
+
+        writer.Write(caseId);
+        writer.Write('\t');
+        writer.Write(SwissEph.OK.ToString(CultureInfo.InvariantCulture));
+        writer.Write('\t');
+        EmitValue(writer, value);
+        writer.Write('\n');
+    }
+
+    private static void ProcessAyanamsaEx(SwissEph swe, string caseId, string func, string[] fields, TextWriter writer)
+    {
+        var tjd = ParseDouble(fields[3], caseId, "tjd");
+        var iflag = ParseInt(fields[4], caseId, "iflag");
+        ApplySidMode(swe, fields, caseId, sidModeIndex: 11);
+
+        string? serr = null;
+        var retc = func == "AYANAMSA_EX"
+            ? swe.swe_get_ayanamsa_ex(tjd, iflag, out var daya, ref serr)
+            : swe.swe_get_ayanamsa_ex_ut(tjd, iflag, out daya, ref serr);
+
+        writer.Write(caseId);
+        writer.Write('\t');
+        writer.Write(retc.ToString(CultureInfo.InvariantCulture));
+        writer.Write('\t');
+        writer.Write(EscapeErr(serr));
+        EmitValue(writer, daya);
         writer.Write('\n');
     }
 

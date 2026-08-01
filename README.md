@@ -205,7 +205,7 @@ requires.
 
 How this is checked, and what checking it does and does not prove. The port's output is compared
 field by field against Astrodienst's own C, built from the same source and run against the same
-ephemeris files. On Windows (MSVC) and Linux (gcc), all 17,064<!--doccount:grid-total-combined--> rows in that comparison (14,820<!--doccount:grid-analytic-total-->
+ephemeris files. On Windows (MSVC) and Linux (gcc), all 18,064<!--doccount:grid-total-combined--> rows in that comparison (15,820<!--doccount:grid-analytic-total-->
 calls that need no ephemeris file plus 2,244<!--doccount:grid-files-total--> that read the shipped `.se1` files) come back
 bit-identical, not merely close; the tracked difference lists for both are empty. macOS (clang,
 arm64) matches too, once clang is told not to substitute its own math builtins for individual libm
@@ -779,8 +779,9 @@ itself ships. Neither can prove the strongest claim this project makes: that for
 the port and Astrodienst's own C compute the identical bits. That is what this third instrument
 is for, and it is the source of the "Numerical compatibility" table above.
 
-- `Tools/OracleGrid` holds the two input grids: `grid-analytic.tsv` (14,820<!--doccount:grid-analytic-total--> rows, `SEFLG_MOSEPH
-  swe_calc`/`swe_calc_ut` plus `swe_houses`/`swe_houses_armc`, opening no ephemeris file) and
+- `Tools/OracleGrid` holds the two input grids: `grid-analytic.tsv` (15,820<!--doccount:grid-analytic-total--> rows, `SEFLG_MOSEPH
+  swe_calc`/`swe_calc_ut`, `swe_houses`/`swe_houses_armc`, and `swe_get_ayanamsa`/`_ex`/`_ex_ut`
+  swept across every predefined `sid_mode` plus `SE_SIDM_USER`, opening no ephemeris file) and
   `grid-files.tsv` (2,244<!--doccount:grid-files-total--> rows, `SEFLG_SWIEPH swe_calc`/`swe_calc_ut`, the `swe_fixstar` family,
   and `swe_get_planet_name`, reading the shipped `.se1`/`sefstars.txt` files).
 - Each grid is replayed by a pair of drivers built from the same inputs: `Tools/CReference/sedump.c`,

@@ -8,10 +8,12 @@
  * the same shape for a later, separate pass to diff.
  *
  *   Tools/OracleGrid/grid-analytic.tsv  -- swe_calc/swe_calc_ut (SEFLG_MOSEPH),
- *                                          swe_houses/swe_houses_armc, and the eight crossing
+ *                                          swe_houses/swe_houses_armc, the eight crossing
  *                                          functions (swe_solcross/_ut, swe_mooncross/_ut,
  *                                          swe_mooncross_node/_ut, swe_helio_cross/_ut), also
- *                                          under SEFLG_MOSEPH. Touches no ephemeris data file.
+ *                                          under SEFLG_MOSEPH, and swe_get_ayanamsa/_ex/_ex_ut
+ *                                          (direct ayanamsa coverage -- every predefined sid_mode
+ *                                          plus SE_SIDM_USER). Touches no ephemeris data file.
  *                                          See gen-grid-analytic.ps1's header.
  *   Tools/OracleGrid/grid-files.tsv     -- swe_calc/swe_calc_ut (SEFLG_SWIEPH), the
  *                                          swe_fixstar family, swe_get_planet_name, and the same
@@ -100,11 +102,15 @@
  *     MOONCROSS_UT, HELIO_CROSS,
  *     HELIO_CROSS_UT                         jd_cross                 (1 double   -> 2 value columns)
  *   MOONCROSS_NODE, MOONCROSS_NODE_UT        jd_cross, xlon, xla      (3 doubles  -> 6 value columns)
+ *   AYANAMSA, AYANAMSA_EX, AYANAMSA_EX_UT    daya                     (1 double   -> 2 value columns)
  *
  * GET_PLANET_NAME has no value column at all: swe_get_planet_name returns a string, not a
  * double, so there is nothing to hex-encode. Its returned name is written into the err column
  * instead of a value column -- see gen-grid-files.ps1's header for why that column, specifically,
- * is the right one for it. HOUSES/HOUSES_ARMC's cusp[0..36], not just cusp[1..12], is because
+ * is the right one for it. AYANAMSA (plain swe_get_ayanamsa) has an err column too, but it is
+ * always empty rather than repurposed: swe_get_ayanamsa has no serr output parameter and no error
+ * signal of any kind, so there is nothing to write there -- see process_ayanamsa. HOUSES/
+ * HOUSES_ARMC's cusp[0..36], not just cusp[1..12], is because
  * hsys 'G' (Gauquelin sectors) populates cusp[1..36] and a fixed column count keeps every func's
  * row mechanically the same width regardless of house system -- cusp[13..36] simply stay at
  * their zero-initialized default for every other system (matches Tools/BaselineMatrix/Houses.cs's
@@ -152,8 +158,8 @@
 #include "swephexp.h"
 
 #define MAX_LINE 4096
-#define ANALYTIC_COLUMNS 14
-#define FILES_COLUMNS 12
+#define ANALYTIC_COLUMNS 16
+#define FILES_COLUMNS 14
 #define CUSP_COUNT 37   /* cusp[0..36] */
 #define ASCMC_COUNT 10  /* ascmc[0..9] */
 #define STAR_BUF_LEN AS_MAXCH
@@ -164,13 +170,14 @@
 #define NOT_IN_208_RETC (-9999)
 
 /* Mode dispatches on which of these two headers the grid's first non-comment line matches --
- * see this file's own top-of-file comment. x2cross and dir are appended after sid_mode in both
- * headers, not interleaved among the original columns, so every column this file's other process_*
- * functions already index by a fixed offset keeps that same offset. */
+ * see this file's own top-of-file comment. x2cross, dir, t0 and ayan_t0 are appended after
+ * sid_mode in both headers, not interleaved among the original columns, so every column this
+ * file's other process_* functions already index by a fixed offset keeps that same offset. t0/
+ * ayan_t0 carry swe_set_sid_mode's own SE_SIDM_USER parameters -- see apply_sid_mode. */
 static const char *EXPECTED_HEADER_ANALYTIC =
-    "case_id\tfunc\tipl\ttjd\tiflag\thsys\tgeolon\tgeolat\theight\tarmc\teps\tsid_mode\tx2cross\tdir";
+    "case_id\tfunc\tipl\ttjd\tiflag\thsys\tgeolon\tgeolat\theight\tarmc\teps\tsid_mode\tx2cross\tdir\tt0\tayan_t0";
 static const char *EXPECTED_HEADER_FILES =
-    "case_id\tfunc\tipl\ttjd\tiflag\tstar\tgeolon\tgeolat\theight\tsid_mode\tx2cross\tdir";
+    "case_id\tfunc\tipl\ttjd\tiflag\tstar\tgeolon\tgeolat\theight\tsid_mode\tx2cross\tdir\tt0\tayan_t0";
 
 enum grid_mode { MODE_ANALYTIC, MODE_FILES };
 
@@ -283,6 +290,31 @@ static void emit_escaped(FILE *out, const char *s)
 }
 
 /*
+ * Applies swe_set_sid_mode when the row's sid_mode column is non-empty. t0/ayan_t0 (swe_set_sid_mode's
+ * own SE_SIDM_USER parameters) always sit exactly 3 and 4 columns after sid_mode in both grids --
+ * sid_mode, x2cross, dir, t0, ayan_t0, in that fixed relative order, for both the 16-column
+ * analytic layout (sid_mode_idx 11) and the 14-column files layout (sid_mode_idx 9) -- see
+ * gen-grid-analytic.ps1's and gen-grid-files.ps1's own header comments on why x2cross/dir/t0/
+ * ayan_t0 are appended in that order rather than interleaved among the original columns. A row
+ * with no sid_mode never reads t0/ayan_t0 at all: an empty sid_mode column means "this row's func
+ * does not touch the sidereal frame" and t0/ayan_t0 mean nothing without it. An empty t0/ayan_t0
+ * on a row that DOES set sid_mode means 0.0 -- the same default swe_set_sid_mode(sid_mode, 0, 0)
+ * always passed before this driver could express SE_SIDM_USER at all.
+ */
+static void apply_sid_mode(char *fields[], const char *case_id, int sid_mode_idx)
+{
+    int32 sid_mode;
+    double t0, ayan_t0;
+
+    if (!has_value(fields[sid_mode_idx])) return;
+
+    sid_mode = (int32)parse_int(fields[sid_mode_idx], case_id, "sid_mode");
+    t0 = has_value(fields[sid_mode_idx + 3]) ? parse_double(fields[sid_mode_idx + 3], case_id, "t0") : 0.0;
+    ayan_t0 = has_value(fields[sid_mode_idx + 4]) ? parse_double(fields[sid_mode_idx + 4], case_id, "ayan_t0") : 0.0;
+    swe_set_sid_mode(sid_mode, t0, ayan_t0);
+}
+
+/*
  * Shared by both grids: the two column layouts agree on ipl/tjd/iflag/geolon/geolat/height at
  * fields[2..8], and only disagree on where sid_mode lives (analytic's 12-column layout carries
  * hsys/armc/eps between height and sid_mode; the 10-column files layout does not) -- sid_mode_idx
@@ -305,10 +337,7 @@ static void process_calc(FILE *out, const char *case_id, const char *func, char 
         double height = parse_double(fields[8], case_id, "height");
         swe_set_topo(geolon, geolat, height);
     }
-    if (has_value(fields[sid_mode_idx])) {
-        int32 sid_mode = (int32)parse_int(fields[sid_mode_idx], case_id, "sid_mode");
-        swe_set_sid_mode(sid_mode, 0, 0);
-    }
+    apply_sid_mode(fields, case_id, sid_mode_idx);
 
     if (strcmp(func, "CALC") == 0)
         retc = swe_calc(tjd, ipl, iflag, xx, serr);
@@ -449,10 +478,7 @@ static void process_crossing_deg(FILE *out, const char *case_id, const char *fun
     int retc;
 
     serr[0] = '\0';
-    if (has_value(fields[sid_mode_idx])) {
-        int32 sid_mode = (int32)parse_int(fields[sid_mode_idx], case_id, "sid_mode");
-        swe_set_sid_mode(sid_mode, 0, 0);
-    }
+    apply_sid_mode(fields, case_id, sid_mode_idx);
 
     if (strcmp(func, "SOLCROSS") == 0)
         result = swe_solcross(x2cross, tjd, iflag, serr);
@@ -568,6 +594,52 @@ static void process_helio_cross(FILE *out, const char *case_id, const char *func
 #endif
 }
 
+/*
+ * AYANAMSA, AYANAMSA_EX, AYANAMSA_EX_UT: direct coverage of swe_get_ayanamsa/_ex/_ex_ut -- see
+ * this file's own top-of-file comment. Analytic-grid only (sid_mode_idx is always 11, the
+ * analytic grid's own fixed sid_mode column position): none of the three opens an ephemeris data
+ * file, so these func tokens never appear in a grid-files.tsv row and this driver never needs to
+ * handle them at any other sid_mode_idx.
+ *
+ * AYANAMSA has no serr output parameter -- swe_get_ayanamsa returns a bare double, with no error
+ * signal at all -- so its retc is a fixed OK and its err column stays empty, the same convention
+ * process_houses/process_houses_armc already use for a C API with nothing to report there.
+ */
+static void process_ayanamsa(FILE *out, const char *case_id, char *fields[])
+{
+    double tjd = parse_double(fields[3], case_id, "tjd");
+    double daya;
+
+    apply_sid_mode(fields, case_id, 11);
+    daya = swe_get_ayanamsa(tjd);
+
+    fprintf(out, "%s\t%d\t", case_id, OK);
+    emit_value(out, daya);
+    fputc('\n', out);
+}
+
+static void process_ayanamsa_ex(FILE *out, const char *case_id, const char *func, char *fields[])
+{
+    double tjd = parse_double(fields[3], case_id, "tjd");
+    int32 iflag = (int32)parse_int(fields[4], case_id, "iflag");
+    char serr[AS_MAXCH];
+    double daya = 0.0;
+    int32 retc;
+
+    serr[0] = '\0';
+    apply_sid_mode(fields, case_id, 11);
+
+    if (strcmp(func, "AYANAMSA_EX") == 0)
+        retc = swe_get_ayanamsa_ex(tjd, iflag, &daya, serr);
+    else
+        retc = swe_get_ayanamsa_ex_ut(tjd, iflag, &daya, serr);
+
+    fprintf(out, "%s\t%d\t", case_id, retc);
+    emit_escaped(out, serr);
+    emit_value(out, daya);
+    fputc('\n', out);
+}
+
 int main(int argc, char **argv)
 {
     FILE *in, *out;
@@ -641,6 +713,10 @@ int main(int argc, char **argv)
                 process_mooncross_node(out, case_id, func, fields);
             } else if (strcmp(func, "HELIO_CROSS") == 0 || strcmp(func, "HELIO_CROSS_UT") == 0) {
                 process_helio_cross(out, case_id, func, fields, 12, 13);
+            } else if (strcmp(func, "AYANAMSA") == 0) {
+                process_ayanamsa(out, case_id, fields);
+            } else if (strcmp(func, "AYANAMSA_EX") == 0 || strcmp(func, "AYANAMSA_EX_UT") == 0) {
+                process_ayanamsa_ex(out, case_id, func, fields);
             } else {
                 die("unknown func '%s' at case %s", func, case_id);
             }
