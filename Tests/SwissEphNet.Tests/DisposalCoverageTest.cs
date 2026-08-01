@@ -34,12 +34,19 @@ namespace SwissEphNet.Tests
     /// instance -- still needs its own AllowList entry, the same as a static method, because
     /// nothing about being a field makes an entry's absence any less of a silent gap.
     ///
-    /// Scope: SwissEph's own declared public methods, properties, events and fields
-    /// (<c>BindingFlags.DeclaredOnly</c>, <c>Static</c> and <c>Instance</c> together) -- not
-    /// members inherited from <see cref="object"/> (<c>ToString</c>, <c>Equals</c>,
-    /// <c>GetHashCode</c>, <c>GetType</c>), which are universal to every .NET object and carry no
-    /// SwissEph instance state to guard, and not constructors, which cannot be called against an
-    /// instance that already exists to be disposed.
+    /// Scope: SwissEph's own declared methods, properties, events and fields that are public,
+    /// protected, or protected internal (<c>BindingFlags.DeclaredOnly</c>, <c>Static</c> and
+    /// <c>Instance</c> together) -- not members inherited from <see cref="object"/>
+    /// (<c>ToString</c>, <c>Equals</c>, <c>GetHashCode</c>, <c>GetType</c>), which are universal
+    /// to every .NET object and carry no SwissEph instance state to guard, and not constructors,
+    /// which cannot be called against an instance that already exists to be disposed. Protected
+    /// and protected internal sit alongside public, not apart from it: SwissEph is not sealed
+    /// and has a public constructor, so both are reachable by a consumer deriving from it in
+    /// another assembly, the same class of externally-visible surface a public member is --
+    /// leaving them unswept would be exactly the blind spot this test exists to close, just one
+    /// level down. Plain internal and private protected members stay out of scope: both require
+    /// being in SwissEph's own assembly, which an external subclass is not, so neither is
+    /// reachable through inheritance from outside; private members are not reachable at all.
     ///
     /// Two shapes reflection can enumerate but this sweep cannot meaningfully drive: an indexer
     /// (its accessors need synthesized index arguments this test does not attempt to invent) and
@@ -91,6 +98,19 @@ namespace SwissEphNet.Tests
     /// throw, plus the 1 nested type and the 1 constructor, are not part of either bucket: a type
     /// declaration and a constructor call are not "used against a disposed instance" in any sense
     /// this test can exercise).
+    ///
+    /// "1 constructor" above means one public *instance* constructor: the class also declares a
+    /// private static constructor (SwissEph.cs:20, initializing the static <c>SE_*</c> tables),
+    /// which is out of this sweep's scope twice over -- private, and a constructor, per Scope
+    /// above -- so it was never part of the 486 and stays uncounted here too.
+    ///
+    /// The protected/protected-internal surface (see Scope above) adds two more members, both
+    /// methods, both swept by the same method loop as the 486: <c>Dispose(bool)</c> (protected,
+    /// SwissEph.cs:88) and <c>OpenBinary(String)</c> (protected internal, SwissEph.cs:210).
+    /// <c>Dispose(bool)</c> is AllowList-exempt for the same idempotency reason as public
+    /// <c>Dispose()</c>; <c>OpenBinary</c> throws correctly with no exemption needed (it calls
+    /// <c>ThrowIfDisposed()</c> at SwissEph.cs:211). No protected or protected-internal property,
+    /// event, or field exists on the class today.
     /// </remarks>
     public class DisposalCoverageTest
     {
@@ -127,6 +147,10 @@ namespace SwissEphNet.Tests
             ["Method:Dispose()"] =
                 "idempotent by design -- a second Dispose() call must not throw " +
                 "(DisposeTest.DoubleDispose_DoesNotThrow pins this).",
+            ["Method:Dispose(System.Boolean)"] =
+                "protected; the idempotency guard lives here (\"if (_disposed) return;\" at " +
+                "SwissEph.cs:89), one call up from public Dispose() above -- same reasoning, " +
+                "same reason it must not throw on a second call.",
             ["Method:swe_dotnet_version()"] =
                 "reads only assembly metadata (typeof(SwissEph).Assembly.FullName); touches no " +
                 "instance state, so there is nothing for a disposed instance to have invalidated.",
@@ -238,22 +262,45 @@ namespace SwissEphNet.Tests
             var failures = new List<string>();
             var seenSignatures = new HashSet<string>(StringComparer.Ordinal);
 
-            const BindingFlags declaredPublic =
-                BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+            const BindingFlags declaredAll =
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+
+            // A member is in this sweep's scope if it is public, or if it is protected or
+            // protected internal. SwissEph is not sealed and has a public constructor, so both
+            // are reachable by a consumer deriving from it in another assembly, the same way a
+            // public member is -- and this sweep would not have noticed if that reachability
+            // stopped being guarded, which is exactly the blind spot it exists to close. Plain
+            // internal and private protected members are not reachable that way: both require
+            // being in SwissEph's own assembly, which an external subclass is not. Private
+            // members are not reachable at all. IsFamily is protected; IsFamilyOrAssembly is
+            // protected internal; IsAssembly (internal) and IsFamilyAndAssembly (private
+            // protected) are both excluded.
+            // C# local functions do not support overloading (unlike ordinary class methods), so
+            // these are four distinct names rather than one overloaded IsInScope.
+            static bool IsAccessorInScope(MethodBase accessor) =>
+                accessor.IsPublic || accessor.IsFamily || accessor.IsFamilyOrAssembly;
+            static bool IsFieldInScope(FieldInfo field) =>
+                field.IsPublic || field.IsFamily || field.IsFamilyOrAssembly;
+            static bool IsPropertyInScope(PropertyInfo property) =>
+                (property.GetMethod != null && IsAccessorInScope(property.GetMethod)) ||
+                (property.SetMethod != null && IsAccessorInScope(property.SetMethod));
+            static bool IsEventInScope(EventInfo evt) =>
+                (evt.AddMethod != null && IsAccessorInScope(evt.AddMethod)) ||
+                (evt.RemoveMethod != null && IsAccessorInScope(evt.RemoveMethod));
 
             // Collected up front so the method loop below can tell a property/event accessor
             // apart from an operator: both are IsSpecialName, but only the accessor is already
             // exercised by the property/event loops that follow.
             var accessorMethods = new HashSet<MethodInfo>();
-            foreach (var p in type.GetProperties(declaredPublic))
+            foreach (var p in type.GetProperties(declaredAll).Where(IsPropertyInScope))
             {
-                if (p.GetMethod != null) accessorMethods.Add(p.GetMethod);
-                if (p.SetMethod != null) accessorMethods.Add(p.SetMethod);
+                if (p.GetMethod != null && IsAccessorInScope(p.GetMethod)) accessorMethods.Add(p.GetMethod);
+                if (p.SetMethod != null && IsAccessorInScope(p.SetMethod)) accessorMethods.Add(p.SetMethod);
             }
-            foreach (var e in type.GetEvents(declaredPublic))
+            foreach (var e in type.GetEvents(declaredAll).Where(IsEventInScope))
             {
-                if (e.AddMethod != null) accessorMethods.Add(e.AddMethod);
-                if (e.RemoveMethod != null) accessorMethods.Add(e.RemoveMethod);
+                if (e.AddMethod != null && IsAccessorInScope(e.AddMethod)) accessorMethods.Add(e.AddMethod);
+                if (e.RemoveMethod != null && IsAccessorInScope(e.RemoveMethod)) accessorMethods.Add(e.RemoveMethod);
             }
 
             // Static and instance together, deliberately: a static public method (or operator --
@@ -263,7 +310,7 @@ namespace SwissEphNet.Tests
             // never being looked at. BindingFlags.Instance alone would let a static method
             // slip past this test unseen, which is exactly the kind of silent gap this test
             // exists to close.
-            foreach (var method in type.GetMethods(declaredPublic))
+            foreach (var method in type.GetMethods(declaredAll).Where(IsAccessorInScope))
             {
                 if (method.IsSpecialName)
                 {
@@ -328,7 +375,7 @@ namespace SwissEphNet.Tests
                 }
             }
 
-            foreach (var property in type.GetProperties(declaredPublic))
+            foreach (var property in type.GetProperties(declaredAll).Where(IsPropertyInScope))
             {
                 var key = PropertyKey(property);
                 seenSignatures.Add(key);
@@ -393,7 +440,7 @@ namespace SwissEphNet.Tests
                 }
             }
 
-            foreach (var evt in type.GetEvents(declaredPublic))
+            foreach (var evt in type.GetEvents(declaredAll).Where(IsEventInScope))
             {
                 var key = EventKey(evt);
                 seenSignatures.Add(key);
@@ -441,7 +488,7 @@ namespace SwissEphNet.Tests
             // invoking harder. const fields are bulk-exempt below by declaration kind (see the
             // class remarks for why); every other field, static or instance, needs its own
             // AllowList entry the same as a static method.
-            foreach (var field in type.GetFields(declaredPublic))
+            foreach (var field in type.GetFields(declaredAll).Where(IsFieldInScope))
             {
                 var key = FieldKey(field);
                 seenSignatures.Add(key);
