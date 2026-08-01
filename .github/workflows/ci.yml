@@ -185,6 +185,82 @@ jobs:
         shell: pwsh
         run: pwsh scripts/verify-no-dependencies.ps1
 
+  # Nothing before this job ever packed the actual release artifact anywhere but a contributor's
+  # own machine. verify-no-dependencies above already runs `dotnet pack`, but only to inspect the
+  # packed nuspec's dependency list -- it discards the .nupkg/.snupkg immediately afterward and
+  # asserts nothing about how they were built.
+  #
+  # That distinction matters because packing locally degrades the shipped symbols. Directory.
+  # Build.props sets ContinuousIntegrationBuild only when GITHUB_ACTIONS, TF_BUILD or CI is
+  # 'true', and that property controls what SourceLink embeds as the document root for every
+  # source file's path in the .pdb. Measured directly, before this job existed: a pack run from a
+  # workstation checkout embeds the checkout's own absolute path (e.g.
+  # `C:\Users\<name>\...\SwissEphNet\*`) as that root, baking a machine-specific path into a
+  # symbol package a consumer might download; the identical pack with CI=true (which
+  # GITHUB_ACTIONS=true, always set on an Actions runner, already satisfies) embeds the
+  # deterministic `/_/*` root instead. A `.nupkg`/`.snupkg` built on a workstation and pushed by
+  # hand would ship the machine-specific version silently -- this job exists so the artifact this
+  # repository actually publishes is always the CI-built one.
+  pack:
+    name: Pack the release artifact
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          # Both runtimes: the library multi-targets netstandard2.0;net8.0;net10.0, and packing
+          # needs the net8.0 SDK/runtime present alongside net10.0 -- same reasoning as
+          # verify-no-dependencies above.
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Pack SwissEphNet (Release)
+        shell: pwsh
+        run: dotnet pack SwissEphNet/SwissEphNet.csproj -c Release -o pack-output
+
+      # Confirms the property this job exists to guarantee, rather than assuming
+      # ContinuousIntegrationBuild took effect just because this step runs inside Actions: opens
+      # the packed .snupkg, reads the embedded .pdb's SourceLink blob directly (the same "documents"
+      # JSON map a debugger resolves a source file against), and fails if its root is anything
+      # other than the deterministic `/_/*` -- in particular, if it is a local, workstation-shaped
+      # absolute path, which is exactly what a non-CI pack was measured to embed.
+      - name: Assert the packed symbols carry a deterministic SourceLink root
+        shell: pwsh
+        run: |
+          $snupkg = Get-ChildItem -Path pack-output -Filter '*.snupkg' | Select-Object -First 1
+          if (-not $snupkg) {
+            Write-Error "No .snupkg found in pack-output/ -- dotnet pack did not produce a symbols package."
+            exit 1
+          }
+          $extractDir = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString('N'))
+          Expand-Archive -LiteralPath $snupkg.FullName -DestinationPath $extractDir
+          $pdb = Get-ChildItem -Path $extractDir -Filter '*.pdb' -Recurse | Select-Object -First 1
+          if (-not $pdb) {
+            Write-Error "$($snupkg.Name) contains no .pdb to inspect."
+            exit 1
+          }
+          # Portable PDB debug streams are not valid UTF-8 throughout (they interleave binary
+          # metadata with the UTF-8 SourceLink JSON blob), so ISO-8859-1 (a 1:1 byte-to-codepoint
+          # mapping) is used purely to search for an ASCII substring without a decode failure --
+          # not to actually interpret the file as ISO-8859-1 text.
+          $bytes = [System.IO.File]::ReadAllBytes($pdb.FullName)
+          $text = [System.Text.Encoding]::GetEncoding(28591).GetString($bytes)
+          if ($text -notmatch [regex]::Escape('"documents":{"/_/*"')) {
+            Write-Error "$($pdb.Name)'s embedded SourceLink map does not start with the deterministic '/_/*' document root. Either Directory.Build.props's GITHUB_ACTIONS/TF_BUILD/CI condition stopped matching this runner, or something built these symbols outside CI -- see this job's own comment for what a workstation pack was measured to embed instead."
+            exit 1
+          }
+          Write-Host "OK: $($pdb.Name) carries the deterministic '/_/*' SourceLink document root."
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package
+          path: |
+            pack-output/*.nupkg
+            pack-output/*.snupkg
+
   # Still no general `dotnet format --verify-no-changes` job: the pre-existing SweWin
   # WinForms code (never previously run through dotnet format) has formatting debt
   # unrelated to any current change, and gating every PR on fixing it is a separate
