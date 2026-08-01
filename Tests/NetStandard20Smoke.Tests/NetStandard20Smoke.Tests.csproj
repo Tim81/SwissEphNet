@@ -55,6 +55,13 @@
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <!--
+      See netstandard20smoke.runsettings for why this project needs a session timeout: the one
+      regression it exists to catch (StringExtensions.Contains(this string, char) recursing into
+      itself on netstandard2.0) is a StackOverflowException that hangs the run past 300 seconds
+      and orphans a testhost process rather than failing a single test quickly.
+    -->
+    <RunSettingsFilePath>$(MSBuildThisFileDirectory)netstandard20smoke.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
   <ItemGroup>
