@@ -46,3 +46,18 @@ not exist on the integration branch once it lands).
    Tests/baseline/baseline-2.8.0.2.env.txt's own "## Local regenerations" log): the previous
    "[ephe]" placeholder was frozen into hundreds of expected serr strings the baseline compares
    verbatim, so restoring the real default necessarily moves that text.
+4. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01: do_fread
+   (Sweph.cs) tested `fp.Read(trg, 0, totsize) == 0`, which rejects only a zero-byte read.
+   sweph.c:4915 and :4926 use `fread(targ, totsize, 1, fp) == 0`: fread's third argument is an
+   item count of 1 (item size totsize), so fread returns 0 items on any short read, not only a
+   zero-byte one. CFile.Read loops and returns the actual byte count, so a partial (non-zero,
+   short) read was silently accepted as success, leaving the rest of the target buffer at
+   whatever it already held. Both do_fread branches changed the same way, to `!= totsize`.
+   Fidelity fix, not a re-transliteration: no other line in SwissEphNet/CPort moved. Proven to
+   discriminate, not merely added: Tests/SwissEphNet.Tests/DoFreadShortReadTest.cs constructs a
+   truncated, header-patched copy of the seas_18.se1 fixture whose declared length and CRC-32
+   both still match the truncated bytes (so read_const's own, separate file-length guard does not
+   fire first), truncated exactly inside the last do_fread call the whole computation makes for
+   the queried date -- confirmed by reverting this fix and rerunning: swe_pheno(SE_CHIRON, ...)
+   returns success (4) with a wrong attr[3] instead of ERR. SwissEphNet/CPort: 48427 -> 48435
+   lines, sha256 26C28B33... -> 66866B61....

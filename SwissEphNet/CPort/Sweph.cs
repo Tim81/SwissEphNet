@@ -5691,7 +5691,12 @@ namespace SwissEphNet.CPort
             /* if no byte reorder has to be done, and read size == return size */
             if (0 == freord && size == corrsize)
             {
-                if (fp.Read(trg, 0, totsize) == 0)
+                // sweph.c:4915 is `fread((void *) targ, (size_t) totsize, 1, fp) == 0`: fread's
+                // third argument is an item count of 1 (item size totsize), so fread returns 0
+                // items on ANY short read, not only a zero-byte one. CFile.Read loops and returns
+                // the actual byte count, so `== 0` here rejected only a read that returned nothing
+                // at all, silently accepting a partial read as success.
+                if (fp.Read(trg, 0, totsize) != totsize)
                 {
                     serr = C.sprintf("Ephemeris file %s is damaged (2).", swed.fidat[ifno].fnam);
                     return (ERR);
@@ -5701,7 +5706,10 @@ namespace SwissEphNet.CPort
             }
             else
             {
-                if (fp.Read(space, 0, totsize) == 0)
+                // sweph.c:4926 is `fread((void *) &space[0], (size_t) totsize, 1, fp) == 0`, the
+                // same one-item-of-size-totsize shape as the branch above: any short read must be
+                // rejected, not only a zero-byte one.
+                if (fp.Read(space, 0, totsize) != totsize)
                 {
                     serr = C.sprintf("Ephemeris file %s is damaged (4).", swed.fidat[ifno].fnam);
                     return (ERR);
