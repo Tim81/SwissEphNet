@@ -465,7 +465,7 @@ def replay_house_pos(rows, swe, tol):
         else:
             hsys, eps_s, armc_s, geolat_s, lon_s, lat_s = parts[1:7]
 
-        armc, geolat, eps, lon, lat = (to_float(x) for x in (armc_s, eps_s, geolat_s, lon_s, lat_s))
+        armc, geolat, eps, lon, lat = (to_float(x) for x in (armc_s, geolat_s, eps_s, lon_s, lat_s))
         exp_pos = to_float(fields[0])
         try:
             pos = swe.house_pos(armc, geolat, eps, [lon, lat], hsys=hsys.encode("latin-1"))
