@@ -76,8 +76,28 @@ fork removed.
 # Upgrading from 2.8.0.2
 
 This section is for anyone with `SwissEphNet 2.8.0.2` in a project, deciding whether to move to
-`SwissEphSharp 2.10.3`. Four questions, in the order they matter: will your numbers change, will
-your code still compile, what do you gain, and can you trust the answers you get.
+`SwissEphSharp 2.10.3`. Five questions, in the order they matter: can you still use it under your
+licence, will your numbers change, will your code still compile, what do you gain, and can you
+trust the answers you get.
+
+## Can you still use it under your licence?
+
+Check this one first, because for some projects it is the answer and the rest does not matter.
+
+The licence changed, and not in a direction that suits everyone. 2.8.0.2 was GPL-2.0-or-later.
+This release is AGPL-3.0-or-later, or a Swiss Ephemeris Professional License bought from
+Astrodienst. The practical difference is the AGPL's network clause. Under GPL-2.0 you could run
+2.8.0.2 inside a web service and owed nobody source, because you were not distributing anything.
+Under AGPL-3.0 operating the service is itself the trigger: users who interact with it over a
+network can require the complete corresponding source of your whole service, not just this
+library.
+
+So if you are running 2.8.0.2 server-side today and cannot publish your source, upgrading is a
+licensing decision before it is a technical one, and the Professional License is the route that
+keeps it available to you. See "License" above for both options in full.
+
+This is not a change this fork chose. It follows Astrodienst's own relicensing of Swiss Ephemeris,
+and it applies to the C library this port tracks just as much as to the port.
 
 ## Will your numbers change?
 
@@ -155,6 +175,40 @@ staying hidden.
 
 `PATH_SEPARATOR` widened from `char` to `char[]`. The value is unchanged (`{ ';' }`); code that
 reads it as a single `char` needs to index `[0]` instead.
+
+`StringExtensions` and `TypeExtensions` are internal now. Both were public, so `using
+SwissEphNet;` put their methods in scope on every `string` and every `Type` in your file:
+`Contains(char)`, `Contains(char[])`, `IndexOfFirstNot`, two `Substr` overloads, `GetTypeCode` and
+`GetAssembly`. If you called any of them, they are gone. `Substr` clamps instead of throwing and
+has no direct replacement; the rest map onto BCL methods (`string.Contains`, `Type.GetTypeCode(t)`,
+`t.Assembly`).
+
+Only one of the seven actually misbehaved, and it is worth saying so plainly rather than implying
+the whole set was dangerous. `Contains(this string, char)` is the one overload the BCL lacks on
+netstandard2.0 and .NET Framework, so on those targets a consumer's own unrelated call bound to
+this method instead of the BCL's, and `((string)null).Contains('x')` returned false where the same
+source on net8.0/net10.0 threw. It also broke the build outright for anyone who already had their
+own `Contains(this string, char)` helper, which is the ordinary way to get that method on .NET
+Framework: CS0121, the moment the package is referenced. Both were reproduced against the shipped
+assets before the change.
+
+The other six went internal with it as a scoping decision, not because each was harmful. Narrower
+fixes existed -- making only that overload internal, or moving the class to a namespace that
+`using SwissEphNet;` does not pull in. The broader change was taken because 2.10.3 is the first
+release published to nuget.org, so this is the moment the public surface is fixed, and a package's
+surface is easier to widen later than to narrow. If you were relying on one of the other six, that
+is a reasonable thing to raise: they can be made public again without disturbing the overload that
+caused the problem.
+
+`ArrayExtensions.GetPointer` stays public, deliberately -- it is how you build the
+`CPointer<double>` that `swe_houses_ex`, `swe_houses_ex2` and `swe_cotrans` take.
+
+Your target framework may no longer be supported at all. 2.8.0.2 shipped `net40` and
+`netstandard1.0`; this release ships `netstandard2.0`, `net8.0` and `net10.0`. A project on
+`net40`, or on any framework that only satisfies `netstandard1.0`, cannot take this package.
+.NET Framework 4.6.1 and later resolve `netstandard2.0` and can, with the accuracy caveat under
+"Numerical compatibility" below. Note also that `netstandard2.0` is on its way out: see the
+deprecation entry under "Breaking changes".
 
 One more thing worth flagging here even though it is not a source-level break like the four
 above: the NuGet package ID is `SwissEphSharp`, not `SwissEphNet`, while the namespace and every
