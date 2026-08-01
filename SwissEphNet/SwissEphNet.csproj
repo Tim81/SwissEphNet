@@ -29,6 +29,23 @@
       NuGet when comparing versions, so a second package differing only there
       cannot be published. A prerelease suffix (2.10.3-rev1) sorts BEFORE
       2.10.3, which is backwards for a release that comes after it.
+
+      The fourth component is not free, and this is the cost to weigh before
+      spending it. Nothing here sets AssemblyVersion, so the SDK derives it
+      from Version: measured with
+      "dotnet msbuild SwissEphNet/SwissEphNet.csproj -t:GetAssemblyVersion
+      -getProperty:AssemblyVersion -p:TargetFramework=netstandard2.0",
+      Version 2.10.3 gives AssemblyVersion 2.10.3.0 and Version 2.10.3.1 gives
+      2.10.3.1. On .NET Framework, which is the host for the netstandard2.0
+      asset, an assembly reference binds on the full four-part version, so a
+      consumer compiled against 2.10.3.0 does not load 2.10.3.1 without a
+      binding redirect: a fork-only revision is a binding-identity break there,
+      not just a package-version bump. net8.0 and net10.0 roll forward on
+      assembly version and are unaffected. So a fork-only release either
+      accepts that break for .NET Framework consumers, or pins AssemblyVersion
+      to 2.10.3.0 here and lets only Version and FileVersion carry the fourth
+      component. Decide it deliberately at the point of making one; do not
+      discover it from a consumer's FileLoadException.
     -->
     <Version>2.10.3</Version>
     <!--
@@ -70,6 +87,10 @@ SwissEphNet):
 - swe_houses, swe_houses_ex, swe_houses_armc, swe_house_pos and swe_house_name each gained an
   int hsys overload alongside the existing char hsys overload, matching upstream swephexp.h.
 - New API surface: swe_houses_ex2, swe_houses_armc_ex2, swe_calc_pctr, swe_get_current_file_data.
+- swe_lun_occult_when_glob and swe_lun_occult_when_loc each gained an Int32 backward overload, so
+  SE_ECL_ONE_TRY can be OR-ed into that bitfield the way swephexp.h declares. The existing bool
+  overload is unchanged and still binds; it can only pass 0 or 1, so it can never request the
+  flag. Reflection that resolves either method by name alone now throws AmbiguousMatchException.
 - OnLoadFile is gone; ephemeris files are read from disk by default through the new
   SwissEph.FileProvider (IEphemerisFileProvider).
 - The assembly is now named SwissEphSharp (was SwissEphNet), so this package can coexist in one
