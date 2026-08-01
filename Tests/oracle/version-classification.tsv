@@ -1,7 +1,8 @@
 # Classifies every oracle case_id by which Swiss Ephemeris C version(s) the port's result
 # matches: 2.08, the version the port tracks, and 2.10.03, the upgrade target. Regenerated
 # by scripts/classify-oracle-versions.ps1 -- see Tools/OracleVerify/ThreeWayClassification.cs
-# for the classifier. Not a gate: nothing in CI reads this file.
+# for the classifier. This file is gated: oracle.yml regenerates it and fails on any
+# difference from what is committed, so commit what the script produces.
 #
 # classification values (see the port_vs_2.08 / port_vs_2.10.03 / c208_vs_c210 columns for
 # the measurement behind each):

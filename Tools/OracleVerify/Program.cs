@@ -9,8 +9,10 @@
 // it takes a 2.08 C dump as well and sorts every case_id into one of four buckets by which C
 // version(s) the port's result matches -- 2.08 (the version the port tracks), 2.10.03 (the
 // upgrade target), both or neither -- see ThreeWayClassification.cs and
-// Tests/oracle/version-classification.tsv's own header. It is not a gate: unlike "verify", it never
-// fails on what it finds, only on a structural problem with the inputs (see RunClassify).
+// Tests/oracle/version-classification.tsv's own header. Unlike "verify", this mode never fails on
+// what it finds, only on a structural problem with the inputs (see RunClassify). The files it
+// writes are gated even so: .github/workflows/oracle.yml regenerates both and fails on any
+// difference from what is committed.
 //
 // Never invoke this directly -- see scripts/verify-oracle.ps1, scripts/regenerate-oracle-known-diff.ps1
 // and scripts/classify-oracle-versions.ps1.

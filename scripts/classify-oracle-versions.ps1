@@ -23,9 +23,13 @@
     TRACKS-2.08, TRACKS-2.10.03, TRACKS-NEITHER) and Program.cs's RunClassify.
 
     Unlike scripts/regenerate-oracle-known-diff.ps1, this is not a gate's bypass and carries no
-    -PruneOnly/-Reason distinction: nothing in CI reads version-classification.tsv to decide
-    PASS/FAIL, so there is no silent-regression risk a reviewed -Reason exists to guard against
-    here the way it does for known-diff.tsv. It always overwrites both files wholesale with
+    -PruneOnly/-Reason distinction. Both output files are gated: .github/workflows/oracle.yml
+    regenerates them from that run's own dumps and fails on any difference from what is committed.
+    What that gate asserts is that the committed measurement is current, not that any particular
+    classification is acceptable, so re-running this script and committing the result is the
+    intended answer to that failure rather than a way around it. That is the difference from
+    known-diff.tsv, where adding a row suppresses a real difference and a reviewed -Reason exists
+    to guard against exactly that. It always overwrites both files wholesale with
     whatever the current run measures. What -Reason (below) buys instead is a readable history of
     *when* the measurement changed and *why someone re-ran it* -- e.g. "after PR #40 fixed the
     swe_fixstar2 path" reads a lot better in Tests/oracle/version-classification-regenerations.log
@@ -162,5 +166,6 @@ foreach ($g in @('Analytic', 'Files')) {
 
 Write-Host ''
 Write-Host 'Review the diff (git diff Tests/oracle/version-classification.tsv Tests/oracle/version-classification-files.tsv) before committing.'
-Write-Host 'This is a measurement, not a gate: nothing in CI reads these files, so there is no PASS/FAIL here to satisfy -- only whether the'
-Write-Host 'new counts make sense given what changed since the last run.'
+Write-Host 'This script has no PASS/FAIL of its own to satisfy -- judge whether the new counts make sense given what changed'
+Write-Host 'since the last run. CI does gate both files: oracle.yml regenerates them and fails if what you commit differs from'
+Write-Host 'what its own dumps produce, so commit this run''s output rather than an edited copy of it.'
