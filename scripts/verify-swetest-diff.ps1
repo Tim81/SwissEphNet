@@ -98,20 +98,28 @@
     silent Moshier-fallback defect on the .NET side.
 
 .PARAMETER GuardOnly
-    Run every check up to and including the Programs/SweTest build, then exit 0 without dispatching
-    a single grid case -- no comparison, no -Regenerate/gate logic. Exists so
-    .github/workflows/oracle.yml can gate on the build and the guard checks (a missing C reference
-    exe, an ephemeris directory that does not match the declared manifest, a malformed grid, a
-    failed dotnet build) as a hard failure, separately from the actual text comparison against
+    Run every check up to and including the Programs/SweTest build, dispatch exactly one grid case
+    (the first row whose args request -eswe) to exercise the Moshier-fallback guard
+    (Test-RequiredFileMissReported), then exit 0 without dispatching the rest of the grid -- no
+    comparison, no -Regenerate/gate logic. Exists so .github/workflows/oracle.yml can gate on the
+    build and the guard checks (a missing C reference exe, an ephemeris directory that does not
+    match the declared manifest, a malformed grid, a failed dotnet build, a required-ephemeris-file
+    silently reported missing) as a hard failure, separately from the actual text comparison against
     Tests/swetest/known-diff.tsv, which stays under continue-on-error because a future MSVC can
     move the C side's printed digits without this port changing at all. Before this switch existed,
     both lived inside one script invocation covered by a single continue-on-error step in the
     workflow, so a broken build or a missing ephemeris file was silently absorbed by the same
     exemption meant only for toolchain-sensitive text drift -- exactly what that job's own comment
-    in oracle.yml said the flag was never meant to cover. The workflow calls this script twice: once
-    with -GuardOnly (no continue-on-error), once normally (continue-on-error still set) -- the
-    second call rebuilds Programs/SweTest again, a redundant few seconds, not a second grid
-    dispatch, since -GuardOnly's own invocation never reaches the grid loop at all.
+    in oracle.yml said the flag was never meant to cover. The one-row guard dispatch closes a
+    second, narrower version of that same gap: Test-RequiredFileMissReported previously lived only
+    inside the full grid loop below, which -GuardOnly never reached, so a harness defect it exists
+    to catch (e.g. a relative -edir regression) was reachable only from the second, continue-on-
+    error'd invocation despite this parameter's own help and oracle.yml's job comment both already
+    claiming otherwise. The workflow calls this script twice: once with -GuardOnly (no
+    continue-on-error), once normally (continue-on-error still set) -- the second call rebuilds
+    Programs/SweTest again and re-dispatches that same first -eswe row a second time, a redundant
+    few seconds either way, not a meaningful second guard dispatch, since the full grid loop's own
+    per-row check (unchanged) covers it again regardless.
 #>
 [CmdletBinding()]
 param(
@@ -200,17 +208,31 @@ function Read-ArgsGrid {
 
 # ---------------------------------------------------------------------------------------
 # known-diff.tsv -- same shape as Tests/conformance/known-fail.tsv: case_id, category, reason.
-# Gates on category only, not on the reason text, matching that file's own design (see
-# CONTRIBUTING.md, "Correctness oracle known-fail list") -- reason is documentation, not part of
-# the comparison.
+# Gates on category AND a normalized digest of the reason (see Get-ReasonDigest below), not the
+# literal reason text -- the literal text is documentation, regenerated fresh every run, and
+# legitimately shifts with unrelated upstream C changes to the same printed line. Category alone
+# is not enough on its own: every row in this file today shares the single category
+# OUTPUT-DIFFERS (the catch-all Compare-Case falls through to), so a case_id whose divergence
+# moved from a path separator on line 1 to a wrong longitude on line 47 would still satisfy an
+# unlisted-category check while gating on nothing that actually distinguishes the two.
 # ---------------------------------------------------------------------------------------
 
 function Read-KnownDiff {
-    param([string] $Path)
+    param([string] $Path, [switch] $AllowMissing)
     $expectedHeader = 'case_id' + "`t" + 'category' + "`t" + 'reason'
     $result = [System.Collections.Generic.Dictionary[string, pscustomobject]]::new()
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-        return $result
+        # Hard-fails by default, matching Read-ArgsGrid's own "zero rows is a failure, not an
+        # empty result" stance (line ~205 above) -- a missing known-diff.tsv silently read as
+        # "nothing known" would make every currently-differing case_id look unlisted (loud), but
+        # would just as silently make an EMPTY grid run (every case newly passing, or the file
+        # accidentally deleted with nothing left to compare) report "PASS: 0 differing case(s)...
+        # no regression, no drift, no stale row", which is vacuously true of a file that was never
+        # read. -AllowMissing opts back into the previous silent-empty behavior for the one call
+        # site that legitimately needs it: -Regenerate's own "how many rows existed before" count,
+        # which must tolerate a first-ever regeneration where the file does not exist yet.
+        if ($AllowMissing) { return $result }
+        Fail "$Path not found. Cannot verify known differences without it. If this is the very first regeneration of this file (bootstrapping known-diff.tsv from nothing), run -Regenerate directly -- its own read of this file already passes -AllowMissing."
     }
     $headerSeen = $false
     foreach ($textLine in [System.IO.File]::ReadLines($Path)) {
@@ -484,6 +506,35 @@ function Get-FirstDiffSummary {
     return 'outputs differ but no differing line was found -- this is a bug in this script, not a real result'
 }
 
+# Normalizes a Compare-Case reason to the shape that matters for the known-diff.tsv gate's drift
+# check, not its exact printed content. Two things justify a digest instead of either extreme:
+# comparing the literal reason text is too strict -- it is regenerated diagnostic detail (see
+# Read-KnownDiff's own header comment) that legitimately shifts with an unrelated upstream C
+# change touching the same printed line, e.g. a column width or a trailing space moving on a line
+# this case_id was never really "about"; comparing category alone is too coarse -- every row in
+# Tests/swetest/known-diff.tsv today shares the single category OUTPUT-DIFFERS (Compare-Case's own
+# catch-all), so category-level drift detection has no power at all to notice a case_id whose
+# divergence relocated to a different, unrelated line.
+#
+# For a Get-FirstDiffSummary reason ("line N: c=... net=..." -- what every OUTPUT-DIFFERS row's
+# reason looks like), the digest is just the line number: the printed content past that point can
+# legitimately vary (a filename, a truncated numeric value, a path separator) without the
+# divergence itself having moved to different subject matter, but the divergence relocating to a
+# different line number in the SAME case_id's output is exactly the "path separator on line 1 to a
+# wrong longitude on line 47" case this check exists to catch. A reason that is not shaped like a
+# Get-FirstDiffSummary line (CRASH's exception summary, PORT-VERSION's fixed banner sentence)
+# digests to the reason text itself unchanged, since there is no line-number structure to extract
+# and those categories are few enough in practice that literal comparison is not overly strict for
+# them.
+function Get-ReasonDigest {
+    param([string] $Reason)
+    $lineMatch = [regex]::Match($Reason, '^line (\d+)')
+    if ($lineMatch.Success) {
+        return "line=$($lineMatch.Groups[1].Value)"
+    }
+    return $Reason
+}
+
 # Detects a difference that is fully explained by the embedded "version 2.08" / "version 2.10.03"
 # banner text (see Tools/SwetestDiff/gen-args-grid.ps1's .DESCRIPTION on why HEADER_BLOCK is the
 # only category that can produce this): if substituting one version string for the other in the
@@ -561,8 +612,37 @@ try {
     }
     Write-Host ''
 
+    # The Moshier-fallback guard (Test-RequiredFileMissReported), dispatched against ONE
+    # representative -eswe row here, before the -GuardOnly exit below -- not left to run for the
+    # first time inside the full grid loop further down. That loop's copy of this same check
+    # (further below) is real code, but it sat unreachable from a -GuardOnly-only invocation: this
+    # script's own .PARAMETER GuardOnly help, and oracle.yml's swetest-diff job comment, both
+    # already claimed "-GuardOnly runs ... Test-RequiredFileMissReported's own guard", but nothing
+    # actually ran it before this exited at $GuardOnly above -- the claim only became true for a
+    # workflow run that continues on to the second, continue-on-error'd invocation, which is
+    # exactly the exemption this guard exists to sit outside of (see the .DESCRIPTION's "NEITHER
+    # BINARY IS BUILT SILENTLY WRONG"). One row is enough to catch a systemic harness defect (a
+    # relative -edir regression, an -edir argument dropped entirely) without dispatching the whole
+    # grid twice; every row still gets the same check for real in the full dispatch loop below.
+    $guardRow = $grid | Where-Object { $_.Args -match '-eswe' } | Select-Object -First 1
+    if ($guardRow) {
+        $cGuardResult = Invoke-SwetestCase -ExePath $CExePath -ArgsStr $guardRow.Args -EpheDirPath $EpheDir -RepoRootPath $repoRoot
+        $netGuardResult = Invoke-SwetestCase -ExePath $netExePath -ArgsStr $guardRow.Args -EpheDirPath $EpheDir -RepoRootPath $repoRoot
+        $cGuardMiss = Test-RequiredFileMissReported -Lines $cGuardResult.Lines -RequiredFiles $requiredFilesSet
+        if ($cGuardMiss) {
+            Fail "$($guardRow.CaseId): C reference reported required file '$cGuardMiss' not found under $EpheDir, which Assert-EphemerisManifest already confirmed is present. -eswe was requested and the run degraded to Moshier instead of failing outright -- that is a harness defect, not a case result to record."
+        }
+        $netGuardMiss = Test-RequiredFileMissReported -Lines $netGuardResult.Lines -RequiredFiles $requiredFilesSet
+        if ($netGuardMiss) {
+            Fail "$($guardRow.CaseId): .NET reported required file '$netGuardMiss' not found under $EpheDir, which Assert-EphemerisManifest already confirmed is present. -eswe was requested and the run degraded to Moshier instead of failing outright -- that is a harness defect, not a case result to record."
+        }
+    }
+    else {
+        Write-Host "WARNING: no -eswe row found in $GridPath -- the Moshier-fallback guard has nothing to dispatch during the guard phase. This does not fail the guard (the grid's own content is Read-ArgsGrid's concern, not this one's), but it means this specific protection is not actually exercised." -ForegroundColor Yellow
+    }
+
     if ($GuardOnly) {
-        Write-Host "PASS (guard-only): C reference exe found, ephemeris manifest matched, grid loaded ($($grid.Count) rows), Programs/SweTest built. No case was dispatched -- see this script's own -GuardOnly parameter help." -ForegroundColor Green
+        Write-Host "PASS (guard-only): C reference exe found, ephemeris manifest matched, grid loaded ($($grid.Count) rows), Programs/SweTest built, Moshier-fallback guard dispatched against one -eswe row. No further case was dispatched -- see this script's own -GuardOnly parameter help." -ForegroundColor Green
         exit 0
     }
 
@@ -646,10 +726,11 @@ try {
     # -----------------------------------------------------------------------------------
 
     if ($Regenerate) {
-        $oldCount = 0
-        if (Test-Path -LiteralPath $KnownDiffPath -PathType Leaf) {
-            $oldCount = (Read-KnownDiff -Path $KnownDiffPath).Count
-        }
+        # -AllowMissing: this is the one call site that legitimately needs Read-KnownDiff's old
+        # silent-empty behavior on a missing file -- a first-ever regeneration of known-diff.tsv,
+        # where 0 prior rows is the correct, non-error starting count. See Read-KnownDiff's own
+        # comment for why every other call site (the gate below) hard-fails instead.
+        $oldCount = (Read-KnownDiff -Path $KnownDiffPath -AllowMissing).Count
 
         $writer = [System.IO.StreamWriter]::new($KnownDiffPath, $false, [System.Text.UTF8Encoding]::new($false))
         try {
@@ -694,6 +775,13 @@ try {
         }
         elseif ($known[$caseId].Category -ne $actualDiffs[$caseId].Category) {
             $drifted.Add("$caseId : known=$($known[$caseId].Category) actual=$($actualDiffs[$caseId].Category) -- $($actualDiffs[$caseId].Reason)")
+        }
+        elseif ((Get-ReasonDigest $known[$caseId].Reason) -ne (Get-ReasonDigest $actualDiffs[$caseId].Reason)) {
+            # Same category, but the underlying divergence moved -- see Get-ReasonDigest's own
+            # comment for why this is checked at all: category alone cannot tell "path separator
+            # on line 1" from "wrong longitude on line 47" when both are OUTPUT-DIFFERS, which
+            # every row in this file is today.
+            $drifted.Add("$caseId : same category ($($known[$caseId].Category)) but the divergence moved -- known: $($known[$caseId].Reason) -- actual: $($actualDiffs[$caseId].Reason)")
         }
     }
 

@@ -664,9 +664,12 @@ jobs:
       # Programs/SweTest build, a duplicate case_id or malformed grid row, and
       # Test-RequiredFileMissReported's own guard -- none of which the comparison's
       # continue-on-error below was ever meant to cover (see the job comment's own citation of
-      # this file's header, lines 477-481). -GuardOnly runs every one of those checks and the
-      # Programs/SweTest build, then exits before dispatching a single grid case, so a break here
-      # fails this job for real.
+      # this file's header, lines 477-481). -GuardOnly runs every one of those checks, the
+      # Programs/SweTest build, and dispatches exactly one grid case (the first -eswe row) to
+      # exercise Test-RequiredFileMissReported for real, then exits before dispatching the rest of
+      # the grid -- see -GuardOnly's own parameter help for why that one dispatch exists: without
+      # it, this guard's check lived only inside the full grid loop, unreachable from this step at
+      # all, so a break here fails this job for real now in a way it previously did not.
       - name: Build Programs/SweTest and verify guard conditions
         shell: pwsh
         run: pwsh scripts/verify-swetest-diff.ps1 -GuardOnly
@@ -807,10 +810,13 @@ jobs:
           dotnet "$DLL" Tools/OracleGrid/grid-analytic.tsv net-analytic.tsv
           dotnet "$DLL" Tools/OracleGrid/grid-files.tsv net-files.tsv external/swisseph/ephe
 
-      # File-level equality, not the row comparator. UlpMath.Distance opens with a.Equals(b),
-      # which is true for (+0.0, -0.0) and for (NaN, NaN), so the row comparator would call a
-      # hex-level difference of that shape identical. scripts/verify-oracle.ps1 asserts the same
-      # file-level equality on Windows for the same reason.
+      # File-level equality, not the row comparator. UlpMath.Distance compares the two values' raw
+      # 64-bit patterns directly, not double.Equals, so a signed-zero or NaN-payload divergence is
+      # now a real, reported difference at the row level too -- what this step still covers, that
+      # the row comparator by design does not, is the decimal (non-hex) text column, row order,
+      # and incidental file bytes (blank lines, line endings) that OracleDump/sedump wrote but no
+      # per-field comparison ever inspects. scripts/verify-oracle.ps1 asserts the same file-level
+      # equality on Windows for the same reason.
       - name: Compare, bit for bit, and quantify any difference
         shell: bash
         run: |
@@ -1012,8 +1018,11 @@ jobs:
           dotnet "$DLL" Tools/OracleGrid/grid-files.tsv net-files.tsv external/swisseph/ephe
 
       # File-level equality, not the row comparator -- same reasoning as macos-exactness's own
-      # copy of this step: UlpMath.Distance's double.Equals first branch treats (+0.0, -0.0) and
-      # (NaN, NaN) as equal, which a plain file comparison would not.
+      # copy of this step: UlpMath.Distance compares raw 64-bit patterns, not double.Equals, so a
+      # signed-zero or NaN-payload divergence is a real row-level difference now too. What this
+      # step still covers, that the row comparator does not: the decimal (non-hex) text column,
+      # row order, and incidental file bytes (blank lines, line endings) no per-field comparison
+      # ever inspects.
       - name: Compare, bit for bit, and quantify any difference
         shell: bash
         run: |
