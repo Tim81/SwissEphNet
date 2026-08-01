@@ -1109,9 +1109,32 @@ namespace SwissEphNet
         /// <summary>
         /// finds time of next occultation globally
         /// </summary>
-        public Int32 swe_lun_occult_when_glob(double tjd_start, Int32 ipl, string starname, Int32 ifl, Int32 ifltype, double[] tret, bool backward, ref string serr)
+        /// <remarks>
+        /// swephexp.h declares this parameter <c>int32 backward</c>, a bitfield: bit 0 selects
+        /// search direction, and OR-ing in <see cref="SE_ECL_ONE_TRY"/> (swecl.c:1539, :1593)
+        /// limits the search to a single lunar cycle instead of continuing until an occultation
+        /// is found. A prior <c>bool backward</c> signature here could only ever pass 0 or 1, so
+        /// <c>backward &amp; SE_ECL_ONE_TRY</c> (32768) was provably always 0 and
+        /// SE_ECL_ONE_TRY was unreachable through this API. Call this overload to request it; the
+        /// <c>bool</c> overload below still exists for source compiled against the old signature,
+        /// but cannot pass it.
+        /// </remarks>
+        public Int32 swe_lun_occult_when_glob(double tjd_start, Int32 ipl, string starname, Int32 ifl, Int32 ifltype, double[] tret, Int32 backward, ref string serr)
         {
             return SweCL.swe_lun_occult_when_glob(tjd_start, ipl, starname, ifl, ifltype, tret, backward, ref serr);
+        }
+
+        /// <summary>
+        /// finds time of next occultation globally
+        /// </summary>
+        /// <remarks>
+        /// Source-compatibility overload for callers built against the pre-fix <c>bool
+        /// backward</c> signature. It can only pass 0 or 1 and so can never request
+        /// <see cref="SE_ECL_ONE_TRY"/> -- use the <c>Int32 backward</c> overload above for that.
+        /// </remarks>
+        public Int32 swe_lun_occult_when_glob(double tjd_start, Int32 ipl, string starname, Int32 ifl, Int32 ifltype, double[] tret, bool backward, ref string serr)
+        {
+            return swe_lun_occult_when_glob(tjd_start, ipl, starname, ifl, ifltype, tret, backward ? 1 : 0, ref serr);
         }
 
         /// <summary>
@@ -1122,10 +1145,31 @@ namespace SwissEphNet
             return SweCL.swe_sol_eclipse_when_loc(tjd_start, ifl, geopos, tret, attr, backward, ref serr);
         }
 
+        /// <summary>
+        /// finds time of next local occultation
+        /// </summary>
+        /// <remarks>
+        /// Same <see cref="SE_ECL_ONE_TRY"/> bitfield as <see cref="swe_lun_occult_when_glob(double, Int32, string, Int32, Int32, double[], Int32, ref string)"/>
+        /// (swephexp.h; occult_when_loc masks it at swecl.c:2436) -- see that overload's remarks.
+        /// </remarks>
+        public Int32 swe_lun_occult_when_loc(double tjd_start, Int32 ipl, String starname, Int32 ifl, double[] geopos, double[] tret,
+            double[] attr, Int32 backward, ref string serr)
+        {
+            return SweCL.swe_lun_occult_when_loc(tjd_start, ipl, starname, ifl, geopos, tret, attr, backward, ref serr);
+        }
+
+        /// <summary>
+        /// finds time of next local occultation
+        /// </summary>
+        /// <remarks>
+        /// Source-compatibility overload for callers built against the pre-fix <c>bool
+        /// backward</c> signature; cannot request <see cref="SE_ECL_ONE_TRY"/> -- use the
+        /// <c>Int32 backward</c> overload above for that.
+        /// </remarks>
         public Int32 swe_lun_occult_when_loc(double tjd_start, Int32 ipl, String starname, Int32 ifl, double[] geopos, double[] tret,
             double[] attr, bool backward, ref string serr)
         {
-            return SweCL.swe_lun_occult_when_loc(tjd_start, ipl, starname, ifl, geopos, tret, attr, backward, ref serr);
+            return swe_lun_occult_when_loc(tjd_start, ipl, starname, ifl, geopos, tret, attr, backward ? 1 : 0, ref serr);
         }
 
         /// <summary>

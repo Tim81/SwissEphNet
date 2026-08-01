@@ -4280,7 +4280,13 @@ namespace SweTest
                         if (search_flag == 0)
                             search_flag = SwissEph.SE_ECL_ALLTYPES_SOLAR;
                     }
-                    if ((eclflag = sweph.swe_lun_occult_when_loc(t_ut, ipl, star, whicheph, geopos, tret, attr, direction_flag/*|SwissEph.SE_ECL_ONE_TRY*/, ref serr)) == SwissEph.ERR)
+                    // swetest.c:3525 is `direction_flag|SE_ECL_ONE_TRY`, unconditional -- AS_BOOL
+                    // is `int` in C, so the OR is ordinary integer bitwise-OR. direction_flag
+                    // here is C# bool (Program.cs:829), which has no bitwise-OR with Int32; before
+                    // SwissEph.swephexp.h.cs's swe_lun_occult_when_loc took a bool backward and
+                    // could not carry this bit at all, so it was commented out here. Widened to
+                    // int at this call site only, matching the C.
+                    if ((eclflag = sweph.swe_lun_occult_when_loc(t_ut, ipl, star, whicheph, geopos, tret, attr, (direction_flag ? 1 : 0) | SwissEph.SE_ECL_ONE_TRY, ref serr)) == SwissEph.ERR)
                     {
                         do_printf(serr);
                         return SwissEph.ERR;
@@ -4389,7 +4395,9 @@ namespace SweTest
                 if (0 == (special_mode & SP_MODE_LOCAL))
                 {
                     /* * global search for occultations, test one lunar cycle only (SE_ECL_ONE_TRY) */
-                    if ((eclflag = sweph.swe_lun_occult_when_glob(t_ut, ipl, star, whicheph, search_flag, tret, direction_flag/*|SE_ECL_ONE_TRY*/, ref serr)) == SwissEph.ERR)
+                    // swetest.c:3617 is `direction_flag|SE_ECL_ONE_TRY`, unconditional -- see the
+                    // matching comment at the local-search call site above.
+                    if ((eclflag = sweph.swe_lun_occult_when_glob(t_ut, ipl, star, whicheph, search_flag, tret, (direction_flag ? 1 : 0) | SwissEph.SE_ECL_ONE_TRY, ref serr)) == SwissEph.ERR)
                     {
                         do_printf(serr);
                         return SwissEph.ERR;

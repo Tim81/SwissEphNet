@@ -1588,9 +1588,16 @@ namespace SwissEphNet.CPort
          *         declare as tret[10] at least!
          *
          */
+        // swecl.c:1574 declares `int32 backward`, a bitfield: swecl.c:1539/:1593 document and read
+        // SE_ECL_ONE_TRY out of it (`backward |= SE_ECL_ONE_TRY` to request it, `one_try = backward
+        // & SE_ECL_ONE_TRY` to test it). This took `bool b_backward` and narrowed it to 0/1 before
+        // the mask ever ran, so `backward & SE_ECL_ONE_TRY` (32768) was provably always 0 -- the
+        // caller had no way to set that bit. Taking Int32 directly, as the C does, makes the bit
+        // reach the mask; `backward` below is used exactly as the old `int backward = b_backward ?
+        // 1 : 0` local made it (see :1624's `backward &= 1`, :1656/:1766-1767's `backward != 0`).
         public Int32 swe_lun_occult_when_glob(
              double tjd_start, Int32 ipl, string starname, Int32 ifl, Int32 ifltype,
-             double[] tret, bool b_backward, ref string serr) {
+             double[] tret, Int32 backward, ref string serr) {
             int i, j, k, m, n, o, i1 = 0, i2 = 0;
             Int32 retflag = 0, retflag2 = 0;
             double de = 6378.140, a;
@@ -1608,7 +1615,6 @@ namespace SwissEphNet.CPort
             Int32 ifltype2;
             Int32 iflag, iflagcart;
             bool dont_times = false;
-            int backward = b_backward ? 1 : 0;
             Int32 one_try = backward & SwissEph.SE_ECL_ONE_TRY;
             if (ipl < 0) ipl = 0;
             /*if (backward & SEI_OCC_FAST)
@@ -2098,8 +2104,14 @@ namespace SwissEphNet.CPort
          *
          * for all other parameters, see function swe_sol_eclipse_when_loc().
          */
+        // swecl.c:2072 declares `int32 backward`, the same SE_ECL_ONE_TRY bitfield
+        // swe_lun_occult_when_glob's own comment (above) documents; occult_when_loc below (its
+        // own `int backward` parameter, matching swecl.c:2415, already Int32) does the masking at
+        // swecl.c:2436. This narrowed the caller-facing backward to bool and collapsed it to 0/1
+        // right here (`backward ? 1 : 0`) before occult_when_loc ever saw it, so SE_ECL_ONE_TRY
+        // was unreachable from this entry point the same way it was from swe_lun_occult_when_glob.
         public Int32 swe_lun_occult_when_loc(double tjd_start, Int32 ipl, string starname, Int32 ifl,
-             double[] geopos, double[] tret, double[] attr, bool backward, ref string serr) {
+             double[] geopos, double[] tret, double[] attr, Int32 backward, ref string serr) {
             Int32 retflag = 0, retflag2 = 0;
             double[] geopos2 = new double[20], dcore = new double[10];
             /* function calls for Pluto with asteroid number 134340
@@ -2114,7 +2126,7 @@ namespace SwissEphNet.CPort
                 ipl = SwissEph.SE_PLUTO;
             ifl &= SEFLG_EPHMASK;
             SE.SwephLib.swi_set_tid_acc(tjd_start, ifl, 0, ref serr);
-            if ((retflag = occult_when_loc(tjd_start, ipl, starname, ifl, geopos, tret, attr, backward ? 1 : 0, ref serr)) <= 0)
+            if ((retflag = occult_when_loc(tjd_start, ipl, starname, ifl, geopos, tret, attr, backward, ref serr)) <= 0)
                 return retflag;
             /* 
              * diameter of core shadow

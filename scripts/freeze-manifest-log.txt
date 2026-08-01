@@ -122,3 +122,28 @@ not exist on the integration branch once it lands).
    rows -- see Tests/swetest/regenerations.log's own entry. Programs/SweTest/Program.cs: 4963 ->
    4981 lines, 69 -> 68 trailing-whitespace lines (one commented C line's trailing space was
    trimmed while adding the fix comment next to it), sha256 B3DC53A7... -> 667C09F3....
+8. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-01:
+   swe_lun_occult_when_glob and swe_lun_occult_when_loc (SwissEphNet/CPort/SweCL.cs) took `bool
+   backward` where swephexp.h declares `int32 backward` for both -- a bitfield: bit 0 selects
+   search direction and OR-ing in SE_ECL_ONE_TRY (32768) limits a global-occultation search to
+   one lunar cycle (swecl.c:1539, documented at :1535-1545), tested by `one_try = backward &
+   SE_ECL_ONE_TRY` at swecl.c:1593 and :2436. `(bool ? 1 : 0) & 32768` is provably always 0, so
+   SE_ECL_ONE_TRY could never reach either mask through the old signature -- confirmed the
+   reverted signature does not even compile against a call site passing it. Both parameters are
+   now Int32, matching the C exactly (swe_lun_occult_when_glob directly; swe_lun_occult_when_loc
+   via occult_when_loc, whose own `int backward` parameter already matched swecl.c:2415 -- only
+   the public wrapper narrowed). SwissEph.swephexp.h.cs (not frozen) gained matching Int32
+   primaries with bool source-compatibility overloads alongside, and
+   Programs/SweTest/Program.cs's own two call sites (swetest.c:3525, :3617, both OR the flag in
+   unconditionally) had their commented-out `|SE_ECL_ONE_TRY` uncommented and widened to int at
+   the call site, matching the C. Fidelity fixes, not re-transliterations: no other line in
+   SwissEphNet/CPort or Programs/SweTest/Program.cs moved. Proven against
+   external/.c-reference/build-2.10.03/libswe-2.10.03.lib directly (a small C driver calling
+   swe_lun_occult_when_glob(2451604.5, 0, "aldebaran", SEFLG_MOSEPH, 0, tret, backward, serr)):
+   backward=0 searches until found, ret=6, 5,447.72 days later; backward=32768 gives up after
+   one lunar cycle, ret=0, "no solar eclipse at tjd = 2451615.848510" -- the .NET port is bit-
+   identical to the C on both calls once its backward parameters actually carry Int32.
+   Tests/SwissEphNet.Tests/EclOneTryTest.cs pins both results and a third proving the bool
+   overload cannot request SE_ECL_ONE_TRY. SwissEphNet/CPort: 48448 -> 48460 lines, sha256
+   42A10A5B... -> D87C454F.... Programs/SweTest/Program.cs: 4981 -> 4989 lines, sha256
+   667C09F3... -> 873AADAC....
