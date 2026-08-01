@@ -135,6 +135,13 @@ namespace SwissEphNet.Tests
 
             Assert.Equal("nan", SwissEph.FormatToDegreeMinuteSecond(double.NaN));
             Assert.Equal("inf", SwissEph.FormatToDegreeMinuteSecond(double.PositiveInfinity));
+            // A run's length is both a field width and a rounding precision, and Math.Round
+            // rejects a precision above 15. Sixteen or more 's' or 'p' characters used to
+            // throw ArgumentOutOfRangeException naming a "digits" parameter the caller never
+            // passed; the rounding is clamped now and the requested width is still honoured.
+            Assert.Equal(23, SwissEph.FormatToDegreeMinuteSecond(12.5, "dddd°mm'" + new string('s', 15)).Length);
+            Assert.Equal(24, SwissEph.FormatToDegreeMinuteSecond(12.5, "dddd°mm'" + new string('s', 16)).Length);
+            Assert.Equal(28, SwissEph.FormatToDegreeMinuteSecond(12.5, "dddd°mm'" + new string('p', 20)).Length);
             Assert.Equal("-inf", SwissEph.FormatToDegreeMinuteSecond(double.NegativeInfinity));
 
             Assert.Equal("   0° 0' 0.0000", SwissEph.FormatToDegreeMinuteSecond(0));

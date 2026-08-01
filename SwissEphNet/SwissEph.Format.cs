@@ -17,6 +17,21 @@ namespace SwissEphNet
         public const int BIT_ZODIAC = 4;
         public const int BIT_LZEROES = 8;
 
+        /// <summary>
+        /// Ceiling for the second argument of <see cref="Math.Round(double, int)"/>, which
+        /// rejects anything above 15 with an ArgumentOutOfRangeException naming "digits".
+        /// </summary>
+        /// <remarks>
+        /// The format specifiers below use a run's length as both a field width and a rounding
+        /// precision. Those are the same number up to 15 and stop being the same number after
+        /// that, so a caller writing sixteen or more consecutive 's' or 'p' characters used to
+        /// get an exception about a "digits" parameter they never passed. Clamping the rounding
+        /// while leaving the width alone keeps the field the caller asked for. Nothing is lost
+        /// by it: dsec here is a fraction of a second, and a double carries no information
+        /// beyond the fifteenth decimal place to round to in the first place.
+        /// </remarks>
+        private const int MaxRoundingDigits = 15;
+
         static string ZodiacSymbols = "♈♉♊♋♌♍♎♏♐♑♒♓";
         static string[] ZodiacShortNames = new String[]{
             "ar", "ta", "ge", "cn", "le", "vi", 
@@ -306,11 +321,11 @@ namespace SwissEphNet
                     case 'G': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", l), zdeg); break;
                     case 'm': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0,{0}}}", l), min); break;
                     case 'M': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", l), min); break;
-                    case 's': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0,{0}}}", l), (int)Math.Round(dsec, l)); break;
-                    case 'S': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", l), (int)Math.Round(dsec, l)); break;
+                    case 's': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0,{0}}}", l), (int)Math.Round(dsec, Math.Min(l, MaxRoundingDigits))); break;
+                    case 'S': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", l), (int)Math.Round(dsec, Math.Min(l, MaxRoundingDigits))); break;
                     case 'p':
                     case 'P':
-                        var t = Math.Round(dsec, l);
+                        var t = Math.Round(dsec, Math.Min(l, MaxRoundingDigits));
                         var prec = t - (int)t;
                         prec = Math.Round(prec * Math.Pow(10, l));
                         result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", l), (int)prec);
