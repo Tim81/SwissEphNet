@@ -38,11 +38,27 @@ public static class ConformanceRunner
         // iteration 6 ended up wrongly pruned once already.
         EphemerisManifest.AssertMatches();
 
+        // Second fail-fast, same reasoning: the completeness guard below is only
+        // as strong as the CHECK_*/GET_* name sets it consults, and a parser that
+        // quietly returned nothing would turn it into a no-op that passes forever.
+        // Building the model here (rather than lazily inside the loop) means a bad
+        // or incomplete setest checkout throws before a single iteration is
+        // dispatched. SetestSourceModel.Load asserts its own non-triviality floors.
+        var setest = SetestSourceModel.Default;
+
         var expPath = Path.Combine(RepoLocator.SetestDir, "t.exp");
         var fixPath = Path.Combine(RepoLocator.SetestDir, "t.fix");
 
         var doc = ExpReader.Read(expPath);
         var precisionTable = FixPrecisionReader.Resolve(fixPath, doc);
+
+        // Every (suite, testcase) the corpus dispatches must have a CHECK_* set
+        // parsed for it, or the guard would silently wave that testcase through:
+        // CheckedNamesFor returning null is indistinguishable, at the point of
+        // use, from "the C asserts nothing here". Checked up front, for the whole
+        // document, so a mismatch between t.exp and setest/*.c is a loud harness
+        // failure rather than a quiet gap in coverage.
+        AssertModelCoversCorpus(setest, doc);
 
         var results = new List<IterationResult>();
 
@@ -162,18 +178,63 @@ public static class ConformanceRunner
                         // where the correct code is `ctx.CheckS("name", name)`) marks that
                         // field consumed without ever asserting anything about it -- the
                         // first check above is blind to this, because the field was in fact
-                        // read. If nothing the dispatcher did for this iteration actually
-                        // ran a comparison (CheckD/CheckDD/CheckI/CheckS against t.exp, or
-                        // CheckEqualsI for the rare non-file-backed self-consistency check),
-                        // "Passed" is not a real pass: it is indistinguishable from a
-                        // testcase that silently checks nothing at all.
-                        else if (!outcome.AnyComparisonPerformed)
+                        // read.
+                        //
+                        // t.exp cannot say which of an iteration's keys are inputs and
+                        // which are asserted values (they share one "name: value" shape),
+                        // so the reference C is asked instead: SetestSourceModel recovers
+                        // the split from setest/*.c, where GET_* reads an input and CHECK_*
+                        // emits an expected value, per (suite, testcase). A consumed key
+                        // that no Check* compared is an offender when either
+                        //   - the C asserts that name in THIS testcase, so the port owed it
+                        //     a comparison and made a plain read instead; or
+                        //   - the C does not declare that name as an input anywhere, in
+                        //     which case the harness read something nobody can account for
+                        //     (a defensive backstop; there are no such names today).
+                        // Names the C only ever reads as inputs -- ipl, iflag, geolon, and
+                        // the rest -- are legitimately consumed without comparison and pass
+                        // straight through.
+                        else
                         {
-                            outcome = DispatchOutcome.Error(
-                                "harness completeness guard: outcome was reported as Passed/ValueMismatch but the dispatcher " +
-                                "never actually performed a comparison for this iteration (no CheckD/CheckDD/CheckI/CheckS/CheckEqualsI " +
-                                "call was made). Every field t.exp records was read, but nothing was asserted -- a Check* call was " +
-                                "likely replaced by a plain field read.");
+                            var uncompared = iteration.Fields.ConsumedButNotComparedKeys(DecorativeKeys);
+                            var offenders = new List<string>();
+                            foreach (var candidate in uncompared)
+                            {
+                                if (setest.IsCheckedBy(suite.Id, testCase.Id, candidate))
+                                {
+                                    offenders.Add($"{candidate} (asserted by setest CHECK_* in {suite.Id}.{testCase.Id})");
+                                }
+                                else if (!setest.IsDeclaredInput(candidate))
+                                {
+                                    offenders.Add($"{candidate} (not a GET_* input anywhere in setest)");
+                                }
+                            }
+
+                            if (offenders.Count > 0)
+                            {
+                                outcome = DispatchOutcome.Error(
+                                    $"harness completeness guard: {offenders.Count} field(s) were read for this iteration but never " +
+                                    $"compared against t.exp: {string.Join(", ", offenders)}. The reference C asserts these names for " +
+                                    "this testcase (external/swisseph/setest), so the dispatcher owes each of them a Check* call -- a " +
+                                    "plain field read marks the key consumed while asserting nothing.");
+                            }
+
+                            // Last line of defence for the checks the model cannot see:
+                            // CHECK_EQUALS_I / CHECK_EQUALS_D are not file-backed (they
+                            // compare two computed values, see suite_01_calc.c:54 and
+                            // suite_10_solcross.c:29), so they contribute no t.exp name and
+                            // dropping one leaves no uncompared key behind. A dispatch that
+                            // reaches Passed having run no comparison at all is not a real
+                            // pass: it is indistinguishable from a testcase that silently
+                            // checks nothing.
+                            else if (!outcome.AnyComparisonPerformed)
+                            {
+                                outcome = DispatchOutcome.Error(
+                                    "harness completeness guard: outcome was reported as Passed/ValueMismatch but the dispatcher " +
+                                    "never actually performed a comparison for this iteration (no CheckD/CheckDD/CheckI/CheckS/CheckEqualsI " +
+                                    "call was made). Every field t.exp records was read, but nothing was asserted -- a Check* call was " +
+                                    "likely replaced by a plain field read.");
+                            }
                         }
                     }
 
@@ -205,5 +266,29 @@ public static class ConformanceRunner
         }
 
         return (doc, results);
+    }
+
+    private static void AssertModelCoversCorpus(SetestSourceModel setest, ExpDocument doc)
+    {
+        var missing = new List<string>();
+        foreach (var suite in doc.TestSuites)
+        {
+            foreach (var testCase in suite.TestCases)
+            {
+                if (setest.CheckedNamesFor(suite.Id, testCase.Id) is null)
+                {
+                    missing.Add($"{suite.Id}.{testCase.Id}");
+                }
+            }
+        }
+
+        if (missing.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"The setest source model parsed from '{setest.SourceDirectory}' has no TESTCASE block for " +
+                $"{missing.Count} of the corpus's {doc.TotalTestCaseCount} testcases ({string.Join(", ", missing)}). " +
+                "The completeness guard would wave those through without checking anything, so this is fatal. " +
+                "t.exp and setest/*.c come from the same submodule commit and must describe the same testcases.");
+        }
     }
 }

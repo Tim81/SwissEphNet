@@ -171,6 +171,20 @@ public sealed class ExpFields
     public IReadOnlyList<string> UnconsumedKeys(IReadOnlyCollection<string> excludedKeys) =>
         _values.Keys.Where(k => !_consumed.Contains(k) && !excludedKeys.Contains(k)).ToList();
 
+    /// <summary>
+    /// Keys some accessor read but no Check* call ever compared, excluding the
+    /// same decorative/structural keys <see cref="UnconsumedKeys"/> excludes.
+    /// Most entries are perfectly legitimate -- a testcase input such as "ipl"
+    /// or "iflag" is read and never compared by design -- so the caller decides
+    /// which of them are offenders (see ConformanceRunner's completeness guard,
+    /// which asks the reference C whether it asserts that name in that
+    /// testcase). Sorted so a failure message is stable across runs.
+    /// </summary>
+    public IReadOnlyList<string> ConsumedButNotComparedKeys(IReadOnlyCollection<string> excludedKeys) =>
+        _consumed.Where(k => !_compared.Contains(k) && !excludedKeys.Contains(k))
+                 .OrderBy(k => k, StringComparer.Ordinal)
+                 .ToList();
+
     private static string TruncateComment(string raw)
     {
         var hashIndex = raw.IndexOf('#');
