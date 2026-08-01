@@ -152,7 +152,10 @@ Sidecar log fixture built by this script's own self-test. Not the real log.
     }
 
     function New-Lab {
-        param([string] $Name)
+        # -Entries lets a case start from a base log other than $BaseEntries. The PR-fill cases at
+        # the end need a base entry that actually carries a "(no PR yet ...)" placeholder, and
+        # planting one in $BaseEntries would quietly change what every other case is testing.
+        param([string] $Name, [string[]] $Entries = $BaseEntries)
         $dir = Join-Path $root $Name
         New-Item -ItemType Directory -Path (Join-Path $dir 'scripts') -Force | Out-Null
         git init -q -b main $dir
@@ -163,7 +166,7 @@ Sidecar log fixture built by this script's own self-test. Not the real log.
         # blob instead of both being normalized to LF on the way in and the case proving nothing.
         git -C $dir config core.autocrlf false
         Set-LabFile (Join-Path $dir 'scripts/freeze-manifest.tsv') $BaseManifest
-        Set-LabFile (Join-Path $dir 'scripts/freeze-manifest-log.txt') (New-LogText $BaseEntries)
+        Set-LabFile (Join-Path $dir 'scripts/freeze-manifest-log.txt') (New-LogText $Entries)
         git -C $dir add scripts/freeze-manifest.tsv scripts/freeze-manifest-log.txt
         git -C $dir commit -q -m 'fixture base'
         return [pscustomobject]@{ Path = $dir; BaseSha = (git -C $dir rev-parse HEAD).Trim() }
@@ -272,6 +275,7 @@ Sidecar log fixture built by this script's own self-test. Not the real log.
     $CountRefusal = 'did not gain a new entry'
     $AppendOnly2 = 'append-only, but entry #2 differs'
     $AppendOnly1 = 'append-only, but entry #1 differs'
+    $AppendOnly3 = 'append-only, but entry #3 differs'
     $NoSubstance = 'gained entry #4, but it has no real content'
 
     Write-Host 'verify-freeze-log self-test'
@@ -355,6 +359,75 @@ Sidecar log fixture built by this script's own self-test. Not the real log.
     $lab = New-Lab 'crlf-working-tree-vs-lf-blob'
     Set-LabHead $lab (New-LogText ($BaseEntries + $NewEntry4)) -ChangeManifest -Crlf
     Assert-GateAccepts 'a CRLF working tree against an LF base blob is not an edit' $lab
+
+    # ------------------------------------------------------------------------------------------
+    # The PR-number fill exception (Test-EntryUnchangedOrPrFilled, further down this file). It is
+    # the one edit to an already-published entry this gate allows, so its WIDTH is the thing that
+    # has to be pinned, and it shipped with no case of either kind. Cases 11, 14 and 16 are what
+    # it must accept; cases 12, 13 and 15 are what it must still refuse.
+    $Placeholder = '(no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)'
+
+    # Shape 1: the standalone parenthetical, replaced outright by the number.
+    $PhEntry2 = @"
+2. $Placeholder 2026-01-02: Re-transliterated one function after an unrelated
+   reformat was reverted, so the frozen fingerprint moved on purpose.
+"@
+    $PhFilled2 = $PhEntry2.Replace($Placeholder, 'PR #77')
+    $PhBase = @($BaseEntries[0], $PhEntry2, $BaseEntries[2])
+
+    # 11. The sanctioned fill itself. CONTRIBUTING.md calls this a checked pre-merge step, so a
+    #     gate that refused it would put two of this repository's own rules in contradiction.
+    $lab = New-Lab 'pr-placeholder-filled' $PhBase
+    Set-LabHead $lab (New-LogText (@($BaseEntries[0], $PhFilled2, $BaseEntries[2]) + $NewEntry4)) -ChangeManifest
+    Assert-GateAccepts 'a "(no PR yet ...)" placeholder replaced with the real PR number' $lab
+
+    # 12. ...and nothing wider: the same fill with one unrelated word changed in the same entry.
+    #     This is the case that tells "one sanctioned substitution" apart from "any edit at all to
+    #     an entry that mentions a PR number at HEAD".
+    $lab = New-Lab 'pr-fill-with-unrelated-edit' $PhBase
+    Set-LabHead $lab (New-LogText (@($BaseEntries[0], ($PhFilled2 -replace 'on purpose', 'by accident'), $BaseEntries[2]) + $NewEntry4)) -ChangeManifest
+    Assert-GateRefuses 'a PR fill carrying an unrelated edit in the same entry' $lab $AppendOnly2
+
+    # 13. An entry that never carried a placeholder cannot acquire or change a PR reference:
+    #     containing "PR #<digits>" at HEAD is not by itself what earns the exception.
+    $lab = New-Lab 'pr-number-changed-without-placeholder'
+    Set-LabHead $lab (New-LogText (@($BaseEntries[0], ($BaseEntries[1] -replace 'PR #2', 'PR #77'), $BaseEntries[2]) + $NewEntry4)) -ChangeManifest
+    Assert-GateRefuses 'a PR number rewritten in an entry that carried no placeholder' $lab $AppendOnly2
+
+    # Shape 2: the placeholder embedded in a parenthetical carrying content of its own.
+    $Ph2Entry3 = @'
+3. Fidelity fix; no other frozen line moved, and the manifest hash moved with it.
+   Seeded local (no PR yet, log entry 2; collapsed from the original sweep).
+'@
+    $Ph2Filled3 = $Ph2Entry3.Replace('no PR yet', 'PR #77')
+    $Ph2Gutted3 = $Ph2Entry3 -replace '\(no PR yet[^)]*\)', 'PR #77'
+    $Ph2Base = @($BaseEntries[0], $BaseEntries[1], $Ph2Entry3)
+
+    # 14. The phrase replaced in place, leaving the rest of the parenthetical intact. Accepted.
+    $lab = New-Lab 'pr-phrase-filled-in-place' $Ph2Base
+    Set-LabHead $lab (New-LogText (@($BaseEntries[0], $BaseEntries[1], $Ph2Filled3) + $NewEntry4)) -ChangeManifest
+    Assert-GateAccepts 'the embedded "no PR yet" phrase replaced in place' $lab
+
+    # 15. The whole parenthetical replaced instead, which deletes the "log entry 2" cross-reference
+    #     the entry had published. An earlier form of this exception matched any parenthetical
+    #     merely starting with "no PR yet" and swallowed everything up to the next ")", so it
+    #     accepted exactly this: an append-only entry losing text, reported as a PR fill.
+    $lab = New-Lab 'pr-phrase-parenthetical-gutted' $Ph2Base
+    Set-LabHead $lab (New-LogText (@($BaseEntries[0], $BaseEntries[1], $Ph2Gutted3) + $NewEntry4)) -ChangeManifest
+    Assert-GateRefuses 'a PR fill that deletes the rest of the parenthetical it sat in' $lab $AppendOnly3
+
+    # 16. A base entry that already cites another PR AHEAD of its own placeholder. The head entry's
+    #     FIRST "PR #<digits>" is then the old citation rather than the fill, so a first-match-only
+    #     lookup refuses a legitimate fill -- and Tests/baseline/baseline-2.8.0.2.env.txt carries
+    #     exactly this shape ("(local, PR #13) ... (local, no PR yet, log entry 6)").
+    $Ph3Entry2 = @'
+2. Re-transliterated one function after PR #13's reformat was reverted; the new
+   rows are local (no PR yet, log entry 2), so the fingerprint moved on purpose.
+'@
+    $Ph3Filled2 = $Ph3Entry2.Replace('no PR yet', 'PR #77')
+    $lab = New-Lab 'pr-fill-behind-an-earlier-citation' @($BaseEntries[0], $Ph3Entry2, $BaseEntries[2])
+    Set-LabHead $lab (New-LogText (@($BaseEntries[0], $Ph3Filled2, $BaseEntries[2]) + $NewEntry4)) -ChangeManifest
+    Assert-GateAccepts 'a fill in an entry that already cited a different PR before it' $lab
 
     Write-Host ''
     Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
@@ -525,7 +598,7 @@ change, this manifest update is very likely an unexcluded reformat -- see CONTRI
 # step could not be taken without turning this gate red.
 #
 # This permits exactly that substitution and nothing wider. The base entry must carry a placeholder;
-# the head entry must carry a "PR #<digits>" reference; and substituting the head's reference into
+# the head entry must carry a "PR #<digits>" reference; and substituting that reference into
 # the base's placeholder must reproduce the head entry character for character. Any other edit --
 # a reworded sentence, a corrected number, a changed SHA -- fails to reproduce it and is still
 # refused, which is what the append-only rule is actually protecting.
@@ -533,18 +606,36 @@ change, this manifest update is very likely an unexcluded reformat -- see CONTRI
 # Two placeholder shapes exist in this repository and both are handled, in this order:
 #   "1. (no PR yet -- fill in ...) 2026-08-01: ..."  ->  "1. PR #32 2026-08-01: ..."   (parenthetical replaced)
 #   "local (no PR yet, log entry 6; ..."             ->  "local (PR #32, log entry 6; ..."  (phrase replaced)
+#
+# The first pattern is pinned to the literal placeholder every producer emits
+# (scripts/regenerate-known-fail.ps1, scripts/regenerate-oracle-known-diff.ps1,
+# scripts/classify-oracle-versions.ps1, scripts/verify-swetest-diff.ps1) rather than the looser
+# '\(no PR yet[^)]*\)'. Loose, it matched ANY parenthetical merely starting with "no PR yet" and
+# swallowed everything up to the next ")", so for the second shape above it also accepted
+# "local PR #32" -- silently deleting a published cross-reference out of an append-only entry and
+# calling that a PR fill. Measured directly: that head was accepted before the pattern was pinned
+# and is refused now, and the self-test case named 'pr-phrase-parenthetical-gutted' keeps it so.
 function Test-EntryUnchangedOrPrFilled {
     param([string] $BaseEntry, [string] $HeadEntry)
 
     if ([string]::Equals($HeadEntry, $BaseEntry, [StringComparison]::Ordinal)) { return $true }
 
-    $prRef = [regex]::Match($HeadEntry, 'PR #\d+')
-    if (-not $prRef.Success) { return $false }
+    # Every "PR #<digits>" in the head entry is a candidate, not just the first. An entry that
+    # already cited some other PR ahead of its own placeholder -- Tests/baseline/
+    # baseline-2.8.0.2.env.txt's provenance row reads "(local, PR #13) ... (local, no PR yet, log
+    # entry 6)" -- makes the first match the OLD number, so a first-match-only lookup refuses the
+    # very fill this exception exists to allow. Measured: that shape was refused before this loop.
+    # Trying each candidate widens nothing, because whichever one is used the substitution still
+    # has to reproduce the head entry character for character.
+    $prRefs = @([regex]::Matches($HeadEntry, 'PR #\d+') | ForEach-Object { $_.Value } | Select-Object -Unique)
+    if ($prRefs.Count -eq 0) { return $false }
 
-    foreach ($pattern in @('\(no PR yet[^)]*\)', 'no PR yet')) {
-        if ($BaseEntry -cnotmatch $pattern) { continue }
-        $filled = [regex]::Replace($BaseEntry, $pattern, $prRef.Value)
-        if ([string]::Equals($HeadEntry, $filled, [StringComparison]::Ordinal)) { return $true }
+    foreach ($prRef in $prRefs) {
+        foreach ($pattern in @('\(no PR yet -- fill in "PR #N" before merging[^)]*\)', 'no PR yet')) {
+            if ($BaseEntry -cnotmatch $pattern) { continue }
+            $filled = [regex]::Replace($BaseEntry, $pattern, $prRef)
+            if ([string]::Equals($HeadEntry, $filled, [StringComparison]::Ordinal)) { return $true }
+        }
     }
 
     return $false
