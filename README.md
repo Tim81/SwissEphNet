@@ -216,11 +216,17 @@ each platform's own math library disagreeing with itself in the last few bits, t
 independently built C programs would show; it is not evidence against the port.
 
 Separately, the port's output is checked against Astrodienst's own 2.10.03 test suite (`setest`),
-12,757 iterations across ten functional areas. 1,427<!--doccount:known-fail-total--> of those still fail: 714<!--doccount:known-fail-value-mismatch--> because the answer
-is outside the tolerance Astrodienst's own suite allows, and 713<!--doccount:known-fail-data-missing--> because a required data file (a
-JPL ephemeris, or an ephemeris era this repository does not ship, roughly years 1200 to 2399) is
-not present, not because the answer is wrong. That is the honest state of it: strong on everything
-it has been checked against, not yet at full parity with Astrodienst's own reference corpus.
+12,757 iterations across ten functional areas. 1,427<!--doccount:known-fail-total--> of those still fail: 668<!--doccount:known-fail-value-mismatch--> because the answer
+is outside the tolerance Astrodienst's own suite allows, and 759<!--doccount:known-fail-data-missing--> because a required data file (a
+JPL ephemeris, a per-asteroid or `ephe/sat/` file, or an ephemeris era this repository does not
+ship, roughly years 1200 to 2399) is not present, not because the answer is wrong. Of those 668,
+`Tests/conformance/value-mismatch-triage.tsv` drives Astrodienst's own MSVC-built 2.10.03 C
+through the identical inputs and finds only 4 are a confirmed port defect (a missing JD-range
+guard on interpolated lunar perigee, `docs/compliance-2.10.03.md` section 3a); the rest reproduce
+the port's own output rather than the reference corpus's, i.e. drift between this build's
+toolchain/environment and whatever produced `setest`'s reference values, not a wrong answer. That
+is the honest state of it: strong on everything it has been checked against, not yet at full
+parity with Astrodienst's own reference corpus.
 
 # Breaking changes
 
@@ -353,6 +359,67 @@ Source-level and reflection-based consumers can be affected:
   also widens from `char` to `char[]` (still `{ ';' }`) to support this; see
   `docs/known-issues.md`'s OnLoadFile entry for the full detail and the DefaultFileProvider
   static escape hatch for harnesses that construct many instances.
+- **The assembly is now named `SwissEphSharp`, not `SwissEphNet`.** The package ID was
+  already `SwissEphSharp`; now the DLL matches it, and the namespace stays `SwissEphNet`,
+  so source that only calls the public API needs no change beyond the `PackageReference`
+  itself. This closes a collision: while the assembly was still named `SwissEphNet`,
+  this package and the original `SwissEphNet` 2.8.0.2 both produced `bin/SwissEphNet.dll`.
+  Referencing both in one dependency graph built cleanly -- no `MSB3277`, no `NU1605` --
+  and whichever copy's build step ran last silently overwrote the other in the output
+  folder. A consumer with a transitive dependency on the original package, still calling
+  the removed `OnLoadFile`/`LoadFileEventArgs` API, crashed at run time the moment the
+  newer assembly won that silent overwrite: `System.TypeLoadException: Could not load
+  type 'SwissEphNet.LoadFileEventArgs' from assembly SwissEphNet, Version=2.10.3.0`. With
+  the rename, `bin` now holds both `SwissEphNet.dll` (2.8.0.2) and `SwissEphSharp.dll`
+  (2.10.3.0), and both work: the two packages can coexist in one dependency graph instead
+  of one silently displacing the other. Anything that calls `Assembly.Load("SwissEphNet")`
+  by literal string, carries a binding redirect naming `SwissEphNet`, or otherwise
+  hardcodes the DLL filename needs to be updated to `SwissEphSharp`; anything that only
+  references the package and writes `using SwissEphNet;` does not.
+- **`SE_EPHE_PATH`, the environment variable, is honored again -- and takes priority over
+  `swe_set_ephe_path`.** `sweph.c:1327` checks it before anything else and only reaches
+  the argument passed to `swe_set_ephe_path` in an `else if`; that block existed in this
+  port but was commented out (`Sweph.cs:1561-1573`), so setting the variable had no
+  effect. It is restored faithfully, priority included: if `SE_EPHE_PATH` is set in the
+  process environment, it wins over whatever path a caller passes to
+  `swe_set_ephe_path`, matching the C exactly. This is a behavior change, not only a bug
+  fix, and it can surprise a caller who has that variable set for an unrelated Swiss
+  Ephemeris install on the same machine -- their explicit `swe_set_ephe_path` call is now
+  silently overridden by it.
+- **The default ephemeris path is now upstream's, not the `[ephe]` placeholder.**
+  `SwissEph.SE_EPHE_PATH` used to be the literal string `"[ephe]"`, a pseudo constant
+  meant to be detected while `OnLoadFile` intercepted every file read; nothing in the
+  library ever detected it. With `OnLoadFile` gone and a null `FileProvider` reading the
+  real filesystem by default, it had become a non-existent relative directory that leaked
+  into user-facing error text. It is now upstream's own default (`swephexp.h:399-408`),
+  chosen at run time rather than compile time because this port ships one assembly for
+  Windows, Linux and macOS rather than compiling per platform: `\sweph\ephe\` on Windows,
+  `.:/users/ephe2/:/users/ephe/` everywhere else, matching the C's own `#if MSDOS` branch
+  (which upstream also takes for ordinary Win32/Win64 builds, not only legacy MS-DOS
+  ones). This only affects callers who pass `null` or an empty string to
+  `swe_set_ephe_path`, or never call it at all: a non-blank argument has always won, at
+  `Sweph.cs:1573`.
+- **2.10.3 is the last release to ship `netstandard2.0`.** Releases after this one will
+  require `net8.0` or later. Consumers on .NET Framework 4.6.1+ can take 2.10.3 as-is: the
+  `netstandard2.0` asset is in this release and works. They should just not expect the
+  next one to still carry it. The reason is measured, not a preference:
+  `netstandard2.0` is a compatibility target, not a correctness one, and bit-exactness
+  against Astrodienst's C (see "Numerical compatibility" below) is claimed for `net8.0`
+  and later only. Measured directly for this note: running the same `netstandard2.0`
+  asset's `swe_calc` over 111 calls (37 bodies, 3 epochs), .NET Framework 4.8 differs
+  from .NET 10 on 21 of those rows, across 11 real bodies and 6 fictitious ones -- the
+  worst is `SE_TRUE_NODE`'s longitude speed, 1.33e-7 relative, with `SE_NEPTUNE` and
+  `SE_URANUS` longitude speed at the same order; the previously cited `FICT_CUPIDO` 83
+  ULP is the small end of that range, not the largest, and is a latitude difference, not
+  longitude. The same asset run under `net8.0` and `net10.0` shows 0 of 111 rows
+  differing. The cause is the .NET Framework 4.8 runtime, not this port: its
+  `Math.Sin`/`Math.Tan` are measurably less accurate near pi, reproducible in a few
+  lines of BCL calls with this library absent entirely. On .NET Framework the results
+  are correct to well within any practical tolerance, just not the C's bits, and
+  that gap is not one this project can close. `Tests/NetStandard20Smoke.Tests` is not
+  evidence either way here: it never calls `swe_calc`, touches no file-loading path, and
+  sets no culture; it is a regression pin for a `net48`-only string-extension recursion
+  and nothing more.
 
 ## V:2.6.0.21
 
@@ -494,16 +561,22 @@ It isn't; one of the three has not shipped yet:
 - The **NuGet package ID**, once this fork publishes, will be `SwissEphSharp`. The `SwissEphNet`
   ID on nuget.org already belongs to the upstream author's own release, so this fork cannot
   publish under it.
-- The **namespace and assembly name** stay `SwissEphNet`. Every file under `SwissEphNet/CPort/`
-  is a line-by-line transliteration of the Swiss Ephemeris C source and declares that namespace;
-  renaming it would touch every one of those frozen files for a cosmetic reason. Keeping it also
-  means the library stays a drop-in replacement for code written against the original namespace.
+- The **assembly** is now `SwissEphSharp.dll`, matching the package ID, so this package and the
+  original `SwissEphNet` package can be referenced together without one silently displacing the
+  other; see the "V:2.10.3" section above for what that collision used to look like.
+- The **namespace** stays `SwissEphNet`. Every file under `SwissEphNet/CPort/` is a line-by-line
+  transliteration of the Swiss Ephemeris C source and declares that namespace; renaming it would
+  touch every one of those frozen files for a cosmetic reason. Keeping it also means the library
+  stays source-compatible with code written against the original namespace.
 
 Publication has not happened yet (see the versioning note in `SwissEphNet.csproj`); until it does,
 build from source or reference `SwissEphNet/SwissEphNet.csproj` directly. Migrating from the old
-package, once this fork's release exists, will be the one line it sounds like: replace the
-`PackageReference` for `SwissEphNet` with one for `SwissEphSharp` and change nothing else. `using
-SwissEphNet;` and every type name will be unaffected.
+package, once this fork's release exists, is mostly the one line it sounds like: replace the
+`PackageReference` for `SwissEphNet` with one for `SwissEphSharp`. `using SwissEphNet;` and every
+type name are unaffected, so source that only calls the public API needs no other change. Anything
+that calls `Assembly.Load("SwissEphNet")` by literal string, carries a binding redirect naming
+`SwissEphNet`, or otherwise hardcodes the DLL filename needs to be updated to `SwissEphSharp`
+too.
 
 This fork is not published or endorsed by Yan Grenier or Astrodienst. See "About this repository"
 above and `NOTICE` for the credit both are owed.

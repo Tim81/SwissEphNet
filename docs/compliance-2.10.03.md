@@ -157,10 +157,10 @@ The 1,427<!--doccount:known-fail-total--> remaining rows split into two categori
 
 | Category | Rows | What it means |
 |---|---|---|
-| `VALUE-MISMATCH` | 714<!--doccount:known-fail-value-mismatch--> | The port ran and produced an answer outside `t.fix` tolerance -- the actual porting work queue. |
-| `DATA-MISSING` | 713<!--doccount:known-fail-data-missing--> | A required data file (a JPL DE ephemeris, a pre-1200/post-2399 era `.se1` file, `ephe/sat/`) is not shipped by this repo, so the iteration was not run at all. |
+| `VALUE-MISMATCH` | 668<!--doccount:known-fail-value-mismatch--> | The port ran and produced an answer outside `t.fix` tolerance -- the actual porting work queue. |
+| `DATA-MISSING` | 759<!--doccount:known-fail-data-missing--> | A required data file (a JPL DE ephemeris, a pre-1200/post-2399 era `.se1` file, `ephe/sat/`, or a per-asteroid file) is not shipped by this repo, so the iteration was not run at all. |
 
-**157 of the 713 `DATA-MISSING` rows are `SEFLG_SWIEPH` calls for a date outside the era this
+**157 of the 759 `DATA-MISSING` rows are `SEFLG_SWIEPH` calls for a date outside the era this
 repo's shipped core ephemeris files cover** (the `sepl`/`semo`/`seas_N.se1` and their BCE `_N.se1`
 counterparts, roughly years 1200-2399). These stay `DATA-MISSING` by design: shipping the full
 era file set would add well over 100 MB to a repository whose vendored C source is already kept
@@ -171,7 +171,7 @@ present.
 
 **A one-time probe (`Tests/conformance/regenerations.log`, Phase 6) widened the ephemeris checkout
 to the full era file set, `ephe/sat/`, and a JPL DE431 file, and re-ran the full 12,757-iteration
-corpus with all three opt-in flags set, without changing `known-fail.tsv`.** Of the 713
+corpus with all three opt-in flags set, without changing `known-fail.tsv`.** Of the (then-713)
 `DATA-MISSING` rows, 504 pass outright once the data is present: 500 of 538 JPL rows and 4 of 18
 `ephe/sat/` rows. **None of the 157 era rows pass** -- with the data present, they surface as
 `VALUE-MISMATCH` instead, the same tracked 2.08-versus-2.10.03 gap the rest of the actionable
@@ -183,12 +183,78 @@ not have made them pass regardless. The probe's own env-var opt-ins
 features of `Tests/SwissEphNet.Conformance.Tests`; the era-file opt-in it used
 (`SWISSEPH_CONFORMANCE_INCLUDE_ERA`) was a temporary, reverted probe, not a shipped feature.
 
+**46 rows moved from `VALUE-MISMATCH` to `DATA-MISSING` in the triage described in section 3a
+below, none of them the era class above.** `EphemerisFileResolver` gained two more static checks
+(`NeedsAsteroidFileWeDoNotShip`, `NeedsCenterBodySatFileWeDoNotHave`), wired into
+`ConformanceDispatcher`'s universal pre-check: 16 rows cite a numbered-asteroid file this repo
+never ships at any tier (`se00433s.se1` for 433 Eros, `se00010s.se1` for 10 Hygiea), and 30 cite
+`SEFLG_CENTER_BODY`'s own per-planet `ephe/sat/` record (`sepm9599.se1` through `sepm9999.se1`)
+for a major-planet `ipl` that a plain planetary-moon-range check does not catch. Verified against
+the full corpus before landing: zero of the 22 `ipl`/`iplctr` > `SE_AST_OFFSET+4` iterations and
+zero of the 45 `SEFLG_CENTER_BODY` iterations anywhere in `t.exp` were passing beforehand, so
+neither check turns a real pass into a false `DATA-MISSING` -- `scripts/regenerate-known-fail.ps1`
+confirmed this directly (0 added, 0 removed, exactly 46 recategorized). A third, adjacent class
+(5 suite 1 rows citing `seplm36.se1`/`sepl_30.se1`, the same era-file gap as the paragraph above
+but never wired into suite 1's own dispatcher) was investigated and deliberately **not** fixed the
+same way: suite 1's `swe_calc`/`swe_calc_ut`/`swe_calc_pctr` return a genuinely correct answer via
+Moshier fallback for *some* out-of-era dates even without the file, unlike `swe_deltat_ex` and the
+crossing functions that already carry this check -- wiring it into suite 1 unconditionally flipped
+14 previously-passing iterations to `DATA-MISSING` in a first attempt (caught by
+`regenerate-known-fail.ps1`'s own added/removed count, then reverted). Those 5 rows stay
+`VALUE-MISMATCH`; section 3a's own triage classifies them directly instead (see
+`Tests/conformance/value-mismatch-triage.tsv`).
+
 **The `reason` column in `known-fail.tsv` is documentation, not part of what the gate checks.**
 `scripts/regenerate-known-fail.ps1` and the gate itself compare only `category`; the free-text
 `reason` can drift from the exact current failure without the gate noticing (`CONTRIBUTING.md`,
 "Correctness oracle known-fail list"). Treat the numbers above, sourced from the category column
 and from the Phase 6 probe's direct run, as load-bearing; treat individual `reason` strings as
 best-effort commentary.
+
+## 3a. VALUE-MISMATCH triage against Astrodienst's own C
+
+The 668 `VALUE-MISMATCH` rows above are the porting work queue in name, but a queue entry is only
+actionable if the port is actually wrong. `Tests/conformance/value-mismatch-triage.tsv` checks
+that directly, for every row: it drives Astrodienst's own MSVC-built 2.10.03 C
+(`external/.c-reference/build-2.10.03/libswe-2.10.03.lib`, the same library the bit-exact oracle
+above uses) through the identical suite/testcase/iteration sequence `ConformanceRunner.cs` and
+every `Dispatch/Suite0*.cs` file replay against the port, using a scratch C driver that
+transliterates that same dispatch logic (not `Tools/CReference/sedump.c`, which only covers
+`CALC`/`CALC_UT`/`HOUSES`/`HOUSES_ARMC`/the fixed-star family/the crossing functions -- suites 5,
+7, 8 and 9 call functions outside that set entirely). Each row gets three numbers: what the port
+produced (already recorded in `known-fail.tsv`'s own `reason` column), what `t.exp` expects (same
+source), and what this fresh, independently-built C produces for the identical input.
+
+Of 668 rows, 664 are **drift**: the C reference reproduces the port's own output, not `t.exp`'s,
+so `t.exp` and the current build disagree for a reason that has nothing to do with a porting
+defect. 360 of the 664 are a single root cause (suite 6 testcase 3, sidereal `swe_houses_ex` with
+house system `W`/Whole Sign and `isid` 0 or 27): both the port and this replay's C driver resolve
+the requested ayanamsa to 0 and fall back to tropical sign boundaries, producing cusps at exact
+30-degree multiples, where `t.exp`'s own values are offset by the correct ayanamsa -- reproduced
+identically by fresh, independently-built C under the same replay sequence, so this is a
+replay/environment artifact (this triage's own harness runs suites in one continuous process;
+Astrodienst's original `t.exp`-generating run may not have), not a value the port computed wrong.
+The rest split across every other suite at magnitudes from a few ULP up to roughly 0.1% relative,
+consistent with the cross-toolchain floating-point drift already measured for suite 4's ayanamsa
+rows (`docs/known-issues.md`) and the platform drift measured for the characterization baseline
+(section 2 above) -- Windows/MSVC/UCRT against whatever produced `t.exp` (its own header: user
+`alois`, 14.12.2023), not a defect surviving in either C or the port.
+
+4 rows are a **real, confirmed port defect**: suite 1 testcase 1 iterations 377, 379, 383, 385,
+all `ipl=22` (`SE_INTP_PERG`, interpolated lunar perigee) at a JD outside `[625000.5, 2818000.5]`.
+`external/swisseph/sweph.c`'s `SE_INTP_PERG` branch (:994-1006) checks that range and returns
+`ERR` with `serr` "Interpolated apsides are restricted to JD 625000.5 - JD 2818000.5" before ever
+computing a position; `SwissEphNet/CPort/Sweph.cs`'s `SE_INTP_PERG` branch (:1179-1197) has no
+such check -- its sibling `SE_INTP_APOG` branch immediately above (:1152-1178) does have it
+(:1161-1168), so this reads as the same guard simply not copied down to the next `else if`. The C
+reference (built independently from the same pinned `external/swisseph` commit) returns `ERR` and
+the matching `serr`, exactly matching `t.exp`; the port returns a computed (wrong, out-of-range)
+position instead. Not fixed here: `Tests/SwissEphNet.Conformance.Tests/` is this triage's own
+scope, `SwissEphNet/CPort/` is not.
+
+Suites reached: all nine that carry a `VALUE-MISMATCH` row (1, 2, 4, 5, 6, 7, 8, 9, 10) -- every
+row was driven, none skipped for reach reasons. Suite 3 carries zero `VALUE-MISMATCH` rows and was
+not replayed (`swe_close()` at suite 6's own start already firewalls it from anything downstream).
 
 ## 4. SweTest text-output comparison
 

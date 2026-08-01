@@ -121,6 +121,53 @@ public static class EphemerisFileResolver
         ipl is >= 9000 and < SwissEph.SE_AST_OFFSET && !IncludeMoons;
 
     /// <summary>
+    /// SEFLG_CENTER_BODY requested and we have not opted into ephe/sat/.
+    /// </summary>
+    /// <remarks>
+    /// swi_gen_filename's own asteroid-or-planetary-moon default branch (external/swisseph/
+    /// swephlib.c:3639-3644) routes any SEI_* planet number in (SE_PLMOON_OFFSET, SE_AST_OFFSET)
+    /// to "sat&lt;DIR_GLUE&gt;sepm&lt;N&gt;.se1" -- the same ephe/sat/ directory
+    /// <see cref="NeedsMoonDataWeDoNotHave"/> already gates on. SEFLG_CENTER_BODY (center-of-body
+    /// correction) reads that same per-planet sepm9Nxx.se1 record even for a major-planet ipl
+    /// like Jupiter (5) that is nowhere near the 9000-9999 range itself, so a plain ipl check
+    /// alone misses it: found via known-fail.tsv suite 1 testcase 1 iterations 91-128 (Jupiter
+    /// through Pluto, SEFLG_CENTER_BODY, citing sepm9599.se1 through sepm9999.se1 -- none of
+    /// which required an in-range ipl at all) reporting VALUE-MISMATCH when both the port and a
+    /// fresh MSVC build of Astrodienst's own 2.10.03 C return an identical "file not found" serr,
+    /// which is DATA-MISSING, not a value mismatch (regenerations.log's Phase 6 probe entry notes
+    /// the same directory already flips these once ephe/sat/ is actually present, without needing
+    /// SWISSEPH_CONFORMANCE_INCLUDE_MOONS at all -- this checks the flag that predicts it instead
+    /// of waiting for the data to be present to notice).
+    /// </remarks>
+    public static bool NeedsCenterBodySatFileWeDoNotHave(int iflag) =>
+        (iflag & SwissEph.SEFLG_CENTER_BODY) != 0 && !IncludeMoons;
+
+    /// <summary>
+    /// A numbered asteroid beyond the four with built-in orbital elements (Ceres/Pallas/Juno/
+    /// Vesta, ipl SE_AST_OFFSET+1..+4, which read from the shipped sepl_NN.se1 main-planet file)
+    /// -- these need their own per-asteroid file, which this repo never ships at any tier.
+    /// </summary>
+    /// <remarks>
+    /// external/swisseph/swephlib.c:3639-3649's swi_gen_filename resolves any ipli beyond
+    /// SE_AST_OFFSET+4 (Sweph.cs:1213's own boundary for the built-in four) to
+    /// "ast&lt;N/1000&gt;&lt;DIR_GLUE&gt;se&lt;N%05d&gt;s.se1" -- a directory this repo's
+    /// required-ephemeris-files.tsv core set has never contained a single file from (verified:
+    /// zero "se*s.se1" or "ast*" entries in that list or in external/swisseph/ephe/). Unlike
+    /// <see cref="NeedsJplDataWeDoNotHave"/> and <see cref="NeedsMoonDataWeDoNotHave"/>, this
+    /// carries no opt-in env var: nothing in this repo's toolchain currently fetches or verifies
+    /// per-asteroid files the way SWISSEPH_CONFORMANCE_JPL_FILE or ephe/sat/ do, so unlike those
+    /// two there is no "provide the file and opt in" path to wire up yet. Found via known-fail.tsv
+    /// suite 1 testcases 1/5, suite 4 testcase 1 and suite 7 testcase 3 all citing
+    /// se00433s.se1 (433 Eros) or se00010s.se1 (10 Hygiea) as VALUE-MISMATCH when both the port
+    /// and a fresh MSVC build of Astrodienst's own 2.10.03 C return an identical "file not found"
+    /// serr, which is DATA-MISSING, not a value mismatch -- the same shape as the already-known
+    /// suite 4 Eros row this method's sibling checks were modeled on, just not previously routed
+    /// through any DataMissing check at all (this ipl range predates every existing check here).
+    /// </remarks>
+    public static bool NeedsAsteroidFileWeDoNotShip(int ipl) =>
+        ipl > SwissEph.SE_AST_OFFSET + 4;
+
+    /// <summary>
     /// SEFLG_SWIEPH requested for a date outside the era this repo's shipped core ephemeris
     /// files (sepl/semo/seas_12.se1 and _18.se1) cover, and either <see cref="IncludeEra"/> is
     /// not set or the specific era files that date needs are not actually present.
