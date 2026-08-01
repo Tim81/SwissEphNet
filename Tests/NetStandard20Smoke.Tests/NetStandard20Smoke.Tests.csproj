@@ -64,6 +64,23 @@
     <RunSettingsFilePath>$(MSBuildThisFileDirectory)netstandard20smoke.runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
+  <!--
+    The public-API approval check, shared verbatim with Tests/SwissEphNet.Tests rather than
+    reimplemented: two copies of the surface renderer could drift, and a difference between
+    the netstandard2.0 list and the net8.0/net10.0 lists then would not tell you whether the
+    surface differs or only the code that printed it. Linked, not duplicated, so the three
+    approved files stay directly comparable with each other.
+
+    The approved list for netstandard2.0 lives here because this is the only project that
+    resolves that asset. Both of this project's target frameworks (net462 and net48) resolve
+    it, and both therefore share this one file: the moniker is read off the library assembly,
+    not off the test project's own TFM.
+  -->
+  <ItemGroup>
+    <Compile Include="..\SwissEphNet.Tests\PublicApiSurface.cs" Link="PublicApiSurface.cs" />
+    <EmbeddedResource Include="PublicApi\SwissEphSharp.netstandard2.0.approved.txt" LogicalName="SwissEphSharp.netstandard2.0.approved.txt" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\SwissEphNet\SwissEphNet.csproj" />
   </ItemGroup>
