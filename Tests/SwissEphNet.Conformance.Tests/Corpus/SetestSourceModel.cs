@@ -72,10 +72,10 @@ public sealed class SetestSourceModel
     // t.exp names. "CHECK_EQUALS_D(" does not contain the substring "CHECK_D(",
     // so the literal prefix excludes the whole family for free.
     private static readonly Regex CheckScalarRegex =
-        new(@"(?<![A-Za-z0-9_])CHECK_(?:D|I|S)\s*\(\s*([^,()]+?)\s*\)", RegexOptions.Compiled);
+        new(@"(?<![A-Za-z0-9_])CHECK_(D|I|S)\s*\(\s*([^,()]+?)\s*\)", RegexOptions.Compiled);
 
     private static readonly Regex CheckArrayRegex =
-        new(@"(?<![A-Za-z0-9_])CHECK_(?:DD|II)\s*\(\s*([^,()]+?)\s*,", RegexOptions.Compiled);
+        new(@"(?<![A-Za-z0-9_])CHECK_(DD|II)\s*\(\s*([^,()]+?)\s*,", RegexOptions.Compiled);
 
     private static readonly Regex GetRegex =
         new(@"(?<![A-Za-z0-9_])GET_(?:I|D|S|P)\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)", RegexOptions.Compiled);
@@ -93,16 +93,31 @@ public sealed class SetestSourceModel
         new(@"(?<![A-Za-z0-9_])(check_[A-Za-z0-9_]+)\s*\(", RegexOptions.Compiled);
 
     private readonly HashSet<string> _inputNames;
+
+    /// <summary>
+    /// How many times each CHECK_* family matched, keyed by the family letters
+    /// (D, I, S, DD, II). Exists so <see cref="AssertNonTrivial"/> can see one
+    /// family going dark, which the aggregate floors provably cannot.
+    /// </summary>
+    private readonly Dictionary<string, int> _checkFamilyCounts;
+
+    private static void BumpFamily(Dictionary<string, int> counts, string family)
+    {
+        counts.TryGetValue(family, out var n);
+        counts[family] = n + 1;
+    }
     private readonly Dictionary<(int Suite, int TestCase), HashSet<string>> _checkedNames;
 
     private SetestSourceModel(
         HashSet<string> inputNames,
         Dictionary<(int, int), HashSet<string>> checkedNames,
         IReadOnlyCollection<string> sharedCheckerNames,
-        string sourceDirectory)
+        string sourceDirectory,
+        Dictionary<string, int> checkFamilyCounts)
     {
         _inputNames = inputNames;
         _checkedNames = checkedNames;
+        _checkFamilyCounts = checkFamilyCounts;
         SharedCheckerNames = sharedCheckerNames;
         SourceDirectory = sourceDirectory;
     }
@@ -179,6 +194,10 @@ public sealed class SetestSourceModel
 
     private static SetestSourceModel Load(string setestDirectory, bool applyFloors)
     {
+        // Accumulated across every testcase parsed below, then handed to the model so
+        // AssertNonTrivial can require each CHECK_* family to have matched at least once.
+        var checkFamilyCounts = new Dictionary<string, int>(StringComparer.Ordinal);
+
         if (!Directory.Exists(setestDirectory))
         {
             throw new InvalidOperationException(
@@ -242,7 +261,7 @@ public sealed class SetestSourceModel
                 var body = text[start..end];
                 var testCaseId = int.Parse(testCases[i].Groups[1].Value);
 
-                var names = CollectCheckedNames(body, helpers, file, suiteId, testCaseId);
+                var names = CollectCheckedNames(body, helpers, file, suiteId, testCaseId, checkFamilyCounts);
 
                 if (!checkedNames.TryAdd((suiteId, testCaseId), names))
                 {
@@ -253,7 +272,7 @@ public sealed class SetestSourceModel
             }
         }
 
-        var model = new SetestSourceModel(inputNames, checkedNames, helpers.Keys.ToList(), setestDirectory);
+        var model = new SetestSourceModel(inputNames, checkedNames, helpers.Keys.ToList(), setestDirectory, checkFamilyCounts);
         if (applyFloors)
         {
             model.AssertNonTrivial();
@@ -285,6 +304,31 @@ public sealed class SetestSourceModel
         if (distinctChecked < 40)
         {
             problems.Add($"only {distinctChecked} distinct CHECK_* name(s) extracted (expected ~47, floor 40)");
+        }
+
+        // Per family, because the aggregate floor above cannot see one family stop
+        // matching. Measured against v2.10.3final: CHECK_D 38 occurrences, CHECK_I 41,
+        // CHECK_S 23, CHECK_DD 46. Blinding CHECK_S alone still leaves 42 distinct names
+        // and blinding CHECK_I leaves 41, both of which clear a floor of 40 -- so the
+        // aggregate count would report a healthy parse while a whole family of assertions
+        // had silently stopped being extracted, and every field only that family asserts
+        // would drop out of the guard unnoticed.
+        //
+        // The floor is presence, not a count: one occurrence is enough to prove the family
+        // still matches, and anything higher would have to be revised on an upstream bump
+        // that merely moves assertions around. CHECK_II is deliberately absent from this
+        // list -- it is a real macro (testsuite.m4:76-89) with zero uses at v2.10.3final,
+        // so requiring it would fail on a correct parse of the pinned source.
+        foreach (var family in new[] { "D", "I", "S", "DD" })
+        {
+            _checkFamilyCounts.TryGetValue(family, out var used);
+            if (used == 0)
+            {
+                problems.Add(
+                    $"CHECK_{family}(...) matched nothing. Every other floor here can be cleared with " +
+                    "this family missing entirely, so its absence means the extraction is broken rather " +
+                    "than that upstream stopped using it.");
+            }
         }
 
         if (_checkedNames.Count < 55)
@@ -354,7 +398,8 @@ public sealed class SetestSourceModel
         IReadOnlyDictionary<string, string> helpers,
         string file,
         int suiteId,
-        int testCaseId)
+        int testCaseId,
+        Dictionary<string, int> familyCounts)
     {
         var names = new HashSet<string>(StringComparer.Ordinal);
         var pending = new Queue<string>();
@@ -367,12 +412,14 @@ public sealed class SetestSourceModel
 
             foreach (Match m in CheckScalarRegex.Matches(text))
             {
-                names.Add(m.Groups[1].Value);
+                names.Add(m.Groups[2].Value);
+                BumpFamily(familyCounts, m.Groups[1].Value);
             }
 
             foreach (Match m in CheckArrayRegex.Matches(text))
             {
-                names.Add(m.Groups[1].Value);
+                names.Add(m.Groups[2].Value);
+                BumpFamily(familyCounts, m.Groups[1].Value);
             }
 
             foreach (Match m in HelperCallRegex.Matches(text))
