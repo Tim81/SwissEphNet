@@ -95,9 +95,9 @@ if (-not $SelfTest -and -not $PruneOnly -and [string]::IsNullOrWhiteSpace($Reaso
 }
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$verifyProject = Join-Path $repoRoot 'Tools\OracleVerify\OracleVerify.csproj'
-$dumpScript = Join-Path $repoRoot 'scripts\run-oracle-dump.ps1'
-$oracleDir = Join-Path $repoRoot 'Tests\oracle'
+$verifyProject = Join-Path $repoRoot 'Tools/OracleVerify/OracleVerify.csproj'
+$dumpScript = Join-Path $repoRoot 'scripts/run-oracle-dump.ps1'
+$oracleDir = Join-Path $repoRoot 'Tests/oracle'
 
 function Get-GridPaths {
     param([string]$GridName)

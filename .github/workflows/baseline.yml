@@ -92,6 +92,10 @@ jobs:
           "sha=$base" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           Write-Host "Resolved baseline-log base: $base"
 
+      - name: Self-test the baseline log gate
+        shell: pwsh
+        run: pwsh scripts/verify-baseline-log.ps1 -SelfTest
+
       - name: Verify baseline changes are logged
         shell: pwsh
         run: pwsh scripts/verify-baseline-log.ps1 -BaseRef '${{ steps.base-ref.outputs.sha }}'

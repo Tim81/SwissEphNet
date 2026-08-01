@@ -202,6 +202,10 @@ jobs:
           "sha=$base" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           Write-Host "Resolved known-fail-log base: $base"
 
+      - name: Self-test the known-fail log gate
+        shell: pwsh
+        run: pwsh scripts/verify-known-fail-log.ps1 -SelfTest
+
       - name: Verify known-fail.tsv changes are logged
         shell: pwsh
         run: pwsh scripts/verify-known-fail-log.ps1 -BaseRef '${{ steps.base-ref.outputs.sha }}'

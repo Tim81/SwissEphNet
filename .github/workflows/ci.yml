@@ -127,6 +127,15 @@ jobs:
           # resolve a log base.
           fetch-depth: 0
 
+      # Self-test first: it plants each bypass this gate exists to catch and asserts the gate
+      # refuses, so a gate that has quietly stopped checking fails here instead of passing the
+      # real run below. Deliberately in the same job as the gate, so it runs on the same runner
+      # OS -- a path built with a Windows-only separator passes on windows-latest and fails on
+      # ubuntu-latest, and only a same-OS self-test catches that.
+      - name: Self-test the freeze gate
+        shell: pwsh
+        run: pwsh scripts/verify-freeze.ps1 -SelfTest
+
       - name: Verify frozen paths were not reformatted
         shell: pwsh
         run: pwsh scripts/verify-freeze.ps1
@@ -167,6 +176,20 @@ jobs:
           $base = $base.Trim()
           "sha=$base" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           Write-Host "Resolved manifest-log base: $base"
+
+      # regenerate-oracle-known-diff.ps1 is a regeneration tool rather than a gate, so it is not
+      # invoked anywhere in CI and its self-test has no gate to sit beside. It runs here because
+      # what it protects is a refusal: -PruneOnly must refuse to write a currently-failing row
+      # into the allow-list, which is the one thing standing between a red oracle gate and a
+      # green one. It also pins the case_id table to ordinal keying -- a case-insensitive table
+      # merged 396 ids last-write-wins when this was last measured.
+      - name: Self-test the oracle known-diff regeneration guard
+        shell: pwsh
+        run: pwsh scripts/regenerate-oracle-known-diff.ps1 -SelfTest
+
+      - name: Self-test the freeze-manifest log gate
+        shell: pwsh
+        run: pwsh scripts/verify-freeze-log.ps1 -SelfTest
 
       - name: Verify freeze-manifest changes are logged
         shell: pwsh
@@ -309,6 +332,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Self-test the documented-counts gate
+        shell: pwsh
+        run: pwsh scripts/verify-doc-counts.ps1 -SelfTest
+
       - name: Verify documented counts against the repository
         shell: pwsh
         run: pwsh scripts/verify-doc-counts.ps1
@@ -324,6 +351,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Self-test the removed-API documentation gate
+        shell: pwsh
+        run: pwsh scripts/verify-doc-no-removed-apis.ps1 -SelfTest
 
       - name: Verify no current-usage documentation calls a removed API
         shell: pwsh
@@ -402,6 +433,10 @@ jobs:
 
           "sha=$base" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           Write-Host "Resolved commit-message scan base: $base"
+
+      - name: Self-test the tooling-authorship gate
+        shell: pwsh
+        run: pwsh scripts/verify-no-tooling-attribution.ps1 -SelfTest
 
       - name: Verify no tooling-authorship text
         shell: pwsh
