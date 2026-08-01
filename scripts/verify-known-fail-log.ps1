@@ -498,6 +498,37 @@ list".
 # above). Every entry that existed at -BaseRef must still read identically, in the same position,
 # at HEAD. A count that only goes up is not enough on its own -- see this file's own header
 # comment for the demonstrated bypass (delete one entry, add two, count still rises).
+# CONTRIBUTING.md requires the "(no PR yet ...)" placeholder in a log entry to be replaced with the
+# real PR number before merging. That is an edit to an already-published entry, so the append-only
+# comparison below refuses it, and the two rules contradicted each other: the documented pre-merge
+# step could not be taken without turning this gate red.
+#
+# This permits exactly that substitution and nothing wider. The base entry must carry a placeholder;
+# the head entry must carry a "PR #<digits>" reference; and substituting the head's reference into
+# the base's placeholder must reproduce the head entry character for character. Any other edit --
+# a reworded sentence, a corrected number, a changed SHA -- fails to reproduce it and is still
+# refused, which is what the append-only rule is actually protecting.
+#
+# Two placeholder shapes exist in this repository and both are handled, in this order:
+#   "1. (no PR yet -- fill in ...) 2026-08-01: ..."  ->  "1. PR #32 2026-08-01: ..."   (parenthetical replaced)
+#   "local (no PR yet, log entry 6; ..."             ->  "local (PR #32, log entry 6; ..."  (phrase replaced)
+function Test-EntryUnchangedOrPrFilled {
+    param([string] $BaseEntry, [string] $HeadEntry)
+
+    if ([string]::Equals($HeadEntry, $BaseEntry, [StringComparison]::Ordinal)) { return $true }
+
+    $prRef = [regex]::Match($HeadEntry, 'PR #\d+')
+    if (-not $prRef.Success) { return $false }
+
+    foreach ($pattern in @('\(no PR yet[^)]*\)', 'no PR yet')) {
+        if ($BaseEntry -cnotmatch $pattern) { continue }
+        $filled = [regex]::Replace($BaseEntry, $pattern, $prRef.Value)
+        if ([string]::Equals($HeadEntry, $filled, [StringComparison]::Ordinal)) { return $true }
+    }
+
+    return $false
+}
+
 if ($changedSidecar) {
     for ($i = 0; $i -lt $baseCount; $i++) {
         # [string]::Equals(..., Ordinal): PowerShell's -ne on strings is culture-aware, so it
@@ -507,7 +538,7 @@ if ($changedSidecar) {
         # "every prior entry unchanged" and exited 0. Ordinal comparison treats the entry as the
         # exact sequence of code points it is, which an append-only log's "still reads identically"
         # requirement means literally.
-        if (-not [string]::Equals($headEntries[$i], $baseEntries[$i], [StringComparison]::Ordinal)) {
+        if (-not (Test-EntryUnchangedOrPrFilled -BaseEntry $baseEntries[$i] -HeadEntry $headEntries[$i])) {
             Write-Error @"
 $sidecarRelPath is append-only, but entry #$($i + 1) differs between $BaseRef and HEAD -- it was
 edited, reordered or removed rather than left alone.
