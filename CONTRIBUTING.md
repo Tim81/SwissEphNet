@@ -396,12 +396,35 @@ exist yet) always names the *parent* of that commit, not the change itself,
 and even a SHA captured correctly would stop existing once the PR merges. A
 PR number does not have either problem. If you do not know the PR number yet,
 leave it blank and fill in the logged line by hand once you do, before the PR
-merges. This applies to every regeneration log in the repository, not only
-this one -- `Tests/oracle/regenerations.log`, `Tests/oracle/regenerations-files.log`,
-`Tests/oracle/version-classification-regenerations.log`, and
-`Tests/swetest/regenerations.log` follow the same convention, so make filling
-in a placeholder "no PR yet" entry with the real PR number a checked step
-before merging, not a hoped-for follow-up.
+merges. This applies to every append-only log in the repository, not only
+this one. Seven tracked files carry the convention, and an earlier version of
+this paragraph named five of them, which is how placeholders in the other two
+went unnoticed:
+
+- `Tests/conformance/regenerations.log` (this one)
+- `Tests/oracle/regenerations.log`
+- `Tests/oracle/regenerations-files.log`
+- `Tests/oracle/version-classification-regenerations.log`
+- `Tests/swetest/regenerations.log`
+- `scripts/freeze-manifest-log.txt` (the freeze manifest's sidecar, checked by
+  `scripts/verify-freeze-log.ps1`)
+- `Tests/baseline/baseline-2.8.0.2.env.txt` (the characterization baseline's
+  sidecar and its "Local regenerations" log, checked by
+  `scripts/verify-baseline-log.ps1`)
+
+Make filling in a placeholder "no PR yet" entry with the real PR number a
+checked step before merging, not a hoped-for follow-up. To see what is
+outstanding across all seven at once (naming the paths, rather than grepping
+`Tests` and `scripts` wholesale, because three of the scripts contain the
+placeholder text as the string they emit):
+
+```powershell
+git grep -c 'no PR yet' -- Tests/conformance/regenerations.log `
+    Tests/oracle/regenerations.log Tests/oracle/regenerations-files.log `
+    Tests/oracle/version-classification-regenerations.log `
+    Tests/swetest/regenerations.log scripts/freeze-manifest-log.txt `
+    Tests/baseline/baseline-2.8.0.2.env.txt
+```
 
 Never hand-edit `known-fail.tsv` and never add a row to make a failing
 `dotnet test Tests/SwissEphNet.Conformance.Tests` go green without first
