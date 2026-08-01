@@ -54,11 +54,30 @@
     that did run agreed -- a build or run that silently produced almost nothing must not
     read as a pass. Defaults to 200, the count the one-time measurement in this script's
     own .DESCRIPTION used; the current fixed value tables produce more than that.
+
+.PARAMETER MinPerOpComparisons
+    The run fails if any of the $ExpectedOps functions (below) was compared fewer than this
+    many times -- including zero, i.e. the function never appeared in either program's output
+    at all. -MinComparisons alone counts lines, not which functions those lines belong to: the
+    fixed value tables produce well over 200 lines total even with three whole functions
+    dropped from crt-parity.c's emit() calls (a bad merge, an accidental deletion), so a
+    total-line floor cannot catch that -- it only asks "was enough compared", never "was the
+    right thing compared". Defaults to 5, comfortably below the smallest per-function count any
+    of the current fixed tables produce (fmod's pair table, the smallest, has 12 pairs) while
+    still requiring more than a token single comparison per function.
 #>
 [CmdletBinding()]
 param(
-    [int] $MinComparisons = 200
+    [int] $MinComparisons = 200,
+    [int] $MinPerOpComparisons = 5
 )
+
+# The complete set of CRT functions crt-parity.c's emit() calls exercise (see this script's own
+# .DESCRIPTION and crt-parity.c's Main) -- kept here, not derived from the C source or the .NET
+# output, specifically so a function silently dropped from one or both programs' emit() calls has
+# something external to be checked against instead of the coverage floor only ever seeing
+# whatever the two programs currently happen to agree on producing.
+$ExpectedOps = @('sin', 'cos', 'tan', 'atan', 'exp', 'floor', 'ceil', 'asin', 'acos', 'log', 'log10', 'sqrt', 'atan2', 'pow', 'fmod')
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -237,6 +256,24 @@ try {
         if ($cBits -ne $dotnetBits) {
             $mismatches.Add("$cName input #$index (line $($i + 1)): C = 0x$cBits, .NET = 0x$dotnetBits")
         }
+    }
+
+    # Per-op coverage floor, not just a total-line floor: $cOutput.Count -lt $MinComparisons
+    # above counts lines regardless of which function produced them, so dropping an entire
+    # function's emit() calls from crt-parity.c (a bad merge, an accidental deletion) still
+    # clears it as long as the remaining functions' lines add up past $MinComparisons -- the
+    # current fixed value tables comfortably do, even missing three whole functions. This checks
+    # the thing -MinComparisons cannot: that every function this gate exists to cover was
+    # actually exercised, not just that enough lines came out of *something*.
+    $missingOps = [System.Collections.Generic.List[string]]::new()
+    foreach ($op in $ExpectedOps) {
+        $seen = if ($opIndex.ContainsKey($op)) { $opIndex[$op] } else { 0 }
+        if ($seen -lt $MinPerOpComparisons) {
+            $missingOps.Add("$op ($seen comparison(s), below the -MinPerOpComparisons floor of $MinPerOpComparisons)")
+        }
+    }
+    if ($missingOps.Count -gt 0) {
+        Fail "Per-op coverage floor not met for $($missingOps.Count) of $($ExpectedOps.Count) expected function(s): $($missingOps -join '; '). crt-parity.c's emit() calls (or Tools/CrtParity's C# counterpart) may be missing a function entirely -- $($cOutput.Count) total line(s) cleared -MinComparisons, but that says nothing about which functions they covered."
     }
 
     if ($mismatches.Count -gt 0) {
