@@ -37,11 +37,17 @@ Swiss Ephemeris, and therefore this library, is dual-licensed. You must choose o
   [Astrodienst](http://www.astro.com/swisseph/) that does not carry the AGPL's source-disclosure
   obligation. Contact Astrodienst directly to obtain one.
 
-See [`LICENSE`](https://github.com/Tim81/SwissEphNet/blob/main/LICENSE) for the full license
-conditions, [`agpl-3.0.txt`](https://github.com/Tim81/SwissEphNet/blob/main/agpl-3.0.txt) for the
-AGPL text, and [`NOTICE`](https://github.com/Tim81/SwissEphNet/blob/main/NOTICE) for attribution.
-These links are absolute rather than relative because this section also renders on nuget.org's
-package page, where a relative link to a file in this repository does not resolve.
+The package ships all three of these files at its own root, so the authoritative copies travel
+with whatever version you installed: `LICENSE` for the full license conditions, `agpl-3.0.txt`
+for the AGPL text, and `NOTICE` for attribution. To read them in the repository instead:
+[`LICENSE`](https://github.com/Tim81/SwissEphNet/blob/release/2.10.03/LICENSE),
+[`agpl-3.0.txt`](https://github.com/Tim81/SwissEphNet/blob/release/2.10.03/agpl-3.0.txt),
+[`NOTICE`](https://github.com/Tim81/SwissEphNet/blob/release/2.10.03/NOTICE). These links are
+absolute rather than relative because this section also renders on nuget.org's package page,
+where a relative link to a file in this repository does not resolve, and they name
+`release/2.10.03` rather than `main` because `main` is still the upstream project's pre-fork
+state: it carries no `NOTICE` and no `agpl-3.0.txt` at all, and its `LICENSE` is the
+1997-2008 pre-relicense text rather than the dual AGPL one this library is offered under.
 
 The library targets 3 frameworks: `netstandard2.0`, `net8.0` and `net10.0`, packaged under the
 `SwissEphSharp` NuGet ID (see the versioning note in `SwissEphNet.csproj` for why the ID differs
@@ -230,9 +236,8 @@ port defects, all a missing JD-range guard on interpolated lunar perigee (`docs/
 section 3a). That guard is fixed now and the four rows are pruned, so of the 664 remaining, none
 is a port defect anyone has demonstrated: each reproduces the port's own output rather than the
 reference corpus's, i.e. drift between this build's toolchain/environment and whatever produced
-`setest`'s reference values, not a wrong answer. That is the honest state of it: strong on
-everything it has been checked against, not yet at full parity with Astrodienst's own reference
-corpus.
+`setest`'s reference values, not a wrong answer. So the port matches everything it has been
+checked against and is not yet at full parity with Astrodienst's own reference corpus.
 
 # Breaking changes
 
@@ -272,6 +277,19 @@ Source-level and reflection-based consumers can be affected:
   `IndexOutOfRangeException`: an internal cusp array was undersized relative to
   upstream 2.10.03. If your code wraps that call in a guard specifically to catch this
   exception, that guard is now dead code and can be removed.
+- **`swe_lun_occult_when_glob` and `swe_lun_occult_when_loc` each gained an `Int32 backward`
+  overload.** `swephexp.h` declares that parameter `int32`, and it is a bitfield: bit 0 selects
+  the search direction, while `SE_ECL_ONE_TRY` (32768) limits the search to a single lunar
+  cycle (`swecl.c:1539` and `:1593`; the local variant masks it at `swecl.c:2436`). This port
+  offered only a `bool backward` signature, which can carry 0 or 1 and nothing else, so
+  `backward & SE_ECL_ONE_TRY` was always 0 and the flag could not be requested through the
+  public API at all. The `bool` overload keeps its exact signature and is still there, so
+  existing source and existing compiled binaries bind the way they always did; it just cannot
+  reach `SE_ECL_ONE_TRY`, and the new `Int32` overload can. The break is resolution by name:
+  `Type.GetMethod("swe_lun_occult_when_glob")` with no parameter-type array, and any other
+  binder that matches on name alone, now throws `AmbiguousMatchException` for these two
+  methods, because each carries two overloads where it carried one. Pass an explicit
+  parameter-type array to select the one you want.
 - **Eclipse magnitude and obscuration are a hundred times smaller.** `attr[0]` and
   `attr[2]` from `swe_sol_eclipse_how`, and from the `attr` array `swe_sol_eclipse_where`
   and `swe_lun_occult_where` fill, are now fractions rather than percentages: an eclipse
@@ -345,7 +363,7 @@ Source-level and reflection-based consumers can be affected:
   `swe_houses_armc_ex2`, `swe_calc_pctr`, `swe_get_current_file_data`, the
   `SEFLG_TROPICAL`, `SEFLG_CENTER_BODY` and `SEFLG_TEST_PLMOON` flags, `SE_ECL_HYBRID`, and
   three `SE_SIDBIT_*` constants (`SE_SIDBIT_ECL_DATE`, `SE_SIDBIT_NO_PREC_OFFSET`,
-  `SE_SIDBIT_PREC_ORIG`). None of this replaces existing API; it is purely additive.
+  `SE_SIDBIT_PREC_ORIG`).
 - **SweTest CLI**: options that previously threw (`-ay`, `-sidt0`, `-sidsp`, `-sid`, `-j`,
   `-helflag`, `-amod`, `-tidacc`) now parse instead of crashing on C pointer-arithmetic
   transliterated as string concatenation. `-house` and `-utc` no longer crash. `dms()` no
@@ -499,15 +517,11 @@ continue to exist in parallel :
 This fork is packaged under the `SwissEphSharp` NuGet ID (see the versioning note in
 `SwissEphNet.csproj`). An older release of the upstream project is available separately as a
 [NuGet package](https://www.nuget.org/packages/SwissEphNet), under the original `SwissEphNet` ID,
-but it predates this fork's retarget and bug fixes. Working from this repository rather than the
-published package also works: build from source or reference `SwissEphNet/SwissEphNet.csproj`
-directly.
-
-SwissEphNet targets `netstandard2.0`, `net8.0` and `net10.0`.
+but it predates this fork's retarget and bug fixes.
 
 ## Numerical compatibility
 
-This library has been validated against the official Swiss Ephemeris C library.
+This library has been validated against the Swiss Ephemeris C library.
 
 On .NET 10 (`net10.0` is what `Tools/OracleDump` and `Tools/OracleVerify` target, and the only
 runtime the table below was actually measured on), it produces bit-identical results for the
@@ -579,10 +593,9 @@ longitude bit-identical at that one date. That is not a fixed ceiling: the same 
 1850-2050 at five-year steps found position differences ranging from 0 ULP up to several
 thousand depending on the date, and adding `SEFLG_SPEED` widens it further, because the speed
 fields are a finite difference between two nearby position evaluations and amplify whatever
-position-level difference already exists. The honest statement is that the two runtimes
-disagree at the ULP level on `FICT_CUPIDO` and on transcendental math generally, reproducibly,
-by an amount that depends on the input; there is no single number, measured or otherwise, that
-bounds it across every call.
+position-level difference already exists. The two runtimes disagree at the ULP level on
+`FICT_CUPIDO` and on transcendental math generally, reproducibly, by an amount that depends on
+the input; there is no single number, measured or otherwise, that bounds it across every call.
 
 The table above is the bit-exact oracle's own result; see "Bit-exact oracle" below for the tooling
 behind it and what it proves that the other two verification instruments in this README cannot.
