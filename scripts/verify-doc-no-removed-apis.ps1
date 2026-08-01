@@ -65,6 +65,18 @@
 
 .PARAMETER RepoRoot
     Repository root. Defaults to the checkout containing this script.
+
+.NOTES
+    Vacuity floor: $currentUsageDocs is filtered through Where-Object { Test-Path ... }, so a
+    renamed or deleted README.md (this repository's only current-usage doc today) makes that list
+    empty. Demonstrated: pointing -RepoRoot at a directory with no README.md at all makes this
+    script print "Checked 0 current-usage documentation file(s)" and exit 0 -- PASS, having
+    scanned nothing. This matters more here than for most gates in this repository, because it
+    runs on ubuntu-latest against a repo whose own path handling is otherwise Windows-flavored
+    elsewhere: a README.md renamed to Readme.md would be invisible to this script's exact-case
+    'README.md' lookup on that case-sensitive filesystem, and nothing would report it. The
+    $checkedFiles -gt 0 guard below closes that: this script only ever passes having actually
+    scanned at least one file.
 #>
 [CmdletBinding()]
 param(
@@ -119,7 +131,11 @@ $RemovedApiPatterns = @{
 # or shallower level appears that does not itself match.
 $historicalHeadingPattern = '(?i)\b(Breaking changes|Upgrading from|Migration|Change ?log|History|Release notes)\b'
 
-$currentUsageDocs = @('README.md') | ForEach-Object { Join-Path $RepoRoot $_ } |
+# Kept separately from $currentUsageDocs (below) so the vacuity-floor error message at the bottom
+# of this script can name what it looked for even when every one of those paths turned out not to
+# exist -- the filtered list itself would just be empty at that point.
+$docCandidateNames = @('README.md')
+$currentUsageDocs = $docCandidateNames | ForEach-Object { Join-Path $RepoRoot $_ } |
     Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }
 
 $failures = [System.Collections.Generic.List[string]]::new()
@@ -274,6 +290,25 @@ if ($failures.Count -gt 0) {
     foreach ($failure in $failures) { Write-Host "  $failure" }
     Write-Host ''
     Write-Host 'FAIL: current-usage documentation teaches an API this library no longer exposes.'
+    exit 1
+}
+
+# Vacuity floor: a PASS with zero files checked is not a pass, it is this check silently doing
+# nothing -- see the .NOTES section above for how that happens ($currentUsageDocs' Test-Path
+# filter finding none of the paths it looked for) and why it matters specifically on this
+# script's ubuntu-latest runner. Every other gate in this repository that can legitimately find
+# nothing to check (verify-freeze-log.ps1, verify-baseline-log.ps1) still requires the *files it
+# is comparing* to exist; this is the one check the review found with no equivalent floor.
+if ($checkedFiles -eq 0) {
+    Write-Error @"
+Checked zero current-usage documentation file(s) -- none of $($docCandidateNames -join ', ') exist
+at $RepoRoot. A run that scanned nothing is not a
+pass: on this script's own case-sensitive runner (ubuntu-latest), a README.md silently renamed to
+something else -- Readme.md, readme.md -- would produce exactly this state and this check would
+report PASS having verified nothing. If README.md was deliberately renamed or removed, update the
+`$currentUsageDocs list above (SwissEphNet.csproj's PackageReadmeFile is the source of truth for
+what actually ships); if not, restore it.
+"@
     exit 1
 }
 
