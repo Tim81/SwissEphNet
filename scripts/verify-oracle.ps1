@@ -28,12 +28,15 @@
 
     FILE-LEVEL SHA-256 CHECK
 
-    The row-level check above decides hex-column equality via
-    Tools/OracleVerify/UlpMath.cs's Distance, whose first branch is double.Equals -- which treats
-    +0.0 and -0.0, and NaN and NaN, as equal. Two dumps can therefore disagree on a field's actual
-    hex bytes (a signed zero, or which of several NaN bit patterns landed) while every row still
-    reports zero ULPs of difference. When a grid's known-diff list is empty (see
-    Assert-DumpsByteIdentical below), this script also compares the two dump files' SHA-256
+    The row-level check above decides hex-column equality via Tools/OracleVerify/UlpMath.cs's
+    Distance, which compares the two values' raw 64-bit patterns (BitConverter.DoubleToInt64Bits),
+    not double.Equals -- a signed-zero or NaN-payload divergence now fails the row-level check
+    directly, rather than being silently absorbed as "zero ULPs of difference" the way an earlier
+    double.Equals-based first branch did. That leaves this file-level check covering what the
+    row-level comparator still cannot see by design: the decimal (non-hex) column, row order, and
+    incidental file bytes -- blank lines, line endings -- that OracleDump.exe/sedump.exe wrote but
+    that never pass through a per-field comparison at all. When a grid's known-diff list is empty
+    (see Assert-DumpsByteIdentical below), this script also compares the two dump files' SHA-256
     hashes directly and fails if they differ, even though the row-level check above passed --
     that is a check on the bytes OracleDump.exe and sedump.exe actually wrote, independent of how
     OracleVerify chooses to interpret them. Skipped when the known-diff list carries recorded
@@ -139,17 +142,19 @@ function Test-KnownDiffEmpty {
 
 # Row-level "bit-identical" (OracleVerify's "verify" mode, called below) means every hex column,
 # the retc and the serr text compare equal per Tools/OracleVerify/RowOutcome.cs -- and hex-column
-# equality is decided by Tools/OracleVerify/UlpMath.cs's Distance, whose first check is
-# double.Equals, not a raw bit comparison. double.Equals treats +0.0 and -0.0 as equal, and NaN as
-# equal to NaN, so a row where the C dump's hex column decodes to -0.0 and the .NET dump's decodes
-# to +0.0 -- two different bit patterns, two different hex strings on disk -- reports zero ULPs of
-# difference and is silently accepted as matching. The grids carry negative-zero fields (e.g. a
-# fixed-star proper-motion component that is exactly zero but signed), so this is not a
-# hypothetical: a future change that flips such a field's sign without changing its numeric value
-# would pass the row-level check and widen no known-diff list, while the two dump files on disk
-# would stop being byte-identical. A SHA-256 comparison of the whole file catches exactly that,
-# independent of what any row-level comparator considers "equal" -- it is a check on the bytes
-# OracleDump.exe and sedump.exe actually wrote, not on how OracleVerify chooses to interpret them.
+# equality is decided by Tools/OracleVerify/UlpMath.cs's Distance, which compares the two values'
+# raw 64-bit patterns directly (BitConverter.DoubleToInt64Bits), not double.Equals: a row where
+# the C dump's hex column decodes to -0.0 and the .NET dump's decodes to +0.0 -- two different bit
+# patterns, two different hex strings on disk -- is a real, reported ULP difference now, not
+# silently accepted as matching the way an earlier double.Equals-based first branch treated it.
+# What this file-level check still covers, that the row-level comparator by design does not: the
+# decimal (non-hex) text column each hex column sits next to in the dump format (DumpRow.Parse
+# only reads the hex fields into Values -- the decimal text is never part of the row-level
+# comparison at all), row order, and incidental file bytes (blank lines, line endings) that
+# OracleDump.exe/sedump.exe wrote but that no per-field comparison ever inspects. A SHA-256
+# comparison of the whole file catches exactly that, independent of what any row-level comparator
+# considers "equal" -- it is a check on the bytes OracleDump.exe and sedump.exe actually wrote,
+# not on how OracleVerify chooses to interpret them.
 function Assert-DumpsByteIdentical {
     param([string] $CPath, [string] $NetPath, [string] $KnownDiffPath)
 
@@ -162,7 +167,7 @@ function Assert-DumpsByteIdentical {
     $netHash = Get-Sha256Hex -Path $NetPath
     if ($cHash -ne $netHash) {
         Write-Host "FAIL: $KnownDiffPath is empty (claims every row is bit-identical), but the dump files themselves differ: $CPath is $cHash, $NetPath is $netHash." -ForegroundColor Red
-        Write-Host '      The row-level check above can still report PASS here: UlpMath.Distance treats +0.0/-0.0 and NaN/NaN as equal, so it can miss a hex-column difference a raw file hash would not.' -ForegroundColor Red
+        Write-Host '      The row-level check above can still report PASS here: it never inspects the decimal (non-hex) text column, row order, or incidental bytes (blank lines, line endings) -- a raw file hash catches a divergence in any of those that no per-field comparison would.' -ForegroundColor Red
         return 1
     }
 
