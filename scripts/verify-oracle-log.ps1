@@ -279,12 +279,16 @@ if ($SelfTest) {
             [string] $KnownDiffLogText,
             [string] $VersionClassLogText,
             [switch] $ChangeKnownDiff,
+            [switch] $ChangeKnownDiffFiles,
             [switch] $ChangeVersionClassification,
             [switch] $ChangeVersionClassificationFilesOnly,
             [switch] $Crlf
         )
         if ($ChangeKnownDiff) {
             Set-LabFile (Join-Path $Lab.Path 'Tests/oracle/known-diff.tsv') $ChangedKnownDiff
+        }
+        if ($ChangeKnownDiffFiles) {
+            Set-LabFile (Join-Path $Lab.Path 'Tests/oracle/known-diff-files.tsv') "case_id`tcategory`tmax_ulp`treason`nF|1`tRETC`t0`tretc differs`n"
         }
         if ($ChangeVersionClassification) {
             Set-LabFile (Join-Path $Lab.Path 'Tests/oracle/version-classification.tsv') "# comment`ncase_id`tclassification`nA|1`tAGREES-BOTH`n"
@@ -407,6 +411,74 @@ if ($SelfTest) {
     $lab = New-Lab 'version-classification-both-changed-with-entry'
     Set-LabHead $lab $null (New-LogText ($BaseEntries + $NewEntry3)) -ChangeVersionClassification -ChangeVersionClassificationFilesOnly
     Assert-GateAccepts 'both version-classification files changing with one real appended entry is accepted' $lab
+
+    # ------------------------------------------------------------------------------------------
+    # Crash reproduction. The base ref this gate actually runs against in CI is
+    # `git merge-base main HEAD` (resolve-log-base.ps1), not a handful of recent commits -- and at
+    # that point in this repository's own history, none of Tests/oracle/known-diff-jpl.tsv,
+    # regenerations-jpl.log, or any of the other three pairs, existed yet: `git cat-file -e
+    # <merge-base>:Tests/oracle/regenerations-jpl.log` fails outright ("exists on disk, but not in
+    # <sha>"). Test-SidecarPair then takes the -not $baseExists branch and sets $baseContent = '',
+    # and Get-DateLogEntries's own empty-content early return used a bare `return @()` -- which
+    # PowerShell unrolls to ZERO objects on the output stream, not "one object that is an empty
+    # array". `$baseEntries = Get-DateLogEntries ''` therefore bound $baseEntries to $null, and
+    # $null.Count threw PropertyNotFoundException under Set-StrictMode. Every case above runs this
+    # script against a lab where every sidecar already exists (with real content) at the base
+    # commit, so none of them exercised this path -- confirmed directly: -BaseRef HEAD~6 could not
+    # have caught it, and did not.
+    #
+    # Two shapes reach the same Get-DateLogEntries('') call: the file not existing at the base
+    # commit at all (baseExists = $false, case 10), and the file existing but genuinely empty --
+    # 0 bytes committed (case 11). Both are covered; a boundary case at exactly one prior entry
+    # (case 12) is covered alongside them, since this class of PowerShell array-unrolling bug
+    # clusters at the 0/1 boundary and a fix that only special-cased "truly nothing" could still
+    # leave "exactly one" fragile.
+
+    # 10. The manifest and sidecar do not exist AT ALL at the base commit -- not even as an empty
+    #     placeholder -- and both are introduced for the first time at head, with a real entry.
+    #     This is the exact shape the real merge-base range hit: baseExists = $false.
+    $labZero = Join-Path $root 'sidecar-did-not-exist-at-base'
+    New-Item -ItemType Directory -Path $labZero -Force | Out-Null
+    git init -q -b main $labZero
+    git -C $labZero config user.email 'selftest@example.invalid'
+    git -C $labZero config user.name 'selftest'
+    git -C $labZero config core.autocrlf false
+    Set-LabFile (Join-Path $labZero 'README.md') "fixture root; Tests/oracle does not exist yet.`n"
+    git -C $labZero add README.md
+    git -C $labZero commit -q -m 'fixture base (Tests/oracle does not exist at all)'
+    $labZeroBaseSha = (git -C $labZero rev-parse HEAD).Trim()
+    New-Item -ItemType Directory -Path (Join-Path $labZero 'Tests/oracle') -Force | Out-Null
+    Set-LabFile (Join-Path $labZero 'Tests/oracle/known-diff-jpl.tsv') "case_id`tcategory`tmax_ulp`treason`nJ|1`tPORT-VERSION`t4`tlon differs`n"
+    Set-LabFile (Join-Path $labZero 'Tests/oracle/regenerations-jpl.log') (New-LogText @($NewEntry3))
+    git -C $labZero add Tests/oracle
+    git -C $labZero commit -q -m 'introduce the JPL pair for the first time'
+    $labZeroLab = [pscustomobject]@{ Path = $labZero; BaseSha = $labZeroBaseSha }
+    Assert-GateAccepts 'the manifest/sidecar not existing at all at the base ref does not crash (real merge-base shape)' $labZeroLab 'gained 1 entry'
+
+    # 11. The sidecar exists and is tracked at the base commit, but is genuinely 0 bytes -- the
+    #     other route to the same Get-DateLogEntries('') call, via -not $changedSidecar's sibling
+    #     path (the sidecar itself did not change; only the manifest did) rather than
+    #     baseExists = $false. New-Lab already commits regenerations-files.log as an empty string
+    #     at every lab's base; this case is the first to also change known-diff-files.tsv, which is
+    #     what makes it reach the comparison at all instead of short-circuiting on "nothing changed".
+    $lab = New-Lab 'sidecar-exists-but-is-empty-at-base'
+    Set-LabHead $lab $null $null -ChangeKnownDiffFiles
+    Assert-GateRefuses 'known-diff-files.tsv changed while its sidecar stayed empty does not crash, and is refused' $lab 'did not gain a new entry'
+
+    # 12. Boundary control for cases 10-11: a base sidecar with exactly ONE prior entry (not zero)
+    #     must still both accept a legitimate append and refuse an edit to that lone entry.
+    $lab = New-Lab 'exactly-one-prior-entry-accepts-append' @($BaseEntries[0])
+    Set-LabHead $lab (New-LogText (@($BaseEntries[0]) + $NewEntry3)) $null -ChangeKnownDiff
+    Assert-GateAccepts 'a base sidecar with exactly one prior entry accepts a legitimate append' $lab 'gained 1 entry'
+
+    # Also appends a real entry alongside the edit -- the count still rising is what makes this
+    # case reach the append-only comparison at all instead of being caught first by the simpler
+    # count-must-rise check (which an edit-with-no-append would trip on its own, proving nothing
+    # about the append-only comparison specifically).
+    $lab = New-Lab 'exactly-one-prior-entry-refuses-edit' @($BaseEntries[0])
+    $editedFirstEntry = $BaseEntries[0] -replace 'no reason is required', 'no reason at all is needed'
+    Set-LabHead $lab (New-LogText (@($editedFirstEntry) + $NewEntry3)) $null -ChangeKnownDiff
+    Assert-GateRefuses 'a base sidecar with exactly one prior entry still refuses an edit to it' $lab 'append-only, but entry #1 differs'
 
     Write-Host ''
     Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue

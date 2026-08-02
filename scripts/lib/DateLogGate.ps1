@@ -43,7 +43,17 @@ Set-StrictMode -Version Latest
 function Get-DateLogEntries {
     param([string] $Content)
     if ([string]::IsNullOrEmpty($Content)) {
-        return @()
+        # , @() -- not a bare @(). An empty array placed on the output stream by a plain `return`
+        # unrolls to ZERO objects, not to "one object that happens to be an empty array" -- and a
+        # caller that receives zero objects from an assignment (`$x = Get-DateLogEntries $c`) gets
+        # $null, not @(). $null.Count then throws PropertyNotFoundException under Set-StrictMode,
+        # exactly the crash this comment sits next to fixing. Reproduced directly: any
+        # -BaseRef where a sidecar did not exist yet (git cat-file -e fails, Test-SidecarPair sets
+        # $baseContent = '') hit this path and crashed scripts/verify-oracle-log.ps1 outright when
+        # run against the real merge-base range, rather than the six-commit range -SelfTest's own
+        # child-process cases used. The comma forces the empty array through as the one object a
+        # plain assignment needs, matching this function's own non-empty return path below.
+        return , @()
     }
     $starts = [regex]::Matches($Content, '(?m)^\d{4}-\d{2}-\d{2}\s')
     $entries = [System.Collections.Generic.List[string]]::new()
