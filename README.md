@@ -858,11 +858,20 @@ ever confirmed as port defects were fixed and pruned.
   **Skipped is not untested.** Both were run once, against real data, and the
   measurement is recorded in `Tests/conformance/regenerations.log`'s entry of
   2026-07-31: the full 12,757-iteration corpus with `SWISSEPH_CONFORMANCE_INCLUDE_JPL=1`
-  and `SWISSEPH_CONFORMANCE_JPL_FILE` pointed at a locally verified `de431.eph`
-  (2,788,676,624 bytes, MD5 `fad0f432ae18c330f9e14915fbf8960a`), which is the file
-  `setest`'s own suites 1 and 10 call `swe_set_jpl_file` with. **500 of the 538 JPL
-  rows pass outright** once the data is present, along with 4 of the 18 `sat` rows.
-  The JPL backend works; what it lacks is a way to keep proving it.
+  and `SWISSEPH_CONFORMANCE_JPL_FILE` pointed at `de431.eph` (2,788,676,624 bytes,
+  MD5 `fad0f432ae18c330f9e14915fbf8960a`), which is the file `setest`'s own suites 1
+  and 10 call `swe_set_jpl_file` with. That MD5 is Astrodienst's own published one --
+  their `readme.md` lists `fad0f432ae18c330f9e14915fbf8960a  de431.eph` among the
+  md5-keys for the JPL files, so the run used a file matching upstream's checksum
+  rather than an arbitrary copy. **500 of the 538 JPL rows pass outright** once the
+  data is present, along with 4 of the 18 `sat` rows. The JPL backend works; what it
+  lacks is a way to keep proving it.
+
+  Astrodienst name three places to get these files: their own
+  `swisseph-download/jplfiles/` page (which points at NASA's JPL FTP area), Alois
+  Treindl's Dropbox, and `https://ephe.scryr.io/jpl/`, a web space provided by
+  Phillip McCabe. All three are listed in upstream's `readme.md` next to the md5-keys,
+  so the checksum is the thing to verify against, not the host.
 
   Nothing in CI measures that, and the reason is size rather than doubt. `de431.eph`
   is 2.6 GB, cannot be committed, and no runner will fetch it per job, so the result
