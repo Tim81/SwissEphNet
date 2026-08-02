@@ -909,6 +909,49 @@ ever confirmed as port defects were fixed and pruned.
   produce different numbers and look like defects, can be ruled out first. Treat these
   rows as verified-but-unwatched, not as covered.
 
+- **The JPL backend also has a bit-exact grid**, and it is the one that found the
+  bug. `Tools/OracleGrid/grid-jpl.tsv` is the third oracle grid: 2,400 rows, 1,200
+  through `swe_calc` and 1,200 through `swe_calc_ut`, sweeping bodies, epochs and
+  sidereal modes with `SEFLG_JPLEPH` set, and with `SEFLG_JPLHOR` and
+  `SEFLG_JPLHOR_APPROX` among the flag combinations. It is opt-in and CI never runs
+  it:
+
+  ```
+  pwsh scripts/run-oracle-dump.ps1 -JplFile C:/path/to/de406.eph
+  pwsh scripts/verify-oracle.ps1   -Grid Jpl
+  ```
+
+  It runs against DE406 rather than DE431 on purpose. The conformance corpus is
+  locked to DE431 because `setest` hardcodes it, but the oracle compares the port
+  against the C over the same file on the same machine, so any DE file works and the
+  190 MB one is the one a contributor can actually download. `load_dpsi_deps` needs
+  `jpldenum >= 403`, which DE406 clears and DE200 does not.
+
+  ```
+  de406.eph  https://ssd.jpl.nasa.gov/ftp/eph/planets/Linux/de406/lnxm3000p3000.406
+  size       199,437,056 bytes
+  sha256     b23009e208d625c5e830c4cb67e6313d7f9eadeffe17292a7471f33250c9342d
+  ```
+
+  Verify with that SHA-256. Astrodienst publish an MD5 for their own `de406e.eph`
+  (`1ef768440cc1617b6c8ad27a9a788135`) which does **not** match NASA's DE406
+  (`39e63b24f3540b92ec83be008f20d70e`); they are different files, and only NASA's
+  reproduces the run below.
+
+  First run: **415 of 2,400 rows bit-identical, 1,985 differing.** One cause behind
+  all of them. `swejpl.c` reads the 400 six-byte constant names with an element size
+  of 1 and checks the *byte* count; the port read the same 2,400 bytes but checked the
+  *character* count they decoded to. DE406 carries 176 bytes above `0x7F` in the unused
+  tail of that block, so the guard fired on a perfectly good file and every
+  `SEFLG_JPLEPH` call fell back to Moshier without saying so. After the fix:
+  **2,400 of 2,400 bit-identical, 0 differing, nothing waived.**
+
+  It survived this long because it is data-dependent. DE431 has no high bytes in that
+  block, and DE431 was the only DE file this repository had ever opened -- including
+  the 12,757-iteration run recorded above. Full numbers and environment are in
+  `Tests/oracle/regenerations-jpl.log`; the defect is written up in
+  `docs/known-issues.md`.
+
 - A separate workflow, not folded into `ci.yml`'s fast job:
   `.github/workflows/conformance.yml` runs on a schedule, on demand, and on every pull
   request, with no `paths` filter -- an earlier version restricted the `pull_request`

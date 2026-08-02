@@ -1625,7 +1625,7 @@ arithmetic, siblings of `swe_utc_time_zone` (already covered in `datetime`); and
 zero-value one, since the "no file open" response itself is behavior worth freezing. Recorded as
 a work queue, not fixed here: closing this gap is new matrix coverage, not a tooling defect fix.
 
-## SweJPL rejects a DE file whose constant-name block is not plain ASCII
+## SweJPL rejected a DE file whose constant-name block is not plain ASCII; fixed
 
 Found by the third bit-exact oracle grid (`Tools/OracleGrid/grid-jpl.tsv`), the first
 port-versus-C measurement of the `SEFLG_JPLEPH` backend at any level. Full numbers, the data
@@ -1686,9 +1686,24 @@ the C writes `file eop_1962_today.txt not found; default to SEFLG_JPLHOR_APPROX`
 (`swed.eop_dpsi_loaded == -1`, only ever written by `load_dpsi_deps`), the port writes `you did not
 call swe_set_jpl_file(); default to SEFLG_JPLHOR_APPROX` (`== 0`, the untouched initial value).
 
-Not fixed here. `SwissEphNet/CPort/` is a frozen path; this qualifies as the freeze's one
-permitted exception, since restoring the byte-count semantics makes the port *more* faithful to
-`swejpl.c:210`/`:682`, but that is a porting change owing its own reviewed commit, manifest update
-and re-measurement rather than being folded into the commit that built the measurement.
-`Tests/oracle/known-diff-jpl.tsv` is deliberately left empty, so
-`scripts/verify-oracle.ps1 -Grid Jpl` stays red until it is fixed.
+**Fixed** in the commit that carries freeze-manifest log entry 14, one commit after the one that
+recorded the measurement. `SwissEphNet/CPort/` is a frozen path, and this is the freeze's one
+permitted exception: restoring the byte-count semantics makes the port *more* faithful to
+`swejpl.c:210`/`:682`. Keeping it out of the measurement commit was deliberate, so that the
+before and after numbers came from two separately reviewed states rather than one.
+
+Both sites now read into a `byte[]` and count what `Read(byte[], int, int)` returns, which is the
+byte count the C compares. `ch_cnam` stays `char[]` at one char per byte, matching the C's `char`
+buffer and what its only reader -- the commented-out diagnostic `printf` at the end of the file --
+assumes.
+
+Re-measured over the same grid and the same DE406: 2,400 of 2,400 rows bit-identical, 0 differing,
+down from 1,985. `Tests/oracle/known-diff-jpl.tsv` is still empty and
+`scripts/verify-oracle.ps1 -Grid Jpl` is now green with nothing waived. The analytic and files
+grids are untouched either side of the change, `dump-net.tsv` at `b36a007e...` and
+`dump-net-files.tsv` at `f3fa03aa...` both times.
+
+What the fix does *not* close is `load_dpsi_deps`'s parsing loop. The port now reaches the same
+early return the C does, and the `serr` text agrees on all 110 `SEFLG_JPLHOR` rows, but neither
+side gets past `swi_fopen` because neither `eop_1962_today.txt` nor `eop_finals.txt` is
+retrievable -- see the entry above on what the oracle grids do not cover.
