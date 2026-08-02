@@ -15,8 +15,8 @@ port's output against a reference `swetest` binary built from your source.
 | `gethostname` called with a variable declared only under `HPUNIX` | **fixed on `master`** | `#ifndef _WINDOWS` guard |
 | `spmoon` used but never declared | **fixed on `master`** | `22cfd73` |
 
-Verified against `master` as fetched on 2 August 2026. Both fixes are on `master` only; neither is
-in any tag.
+Verified against `master` as fetched on 2 August 2026, and since released in `v2.10.3bfinal`
+(`f4dcd18e`) -- see the update at the end of this note.
 
 ## The two you fixed
 
@@ -111,6 +111,36 @@ surprise you.
 
 ---
 
+## Update, 2 August 2026: `v2.10.3bfinal` released, and one thing we got wrong above
+
+Thank you for cutting the patch release. We have moved our pin from `v2.10.3final` to
+`v2.10.3bfinal` (`f4dcd18e`) and rebuilt against it: `spmoon` is declared, `gethostname` is
+guarded, and `swetest.c` compiles clean of both defects this report was about. Every library
+translation unit (`sweph.c`, `swephlib.c`, `swecl.c`, `swehouse.c`, `swejpl.c`, `swehel.c`,
+`swedate.c`, `swemmoon.c`, `swemplan.c`) and `swephexp.h` are byte-identical to `v2.10.3final`, so
+this did not touch anything our port measures itself against beyond the two fixes and the six
+ephemeris data files that also changed in the same release.
+
+One correction to what we told you above, though. In "One thing worth knowing" we said `do_printf`
+switching to `fprintf(fp, info)` under `_WINDOWS` was "fine on `master`, where the rest of the tree
+expects `_WINDOWS`". We had not actually compiled that branch when we wrote that -- only reasoned
+about it from the diff -- and it was wrong. `fp` (`swetest.c:3958`) is declared nowhere in
+`swetest.c`, on `master` same as on the tag (`git ls-remote` shows `master` and `v2.10.3bfinal` at
+the same commit), so `#define _WINDOWS` activates a second hard compile error the moment the first
+one (`gethostname`) is fixed:
+
+```
+swetest.c(3959): error C2065: 'fp': undeclared identifier
+```
+
+`do_printf` is called by every line `swetest` prints, so this is not a corner case -- it is the
+whole program's output path. We are working around it downstream the same way as before, patching
+a copy: substituting `fputs(info, stdout)` for the `fprintf(fp, info)` call, matching what the
+`#else` branch has always done. Sorry for the bad information last time; we should have compiled
+it before saying it was fine.
+
+---
+
 Reported from the SwissEphNet fork (`https://github.com/Tim81/SwissEphNet`), a C# port of the
-Swiss Ephemeris tracking `v2.10.3final`. Original port by Yan Grenier; fork work by
+Swiss Ephemeris tracking `v2.10.3bfinal`. Original port by Yan Grenier; fork work by
 Timothy van der Ham.

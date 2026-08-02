@@ -1372,28 +1372,34 @@ An ephemeris path long enough to trip the C's guard never got the
 through to `SE.LoadFile` regardless of length. (Historical: `SE.LoadFile` itself is also gone,
 replaced by `SE.OpenBinary` -- see "OnLoadFile superseded" above.)
 
-## swetest.c's missing `spmoon` declaration: fixed on upstream master, not on the pinned tag
+## swetest.c's missing `spmoon` declaration and unguarded `gethostname`: fixed in v2.10.3bfinal; a third defect surfaced by the same fix
 
-`swetest.c` uses `spmoon` at `:1139`, `:1140` and `:1621` (reading `-xv`, then `atoi`-ing it for
-the `v` planetary-moon selector) but never declares it in the pinned `v2.10.3final` tag.
-`Tools/CReference/build-c.ps1` patches a declaration in ahead of `sastno`'s;
-`Programs/SweTest/Program.cs:759` carries the equivalent field for the port; the two are kept at
-the same default value so the C reference binary and the port fail the same way under
-`swetest -pv` with no `-xv`.
+Resolved. `swetest.c` used `spmoon` at `:1139`, `:1140` and `:1621` (reading `-xv`, then `atoi`-ing
+it for the `v` planetary-moon selector) without declaring it, and called `gethostname()`
+unconditionally at `:1282` with the variable it writes into declared only under `#if HPUNIX`
+(`:826-828`) -- both hard compile errors in `v2.10.3final`, the tag this port previously pinned.
+`Tools/CReference/build-c.ps1` used to patch a copy of `swetest.c` at build time to work around
+both; `Programs/SweTest/Program.cs:759` carries the equivalent `spmoon` default for the port.
 
-Astrodienst has since fixed this on the `aloistr/swisseph` `master` branch, past the pinned tag:
-`static char spmoon[AS_MAXCH] = "9501";  // Jupiter Moon Io`, sitting between `sastno` and `shyp`.
-Both this repo's patches now use `"9501"`, matching that fix rather than inventing a value; an
-earlier version of both used `"9001"`, which is not a moon of anything (the planetary-moon
-numbering is `SE_PLMOON_OFFSET`, 9000, plus the host planet's number times 100, so 95xx is a
-Jupiter moon and Io is the first one, `9501`, not `9001`).
+Astrodienst fixed both upstream, released in `v2.10.3bfinal` (`f4dcd18e`), the tag this port now
+pins: `static char spmoon[AS_MAXCH] = "9501";  // Jupiter Moon Io` (matching the value this fork's
+own patch already used -- an earlier version of that patch used `"9001"`, which is not a moon of
+anything; the planetary-moon numbering is `SE_PLMOON_OFFSET`, 9000, plus the host planet's number
+times 100, so 95xx is a Jupiter moon and Io is the first one, `9501`, not `9001`) and
+`#ifndef _WINDOWS` around the `gethostname` block, with `sweodef.h` now defining `_WINDOWS` under
+`#ifdef _WIN32` to match. `build-c.ps1`'s two patches for these are removed, not adapted -- both
+of its own assertions ("spmoon is already declared", "the gethostname call is already inside a
+preprocessor conditional") fired against `f4dcd18e` before removal, exactly as designed.
 
-A future submodule bump past the commit that adds this declaration must drop both patches instead
-of applying them on top. `build-c.ps1` already asserts the declaration is absent before patching
-and fails loudly, naming this exact scenario, if it finds one already there
-(`'swetest.c: spmoon is already declared. The upstream compile defect this patch exists for may no
-longer apply...'`) -- confirmed against the master-branch declaration text directly, which matches
-the assert's pattern and would trip it.
+The same `sweodef.h` change surfaces a third defect, still open as of `f4dcd18e`: `do_printf`
+(`swetest.c:3956-3963`, called by every line `swetest` prints) reads `fprintf(fp, info)` under
+`#ifdef _WINDOWS`, and `fp` is declared nowhere in `swetest.c`. Dead code under `v2.10.3final`
+(`_WINDOWS` was never defined there, so the branch never compiled); a hard `C2065` on any MSVC
+build now that it activates on every Windows build (`_WIN32` is always defined by MSVC). `master`
+and `v2.10.3bfinal` are the same commit, so there is no newer upstream fix to pull.
+`build-c.ps1` patches this one narrowly (`fputs(info, stdout)` substituted for both branches of
+the `#ifdef`, matching the `#else` branch's existing behaviour exactly) and reports it upstream --
+see `docs/upstream/swetest-2.10.03-build-defects.md`.
 
 ## swe_set_jpl_file: the C's AS_MAXCH clamps are not reproduced, and the comments were 2.08's
 

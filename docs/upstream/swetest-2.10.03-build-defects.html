@@ -28,8 +28,9 @@ port's output against a reference <code>swetest</code> binary built from your so
 </tr>
 </table>
 
-<p>Verified against <code>master</code> as fetched on 2 August 2026. Both fixes are on
-<code>master</code> only; neither is in any tag.</p>
+<p>Verified against <code>master</code> as fetched on 2 August 2026, and since released in
+<code>v2.10.3bfinal</code> (<code>f4dcd18e</code>) &mdash; see the update at the end of this
+note.</p>
 
 <h2>The two you fixed</h2>
 
@@ -130,7 +131,41 @@ exactly that reason, and mention it only so a backport does not surprise you.</p
 
 <hr>
 
+<h2>Update, 2 August 2026: <code>v2.10.3bfinal</code> released, and one thing we got wrong above</h2>
+
+<p>Thank you for cutting the patch release. We have moved our pin from <code>v2.10.3final</code> to
+<code>v2.10.3bfinal</code> (<code>f4dcd18e</code>) and rebuilt against it: <code>spmoon</code> is
+declared, <code>gethostname</code> is guarded, and <code>swetest.c</code> compiles clean of both
+defects this report was about. Every library translation unit (<code>sweph.c</code>,
+<code>swephlib.c</code>, <code>swecl.c</code>, <code>swehouse.c</code>, <code>swejpl.c</code>,
+<code>swehel.c</code>, <code>swedate.c</code>, <code>swemmoon.c</code>, <code>swemplan.c</code>)
+and <code>swephexp.h</code> are byte-identical to <code>v2.10.3final</code>, so this did not touch
+anything our port measures itself against beyond the two fixes and the six ephemeris data files
+that also changed in the same release.</p>
+
+<p>One correction to what we told you above, though. In "One thing worth knowing" we said
+<code>do_printf</code> switching to <code>fprintf(fp, info)</code> under <code>_WINDOWS</code> was
+"fine on <code>master</code>, where the rest of the tree expects <code>_WINDOWS</code>". We had not
+actually compiled that branch when we wrote that &mdash; only reasoned about it from the diff
+&mdash; and it was wrong. <code>fp</code> (<code>swetest.c:3958</code>) is declared nowhere in
+<code>swetest.c</code>, on <code>master</code> same as on the tag (<code>git ls-remote</code> shows
+<code>master</code> and <code>v2.10.3bfinal</code> at the same commit), so
+<code>#define _WINDOWS</code> activates a second hard compile error the moment the first one
+(<code>gethostname</code>) is fixed:</p>
+
+<pre>
+swetest.c(3959): error C2065: 'fp': undeclared identifier
+</pre>
+
+<p><code>do_printf</code> is called by every line <code>swetest</code> prints, so this is not a
+corner case &mdash; it is the whole program's output path. We are working around it downstream the
+same way as before, patching a copy: substituting <code>fputs(info, stdout)</code> for the
+<code>fprintf(fp, info)</code> call, matching what the <code>#else</code> branch has always done.
+Sorry for the bad information last time; we should have compiled it before saying it was fine.</p>
+
+<hr>
+
 <p>Reported from the SwissEphNet fork
 (<a href="https://github.com/Tim81/SwissEphNet">https://github.com/Tim81/SwissEphNet</a>), a C#
-port of the Swiss Ephemeris tracking <code>v2.10.3final</code>. Original port by Yan Grenier; fork
+port of the Swiss Ephemeris tracking <code>v2.10.3bfinal</code>. Original port by Yan Grenier; fork
 work by Timothy van der Ham.</p>
