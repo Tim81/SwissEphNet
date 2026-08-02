@@ -115,15 +115,46 @@ function Get-DefinedMacros {
     return , @($found)
 }
 
-# *.yml and *.yaml -- GitHub Actions accepts both extensions for a workflow file, and a scan that
-# only looked for *.yml would silently drop coverage of any workflow saved with the other one.
-# Factored out so -SelfTest can exercise it directly rather than only indirectly through the whole
-# gate, matching how Get-RequiredMacros/Get-MacroBearingLines/Test-Parity are each tested on their
-# own below.
+# *.yml and *.yaml, and recursive over the WHOLE .github tree, not just .github/workflows -- see
+# MEDIUM 3's own review: a non-recursive scan of .github/workflows alone cannot see a compile site
+# in a nested workflow (.github/workflows/<subdir>/x.yml) or in a composite action
+# (.github/actions/*/action.yml, a supported, real GitHub Actions file that also carries a .yml
+# extension). Passing the .github directory itself (not .github/workflows) as -WorkflowsDir is
+# what makes this one recursive scan cover both shapes at once, plus every ordinary workflow file,
+# without scanning the same file twice under two different function calls. GitHub Actions accepts
+# both .yml and .yaml for either kind of file, and a scan that only looked for *.yml would silently
+# drop coverage of any file saved with the other extension. Factored out so -SelfTest can exercise
+# it directly rather than only indirectly through the whole gate, matching how
+# Get-RequiredMacros/Get-MacroBearingLines/Test-Parity are each tested on their own below.
 function Get-WorkflowScanFiles {
     param([string] $WorkflowsDir)
-    return @(Get-ChildItem -LiteralPath $WorkflowsDir -File -ErrorAction SilentlyContinue |
+    return @(Get-ChildItem -LiteralPath $WorkflowsDir -File -Recurse -ErrorAction SilentlyContinue |
             Where-Object { $_.Extension -in '.yml', '.yaml' } |
+            ForEach-Object { $_.FullName })
+}
+
+# scripts/*.sh -- MEDIUM 3's own review: a compile site in a shell script under scripts/ (this
+# repository has none today, but nothing stops one being added, e.g. a Linux/macOS-oriented
+# helper alongside the .ps1 scripts) is invisible to a scan that only ever looked at .ps1 files and
+# workflow YAML. Recursive, matching Get-WorkflowScanFiles' own posture -- scripts/ nests scripts
+# under scripts/lib/ already.
+function Get-ShellScriptScanFiles {
+    param([string] $RepoRoot)
+    $scriptsDir = Join-Path $RepoRoot 'scripts'
+    if (-not (Test-Path -LiteralPath $scriptsDir -PathType Container)) { return @() }
+    return @(Get-ChildItem -LiteralPath $scriptsDir -File -Recurse -Filter '*.sh' -ErrorAction SilentlyContinue |
+            ForEach-Object { $_.FullName })
+}
+
+# Any file literally named Makefile, anywhere in the repository this gate controls -- MEDIUM 3's
+# own review names this as a third invisible-site shape alongside composite actions and shell
+# scripts. Excludes external/ (vendored/submodule source this repository does not control, the
+# same exclusion scripts/verify-oracle.ps1's own Get-PortSourceHash applies for the same reason)
+# and bin/obj/.git (build output and VCS internals, never a real compile site).
+function Get-MakefileScanFiles {
+    param([string] $RepoRoot)
+    return @(Get-ChildItem -LiteralPath $RepoRoot -File -Recurse -Filter 'Makefile' -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -notmatch '[\\/](external|bin|obj|\.git)[\\/]' } |
             ForEach-Object { $_.FullName })
 }
 
@@ -181,11 +212,15 @@ function Test-Parity {
 
 $sedump = Join-Path $repoRoot 'Tools/CReference/sedump.c'
 $build208 = 'build-c.ps1'
-$workflowsDir = Join-Path $repoRoot '.github/workflows'
+# .github (not .github/workflows) -- MEDIUM 3: recursive over the whole tree so a workflow saved
+# under a subdirectory and a composite action under .github/actions/*/action.yml are both in
+# scope, not just top-level files directly inside .github/workflows. See Get-WorkflowScanFiles'
+# own comment.
+$githubDir = Join-Path $repoRoot '.github'
 $scan = @(
     (Join-Path $repoRoot 'scripts/run-oracle-dump.ps1')
     (Join-Path $repoRoot 'Tools/CReference/build-c.ps1')
-) + @(Get-WorkflowScanFiles -WorkflowsDir $workflowsDir)
+) + @(Get-WorkflowScanFiles -WorkflowsDir $githubDir) + @(Get-ShellScriptScanFiles -RepoRoot $repoRoot) + @(Get-MakefileScanFiles -RepoRoot $repoRoot)
 
 # Measured, not guessed: scripts/run-oracle-dump.ps1's own $commonFlags line (one site) plus the
 # four clang/gcc invocations in .github/workflows/oracle.yml (two clang -- the strict build and the
@@ -314,6 +349,65 @@ if ($SelfTest) {
             Write-Host "  ok: bypass (a): both .yml and .yaml workflow files are scanned" -ForegroundColor DarkGray
         } else {
             Write-Host "  SELFTEST FAIL: bypass (a): expected 2 files (one .yml, one .yaml), got $($found.Count): $($found -join ', ')" -ForegroundColor Red
+            $failed++
+        }
+
+        # MEDIUM 3: a compile site in .github/workflows/<subdir>/x.yml (a nested workflow) and in
+        # .github/actions/*/action.yml (a real, supported GitHub Actions composite action) are both
+        # invisible to a scan of .github/workflows alone -- neither path sits directly inside that
+        # one directory. Passing the .github directory itself, recursively, is the fix; this
+        # exercises exactly the two shapes the review named, against $githubLab (a fresh .github
+        # tree, not reused from the bypass (a) fixture above so this case does not depend on it).
+        $githubLab = Join-Path $lab 'dot-github'
+        $nestedWorkflowDir = Join-Path $githubLab 'workflows/nested'
+        $compositeActionDir = Join-Path $githubLab 'actions/build-sedump'
+        New-Item -ItemType Directory -Force -Path $nestedWorkflowDir | Out-Null
+        New-Item -ItemType Directory -Force -Path $compositeActionDir | Out-Null
+        'gcc -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -o a sedump.c' |
+            Set-Content -LiteralPath (Join-Path $nestedWorkflowDir 'x.yml') -Encoding utf8
+        'gcc -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -o b sedump.c' |
+            Set-Content -LiteralPath (Join-Path $compositeActionDir 'action.yml') -Encoding utf8
+        $githubFound = @(Get-WorkflowScanFiles -WorkflowsDir $githubLab)
+        $foundNested = @($githubFound | Where-Object { $_ -like '*nested*x.yml' }).Count -eq 1
+        $foundAction = @($githubFound | Where-Object { $_ -like '*actions*action.yml' }).Count -eq 1
+        if ($foundNested -and $foundAction) {
+            Write-Host "  ok: MEDIUM 3: a nested workflow (.github/workflows/<subdir>/x.yml) and a composite action (.github/actions/*/action.yml) are both scanned" -ForegroundColor DarkGray
+        } else {
+            Write-Host "  SELFTEST FAIL: MEDIUM 3: expected both a nested workflow and a composite action file, got $($githubFound.Count) file(s): $($githubFound -join ', ')" -ForegroundColor Red
+            $failed++
+        }
+
+        # MEDIUM 3: scripts/*.sh -- a compile site in a shell script under scripts/ (none exist in
+        # this repository today; nothing stops one being added).
+        $shLab = Join-Path $lab 'scripts-sh'
+        $shScriptsDir = Join-Path $shLab 'scripts'
+        New-Item -ItemType Directory -Force -Path $shScriptsDir | Out-Null
+        'gcc -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -o a sedump.c' |
+            Set-Content -LiteralPath (Join-Path $shScriptsDir 'build.sh') -Encoding utf8
+        $shFound = @(Get-ShellScriptScanFiles -RepoRoot $shLab)
+        if ($shFound.Count -eq 1 -and $shFound[0] -like '*build.sh') {
+            Write-Host "  ok: MEDIUM 3: scripts/*.sh is scanned" -ForegroundColor DarkGray
+        } else {
+            Write-Host "  SELFTEST FAIL: MEDIUM 3: scripts/*.sh -- expected 1 file (build.sh), got $($shFound.Count): $($shFound -join ', ')" -ForegroundColor Red
+            $failed++
+        }
+
+        # MEDIUM 3: a Makefile -- and NOT one that happens to sit under external/ (vendored source
+        # this gate does not control, excluded the same way scripts/verify-oracle.ps1's own
+        # Get-PortSourceHash excludes bin/obj), which this second fixture proves is actually
+        # excluded rather than merely untested.
+        $makeLab = Join-Path $lab 'makefile-scan'
+        New-Item -ItemType Directory -Force -Path $makeLab | Out-Null
+        New-Item -ItemType Directory -Force -Path (Join-Path $makeLab 'external/some-vendored-lib') | Out-Null
+        'gcc -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -o a sedump.c' |
+            Set-Content -LiteralPath (Join-Path $makeLab 'Makefile') -Encoding utf8
+        'gcc -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -o vendored sedump.c' |
+            Set-Content -LiteralPath (Join-Path $makeLab 'external/some-vendored-lib/Makefile') -Encoding utf8
+        $makeFound = @(Get-MakefileScanFiles -RepoRoot $makeLab)
+        if ($makeFound.Count -eq 1 -and $makeFound[0] -notmatch '[\\/]external[\\/]') {
+            Write-Host "  ok: MEDIUM 3: a root Makefile is scanned, one under external/ is excluded" -ForegroundColor DarkGray
+        } else {
+            Write-Host "  SELFTEST FAIL: MEDIUM 3: Makefile scan -- expected exactly 1 file (not under external/), got $($makeFound.Count): $($makeFound -join ', ')" -ForegroundColor Red
             $failed++
         }
 
