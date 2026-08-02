@@ -416,18 +416,31 @@ foreach ($c in $DiffGeoHelCases) {
 # range via swe_get_current_file_data), -ep (extra output precision), -tpm (SEFLG_TEST_PLMOON),
 # -sidbit<N> (extra sidereal-mode bits, paired with -sid so the bit is visible in output).
 #
-# LIM and LIM_PLANET both hit -lim but take different branches of swetest.c's per-body ifno
-# lookup (swetest.c:1661-1671, v2.10.3bfinal): LIM's -xs433 is ipl > SE_AST_OFFSET, so ifno stays
-# the default 3 (asteroid file) on both sides of the ifno rewrite this port's show_file_limit
-# block absorbed. LIM_PLANET's -p2 (Mercury) hits ifno=0 (planet file, sepl*.se1) instead, the
-# branch that was unreachable before Program.cs:2049 stopped gating this block on
-# `ipl > SE_AST_OFFSET`; a single-asteroid grid never exercised it, which is how the port
-# printed no "range" line at all for every planet body until this row existed.
+# The four LIM* cases cover all four branches of swetest.c's per-body ifno lookup
+# (swetest.c:1661-1671, v2.10.3bfinal), which selects which of the four loaded ephemeris files
+# swe_get_current_file_data reports on. Each branch names a different file, so a body landing in
+# the wrong one is visible in the output rather than silent:
+#
+#   ifno=3  LIM         -ps -xs433   ipl > SE_AST_OFFSET, the default   se00433s.se1
+#   ifno=0  LIM_PLANET  -p2          Sun, or Mercury..below Chiron      sepl_18.se1
+#   ifno=1  LIM_MOON    -p1          Moon                               semo_18.se1
+#   ifno=2  LIM_AST     -pD          Chiron..Vesta                      seas_18.se1
+#
+# LIM_PLANET's branch was unreachable before Program.cs:2049 stopped gating this block on
+# `ipl > SE_AST_OFFSET`; a single-asteroid grid never exercised it, which is how the port printed
+# no "range" line at all for every planet body until that row existed. LIM_MOON and LIM_AST close
+# the same hole for the other two branches: with only LIM and LIM_PLANET present, a body routed to
+# the wrong one of semo/seas would have reported a plausible-looking range from the wrong file
+# with nothing in the grid to contradict it. Note also that LIM alone is weak evidence on its own
+# terms -- se00433s.se1 is not a file this repo ships, so that row pins the not-found shape (a
+# zeroed range plus an error line), not a loaded-file one.
 # ---------------------------------------------------------------------------------------
 
 $New210FlagCases = @(
     @{ Id = 'LIM'; Args = '-ps -xs433 -lim' }
     @{ Id = 'LIM_PLANET'; Args = '-p2 -lim' }
+    @{ Id = 'LIM_MOON'; Args = '-p1 -lim' }
+    @{ Id = 'LIM_AST'; Args = '-pD -lim' }
     @{ Id = 'EP'; Args = '-p0 -ep' }
     @{ Id = 'TPM'; Args = '-p1 -tpm' }
     @{ Id = 'SIDBIT'; Args = '-p0 -sid1 -sidbit256' }
