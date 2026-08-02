@@ -51,15 +51,18 @@ name: Oracle build gates
 # report the drift, do not gate on it. Everything before it in that job still gates: the gitlink
 # assertion, the submodule checkout, the 2.08 sdist fetch, build-c.ps1's compile.
 #
-# macos-exactness and linux-exactness are the other two. Each now carries a second comparison, an
-# AOT-published build of the same driver logic OracleDump.exe runs under the JIT (Tools/
-# OracleDumpAot, added for this leg -- see that project's own header for why it cannot just
-# ProjectReference SwissEphNet.csproj the way OracleDump.csproj does). That comparison's own step
-# carries continue-on-error, diagnostic rather than gating on first landing: it is a combination
-# (NativeAOT codegen x this platform's libm x this exact runner image) that has never executed in
-# CI before, unlike the JIT comparison next to it, which already has. See each job's own comment
-# for what was measured locally before this leg existed, and what turns this from diagnostic to
-# gating.
+# macos-exactness and linux-exactness each carry a second comparison, an AOT-published build of the
+# same driver logic OracleDump.exe runs under the JIT (Tools/OracleDumpAot, added for this leg --
+# see that project's own header for why it cannot just ProjectReference SwissEphNet.csproj the way
+# OracleDump.csproj does). Both GATE. They landed with continue-on-error, on the reasoning that a
+# combination never executed in this CI before -- NativeAOT codegen x this platform's libm x this
+# exact runner image -- should not be able to fail the branch on its first run. Both then reported
+# AOT BIT-IDENTICAL against their own platform's C reference (22,289 analytic and 3,280 files rows,
+# 0 FMA instructions in either published binary), which is the promotion criterion those comments
+# set out, so the flags are gone and swetest-diff is once again the only step-level
+# continue-on-error in this file. macOS is the one that needed asking: arm64 carries fmadd in its
+# base instruction set, so unlike x86-64 there is no baseline to raise before a compiler can
+# contract a multiply-add, and nothing passes ILC an -fno-builtin equivalent.
 #
 # All three flags -- oracle-dump's now-removed one, swetest-diff's, and the two AOT-comparison
 # ones -- sat at job level before they sat on a single step, and at job level each was swallowing
@@ -180,7 +183,7 @@ jobs:
           # is the historical bug. Update this list, and the header comment above, together and
           # deliberately when that changes; this check exists so the two cannot drift apart
           # silently.
-          $expectedStepLevelFlags = @('swetest-diff', 'macos-exactness', 'linux-exactness')
+          $expectedStepLevelFlags = @('swetest-diff')
 
           $extraJobLevel = @($jobLevelFlags | Sort-Object -Unique)
           $extraStepLevel = @($stepLevelFlags | Where-Object { $_ -notin $expectedStepLevelFlags } | Sort-Object -Unique)
@@ -1081,11 +1084,12 @@ jobs:
       # reference an AOT binary built and run on this machine can be measured against is a C
       # reference also built and run on this same machine, in this same job.
       #
-      # Diagnostic, not gating -- see the comment above this section for the full reasoning and the
-      # promotion criterion.
-      - name: Compare the AOT binary against the C reference, bit for bit (diagnostic -- see job comment above)
+      # Gating. It landed diagnostic, on the reasoning that a combination never run in this CI
+      # before -- NativeAOT codegen, this platform's libm, this runner image -- should not be able
+      # to fail the branch on its first execution. It then passed clean on this runner image, so
+      # the promotion criterion that comment set out is met and continue-on-error is gone.
+      - name: Compare the AOT binary against the C reference, bit for bit
         shell: bash
-        continue-on-error: true
         run: |
           set +e
           rc=0
@@ -1371,13 +1375,11 @@ jobs:
       # dump-net.tsv or dump-net-files.tsv, for the same platform-specificity reason macos-
       # exactness's own copy of this comment gives.
       #
-      # Diagnostic, not gating -- see the comment above this section for the full reasoning and the
-      # promotion criterion (identical to macos-exactness's own: pass clean on this runner image at
-      # least once, then drop continue-on-error and remove this job's name from
-      # header-flags-check's $expectedStepLevelFlags).
-      - name: Compare the AOT binary against the C reference, bit for bit (diagnostic -- see job comment above)
+      # Gating, promoted on the criterion macos-exactness's own copy of this comment set out: pass
+      # clean on this runner image at least once, then drop continue-on-error and remove the job's
+      # name from header-flags-check's $expectedStepLevelFlags. Both were done together.
+      - name: Compare the AOT binary against the C reference, bit for bit
         shell: bash
-        continue-on-error: true
         run: |
           set +e
           rc=0
