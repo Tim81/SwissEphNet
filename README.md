@@ -285,8 +285,11 @@ field by field against Astrodienst's own C, built from the same source and run a
 ephemeris files. On Windows (MSVC) and Linux (gcc), all 25,540<!--doccount:grid-total-combined--> rows in that comparison (22,289<!--doccount:grid-analytic-total-->
 calls that need no ephemeris file plus 3,251<!--doccount:grid-files-total--> that read the shipped `.se1` files) come back
 bit-identical, not merely close; the tracked difference lists for both are empty. macOS (clang,
-arm64) matches too, once clang is told not to substitute its own math builtins for individual libm
-calls (`-fno-builtin`). None of that proves agreement between platforms: comparing the port's own
+arm64) matched at an earlier, smaller grid size once clang was told not to substitute its own math
+builtins for individual libm calls (`-fno-builtin`) -- see the table below for exactly what is and
+is not re-verified against the current 25,540-row grid; unlike Windows and Linux, macOS cannot be
+measured outside its own CI runner, so this section does not claim a current macOS number. None of
+that proves agreement between platforms: comparing the port's own
 frozen output, generated on Windows and on Linux from the same commit, finds 66,342 of 3,547,367
 compared fields differing at all, 5,394 of them beyond the shipped tolerance. That divergence is
 each platform's own math library disagreeing with itself in the last few bits, the same thing two
@@ -601,8 +604,8 @@ platform:
 | Platform | C reference | Result |
 |---|---|---|
 | Windows x64 | MSVC 19.51, `/O2 /fp:precise /MD` | 25,540<!--doccount:grid-total-combined--> of 25,540 rows bit-identical (gated) |
-| Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | 20,532 of 20,532 rows bit-identical at last CI run (gated; not yet re-run against the 25,540-row grid) |
-| macOS arm64 | clang, `-O2 -ffp-contract=off -fno-builtin` | 20,532 of 20,532 rows bit-identical at last CI run (gated; not yet re-run against the 25,540-row grid) |
+| Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | 25,540 of 25,540 rows bit-identical (gated; also confirmed by a full local replay against this grid: 22,289 analytic rows, sha256 `41f84577d86e296f86ba06444002977c`, and 3,251 files rows, sha256 `900308e9acd05d48dd846cd778f7a90a`, both bit-identical) |
+| macOS arm64 | clang, `-O2 -ffp-contract=off -fno-builtin` | 20,532 of 20,532 rows bit-identical at last CI run (gated by `macos-exactness`; not re-run locally against the current 25,540-row grid -- macOS has no local reproduction path here, so this row is CI's own last result, not a claim made outside it) |
 
 The characterization baseline (`scripts/verify-baseline.ps1`) separately runs on both `net8.0` and
 `net10.0` and reports them field-identical to each other on the platform that generated it. That
@@ -610,7 +613,7 @@ corroborates `net8.0` from a different instrument, but it is a weaker claim than
 self-consistency between two TFMs of this port rather than agreement with the C reference.
 
 "Gated" on the Windows row means `oracle-dump`, the `.github/workflows/oracle.yml` job that
-replays this exact 20,532-row grid, re-runs the comparison end to end on every push and pull
+replays this exact 25,540-row grid, re-runs the comparison end to end on every push and pull
 request and fails the workflow on any mismatch. Three more jobs also run on Windows in that file
 but check different things than this grid: `crt-parity` compares MSVC C against .NET on a fixed
 CRT value table, `c-reference-validate` compares the MSVC C build against pyswisseph 2.10.03, and

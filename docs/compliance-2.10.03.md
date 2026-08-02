@@ -125,11 +125,18 @@ influence when `SE_EPHE_PATH` genuinely is set -- the variable still overrides w
 driver passes, exactly as it overrides a real path, which is `swe_set_ephe_path`'s own documented
 priority, faithfully ported. Second, `AYANAMSA_EX`/`AYANAMSA_EX_UT` rows now OR `SEFLG_MOSEPH` into
 their `iflag`, closing a *different* leak specific to twelve `sid_mode`s
-`swi_get_ayanamsa_ex`'s own guard names (`sweph.c:3031-3045`): those modes resolve their star
-position from a hardcoded built-in table (`get_builtin_star`, `sweph.c:6750-6803`), not
-`sefstars.txt`, but `fixstar_calc_from_struct`'s own `!(epheflag & SEFLG_MOSEPH)` check
-(`sweph.c:6407-6425`) still reached the same `sweph.c:639-640` lazy path when no ephemeris bit was
-set at all. A column-level diff (value columns and retc, not just row count) found only err-column
+`swi_get_ayanamsa_ex`'s own guard names (`sweph.c:3031-3045`): those modes call `swe_fixstar`
+(`sweph.c:7896-7953`, not `swe_fixstar2` -- `swi_get_ayanamsa_ex`'s star/galactic branches call
+`swe_fixstar` directly, e.g. `sweph.c:3051` for `SE_SIDM_TRUE_CITRA`), which resolves their star
+position from a hardcoded built-in table (`get_builtin_star`, `sweph.c:6750-6803`) before it would
+ever fall through to `sefstars.txt`. What still leaked: `swe_fixstar`'s own position calc,
+`swi_fixstar_calc_from_record` (`sweph.c:7613`), calls `main_planet_bary` for Earth's barycentric
+position (`sweph.c:7711-7714`), which -- under the default `SEFLG_SWIEPH`, i.e. without
+`SEFLG_MOSEPH` forced -- opens a planet file via `get_new_segment`'s
+`swi_fopen(..., swed.ephepath, serr)` (`sweph.c:2192`). `swed.ephepath` at that point is whatever
+the driver's own per-row `swe_set_ephe_path` call already resolved it to, honoring
+`SE_EPHE_PATH`'s priority (`sweph.c:1327-1330`) -- the same priority rule as above, reached
+through a file-open path rather than a fresh lazy re-init. A column-level diff (value columns and retc, not just row count) found only err-column
 movement on these rows before the fix, never a value or retc change, so this closes a
 reproducibility gap without changing any value. `swe_get_ayanamsa`/`swe_get_ayanamsa_ut` have no
 `iflag` parameter to carry `SEFLG_MOSEPH` on at all -- `swi_guess_ephe_flag()`

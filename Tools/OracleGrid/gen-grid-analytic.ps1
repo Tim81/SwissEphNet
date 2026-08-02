@@ -681,18 +681,33 @@ $AyanamsaJds = Get-JdSpread -Count 4 -Lo 1000000 -Hi 2600000
 # Read directly off the C body (not assumed from the header declaration): swi_get_ayanamsa_ex's
 # own guard (sweph.c:3031-3045) is not what leaks the environment into these rows.
 # get_builtin_star (sweph.c:6750-6803) hardcodes the star record for exactly the twelve sid_modes
-# that guard names, and swe_fixstar2 (sweph.c:6818-6853) consults it BEFORE
-# search_star_in_list -- so sefstars.txt is never the file that decides the ayanamsa value here.
-# What actually leaks the environment is fixstar_calc_from_struct's OWN
-# !(epheflag & SEFLG_MOSEPH) check on the first non-MOSEPH call in the process (sweph.c:6407-6425,
-# one call deeper than swi_get_ayanamsa_ex's own guard), which reaches sweph.c:639-640's
-# swe_set_ephe_path(NULL) and so SE_EPHE_PATH -- through the same lazy-init mechanism CALC/CALC_UT
-# rows are already protected from by $SEFLG_MOSEPH's own explicit OR, not through sefstars.txt.
-# A column-level diff of the analytic dump with SE_EPHE_PATH set against unset (value columns and
-# retc, not just row count) found only err-column movement on these rows, never a value or retc
-# change. OR-ing SEFLG_MOSEPH into these two funcs' iflag closes that gap directly, rather than
-# adding separate file-backed coverage for a file dependency that get_builtin_star already shows
-# does not exist for these twelve sid_modes.
+# that guard names, and swe_fixstar (sweph.c:7896-7953) -- the function swi_get_ayanamsa_ex's own
+# star/galactic sid_mode branches actually call (e.g. sweph.c:3051 for SE_SIDM_TRUE_CITRA), not
+# swe_fixstar2 -- consults it BEFORE falling through to swi_fixstar_load_record's sefstars.txt
+# path (sweph.c:7927-7937) -- so sefstars.txt is never the file that decides the ayanamsa value
+# here. What actually leaks the environment: swe_fixstar's own position calc,
+# swi_fixstar_calc_from_record (sweph.c:7613), calls main_planet_bary for Earth's barycentric
+# position (sweph.c:7711-7714, needed for parallax/light-deflection/aberration). Under the default
+# SEFLG_SWIEPH (i.e. without SEFLG_MOSEPH forced), that reaches get_new_segment's
+# swi_fopen(ifno, s, swed.ephepath, serr) (sweph.c:2192) -- the same file-open and "not found in
+# PATH" serr mechanism (swi_fopen, sweph.c:2363-2404) that produces the DIR_GLUE-sensitive
+# messages docs/known-issues.md's SE_EPHE_PATH section measures, not a lazy re-init. swed.ephepath
+# at that point is whatever the driver's own per-row swe_set_ephe_path call already resolved it
+# to, honoring SE_EPHE_PATH's priority over the
+# path argument (sweph.c:1327-1330) -- the same priority rule, reached through a file-open path
+# rather than a fresh call to swe_set_ephe_path itself. (swi_fixstar_calc_from_record has its own
+# !(epheflag & SEFLG_MOSEPH) guard too, sweph.c:7633-7635, and its message correctly names
+# "swe_fixstar() or swe_fixstar_ut()" -- the function actually running. swe_fixstar2's parallel
+# guard, in fixstar_calc_from_struct at sweph.c:6407-6427, carries the identical message even
+# though it is reached from swe_fixstar2, not swe_fixstar -- so citing that guard against the real
+# path would have pointed at a message that misnames its own caller; the real path's guard does
+# not have that problem.) A column-level diff of the analytic dump with SE_EPHE_PATH set against
+# unset (value columns and retc, not just row count) found only err-column movement on these rows,
+# never a value or retc change. OR-ing SEFLG_MOSEPH into these two funcs' iflag closes that gap
+# directly, by routing main_planet_bary straight to its Moshier branch (sweph.c:1735-1737), which
+# never reads swed.ephepath or opens a file at all -- rather than adding separate file-backed
+# coverage for a file dependency that get_builtin_star already shows does not exist for these
+# twelve sid_modes.
 $AyanamsaExIflagCombos = @(
     [pscustomobject]@{ Name = '0';     Flag = 0 }
     [pscustomobject]@{ Name = 'NONUT'; Flag = $SEFLG_NONUT }
@@ -978,12 +993,15 @@ foreach ($sidMode in 0..($SidModeSweepCount - 1)) {
         foreach ($combo in $AyanamsaExIflagCombos) {
             # SEFLG_MOSEPH OR-ed in explicitly -- see $AyanamsaExIflagCombos' own comment for why:
             # without it, swi_get_ayanamsa_ex's twelve star/galactic-based sid_modes
-            # (sweph.c:3031-3045) route through fixstar_calc_from_struct and its own
-            # !(epheflag & SEFLG_MOSEPH) check (sweph.c: fixstar_calc_from_struct), which calls
-            # swe_set_ephe_path(NULL) via the sweph.c:639-640 lazy-init path the first time any
-            # non-MOSEPH call runs in the process -- letting SE_EPHE_PATH or the compiled-in
-            # default leak into this row's serr text even though grid-analytic.tsv's own premise is
-            # that no row here touches a file or the environment at all.
+            # (sweph.c:3031-3045) call swe_fixstar (sweph.c:7896-7953), whose own position calc
+            # swi_fixstar_calc_from_record (sweph.c:7613) reaches get_new_segment's
+            # swi_fopen(..., swed.ephepath, serr) (sweph.c:2192) via main_planet_bary under the
+            # default SEFLG_SWIEPH -- letting SE_EPHE_PATH (already resolved into swed.ephepath by
+            # the driver's own per-row swe_set_ephe_path call, sweph.c:1327-1330's priority) leak
+            # into this row's serr text even though grid-analytic.tsv's own premise is that no row
+            # here touches a file or the environment at all. See this variable's own comment above
+            # for the full call chain and why the star position itself never depends on
+            # sefstars.txt.
             $iflag = $SEFLG_MOSEPH -bor $combo.Flag
             $rows.Add((New-AyanamsaExRow -Func 'AYANAMSA_EX' -SidMode $sidMode -Tjd $tjd `
                 -FlagName $combo.Name -IFlag $iflag -T0 0.0 -AyanT0 0.0 -IsUser:$false))
@@ -1243,12 +1261,13 @@ $headerLines = @(
     '# SWISSEPH_HAS_HOUSES_EX2 in both drivers, the same pattern SWISSEPH_HAS_CROSSING already uses.'
     '#'
     '# AYANAMSA_EX/AYANAMSA_EX_UT now OR SEFLG_MOSEPH into every row''s iflag, closing a gap where'
-    '# twelve sid_modes (swi_get_ayanamsa_ex''s own guard, sweph.c:3031-3045) reached'
-    '# fixstar_calc_from_struct''s own epheflag check (sweph.c:6407-6425) with no ephemeris bit set'
-    '# at all, letting SE_EPHE_PATH leak into the row''s err column even though this grid''s whole'
-    '# premise is that no row touches a file or the environment. Measured (see $AyanamsaExIflagCombos'''
-    '# own comment for the exact row-level result): only the err column moved; the star position'
-    '# itself comes from a hardcoded built-in table (get_builtin_star, sweph.c:6750-6803), not'
+    '# twelve sid_modes (swi_get_ayanamsa_ex''s own guard, sweph.c:3031-3045) call swe_fixstar'
+    '# (sweph.c:7896-7953), whose swi_fixstar_calc_from_record (sweph.c:7613) opens a planet file'
+    '# via swed.ephepath (sweph.c:2192) with no ephemeris bit forced, letting SE_EPHE_PATH leak'
+    '# into the row''s err column even though this grid''s whole premise is that no row touches a'
+    '# file or the environment. Measured (see $AyanamsaExIflagCombos'' own comment for the exact'
+    '# row-level result and full call chain): only the err column moved; the star position itself'
+    '# comes from a hardcoded built-in table (get_builtin_star, sweph.c:6750-6803), not'
     '# sefstars.txt, so the fix removes an environment dependency without changing any value.'
     '#'
     '# Lines starting with ''#'' are comments. The first non-comment line is the column-name header'

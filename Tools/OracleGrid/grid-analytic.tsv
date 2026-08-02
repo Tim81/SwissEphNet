@@ -133,12 +133,13 @@
 # SWISSEPH_HAS_HOUSES_EX2 in both drivers, the same pattern SWISSEPH_HAS_CROSSING already uses.
 #
 # AYANAMSA_EX/AYANAMSA_EX_UT now OR SEFLG_MOSEPH into every row's iflag, closing a gap where
-# twelve sid_modes (swi_get_ayanamsa_ex's own guard, sweph.c:3031-3045) reached
-# fixstar_calc_from_struct's own epheflag check (sweph.c:6407-6425) with no ephemeris bit set
-# at all, letting SE_EPHE_PATH leak into the row's err column even though this grid's whole
-# premise is that no row touches a file or the environment. Measured (see $AyanamsaExIflagCombos'
-# own comment for the exact row-level result): only the err column moved; the star position
-# itself comes from a hardcoded built-in table (get_builtin_star, sweph.c:6750-6803), not
+# twelve sid_modes (swi_get_ayanamsa_ex's own guard, sweph.c:3031-3045) call swe_fixstar
+# (sweph.c:7896-7953), whose swi_fixstar_calc_from_record (sweph.c:7613) opens a planet file
+# via swed.ephepath (sweph.c:2192) with no ephemeris bit forced, letting SE_EPHE_PATH leak
+# into the row's err column even though this grid's whole premise is that no row touches a
+# file or the environment. Measured (see $AyanamsaExIflagCombos' own comment for the exact
+# row-level result and full call chain): only the err column moved; the star position itself
+# comes from a hardcoded built-in table (get_builtin_star, sweph.c:6750-6803), not
 # sefstars.txt, so the fix removes an environment dependency without changing any value.
 #
 # Lines starting with '#' are comments. The first non-comment line is the column-name header
