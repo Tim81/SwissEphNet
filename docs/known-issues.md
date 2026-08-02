@@ -1624,3 +1624,71 @@ arithmetic, siblings of `swe_utc_time_zone` (already covered in `datetime`); and
 "none" under this harness's no-files rule -- a one-row, low-value addition, but not a
 zero-value one, since the "no file open" response itself is behavior worth freezing. Recorded as
 a work queue, not fixed here: closing this gap is new matrix coverage, not a tooling defect fix.
+
+## SweJPL rejects a DE file whose constant-name block is not plain ASCII
+
+Found by the third bit-exact oracle grid (`Tools/OracleGrid/grid-jpl.tsv`), the first
+port-versus-C measurement of the `SEFLG_JPLEPH` backend at any level. Full numbers, the data
+file's hashes and the environment are in `Tests/oracle/regenerations-jpl.log`; this section is
+the defect itself.
+
+`swejpl.c` reads the 400 six-byte JPL constant names as a raw *byte* field and checks the *byte*
+count it got back:
+
+```c
+/* swejpl.c:210, and again at :682 in state() */
+nrd = fread((void *) js->ch_cnam, 1, 6*400, js->jplfptr);
+if (nrd != 6*400) return NOT_AVAILABLE;
+```
+
+The port reads the same 2400 bytes but decodes them as text and checks the resulting *character*
+count against the same 2400 (`SweJPL.cs:245-247` in `fsizer`, `:743-745` in `state`):
+
+```csharp
+js.ch_cnam = js.jplfptr.ReadChars(6 * 400) ?? Array.Empty<char>();
+nrd = js.ch_cnam.Length;
+if (nrd != 6 * 400) return Sweph.NOT_AVAILABLE;
+```
+
+`CFile.ReadChars(count)` reads `count` bytes and then decodes them, so its result is `count`
+characters only when every byte decodes to exactly one character. Under the port's UTF-8 default
+(the deliberate one -- see the data-file encoding note in `CONTRIBUTING.md`) a byte above `0x7F`
+either combines with its neighbours or becomes a single replacement character, and the count
+comes back short.
+
+That block is not guaranteed to be ASCII. It is 400 fixed six-byte slots and a DE file names far
+fewer constants than that; whatever sits in the unused tail is not specified. Measured on the two
+files to hand:
+
+| File | Bytes above `0x7F` in the 2400-byte block | Decodes to | Port's guard |
+|---|---|---|---|
+| NASA JPL DE406 (`lnxm3000p3000.406`) | 176 | 2380 chars | fails |
+| Astrodienst `de431.eph` | 0 | 2400 chars | passes |
+
+So `fsizer` returns `NOT_AVAILABLE` for DE406, `open_jpl_file` fails, and `swe_calc` falls back
+through `SEFLG_SWIEPH` to Moshier on every row that needs an ephemeris -- silently, because the
+fallback is the documented behaviour for a JPL file that genuinely is not there. Measured over the
+JPL grid: 1,985 of 2,400 rows differ from the C, 1,860 of them by returning `SEFLG_MOSEPH` where
+the C returns `SEFLG_JPLEPH`.
+
+**This is why nothing had caught it.** The defect is data-dependent, and the only DE file this
+repo's tooling had ever been pointed at is DE431, which is clean ASCII in that block. The DE431
+conformance run recorded in `Tests/conformance/regenerations.log` (2026-07-31, 500 of 538 JPL rows
+passing) therefore exercised a working JPL path and proves nothing about DE406, DE405, DE200 or
+any other file whose unused constant slots happen to hold a high byte.
+
+One further consequence, and the sharpest evidence that the diagnosis is right: `load_dpsi_deps`
+is called from exactly one place in the whole library -- `swe_set_jpl_file`, on the branch where
+the file it just opened reports `jpldenum >= 403` (`sweph.c:1503-1504`). Because the port never
+gets a successful open, it never reaches that branch. `plaus_iflag` (`sweph.c:6121-6141`) turns
+that into a visible, byte-comparable difference in the `serr` column of every `SEFLG_JPLHOR` row:
+the C writes `file eop_1962_today.txt not found; default to SEFLG_JPLHOR_APPROX`
+(`swed.eop_dpsi_loaded == -1`, only ever written by `load_dpsi_deps`), the port writes `you did not
+call swe_set_jpl_file(); default to SEFLG_JPLHOR_APPROX` (`== 0`, the untouched initial value).
+
+Not fixed here. `SwissEphNet/CPort/` is a frozen path; this qualifies as the freeze's one
+permitted exception, since restoring the byte-count semantics makes the port *more* faithful to
+`swejpl.c:210`/`:682`, but that is a porting change owing its own reviewed commit, manifest update
+and re-measurement rather than being folded into the commit that built the measurement.
+`Tests/oracle/known-diff-jpl.tsv` is deliberately left empty, so
+`scripts/verify-oracle.ps1 -Grid Jpl` stays red until it is fixed.
