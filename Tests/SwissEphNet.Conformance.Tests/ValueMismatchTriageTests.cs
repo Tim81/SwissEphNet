@@ -31,7 +31,7 @@ public class ValueMismatchTriageTests
 {
     private const string FileName = "value-mismatch-triage.tsv";
     private static readonly string[] Header =
-        ["suite", "testcase", "iteration", "magnitude_key", "classification", "note", "fields (texp=t.exp expected, port=SwissEphNet output, c=MSVC-built Astrodienst 2.10.03 C output)"];
+        ["suite", "testcase", "iteration", "magnitude_key", "classification", "note", "fields (texp=t.exp expected, port=SwissEphNet output, c=MSVC-built Astrodienst 2.10.03 C output, external/swisseph @ v2.10.3bfinal / f4dcd18e, measured 2026-08-02)"];
 
     private static readonly HashSet<string> AllowedClassifications = new(StringComparer.Ordinal) { "DRIFT", "PORT-DEFECT" };
 
