@@ -592,16 +592,20 @@ does not match, checked by category so a listed row whose difference has changed
 fails the gate.
 
 **This is the one instrument in this document that is not currently clean**, though it is closer
-than it was. `Tests/swetest/known-diff.tsv` carries 13<!--doccount:swetest-known-diff--> rows, all category `OUTPUT-DIFFERS`, so 241
-of 254 argument strings (94.9%) produce output that matches Astrodienst's C exactly. All 13 are
+than it was. `Tests/swetest/known-diff.tsv` carries 15<!--doccount:swetest-known-diff--> rows, all category `OUTPUT-DIFFERS`, so 241
+of 256 argument strings (94.1%) produce output that matches Astrodienst's C exactly. All 15 are
 path-separator or placeholder cosmetics rather than computational divergence: most print an
 ephemeris-file-not-found message that embeds the search path, where the C reports it with `\`
 (`'<ephe-dir>\'`) and the port with `/` (`'<ephe-dir>/'`), or the C reports a literal directory
 where the port reports the `[ephe]` placeholder token this comparison substitutes for the actual
-(machine-specific) ephemeris directory. `NEW_2_10_FLAGS|LIM_PLANET` is the same `\`-vs-`/` DIR_GLUE
-divergence on a file that *is* found: `-lim`'s `range <path>: ... de=441` line embeds the resolved
-path of `sepl_18.se1` itself, not a not-found diagnostic. One further row (`FMT_MULTI|6`) differs
-only in how not-a-number prints: C's `-nan(ind)` against the port's `NaN`.
+(machine-specific) ephemeris directory. The three `NEW_2_10_FLAGS|LIM_*` rows other than `LIM`
+itself are the same `\`-vs-`/` DIR_GLUE divergence on a file that *is* found: `-lim`'s
+`range <path>: ... de=441` line embeds the resolved path of the ephemeris file itself, not a
+not-found diagnostic, and every number on that line agrees. Those three exist because `-lim`
+selects one of four files by body (`swetest.c:1661-1671`), so `LIM_PLANET`, `LIM_MOON` and
+`LIM_AST` pin `sepl_18.se1`, `semo_18.se1` and `seas_18.se1` where `LIM` pins the not-found shape
+of `se00433s.se1`. One further row (`FMT_MULTI|6`) differs only in how not-a-number prints: C's
+`-nan(ind)` against the port's `NaN`.
 
 The three `PLSEL_TRUNCATION` rows that used to sit here were the one real output-shape gap in
 this list, and they are gone. `Programs/SweTest` read `-p<seq>`'s body as a single `char` where

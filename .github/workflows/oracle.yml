@@ -44,7 +44,7 @@ name: Oracle build gates
 # step the same way, added afterwards for the same reason (see Tests/oracle/version-classification*.tsv).
 #
 # swetest-diff is one of three jobs that still exempt one step apiece. It compares the runner's
-# MSVC C against Tests/swetest/known-diff.tsv, which holds 13<!--doccount:swetest-known-diff--> real rows of printed output captured
+# MSVC C against Tests/swetest/known-diff.tsv, which holds 15<!--doccount:swetest-known-diff--> real rows of printed output captured
 # from one specific compiler (external/.c-reference/toolchain.txt records which one) -- a future
 # windows-latest MSVC genuinely can move those without the port changing at all, so that
 # comparison step carries continue-on-error, matching baseline.yml's own verify-baseline-linux job:
@@ -683,7 +683,7 @@ jobs:
           Write-Host "PASS: the committed three-way version classification matches this run's dumps." -ForegroundColor Green
 
   # Partly gating, and unlike oracle-dump above the exemption here is still earned:
-  # Tests/swetest/known-diff.tsv holds 13<!--doccount:swetest-known-diff--> real rows of printed output captured from one specific
+  # Tests/swetest/known-diff.tsv holds 15<!--doccount:swetest-known-diff--> real rows of printed output captured from one specific
   # MSVC, so a runner toolset bump genuinely can move them without this port changing. Everything
   # before the comparison step -- the gitlink assertion, the submodule checkout, the 2.08 sdist
   # fetch and build-c.ps1 -- is a hard failure. Not because those steps are toolchain-independent;
