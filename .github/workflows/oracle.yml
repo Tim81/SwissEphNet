@@ -184,6 +184,69 @@ jobs:
 
           Write-Host "PASS: continue-on-error appears only at step level in $($stepLevelFlags -join ', '), matching the header comment."
 
+  # Pure text parsing, no build, no submodule -- cheap enough to run on every push and pull
+  # request alongside header-flags-check above. Modeled directly on conformance.yml's own
+  # verify-known-fail-log job: Tests/oracle/known-diff*.tsv and version-classification*.tsv had no
+  # CI-side guard at all against a hand edit that bypassed scripts/regenerate-oracle-known-diff.ps1
+  # or scripts/classify-oracle-versions.ps1's own bookkeeping, the same gap that job closed for
+  # Tests/conformance/known-fail.tsv. scripts/verify-oracle-log.ps1 covers all four sidecars in one
+  # run rather than needing four near-identical jobs.
+  #
+  # push and pull_request only, matching conformance.yml's verify-known-fail-log job exactly --
+  # this workflow's own `schedule` trigger (see the `on:` block above) introduces no new commits
+  # for "did this change record itself in the log" to be a question about, and would fail every
+  # Monday for a reason that has nothing to do with the oracle sidecars -- see that job's own
+  # comment on resolve-log-base.ps1's refusal in exactly this situation.
+  verify-oracle-log:
+    name: "Gate: Tests/oracle/*.tsv changes are logged"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # resolve-log-base.ps1 (and the git log range it produces) need history beyond the
+          # default shallow clone -- same reasoning as ci.yml's verify-freeze job.
+          fetch-depth: 0
+
+      - name: Fetch the integration refs the base resolver needs
+        shell: bash
+        run: |
+          git fetch --quiet origin \
+            "+refs/heads/release/2.10.03:refs/remotes/origin/release/2.10.03" \
+            "+refs/heads/main:refs/remotes/origin/main" || true
+
+      - name: Determine base ref for the oracle-log check
+        id: base-ref
+        shell: pwsh
+        run: |
+          # See ci.yml's verify-freeze job (and verify-no-tooling-attribution in the same file) for
+          # why both of these are needed: the explicit pin (without it, a native command's ordinary
+          # non-zero exit inside -WidenPastCancellation would throw NativeCommandExitException the
+          # day the runner's ambient default flips), and the argument-list splat (a bare trailing
+          # token would bind to -IntegrationRef instead of toggling the switch, since
+          # resolve-log-base.ps1 runs as a separate child process here).
+          $PSNativeCommandUseErrorActionPreference = $false
+
+          $resolveArgs = @(
+            '-EventName', '${{ github.event_name }}',
+            '-BeforeSha', '${{ github.event.before }}',
+            '-PrBaseSha', '${{ github.event.pull_request.base.sha }}'
+          )
+          if ('${{ github.event_name }}' -eq 'push') { $resolveArgs += '-WidenPastCancellation' }
+          $base = pwsh scripts/resolve-log-base.ps1 @resolveArgs
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $base = $base.Trim()
+          "sha=$base" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Resolved oracle-log base: $base"
+
+      - name: Self-test the oracle log gate
+        shell: pwsh
+        run: pwsh scripts/verify-oracle-log.ps1 -SelfTest
+
+      - name: Verify Tests/oracle/*.tsv changes are logged
+        shell: pwsh
+        run: pwsh scripts/verify-oracle-log.ps1 -BaseRef '${{ steps.base-ref.outputs.sha }}'
+
   # Gate. Compares MSVC C against .NET, both built on this runner in this run -- see
   # scripts/verify-crt-parity.ps1's own .DESCRIPTION for what it checks; a FAIL here means the
   # bit-exact oracle's own premise has broken, independent of anything sweph.c does. Needs no
