@@ -241,10 +241,26 @@ namespace SwissEphNet.CPort
             if (nrd != 252) return Sweph.NOT_AVAILABLE;
             /* cnam = names of constants */
             //fread((void *) js.ch_cnam, 1, 6*400, js.jplfptr);
-            // swejpl.c:210
-            js.ch_cnam = js.jplfptr.ReadChars(6 * 400) ?? Array.Empty<char>();
-            nrd = js.ch_cnam.Length;
+            // swejpl.c:210-211. fread's element size is 1 here, so its return is a count of
+            // BYTES and the guard below is a byte guard. Reading through ReadChars made it a
+            // character guard instead: ReadChars consumes exactly 6*400 bytes (its own comment
+            // explains why it has to), but it returns the DECODED characters, and any byte
+            // above 0x7F folds a multi-byte sequence into one char. The count then falls short
+            // of 2400 for a file that is perfectly well-formed, and open_jpl_file refuses it.
+            //
+            // Measured on real data: DE406's 400 constant-name slots carry 176 bytes above
+            // 0x7F in the unused tail, so 2400 bytes decode to 2380 characters and every JPL
+            // call silently fell back to Moshier. DE431 has none, decodes 2400 to 2400, and is
+            // the only DE file this repository's tooling had ever opened -- which is why the
+            // defect survived a 12,757-iteration conformance run against it.
+            //
+            // Read the bytes and count the bytes, as the C does. ch_cnam stays char[] to match
+            // the C's char buffer, one char per byte, which is also what its only reader (the
+            // commented-out diagnostic printf near the end of this file) assumes.
+            var cnamBytes = new byte[6 * 400];
+            nrd = js.jplfptr.Read(cnamBytes, 0, 6 * 400);
             if (nrd != 6 * 400) return Sweph.NOT_AVAILABLE;
+            js.ch_cnam = Array.ConvertAll(cnamBytes, b => (char)b);
             /* ss[0] = start epoch of ephemeris
              * ss[1] = end epoch
              * ss[2] = segment size in days */
@@ -739,10 +755,13 @@ namespace SwissEphNet.CPort
                 if (nrd != 252) return Sweph.NOT_AVAILABLE;
                 /* cnam = names of constants */
                 //fread((void *) js.ch_cnam, 1, 2400, js.jplfptr);
-                // swejpl.c:682
-                js.ch_cnam = js.jplfptr.ReadChars(2400) ?? Array.Empty<char>();
-                nrd = js.ch_cnam.Length;
+                // swejpl.c:682-683, the byte-order-swapped twin of the read above. Same fix
+                // and the same reason: fread's element size is 1, so the C counts bytes, and
+                // decoding to characters first made a well-formed DE406 fail the guard.
+                var cnamBytes2 = new byte[2400];
+                nrd = js.jplfptr.Read(cnamBytes2, 0, 2400);
                 if (nrd != 2400) return Sweph.NOT_AVAILABLE;
+                js.ch_cnam = Array.ConvertAll(cnamBytes2, b => (char)b);
                 /* ss[0] = start epoch of ephemeris
                  * ss[1] = end epoch
                  * ss[2] = segment size in days */

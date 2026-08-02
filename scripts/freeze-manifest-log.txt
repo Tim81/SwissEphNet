@@ -273,3 +273,25 @@ b"} where the C gives {"a", ""}); that one is fixed
    too.
    No behaviour change in this entry. SwissEphNet/CPort: 48518 -> 48530 lines, sha256
    91F5C3E6... -> 23B9CDB0....
+14. PR #32 2026-08-02: One fidelity fix, and the first port defect the JPL grid found.
+   SweJPL.cs read the 400 six-byte constant names with ReadChars and compared the result's
+   Length against 2400. swejpl.c:210-211 and :682-683 call fread with an element size of 1, so
+   its return is a count of BYTES and both guards are byte guards. ReadChars consumes exactly
+   2400 bytes (CFile.cs documents why it must) but returns the DECODED characters, and any
+   byte above 0x7F folds a multi-byte sequence into a single char, so the count falls short of
+   2400 for a well-formed file and open_jpl_file refuses it.
+   Data-dependent, which is why nothing caught it. DE406 carries 176 bytes above 0x7F in the
+   unused tail of its constant-name block, so 2400 bytes decode to 2380 characters and every
+   JPL call silently fell back to Moshier. DE431 carries none, decodes 2400 to 2400, and was
+   the only DE file this repository had ever opened -- including the 12,757-iteration
+   conformance run that passed 500 of 538 JPL rows against it.
+   Fixed by reading the bytes and counting the bytes at both sites, via CFile.Read(byte[], int,
+   int), which was already public. ch_cnam stays char[] at one char per byte, matching the C's
+   char buffer and the assumption of its only reader, the commented-out diagnostic printf near
+   the end of the file.
+   Measured against the MSVC-built C over Tools/OracleGrid/grid-jpl.tsv with NASA's DE406
+   (sha256 b23009e208d625c5e830c4cb67e6313d7f9eadeffe17292a7471f33250c9342d): before, 415 of
+   2,400 rows bit-identical and 1,985 differing, all traced to this one cause; after, 2,400 of
+   2,400 bit-identical, 0 differing. The analytic and files grids are untouched, dump-net.tsv
+   b36a007e... and dump-net-files.tsv f3fa03aa... byte-identical either side of the change.
+   SwissEphNet/CPort: 48530 -> 48549 lines, sha256 23B9CDB0... -> EBBE1B4F....
