@@ -1726,9 +1726,12 @@ retrievable -- see the entry above on what the oracle grids do not cover.
 
 ## The analytic grid's recorded artefacts depend on SE_EPHE_PATH; the port and the C do not disagree
 
-Second correction of this section. The first version claimed the ayanamsa values moved; they never
-did. The second claimed a C-versus-port divergence; there is none. Both errors and how they were
-reached are recorded at the end, because the same mistake produced both.
+Third update to this section, and the first that closes something rather than correcting a prior
+mistake. The first version claimed the ayanamsa values moved; they never did. The second claimed a
+C-versus-port divergence; there is none. Both errors and how they were reached are recorded further
+down, because the same mistake produced both. This update replaces "The residual, which is real and
+is not closed" below with what actually closed it, kept under its own heading rather than rewritten
+out of the record.
 
 ### What is true, measured on the current tree
 
@@ -1767,23 +1770,89 @@ all. `git diff --name-only` across the two commits lists only `Tools/`, `scripts
 `.github/` and the regenerated grid and classification artefacts. Nothing under `SwissEphNet/`.
 A defect in `SwissEphNet/CPort/` cannot be fixed by editing a driver.
 
-### The residual, which is real and is not closed
+### The residual that was open, and is now closed: both drivers clear their own SE_EPHE_PATH
 
-The 621 rows are still environment-sensitive, and the sentinel path cannot close that.
+The 621 rows were still environment-sensitive, and the sentinel path alone could not close that.
 `swe_set_ephe_path` gives the environment variable priority over the path it was passed
-(`sweph.c:1327`), so an exported `SE_EPHE_PATH` overrides the sentinel on both sides. The drivers'
-own comments say so rather than implying otherwise.
+(`sweph.c:1327`), so an exported `SE_EPHE_PATH` overrode the sentinel on both sides. Worse, that
+priority is not specific to the sentinel: it applies exactly as much when a real, explicit
+`ephe-dir` is passed, which is grid-files.tsv's normal case, not grid-analytic.tsv's. Measured on
+grid-files.tsv (3,251 rows, the grid CI actually gates) with the explicit ephe-dir still passed
+and `SE_EPHE_PATH` pointed at an empty directory: **2,223 rows changed, 2,219 of them in value
+columns.** That is not a reproducibility footnote, it is the gated grid silently reading from a
+contributor's own directory instead of `external/swisseph/ephe` -- and since both `sedump.c` and
+`Tools/OracleDump/Program.cs` were equally hijacked, they still agreed with each other, so
+`verify-oracle` stayed green while measuring the wrong data.
 
-The consequence is bounded and worth stating exactly: `verify-oracle` is unaffected, because both
-sides move together and are compared against each other. What is affected is reproducibility of
-the *recorded artefacts* -- `dump-c-2.10.03.tsv`'s SHA-256, and the classification derived from it,
-hold only on a machine whose environment matches the one that produced them.
+Both drivers now clear `SE_EPHE_PATH` from their own process before any row runs --
+`Tools/CReference/sedump.c`'s `main()` (`_putenv_s`/`unsetenv`, platform-guarded) and
+`Tools/OracleDump/Program.cs`'s `Main` (`Environment.SetEnvironmentVariable("SE_EPHE_PATH", null)`)
+-- so `getenv("SE_EPHE_PATH")` inside `swe_set_ephe_path` (`sweph.c:1327-1330`, ported faithfully
+at `SwissEphNet/CPort/Sweph.cs:1569-1583`) returns nothing regardless of what either process
+inherited, and the path argument each driver actually passes is what governs. This is a
+driver-level change made from outside `swe_set_ephe_path`, not an edit to it: that function stays
+a frozen, faithful transliteration, priority check included.
 
-Two of the four funcs cannot be fixed by a flag. `swe_get_ayanamsa(double tjd_et)` and
-`swe_get_ayanamsa_ut(double tjd_ut)` take no `iflag` parameter at all (`swephexp.h:758-759`), so
-there is nothing to OR `SEFLG_MOSEPH` into; the ephemeris is chosen internally. Closing those
-would mean either clearing the variable in the drivers before the analytic leg, or accepting and
-documenting the sensitivity.
+Measured, both directions:
+
+- **Inert on a clean machine.** With `SE_EPHE_PATH` unset, `dump-c-2.10.03.tsv`, `dump-net.tsv`,
+  `dump-c-2.10.03-files.tsv` and `dump-net-files.tsv` are byte-identical before and after this
+  change (same SHA-256 for each of the four, both grids).
+- **Closes the hijack.** With `SE_EPHE_PATH` pointed at an empty directory and the real
+  `ephe-dir` still passed on the command line, the files grid now produces the same bytes
+  (matching SHA-256) as the unset case, on both drivers -- the 2,223-row change above is gone.
+
+Two of the four ayanamsa-adjacent funcs the 621-row figure covers could not have been fixed by an
+`iflag` alone: `swe_get_ayanamsa(double tjd_et)` and `swe_get_ayanamsa_ut(double tjd_ut)` take no
+`iflag` parameter at all (`swephexp.h:758-759`), so there was nothing to OR `SEFLG_MOSEPH` into;
+the ephemeris is chosen internally. Clearing the variable in both drivers, rather than trying to
+route around it per call, is what actually closes those two.
+
+What this does not close: it clears the variable in each driver's own process only, using
+`_putenv_s`/`unsetenv` (C) or `Environment.SetEnvironmentVariable(name, null)` (.NET) -- none of
+which touch the parent shell's or CI runner's own environment, only the child process's copy of
+it. It also does not reach `swetest.exe`, a separate binary built by `Tools/CReference/build-c.ps1`
+and exercised only by `scripts/verify-swetest-diff.ps1`, not by either oracle driver -- a
+`SE_EPHE_PATH` set on a machine running the swetest text diff still resolves against that variable
+exactly as `sweph.c:1327-1330` always intended.
+
+### DIR_GLUE's consequence under a hijacked configuration, newly measured
+
+The other known, deliberate divergence in this file ("DIR_GLUE fixed: CPort/Sweph.cs:2634 was a
+mis-transliteration") is *not* touched by the fix above and must not be. But the hijacked
+configuration used to measure the fix also measured DIR_GLUE's consequence for the first time:
+under `SE_EPHE_PATH` pointed at an empty directory (files grid, before the env-clearing fix), the
+C and the port disagree on **1,738 of 3,251 rows -- all 1,738 in the `err` column, zero in any
+value column, zero in `retc`.**
+
+Of those 1,738, character-diffing each pair of `err` strings splits them two ways:
+
+- **1,474 rows are a pure separator swap**, and nothing else: every one of the 1,474 diffs to
+  exactly one `difflib` replace operation, the C side's escaped `\\` (one literal backslash, from
+  `emit_escaped`/`EscapeErr` doubling it for TSV safety) against the port's `/`, with the rest of
+  the string -- including every other separator in the same path -- character-for-character
+  identical on both sides. This is the backslash-versus-slash split the "DIR_GLUE fixed" section
+  already documents (`external/swisseph/sweodef.h:304` defines `/` under `UNIX_FS`, `:319` defines
+  `\\` otherwise; `SwissEphNet/SwissEph.sweodef.h.cs:192` hardcodes `/` for every platform, since
+  one assembly ships to Linux and macOS too, where `\\` is not a separator at all). `sweph.c:2400`
+  (`swi_fopen`'s "not found in PATH" message) embeds `ephepath` as stored by `swe_set_ephe_path`,
+  which appends exactly one trailing `DIR_GLUE` character (`sweph.c:1335-1337`) -- that one
+  appended character is the entire diff. Both sides fail to find the file identically; only the
+  spelling of the path they looked in differs.
+- **264 rows are a different pattern this measurement does not explain**: `CALC`/`CALC_UT` rows
+  carrying the `TOPOCTR` or `SIDEREAL` iflag combination, where one side's `err` is empty and the
+  other's carries the full "not found" message -- e.g. case `CALC|0|2195878|TOPOCTR`: C empty,
+  port carries the message; case `CALC|0|2195878|SIDEREAL`: C carries the message, port empty.
+  132 `CALC` and 132 `CALC_UT` rows, split the same way. This is not the DIR_GLUE mechanism (no
+  separator is involved when one side is simply empty) and is not attributed to anything here --
+  flagged as a real, currently-unexplained pattern rather than folded into the DIR_GLUE count it
+  was found alongside.
+
+Clearing `SE_EPHE_PATH` in both drivers, as the section above does, keeps both patterns out of the
+oracle's comparison by construction -- the gated grids never run under a hijacked or nonexistent
+path in the first place -- but it does not and should not paper over that the underlying `serr`
+differences are real and would reappear if either driver were ever pointed at a directory that
+does not exist, ephe-dir or SE_EPHE_PATH alike.
 
 ### What the two earlier versions got wrong, and how
 

@@ -100,11 +100,43 @@
  * unconditionally before every row -- SENTINEL_EPHE_DIR when the grid gave no ephe-dir argument,
  * the real ephe-dir otherwise -- so ephe_path_is_set is TRUE from row 1 and every row sees the
  * same, deterministic, guaranteed-nonexistent path regardless of iteration order, CWD or whether
- * "\sweph\ephe\" happens to exist on this machine. See SENTINEL_EPHE_DIR's own comment for what
- * this does NOT close: SE_EPHE_PATH still overrides the sentinel when the environment variable is
- * set, exactly as it would override a real path -- that is swe_set_ephe_path's own documented
- * priority (sweph.c:1326: "environment variable SE_EPHE_PATH has priority"), faithfully ported at
- * SwissEphNet/CPort/Sweph.cs:1569-1583, and not something a driver calling that API can override.
+ * "\sweph\ephe\" happens to exist on this machine. See SENTINEL_EPHE_DIR's own comment for the
+ * separate fix below (CLEAR_INHERITED_SE_EPHE_PATH) that closes the one thing pinning the
+ * sentinel could not: SE_EPHE_PATH overriding it whenever the variable happens to be set in this
+ * process's own environment.
+ *
+ * CLEAR_INHERITED_SE_EPHE_PATH: THIS PROCESS'S OWN SE_EPHE_PATH, NOT ANY OTHER PROCESS'S
+ *
+ * swe_set_ephe_path gives getenv("SE_EPHE_PATH") priority over the path it was passed
+ * (sweph.c:1327-1330: "environment variable SE_EPHE_PATH has priority"), faithfully ported at
+ * SwissEphNet/CPort/Sweph.cs:1569-1583 -- and that priority applies to an explicit, real ephe-dir
+ * argument exactly as much as it applies to SENTINEL_EPHE_DIR above; nothing about "a real
+ * directory was passed" makes swe_set_ephe_path skip the getenv check. Measured on grid-files.tsv
+ * (the grid CI actually gates, with a real ephe-dir passed on the command line and SE_EPHE_PATH
+ * pointed at an empty directory): 2,223 of 3,251 rows change, 2,219 of them in value columns --
+ * a contributor with that variable exported would have this driver silently read from their
+ * directory instead of the one this invocation actually named, both sides would agree because
+ * both sides are equally hijacked, and verify-oracle would stay green while measuring the wrong
+ * data. main() below clears SE_EPHE_PATH from this process's own environment, once, before the
+ * row loop starts and before swe_set_ephe_path is ever called -- so getenv("SE_EPHE_PATH") in
+ * swe_set_ephe_path returns NULL for every row regardless of what this process inherited, and the
+ * path argument (SENTINEL_EPHE_DIR or the real ephe-dir) is what actually governs. This is a
+ * driver-level change made from outside swe_set_ephe_path, not an edit to that function -- it
+ * remains a frozen, faithful transliteration of sweph.c:1315-1350, priority check included.
+ *
+ * What this closes: the recorded dump artefacts (dump-c-2.10.03.tsv, dump-net.tsv, and their
+ * SHA-256s) and the files-grid comparison verify-oracle gates on no longer depend on whether the
+ * machine running this driver happens to have SE_EPHE_PATH exported, for either grid.
+ *
+ * What this does NOT close: it clears the variable in THIS process only, using _putenv_s (POSIX
+ * builds of this same file use unsetenv instead -- see main()) rather than editing the parent
+ * shell's or CI runner's own environment, which a child process cannot do and should not try to.
+ * It also does not reach swetest.exe -- a separate binary, built by this same script from
+ * swetest.c, and exercised only by scripts/verify-swetest-diff.ps1, not by this driver -- so a
+ * SE_EPHE_PATH set on a machine running the swetest text-diff still resolves against that
+ * variable exactly as sweph.c:1327-1330 always intended. Nor does it change swe_set_ephe_path's
+ * own priority for any OTHER caller of this library; it only ever affects what THIS process's own
+ * getenv("SE_EPHE_PATH") returns.
  *
  * INVOCATION
  *
@@ -328,13 +360,15 @@
  * match it: swi_fopen's search fails the same deterministic way regardless of the machine's
  * current directory, whether "\sweph\ephe\" (the compiled-in SE_EPHE_PATH default under MSDOS --
  * swephexp.h:399-408) happens to exist, or which files that default or a stray CWD happen to
- * contain. It does NOT insulate a row from the SE_EPHE_PATH environment variable: swe_set_ephe_path
- * checks getenv("SE_EPHE_PATH") BEFORE looking at the path argument passed to it at all
- * (sweph.c:1327-1330) and uses the environment value instead when it is set, so a caller with
- * SE_EPHE_PATH exported still sees that path, sentinel argument or not -- this fix removes the
- * grid's dependency on the compiled-in default and the process's current directory, not on the
- * environment, which is a real and separate library behavior this driver has no way to override
- * from outside CPort (and must not: swe_set_ephe_path is a frozen transliteration). See
+ * contain. On its own this constant does not insulate a row from the SE_EPHE_PATH environment
+ * variable: swe_set_ephe_path checks getenv("SE_EPHE_PATH") BEFORE looking at the path argument
+ * passed to it at all (sweph.c:1327-1330) and uses the environment value instead when it is set,
+ * so a caller with SE_EPHE_PATH exported would still see that path, sentinel argument or not.
+ * main()'s CLEAR_INHERITED_SE_EPHE_PATH step (see the header comment above) is what closes that
+ * gap now, by clearing the variable from this process's own environment before the row loop
+ * starts -- from outside swe_set_ephe_path, not by editing it, since that function is a frozen
+ * transliteration. This constant's own job stays narrower: removing the grid's dependency on the
+ * compiled-in default and the process's current directory. See
  * scripts/run-oracle-dump.ps1's own sentinel-path measurement for what this does and does not
  * close. */
 #define SENTINEL_EPHE_DIR "swisseph-oracle-sentinel-path?that-cannot-exist"
@@ -1166,6 +1200,24 @@ int main(int argc, char **argv)
     enum grid_mode mode = MODE_ANALYTIC;
     int expected_columns = ANALYTIC_COLUMNS;
     long row_count = 0;
+
+    /* Clears THIS process's own SE_EPHE_PATH before anything else runs, including before argument
+     * parsing needs it -- see CLEAR_INHERITED_SE_EPHE_PATH in the header comment above for the
+     * measurement (2,223 of 3,251 grid-files.tsv rows) that makes this more than defensive. Either
+     * call below leaves a later getenv("SE_EPHE_PATH") in this same process returning NULL:
+     * _putenv_s(name, "") -- an empty value string -- is documented by Microsoft to remove the
+     * variable from the environment, the same outcome unsetenv gives on POSIX, so this is not
+     * relying on sweph.c:1327-1330's own strlen(sp) != 0 half of its guard to treat an empty-but-
+     * present value as absent; the variable is actually gone from this process's environment
+     * block either way. _putenv_s is MSVC, the only compiler this repo's own build scripts use on
+     * Windows; unsetenv is POSIX, for the gcc/clang builds this same source file is also compiled
+     * with -- see this file's own top-of-file comment on why one source serves both. Neither call
+     * touches the parent shell's or CI runner's environment, only this process's own copy of it. */
+#ifdef _WIN32
+    _putenv_s("SE_EPHE_PATH", "");
+#else
+    unsetenv("SE_EPHE_PATH");
+#endif
 
     if (argc < 3 || argc > 5) {
         fprintf(stderr, "Usage: sedump <grid.tsv> <output.tsv> [ephe-dir [jpl-file]]\n");

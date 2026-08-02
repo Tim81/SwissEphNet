@@ -45,8 +45,30 @@
 // ephe-dir is optional; when omitted, every row now pins swe_set_ephe_path to
 // SentinelEpheDir rather than leaving it unset -- see SentinelEpheDir's own comment and
 // sedump.c's identical "THE SENTINEL EPHEMERIS PATH" section for why grid-analytic.tsv's
-// "reproducible on any machine" premise needed this and what it does not close (SE_EPHE_PATH
-// still overrides whatever path this driver passes -- see AttachEpheDir).
+// "reproducible on any machine" premise needed this.
+//
+// CLEARING THIS PROCESS'S OWN SE_EPHE_PATH
+//
+// swe_set_ephe_path gives Environment.GetEnvironmentVariable("SE_EPHE_PATH") priority over the
+// path it was passed (CPort/Sweph.cs:1569-1583, faithfully porting sweph.c:1327-1330's "environment
+// variable SE_EPHE_PATH has priority"), and that priority applies to an explicit, real ephe-dir
+// argument exactly as much as it applies to SentinelEpheDir -- nothing about "a real directory was
+// passed" makes swe_set_ephe_path skip the check. Measured on grid-files.tsv (the grid CI actually
+// gates, with a real ephe-dir passed and SE_EPHE_PATH pointed at an empty directory): 2,223 of
+// 3,251 rows change, 2,219 of them in value columns -- a contributor with that variable exported
+// would have this driver silently read from their directory instead of the one named on the
+// command line, both sides of the oracle would agree because both are equally hijacked, and
+// verify-oracle would stay green while measuring the wrong data. Main clears SE_EPHE_PATH from
+// this process's own environment first thing, before the row loop starts and before
+// swe_set_ephe_path is ever called, using Environment.SetEnvironmentVariable("SE_EPHE_PATH", null)
+// -- which removes the variable for this process only, mirroring sedump.c's _putenv_s/unsetenv --
+// so every later Environment.GetEnvironmentVariable("SE_EPHE_PATH") in this process returns null
+// regardless of what it inherited. This is a driver-level change made from outside
+// swe_set_ephe_path, not an edit to that method: it stays a frozen, faithful transliteration,
+// priority check included. What this does NOT close: it clears the variable in THIS process only
+// -- the parent shell's or CI runner's own environment is untouched -- and it does not reach
+// swetest.exe, a separate binary exercised only by scripts/verify-swetest-diff.ps1, not by this
+// driver.
 //
 // A FRESH SwissEph INSTANCE PER ROW
 //
@@ -83,11 +105,10 @@ internal static class Program
     // two-argument invocation -- see AttachEpheDir's own call site in ProcessRow). Deliberately
     // contains '?', which is not a legal character in a Windows path component, so no real
     // directory can ever match it -- mirrors sedump.c's identical SENTINEL_EPHE_DIR constant and
-    // comment, including what this does NOT close: SE_EPHE_PATH still overrides whatever path is
-    // passed to swe_set_ephe_path (CPort/Sweph.cs:1581-1583 checks the environment variable
-    // before the path argument, faithfully porting sweph.c:1327-1330), so this fix removes the
-    // grid's dependency on the compiled-in default and the process's current directory, not on
-    // the environment.
+    // comment. On its own this constant does not insulate a row from the SE_EPHE_PATH environment
+    // variable -- see the header comment's "CLEARING THIS PROCESS'S OWN SE_EPHE_PATH" section for
+    // what actually closes that gap now. This constant's own job stays narrower: removing the
+    // grid's dependency on the compiled-in default and the process's current directory.
     private const string SentinelEpheDir = "swisseph-oracle-sentinel-path?that-cannot-exist";
 
     // x2cross, dir, t0 and ayan_t0 are appended after sid_mode in both headers, not interleaved
@@ -112,6 +133,13 @@ internal static class Program
 
     private static int Main(string[] args)
     {
+        // Clears THIS process's own SE_EPHE_PATH before anything else runs, including before
+        // argument parsing needs it -- see the header comment's "CLEARING THIS PROCESS'S OWN
+        // SE_EPHE_PATH" section for the measurement (2,223 of 3,251 grid-files.tsv rows) that
+        // makes this more than defensive. null (not "") removes the variable outright, mirroring
+        // sedump.c's _putenv_s(name, "")/unsetenv, which both remove rather than merely blank it.
+        Environment.SetEnvironmentVariable("SE_EPHE_PATH", null);
+
         if (args.Length is < 2 or > 4)
         {
             Console.Error.WriteLine("Usage: OracleDump <grid.tsv> <output.tsv> [ephe-dir [jpl-file]]");
