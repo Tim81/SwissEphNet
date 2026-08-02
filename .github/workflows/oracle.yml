@@ -31,9 +31,8 @@ name: Oracle build gates
 # means the same thing on any machine that runs this file and gates the same way conformance.yml
 # and baseline.yml's Windows leg do.
 #
-# Five of the six (crt-parity, c-reference-validate, oracle-dump, macos-exactness,
-# linux-exactness) gate end to end: every step,
-# comparison included, is a hard failure. oracle-dump used to be the exception -- its comparison
+# Three of the six (crt-parity, c-reference-validate, oracle-dump) gate end to end: every step,
+# comparison included, is a hard failure. oracle-dump used to have an exception -- its comparison
 # step against Tests/oracle/known-diff*.tsv carried continue-on-error, on the theory that a
 # different MSVC minor version on a future windows-latest image could move the C side's printed
 # digits without the port changing at all. Commit eec6e44 removed that flag: both known-diff
@@ -44,18 +43,28 @@ name: Oracle build gates
 # the flag was silently absorbing too. That job also gates its later three-way-classification
 # step the same way, added afterwards for the same reason (see Tests/oracle/version-classification*.tsv).
 #
-# swetest-diff is the one job that still exempts its final step. It compares the runner's MSVC C
-# against Tests/swetest/known-diff.tsv, which holds 12<!--doccount:swetest-known-diff--> real rows of printed output captured from
-# one specific compiler (external/.c-reference/toolchain.txt records which one) -- a future
+# swetest-diff is one of three jobs that still exempt one step apiece. It compares the runner's
+# MSVC C against Tests/swetest/known-diff.tsv, which holds 12<!--doccount:swetest-known-diff--> real rows of printed output captured
+# from one specific compiler (external/.c-reference/toolchain.txt records which one) -- a future
 # windows-latest MSVC genuinely can move those without the port changing at all, so that
 # comparison step carries continue-on-error, matching baseline.yml's own verify-baseline-linux job:
 # report the drift, do not gate on it. Everything before it in that job still gates: the gitlink
 # assertion, the submodule checkout, the 2.08 sdist fetch, build-c.ps1's compile.
 #
-# Both flags -- oracle-dump's now-removed one and swetest-diff's remaining one -- sat at job level
-# before they sat on a single step, and at job level each was swallowing steps that should have
-# gated too, so a broken build reported success to the checks API. Each job below says which kind
-# it is and why.
+# macos-exactness and linux-exactness are the other two. Each now carries a second comparison, an
+# AOT-published build of the same driver logic OracleDump.exe runs under the JIT (Tools/
+# OracleDumpAot, added for this leg -- see that project's own header for why it cannot just
+# ProjectReference SwissEphNet.csproj the way OracleDump.csproj does). That comparison's own step
+# carries continue-on-error, diagnostic rather than gating on first landing: it is a combination
+# (NativeAOT codegen x this platform's libm x this exact runner image) that has never executed in
+# CI before, unlike the JIT comparison next to it, which already has. See each job's own comment
+# for what was measured locally before this leg existed, and what turns this from diagnostic to
+# gating.
+#
+# All three flags -- oracle-dump's now-removed one, swetest-diff's, and the two AOT-comparison
+# ones -- sat at job level before they sat on a single step, and at job level each was swallowing
+# steps that should have gated too, so a broken build reported success to the checks API. Each job
+# below says which kind it is and why.
 on:
   # push is listed for the same reason ci.yml and baseline.yml list it: without it a direct push,
   # to main included, ran none of these eight jobs, so the bit-exactness comparison this whole
@@ -162,12 +171,16 @@ jobs:
             }
           }
 
-          # The only job/level combination this workflow currently expects: swetest-diff, at step
-          # level. No job is ever expected to carry continue-on-error at job level -- see the file
-          # header and the job comment above for why that specific placement is the historical
-          # bug. Update this list, and the header comment above, together and deliberately when
-          # that changes; this check exists so the two cannot drift apart silently.
-          $expectedStepLevelFlags = @('swetest-diff')
+          # The job/level combinations this workflow currently expects, all at step level:
+          # swetest-diff (the MSVC-toolchain-sensitive text comparison), and macos-exactness/
+          # linux-exactness (each job's diagnostic AOT-vs-C comparison, added alongside this
+          # comment -- see the file header's own paragraph on why that one step is diagnostic, not
+          # gating, on first landing). No job is ever expected to carry continue-on-error at job
+          # level -- see the file header and the job comment above for why that specific placement
+          # is the historical bug. Update this list, and the header comment above, together and
+          # deliberately when that changes; this check exists so the two cannot drift apart
+          # silently.
+          $expectedStepLevelFlags = @('swetest-diff', 'macos-exactness', 'linux-exactness')
 
           $extraJobLevel = @($jobLevelFlags | Sort-Object -Unique)
           $extraStepLevel = @($stepLevelFlags | Where-Object { $_ -notin $expectedStepLevelFlags } | Sort-Object -Unique)
@@ -981,6 +994,122 @@ jobs:
           done
           exit $rc
 
+      # Everything above this point answers "does the port match Astrodienst's C on macOS arm64",
+      # measured under the JIT -- Tests/SweWin and every other consumer of this package that ships
+      # as ordinary IL runs that way. Timothy's own astrology application does not: it ships .NET
+      # 10 NativeAOT on macOS, and multi-targeting net8.0/net10.0 in the first place was done
+      # specifically to support that. Everything measured above this point is therefore one
+      # unverified inference away from the platform that actually matters -- AOT and the JIT do not
+      # have to produce identical codegen, and .github/workflows/oracle.yml's own comment on
+      # arm64's fmadd (a few lines above this one) is exactly the shape of surprise a different
+      # compiler backend can spring on identical source.
+      #
+      # Measured locally before this leg existed, on the two platforms that could be measured
+      # locally: on both Windows x64 and Linux x64 (container), an AOT-published build of this same
+      # driver logic reproduced the JIT build's own dump byte for byte, at ILC's default codegen
+      # baseline and at -p:IlcInstructionSet=x86-64-v3, and a disassembly of each AOT binary
+      # (dumpbin on Windows, objdump on Linux) found zero FMA instructions at either baseline. macOS
+      # arm64 could not be measured the same way -- there is no macOS runner to hand outside CI --
+      # so this leg is the first time any of it runs here, and it answers a question the x86-64
+      # measurements cannot: arm64's base ISA has fmadd built in (see this job's own comment on
+      # aarch64/gcc 13.3.0's contracted vs. uncontracted result), so an AOT backend contracting a
+      # multiply-add on this architecture, the way clang already does on the C side without
+      # -ffp-contract=off, is a live possibility here in a way it structurally is not on x86-64.
+      #
+      # Tools/OracleDumpAot compiles Tools/OracleDump/Program.cs directly (see that project's own
+      # header for why it cannot ProjectReference SwissEphNet.csproj or OracleDump.csproj the way
+      # the JIT steps above do), so this AOT binary runs the identical driver logic against the
+      # identical SwissEphSharp.dll IL as OracleDump.exe above -- built for net10.0 only, one step
+      # below, since Directory.Build.props's own "Deliberately NOT setting IsTrimmable/
+      # IsAotCompatible" remark and this job's own reproduction of NETSDK1207 agree that publishing
+      # AOT against the multi-target project directly does not work.
+      #
+      # The FMA check below gates: a contraction there has a known, well-understood cause (the same
+      # one this job already asserts against on the C side, a few steps up), not an unknown port
+      # defect, so there is nothing diagnostic about catching it. The value comparison after it does
+      # not gate yet -- continue-on-error sits on that one step only, matching swetest-diff's own
+      # placement discipline (see this file's header comment and header-flags-check's
+      # $expectedStepLevelFlags for why it lives there and nowhere else). This is a combination that
+      # has never executed in CI before this leg landed: NativeAOT codegen, this platform's
+      # libSystem, this exact macos-latest runner image, together. The JIT comparison a few steps up
+      # already has a CI track record; this one does not, and a red result here on first landing
+      # would say nothing yet about whether the cause is a real AOT-vs-JIT divergence or a plumbing
+      # mistake in a workflow step that has run zero times. Promote it to a hard failure (drop the
+      # continue-on-error and add this job's name to $expectedStepLevelFlags's removal instead of
+      # its addition) once it has passed clean on this runner image at least once -- at that point
+      # it carries the same kind of track record the JIT comparison already does, and the same
+      # reasoning that removed oracle-dump's own exemption (commit eec6e44, cited in the file
+      # header) applies here too: an exemption earns its keep only as long as there is a real,
+      # named, toolchain-sensitive reason for it, not indefinitely.
+      - name: Build SwissEphNet for net10.0 only (AOT needs a single-target assembly, not the multi-target project)
+        shell: bash
+        run: dotnet build SwissEphNet/SwissEphNet.csproj -c Release -f net10.0 --nologo -v q
+
+      - name: Publish the AOT oracle driver (osx-arm64, self-contained, NativeAOT)
+        shell: bash
+        run: dotnet publish Tools/OracleDumpAot -c Release -r osx-arm64 --self-contained true -p:PublishAot=true --nologo -v q
+
+      # Same discipline as "Assert no FMA contraction survived" above, applied to the AOT binary
+      # instead of the clang one -- ILC is a different compiler backend from both clang and RyuJIT,
+      # so its own codegen needs its own check rather than trusting the JIT-side measurement (this
+      # job's own "Assert no FMA contraction survived" step) to speak for it. This step gates: see
+      # the comment above this section for why an FMA contraction here is a known cause, not an
+      # unknown one.
+      - name: Assert no FMA instruction reached the AOT binary
+        shell: bash
+        run: |
+          BIN=Tools/OracleDumpAot/bin/Release/net10.0/osx-arm64/publish/OracleDumpAot
+          n=$(otool -tv "$BIN" | grep -cE '\bfmadd|\bfmsub|\bfnmadd|\bfnmsub' || true)
+          echo "fused multiply-add instructions in AOT binary: $n"
+          if [ "$n" != "0" ]; then
+            echo "::error::ILC emitted FMA on arm64 despite the port never calling Math.FusedMultiplyAdd; the AOT binary would not be comparable to the C reference the same way the JIT build above is"
+            exit 1
+          fi
+
+      - name: Replay both grids through the AOT binary
+        shell: bash
+        run: |
+          BIN=Tools/OracleDumpAot/bin/Release/net10.0/osx-arm64/publish/OracleDumpAot
+          "$BIN" Tools/OracleGrid/grid-analytic.tsv aot-analytic.tsv
+          "$BIN" Tools/OracleGrid/grid-files.tsv aot-files.tsv external/swisseph/ephe
+
+      # Against c-analytic.tsv/c-files.tsv, the same clang C reference (built with
+      # -ffp-contract=off -fno-builtin, further up this job) the JIT comparison above already
+      # compares against -- never against Windows-produced dump-net.tsv or dump-net-files.tsv. The
+      # baseline this whole workflow builds is platform-specific by construction (this job's own
+      # top-of-file comment: "does not produce the same numbers and cannot be made to"), so the only
+      # reference an AOT binary built and run on this machine can be measured against is a C
+      # reference also built and run on this same machine, in this same job.
+      #
+      # Diagnostic, not gating -- see the comment above this section for the full reasoning and the
+      # promotion criterion.
+      - name: Compare the AOT binary against the C reference, bit for bit (diagnostic -- see job comment above)
+        shell: bash
+        continue-on-error: true
+        run: |
+          set +e
+          rc=0
+          for g in analytic files; do
+            total=$(wc -l < "aot-$g.tsv")
+            if [ "$total" -le 0 ]; then
+              echo "::error::$g: aot-$g.tsv has $total data row(s) -- refusing to call an empty or near-empty grid bit-identical"
+              rc=1
+              continue
+            fi
+            if cmp -s "c-$g.tsv" "aot-$g.tsv"; then
+              echo "$g: AOT BIT-IDENTICAL to the clang C reference, $total rows"
+            else
+              n=$(diff "c-$g.tsv" "aot-$g.tsv" | grep -c '^<' || true)
+              echo "::warning::$g: $n of $total rows differ between the clang C reference and the AOT-published port (the JIT comparison above this section already gates on this same C reference; this step is diagnostic on first landing -- see the job comment above it)"
+              echo "  by func:"
+              diff "c-$g.tsv" "aot-$g.tsv" | grep '^<' | sed 's/^< //' | cut -d'|' -f1 | sort | uniq -c | sort -rn | sed 's/^/    /'
+              echo "  first differing row, C then AOT:"
+              diff "c-$g.tsv" "aot-$g.tsv" | head -4 | sed 's/^/    /'
+              rc=1
+            fi
+          done
+          exit $rc
+
   # Gate, and the other non-Windows job (macos-exactness above is the first). It answers the
   # same question that job does, for glibc: does the port reproduce Astrodienst's C on the libm
   # most Linux deployments of this port would actually run against? Until this job existed, the
@@ -1188,6 +1317,86 @@ jobs:
               echo "  (the -ffp-contract=off -fno-builtin diagnostic build differs from the port on $m rows)"
               echo "  first differing row, C then port:"
               diff "c-$g.tsv" "net-$g.tsv" | head -4 | sed 's/^/    /'
+              rc=1
+            fi
+          done
+          exit $rc
+
+      # Same leg as macos-exactness's own AOT steps just above, same reasons for existing and for
+      # being diagnostic rather than gating on first landing -- see that job's comment (right after
+      # its own JIT "Compare, bit for bit" step) for the full reasoning, Tools/OracleDumpAot's own
+      # header for why it cannot ProjectReference either multi-targeted project, and this file's
+      # header comment for the project-wide account of every continue-on-error in this workflow.
+      # "Nearly free once macOS exists" (the reason this leg was added here at all) means the
+      # project and the workflow shape are already paid for, not that this platform's own result is
+      # already known: this exact combination -- NativeAOT codegen, glibc, this ubuntu-latest image
+      # -- has not run in this CI before either, so it gets the same treatment macos-exactness's own
+      # AOT leg does, even though the risk that motivated adding AOT coverage at all (arm64's fmadd
+      # being in the base ISA, and Apple's libSystem already disagreeing with separate sin()/cos()
+      # calls once builtins are left on) is specific to macOS and does not carry over here: base
+      # x86-64 has no FMA3 encoding for ILC to contract into any more than gcc did on the C side
+      # (this job's own "Assert no FMA instruction reached the binary" step, above), and this job's
+      # own builtin-substitution measurement already found glibc's sincos() bit-identical to the
+      # port. The FMA step below still gates, on the same "known cause, not an unknown one" grounds
+      # as macos-exactness's copy, and to keep verifying by disassembly rather than by inference from
+      # a risk analysis that happens to point elsewhere on this platform.
+      - name: Build SwissEphNet for net10.0 only (AOT needs a single-target assembly, not the multi-target project)
+        shell: bash
+        run: dotnet build SwissEphNet/SwissEphNet.csproj -c Release -f net10.0 --nologo -v q
+
+      - name: Publish the AOT oracle driver (linux-x64, self-contained, NativeAOT)
+        shell: bash
+        run: dotnet publish Tools/OracleDumpAot -c Release -r linux-x64 --self-contained true -p:PublishAot=true --nologo -v q
+
+      - name: Assert no FMA instruction reached the AOT binary
+        shell: bash
+        run: |
+          BIN=Tools/OracleDumpAot/bin/Release/net10.0/linux-x64/publish/OracleDumpAot
+          n=$(objdump -d "$BIN" | grep -cE '\bvfmadd|\bvfmsub|\bvfnmadd|\bvfnmsub' || true)
+          echo "FMA instructions in AOT binary: $n"
+          if [ "$n" != "0" ]; then
+            echo "::error::ILC contracted a multiply-add despite base x86-64 having no FMA3 encoding; the AOT binary would not be comparable to the C reference the same way the JIT build above is"
+            exit 1
+          fi
+
+      - name: Replay both grids through the AOT binary
+        shell: bash
+        run: |
+          BIN=Tools/OracleDumpAot/bin/Release/net10.0/linux-x64/publish/OracleDumpAot
+          "$BIN" Tools/OracleGrid/grid-analytic.tsv aot-analytic.tsv
+          "$BIN" Tools/OracleGrid/grid-files.tsv aot-files.tsv external/swisseph/ephe
+
+      # Against c-analytic.tsv/c-files.tsv, the same gcc C reference (plain -O2, further up this
+      # job) the JIT comparison above already compares against -- never against Windows-produced
+      # dump-net.tsv or dump-net-files.tsv, for the same platform-specificity reason macos-
+      # exactness's own copy of this comment gives.
+      #
+      # Diagnostic, not gating -- see the comment above this section for the full reasoning and the
+      # promotion criterion (identical to macos-exactness's own: pass clean on this runner image at
+      # least once, then drop continue-on-error and remove this job's name from
+      # header-flags-check's $expectedStepLevelFlags).
+      - name: Compare the AOT binary against the C reference, bit for bit (diagnostic -- see job comment above)
+        shell: bash
+        continue-on-error: true
+        run: |
+          set +e
+          rc=0
+          for g in analytic files; do
+            total=$(wc -l < "aot-$g.tsv")
+            if [ "$total" -le 0 ]; then
+              echo "::error::$g: aot-$g.tsv has $total data row(s) -- refusing to call an empty or near-empty grid bit-identical"
+              rc=1
+              continue
+            fi
+            if cmp -s "c-$g.tsv" "aot-$g.tsv"; then
+              echo "$g: AOT BIT-IDENTICAL to the gcc C reference, $total rows"
+            else
+              n=$(diff "c-$g.tsv" "aot-$g.tsv" | grep -c '^<' || true)
+              echo "::warning::$g: $n of $total rows differ between the gcc C reference and the AOT-published port (the JIT comparison above this section already gates on this same C reference; this step is diagnostic on first landing -- see the job comment above it)"
+              echo "  by func:"
+              diff "c-$g.tsv" "aot-$g.tsv" | grep '^<' | sed 's/^< //' | cut -d'|' -f1 | sort | uniq -c | sort -rn | sed 's/^/    /'
+              echo "  first differing row, C then AOT:"
+              diff "c-$g.tsv" "aot-$g.tsv" | head -4 | sed 's/^/    /'
               rc=1
             fi
           done
