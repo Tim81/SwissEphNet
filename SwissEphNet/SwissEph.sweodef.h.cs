@@ -182,7 +182,7 @@ namespace SwissEphNet
         // fixed: CPort/Sweph.cs:2634 was a mis-transliteration" for why this
         // required (and got) a CPort edit: swi_fopen's ephepath+filename join
         // had been hard-coded to '\\' instead of using DIR_GLUE, unlike the
-        // parallel site in swe_set_ephe_path (Sweph.cs:1514-1515), which
+        // parallel site in swe_set_ephe_path (Sweph.cs:1595-1596), which
         // already used DIR_GLUE correctly. That was a divergence from the C
         // source, not a deliberate platform choice, and fixing it makes the
         // port more faithful rather than less. swi_gen_filename

@@ -66,8 +66,9 @@
 // variable SE_EPHE_PATH has priority"), and that priority applies to an explicit, real ephe-dir
 // argument exactly as much as it applies to SentinelEpheDir -- nothing about "a real directory was
 // passed" makes swe_set_ephe_path skip the check. Measured on grid-files.tsv (the grid CI actually
-// gates, with a real ephe-dir passed and SE_EPHE_PATH pointed at an empty directory): 2,223 of
-// 3,251 rows change, 2,219 of them in value columns -- a contributor with that variable exported
+// gates, with a real ephe-dir passed and SE_EPHE_PATH pointed at an empty directory): 2,246 of
+// 3,280 rows change, 2,241 of them in value columns (re-measured on the current grid; first
+// measured at 2,223 of 3,251, this file's own row count at the time) -- a contributor with that variable exported
 // would have this driver silently read from their directory instead of the one named on the
 // command line, both sides of the oracle would agree because both are equally hijacked, and
 // verify-oracle would stay green while measuring the wrong data. Main clears SE_EPHE_PATH from
@@ -160,7 +161,7 @@ internal static class Program
     {
         // Clears THIS process's own SE_EPHE_PATH before anything else runs, including before
         // argument parsing needs it -- see the header comment's "CLEARING THIS PROCESS'S OWN
-        // SE_EPHE_PATH" section for the measurement (2,223 of 3,251 grid-files.tsv rows) that
+        // SE_EPHE_PATH" section for the measurement (2,246 of 3,280 grid-files.tsv rows, current grid) that
         // makes this more than defensive. null (not "") removes the variable outright, mirroring
         // sedump.c's _putenv_s(name, "")/unsetenv, which both remove rather than merely blank it.
         Environment.SetEnvironmentVariable("SE_EPHE_PATH", null);
@@ -953,9 +954,16 @@ internal static class Program
     // carries therefore measures that directly, not the empty-fnam branch its own label suggests,
     // matching sedump.c's process_get_current_file_data comment for the same finding. When both
     // fields[2] (ipl) and fields[3] (tjd) are non-empty, this method calls swe_calc first
-    // (discarding its own result) to populate ifno 2 (SEI_FILE_MAIN_AST) with real data (this path
-    // also runs for a row targeting ifno 0, but is then redundant with the free ifno 0 above --
-    // kept anyway, at no cost, as a second, less coupled proof); when fields[2] is empty but
+    // (discarding its own result) to populate ifno 2 (SEI_FILE_MAIN_AST) with real data. PRECALC|0
+    // also targets ifno 0, but at a different tjd (2269091) than the Moon-calc's own (J2000,
+    // 2451545.0) -- not a repeat of NODATA|0's ifno-0 slot, an overwrite of it with a different
+    // file: measured directly in dump-net-files.tsv, NODATA|0 reports sepl_18.se1 (tfstart
+    // 2378496.5, tfend 2597795.3157304148, the file J2000 falls in) while PRECALC|0 reports
+    // sepl_12.se1 (tfstart 2159347.5, tfend 2378663.66582972, the file 2269091 falls in). PRECALC|0
+    // is the only row in this grid proving both that a slot gets overwritten, not merely populated
+    // once, and that file selection at a fixed ifno depends on the row's own date -- NODATA|0 alone
+    // proves neither, matching sedump.c's process_get_current_file_data comment for the same
+    // finding (that comment previously called this "redundant"; it is not); when fields[2] is empty but
     // fields[5] (star) and fields[3] are non-empty, it calls swe_fixstar2 first instead, for ifno 4
     // (SEI_FILE_FIXSTAR). ifno 3 (SEI_FILE_ANY_AST) is not reachable with real data by any row in
     // this grid -- see gen-grid-files.ps1's own comment on New-GetCurrentFileDataRow for why -- so

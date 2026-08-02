@@ -414,11 +414,13 @@ jobs:
   # could shift without any change to this port. Neither list records anything toolchain-sensitive
   # any more: known-diff.tsv (analytic) is header-only, and every one of the
   # 22,289<!--doccount:grid-analytic-total--> analytic rows is required to be bit-identical;
-  # known-diff-files.tsv (file-backed) carries 5 recorded SERR entries, all a single deliberate,
-  # platform-portable path-separator choice (DIR_GLUE) rather than a compiler-version-sensitive
-  # ULP, so that list is not "no recorded exceptions" but is still "no recorded toolchain-sensitive
-  # value left to protect" -- every one of the 3,280<!--doccount:grid-files-total--> file-backed
-  # rows is required to be either bit-identical or exactly one of those 5.
+  # known-diff-files.tsv (file-backed) is header-only too, same as known-diff.tsv: it briefly
+  # carried 5 recorded SERR entries, all a single deliberate, platform-portable path-separator
+  # choice (DIR_GLUE) rather than a compiler-version-sensitive ULP, and they are gone now, not
+  # waived -- the returned file path was scoped down to its basename (see
+  # docs/compliance-2.10.03.md's "The last two 2.10.03-only entry points") -- so every one of the
+  # 3,280<!--doccount:grid-files-total--> file-backed rows is required to be bit-identical, full
+  # stop, not "bit-identical or one of 5 recorded exceptions".
   #
   # Second, verify-oracle.ps1 does far more than that comparison. It exits 1 on a missing or
   # malformed provenance sidecar, a missing dump, a failed Tools/OracleVerify build, and
@@ -789,7 +791,8 @@ jobs:
       # the port at that first run's row count; with -fno-builtin both grids were bit-identical.
       # This build keeps that comparison running so a change in it is noticed -- the 62/10 figures
       # are from the grid's size at that first run and have not been re-measured since (the grid
-      # has grown twice since then; see docs/compliance-2.10.03.md's own "macOS is now measured"
+      # has grown four times since then -- 8f601cf, 6d63999, 5ced3b8, 571092e; see
+      # docs/compliance-2.10.03.md's own "macOS is now measured"
       # section for the current row counts and for why they are not re-quoted here). This step's
       # own PASS/FAIL output on every run is the current measurement, not this comment.
       - name: Build a diagnostic C reference with clang's builtins left on
@@ -838,20 +841,18 @@ jobs:
           # macOS ships BSD diff, which has none of GNU's --unchanged-line-format options, so
           # everything below reads plain POSIX diff output.
           for g in analytic files; do
-            # wc -l counts newlines, not lines -- the grid/dump files here have no trailing
-            # newline on the last row, so this undercounts the true row total by one; the `- 1`
-            # below is why $total, not wc -l's own output, is what gets reported and compared
-            # (see the builtins-on comment above for the same off-by-one, and
-            # Tools/OracleGrid/grid-analytic.tsv/grid-files.tsv for the grid's current row
-            # count -- not repeated here as a literal number, since a hardcoded figure in this
-            # comment has already gone stale twice across two later grid additions). Row-count
-            # guard below: without it, two empty files compare
-            # bit-identical (cmp -s on two zero-byte files succeeds) and total comes out -1,
-            # which would report "BIT-IDENTICAL, -1 rows" and exit 0 -- a grid that silently
+            # wc -l counts newlines, not lines. The grid/dump files here DO end with a trailing
+            # newline on the last row (measured: every one of them ends 0a), so wc -l's own output
+            # is the true row total -- no off-by-one adjustment needed or applied here (an earlier
+            # revision of this comment claimed the opposite and subtracted one, which made this
+            # step under-report the true count by one; $total below is wc -l's own output,
+            # unmodified). Row-count guard below: without it, two empty files compare
+            # bit-identical (cmp -s on two zero-byte files succeeds) and total comes out 0,
+            # which would report "BIT-IDENTICAL, 0 rows" and exit 0 -- a grid that silently
             # shrank to nothing would still pass.
-            total=$(($(wc -l < "c-$g.tsv") - 1))
+            total=$(wc -l < "c-$g.tsv")
             if [ "$total" -le 0 ]; then
-              echo "::error::$g: c-$g.tsv has $total data row(s) (wc -l undercounts by one, see comment above) -- refusing to call an empty or near-empty grid bit-identical"
+              echo "::error::$g: c-$g.tsv has $total data row(s) -- refusing to call an empty or near-empty grid bit-identical"
               rc=1
               continue
             fi
@@ -1043,18 +1044,19 @@ jobs:
           set +e
           rc=0
           for g in analytic files; do
-            # wc -l counts newlines, not lines -- the grid/dump files here have no trailing
-            # newline on the last row, so this undercounts the true row total by one (the same
-            # off-by-one macos-exactness's own comment carries -- see its row-count guard for the
-            # full explanation; neither copy hardcodes the grid's current row count, since a
-            # literal figure in this comment has already gone stale twice across two later grid
-            # additions). Row-count guard below: without it, two empty files compare
-            # bit-identical (cmp -s on two zero-byte files succeeds) and total comes out -1,
-            # which would report "BIT-IDENTICAL, -1 rows" and exit 0 -- a grid that silently
+            # wc -l counts newlines, not lines. The grid/dump files here DO end with a trailing
+            # newline on the last row (measured: every one of them ends 0a), so wc -l's own output
+            # is the true row total -- no off-by-one adjustment needed or applied here (an earlier
+            # revision of this comment, and the same claim in macos-exactness's copy, claimed the
+            # opposite and subtracted one, which made this step under-report the true count by
+            # one; $total below is wc -l's own output, unmodified). Row-count guard below: without
+            # it, two empty files compare
+            # bit-identical (cmp -s on two zero-byte files succeeds) and total comes out 0,
+            # which would report "BIT-IDENTICAL, 0 rows" and exit 0 -- a grid that silently
             # shrank to nothing would still pass.
-            total=$(($(wc -l < "c-$g.tsv") - 1))
+            total=$(wc -l < "c-$g.tsv")
             if [ "$total" -le 0 ]; then
-              echo "::error::$g: c-$g.tsv has $total data row(s) (wc -l undercounts by one, see comment above) -- refusing to call an empty or near-empty grid bit-identical"
+              echo "::error::$g: c-$g.tsv has $total data row(s) -- refusing to call an empty or near-empty grid bit-identical"
               rc=1
               continue
             fi

@@ -141,7 +141,9 @@
  * argument exactly as much as it applies to SENTINEL_EPHE_DIR above; nothing about "a real
  * directory was passed" makes swe_set_ephe_path skip the getenv check. Measured on grid-files.tsv
  * (the grid CI actually gates, with a real ephe-dir passed on the command line and SE_EPHE_PATH
- * pointed at an empty directory): 2,223 of 3,251 rows change, 2,219 of them in value columns --
+ * pointed at an empty directory): 2,246 of 3,280 rows change, 2,241 of them in value columns
+ * (re-measured on the current grid; first measured at 2,223 of 3,251, this file's own row count
+ * at the time) --
  * a contributor with that variable exported would have this driver silently read from their
  * directory instead of the one this invocation actually named, both sides would agree because
  * both sides are equally hijacked, and verify-oracle would stay green while measuring the wrong
@@ -1347,11 +1349,16 @@ static void process_pctr(FILE *out, const char *case_id, char *fields[], int sid
  * not the empty-fnam branch its own label suggests -- see New-GetCurrentFileDataRow's own comment
  * in gen-grid-files.ps1. ipl_idx/tjd_idx/iflag_idx (when both ipl and tjd are non-empty) trigger a
  * preceding swe_calc first -- the same three columns CALC already reads -- so this row can also
- * reach ifno 2 (SEI_FILE_MAIN_AST) with real data (PRECALC|0's own preceding swe_calc on ifno 0 is
- * therefore redundant with NODATA|0, not a second, independent proof -- kept anyway, since a row
- * this grid already carries costs nothing to keep and a future change to the Moon-calc's own file
- * dependencies could make it the only one still reaching ifno 0 with real data); star_idx (when
- * both star and tjd are non-empty, and ipl is empty) triggers a preceding swe_fixstar2 instead,
+ * reach ifno 2 (SEI_FILE_MAIN_AST) with real data. PRECALC|0's own preceding swe_calc also targets
+ * ifno 0 (SE_SUN -> SEI_FILE_PLANET), but at a different tjd (2269091) than the Moon-calc above
+ * (J2000, 2451545.0) -- not a repeat of NODATA|0's ifno-0 slot, an OVERWRITE of it with a
+ * different file: measured directly in dump-net-files.tsv, NODATA|0 reports sepl_18.se1
+ * (tfstart 2378496.5, tfend 2597795.3157304148, the file J2000 falls in) while PRECALC|0 reports
+ * sepl_12.se1 (tfstart 2159347.5, tfend 2378663.66582972, the file 2269091 falls in). PRECALC|0 is
+ * the only row in this grid proving both that a slot gets overwritten, not merely populated once,
+ * and that file selection at a fixed ifno depends on the row's own date -- NODATA|0 alone proves
+ * neither. star_idx (when both star and tjd are non-empty, and ipl is empty) triggers a preceding
+ * swe_fixstar2 instead,
  * for ifno 4 (SEI_FILE_FIXSTAR) -- both preceding calls' own retc/serr/xx are discarded here; only
  * what they leave in swed.fidat matters to this row. ifno 3 (SEI_FILE_ANY_AST -- an
  * individually-numbered asteroid or planetary-moon file) is not reachable with real data by any
@@ -1451,7 +1458,7 @@ int main(int argc, char **argv)
 
     /* Clears THIS process's own SE_EPHE_PATH before anything else runs, including before argument
      * parsing needs it -- see CLEAR_INHERITED_SE_EPHE_PATH in the header comment above for the
-     * measurement (2,223 of 3,251 grid-files.tsv rows) that makes this more than defensive. Either
+     * measurement (2,246 of 3,280 grid-files.tsv rows, current grid) that makes this more than defensive. Either
      * call below leaves a later getenv("SE_EPHE_PATH") in this same process returning NULL:
      * _putenv_s(name, "") -- an empty value string -- is documented by Microsoft to remove the
      * variable from the environment, the same outcome unsetenv gives on POSIX, so this is not

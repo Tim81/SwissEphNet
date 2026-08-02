@@ -39,8 +39,9 @@
     and a separate manifest to keep two hand-maintained copies of the same number aligned.
 
     Scope, "at minimum" per the class of defect this exists to catch: known-fail.tsv's total row
-    count and its category split; known-diff.tsv's row count for both oracle grids and for
-    swetest; and both oracle grid row counts together with their per-`func` breakdown. $docFiles
+    count and its category split; known-diff.tsv's row count for all three oracle grids (analytic,
+    files, JPL) and for swetest; and all three oracle grid row counts together with their
+    per-`func` breakdown. $docFiles
     below -- README.md, CONTRIBUTING.md, docs/compliance-2.10.03.md, docs/known-issues.md,
     .github/workflows/oracle.yml, .github/workflows/conformance.yml and .github/workflows/
     baseline.yml -- is the allowlist of files a marker is permitted to live in; a marker anywhere
@@ -194,12 +195,14 @@ function Invoke-DocCountCheck {
         $GroundTruth[$id] = @($knownFailRows | Where-Object { $_.Split("`t")[$catIdx] -eq $category }).Count
     }
 
-    # -- known-diff.tsv row counts: both oracle grids and swetest --------------------------------
+    # -- known-diff.tsv row counts: all three oracle grids and swetest -----------------------------
     $GroundTruth['oracle-known-diff-analytic'] = @(Get-DataRows (Join-Path $RepoRoot 'Tests/oracle/known-diff.tsv')).Count - 1
     $GroundTruth['oracle-known-diff-files'] = @(Get-DataRows (Join-Path $RepoRoot 'Tests/oracle/known-diff-files.tsv')).Count - 1
+    $GroundTruth['oracle-known-diff-jpl'] = @(Get-DataRows (Join-Path $RepoRoot 'Tests/oracle/known-diff-jpl.tsv')).Count - 1
     $GroundTruth['swetest-known-diff'] = @(Get-DataRows (Join-Path $RepoRoot 'Tests/swetest/known-diff.tsv')).Count - 1
 
-    # -- the two oracle grids: total rows and their per-func breakdown ---------------------------
+    # -- the two gated oracle grids: total rows and their per-func breakdown (the JPL grid, opt-in
+    # and ungated, is tracked separately below) ---------------------------------------------------
     function Get-GridFuncCounts {
         param([Parameter(Mandatory)][string] $Path)
         $lines = @(Get-DataRows $Path)
@@ -265,6 +268,17 @@ function Invoke-DocCountCheck {
         Where-Object { $_ -like 'FIXSTAR*' } | ForEach-Object { $filesGrid.ByFunc[$_] } | Measure-Object -Sum).Sum
 
     $GroundTruth['grid-total-combined'] = $analyticGrid.Total + $filesGrid.Total
+
+    # -- the JPL grid: opt-in, not part of grid-total-combined above (it needs a DE file this repo
+    # does not ship, and CI never runs it -- see scripts/run-oracle-dump.ps1's own -JplFile
+    # parameter). Tracked separately so prose citing its row count and per-func breakdown (e.g.
+    # README.md's "The JPL backend also has a bit-exact grid") is checked the same way the two
+    # gated grids are, instead of a hand-copied number going stale the next time the grid grows.
+    $jplGrid = Get-GridFuncCounts (Join-Path $RepoRoot 'Tools/OracleGrid/grid-jpl.tsv')
+    $GroundTruth['grid-jpl-total'] = $jplGrid.Total
+    foreach ($func in $jplGrid.ByFunc.Keys) {
+        $GroundTruth['grid-jpl-func-' + (ConvertTo-DocCountId $func)] = $jplGrid.ByFunc[$func]
+    }
 
     # -- nutation-path split: see Get-GridNonutOptOutCount's own comment for exactly what "opt out"
     # means here. grid-files.tsv has no row carrying SEFLG_NONUT today, but this is still computed
@@ -508,6 +522,7 @@ $knownFailTsv = @(
     "3`tDATA-MISSING`tc")
 $oracleKnownDiffTsv = @('# lab', "func`tnote", "CALC`ta", "CALC`tb")
 $oracleKnownDiffFilesTsv = @('# lab', "func`tnote", "CALC`ta")
+$oracleKnownDiffJplTsv = @('# lab', "func`tnote", "CALC`ta")
 $swetestKnownDiffTsv = @('# lab', "func`tnote", "CALC`ta", "CALC`tb", "CALC`tc", "CALC`td")
 
 # iflag carries SEFLG_NONUT (64) on exactly one row per grid, and one files-grid row leaves iflag
@@ -522,6 +537,12 @@ $gridFilesTsv = @(
     "CALC`t1`t0",
     "FIXSTAR`t1`t", "FIXSTAR`t2`t64",
     "MOONCROSS`t1`t0")
+# The third, opt-in, ungated grid -- small and a different func mix from the two above so a case
+# that only reads grid-analytic.tsv/grid-files.tsv can't accidentally pass by reusing their counts.
+$gridJplTsv = @(
+    '# lab', "func`targ`tiflag",
+    "CALC`t1`t0",
+    "CALC_UT`t1`t0", "CALC_UT`t2`t0")
 
 # A document citing every id the lab's ground truth defines, each with the value those files
 # actually produce. An id with no marker anywhere is a failure in its own right, so this has to be
@@ -537,6 +558,7 @@ $readmeLines = @(
     '- of them NOT-IMPLEMENTED: 0<!--doccount:known-fail-not-implemented-->',
     '- analytic oracle known-diff rows: 2<!--doccount:oracle-known-diff-analytic-->',
     '- file-backed oracle known-diff rows: 1<!--doccount:oracle-known-diff-files-->',
+    '- JPL oracle known-diff rows: 1<!--doccount:oracle-known-diff-jpl-->',
     '- swetest known-diff rows: 4<!--doccount:swetest-known-diff-->',
     '- analytic grid rows: 5<!--doccount:grid-analytic-total-->',
     '- of them CALC: 2<!--doccount:grid-analytic-func-calc-->',
@@ -549,6 +571,9 @@ $readmeLines = @(
     '- file-backed crossing rows: 1<!--doccount:grid-files-crossing-total-->',
     '- the swe_fixstar family: 2<!--doccount:grid-files-fixstar-family-total-->',
     '- both grids together: 9<!--doccount:grid-total-combined-->',
+    '- JPL grid rows: 3<!--doccount:grid-jpl-total-->',
+    '- of them CALC: 1<!--doccount:grid-jpl-func-calc-->',
+    '- of them CALC_UT: 2<!--doccount:grid-jpl-func-calc-ut-->',
     '- analytic rows opting out of nutation via SEFLG_NONUT: 1<!--doccount:grid-analytic-nonut-optout-->',
     '- analytic rows on the default nutation path: 4<!--doccount:grid-analytic-default-nutation-->',
     '- file-backed rows opting out of nutation via SEFLG_NONUT: 1<!--doccount:grid-files-nonut-optout-->',
@@ -577,8 +602,10 @@ function New-DocCountLab {
     Set-LabFile $dir 'Tests/conformance/known-fail.tsv' $knownFailTsv
     Set-LabFile $dir 'Tests/oracle/known-diff.tsv' $oracleKnownDiffTsv
     Set-LabFile $dir 'Tests/oracle/known-diff-files.tsv' $oracleKnownDiffFilesTsv
+    Set-LabFile $dir 'Tests/oracle/known-diff-jpl.tsv' $oracleKnownDiffJplTsv
     Set-LabFile $dir 'Tests/swetest/known-diff.tsv' $swetestKnownDiffTsv
     Set-LabFile $dir 'Tools/OracleGrid/grid-analytic.tsv' $gridAnalyticTsv
+    Set-LabFile $dir 'Tools/OracleGrid/grid-jpl.tsv' $gridJplTsv
     Set-LabFile $dir 'Tools/OracleGrid/grid-files.tsv' $gridFilesTsv
     Set-LabFile $dir 'README.md' $Readme
     if ($ExtraPath) {

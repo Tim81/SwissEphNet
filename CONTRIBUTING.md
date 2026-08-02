@@ -397,13 +397,17 @@ and even a SHA captured correctly would stop existing once the PR merges. A
 PR number does not have either problem. If you do not know the PR number yet,
 leave it blank and fill in the logged line by hand once you do, before the PR
 merges. This applies to every append-only log in the repository, not only
-this one. Seven tracked files carry the convention, and an earlier version of
-this paragraph named five of them, which is how placeholders in the other two
-went unnoticed:
+this one. Eight tracked files carry the convention. An earlier version of
+this paragraph named five of them, which is how placeholders in the other
+two then-untracked ones (`regenerations-files.log`,
+`version-classification-regenerations.log`) went unnoticed; a later revision
+found those two and named seven, which is how a placeholder in the eighth
+(`regenerations-jpl.log`, added by a later entry point) went unnoticed in turn:
 
 - `Tests/conformance/regenerations.log` (this one)
 - `Tests/oracle/regenerations.log`
 - `Tests/oracle/regenerations-files.log`
+- `Tests/oracle/regenerations-jpl.log`
 - `Tests/oracle/version-classification-regenerations.log`
 - `Tests/swetest/regenerations.log`
 - `scripts/freeze-manifest-log.txt` (the freeze manifest's sidecar, checked by
@@ -414,13 +418,14 @@ went unnoticed:
 
 Make filling in a placeholder "no PR yet" entry with the real PR number a
 checked step before merging, not a hoped-for follow-up. To see what is
-outstanding across all seven at once (naming the paths, rather than grepping
+outstanding across all eight at once (naming the paths, rather than grepping
 `Tests` and `scripts` wholesale, because three of the scripts contain the
 placeholder text as the string they emit):
 
 ```powershell
 git grep -c 'no PR yet' -- Tests/conformance/regenerations.log `
     Tests/oracle/regenerations.log Tests/oracle/regenerations-files.log `
+    Tests/oracle/regenerations-jpl.log `
     Tests/oracle/version-classification-regenerations.log `
     Tests/swetest/regenerations.log scripts/freeze-manifest-log.txt `
     Tests/baseline/baseline-2.8.0.2.env.txt

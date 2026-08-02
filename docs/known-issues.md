@@ -244,7 +244,7 @@ if (*s != '\0' && *(s + j - 1) != *DIR_GLUE)
 So `CPort/Sweph.cs:2634`'s hard-coded `"\\"` is a mis-transliteration, not a
 platform-specific deviation from the source. The proof it is an error rather
 than a convention: the parallel site in `swe_set_ephe_path`
-(`Sweph.cs:1514-1515`, corresponding to `sweph.c:1356-1357`, an identical C
+(`Sweph.cs:1595-1596`, corresponding to `sweph.c:1339-1340`, an identical C
 pattern) was transliterated correctly, using `DIR_GLUE`. One site right, one
 site wrong -- CPort's own internal inconsistency is the evidence, independent
 of the C source lookup. Fixing `2634` to use `DIR_GLUE` (keeping
@@ -1332,7 +1332,7 @@ colon-separated path still gets one unsplit entry, which is now a considered cho
 `char`-width accident.
 
 **`DIR_GLUE` is always `'/'`, so the "not found" message reads wrong on Windows.**
-`SwissEph.sweodef.h.cs:153` sets `DIR_GLUE = '/'` unconditionally, for the reasons already recorded
+`SwissEph.sweodef.h.cs:192` sets `DIR_GLUE = '/'` unconditionally, for the reasons already recorded
 above under "DIR_GLUE fixed" -- a single cross-platform value has to pick one separator, and `/` is
 the one both Windows and everything else accept. The C instead compiles a different literal per
 platform (`sweodef.h:304` gives `"/"`, `:319` gives `"\\"` under MSDOS), so on Windows the C joins
@@ -1750,14 +1750,16 @@ retrievable -- see the entry above on what the oracle grids do not cover.
 
 ## The analytic grid's recorded artefacts depend on SE_EPHE_PATH; the port and the C do not disagree
 
-Third update to this section, and the first that closes something rather than correcting a prior
-mistake. The first version claimed the ayanamsa values moved; they never did. The second claimed a
-C-versus-port divergence; there is none. Both errors and how they were reached are recorded further
-down, because the same mistake produced both. This update replaces "The residual, which is real and
-is not closed" below with what actually closed it, kept under its own heading rather than rewritten
-out of the record.
+Fourth update to this section. The first version claimed the ayanamsa values moved; they never
+did. The second claimed a C-versus-port divergence; there is none. Both errors and how they were
+reached are recorded further down, because the same mistake produced both. The third version's own
+heading, "The residual, which is real and is not closed", was rewritten -- not kept alongside --
+once the fix landed; "The residual that was open, and is now closed" below is what replaced it,
+not an addition next to it. This, the fourth update, corrects the section immediately below:
+"What is true, measured on the current tree" stopped being the current tree once the residual
+closed, and had not been re-labeled to say so.
 
-### What is true, measured on the current tree
+### What was true before the residual below closed
 
 Replaying `grid-analytic.tsv` (22,289 rows) through each driver, in three configurations:
 
@@ -1778,8 +1780,13 @@ versus set:
    AYANAMSA 73   AYANAMSA_UT 168   HOUSES_EX 190   HOUSES_EX2 190
 ```
 
-Identical row sets, identical counts, on both drivers. The grid is environment-sensitive; the port
-is not divergent.
+Identical row sets, identical counts, on both drivers, at the time this was measured: the grid was
+environment-sensitive; the port was not divergent. That gap is closed now -- see "The residual that
+was open, and is now closed" below -- and re-measured directly on the current tree with the same
+comparison this table used (`Tools/OracleDump`, `grid-analytic.tsv`, `SE_EPHE_PATH` unset versus
+pointed at `external/swisseph/ephe`, a real populated ephemeris directory): the two dumps are
+byte-identical, sha256 `4ac1a3c0…c7640` both times. 0 of 22,289 rows differ. The grid is no longer
+environment-sensitive.
 
 ### Why the earlier measurement showed 210 rows differing
 
@@ -1801,8 +1808,10 @@ The 621 rows were still environment-sensitive, and the sentinel path alone could
 (`sweph.c:1327`), so an exported `SE_EPHE_PATH` overrode the sentinel on both sides. Worse, that
 priority is not specific to the sentinel: it applies exactly as much when a real, explicit
 `ephe-dir` is passed, which is grid-files.tsv's normal case, not grid-analytic.tsv's. Measured on
-grid-files.tsv (3,251 rows, the grid CI actually gates) with the explicit ephe-dir still passed
-and `SE_EPHE_PATH` pointed at an empty directory: **2,223 rows changed, 2,219 of them in value
+grid-files.tsv (3,280<!--doccount:grid-files-total--> rows, the grid CI actually gates, current
+tree, re-measured after the grid grew from the 3,251 rows this fix was first measured against)
+with the explicit ephe-dir still passed
+and `SE_EPHE_PATH` pointed at an empty directory: **2,246 rows changed, 2,241 of them in value
 columns.** That is not a reproducibility footnote, it is the gated grid silently reading from a
 contributor's own directory instead of `external/swisseph/ephe` -- and since both `sedump.c` and
 `Tools/OracleDump/Program.cs` were equally hijacked, they still agreed with each other, so
@@ -1824,7 +1833,7 @@ Measured, both directions:
   change (same SHA-256 for each of the four, both grids).
 - **Closes the hijack.** With `SE_EPHE_PATH` pointed at an empty directory and the real
   `ephe-dir` still passed on the command line, the files grid now produces the same bytes
-  (matching SHA-256) as the unset case, on both drivers -- the 2,223-row change above is gone.
+  (matching SHA-256) as the unset case, on both drivers -- the 2,246-row change above is gone.
 
 Two of the four ayanamsa-adjacent funcs the 621-row figure covers could not have been fixed by an
 `iflag` alone: `swe_get_ayanamsa(double tjd_et)` and `swe_get_ayanamsa_ut(double tjd_ut)` take no
@@ -1846,12 +1855,13 @@ The other known, deliberate divergence in this file ("DIR_GLUE fixed: CPort/Swep
 mis-transliteration") is *not* touched by the fix above and must not be. But the hijacked
 configuration used to measure the fix also measured DIR_GLUE's consequence for the first time:
 under `SE_EPHE_PATH` pointed at an empty directory (files grid, before the env-clearing fix), the
-C and the port disagree on **1,738 of 3,251 rows -- all 1,738 in the `err` column, zero in any
-value column, zero in `retc`.**
+C and the port disagree on **1,754 of 3,280<!--doccount:grid-files-total--> rows -- all 1,754 in the `err` column, zero in any
+value column, zero in `retc`** (re-measured directly on the current tree, up from 1,738 of 3,251
+at the grid size this was first measured against).
 
-Of those 1,738, character-diffing each pair of `err` strings splits them two ways:
+Of those 1,754, character-diffing each pair of `err` strings splits them two ways:
 
-- **1,474 rows are a pure separator swap**, and nothing else: every one of the 1,474 diffs to
+- **1,490 rows are a pure separator swap**, and nothing else: every one of the 1,490 diffs to
   exactly one `difflib` replace operation, the C side's escaped `\\` (one literal backslash, from
   `emit_escaped`/`EscapeErr` doubling it for TSV safety) against the port's `/`, with the rest of
   the string -- including every other separator in the same path -- character-for-character
@@ -1860,10 +1870,11 @@ Of those 1,738, character-diffing each pair of `err` strings splits them two way
   `\\` otherwise; `SwissEphNet/SwissEph.sweodef.h.cs:192` hardcodes `/` for every platform, since
   one assembly ships to Linux and macOS too, where `\\` is not a separator at all). `sweph.c:2400`
   (`swi_fopen`'s "not found in PATH" message) embeds `ephepath` as stored by `swe_set_ephe_path`,
-  which appends exactly one trailing `DIR_GLUE` character (`sweph.c:1335-1337`) -- that one
+  which appends exactly one trailing `DIR_GLUE` character (`sweph.c:1338-1340`) -- that one
   appended character is the entire diff. Both sides fail to find the file identically; only the
   spelling of the path they looked in differs.
-- **264 rows are a different pattern this measurement does not explain**: `CALC`/`CALC_UT` rows
+- **264 rows are a different pattern this measurement does not explain** (unchanged at the current
+  3,280-row grid, re-measured alongside the 1,754/1,490 figures above): `CALC`/`CALC_UT` rows
   carrying the `TOPOCTR` or `SIDEREAL` iflag combination, where one side's `err` is empty and the
   other's carries the full "not found" message -- e.g. case `CALC|0|2195878|TOPOCTR`: C empty,
   port carries the message; case `CALC|0|2195878|SIDEREAL`: C carries the message, port empty.
@@ -1873,10 +1884,18 @@ Of those 1,738, character-diffing each pair of `err` strings splits them two way
   was found alongside.
 
 Clearing `SE_EPHE_PATH` in both drivers, as the section above does, keeps both patterns out of the
-oracle's comparison by construction -- the gated grids never run under a hijacked or nonexistent
-path in the first place -- but it does not and should not paper over that the underlying `serr`
-differences are real and would reappear if either driver were ever pointed at a directory that
-does not exist, ephe-dir or SE_EPHE_PATH alike.
+gated `grid-files.tsv` comparison: with the variable cleared, that grid runs under the real,
+existing `-EpheDir` its own invocation passes, not a hijacked or nonexistent one. This is not true
+of `grid-analytic.tsv` the same way -- that grid runs under `SENTINEL_EPHE_DIR`, a deliberately
+nonexistent path, on all 22,289 rows, by design (see `docs/compliance-2.10.03.md`'s "The sentinel
+ephemeris path and the AYANAMSA_EX/AYANAMSA_EX_UT environment leak"), so
+"never runs under a nonexistent path" does not hold for it. What keeps these two `serr` patterns out
+of the analytic comparison is a different, narrower fact: no analytic row calls `swi_fopen` at all,
+because every row forces `SEFLG_MOSEPH` -- confirmed directly, `grep -c "not found in PATH"` finds
+0 occurrences in either analytic dump (`SE_EPHE_PATH` unset or pointed at a real ephemeris
+directory). It does not and should not paper over that the underlying `serr`
+differences are real and would reappear if `grid-files.tsv` were ever pointed at a directory that
+does not exist, ephe-dir or (absent the clearing fix) `SE_EPHE_PATH` alike.
 
 ### What the two earlier versions got wrong, and how
 

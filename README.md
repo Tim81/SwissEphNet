@@ -282,16 +282,20 @@ requires.
 
 How this is checked, and what checking it does and does not prove. The port's output is compared
 field by field against Astrodienst's own C, built from the same source and run against the same
-ephemeris files. On Windows (MSVC) and Linux (gcc), all 25,569<!--doccount:grid-total-combined--> rows in that comparison (22,289<!--doccount:grid-analytic-total-->
+ephemeris files. On Windows (MSVC), Linux (gcc) and macOS (clang, `-fno-builtin`), all
+25,569<!--doccount:grid-total-combined--> rows in that comparison (22,289<!--doccount:grid-analytic-total-->
 calls that need no ephemeris file plus 3,280<!--doccount:grid-files-total--> that read the shipped `.se1` files) come back
-bit-identical, not merely close; both tracked difference lists (0<!--doccount:oracle-known-diff-files-->
+bit-identical, not merely close (gated in CI on all three platforms -- see the table below for
+what has and has not been independently reproduced outside CI on this workstation); all three
+tracked difference lists (0<!--doccount:oracle-known-diff-files-->
 recorded exceptions each) are empty. A `GET_CURRENT_FILE_DATA` row records only the basename of
 the file it opened, deliberately, not the full path -- see `docs/compliance-2.10.03.md`'s "The
-last two 2.10.03-only entry points" section for why, and for the five `SERR` rows that briefly
-existed before that scoping decision. macOS (clang,
-arm64) matched at an earlier, smaller grid size once clang was told not to substitute its own math
-builtins for individual libm calls (`-fno-builtin`) -- see the table below for exactly what is and
-is not re-verified against the current 25,569-row grid; unlike Windows and Linux, macOS cannot be
+last two 2.10.03-only entry points" section for why, and for the six `SERR` rows (five in the
+files grid, one in the JPL grid) that briefly
+existed before that scoping decision. macOS's own math builtins had to be told not to substitute
+for individual libm calls (`-fno-builtin`) before it matched -- clang's default behavior otherwise
+fuses adjacent libm calls (e.g. `sin`/`cos` into `__sincos`) in a way that does not return
+bit-identically to calling them separately; unlike Windows and Linux, macOS cannot be
 measured outside its own CI runner, so this section does not claim a current macOS number. None of
 that proves agreement between platforms: comparing the port's own
 frozen output, generated on Windows and on Linux from the same commit, finds 66,342 of 3,547,367
@@ -608,8 +612,8 @@ platform:
 | Platform | C reference | Result |
 |---|---|---|
 | Windows x64 | MSVC 19.51, `/O2 /fp:precise /MD` | 25,569<!--doccount:grid-total-combined--> of 25,569 rows bit-identical (gated) |
-| Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | Gated at the same total on every push and pull request; the 22,289-analytic/3,251-files local replay this row previously cited was from the addition before this one (`HOUSES_EX2`/`HOUSES_ARMC_EX2`) and has not been independently re-run against the current 3,280-row files grid outside CI -- see `docs/compliance-2.10.03.md`'s "The last two 2.10.03-only entry points" for what was actually checked, and on which platform |
-| macOS arm64 | clang, `-O2 -ffp-contract=off -fno-builtin` | 20,532 of 20,532 rows bit-identical at last CI run (gated by `macos-exactness`; not re-run locally against the current 25,569-row grid -- macOS has no local reproduction path here, so this row is CI's own last result, not a claim made outside it) |
+| Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | 25,569 of 25,569 rows bit-identical, gated at that total on every push and pull request; confirmed at the current grid by PR #32's CI run at commit `f2803ce` (`https://github.com/Tim81/SwissEphNet/actions/runs/30752822701`, job "Gate: port matches the C reference on Linux x64 (glibc)", pass) -- this workstation has not independently re-run it outside CI -- see `docs/compliance-2.10.03.md`'s "The last two 2.10.03-only entry points" for what was checked and when |
+| macOS arm64 | clang, `-O2 -ffp-contract=off -fno-builtin` | 25,569 of 25,569 rows bit-identical, gated by `macos-exactness` on every push and pull request; confirmed at the current grid by the same PR #32 CI run at commit `f2803ce`, job "Gate: port matches the C reference on macOS arm64 (Apple libSystem)", pass -- macOS has no local reproduction path here, so this row is CI's own result, not a claim made outside it |
 
 The characterization baseline (`scripts/verify-baseline.ps1`) separately runs on both `net8.0` and
 `net10.0` and reports them field-identical to each other on the platform that generated it. That
@@ -617,7 +621,7 @@ corroborates `net8.0` from a different instrument, but it is a weaker claim than
 self-consistency between two TFMs of this port rather than agreement with the C reference.
 
 "Gated" on the Windows row means `oracle-dump`, the `.github/workflows/oracle.yml` job that
-replays this exact 25,540-row grid, re-runs the comparison end to end on every push and pull
+replays this exact 25,569<!--doccount:grid-total-combined-->-row grid, re-runs the comparison end to end on every push and pull
 request and fails the workflow on any mismatch. Three more jobs also run on Windows in that file
 but check different things than this grid: `crt-parity` compares MSVC C against .NET on a fixed
 CRT value table, `c-reference-validate` compares the MSVC C build against pyswisseph 2.10.03, and
@@ -917,10 +921,11 @@ ever confirmed as port defects were fixed and pruned.
   rows as verified-but-unwatched, not as covered.
 
 - **The JPL backend also has a bit-exact grid**, and it is the one that found the
-  bug. `Tools/OracleGrid/grid-jpl.tsv` is the third oracle grid: 2,400 rows, 1,200
-  through `swe_calc` and 1,200 through `swe_calc_ut`, sweeping bodies, epochs and
+  bug. `Tools/OracleGrid/grid-jpl.tsv` is the third oracle grid: 2,407<!--doccount:grid-jpl-total--> rows, 1,200<!--doccount:grid-jpl-func-calc-->
+  through `swe_calc`, 1,200<!--doccount:grid-jpl-func-calc-ut--> through `swe_calc_ut`, sweeping bodies, epochs and
   sidereal modes with `SEFLG_JPLEPH` set, and with `SEFLG_JPLHOR` and
-  `SEFLG_JPLHOR_APPROX` among the flag combinations. It is opt-in and CI never runs
+  `SEFLG_JPLHOR_APPROX` among the flag combinations, plus 7<!--doccount:grid-jpl-func-get-current-file-data-->
+  `swe_get_current_file_data` rows. It is opt-in and CI never runs
   it:
 
   ```

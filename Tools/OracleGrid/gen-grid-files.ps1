@@ -163,16 +163,17 @@
     verbatim. Empty string means "does not apply to this row's func":
 
       case_id, func, ipl, tjd, iflag, star, geolon, geolat, height, sid_mode, x2cross, dir, t0,
-      ayan_t0, method, hsys, armc, eps
+      ayan_t0, method, hsys, armc, eps, iplctr, ifno
 
-    Eighteen columns today. method and hsys were appended for NOD_APS_UT/HOUSES_EX; armc and eps
-    are this addition's own appension, needed only because HOUSES_ARMC_EX2 is the first func this
+    Twenty columns today. method and hsys were appended for NOD_APS_UT/HOUSES_EX; armc and eps
+    were HOUSES_ARMC_EX2's own addition, needed only because it is the first func this
     grid has ever carried that takes an armc/eps pair directly (HOUSES_EX/HOUSES_EX2 derive armc
-    from geolon/tjd internally and never need it as an input column) -- additive, at the end, for
+    from geolon/tjd internally and never need it as an input column); iplctr and ifno are a fourth
+    additive tail, for PCTR/GET_CURRENT_FILE_DATA -- additive, at the end, for
     the same reason every earlier column here landed at the end rather than interleaved: every
     column an existing func already reads keeps the same index it always had.
     grid-jpl.tsv carries this header byte-for-byte (see gen-grid-jpl.ps1's own header for why), so
-    this addition is a two-grid schema change, not a one-grid one.
+    each of these additive tails is a two-grid schema change, not a one-grid one.
 
 .NOTES
     Deterministic by construction: no timestamps, no randomness, no machine-dependent state (the
@@ -488,8 +489,12 @@ function New-PctrRow {
 # call), and Earth's data lives in the planet file. This grid's own NODATA|0 case_id therefore
 # measures real data, not the empty-fnam branch its label suggests. Ipl+Tjd (Star left $null)
 # trigger a preceding swe_calc, reusing the same columns CALC already carries, to populate ifno 2
-# (main asteroid file) with real data too -- a row targeting ifno 0 this way is redundant with the
-# free ifno 0 above, kept anyway at no cost; Star+Tjd (Ipl left $null) trigger a preceding
+# (main asteroid file) with real data too. PRECALC's own ifno-0 row (SE_SUN, a different tjd than
+# the Moon-calc's own J2000) does not merely repeat NODATA|0's ifno-0 slot -- it overwrites it with
+# a different file (sepl_12.se1 vs. sepl_18.se1, measured directly in dump-net-files.tsv), the only
+# row in this grid proving both that a slot gets overwritten and that file selection at a fixed
+# ifno depends on the row's own date; see process_get_current_file_data's own comment in
+# Tools/CReference/sedump.c for the exact dates and file ranges. Star+Tjd (Ipl left $null) trigger a preceding
 # swe_fixstar2 instead, for ifno 4 (the star file). Ifno 3 (SEI_FILE_ANY_AST -- an
 # individually-numbered asteroid or planetary-moon file) has no row here that reaches it with real
 # data: this repo's ephemeris checkout ships no such file (only sepl/semo/seas_{12,18}.se1 and
@@ -783,7 +788,7 @@ $GetCurrentFileDataBoundary = @(-1, 5)                 # sweph.c:8299's ifno < 0
 # not match its own label; only ifno 2/3/4 here actually hit strlen(fnam) == 0.
 $GetCurrentFileDataNoData = @(0, 2, 3, 4)
 $GetCurrentFileDataAutoReal = 1                        # SEI_FILE_MOON -- populated for free
-$GetCurrentFileDataPreCalcIpl = 0                       # SE_SUN -> SEI_FILE_PLANET (ifno 0; redundant with the free ifno-0 row above, kept anyway)
+$GetCurrentFileDataPreCalcIpl = 0                       # SE_SUN -> SEI_FILE_PLANET (ifno 0; overwrites the free ifno-0 row above with a different file -- see this script's own header comment)
 # SE_CERES (17): one of the six bodies swi_get_denum's own dispatch (sweph.c:2423-2429) routes to
 # SEI_FILE_MAIN_AST -- an arbitrary numbered asteroid (e.g. SE_AST_OFFSET-relative) routes to
 # SEI_FILE_ANY_AST (ifno 3) instead, not ifno 2 -- matches

@@ -40,7 +40,7 @@ full parity with 2.10.03; it is not, and the next section says by how much.
 | Platform | C reference | Result |
 |---|---|---|
 | Windows x64 | MSVC 19.51.36248, `/O2 /fp:precise /MD` | 25,540 of 25,540 oracle rows bit-identical (gated) |
-| Linux x64, Ubuntu 24.04.4 | gcc 13.3.0, `-O2` | 25,540 of 25,540 oracle rows bit-identical (gated; also confirmed by a full local replay against this grid: 22,289 analytic rows, sha256 `41f84577d86e296f86ba06444002977c`, and 3,251 files rows, sha256 `900308e9acd05d48dd846cd778f7a90a`, both bit-identical) |
+| Linux x64, Ubuntu 24.04.4 | gcc 13.3.0, `-O2` | 25,540 of 25,540 oracle rows bit-identical (gated; also confirmed by a full local replay against this grid: 22,289 analytic rows, sha256 `41f84577…2977c`, and 3,251 files rows, sha256 `900308e9…7a90a`, both bit-identical) |
 | macOS arm64 (Apple libSystem) | clang, `-O2 -ffp-contract=off -fno-builtin` | 20,532 of 20,532 oracle rows bit-identical at last CI run (gated by `macos-exactness`; not re-run locally against the current 25,540-row grid -- macOS has no local reproduction path here, so this row is CI's own last result, not a claim made outside it) |
 
 **25,540 was measured directly on Windows and Linux** (Windows: this record's own oracle numbers, `scripts/run-oracle-dump.ps1` + `scripts/verify-oracle.ps1`, both grids' known-diff lists empty and both dump files SHA-256 identical to Astrodienst's own C: `dump-c-2.10.03.tsv`/`dump-net.tsv` at `4ac1a3c0…c7640`, `dump-c-2.10.03-files.tsv`/`dump-net-files.tsv` at `aef136bd…d72f2d0`; the JPL grid, opt-in and not part of either total above, also ran clean at 2,400 of 2,400 rows, `dump-c-2.10.03-jpl.tsv`/`dump-net-jpl.tsv` at `bc0ca597…d7067724`. Linux: gcc, a full local replay of both grids against the port, bit-identical at the sha256 pair in the table row above). macOS is re-verified by its own CI job (`macos-exactness`) against the identical committed grids and drivers on the next push or pull request, not re-run from this workstation or reproducible outside CI here; its prior run at the smaller row count (20,532) was bit-identical, and this addition (5,008 rows: 4,500 across `HOUSES_EX2`/`HOUSES_ARMC_EX2` in both grids plus 8 `FIXSTAR2_MAG` rows) has not yet been measured on that platform. Unlike the ayanamsa addition that grew the grid from 17,064 to 18,064, this addition is not a re-sweep of code paths this grid already reached: `swe_houses_ex2`/`swe_houses_armc_ex2` are new in 2.10.03 and `swe_fixstar2_mag` had no row anywhere before this addition, so Windows and Linux are the only platforms this specific claim has actually been checked on until macOS CI next runs.
@@ -66,9 +66,12 @@ appears in `grid-analytic.tsv`), `dump-c-2.10.03-files.tsv`/`dump-net-files.tsv`
 and `dump-c-2.10.03-jpl.tsv`/`dump-net-jpl.tsv` now
 `0e92737bc20e17620b036e674af88df260c28b5fc4fbbb4d30c582ca5d2a21b4` (previously
 `bc0ca597…d7067724`). All three pairs are file-level SHA-256 identical between the C reference and
-the port, not merely row-level equal. Linux and macOS have not been independently
-re-run against this total by this record -- `linux-exactness`/`macos-exactness` do that on the
-next push or pull request, the same way they did for the `HOUSES_EX2`/`HOUSES_ARMC_EX2` addition
+the port, not merely row-level equal. Not independently re-run from this workstation against this
+total, but `linux-exactness` and `macos-exactness` both did, in CI: PR #32's "Oracle build gates"
+workflow run at commit `f2803ce` (`https://github.com/Tim81/SwissEphNet/actions/runs/30752822701`)
+shows "Gate: port matches the C reference on Linux x64 (glibc)" and "Gate: port matches the C
+reference on macOS arm64 (Apple libSystem)" both passing, alongside the Windows gate, at the
+current 25,569-row grid -- the same way they did for the `HOUSES_EX2`/`HOUSES_ARMC_EX2` addition
 above.
 
 Windows is gated by `oracle-dump`, the `.github/workflows/oracle.yml` job that replays this grid
@@ -111,9 +114,13 @@ and 10<!--doccount:grid-files-func-get-current-file-data--> `GET_CURRENT_FILE_DA
 none of the four opens an ephemeris file, so all direct ayanamsa coverage lives in
 `grid-analytic.tsv` -- see "The sentinel ephemeris path..." below for why that premise needed its
 own fix rather than a new file-backed grid.
-`Tests/oracle/known-diff.tsv` and `Tests/oracle/known-diff-files.tsv` are both empty
+`Tests/oracle/known-diff.tsv` and `Tests/oracle/known-diff-files.tsv`, the two lists for the grids
+this 25,569 total gates, are both empty
 (0<!--doccount:oracle-known-diff-analytic--> and 0<!--doccount:oracle-known-diff-files--> rows):
-no recorded exception on either grid, on any platform. `known-diff-files.tsv` briefly carried 5
+no recorded exception on either of those two grids, on any platform. (A third, `known-diff-jpl.tsv`,
+tracks the opt-in JPL grid -- see "all three known-diff lists" above -- and is also
+empty: 0<!--doccount:oracle-known-diff-jpl--> rows.)
+`known-diff-files.tsv` briefly carried 5
 `SERR` rows, all five `GET_CURRENT_FILE_DATA` -- see "The last two 2.10.03-only entry points"
 below for why they existed for one revision of this record and not the next.
 
@@ -173,8 +180,13 @@ planet file. The row recorded as `ifno` 0 in this func's "no data" set therefore
 data, not an empty-`fnam` reject, despite its own case_id label (`NODATA|0`) -- caught only by
 reading the actual dump rather than the row's own name. `ifno` 2/4 reach real data too, through an
 optional preceding `swe_calc`/`swe_fixstar2` this func's own row reuses `ipl`/`tjd`/`iflag`/`star`
-to trigger (the `ifno` 0 variant of that same mechanism is then redundant with the free `ifno` 0
-row, kept anyway at no cost). `ifno` 3 (an individually-numbered asteroid or planetary-moon file)
+to trigger. The `ifno` 0 variant of that same mechanism (`PRECALC|0`) targets the same slot
+`NODATA|0` already populated, but at a different date (2269091 versus the Moon-calc's own J2000) --
+not a repeat, an overwrite: `NODATA|0` reports `sepl_18.se1` and `PRECALC|0` reports `sepl_12.se1`,
+measured directly in `dump-net-files.tsv`. `PRECALC|0` is the only row in this grid proving both
+that a slot gets overwritten, not merely populated once, and that file selection at a fixed `ifno`
+depends on the row's own date; `NODATA|0` alone proves neither. `ifno` 3 (an individually-numbered
+asteroid or planetary-moon file)
 has no real-data row anywhere in this grid: this repository's ephemeris checkout ships no such
 file.
 
@@ -256,15 +268,29 @@ reproducibility gap without changing any value. `swe_get_ayanamsa`/`swe_get_ayan
 `iflag` parameter to carry `SEFLG_MOSEPH` on at all -- `swi_guess_ephe_flag()`
 (`swephlib.c:3186-3195`) resolves them to `SEFLG_SWIEPH` on this grid, but the function itself is
 not unconditional: it returns `SEFLG_JPLEPH` whenever `swed.jpl_file_is_open` (`swephlib.c:3190-3192`),
-which is true of grid-analytic.tsv specifically -- it opens no JPL file -- not of
-`swi_guess_ephe_flag()` in general -- and `HOUSES_EX`/`HOUSES_EX2`'s own
-`SIDEREAL` rows carry no `SEFLG_MOSEPH` either; both remain genuinely environment-sensitive
-(measured: pointing `SE_EPHE_PATH` at a real, populated ephemeris directory changes `AYANAMSA`/
-`AYANAMSA_UT` *values*, and `HOUSES_EX`/`HOUSES_EX2`'s `SIDEREAL` rows for every house-system
-letter, not merely the hsys `'I'`/`'i'` Sunshine sub-call). The sentinel-path fix above is the
-mitigation for those two: it makes the grid deterministic when the variable is unset, which is the
-normal case, without pretending to close what only clearing the variable (or forcing `SEFLG_MOSEPH`
-where the API allows it) can close.
+which is false for grid-analytic.tsv specifically -- it opens no JPL file -- not false of
+`swi_guess_ephe_flag()`'s behavior in general -- and `HOUSES_EX`/`HOUSES_EX2`'s own
+`SIDEREAL` rows carry no `SEFLG_MOSEPH` either; at the time this paragraph was first written, both
+remained genuinely environment-sensitive (measured: pointing `SE_EPHE_PATH` at a real, populated
+ephemeris directory changed `AYANAMSA`/`AYANAMSA_UT` *values*, and `HOUSES_EX`/`HOUSES_EX2`'s
+`SIDEREAL` rows for every house-system letter, not merely the hsys `'I'`/`'i'` Sunshine sub-call).
+That gap is now closed, not merely mitigated -- see immediately below.
+
+**Closed in `917c5f5`: both drivers now clear their own process's `SE_EPHE_PATH`.** Rather than
+routing around the environment variable per call, `sedump.c`'s `main()`
+(`_putenv_s("SE_EPHE_PATH", "")`/`unsetenv`, platform-guarded) and
+`Tools/OracleDump/Program.cs`'s `Main` (`Environment.SetEnvironmentVariable("SE_EPHE_PATH", null)`)
+now clear the variable from their own process before the row loop starts and before
+`swe_set_ephe_path` is ever called, so `getenv("SE_EPHE_PATH")` (`sweph.c:1327-1330`) returns
+nothing regardless of what either process inherited, and the path argument each driver actually
+passes -- sentinel or real -- is what governs. Re-measured directly on this workstation with the
+current tree: replaying `grid-analytic.tsv` (22,289 rows) through `Tools/OracleDump` with
+`SE_EPHE_PATH` unset versus pointed at `external/swisseph/ephe` (a real, populated ephemeris
+directory) produces byte-identical dumps, both sha256 `4ac1a3c0…c7640` -- the same hash the
+sentinel-only fix above already produced with the variable unset. 0 of 22,289 rows differ either
+way. `AYANAMSA`/`AYANAMSA_UT` and `HOUSES_EX`/`HOUSES_EX2`'s `SIDEREAL` rows are no longer
+environment-sensitive; the paragraph above describes the state before this fix, not the current
+tree.
 
 **Six astrology-program entry points, added in this record.** `HOUSES_EX`, `AYANAMSA_UT`,
 `SIDTIME`, `AZALT`, `HOUSE_NAME` and `NOD_APS_UT` are calls a real astrology program makes (this
@@ -329,9 +355,10 @@ Measured when exactly that happened -- gcc, both grids, this repository's own `o
 line -- the C side emitted the sentinel for 4,500 analytic rows while the port computed real
 values, and the job's `cmp` failed. Nothing catches it earlier, because the sentinel branch
 compiles cleanly; a macro added here has to be added to all five. At last measurement from this
-workstation (14,820 and 2,244 rows -- the grid's size at that time, two additions before the
+workstation (14,820 and 2,244 rows -- the grid's size at that time, four additions before the
 current 25,569<!--doccount:grid-total-combined--> total this record's "Of the 25,569 oracle rows"
-paragraph below cites; not re-quoted as a "current" figure here because it was not current even
+paragraph below cites (`8f601cf` to 18,064, `6d63999` to 20,532, `5ced3b8` to 25,540, `571092e` to
+25,569); not re-quoted as a "current" figure here because it was not current even
 when this sentence was first written, only "at last measurement"), both grids produced exactly
 that many rows on Linux, matching Windows row for row, and every row matched Astrodienst's own C
 bit for bit, on `ubuntu-latest` (gcc 13.3.0, glibc), matching the Windows and macOS results at that
@@ -355,8 +382,9 @@ third libm alongside `ucrtbase.dll` and glibc above) and replays both grids agai
 way the Windows and Linux jobs do. It builds the C reference twice: once with `-fno-builtin`,
 which is the gate, and once, kept alongside as a diagnostic rather than gated, with clang's math
 builtins left on. With `-fno-builtin`, both grids are bit-identical against the port. At last
-measurement from this workstation -- two grid additions before the current
-25,569<!--doccount:grid-total-combined--> total, so the figures below are what that specific,
+measurement from this workstation -- four grid additions before the current
+25,569<!--doccount:grid-total-combined--> total (see the gcc paragraph above for the specific
+commits), so the figures below are what that specific,
 older run found, not a current claim; `macos-exactness` re-verifies the current row count on every
 push and pull request -- with the diagnostic build's builtins left on, 62 of 14,819 analytic rows
 and 10 of 2,243 file-backed rows differed from the port -- clang's default behavior substitutes
@@ -378,8 +406,9 @@ opt out) and all 3,280<!--doccount:grid-files-default-nutation--> files-grid row
 (0<!--doccount:grid-files-nonut-optout--> opt out) -- the 29 `PCTR`/`GET_CURRENT_FILE_DATA` rows
 this record adds carry no `SEFLG_NONUT` row of their own. Recomputed directly from both grids'
 `iflag` columns (bit 64, `swephexp.h:193`), not carried forward from an earlier row count. All
-24,561 are among the bit-identical (or, for the five `GET_CURRENT_FILE_DATA` rows recorded in
-`Tests/oracle/known-diff-files.tsv`, `SERR`-only-differing) rows above -- see "What this record
+24,561 are among the bit-identical rows above (the five `GET_CURRENT_FILE_DATA` rows that briefly
+recorded `SERR`-only differences in `Tests/oracle/known-diff-files.tsv` are gone now, not waived --
+see "The last two 2.10.03-only entry points" above) -- see "What this record
 does not cover" for what that does and
 does not establish about the nutation coefficient tables themselves.
 
