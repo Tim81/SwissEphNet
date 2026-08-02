@@ -152,6 +152,27 @@ $SE_SIDM_USER     = 255
 # 2.8.0.2 NuGet package) divergence this sidesteps.
 $SidModeSweepCount = 47
 
+# swe_nod_aps(_ut)'s own reject check (external/swisseph/swecl.c:5126-5129): the four named
+# lunar-node/apogee bodies, ipl < 0, and SE_NPLANETS <= ipl <= SE_AST_OFFSET.
+$SE_MEAN_NODE   = 10
+$SE_TRUE_NODE   = 11
+$SE_MEAN_APOG   = 12
+$SE_OSCU_APOG   = 13
+$SE_EARTH       = 14
+$SE_NPLANETS    = 23
+$SE_AST_OFFSET  = 10000
+# swe_nod_aps(_ut)'s method bitmask (external/swisseph/swephexp.h:291-294): SE_NODBIT_FOPOINT is
+# read once as a flag (do_focal_point) and then the method value itself is reduced mod it
+# (swecl.c:5099,5114), so a caller may combine it with any of the other three.
+$SE_NODBIT_MEAN     = 1
+$SE_NODBIT_OSCU     = 2
+$SE_NODBIT_OSCU_BAR = 4
+$SE_NODBIT_FOPOINT  = 256
+
+# swe_azalt's calc_flag (external/swisseph/swephexp.h:364-365): which coordinate frame xin is in.
+$SE_ECL2HOR = 0
+$SE_EQU2HOR = 1
+
 # ---------------------------------------------------------------------------------------
 # Formatting -- matches Tools/BaselineMatrix/Format.cs's D()/I(): invariant culture, "R"
 # round-trip precision for doubles, so every machine that runs this script (and the drivers
@@ -230,7 +251,7 @@ function New-CalcRow {
     $fields = @(
         $caseId, $Func, (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
         $geolonField, $geolatField, $heightField, '', '', $sidModeField, '', '',
-        $t0Field, $ayanT0Field
+        $t0Field, $ayanT0Field, '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -240,7 +261,8 @@ function New-HousesRow {
     $caseId = "HOUSES|$Hsys|$(Fmt $GeoLat)|$(Fmt $GeoLon)|$(Fmt $Tjd)"
     $fields = @(
         $caseId, 'HOUSES', '', (Fmt $Tjd), '', "$Hsys",
-        (Fmt $GeoLon), (Fmt $GeoLat), '', '', '', '', '', '', '', ''
+        (Fmt $GeoLon), (Fmt $GeoLat), '', '', '', '', '', '', '', '',
+        '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -250,7 +272,8 @@ function New-HousesArmcRow {
     $caseId = "HOUSESARMC|$Hsys|$(Fmt $GeoLat)|$(Fmt $Eps)|$(Fmt $Armc)"
     $fields = @(
         $caseId, 'HOUSES_ARMC', '', '', '', "$Hsys",
-        '', (Fmt $GeoLat), '', (Fmt $Armc), (Fmt $Eps), '', '', '', '', ''
+        '', (Fmt $GeoLat), '', (Fmt $Armc), (Fmt $Eps), '', '', '', '', '',
+        '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -272,7 +295,8 @@ function New-SolarLunarCrossRow {
     $sidModeField = if ($null -eq $SidMode) { '' } else { FmtI ([int]$SidMode) }
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
-        '', '', '', '', '', $sidModeField, (Fmt $X2Cross), '', '', ''
+        '', '', '', '', '', $sidModeField, (Fmt $X2Cross), '', '', '',
+        '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -291,7 +315,8 @@ function New-MoonCrossNodeRow {
     $caseId = "$Prefix|$(Fmt $Tjd)|$FlagName"
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
-        '', '', '', '', '', '', '', '', '', ''
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -312,7 +337,8 @@ function New-HelioCrossRow {
     $caseId = "$Prefix|$(FmtI $Ipl)|$(Fmt $X2Cross)|$(Fmt $Tjd)|$FlagName|$(FmtI $Dir)"
     $fields = @(
         $caseId, $Func, (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
-        '', '', '', '', '', '', (Fmt $X2Cross), (FmtI $Dir), '', ''
+        '', '', '', '', '', '', (Fmt $X2Cross), (FmtI $Dir), '', '',
+        '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -331,7 +357,7 @@ function New-AyanamsaRow {
     $fields = @(
         $caseId, 'AYANAMSA', '', (Fmt $Tjd), '', '',
         '', '', '', '', '', (FmtI $SidMode), '', '',
-        (Fmt $T0), (Fmt $AyanT0)
+        (Fmt $T0), (Fmt $AyanT0), '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -343,7 +369,96 @@ function New-AyanamsaExRow {
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
         '', '', '', '', '', (FmtI $SidMode), '', '',
-        (Fmt $T0), (Fmt $AyanT0)
+        (Fmt $T0), (Fmt $AyanT0), '', '', '', '', '', ''
+    )
+    return ($fields -join "`t")
+}
+
+# swe_houses_ex -- the sidereal/radians-capable sibling of swe_houses (see New-HousesRow above).
+# Unlike swe_houses, it takes an iflag, so a sid_mode/t0/ayan_t0 triple may be present -- SidMode
+# is $null for a non-sidereal row, matching every other *SidMode param in this script.
+function New-HousesExRow {
+    param([char] $Hsys, [double] $GeoLat, [double] $GeoLon, [double] $Tjd, [string] $FlagName, [int] $IFlag, $SidMode)
+    $caseId = "HOUSESEX|$Hsys|$(Fmt $GeoLat)|$(Fmt $GeoLon)|$(Fmt $Tjd)|$FlagName"
+    $sidModeField = if ($null -eq $SidMode) { '' } else { FmtI ([int]$SidMode) }
+    $fields = @(
+        $caseId, 'HOUSES_EX', '', (Fmt $Tjd), (FmtI $IFlag), "$Hsys",
+        (Fmt $GeoLon), (Fmt $GeoLat), '', '', '', $sidModeField, '', '', '', '',
+        '', '', '', '', '', ''
+    )
+    return ($fields -join "`t")
+}
+
+# swe_get_ayanamsa_ut -- the UT sibling of swe_get_ayanamsa (New-AyanamsaRow above). Same shape,
+# same sid_mode/t0/ayan_t0 handling; only the func token and case_id prefix differ, since Tjd here
+# is UT rather than ET.
+function New-AyanamsaUtRow {
+    param([int] $SidMode, [double] $Tjd, [double] $T0, [double] $AyanT0, [bool] $IsUser)
+    $caseId = if ($IsUser) { "AYANAMSAUT|USER|$(Fmt $T0)|$(Fmt $AyanT0)|$(Fmt $Tjd)" } else { "AYANAMSAUT|$(FmtI $SidMode)|$(Fmt $Tjd)" }
+    $fields = @(
+        $caseId, 'AYANAMSA_UT', '', (Fmt $Tjd), '', '',
+        '', '', '', '', '', (FmtI $SidMode), '', '',
+        (Fmt $T0), (Fmt $AyanT0), '', '', '', '', '', ''
+    )
+    return ($fields -join "`t")
+}
+
+# swe_sidtime -- a bare double, no serr, no sid_mode of its own (sidereal *time*, not the
+# ayanamsha) -- so tjd is the only input.
+function New-SidtimeRow {
+    param([double] $Tjd)
+    $caseId = "SIDTIME|$(Fmt $Tjd)"
+    $fields = @(
+        $caseId, 'SIDTIME', '', (Fmt $Tjd), '', '',
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', ''
+    )
+    return ($fields -join "`t")
+}
+
+# swe_azalt -- geopos reuses this grid's existing geolon/geolat/height columns (fields[6..8]);
+# calc_flag/atpress/attemp/xin0/xin1 are the new trailing columns this func needs. xin[2] is
+# deliberately not a column at all -- swe_azalt's own body never reads it (see
+# Tools/CReference/sedump.c's process_azalt) -- so there is no Xin2 parameter here either.
+function New-AzAltRow {
+    param(
+        [string] $CalcFlagName, [int] $CalcFlag,
+        [double] $GeoLon, [double] $GeoLat, [double] $Height,
+        [string] $PressName, [double] $AtPress, [double] $Attemp,
+        [string] $XinName, [double] $Xin0, [double] $Xin1,
+        [double] $Tjd
+    )
+    $caseId = "AZALT|$CalcFlagName|$(Fmt $GeoLat)|$PressName|$XinName|$(Fmt $Tjd)"
+    $fields = @(
+        $caseId, 'AZALT', '', (Fmt $Tjd), '', '',
+        (Fmt $GeoLon), (Fmt $GeoLat), (Fmt $Height), '', '', '', '', '', '', '',
+        '', (FmtI $CalcFlag), (Fmt $AtPress), (Fmt $Attemp), (Fmt $Xin0), (Fmt $Xin1)
+    )
+    return ($fields -join "`t")
+}
+
+# swe_house_name -- a pure lookup, so only hsys matters; reuses the shared hsys column HOUSES/
+# HOUSES_ARMC/HOUSES_EX already carry at fields[5].
+function New-HouseNameRow {
+    param([char] $Hsys)
+    $caseId = "HOUSENAME|$Hsys"
+    $fields = @(
+        $caseId, 'HOUSE_NAME', '', '', '', "$Hsys",
+        '', '', '', '', '', '', '', '', '', '',
+        '', '', '', '', '', ''
+    )
+    return ($fields -join "`t")
+}
+
+# swe_nod_aps_ut -- ipl reuses the shared ipl column swe_calc/swe_helio_cross already carry at
+# fields[2]; method is the new trailing column this func needs (analytic-grid position 16).
+function New-NodApsUtRow {
+    param([int] $Ipl, [double] $Tjd, [int] $IFlag, [int] $Method)
+    $caseId = "NODAPSUT|$(FmtI $Ipl)|$(Fmt $Tjd)|$(FmtI $Method)"
+    $fields = @(
+        $caseId, 'NOD_APS_UT', (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
+        '', '', '', '', '', '', '', '', '', '',
+        (FmtI $Method), '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -549,6 +664,114 @@ $AyanamsaUserParams = @(
 )
 
 # ---------------------------------------------------------------------------------------
+# swe_houses_ex grid values. Same 25-letter house-system list as HOUSES/HOUSES_ARMC above (see
+# $HouseLetters' own comment for why 'J' is excluded -- swe_houses_ex shares the exact same
+# per-system switch in swehouse.c that HOUSES/HOUSES_ARMC already avoid 'J' for). Smaller than
+# HOUSES' own geolat/geolon/tjd cross product on purpose: iflag is a new dimension HOUSES does not
+# have, and this grid's row budget goes toward sweeping iflag (PLAIN/SIDEREAL/RADIANS) rather than
+# re-covering the geolat/geolon/tjd spread HOUSES/HOUSES_ARMC already prove.
+# ---------------------------------------------------------------------------------------
+
+# Two polar-circle extremes (one per hemisphere) plus the equator -- the degenerate-branch cases
+# that earn HOUSES its own keep (see that section's own comment on eps = 0/niter_max), reused here
+# rather than HOUSES' full eleven-point spread.
+$HousesExGeoLats = @(-80, -66, 0, 66, 80)
+$HousesExGeoLons = @(-118.24, 0.0)
+$HousesExJds = @($HouseJds[0], $HouseJds[-1])
+$HousesExFlagCombos = @(
+    [pscustomobject]@{ Name = 'PLAIN';    Flag = 0;               NeedsSid = $false }
+    [pscustomobject]@{ Name = 'SIDEREAL'; Flag = $SEFLG_SIDEREAL; NeedsSid = $true }
+    [pscustomobject]@{ Name = 'RADIANS';  Flag = $SEFLG_RADIANS;  NeedsSid = $false }
+)
+
+# ---------------------------------------------------------------------------------------
+# swe_get_ayanamsa_ut grid values -- identical sweep to AYANAMSA above (New-AyanamsaRow), since
+# swe_get_ayanamsa_ut takes the exact same (tjd, sid_mode) inputs plain swe_get_ayanamsa does.
+# Reuses $AyanamsaJds/$AyanamsaUserParams rather than a second copy of the same numbers.
+# ---------------------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------------------
+# swe_sidtime grid values. Zero coverage anywhere in this repo before this addition. Pure
+# arithmetic with no conditional branch of its own (swephlib.c:3580-3592: one straight-line
+# computation from swi_epsiln/swi_nutation/swe_sidtime0), so this is a modest numeric-value
+# sample, not a sweep across code paths the way the sid_mode/hsys dimensions above are -- twelve
+# points across the same Moshier-window spread the rest of this grid uses.
+# ---------------------------------------------------------------------------------------
+$SidtimeJds = Get-JdSpread -Count 12 -Lo 1000000 -Hi 2600000
+
+# ---------------------------------------------------------------------------------------
+# swe_azalt grid values. calc_flag crosses SE_ECL2HOR (which additionally calls swe_calc for
+# SE_ECL_NUT and swe_cotrans before the shared horizon-coordinate arithmetic) against SE_EQU2HOR
+# (which skips straight to it) -- swecl.c:2804-2808. AzAltPressScenarios crosses the atpress == 0
+# pressure-estimate branch (swecl.c:2819-2822), forced by pairing it with a non-zero height, against
+# an explicitly given atpress with a zero height, so both branches are reached on purpose rather
+# than by accident of which row happens to carry which height. AzAltGeoLats crosses an ordinary
+# latitude against a near-pole one, since geopos[1] feeds the cotrans call that turns the
+# hour-angle-relative x[] into azimuth/altitude (swecl.c:2814). Attemp has no branch of its own
+# (swe_refrac_extended folds it into one arithmetic expression regardless of value), so it stays
+# fixed.
+# ---------------------------------------------------------------------------------------
+$AzAltCalcFlagCombos = @(
+    [pscustomobject]@{ Name = 'ECL2HOR'; Flag = $SE_ECL2HOR }
+    [pscustomobject]@{ Name = 'EQU2HOR'; Flag = $SE_EQU2HOR }
+)
+$AzAltPressScenarios = @(
+    [pscustomobject]@{ Name = 'ESTIMATED'; AtPress = 0.0;     Height = 100.0 }
+    [pscustomobject]@{ Name = 'GIVEN';     AtPress = 1013.25; Height = 0.0 }
+)
+$AzAltGeoLon = -118.24
+$AzAltGeoLats = @(34.05, 89.0)
+$AzAltAttemp = 15.0
+$AzAltXinPoints = @(
+    [pscustomobject]@{ Name = 'ZERO'; X0 = 0.0;   X1 = 0.0 }
+    [pscustomobject]@{ Name = 'MID';  X0 = 90.0;  X1 = 45.0 }
+    [pscustomobject]@{ Name = 'NEG';  X0 = 270.0; X1 = -30.0 }
+)
+$AzAltTjd = @(1500000.0, 2400000.0)
+
+# ---------------------------------------------------------------------------------------
+# swe_house_name grid values -- trivial, but zero coverage before this addition. Every letter
+# swehouse.c's switch actually cases on (25 -- see swe_house_name's own header comment for the
+# full list, which INCLUDES 'J' unlike $HouseLetters above: swe_house_name is a pure lookup that
+# both the C and the port agree on for 'J', even though neither side's actual house-cusp
+# *computation* implements that system yet -- see docs/known-issues.md's "What the oracle grids
+# do not cover in the house code" for that distinction), plus 'P', which is deliberately NOT one
+# of the switch's case labels and therefore exercises the default ("Placidus") branch.
+# ---------------------------------------------------------------------------------------
+$HouseNameLetters = @(
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'i', 'J', 'K', 'L', 'M', 'N',
+    'O', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y',
+    'P'  # not a case label -- falls through to the default ("Placidus") branch
+)
+
+# ---------------------------------------------------------------------------------------
+# swe_nod_aps_ut grid values. NodApsAcceptedIpl mirrors $HelioCrossValidIpl's own reasoning below
+# (Sun..Pluto, Earth -- every body with a Moshier model, so a forced-SEFLG_MOSEPH row does not
+# fail on a missing ephemeris file before it can exercise nod_aps's own logic at all).
+# NodApsRejectedIpl is one representative pick from each disjunct of swe_nod_aps's own reject
+# check (swecl.c:5126-5129): the four named lunar-node/apogee bodies, ipl < 0, and the
+# SE_NPLANETS..SE_AST_OFFSET range (its own two ends plus one midpoint). NodApsMethods sweeps
+# every distinct code path method's own bitmask reaches: mean (0 and SE_NODBIT_MEAN, which take
+# the same branch for Sun..Neptune/Earth), SE_NODBIT_OSCU, SE_NODBIT_OSCU_BAR (barycentric,
+# reached only past Jupiter -- x[2] > 6 at swecl.c:5245), and each of those OR-ed with
+# SE_NODBIT_FOPOINT (swecl.c:5099,5114).
+# ---------------------------------------------------------------------------------------
+$NodApsAcceptedIpl = @(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, $SE_EARTH)
+$NodApsRejectedIpl = @($SE_MEAN_NODE, $SE_TRUE_NODE, $SE_MEAN_APOG, $SE_OSCU_APOG, -1, $SE_NPLANETS, $SE_AST_OFFSET)
+$NodApsMethods = @(
+    0,
+    $SE_NODBIT_MEAN,
+    $SE_NODBIT_OSCU,
+    $SE_NODBIT_OSCU_BAR,
+    ($SE_NODBIT_FOPOINT),
+    ($SE_NODBIT_FOPOINT -bor $SE_NODBIT_MEAN),
+    ($SE_NODBIT_FOPOINT -bor $SE_NODBIT_OSCU),
+    ($SE_NODBIT_FOPOINT -bor $SE_NODBIT_OSCU_BAR)
+)
+$NodApsTjd = @(1200000.0, 2400000.0)
+$NodApsRejectedTjd = 1200000.0
+
+# ---------------------------------------------------------------------------------------
 # Build rows
 # ---------------------------------------------------------------------------------------
 
@@ -568,6 +791,12 @@ $helioCrossUtCount = 0
 $ayanamsaCount = 0
 $ayanamsaExCount = 0
 $ayanamsaExUtCount = 0
+$housesExCount = 0
+$ayanamsaUtCount = 0
+$sidtimeCount = 0
+$azaltCount = 0
+$houseNameCount = 0
+$nodApsUtCount = 0
 
 foreach ($ipl in $Bodies) {
     foreach ($tjd in $CalcJds) {
@@ -714,11 +943,81 @@ foreach ($p in $AyanamsaUserParams) {
     }
 }
 
+foreach ($hsys in $HouseLetters) {
+    foreach ($geolat in $HousesExGeoLats) {
+        foreach ($geolon in $HousesExGeoLons) {
+            foreach ($tjd in $HousesExJds) {
+                foreach ($combo in $HousesExFlagCombos) {
+                    $iflag = $combo.Flag
+                    $sidMode = if ($combo.NeedsSid) { Get-NextSidMode } else { $null }
+
+                    $rows.Add((New-HousesExRow -Hsys $hsys -GeoLat $geolat -GeoLon $geolon -Tjd $tjd `
+                        -FlagName $combo.Name -IFlag $iflag -SidMode $sidMode))
+                    $housesExCount++
+                }
+            }
+        }
+    }
+}
+
+foreach ($sidMode in 0..($SidModeSweepCount - 1)) {
+    foreach ($tjd in $AyanamsaJds) {
+        $rows.Add((New-AyanamsaUtRow -SidMode $sidMode -Tjd $tjd -T0 0.0 -AyanT0 0.0 -IsUser:$false))
+        $ayanamsaUtCount++
+    }
+}
+foreach ($p in $AyanamsaUserParams) {
+    foreach ($tjd in $AyanamsaJds) {
+        $rows.Add((New-AyanamsaUtRow -SidMode $SE_SIDM_USER -Tjd $tjd -T0 $p.T0 -AyanT0 $p.AyanT0 -IsUser:$true))
+        $ayanamsaUtCount++
+    }
+}
+
+foreach ($tjd in $SidtimeJds) {
+    $rows.Add((New-SidtimeRow -Tjd $tjd))
+    $sidtimeCount++
+}
+
+foreach ($calcFlagCombo in $AzAltCalcFlagCombos) {
+    foreach ($press in $AzAltPressScenarios) {
+        foreach ($geolat in $AzAltGeoLats) {
+            foreach ($xin in $AzAltXinPoints) {
+                foreach ($tjd in $AzAltTjd) {
+                    $rows.Add((New-AzAltRow -CalcFlagName $calcFlagCombo.Name -CalcFlag $calcFlagCombo.Flag `
+                        -GeoLon $AzAltGeoLon -GeoLat $geolat -Height $press.Height `
+                        -PressName $press.Name -AtPress $press.AtPress -Attemp $AzAltAttemp `
+                        -XinName $xin.Name -Xin0 $xin.X0 -Xin1 $xin.X1 -Tjd $tjd))
+                    $azaltCount++
+                }
+            }
+        }
+    }
+}
+
+foreach ($hsys in $HouseNameLetters) {
+    $rows.Add((New-HouseNameRow -Hsys $hsys))
+    $houseNameCount++
+}
+
+foreach ($ipl in $NodApsAcceptedIpl) {
+    foreach ($method in $NodApsMethods) {
+        foreach ($tjd in $NodApsTjd) {
+            $rows.Add((New-NodApsUtRow -Ipl $ipl -Tjd $tjd -IFlag $SEFLG_MOSEPH -Method $method))
+            $nodApsUtCount++
+        }
+    }
+}
+foreach ($ipl in $NodApsRejectedIpl) {
+    $rows.Add((New-NodApsUtRow -Ipl $ipl -Tjd $NodApsRejectedTjd -IFlag $SEFLG_MOSEPH -Method 0))
+    $nodApsUtCount++
+}
+
 $totalRows = $rows.Count
 $expectedTotal = $calcCount + $calcUtCount + $housesCount + $housesArmcCount +
     $solCrossCount + $solCrossUtCount + $moonCrossCount + $moonCrossUtCount +
     $moonCrossNodeCount + $moonCrossNodeUtCount + $helioCrossCount + $helioCrossUtCount +
-    $ayanamsaCount + $ayanamsaExCount + $ayanamsaExUtCount
+    $ayanamsaCount + $ayanamsaExCount + $ayanamsaExUtCount +
+    $housesExCount + $ayanamsaUtCount + $sidtimeCount + $azaltCount + $houseNameCount + $nodApsUtCount
 if ($totalRows -ne $expectedTotal) {
     throw 'Row count bookkeeping is inconsistent -- this is a bug in this script, not a data problem.'
 }
@@ -835,6 +1134,24 @@ $headerLines = @(
     '# non-empty sid_mode needs swe_set_sid_mode called first -- both are per-row setup on that'
     '# row''s fresh library instance.'
     '#'
+    '# HOUSES_EX / AYANAMSA_UT / SIDTIME / AZALT / HOUSE_NAME / NOD_APS_UT: six entry points an'
+    '# astrology-program consumer of this library actually calls that no grid measured before this'
+    '# addition (Celestium is one example such consumer, named only as that -- nothing about its'
+    '# own source is referenced here). HOUSES_EX is swe_houses with an iflag (SEFLG_SIDEREAL,'
+    '# SEFLG_RADIANS), the sidereal house path -- same 25-letter hsys set as HOUSES/HOUSES_ARMC'
+    '# ('' J'' excluded for the same reason). AYANAMSA_UT is the UT sibling of AYANAMSA. SIDTIME'
+    '# (swe_sidtime) and AZALT (swe_azalt) had zero coverage anywhere in this repository before'
+    '# this addition; AZALT reuses the geolon/geolat/height columns for its geopos parameter and'
+    '# gets five new trailing columns (method/calc_flag/atpress/attemp/xin0/xin1 -- method is'
+    '# NOD_APS_UT''s own, the other four are AZALT''s; xin[2] has no column at all, since'
+    '# swe_azalt''s own body never reads it). HOUSE_NAME (swe_house_name) is a pure lookup, swept'
+    '# across a wider hsys set than HOUSES/HOUSES_ARMC on purpose: it INCLUDES ''J'' (both the C and'
+    '# the port agree on its name even though neither implements that house system''s cusp'
+    '# computation yet) and ''P'' (not a case label, so it exercises the default/Placidus branch).'
+    '# NOD_APS_UT (swe_nod_aps_ut) reuses the ipl column and adds method (its own bitmask'
+    '# parameter); both accepted and rejected ipl values are covered, to exercise the serr path as'
+    '# well as the real one.'
+    '#'
     '# Lines starting with ''#'' are comments. The first non-comment line is the column-name header'
     '# below and is not a data row -- both drivers assert it matches verbatim before reading any'
     '# data, so a schema change here that a driver was not updated for fails loudly instead of'
@@ -842,7 +1159,8 @@ $headerLines = @(
 )
 $columnHeader = 'case_id' + "`t" + 'func' + "`t" + 'ipl' + "`t" + 'tjd' + "`t" + 'iflag' + "`t" +
     'hsys' + "`t" + 'geolon' + "`t" + 'geolat' + "`t" + 'height' + "`t" + 'armc' + "`t" + 'eps' + "`t" + 'sid_mode' + "`t" +
-    'x2cross' + "`t" + 'dir' + "`t" + 't0' + "`t" + 'ayan_t0'
+    'x2cross' + "`t" + 'dir' + "`t" + 't0' + "`t" + 'ayan_t0' + "`t" +
+    'method' + "`t" + 'calc_flag' + "`t" + 'atpress' + "`t" + 'attemp' + "`t" + 'xin0' + "`t" + 'xin1'
 
 $writer = [System.IO.StreamWriter]::new($outputPath, $false, [System.Text.UTF8Encoding]::new($false))
 try {
@@ -871,3 +1189,9 @@ Write-Host "  HELIO_CROSS_UT     $helioCrossUtCount"
 Write-Host "  AYANAMSA           $ayanamsaCount"
 Write-Host "  AYANAMSA_EX        $ayanamsaExCount"
 Write-Host "  AYANAMSA_EX_UT     $ayanamsaExUtCount"
+Write-Host "  HOUSES_EX          $housesExCount"
+Write-Host "  AYANAMSA_UT        $ayanamsaUtCount"
+Write-Host "  SIDTIME            $sidtimeCount"
+Write-Host "  AZALT              $azaltCount"
+Write-Host "  HOUSE_NAME         $houseNameCount"
+Write-Host "  NOD_APS_UT         $nodApsUtCount"

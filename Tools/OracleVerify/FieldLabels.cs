@@ -25,6 +25,17 @@ namespace OracleVerify;
 /// Tools/CReference/sedump.c's process_ayanamsa/process_ayanamsa_ex for why AYANAMSA's own err
 /// column is always empty (swe_get_ayanamsa has no serr parameter) rather than repurposed the way
 /// NAME's is.
+///
+/// HOUSESEX (both grids) shares HOUSES/HOUSESARMC's cusp[0..36]+ascmc[0..9] shape -- it is the
+/// sidereal/radians-capable sibling of swe_houses, with the same fixed column count regardless of
+/// house system. AYANAMSAUT (grid-analytic.tsv only) carries a single value like AYANAMSA, the UT
+/// sibling of swe_get_ayanamsa. SIDTIME (grid-analytic.tsv only) carries a single value, the
+/// sidereal time itself. AZALT (grid-analytic.tsv only) carries three: swe_azalt's xaz[0..2]
+/// (azimuth, true altitude, apparent altitude). HOUSENAME (grid-analytic.tsv only) carries none
+/// at all, the same reason NAME does not: swe_house_name returns a string, not a double, so its
+/// returned name is written into the err column instead -- see
+/// Tools/CReference/sedump.c's process_house_name. NODAPSUT (both grids) carries 24: swe_nod_aps_ut's
+/// four six-double output arrays (xnasc, xndsc, xperi, xaphe), in that order.
 /// </summary>
 internal static class FieldLabels
 {
@@ -38,18 +49,28 @@ internal static class FieldLabels
     private static readonly string[] MoonCrossNodeLabels = ["jd_cross", "xlon", "xlat"];
     private static readonly string[] AyanamsaLabels = ["ayanamsa"];
     private static readonly string[] AyanamsaExLabels = ["daya"];
+    private static readonly string[] SidtimeLabels = ["tsid"];
+    private static readonly string[] AzAltLabels = BuildLabels("xaz", 3);
+    private static readonly string[] NodApsLabels = BuildLabels("xnasc", 6)
+        .Concat(BuildLabels("xndsc", 6))
+        .Concat(BuildLabels("xperi", 6))
+        .Concat(BuildLabels("xaphe", 6))
+        .ToArray();
 
     public static IReadOnlyList<string> For(string func, string caseId) => func switch
     {
         "CALC" or "CALCUT" => XxLabels,
-        "HOUSES" or "HOUSESARMC" => HouseLabels,
+        "HOUSES" or "HOUSESARMC" or "HOUSESEX" => HouseLabels,
         "FIXSTAR" or "FIXSTARUT" or "FIXSTAR2" or "FIXSTAR2UT" => XxLabels,
         "FIXSTARMAG" => MagLabels,
-        "NAME" => NameLabels,
+        "NAME" or "HOUSENAME" => NameLabels,
         "SOLCROSS" or "SOLCROSSUT" or "MOONCROSS" or "MOONCROSSUT" or "HELIOCROSS" or "HELIOCROSSUT" => JdCrossLabels,
         "MOONCROSSNODE" or "MOONCROSSNODEUT" => MoonCrossNodeLabels,
-        "AYANAMSA" => AyanamsaLabels,
+        "AYANAMSA" or "AYANAMSAUT" => AyanamsaLabels,
         "AYANAMSAEX" or "AYANAMSAEXUT" => AyanamsaExLabels,
+        "SIDTIME" => SidtimeLabels,
+        "AZALT" => AzAltLabels,
+        "NODAPSUT" => NodApsLabels,
         _ => throw new FormatException($"case {caseId}: unrecognized func token '{func}' at the start of case_id."),
     };
 

@@ -39,11 +39,11 @@ full parity with 2.10.03; it is not, and the next section says by how much.
 
 | Platform | C reference | Result |
 |---|---|---|
-| Windows x64 | MSVC 19.51.36248, `/O2 /fp:precise /MD` | 18,064 of 18,064 oracle rows bit-identical (gated) |
-| Linux x64, Ubuntu 24.04.4 | gcc 13.3.0, `-O2` | 18,064 of 18,064 oracle rows bit-identical (gated) |
-| macOS arm64 (Apple libSystem) | clang, `-O2 -ffp-contract=off -fno-builtin` | 18,064 of 18,064 oracle rows bit-identical (gated) |
+| Windows x64 | MSVC 19.51.36248, `/O2 /fp:precise /MD` | 20,532 of 20,532 oracle rows bit-identical (gated) |
+| Linux x64, Ubuntu 24.04.4 | gcc 13.3.0, `-O2` | 20,532 of 20,532 oracle rows bit-identical (gated) |
+| macOS arm64 (Apple libSystem) | clang, `-O2 -ffp-contract=off -fno-builtin` | 20,532 of 20,532 oracle rows bit-identical (gated) |
 
-**18,064 was measured directly on Windows** (this record's own oracle numbers, `scripts/run-oracle-dump.ps1` + `scripts/verify-oracle.ps1`, both grids' known-diff lists empty and both dump files SHA-256 identical to Astrodienst's own C). Linux and macOS are re-verified by their own CI jobs against the identical committed grids and drivers on the next push or pull request, not re-run from this workstation; their prior runs at the smaller row count (17,064) were bit-identical, and nothing added here changes what either platform's compiler does with the arithmetic itself -- new rows call `swe_get_ayanamsa`/`_ex`/`_ex_ut` and vary `sid_mode` on rows that already existed, not new code paths beyond what the rest of this grid already exercises.
+**20,532 was measured directly on Windows** (this record's own oracle numbers, `scripts/run-oracle-dump.ps1` + `scripts/verify-oracle.ps1`, both grids' known-diff lists empty and both dump files SHA-256 identical to Astrodienst's own C: `dump-c-2.10.03.tsv`/`dump-net.tsv` at `2d756fc5…a939c2e7`, `dump-c-2.10.03-files.tsv`/`dump-net-files.tsv` at `74cdc445…de7873d9`). Linux and macOS are re-verified by their own CI jobs against the identical committed grids and drivers on the next push or pull request, not re-run from this workstation; their prior runs at the smaller row count (18,064) were bit-identical. Unlike the ayanamsa addition that grew the grid from 17,064 to 18,064, this addition (2,469 rows, +1,969 analytic / +499 file-backed) is not a re-sweep of code paths this grid already reached: `swe_houses_ex`, `swe_get_ayanamsa_ut`, `swe_sidtime`, `swe_azalt`, `swe_house_name` and `swe_nod_aps_ut` are six entry points no grid measured before this addition, so Windows is the only platform this specific claim has actually been checked on until Linux/macOS CI next runs.
 
 Windows is gated by `oracle-dump`, the `.github/workflows/oracle.yml` job that replays this grid
 end to end on every push and pull request; Linux is gated the same way by `linux-exactness`, and
@@ -55,29 +55,55 @@ request, the same way `oracle-dump` and `macos-exactness` already did for their 
 (`crt-parity`, `c-reference-validate`, `swetest-diff`) check instead, since none of them replay
 this grid.
 
-18,064<!--doccount:grid-total-combined--> is the sum of the two grids, and neither is a single homogeneous function. Recounted by
+20,532<!--doccount:grid-total-combined--> is the sum of the two grids, and neither is a single homogeneous function. Recounted by
 `func` column rather than trusted from an earlier draft of this document:
-`Tools/OracleGrid/grid-analytic.tsv` is 15,820<!--doccount:grid-analytic-total--> rows -- 6,600<!--doccount:grid-analytic-func-houses-armc--> `HOUSES_ARMC`, 3,300<!--doccount:grid-analytic-func-houses--> `HOUSES`, 2,160<!--doccount:grid-analytic-func-calc-->
+`Tools/OracleGrid/grid-analytic.tsv` is 17,789<!--doccount:grid-analytic-total--> rows -- 6,600<!--doccount:grid-analytic-func-houses-armc--> `HOUSES_ARMC`, 3,300<!--doccount:grid-analytic-func-houses--> `HOUSES`, 2,160<!--doccount:grid-analytic-func-calc-->
 `CALC`, 2,160<!--doccount:grid-analytic-func-calc-ut--> `CALC_UT` (all `SEFLG_MOSEPH`, opening no ephemeris file), 600<!--doccount:grid-analytic-crossing-total--> crossing rows
 (`HELIO_CROSS`/`HELIO_CROSS_UT` 192<!--doccount:grid-analytic-func-helio-cross--><!--doccount:grid-analytic-func-helio-cross-ut--> each, `SOLCROSS`/`SOLCROSS_UT` 48<!--doccount:grid-analytic-func-solcross--><!--doccount:grid-analytic-func-solcross-ut--> each,
 `MOONCROSS`/`MOONCROSS_UT` 48<!--doccount:grid-analytic-func-mooncross--><!--doccount:grid-analytic-func-mooncross-ut--> each, `MOONCROSS_NODE`/`MOONCROSS_NODE_UT` 12<!--doccount:grid-analytic-func-mooncross-node--><!--doccount:grid-analytic-func-mooncross-node-ut--> each),
-plus 1,000 direct ayanamsa rows -- `AYANAMSA` (plain `swe_get_ayanamsa`) 200<!--doccount:grid-analytic-func-ayanamsa-->,
+1,000 direct ayanamsa rows -- `AYANAMSA` (plain `swe_get_ayanamsa`) 200<!--doccount:grid-analytic-func-ayanamsa-->,
 `AYANAMSA_EX` (`swe_get_ayanamsa_ex`) 400<!--doccount:grid-analytic-func-ayanamsa-ex-->, `AYANAMSA_EX_UT` (`swe_get_ayanamsa_ex_ut`) 400<!--doccount:grid-analytic-func-ayanamsa-ex-ut-->
 -- covering every predefined `sid_mode` (0..46) crossed with four Julian days (`AYANAMSA_EX`/`_EX_UT`
 also crossed with a plain/`SEFLG_NONUT` iflag pair), plus `SE_SIDM_USER` (mode 255) with three
-`t0`/`ayan_t0` pairs. Earlier text here described the grid as just `swe_calc`/`swe_calc_ut` plus
-`swe_houses`/`swe_houses_armc` and omitted all 600 crossing rows; before this addition it also had
-no direct ayanamsa coverage at all -- see "Direct vs. indirect ayanamsa coverage" below.
-`Tools/OracleGrid/grid-files.tsv` is 2,244<!--doccount:grid-files-total--> rows -- 900<!--doccount:grid-files-func-calc--> `CALC`, 900<!--doccount:grid-files-func-calc-ut--> `CALC_UT` (`SEFLG_SWIEPH`,
+`t0`/`ayan_t0` pairs, plus 1,969 rows across six more entry points added in this record (see
+"Six astrology-program entry points, added in this record" below). Earlier text here described the
+grid as just `swe_calc`/`swe_calc_ut` plus `swe_houses`/`swe_houses_armc` and omitted all 600
+crossing rows; before this addition it also had no direct ayanamsa coverage at all -- see "Direct
+vs. indirect ayanamsa coverage" below.
+`Tools/OracleGrid/grid-files.tsv` is 2,743<!--doccount:grid-files-total--> rows -- 900<!--doccount:grid-files-func-calc--> `CALC`, 900<!--doccount:grid-files-func-calc-ut--> `CALC_UT` (`SEFLG_SWIEPH`,
 reading the shipped `.se1` files), 200<!--doccount:grid-files-fixstar-family-total--> across the `swe_fixstar` family (`FIXSTAR`/`FIXSTAR_UT`/
 `FIXSTAR2`/`FIXSTAR2_UT` 48<!--doccount:grid-files-func-fixstar--><!--doccount:grid-files-func-fixstar-ut--><!--doccount:grid-files-func-fixstar2--><!--doccount:grid-files-func-fixstar2-ut--> each, `FIXSTAR_MAG` 8<!--doccount:grid-files-func-fixstar-mag-->, reading `sefstars.txt`), 24<!--doccount:grid-files-func-get-planet-name-->
-`GET_PLANET_NAME`, plus 220<!--doccount:grid-files-crossing-total--> crossing rows (`HELIO_CROSS`/`HELIO_CROSS_UT` 72<!--doccount:grid-files-func-helio-cross--><!--doccount:grid-files-func-helio-cross-ut--> each,
+`GET_PLANET_NAME`, 220<!--doccount:grid-files-crossing-total--> crossing rows (`HELIO_CROSS`/`HELIO_CROSS_UT` 72<!--doccount:grid-files-func-helio-cross--><!--doccount:grid-files-func-helio-cross-ut--> each,
 `SOLCROSS`/`SOLCROSS_UT` 16<!--doccount:grid-files-func-solcross--><!--doccount:grid-files-func-solcross-ut--> each, `MOONCROSS`/`MOONCROSS_UT` 16<!--doccount:grid-files-func-mooncross--><!--doccount:grid-files-func-mooncross-ut--> each,
 `MOONCROSS_NODE`/`MOONCROSS_NODE_UT` 6<!--doccount:grid-files-func-mooncross-node--><!--doccount:grid-files-func-mooncross-node-ut--> each) -- 820 crossing rows omitted from an earlier draft
-across both grids combined. `grid-files.tsv` carries no ayanamsa rows of its own: `swe_get_ayanamsa`/
+across both grids combined -- plus 499 rows across two of the same six new entry points (below).
+`grid-files.tsv` carries no ayanamsa rows of its own: `swe_get_ayanamsa`/
 `_ex`/`_ex_ut` open no ephemeris file, so all direct ayanamsa coverage lives in `grid-analytic.tsv`.
 Both `Tests/oracle/known-diff.tsv` and `Tests/oracle/known-diff-files.tsv`
 are empty (0<!--doccount:oracle-known-diff-analytic--> and 0<!--doccount:oracle-known-diff-files--> rows respectively): there is no recorded exception on either grid, on any platform.
+
+**Six astrology-program entry points, added in this record.** `HOUSES_EX`, `AYANAMSA_UT`,
+`SIDTIME`, `AZALT`, `HOUSE_NAME` and `NOD_APS_UT` are calls a real astrology program makes (this
+fork's own use case; Celestium is named only as one example consumer, not a source this record
+references) that no grid measured before this addition. `HOUSES_EX` (`swe_houses_ex`, the
+sidereal/radians-capable sibling of `swe_houses`) is the highest-value of the six: 1,500<!--doccount:grid-analytic-func-houses-ex-->
+analytic rows plus 300<!--doccount:grid-files-func-houses-ex--> file-backed rows, the latter
+covering `SIDEREAL` `sid_mode`s that can drive the ayanamsa through a file-backed `swe_calc`, which
+the analytic grid's forced `SEFLG_MOSEPH` can never reach. `AYANAMSA_UT` (`swe_get_ayanamsa_ut`)
+mirrors `AYANAMSA`'s own sweep, 200<!--doccount:grid-analytic-func-ayanamsa-ut--> rows. `SIDTIME`
+(`swe_sidtime`) and `AZALT` (`swe_azalt`) had zero coverage anywhere in this repository before
+this addition: 12<!--doccount:grid-analytic-func-sidtime--> and 48<!--doccount:grid-analytic-func-azalt-->
+rows respectively; `AZALT`'s rows deliberately include `atpress = 0` paired with a non-zero
+height, to exercise `swe_azalt`'s pressure-estimate branch rather than only assert it exists.
+`HOUSE_NAME` (`swe_house_name`) is a trivial pure lookup, 26<!--doccount:grid-analytic-func-house-name-->
+rows -- the one place either grid exercises house system `'J'` at all, but only as a string lookup,
+not the cusp geometry `docs/known-issues.md`'s "What the oracle grids do not cover in the house
+code" still documents as uncovered for `'J'`. `NOD_APS_UT` (`swe_nod_aps_ut`) is 183<!--doccount:grid-analytic-func-nod-aps-ut-->
+analytic rows plus 199<!--doccount:grid-files-func-nod-aps-ut--> file-backed rows, the latter the
+one place either grid exercises `SE_CHIRON` through `swe_nod_aps_ut` at all (it has no Moshier
+model, so its mean-speed override needs a real `seas_12.se1`/`seas_18.se1` segment). All six
+funcs' rows compare bit-identical against Astrodienst's own C with zero `known-diff.tsv` entries,
+the same as every other func in both grids.
 
 **Direct vs. indirect ayanamsa coverage.** Before this addition, every `sid_mode` either grid
 carried was exercised only *indirectly*: a `SEFLG_SIDEREAL` `swe_calc`/`swe_calc_ut` or
@@ -144,11 +170,12 @@ arithmetic drops one real row from the printed total. The gate itself compares t
 for whole-file equality, not this printed count, so the off-by-one affects only the diagnostic
 step's own summary line, not what is actually gated.
 
-Of the 18,064 oracle rows, 17,056 exercise the default nutation path rather than opting out via
-`SEFLG_NONUT`: 14,812 of the analytic grid's 15,820 rows (1,008 opt out) and all 2,244 files-grid
-rows (0 opt out). All 17,056 are among the bit-identical rows above -- see "What this record does
-not cover" for what that does and does not establish about the nutation coefficient tables
-themselves.
+Of the 20,532 oracle rows, 19,524 exercise the default nutation path rather than opting out via
+`SEFLG_NONUT`: 16,781 of the analytic grid's 17,789 rows (1,008 opt out -- unchanged by this
+record's own addition, since none of its six new funcs' rows carry `SEFLG_NONUT`) and all 2,743
+files-grid rows (0 opt out). All 19,524 are among the bit-identical rows above -- see "What this
+record does not cover" for what that does and does not establish about the nutation coefficient
+tables themselves.
 
 ## 2. Characterization baseline
 
@@ -354,7 +381,7 @@ independently diffed, value by value, against `external/swisseph/swenut2000a.h`.
 lengths match exactly on both sides (`NLS` 678, `NLS_2000B` 77, `NPL` 687), which rules out gross
 truncation, but that is a length check, not a value check, and no commit or script in this
 repository's history performs the latter. The indirect evidence is real but is not the same
-claim: 17,056 of the 18,064 bit-exact oracle rows exercise the default (non-`SEFLG_NONUT`)
+claim: 19,524 of the 20,532 bit-exact oracle rows exercise the default (non-`SEFLG_NONUT`)
 nutation path and match Astrodienst's own C bit for bit, which a wrong coefficient of any
 consequence would be very unlikely to survive. That is strong corroboration through the oracle,
 not a direct audit of the table itself.
@@ -387,13 +414,19 @@ for a live C buffer, so none belongs on this list.
 from `known-fail.tsv`'s category counts rather than a fresh run: category is gated and reliable,
 free text is not.
 
-**The bit-exact oracle's house-code coverage is narrower than "15,820 of 15,820 match" suggests.**
-Both drivers call only the six-argument `swe_houses`/`swe_houses_armc` forms, so `swe_houses_ex2`,
-`swe_houses_armc_ex2`, `swe_house_pos`, `swe_house_name`, every house-code `serr` path, and every
-speed derivative (`AscDash` and the other nine speed fields) have no bit-exact coverage at all --
-some of that is partly covered by the correctness oracle instead (house systems `'P'`/`'W'`/`'K'`
-only, for speeds), and house system `'J'` (Savard-A) has no external validation on either
-instrument, anywhere. See `docs/known-issues.md`, "What the oracle grids do not cover in the house
+**The bit-exact oracle's house-code coverage is narrower than "17,789 of 17,789 match" suggests,
+though this record closes part of the gap.** Before this record, both drivers called only the
+six-argument `swe_houses`/`swe_houses_armc` forms; they now also call `swe_houses_ex` (the
+iflag-taking, sidereal/radians-capable form) and `swe_house_name`. `swe_houses_ex2`/
+`swe_houses_armc_ex2`'s own speed-derivative outputs (`cusp_speed`/`ascmc_speed`), `swe_house_pos`,
+and every house-code `serr` path (`swe_houses_ex` has none either, matching `swe_houses`) still
+have no bit-exact coverage at all -- some of the speed gap is partly covered by the correctness
+oracle instead (house systems `'P'`/`'W'`/`'K'` only, for speeds). House system `'J'` (Savard-A)
+still has no external validation of its cusp *computation* on either instrument: `HOUSE_NAME`'s new
+coverage only confirms both sides agree on the string `swe_house_name` returns for `'J'` (a lookup
+table entry), not the geometry `swe_houses_ex` would compute for it -- `'J'` stays deliberately
+excluded from every hsys sweep that actually computes cusps, on both grids. See
+`docs/known-issues.md`, "What the oracle grids do not cover in the house
 code," for the full accounting.
 
 ## Sources

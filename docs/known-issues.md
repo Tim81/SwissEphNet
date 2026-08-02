@@ -1129,28 +1129,38 @@ the four fixed-star entry points, as recorded above.
 
 ## What the oracle grids do not cover in the house code
 
-The bit-exact comparison reports 15,820 of 15,820 analytic-grid rows matching MSVC-built
+The bit-exact comparison reports 17,789 of 17,789 analytic-grid rows matching MSVC-built
 2.10.03 C. That is a real result and it is narrower than it sounds, so this records what it
 does and does not establish, to stop it being cited for things it never touched.
 
-Both replay drivers (`Tools/OracleDump/Program.cs`, `Tools/CReference/sedump.c`) call exactly
-two house functions, `swe_houses` and `swe_houses_armc`, in their **six-argument** form. That
-determines the coverage.
+Both replay drivers (`Tools/OracleDump/Program.cs`, `Tools/CReference/sedump.c`) call
+`swe_houses` and `swe_houses_armc` in their **six-argument** form, plus, as of the addition that
+closed part of this gap, `swe_houses_ex` (the iflag-taking, sidereal/radians-capable sibling) and
+`swe_house_name` (a pure lookup, not a cusp computation). That determines the coverage.
 
 **Genuinely covered.** Twenty-five house letters crossed with latitudes to 89 degrees and
 obliquities including 0. The `eps = 0` column is what earns the grid its keep: `tand(0)` is
 zero, the pole-height iteration cannot converge, and 2.10.03's `niter_max` cap fires. So
 `niter_max`, the Porphyry fallback, the Alcabitius clamp and the non-speed `CalcH`
-restructuring are all verified against Astrodienst's own C.
+restructuring are all verified against Astrodienst's own C. `swe_houses_ex`'s own iflag handling
+(`SEFLG_SIDEREAL` -- including the ayanamsa applied through it, on `grid-files.tsv`'s rows via a
+real file-backed `swe_calc` -- and `SEFLG_RADIANS`) is covered too, over the same 25 letters
+(narrower geolat/geolon/date spread than plain `swe_houses`' own sweep, since iflag is a new
+dimension on top of what that sweep already proves). `swe_house_name`'s own switch is covered in
+full -- every case label it has, INCLUDING `'J'` (see below) and one letter (`'P'`) that
+deliberately is not a case label, to exercise its default/Placidus branch.
 
-**Not covered by the grid at all**, because the six-argument overloads have no such parameter
-or entry point:
+**Not covered by the grid at all**, because none of the four entry points above has such a
+parameter or reaches it:
 
 - every speed derivative, so `AscDash` and all nine speed fields
-- `swe_houses_ex2` and `swe_houses_armc_ex2`
-- `swe_house_pos` and `swe_house_name`
+- `swe_houses_ex2`'s and `swe_houses_armc_ex2`'s own `cusp_speed`/`ascmc_speed` outputs (`swe_houses_ex`
+  forwards to `swe_houses_ex2` with both hardcoded `NULL`, so calling it proves nothing about them)
+- `swe_house_pos`
 - `serr` on any house path, including the threading added through `sidereal_houses_*`
-- house systems `'J'`, `'Z'` and `'0'`
+  (`swe_houses_ex` has no `serr` parameter either, matching `swe_houses`)
+- house systems `'Z'` and `'0'`
+- house system `'J'`'s cusp **computation** specifically -- see below; its *name* is covered
 
 **Partly covered elsewhere.** The speed fields are exercised by conformance suite 6 testcases
 8 and 9, all 1,080 iterations of which pass against `t.exp`. But testcase 8 uses only hsys `'P'`
@@ -1161,11 +1171,17 @@ numerical-differentiation path, reached by `L Q S X M F B Y I`, has no coverage 
 oracle, because the two systems that do carry speeds through conformance both take the analytic
 path.
 
-**House system `'J'` (Savard-A) has no external validation whatsoever.** The analytic grid
-excludes it deliberately (`gen-grid-analytic.ps1`'s house-letter list, with a comment saying
-so), and `setest/t.exp` never uses it in any suite 6 testcase -- checked by enumerating every
-`ihsy` in the corpus. Its geometry was transliterated from `swehouse.c:1176-1251` and `:2472-2535`
-and read back against the C line by line, which is the only evidence there is. The 918 `HP|J`
+**House system `'J'` (Savard-A) has no external validation of its cusp computation, though its
+*name* now does.** `swe_house_name('J')` is bit-exact verified: both `sedump.c` and the port agree
+on the string `"Savard-A"` for it, since `swe_house_name` is a pure lookup and both sides implement
+the identical 25-case switch (`swehouse.c:827`, `SwissEphNet/CPort/SweHouse.cs:990`) -- see
+`gen-grid-analytic.ps1`'s `$HouseNameLetters`. That is not the same claim as validating the house
+*system*: `'J'`'s actual cusp geometry is still excluded, deliberately, from every hsys sweep that
+computes cusps at all (`swe_houses`/`swe_houses_armc`'s own `$HouseLetters`, and `swe_houses_ex`'s
+sweep reuses that same list, with the same comment explaining why), and `setest/t.exp` never uses
+it in any suite 6 testcase -- checked by enumerating every `ihsy` in the corpus. Its geometry was
+transliterated from `swehouse.c:1176-1251` and `:2472-2535` and read back against the C line by
+line, which is the only evidence there is for the computation itself. The 918 `HP|J`
 and `HN|J` baseline rows froze the port's own output with no oracle behind them.
 
 Closing that gap means either adding `'J'` to the analytic grid, which needs the C reference to

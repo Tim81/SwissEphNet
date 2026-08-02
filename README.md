@@ -282,8 +282,8 @@ requires.
 
 How this is checked, and what checking it does and does not prove. The port's output is compared
 field by field against Astrodienst's own C, built from the same source and run against the same
-ephemeris files. On Windows (MSVC) and Linux (gcc), all 18,064<!--doccount:grid-total-combined--> rows in that comparison (15,820<!--doccount:grid-analytic-total-->
-calls that need no ephemeris file plus 2,244<!--doccount:grid-files-total--> that read the shipped `.se1` files) come back
+ephemeris files. On Windows (MSVC) and Linux (gcc), all 20,532<!--doccount:grid-total-combined--> rows in that comparison (17,789<!--doccount:grid-analytic-total-->
+calls that need no ephemeris file plus 2,743<!--doccount:grid-files-total--> that read the shipped `.se1` files) come back
 bit-identical, not merely close; the tracked difference lists for both are empty. macOS (clang,
 arm64) matches too, once clang is told not to substitute its own math builtins for individual libm
 calls (`-fno-builtin`). None of that proves agreement between platforms: comparing the port's own
@@ -600,9 +600,9 @@ platform:
 
 | Platform | C reference | Result |
 |---|---|---|
-| Windows x64 | MSVC 19.51, `/O2 /fp:precise /MD` | 18,064<!--doccount:grid-total-combined--> of 18,064 rows bit-identical (gated) |
-| Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | 18,064 of 18,064 rows bit-identical (gated) |
-| macOS arm64 | clang, `-O2 -ffp-contract=off -fno-builtin` | 18,064 of 18,064 rows bit-identical (gated) |
+| Windows x64 | MSVC 19.51, `/O2 /fp:precise /MD` | 20,532<!--doccount:grid-total-combined--> of 20,532 rows bit-identical (gated) |
+| Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | 20,532 of 20,532 rows bit-identical (gated) |
+| macOS arm64 | clang, `-O2 -ffp-contract=off -fno-builtin` | 20,532 of 20,532 rows bit-identical (gated) |
 
 The characterization baseline (`scripts/verify-baseline.ps1`) separately runs on both `net8.0` and
 `net10.0` and reports them field-identical to each other on the platform that generated it. That
@@ -610,7 +610,7 @@ corroborates `net8.0` from a different instrument, but it is a weaker claim than
 self-consistency between two TFMs of this port rather than agreement with the C reference.
 
 "Gated" on the Windows row means `oracle-dump`, the `.github/workflows/oracle.yml` job that
-replays this exact 18,064-row grid, re-runs the comparison end to end on every push and pull
+replays this exact 20,532-row grid, re-runs the comparison end to end on every push and pull
 request and fails the workflow on any mismatch. Three more jobs also run on Windows in that file
 but check different things than this grid: `crt-parity` compares MSVC C against .NET on a fixed
 CRT value table, `c-reference-validate` compares the MSVC C build against pyswisseph 2.10.03, and
@@ -988,11 +988,12 @@ itself ships. Neither can prove the strongest claim this project makes: that for
 the port and Astrodienst's own C compute the identical bits. That is what this third instrument
 is for, and it is the source of the "Numerical compatibility" table above.
 
-- `Tools/OracleGrid` holds the two input grids: `grid-analytic.tsv` (15,820<!--doccount:grid-analytic-total--> rows, `SEFLG_MOSEPH
-  swe_calc`/`swe_calc_ut`, `swe_houses`/`swe_houses_armc`, and `swe_get_ayanamsa`/`_ex`/`_ex_ut`
-  swept across every predefined `sid_mode` plus `SE_SIDM_USER`, opening no ephemeris file) and
-  `grid-files.tsv` (2,244<!--doccount:grid-files-total--> rows, `SEFLG_SWIEPH swe_calc`/`swe_calc_ut`, the `swe_fixstar` family,
-  and `swe_get_planet_name`, reading the shipped `.se1`/`sefstars.txt` files).
+- `Tools/OracleGrid` holds the two input grids: `grid-analytic.tsv` (17,789<!--doccount:grid-analytic-total--> rows, `SEFLG_MOSEPH
+  swe_calc`/`swe_calc_ut`, `swe_houses`/`swe_houses_armc`/`swe_houses_ex`, `swe_get_ayanamsa`/`_ex`/`_ex_ut`/`_ut`,
+  `swe_sidtime`, `swe_azalt`, `swe_house_name` and `swe_nod_aps_ut`, swept across every predefined
+  `sid_mode` plus `SE_SIDM_USER`, opening no ephemeris file) and
+  `grid-files.tsv` (2,743<!--doccount:grid-files-total--> rows, `SEFLG_SWIEPH swe_calc`/`swe_calc_ut`, the `swe_fixstar` family,
+  `swe_get_planet_name`, `swe_houses_ex` and `swe_nod_aps_ut`, reading the shipped `.se1`/`sefstars.txt` files).
 - Each grid is replayed by a pair of drivers built from the same inputs: `Tools/CReference/sedump.c`,
   compiled against Astrodienst's own vendored 2.10.03 C, and `Tools/OracleDump`, built against this
   port. Both write every hex-encoded field, the return code, and the `serr` text to a TSV.

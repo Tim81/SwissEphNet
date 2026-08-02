@@ -6,13 +6,18 @@
 //                                          swe_houses/swe_houses_armc, and the eight crossing
 //                                          functions (swe_solcross/_ut, swe_mooncross/_ut,
 //                                          swe_mooncross_node/_ut, swe_helio_cross/_ut), also
-//                                          under SEFLG_MOSEPH. Touches no ephemeris data file.
+//                                          under SEFLG_MOSEPH, plus swe_houses_ex (the sidereal/
+//                                          radians house path), swe_get_ayanamsa_ut,
+//                                          swe_sidtime, swe_azalt, swe_house_name and
+//                                          swe_nod_aps_ut. Touches no ephemeris data file.
 //                                          See gen-grid-analytic.ps1's header.
 //   Tools/OracleGrid/grid-files.tsv     -- swe_calc/swe_calc_ut (SEFLG_SWIEPH), the swe_fixstar
-//                                          family, swe_get_planet_name, and the same eight
-//                                          crossing functions under SEFLG_SWIEPH. Opens the
-//                                          shipped .se1/sefstars.txt files. See
-//                                          gen-grid-files.ps1's header.
+//                                          family, swe_get_planet_name, the same eight
+//                                          crossing functions under SEFLG_SWIEPH, plus
+//                                          swe_houses_ex and swe_nod_aps_ut (the two of the six
+//                                          new funcs where a real .se1 file changes what gets
+//                                          exercised). Opens the shipped .se1/sefstars.txt
+//                                          files. See gen-grid-files.ps1's header.
 //   Tools/OracleGrid/grid-jpl.tsv       -- swe_calc/swe_calc_ut (SEFLG_JPLEPH), including the
 //                                          SEFLG_JPLHOR/SEFLG_JPLHOR_APPROX combinations no other
 //                                          grid can reach. Opens a JPL DE file this repo does not
@@ -59,8 +64,8 @@ namespace OracleDump;
 
 internal static class Program
 {
-    private const int AnalyticColumns = 16;
-    private const int FilesColumns = 14;
+    private const int AnalyticColumns = 22;
+    private const int FilesColumns = 16;
     private const int CuspCount = 37; // cusp[0..36]
     private const int AscmcCount = 10; // ascmc[0..9]
 
@@ -69,11 +74,18 @@ internal static class Program
     // index by a fixed offset keeps that same offset -- matches Tools/CReference/sedump.c's
     // identical choice. t0/ayan_t0 carry swe_set_sid_mode's own SE_SIDM_USER parameters -- see
     // ApplySidMode.
+    //
+    // method, calc_flag, atpress, attemp, xin0, xin1 (analytic) and method, hsys (files) are a
+    // second additive tail, appended after t0/ayan_t0 for the same reason -- see
+    // Tools/CReference/sedump.c's identical header comment on EXPECTED_HEADER_ANALYTIC/FILES for
+    // which new func needs which column.
     private static readonly string ExpectedHeaderAnalytic = string.Join('\t',
-        "case_id", "func", "ipl", "tjd", "iflag", "hsys", "geolon", "geolat", "height", "armc", "eps", "sid_mode", "x2cross", "dir", "t0", "ayan_t0");
+        "case_id", "func", "ipl", "tjd", "iflag", "hsys", "geolon", "geolat", "height", "armc", "eps", "sid_mode", "x2cross", "dir", "t0", "ayan_t0",
+        "method", "calc_flag", "atpress", "attemp", "xin0", "xin1");
 
     private static readonly string ExpectedHeaderFiles = string.Join('\t',
-        "case_id", "func", "ipl", "tjd", "iflag", "star", "geolon", "geolat", "height", "sid_mode", "x2cross", "dir", "t0", "ayan_t0");
+        "case_id", "func", "ipl", "tjd", "iflag", "star", "geolon", "geolat", "height", "sid_mode", "x2cross", "dir", "t0", "ayan_t0",
+        "method", "hsys");
 
     private enum GridMode { Analytic, Files }
 
@@ -221,6 +233,24 @@ internal static class Program
                 case "AYANAMSA_EX_UT":
                     ProcessAyanamsaEx(swe, caseId, func, fields, writer);
                     break;
+                case "HOUSES_EX":
+                    ProcessHousesEx(swe, caseId, fields, sidModeIndex: 11, hsysIndex: 5, writer);
+                    break;
+                case "AYANAMSA_UT":
+                    ProcessAyanamsaUt(swe, caseId, fields, writer);
+                    break;
+                case "SIDTIME":
+                    ProcessSidtime(swe, caseId, fields, writer);
+                    break;
+                case "AZALT":
+                    ProcessAzalt(swe, caseId, fields, writer);
+                    break;
+                case "HOUSE_NAME":
+                    ProcessHouseName(swe, caseId, fields, writer);
+                    break;
+                case "NOD_APS_UT":
+                    ProcessNodApsUt(swe, caseId, fields, sidModeIndex: 11, methodIndex: 16, writer);
+                    break;
                 default:
                     throw new InvalidDataException($"unknown func '{func}' at case {caseId}");
             }
@@ -258,6 +288,12 @@ internal static class Program
                 case "HELIO_CROSS":
                 case "HELIO_CROSS_UT":
                     ProcessHelioCross(swe, caseId, func, fields, sidModeIndex: 9, x2crossIndex: 10, dirIndex: 11, writer);
+                    break;
+                case "HOUSES_EX":
+                    ProcessHousesEx(swe, caseId, fields, sidModeIndex: 9, hsysIndex: 15, writer);
+                    break;
+                case "NOD_APS_UT":
+                    ProcessNodApsUt(swe, caseId, fields, sidModeIndex: 9, methodIndex: 14, writer);
                     break;
                 default:
                     throw new InvalidDataException($"unknown func '{func}' at case {caseId}");
@@ -509,6 +545,177 @@ internal static class Program
         writer.Write('\t');
         writer.Write(EscapeErr(serr));
         EmitValue(writer, daya);
+        writer.Write('\n');
+    }
+
+    // HOUSES_EX: swe_houses_ex, the sidereal/radians-capable sibling of HOUSES. Shared by both
+    // grids -- hsysIndex is the one difference (analytic's hsys sits at fields[5], shared with
+    // HOUSES/HOUSES_ARMC; the files grid has no hsys column of its own, so it gets the new
+    // trailing one instead), matching ProcessHousesArmc's own sidModeIndex-style parameter for
+    // the same reason.
+    private static void ProcessHousesEx(SwissEph swe, string caseId, string[] fields, int sidModeIndex, int hsysIndex, TextWriter writer)
+    {
+        var tjd = ParseDouble(fields[3], caseId, "tjd");
+        var iflag = ParseInt(fields[4], caseId, "iflag");
+        var hsys = ParseHsys(fields[hsysIndex], caseId);
+        var geolon = ParseDouble(fields[6], caseId, "geolon");
+        var geolat = ParseDouble(fields[7], caseId, "geolat");
+
+        ApplySidMode(swe, fields, caseId, sidModeIndex);
+
+        var cusp = new double[40];
+        var ascmc = new double[10];
+        // swe_houses_ex takes geolat before geolon -- opposite of this grid's own
+        // geolon-then-geolat column order -- matches ProcessHouses's identical care for plain
+        // swe_houses.
+        var retc = swe.swe_houses_ex(tjd, iflag, geolat, geolon, hsys, cusp, ascmc);
+
+        WriteHousesRow(writer, caseId, retc, cusp, ascmc);
+    }
+
+    // AYANAMSA_UT: swe_get_ayanamsa_ut, the UT sibling of AYANAMSA -- same fixed-OK, empty-err
+    // convention as ProcessAyanamsa, and the same ApplySidMode call, since the ayanamsa it
+    // returns still depends on whichever sid_mode swe_set_sid_mode last configured.
+    // Analytic-grid only: opens no ephemeris file, so this func token never appears in a
+    // grid-files.tsv row.
+    private static void ProcessAyanamsaUt(SwissEph swe, string caseId, string[] fields, TextWriter writer)
+    {
+        var tjd = ParseDouble(fields[3], caseId, "tjd");
+        ApplySidMode(swe, fields, caseId, sidModeIndex: 11);
+        var value = swe.swe_get_ayanamsa_ut(tjd);
+
+        writer.Write(caseId);
+        writer.Write('\t');
+        writer.Write(SwissEph.OK.ToString(CultureInfo.InvariantCulture));
+        writer.Write('\t');
+        EmitValue(writer, value);
+        writer.Write('\n');
+    }
+
+    // SIDTIME: swe_sidtime. A bare double with no serr and no sid_mode dependence of its own
+    // (sidereal *time*, not the ayanamsha) -- RefuseIfSidModeSet guards the latter the same way
+    // ProcessFixstar/ProcessHouses already guard funcs with no sidereal-frame parameter.
+    private static void ProcessSidtime(SwissEph swe, string caseId, string[] fields, TextWriter writer)
+    {
+        RefuseIfSidModeSet(caseId, "SIDTIME", fields, sidModeIndex: 11);
+        var tjd = ParseDouble(fields[3], caseId, "tjd");
+        var value = swe.swe_sidtime(tjd);
+
+        writer.Write(caseId);
+        writer.Write('\t');
+        writer.Write(SwissEph.OK.ToString(CultureInfo.InvariantCulture));
+        writer.Write('\t');
+        EmitValue(writer, value);
+        writer.Write('\n');
+    }
+
+    // AZALT: swe_azalt. Analytic-grid only. geopos is {lon, lat, height}, reusing this grid's
+    // existing geolon/geolat/height columns; xin[2] is never a grid column because swe_azalt's
+    // own body only ever reads xin[0]/xin[1] -- a column nothing reads is exactly the dead-input
+    // trap this repo has already been burned by, so this driver does not add one. atpress == 0
+    // takes the pressure-estimate branch, so this grid deliberately carries rows with atpress = 0
+    // and a non-zero height so that branch is exercised, not just asserted.
+    private static void ProcessAzalt(SwissEph swe, string caseId, string[] fields, TextWriter writer)
+    {
+        RefuseIfSidModeSet(caseId, "AZALT", fields, sidModeIndex: 11);
+
+        var tjd = ParseDouble(fields[3], caseId, "tjd");
+        var geopos = new[]
+        {
+            ParseDouble(fields[6], caseId, "geolon"),
+            ParseDouble(fields[7], caseId, "geolat"),
+            ParseDouble(fields[8], caseId, "height"),
+        };
+        var calcFlag = ParseInt(fields[17], caseId, "calc_flag");
+        var atpress = ParseDouble(fields[18], caseId, "atpress");
+        var attemp = ParseDouble(fields[19], caseId, "attemp");
+        var xin = new[]
+        {
+            ParseDouble(fields[20], caseId, "xin0"),
+            ParseDouble(fields[21], caseId, "xin1"),
+        };
+        var xaz = new double[3];
+
+        // swe_azalt reads const_lapse_rate, a swecl.c static settable only through
+        // swe_set_lapse_rate -- neither driver ever calls that, and both reset all other library
+        // state before every row (a fresh SwissEph here, swe_close() in sedump.c), so both sides
+        // see SE_LAPSE_RATE, the compiled-in default, on every single row.
+        swe.swe_azalt(tjd, calcFlag, geopos, atpress, attemp, xin, xaz);
+
+        writer.Write(caseId);
+        writer.Write('\t');
+        writer.Write(SwissEph.OK.ToString(CultureInfo.InvariantCulture)); // swe_azalt returns void -- no retc, no serr
+        writer.Write('\t');
+        for (var i = 0; i < 3; i++)
+        {
+            EmitValue(writer, xaz[i]);
+        }
+        writer.Write('\n');
+    }
+
+    // HOUSE_NAME: swe_house_name. Analytic-grid only; a pure lookup, so it opens no ephemeris
+    // file either way. Returns a string, never null -- same "write the string into the err
+    // column, fixed retc 0" convention as ProcessName (GET_PLANET_NAME).
+    private static void ProcessHouseName(SwissEph swe, string caseId, string[] fields, TextWriter writer)
+    {
+        var hsys = ParseHsys(fields[5], caseId);
+        var name = swe.swe_house_name(hsys);
+
+        writer.Write(caseId);
+        writer.Write('\t');
+        writer.Write(0.ToString(CultureInfo.InvariantCulture));
+        writer.Write('\t');
+        writer.Write(EscapeErr(name));
+        writer.Write('\n');
+    }
+
+    // NOD_APS_UT: swe_nod_aps_ut, which adds swe_deltat_ex to tjd_ut and delegates to
+    // swe_nod_aps. Real retc and serr. Shared by both grids -- methodIndex is the one difference
+    // (analytic carries the new method column after t0/ayan_t0; files carries it right before
+    // its own trailing hsys column), matching ProcessHousesEx's own hsysIndex-style parameter for
+    // the same reason. No sidereal-frame parameter in Astrodienst's API, so this func gets the
+    // same RefuseIfSidModeSet guard ProcessMoonCrossNode/ProcessHelioCross already use.
+    private static void ProcessNodApsUt(SwissEph swe, string caseId, string[] fields, int sidModeIndex, int methodIndex, TextWriter writer)
+    {
+        RefuseIfSidModeSet(caseId, "NOD_APS_UT", fields, sidModeIndex);
+
+        var ipl = ParseInt(fields[2], caseId, "ipl");
+        var tjd = ParseDouble(fields[3], caseId, "tjd");
+        var iflag = ParseInt(fields[4], caseId, "iflag");
+        var method = ParseInt(fields[methodIndex], caseId, "method");
+
+        var xnasc = new double[6];
+        var xndsc = new double[6];
+        var xperi = new double[6];
+        var xaphe = new double[6];
+        string? serr = null;
+        // Zero-initialized above regardless of outcome -- swe_nod_aps only zeroes these four
+        // arrays itself on its "not implemented" reject branch; every other ERR return (e.g. an
+        // inner swe_calc failure) leaves them untouched, matching ProcessHelioCross's identical
+        // rule for jdCross, for the identical reason.
+        var retc = swe.swe_nod_aps_ut(tjd, ipl, iflag, method, xnasc, xndsc, xperi, xaphe, ref serr);
+
+        writer.Write(caseId);
+        writer.Write('\t');
+        writer.Write(retc.ToString(CultureInfo.InvariantCulture));
+        writer.Write('\t');
+        writer.Write(EscapeErr(serr));
+        for (var i = 0; i < 6; i++)
+        {
+            EmitValue(writer, xnasc[i]);
+        }
+        for (var i = 0; i < 6; i++)
+        {
+            EmitValue(writer, xndsc[i]);
+        }
+        for (var i = 0; i < 6; i++)
+        {
+            EmitValue(writer, xperi[i]);
+        }
+        for (var i = 0; i < 6; i++)
+        {
+            EmitValue(writer, xaphe[i]);
+        }
         writer.Write('\n');
     }
 

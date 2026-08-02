@@ -11,15 +11,22 @@
  *                                          swe_houses/swe_houses_armc, the eight crossing
  *                                          functions (swe_solcross/_ut, swe_mooncross/_ut,
  *                                          swe_mooncross_node/_ut, swe_helio_cross/_ut), also
- *                                          under SEFLG_MOSEPH, and swe_get_ayanamsa/_ex/_ex_ut
+ *                                          under SEFLG_MOSEPH, swe_get_ayanamsa/_ex/_ex_ut
  *                                          (direct ayanamsa coverage -- every predefined sid_mode
- *                                          plus SE_SIDM_USER). Touches no ephemeris data file.
+ *                                          plus SE_SIDM_USER), swe_houses_ex (the sidereal/
+ *                                          radians house path), swe_get_ayanamsa_ut,
+ *                                          swe_sidtime, swe_azalt, swe_house_name and
+ *                                          swe_nod_aps_ut. Touches no ephemeris data file.
  *                                          See gen-grid-analytic.ps1's header.
  *   Tools/OracleGrid/grid-files.tsv     -- swe_calc/swe_calc_ut (SEFLG_SWIEPH), the
- *                                          swe_fixstar family, swe_get_planet_name, and the same
- *                                          eight crossing functions under SEFLG_SWIEPH. Opens
- *                                          the shipped .se1/sefstars.txt files. See
- *                                          gen-grid-files.ps1's header.
+ *                                          swe_fixstar family, swe_get_planet_name, the same
+ *                                          eight crossing functions under SEFLG_SWIEPH,
+ *                                          swe_houses_ex and swe_nod_aps_ut (the two of the six
+ *                                          new funcs where a real .se1 file changes what gets
+ *                                          exercised -- the sidereal ayanamsa behind
+ *                                          swe_houses_ex, and swe_nod_aps_ut's planetary
+ *                                          positions). Opens the shipped .se1/sefstars.txt
+ *                                          files. See gen-grid-files.ps1's header.
  *   Tools/OracleGrid/grid-jpl.tsv       -- swe_calc/swe_calc_ut (SEFLG_JPLEPH), including the
  *                                          SEFLG_JPLHOR/SEFLG_JPLHOR_APPROX combinations no other
  *                                          grid can reach (sweph.c:6110-6112 strips both unless
@@ -156,6 +163,12 @@
  *     HELIO_CROSS_UT                         jd_cross                 (1 double   -> 2 value columns)
  *   MOONCROSS_NODE, MOONCROSS_NODE_UT        jd_cross, xlon, xla      (3 doubles  -> 6 value columns)
  *   AYANAMSA, AYANAMSA_EX, AYANAMSA_EX_UT    daya                     (1 double   -> 2 value columns)
+ *   HOUSES_EX                                cusp[0..36], ascmc[0..9] (47 doubles -> 94 value columns)
+ *   AYANAMSA_UT                              daya                     (1 double   -> 2 value columns)
+ *   SIDTIME                                  tsid                     (1 double   -> 2 value columns)
+ *   AZALT                                    xaz[0..2]                (3 doubles  -> 6 value columns)
+ *   HOUSE_NAME                               (none)                   (0 value columns)
+ *   NOD_APS_UT             xnasc[0..5], xndsc[0..5], xperi[0..5], xaphe[0..5] (24 doubles -> 48 value columns)
  *
  * GET_PLANET_NAME has no value column at all: swe_get_planet_name returns a string, not a
  * double, so there is nothing to hex-encode. Its returned name is written into the err column
@@ -170,6 +183,23 @@
  * own reasoning for the same choice). retc/err come right after case_id, not after the doubles,
  * purely so a reader can see whether a row errored before scanning past however many value
  * columns that func has.
+ *
+ * HOUSES_EX (swehouse.c:178) has no serr parameter either -- it forwards to swe_houses_ex2 with
+ * serr hardcoded NULL (swehouse.c:186) -- so its err column is empty, the same convention HOUSES/
+ * HOUSES_ARMC already use, and its retc/cusp/ascmc columns are laid out identically to HOUSES.
+ * AYANAMSA_UT (swe_get_ayanamsa_ut, sweph.c:3260) and SIDTIME (swe_sidtime, swephlib.c:3580) are
+ * both bare doubles with no serr and no error signal at all, matching AYANAMSA's own convention:
+ * a fixed OK retc and an empty err column. HOUSE_NAME (swe_house_name, swehouse.c:827) returns
+ * const char *, never NULL, so it has no value column at all and its name goes into the err
+ * column, matching GET_PLANET_NAME's own convention; its retc is a fixed 0, the same "the C API
+ * genuinely has nothing to report there" reason GET_PLANET_NAME's is. AZALT (swe_azalt,
+ * swecl.c:2788) returns void -- no retc, no serr -- so its retc is a fixed OK and its err column
+ * stays empty; see process_azalt for why xin[2] never gets a grid column. NOD_APS_UT
+ * (swe_nod_aps_ut, swecl.c:5645, delegating to swe_nod_aps at swecl.c:5064) is the one of these
+ * six with a real int32 retc and a real serr, and the one whose four six-double output arrays
+ * (xnasc, xndsc, xperi, xaphe) are zeroed only on its "not implemented" reject branch
+ * (swecl.c:5134-5146) -- see process_nod_aps_ut for why both drivers zero-initialize all four
+ * before every call regardless.
  *
  * THE CROSSING FUNCTIONS' retc COLUMN: ONE REAL, SIX SYNTHETIC
  *
@@ -211,8 +241,8 @@
 #include "swephexp.h"
 
 #define MAX_LINE 4096
-#define ANALYTIC_COLUMNS 16
-#define FILES_COLUMNS 14
+#define ANALYTIC_COLUMNS 22
+#define FILES_COLUMNS 16
 #define CUSP_COUNT 37   /* cusp[0..36] */
 #define ASCMC_COUNT 10  /* ascmc[0..9] */
 #define STAR_BUF_LEN AS_MAXCH
@@ -226,11 +256,24 @@
  * see this file's own top-of-file comment. x2cross, dir, t0 and ayan_t0 are appended after
  * sid_mode in both headers, not interleaved among the original columns, so every column this
  * file's other process_* functions already index by a fixed offset keeps that same offset. t0/
- * ayan_t0 carry swe_set_sid_mode's own SE_SIDM_USER parameters -- see apply_sid_mode. */
+ * ayan_t0 carry swe_set_sid_mode's own SE_SIDM_USER parameters -- see apply_sid_mode.
+ *
+ * method, calc_flag, atpress, attemp, xin0, xin1 (analytic) and method, hsys (files) are a second
+ * additive tail, appended after t0/ayan_t0 for the same reason x2cross/dir/t0/ayan_t0 themselves
+ * were: HOUSES_EX/AYANAMSA_UT/SIDTIME/AZALT/HOUSE_NAME/NOD_APS_UT (see the dispatch table in
+ * main() and the six new process_* functions below) need columns none of the funcs already in
+ * this grid used, and every existing column's offset had to keep meaning what it always meant.
+ * method carries swe_nod_aps_ut's own method bitmask; calc_flag/atpress/attemp/xin0/xin1 carry
+ * swe_azalt's own parameters (xin[2] is never read by swe_azalt -- see process_azalt -- so there
+ * is no xin2 column); hsys (files grid only) carries HOUSES_EX's house-system letter, since the
+ * files grid has no hsys column of its own the way the analytic grid's HOUSES/HOUSES_ARMC rows
+ * already share at fields[5]. */
 static const char *EXPECTED_HEADER_ANALYTIC =
-    "case_id\tfunc\tipl\ttjd\tiflag\thsys\tgeolon\tgeolat\theight\tarmc\teps\tsid_mode\tx2cross\tdir\tt0\tayan_t0";
+    "case_id\tfunc\tipl\ttjd\tiflag\thsys\tgeolon\tgeolat\theight\tarmc\teps\tsid_mode\tx2cross\tdir\tt0\tayan_t0"
+    "\tmethod\tcalc_flag\tatpress\tattemp\txin0\txin1";
 static const char *EXPECTED_HEADER_FILES =
-    "case_id\tfunc\tipl\ttjd\tiflag\tstar\tgeolon\tgeolat\theight\tsid_mode\tx2cross\tdir\tt0\tayan_t0";
+    "case_id\tfunc\tipl\ttjd\tiflag\tstar\tgeolon\tgeolat\theight\tsid_mode\tx2cross\tdir\tt0\tayan_t0"
+    "\tmethod\thsys";
 
 enum grid_mode { MODE_ANALYTIC, MODE_FILES };
 
@@ -750,6 +793,164 @@ static void process_ayanamsa_ex(FILE *out, const char *case_id, const char *func
     fputc('\n', out);
 }
 
+/*
+ * HOUSES_EX: swe_houses_ex (swehouse.c:178), the sidereal/radians-capable sibling of HOUSES.
+ * Shared by both grids -- hsys_idx is the one difference (analytic's hsys sits at fields[5],
+ * shared with HOUSES/HOUSES_ARMC; the files grid has no hsys column of its own, so it gets the
+ * new trailing one instead), matching process_houses_armc's own sid_mode_idx-style parameter for
+ * the same reason.
+ */
+static void process_houses_ex(FILE *out, const char *case_id, char *fields[], int sid_mode_idx, int hsys_idx)
+{
+    double tjd = parse_double(fields[3], case_id, "tjd");
+    int32 iflag = (int32)parse_int(fields[4], case_id, "iflag");
+    int hsys = parse_hsys(fields[hsys_idx], case_id);
+    double geolon = parse_double(fields[6], case_id, "geolon");
+    double geolat = parse_double(fields[7], case_id, "geolat");
+    double cusp[40] = { 0 };
+    double ascmc[10] = { 0 };
+    int retc, i;
+
+    apply_sid_mode(fields, case_id, sid_mode_idx);
+
+    /* swehouse.c:178 takes geolat before geolon -- opposite of this grid's own geolon-then-geolat
+     * column order -- matches process_houses's identical care for plain swe_houses. */
+    retc = swe_houses_ex(tjd, iflag, geolat, geolon, hsys, cusp, ascmc);
+
+    fprintf(out, "%s\t%d\t", case_id, retc); /* no serr param on swe_houses_ex */
+    for (i = 0; i < CUSP_COUNT; i++) emit_value(out, cusp[i]);
+    for (i = 0; i < ASCMC_COUNT; i++) emit_value(out, ascmc[i]);
+    fputc('\n', out);
+}
+
+/* AYANAMSA_UT: swe_get_ayanamsa_ut (sweph.c:3260), the UT sibling of AYANAMSA -- same fixed-OK,
+ * empty-err convention as process_ayanamsa, and the same apply_sid_mode call, since the ayanamsa
+ * it returns still depends on whichever sid_mode swe_set_sid_mode last configured. Analytic-grid
+ * only: opens no ephemeris file, so this func token never appears in a grid-files.tsv row. */
+static void process_ayanamsa_ut(FILE *out, const char *case_id, char *fields[])
+{
+    double tjd = parse_double(fields[3], case_id, "tjd");
+    double daya;
+
+    apply_sid_mode(fields, case_id, 11);
+    daya = swe_get_ayanamsa_ut(tjd);
+
+    fprintf(out, "%s\t%d\t", case_id, OK);
+    emit_value(out, daya);
+    fputc('\n', out);
+}
+
+/* SIDTIME: swe_sidtime (swephlib.c:3580). A bare double with no serr and no sid_mode dependence
+ * of its own (sidereal *time*, not the ayanamsha) -- refuse_if_sid_mode_set guards the latter the
+ * same way process_fixstar/process_houses already guard funcs with no sidereal-frame parameter. */
+static void process_sidtime(FILE *out, const char *case_id, char *fields[])
+{
+    double tjd = parse_double(fields[3], case_id, "tjd");
+    double tsid;
+
+    refuse_if_sid_mode_set(case_id, "SIDTIME", fields, 11);
+    tsid = swe_sidtime(tjd);
+
+    fprintf(out, "%s\t%d\t", case_id, OK);
+    emit_value(out, tsid);
+    fputc('\n', out);
+}
+
+/*
+ * AZALT: swe_azalt (swecl.c:2788). Analytic-grid only. geopos is {lon, lat, height}, reusing this
+ * grid's existing geolon/geolat/height columns; xin[2] is never a grid column because swe_azalt's
+ * own body only ever reads xin[0]/xin[1] (`for (i = 0; i < 2; i++) xra[i] = xin[i]; xra[2] = 1;`,
+ * swecl.c:2801-2803) -- a column nothing reads is exactly the dead-input trap this repo has
+ * already been burned by, so this driver does not add one. atpress == 0 takes the pressure-
+ * estimate branch (swecl.c:2819-2822); this grid deliberately carries rows with atpress = 0 and a
+ * non-zero height so that branch is exercised, not just asserted.
+ */
+static void process_azalt(FILE *out, const char *case_id, char *fields[])
+{
+    double tjd = parse_double(fields[3], case_id, "tjd");
+    double geopos[3];
+    int32 calc_flag;
+    double atpress, attemp;
+    double xin[2];
+    double xaz[3] = { 0 };
+
+    refuse_if_sid_mode_set(case_id, "AZALT", fields, 11);
+
+    geopos[0] = parse_double(fields[6], case_id, "geolon");
+    geopos[1] = parse_double(fields[7], case_id, "geolat");
+    geopos[2] = parse_double(fields[8], case_id, "height");
+    calc_flag = (int32)parse_int(fields[17], case_id, "calc_flag");
+    atpress = parse_double(fields[18], case_id, "atpress");
+    attemp = parse_double(fields[19], case_id, "attemp");
+    xin[0] = parse_double(fields[20], case_id, "xin0");
+    xin[1] = parse_double(fields[21], case_id, "xin1");
+
+    /* swe_azalt reads const_lapse_rate, a swecl.c static settable only through
+     * swe_set_lapse_rate (swecl.c:2988) -- neither driver ever calls that, and both reset all
+     * other library state before every row (swe_close() here, a fresh SwissEph there), so both
+     * sides see SE_LAPSE_RATE, the compiled-in default, on every single row. */
+    swe_azalt(tjd, calc_flag, geopos, atpress, attemp, xin, xaz);
+
+    fprintf(out, "%s\t%d\t", case_id, OK); /* swe_azalt returns void -- no retc, no serr */
+    emit_value(out, xaz[0]);
+    emit_value(out, xaz[1]);
+    emit_value(out, xaz[2]);
+    fputc('\n', out);
+}
+
+/* HOUSE_NAME: swe_house_name (swehouse.c:827). Analytic-grid only; a pure lookup, so it opens no
+ * ephemeris file either way. Returns const char *, never NULL -- same "write the string into the
+ * err column, fixed retc 0" convention as process_name (GET_PLANET_NAME). */
+static void process_house_name(FILE *out, const char *case_id, char *fields[])
+{
+    int hsys = parse_hsys(fields[5], case_id);
+    const char *name = swe_house_name(hsys);
+
+    fprintf(out, "%s\t%d\t", case_id, 0);
+    emit_escaped(out, name);
+    fputc('\n', out);
+}
+
+/*
+ * NOD_APS_UT: swe_nod_aps_ut (swecl.c:5645), which adds swe_deltat_ex to tjd_ut and delegates to
+ * swe_nod_aps (swecl.c:5064). Real int32 retc and serr. Shared by both grids -- method_idx is the
+ * one difference (analytic carries the new method column after t0/ayan_t0; files carries it
+ * right before its own trailing hsys column), matching process_houses_ex's own hsys_idx-style
+ * parameter for the same reason. No sidereal-frame parameter in Astrodienst's API, so this func
+ * gets the same refuse_if_sid_mode_set guard process_mooncross_node/process_helio_cross already
+ * use for the same reason.
+ */
+static void process_nod_aps_ut(FILE *out, const char *case_id, char *fields[], int sid_mode_idx, int method_idx)
+{
+    int ipl = (int)parse_int(fields[2], case_id, "ipl");
+    double tjd = parse_double(fields[3], case_id, "tjd");
+    int32 iflag = (int32)parse_int(fields[4], case_id, "iflag");
+    int32 method = (int32)parse_int(fields[method_idx], case_id, "method");
+    double xnasc[6] = { 0 }, xndsc[6] = { 0 }, xperi[6] = { 0 }, xaphe[6] = { 0 };
+    char serr[AS_MAXCH];
+    int32 retc;
+    int i;
+
+    refuse_if_sid_mode_set(case_id, "NOD_APS_UT", fields, sid_mode_idx);
+    serr[0] = '\0';
+
+    /* Zero-initialized above regardless of outcome: swe_nod_aps only zeroes xnasc/xndsc/xperi/
+     * xaphe itself on its "nodes/apsides ... are not implemented" reject branch
+     * (swecl.c:5134-5146); every other ERR return (e.g. an inner swe_calc failure) leaves them
+     * untouched. Matches process_helio_cross's identical rule for jd_cross, for the identical
+     * reason -- an ERR row's value columns must be a deterministic 0.0 on both sides, not
+     * whatever happened to be left on each side's stack. */
+    retc = swe_nod_aps_ut(tjd, ipl, iflag, method, xnasc, xndsc, xperi, xaphe, serr);
+
+    fprintf(out, "%s\t%d\t", case_id, retc);
+    emit_escaped(out, serr);
+    for (i = 0; i < 6; i++) emit_value(out, xnasc[i]);
+    for (i = 0; i < 6; i++) emit_value(out, xndsc[i]);
+    for (i = 0; i < 6; i++) emit_value(out, xperi[i]);
+    for (i = 0; i < 6; i++) emit_value(out, xaphe[i]);
+    fputc('\n', out);
+}
+
 int main(int argc, char **argv)
 {
     FILE *in, *out;
@@ -842,6 +1043,18 @@ int main(int argc, char **argv)
                 process_ayanamsa(out, case_id, fields);
             } else if (strcmp(func, "AYANAMSA_EX") == 0 || strcmp(func, "AYANAMSA_EX_UT") == 0) {
                 process_ayanamsa_ex(out, case_id, func, fields);
+            } else if (strcmp(func, "HOUSES_EX") == 0) {
+                process_houses_ex(out, case_id, fields, 11, 5);
+            } else if (strcmp(func, "AYANAMSA_UT") == 0) {
+                process_ayanamsa_ut(out, case_id, fields);
+            } else if (strcmp(func, "SIDTIME") == 0) {
+                process_sidtime(out, case_id, fields);
+            } else if (strcmp(func, "AZALT") == 0) {
+                process_azalt(out, case_id, fields);
+            } else if (strcmp(func, "HOUSE_NAME") == 0) {
+                process_house_name(out, case_id, fields);
+            } else if (strcmp(func, "NOD_APS_UT") == 0) {
+                process_nod_aps_ut(out, case_id, fields, 11, 16);
             } else {
                 die("unknown func '%s' at case %s", func, case_id);
             }
@@ -862,6 +1075,10 @@ int main(int argc, char **argv)
                 process_mooncross_node(out, case_id, func, fields, 9);
             } else if (strcmp(func, "HELIO_CROSS") == 0 || strcmp(func, "HELIO_CROSS_UT") == 0) {
                 process_helio_cross(out, case_id, func, fields, 9, 10, 11);
+            } else if (strcmp(func, "HOUSES_EX") == 0) {
+                process_houses_ex(out, case_id, fields, 9, 15);
+            } else if (strcmp(func, "NOD_APS_UT") == 0) {
+                process_nod_aps_ut(out, case_id, fields, 9, 14);
             } else {
                 die("unknown func '%s' at case %s", func, case_id);
             }

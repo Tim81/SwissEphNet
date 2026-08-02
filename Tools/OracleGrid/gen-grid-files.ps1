@@ -71,6 +71,15 @@
                                  shipped files' span -- gen-grid-analytic.ps1's unconstrained
                                  Moshier range has no such limit, so those three stay there only.
 
+      swe_houses_ex / swe_nod_aps_ut -- two of the six new funcs gen-grid-analytic.ps1 adds
+                                 (HOUSES_EX/AYANAMSA_UT/SIDTIME/AZALT/HOUSE_NAME/NOD_APS_UT), the
+                                 two where reading a real .se1 file changes what gets exercised:
+                                 some SIDEREAL sid_modes drive the ayanamsa through a file-backed
+                                 swe_calc, which SEFLG_MOSEPH can never reach, and SE_CHIRON (which
+                                 swe_nod_aps_ut can special-case with a hardcoded mean speed) has
+                                 no Moshier model at all. See the COLUMNS section below for the
+                                 method/hsys columns this needs.
+
     THE STAR NAME LOOKUP AND THE PLANET NAME ARE CARRIED IN THE err/serr COLUMN
 
     swe_get_planet_name returns a string, not a double, so it has no xx[]/mag output to hex-encode
@@ -137,12 +146,28 @@ $SEFLG_BARYCTR    = 16 * 1024
 $SEFLG_TOPOCTR    = 32 * 1024
 $SEFLG_SIDEREAL   = 64 * 1024
 $SE_SIDM_LAHIRI   = 1
+$SEFLG_RADIANS    = 8 * 1024
 # Deliberately a literal, not read off any assembly's SwissEph.SE_NSIDM_PREDEF -- see
 # gen-grid-analytic.ps1's own copy of this constant and comment for why (this script runs
 # standalone PowerShell and loads no .NET assembly, so there is nothing to read the constant off
 # in the first place; the value is pinned here anyway, matching Tools/BaselineMatrix/Ayanamsa.cs's
 # own literal, since the sid-mode sweep below is a property of what this grid covers).
 $SidModeSweepCount = 47
+
+# swe_nod_aps(_ut)'s own reject check -- see gen-grid-analytic.ps1's identical copy of these
+# constants and comment for the C citations.
+$SE_MEAN_NODE   = 10
+$SE_TRUE_NODE   = 11
+$SE_MEAN_APOG   = 12
+$SE_OSCU_APOG   = 13
+$SE_EARTH       = 14
+$SE_CHIRON      = 15
+$SE_NPLANETS    = 23
+$SE_AST_OFFSET  = 10000
+$SE_NODBIT_MEAN     = 1
+$SE_NODBIT_OSCU     = 2
+$SE_NODBIT_OSCU_BAR = 4
+$SE_NODBIT_FOPOINT  = 256
 
 # ---------------------------------------------------------------------------------------
 # Formatting -- matches gen-grid-analytic.ps1's Fmt/FmtI: invariant culture, "R" round-trip
@@ -218,7 +243,7 @@ function New-CalcFileRow {
     $fields = @(
         $caseId, $Func, (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
         $geolonField, $geolatField, $heightField, $sidModeField, '', '',
-        $t0Field, $ayanT0Field
+        $t0Field, $ayanT0Field, '', ''
     )
     return ($fields -join "`t")
 }
@@ -235,7 +260,7 @@ function New-FixstarRow {
     $caseId = "$Prefix|$Star|$(Fmt $Tjd)|$FlagName"
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), $Star,
-        '', '', '', '', '', '', '', ''
+        '', '', '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -245,7 +270,7 @@ function New-FixstarMagRow {
     $caseId = "FIXSTARMAG|$Star"
     $fields = @(
         $caseId, 'FIXSTAR_MAG', '', '', '', $Star,
-        '', '', '', '', '', '', '', ''
+        '', '', '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -255,7 +280,7 @@ function New-NameRow {
     $caseId = "NAME|$(FmtI $Ipl)"
     $fields = @(
         $caseId, 'GET_PLANET_NAME', (FmtI $Ipl), '', '', '',
-        '', '', '', '', '', '', '', ''
+        '', '', '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -276,7 +301,7 @@ function New-SolarLunarCrossRow {
     $caseId = "$Prefix|$(Fmt $X2Cross)|$(Fmt $Tjd)|$FlagName"
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
-        '', '', '', '', (Fmt $X2Cross), '', '', ''
+        '', '', '', '', (Fmt $X2Cross), '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -295,7 +320,7 @@ function New-MoonCrossNodeRow {
     $caseId = "$Prefix|$(Fmt $Tjd)|$FlagName"
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
-        '', '', '', '', '', '', '', ''
+        '', '', '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -316,7 +341,40 @@ function New-HelioCrossRow {
     $caseId = "$Prefix|$(FmtI $Ipl)|$(Fmt $X2Cross)|$(Fmt $Tjd)|$FlagName|$(FmtI $Dir)"
     $fields = @(
         $caseId, $Func, (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
-        '', '', '', '', (Fmt $X2Cross), (FmtI $Dir), '', ''
+        '', '', '', '', (Fmt $X2Cross), (FmtI $Dir), '', '', '', ''
+    )
+    return ($fields -join "`t")
+}
+
+# swe_houses_ex -- the sidereal/radians-capable sibling of swe_houses; see
+# gen-grid-analytic.ps1's own New-HousesExRow for the full rationale. This grid's own reason to
+# carry it at all (rather than leaving it to grid-analytic.tsv) is its SIDEREAL rows: some
+# sid_modes drive the ayanamsa through a file-backed swe_calc (e.g. the true-position-of-a-star
+# modes), which SEFLG_MOSEPH can never reach -- see this script's own header.
+function New-HousesExRow {
+    param([char] $Hsys, [double] $GeoLat, [double] $GeoLon, [double] $Tjd, [string] $FlagName, [int] $IFlag, $SidMode)
+    $caseId = "HOUSESEX|$Hsys|$(Fmt $GeoLat)|$(Fmt $GeoLon)|$(Fmt $Tjd)|$FlagName"
+    $sidModeField = if ($null -eq $SidMode) { '' } else { FmtI ([int]$SidMode) }
+    $fields = @(
+        $caseId, 'HOUSES_EX', '', (Fmt $Tjd), (FmtI $IFlag), '',
+        (Fmt $GeoLon), (Fmt $GeoLat), '', $sidModeField, '', '', '', '',
+        '', "$Hsys"
+    )
+    return ($fields -join "`t")
+}
+
+# swe_nod_aps_ut -- see gen-grid-analytic.ps1's own New-NodApsUtRow for the full rationale. This
+# grid's own reason to carry it (rather than leaving it to grid-analytic.tsv) is SE_CHIRON: it has
+# no Moshier model, so its mean-speed override (external/swisseph/swecl.c:8551-8552's sibling in
+# swe_nod_aps's own "true"/osculating branch) is reachable only against a real seas_12.se1/
+# seas_18.se1 file -- the same reason gen-grid-files.ps1's own $HelioCrossIplFiles carries it.
+function New-NodApsUtRow {
+    param([int] $Ipl, [double] $Tjd, [int] $IFlag, [int] $Method)
+    $caseId = "NODAPSUT|$(FmtI $Ipl)|$(Fmt $Tjd)|$(FmtI $Method)"
+    $fields = @(
+        $caseId, 'NOD_APS_UT', (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
+        '', '', '', '', '', '', '', '',
+        (FmtI $Method), ''
     )
     return ($fields -join "`t")
 }
@@ -479,6 +537,55 @@ $HelioCrossTjdFiles = @($CalcJdsFiles[0], $CalcJdsFiles[7])
 $HelioCrossDir = @(1, -1)
 
 # ---------------------------------------------------------------------------------------
+# swe_houses_ex grid values -- see this script's own header for why this func is here at all
+# (its SIDEREAL rows can drive the ayanamsa through a file-backed swe_calc, unlike
+# grid-analytic.tsv's forced-SEFLG_MOSEPH rows). Smaller than gen-grid-analytic.ps1's own
+# HOUSES_EX sweep, matching how every file-backed func in this grid is sized smaller than its
+# grid-analytic.tsv counterpart: this grid's job is proving the file layer is exercised, not
+# re-covering the geolat/geolon/iflag spread grid-analytic.tsv already covers.
+# ---------------------------------------------------------------------------------------
+# Every house-system letter SwissEphNet/CPort/SweHouse.cs actually implements a case for --
+# matches gen-grid-analytic.ps1's own $HouseLetters exactly (same comment there on why 'J' is
+# deliberately excluded). This grid never carries swe_houses/swe_houses_armc rows of its own, so
+# it has no such list already in scope; HOUSES_EX is the first func here that needs one.
+$HouseLetters = @(
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'i', 'K', 'L', 'M', 'N', 'O',
+    'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'
+)
+$HousesExGeoLats = @(-66, 66)
+$HousesExGeoLon = -118.24
+$HousesExJdsFiles = @($CalcJdsFiles[1], $CalcJdsFiles[7])
+$HousesExFlagCombos = @(
+    [pscustomobject]@{ Name = 'PLAIN';    Flag = 0;               NeedsSid = $false }
+    [pscustomobject]@{ Name = 'SIDEREAL'; Flag = $SEFLG_SIDEREAL; NeedsSid = $true }
+    [pscustomobject]@{ Name = 'RADIANS';  Flag = $SEFLG_RADIANS;  NeedsSid = $false }
+)
+
+# ---------------------------------------------------------------------------------------
+# swe_nod_aps_ut grid values -- see this script's own header for why SE_CHIRON is included here
+# (the one place either grid tests it): unlike gen-grid-analytic.ps1's accepted-ipl list, there is
+# no orbital-period search-margin concern for swe_nod_aps_ut the way there is for
+# swe_helio_cross(_ut) -- nod_aps evaluates only near tjd_et itself (a small NODE_CALC_INTV
+# offset for the speed derivative, external/swisseph/swecl.c:5256-5266), it does not walk forward
+# or backward searching for a crossing -- so the full Moshier-accepted body list plus SE_CHIRON
+# can all be swept without a file-era margin.
+# ---------------------------------------------------------------------------------------
+$NodApsAcceptedIplFiles = @(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, $SE_EARTH, $SE_CHIRON)
+$NodApsRejectedIplFiles = @($SE_MEAN_NODE, $SE_TRUE_NODE, $SE_MEAN_APOG, $SE_OSCU_APOG, -1, $SE_NPLANETS, $SE_AST_OFFSET)
+$NodApsMethodsFiles = @(
+    0,
+    $SE_NODBIT_MEAN,
+    $SE_NODBIT_OSCU,
+    $SE_NODBIT_OSCU_BAR,
+    ($SE_NODBIT_FOPOINT),
+    ($SE_NODBIT_FOPOINT -bor $SE_NODBIT_MEAN),
+    ($SE_NODBIT_FOPOINT -bor $SE_NODBIT_OSCU),
+    ($SE_NODBIT_FOPOINT -bor $SE_NODBIT_OSCU_BAR)
+)
+$NodApsTjdFiles = @($CalcJdsFiles[1], $CalcJdsFiles[7])
+$NodApsRejectedTjdFiles = $CalcJdsFiles[1]
+
+# ---------------------------------------------------------------------------------------
 # Build rows
 # ---------------------------------------------------------------------------------------
 
@@ -499,6 +606,8 @@ $moonCrossNodeCount = 0
 $moonCrossNodeUtCount = 0
 $helioCrossCount = 0
 $helioCrossUtCount = 0
+$housesExCount = 0
+$nodApsUtCount = 0
 
 foreach ($ipl in $Bodies) {
     foreach ($tjd in $CalcJdsFiles) {
@@ -603,9 +712,38 @@ foreach ($ipl in $HelioCrossIplFiles) {
     }
 }
 
+foreach ($hsys in $HouseLetters) {
+    foreach ($geolat in $HousesExGeoLats) {
+        foreach ($tjd in $HousesExJdsFiles) {
+            foreach ($combo in $HousesExFlagCombos) {
+                $iflag = $combo.Flag
+                $sidMode = if ($combo.NeedsSid) { Get-NextSidMode } else { $null }
+
+                $rows.Add((New-HousesExRow -Hsys $hsys -GeoLat $geolat -GeoLon $HousesExGeoLon -Tjd $tjd `
+                    -FlagName $combo.Name -IFlag $iflag -SidMode $sidMode))
+                $housesExCount++
+            }
+        }
+    }
+}
+
+foreach ($ipl in $NodApsAcceptedIplFiles) {
+    foreach ($method in $NodApsMethodsFiles) {
+        foreach ($tjd in $NodApsTjdFiles) {
+            $rows.Add((New-NodApsUtRow -Ipl $ipl -Tjd $tjd -IFlag $SEFLG_SWIEPH -Method $method))
+            $nodApsUtCount++
+        }
+    }
+}
+foreach ($ipl in $NodApsRejectedIplFiles) {
+    $rows.Add((New-NodApsUtRow -Ipl $ipl -Tjd $NodApsRejectedTjdFiles -IFlag $SEFLG_SWIEPH -Method 0))
+    $nodApsUtCount++
+}
+
 $totalRows = $rows.Count
 $expectedTotal = $calcCount + $calcUtCount + $fixstarCount + $fixstarUtCount + $fixstar2Count + $fixstar2UtCount + $fixstarMagCount + $nameCount +
-    $solCrossCount + $solCrossUtCount + $moonCrossCount + $moonCrossUtCount + $moonCrossNodeCount + $moonCrossNodeUtCount + $helioCrossCount + $helioCrossUtCount
+    $solCrossCount + $solCrossUtCount + $moonCrossCount + $moonCrossUtCount + $moonCrossNodeCount + $moonCrossNodeUtCount + $helioCrossCount + $helioCrossUtCount +
+    $housesExCount + $nodApsUtCount
 if ($totalRows -ne $expectedTotal) {
     throw 'Row count bookkeeping is inconsistent -- this is a bug in this script, not a data problem.'
 }
@@ -707,11 +845,23 @@ $headerLines = @(
     '#              own SIDEREAL rows use only predefined modes) -- present so the schema matches'
     '#              gen-grid-analytic.ps1''s, which does use it'
     '#   ayan_t0    SE_SIDM_USER ayanamsa at t0, degrees; same emptiness note as t0'
+    '#   method     swe_nod_aps_ut method bitmask                        [NOD_APS_UT]'
+    '#   hsys       house-system letter                                  [HOUSES_EX]'
     '#'
     '# x2cross and dir are appended after sid_mode, and t0/ayan_t0 after those, rather than'
     '# interleaved among the original ten columns, so every column this grid''s other funcs already'
     '# used keeps the same index it always had -- the same additive-not-renumbering choice'
-    '# gen-grid-analytic.ps1 makes.'
+    '# gen-grid-analytic.ps1 makes. method/hsys are a second additive tail after ayan_t0, for the'
+    '# same reason: HOUSES_EX and NOD_APS_UT are the two of grid-analytic.tsv''s six new funcs'
+    '# (HOUSES_EX/AYANAMSA_UT/SIDTIME/AZALT/HOUSE_NAME/NOD_APS_UT) where reading a real .se1 file'
+    '# changes what gets exercised -- the sidereal ayanamsa behind swe_houses_ex, and'
+    '# swe_nod_aps_ut''s planetary positions (including SE_CHIRON, which has no Moshier model at'
+    '# all) -- so only those two get a func token here; the other four open no file, or would be'
+    '# an identical code path to their grid-analytic.tsv coverage, and are covered there instead.'
+    '# hsys sits where it does, rather than reusing a column HOUSES/HOUSES_ARMC might have shared'
+    '# the way grid-analytic.tsv''s HOUSES_EX rows reuse fields[5], because this grid never carries'
+    '# swe_houses/swe_houses_armc rows of its own and so never allocated an hsys column at all'
+    '# until HOUSES_EX needed one.'
     '#'
     '# Lines starting with ''#'' are comments. The first non-comment line is the column-name header'
     '# below and is not a data row -- both drivers assert it matches verbatim before reading any'
@@ -719,7 +869,7 @@ $headerLines = @(
 )
 $columnHeader = 'case_id' + "`t" + 'func' + "`t" + 'ipl' + "`t" + 'tjd' + "`t" + 'iflag' + "`t" +
     'star' + "`t" + 'geolon' + "`t" + 'geolat' + "`t" + 'height' + "`t" + 'sid_mode' + "`t" +
-    'x2cross' + "`t" + 'dir' + "`t" + 't0' + "`t" + 'ayan_t0'
+    'x2cross' + "`t" + 'dir' + "`t" + 't0' + "`t" + 'ayan_t0' + "`t" + 'method' + "`t" + 'hsys'
 
 $writer = [System.IO.StreamWriter]::new($outputPath, $false, [System.Text.UTF8Encoding]::new($false))
 try {
@@ -749,3 +899,5 @@ Write-Host "  MOONCROSS_NODE     $moonCrossNodeCount"
 Write-Host "  MOONCROSS_NODE_UT  $moonCrossNodeUtCount"
 Write-Host "  HELIO_CROSS        $helioCrossCount"
 Write-Host "  HELIO_CROSS_UT     $helioCrossUtCount"
+Write-Host "  HOUSES_EX          $housesExCount"
+Write-Host "  NOD_APS_UT         $nodApsUtCount"
