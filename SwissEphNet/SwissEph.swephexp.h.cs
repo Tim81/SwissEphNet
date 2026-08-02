@@ -493,7 +493,7 @@ namespace SwissEphNet
         {
             return isWindows
                 ? "\\sweph\\ephe\\"
-                : ".;/users/ephe2/;/users/ephe/";
+                : ".:/users/ephe2/:/users/ephe/";
         }
 
         internal static string DefaultEphePath

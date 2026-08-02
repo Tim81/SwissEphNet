@@ -1,92 +1,114 @@
-using System.Runtime.InteropServices;
+using SwissEphNet.CPort;
 using Xunit;
 
 namespace SwissEphNet.Tests
 {
     /// <summary>
-    /// swi_fopen splits swed.ephepath on <see cref="SwissEph.PATH_SEPARATOR"/> (CPort/Sweph.cs,
-    /// transliterating sweph.c:2377), and this port deliberately keeps PATH_SEPARATOR at
-    /// { ';' } on every platform where the C's own non-Windows cut-list (sweodef.h:305) is
-    /// ";:" -- a bare ':' cannot be added to a cross-platform cut-list without splitting a
-    /// Windows drive letter. See SwissEph.sweodef.h.cs and docs/known-issues.md's "Three
-    /// file-layer divergences" for that decision.
-    ///
-    /// The consequence, which is what this test pins: SwissEph.DefaultEphePath has to be
-    /// joined with ';' off Windows too. Joined with upstream's ':' (swephexp.h:403) it
-    /// reaches swi_fopen as ONE unsplit component, is used verbatim as a directory prefix,
-    /// and matches nothing -- losing in particular the "." component that sweph.c:2381 maps
-    /// to the current directory. A caller who never calls swe_set_ephe_path then computes
-    /// from Moshier on Linux and macOS where the C reads the ephemeris file. Measured with
-    /// Programs/SweTest against this repository's own ephe/ directory, same path, separator
-    /// the only difference: ';' printed Sun 279.8584613 for 1.1.2000 and ':' printed
-    /// "using Moshier eph." and 279.8584626.
-    ///
-    /// Neither verification gate can see that, which is why this test exists rather than a
-    /// baseline row. The characterization baseline is Moshier-only and never subscribes to
-    /// file loading, so a silent Moshier fallback is invisible to it by construction; the
-    /// conformance and oracle runs are Windows, whose literal carries no separator at all.
-    ///
-    /// The cases below go through DefaultEphePathFor(bool) rather than the DefaultEphePath
-    /// property on purpose. A test that reads the property exercises only the branch matching
-    /// the runner it happens to be on, so on a Windows runner it passes whatever the
-    /// non-Windows literal says -- confirmed by putting the ':' form back and watching the
-    /// property-based version of this test stay green on both TFMs. Passing the platform in
-    /// makes both literals reachable everywhere, so this fails on Windows too.
+    /// The <c>SE_EPHE_PATH</c> default and <c>PATH_SEPARATOR</c> have to agree, on both
+    /// platforms, because <c>swi_fopen</c> splits the one with the other (CPort/Sweph.cs,
+    /// transliterating sweph.c:2377).
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>swephexp.h:399-408</c> gives the default as <c>"\\sweph\\ephe\\"</c> under
+    /// <c>#if MSDOS</c> and <c>".:/users/ephe2/:/users/ephe/"</c> otherwise;
+    /// <c>sweodef.h:305/:311</c> gives the cut-list as <c>";:"</c> under <c>#if UNIX_FS</c>
+    /// and <c>";"</c> otherwise. Each pair is self-consistent in the C, because the C is
+    /// compiled per platform. This port is not, so both are chosen at run time, and the pairing
+    /// is a property that has to be asserted rather than one the compiler enforces.
+    /// </para>
+    /// <para>
+    /// It went wrong once in each direction. First the port carried upstream's colon-joined
+    /// default while splitting on <c>';'</c> only, so the default arrived as one unsplit
+    /// component, matched nothing, and lost the <c>"."</c> that <c>sweph.c:2381</c> maps to the
+    /// current directory: a caller who never calls <c>swe_set_ephe_path</c> computed from
+    /// Moshier on Linux and macOS where the C read the file. Then the default was rewritten
+    /// with semicolons to suit the separator, which fixed that and moved the port away from the
+    /// C, and the Linux and macOS exactness gates went red. The separator is what was wrong;
+    /// the literal is upstream's and is carried verbatim.
+    /// </para>
+    /// <para>
+    /// Both helpers take the platform as an argument because reading only the host's values
+    /// cannot check this. On a Windows runner the non-Windows literal is never exercised, so a
+    /// mismatch there passes unnoticed, which is how the first version survived until a Linux
+    /// gate caught it. The characterization baseline cannot see it either: it is Moshier-only
+    /// and never subscribes to file loading, so a silent Moshier fallback is invisible to it by
+    /// construction.
+    /// </para>
+    /// </remarks>
     public class DefaultEphePathSplitTest
     {
-        // A ':' left inside a component means the string was joined with a character
-        // swi_fopen does not split on. The one legitimate ':' is a Windows drive letter
-        // ("C:\ephe"), which is part of a path rather than a separator between paths.
-        static void AssertNoUnsplitSeparator(string[] parts)
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void DefaultPathSplitsIntoItsComponentsOnItsOwnPlatform(bool isWindows)
         {
-            foreach (var part in parts)
-            {
-                // Ordinal explicitly: a path separator is a byte, not a letter, and this
-                // repository treats every unqualified comparison as a defect to be closed.
-                var colon = part.IndexOf(':', System.StringComparison.Ordinal);
-                Assert.True(
-                    colon < 0 || colon == 1,
-                    "component '" + part + "' of the default ephemeris path contains a ':' that is not "
-                        + "a drive letter, so the default was joined with a separator swi_fopen does not "
-                        + "split on; it will arrive there as one unusable path and every calculation "
-                        + "will fall back to Moshier.");
-            }
+            var path = SwissEph.DefaultEphePathFor(isWindows);
+            var sep = SwissEph.PathSeparatorFor(isWindows);
+
+            var n = SwephLib.swi_cutstr(path, sep, out var parts, 20);
+
+            var expected = isWindows
+                ? new[] { "\\sweph\\ephe\\" }
+                : new[] { ".", "/users/ephe2/", "/users/ephe/" };
+
+            Assert.Equal(expected, parts);
+            Assert.Equal(expected.Length, n);
         }
 
         [Fact]
-        public void NonWindowsDefaultSplitsIntoUpstreamsThreeComponents()
+        public void NonWindowsDefaultKeepsTheCurrentDirectoryComponent()
         {
-            var parts = SwissEph.DefaultEphePathFor(isWindows: false).Split(SwissEph.PATH_SEPARATOR);
-
-            AssertNoUnsplitSeparator(parts);
-
-            // swephexp.h:403's three components, in upstream's order and spelling. The first
-            // is the current directory, and is the only one of the three that exists on a
-            // machine that is not Astrodienst's.
-            Assert.Equal(new[] { ".", "/users/ephe2/", "/users/ephe/" }, parts);
+            // "." is the only one of upstream's three components that exists on a machine that
+            // is not Astrodienst's. Losing it is what made the silent Moshier fallback, so it
+            // is asserted on its own and not only as part of the collection above.
+            Assert.Contains(".", Split(isWindows: false));
         }
 
         [Fact]
-        public void WindowsDefaultIsUpstreamsSingleComponent()
+        public void NonWindowsSeparatorAcceptsBothFormsTheCAccepts()
         {
-            var parts = SwissEph.DefaultEphePathFor(isWindows: true).Split(SwissEph.PATH_SEPARATOR);
+            // sweodef.h:305 is ";:" -- "semicolon or colon may be used". A caller on Unix may
+            // reasonably pass either, and the colon form is what every other Swiss Ephemeris
+            // binding on that platform takes.
+            var sep = SwissEph.PathSeparatorFor(isWindows: false);
+            Assert.Contains(';', sep);
+            Assert.Contains(':', sep);
 
-            AssertNoUnsplitSeparator(parts);
-
-            // swephexp.h:401's single component; nothing to split.
-            Assert.Equal(new[] { "\\sweph\\ephe\\" }, parts);
+            Assert.Equal(new[] { "/a", "/b" }, Cut("/a:/b", sep));
+            Assert.Equal(new[] { "/a", "/b" }, Cut("/a;/b", sep));
         }
 
         [Fact]
-        public void ThePropertyPicksTheBranchForTheRunningPlatform()
+        public void WindowsSeparatorLeavesADriveLetterIntact()
         {
-            // The two cases above prove the literals are right; this one proves the property
-            // still routes to them, so neither of them is testing a value the library has
-            // stopped using.
-            Assert.Equal(
-                SwissEph.DefaultEphePathFor(RuntimeInformation.IsOSPlatform(OSPlatform.Windows)),
-                SwissEph.DefaultEphePath);
+            // Why the colon is not simply added everywhere: sweodef.h:311 is ";" alone on
+            // Windows, and a bare colon would cut "C:\ephe" at the drive letter. This is the
+            // case that makes the cut-list platform-dependent rather than the union of both.
+            var sep = SwissEph.PathSeparatorFor(isWindows: true);
+            Assert.DoesNotContain(':', sep);
+
+            Assert.Equal(new[] { "C:\\ephe", "D:\\ephe2" }, Cut("C:\\ephe;D:\\ephe2", sep));
+        }
+
+        [Fact]
+        public void HostValuesComeFromTheHelpersForThisPlatform()
+        {
+            // The helpers are only worth testing if the shipped statics actually come from them.
+            var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(
+                System.Runtime.InteropServices.OSPlatform.Windows);
+
+            Assert.Equal(SwissEph.PathSeparatorFor(isWindows), SwissEph.PATH_SEPARATOR);
+            Assert.Equal(SwissEph.DefaultEphePathFor(isWindows), SwissEph.DefaultEphePath);
+        }
+
+        private static string[] Split(bool isWindows) =>
+            Cut(SwissEph.DefaultEphePathFor(isWindows), SwissEph.PathSeparatorFor(isWindows));
+
+        private static string[] Cut(string s, char[] sep)
+        {
+            SwephLib.swi_cutstr(s, sep, out var parts, 20);
+            return parts;
         }
     }
 }
