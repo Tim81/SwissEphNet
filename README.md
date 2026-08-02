@@ -855,6 +855,22 @@ ever confirmed as port defects were fixed and pruned.
   (`ipl` 9000-9999) need `ephe/sat/` at ~227 MB (opt in with
   `SWISSEPH_CONFORMANCE_INCLUDE_MOONS=1` and that directory populated).
 
+  **Skipped is not untested.** Both were run once, against real data, and the
+  measurement is recorded in `Tests/conformance/regenerations.log`'s entry of
+  2026-07-31: the full 12,757-iteration corpus with `SWISSEPH_CONFORMANCE_INCLUDE_JPL=1`
+  and `SWISSEPH_CONFORMANCE_JPL_FILE` pointed at a locally verified `de431.eph`
+  (2,788,676,624 bytes, MD5 `fad0f432ae18c330f9e14915fbf8960a`), which is the file
+  `setest`'s own suites 1 and 10 call `swe_set_jpl_file` with. **500 of the 538 JPL
+  rows pass outright** once the data is present, along with 4 of the 18 `sat` rows.
+  The JPL backend works; what it lacks is a way to keep proving it.
+
+  Nothing in CI measures that, and the reason is size rather than doubt. `de431.eph`
+  is 2.6 GB, cannot be committed, and no runner will fetch it per job, so the result
+  above is a dated one-time measurement rather than a gate. It is reproducible by
+  anyone holding that file: the MD5 is recorded so a different DE build, which would
+  produce different numbers and look like defects, can be ruled out first. Treat these
+  rows as verified-but-unwatched, not as covered.
+
 - A separate workflow, not folded into `ci.yml`'s fast job:
   `.github/workflows/conformance.yml` runs on a schedule, on demand, and on every pull
   request, with no `paths` filter -- an earlier version restricted the `pull_request`
