@@ -98,6 +98,17 @@ pointing at `master`, would save the next person the bisect.
 We work around it downstream by patching a copy: we adopt your own `spmoon` declaration verbatim,
 `"9501"`, so our reference binary and yours agree on what `-pv` means without an `-xv`.
 
+One thing worth knowing if you do cut a patch release from the tag rather than from `master`: the
+`gethostname` guard cannot be cherry-picked on its own. `_WINDOWS` does not appear anywhere in
+`sweodef.h` at `v2.10.3final`, so `#ifndef _WINDOWS` is true there and the block still compiles.
+Adding the `#define` to compensate reaches two other places in that tree:
+`swephexp.h:615` pulls in `<windows.h>` and declares `extern HANDLE dllhandle`, which is set by
+`swedllst::DllMain` and so is not there in a static build; and `swetest.c:3944` switches `do_printf`
+from `fputs(info, stdout)` to `fprintf(fp, info)`, which moves every line `swetest` prints off
+stdout. Both are fine on `master`, where the rest of the tree expects `_WINDOWS`. We guard on
+`HPUNIX` in our own patched copy for exactly that reason, and mention it only so a backport does not
+surprise you.
+
 ---
 
 Reported from the SwissEphNet fork (`https://github.com/Tim81/SwissEphNet`), a C# port of the

@@ -333,6 +333,32 @@ function New-PatchedSwetestSource {
     # in sweodef.h -- read directly off aloistr/swisseph master, not taken on description. Only the
     # first is visible in this file, so that is what this looks for: any preprocessor conditional
     # immediately above the call.
+    #
+    # WHY THIS PATCH USES #if HPUNIX AND NOT UPSTREAM'S OWN #ifndef _WINDOWS. Taking their guard
+    # verbatim would mean taking both halves, and the second half cannot be retrofitted onto
+    # v2.10.3final. _WINDOWS does not appear anywhere in the tag's sweodef.h (zero matches), so the
+    # guard alone leaves it undefined, #ifndef is true, the block compiles and the build breaks
+    # exactly as it does today. Defining it to compensate reaches two other sites in the tag:
+    #
+    #   swephexp.h:615  #if defined(MAKE_DLL) || defined(USE_DLL) || defined(_WINDOWS)
+    #                   pulls in <windows.h> and declares `extern HANDLE dllhandle`, which the
+    #                   comment beside it says is set by swedllst::DllMain. This is a static-lib
+    #                   build with no DllMain, and the header is included by every translation unit
+    #                   of libswe, so this changes how the reference LIBRARY compiles, not just
+    #                   swetest.
+    #   swetest.c:3944  do_printf switches from fputs(info, stdout) to fprintf(fp, info) -- a
+    #                   different stream, and a non-literal format string. Every line swetest
+    #                   prints would stop going to stdout, which is precisely what
+    #                   scripts/verify-swetest-diff.ps1 captures and compares.
+    #
+    # Upstream's fix is coherent on master because master's tree is consistent with _WINDOWS being
+    # defined on Windows. On the pinned tag it is not, and adopting it here would quietly change
+    # the C reference this whole harness is measured against. #if HPUNIX reaches the same place by
+    # the tag's own existing machinery: sweodef.h:96-98 defines MSDOS MY_TRUE under _WIN32, and
+    # :143-144 derives HPUNIX MY_FALSE from MSDOS, so the block compiles out on Windows and on Unix
+    # stays exactly where upstream's own guard would leave it,
+    # which is the entire intent. The spmoon half of the workaround IS taken from upstream verbatim
+    # (see the "9501" note above); only this half has a reason not to be.
     $gethostnameGuardedPattern = '(?m)^#\s*(if|ifdef|ifndef)\b[^\r\n]*\r?\n  gethostname \(hostname, 80\);'
     if ($text -match $gethostnameGuardedPattern) {
         Fail 'swetest.c: the gethostname call is already inside a preprocessor conditional, so upstream has fixed this itself. Drop this patch rather than applying it on top, and re-check whether the spmoon patch above is still needed too.'

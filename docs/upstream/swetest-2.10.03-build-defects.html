@@ -115,6 +115,19 @@ bisect.</p>
 declaration verbatim, <code>"9501"</code>, so our reference binary and yours agree on what
 <code>-pv</code> means without an <code>-xv</code>.</p>
 
+<p>One thing worth knowing if you do cut a patch release from the tag rather than from
+<code>master</code>: the <code>gethostname</code> guard cannot be cherry-picked on its own.
+<code>_WINDOWS</code> does not appear anywhere in <code>sweodef.h</code> at
+<code>v2.10.3final</code>, so <code>#ifndef _WINDOWS</code> is true there and the block still
+compiles. Adding the <code>#define</code> to compensate reaches two other places in that tree:
+<code>swephexp.h:615</code> pulls in <code>&lt;windows.h&gt;</code> and declares
+<code>extern HANDLE dllhandle</code>, which is set by <code>swedllst::DllMain</code> and so is not
+there in a static build; and <code>swetest.c:3944</code> switches <code>do_printf</code> from
+<code>fputs(info, stdout)</code> to <code>fprintf(fp, info)</code>, which moves every line
+<code>swetest</code> prints off stdout. Both are fine on <code>master</code>, where the rest of the
+tree expects <code>_WINDOWS</code>. We guard on <code>HPUNIX</code> in our own patched copy for
+exactly that reason, and mention it only so a backport does not surprise you.</p>
+
 <hr>
 
 <p>Reported from the SwissEphNet fork
