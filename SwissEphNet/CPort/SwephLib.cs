@@ -3877,6 +3877,27 @@ namespace SwissEphNet.CPort
             //if (n < nmax) cpos[n] = NULL;
             //return (n);
 
+            // Three divergences from the C above, all in how the field count is kept.
+            //
+            // First, the C seeds n = 1 with cpos[0] = s before the loop, so a field always
+            // exists: cutting "" yields one empty field, not none. This returned an empty
+            // array for an empty input, and a caller reading cpos[0] the way the C's own
+            // callers do would read past the end.
+            //
+            // Second, "n < nmax" in the C is a test on a count that already includes cpos[0],
+            // so "result.Count < nmax" here lagged it by one and cut one field too many. With
+            // s = "a;b;c" and nmax = 2 the C returns 2, {"a", "b;c"}, leaving the last field
+            // un-cut exactly as this function's own doc comment promises; this returned 3,
+            // {"a", "b", "c"}.
+            //
+            // Third, the trailing field was added only when ps < pe, so a string ending in a
+            // separator lost the empty field after it: "a;" gave {"a"} where the C gives
+            // {"a", ""}.
+            //
+            // Both live callers pass nmax = 20 (swi_fopen's path split at Sweph.cs:2841 and
+            // fixstar_cut_string's comma split at Sweph.cs:7350), so the count test only bites
+            // at nineteen or more fields, but the other two bite on any empty or
+            // separator-terminated input.
             s = s ?? string.Empty;
             int ps = 0, pe = s.Length;
             List<string> result = new List<string>();
@@ -3884,21 +3905,31 @@ namespace SwissEphNet.CPort
             while (p < pe)
             {
                 char c = s[p];
-                if(cutlist.Contains(c) && result.Count < nmax)
+                // result.Count + 1 is the C's n: the field being accumulated is cpos[n - 1]
+                // and has not been added yet.
+                bool cut = cutlist.Contains(c) && result.Count + 1 < nmax;
+                if (cut)
                 {
                     result.Add(s.Substring(ps, p - ps));
-                    while (p < pe && cutlist.Contains(s[p])) p++;
-                    ps = p;
+                    // The C advances while the NEXT character is also a separator, leaving s
+                    // on the last one, then starts the next field at s + 1. That is what
+                    // collapses a run of separators into one cut.
+                    while (p + 1 < pe && cutlist.Contains(s[p + 1])) p++;
+                    ps = p + 1;
                 }
-                if (c == '\n' || c == '\r')
+                // The C tests *s after the branch above may have overwritten it with '\0', so
+                // a separator that was cut can never also be seen as a line ending here. Only
+                // reachable when '\n' or '\r' is itself in cutlist, which no caller does, but
+                // testing the original character would diverge if one ever did.
+                if (!cut && (c == '\n' || c == '\r'))
                 {
                     pe = p;
                     break;
                 }
                 p++;
             }
-            if (ps < pe)
-                result.Add(s.Substring(ps, pe - ps));
+            // Unconditional, matching the C's cpos[0] existing before the loop runs at all.
+            result.Add(s.Substring(ps, Math.Max(0, pe - ps)));
             cpos = result.ToArray();
             return cpos.Length;
         }	/* cutstr */

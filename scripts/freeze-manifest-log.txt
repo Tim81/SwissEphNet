@@ -217,3 +217,29 @@ not exist on the integration branch once it lands).
    flattening the asteroid format: 5 of its 7 cases fail, the 2 planetary-moon cases correctly
    do not.
    SwissEphNet/CPort: 48476 -> 48487 lines, sha256 0AEEA27E... -> 8B5C2BAE....
+12. PR #32 2026-08-02: One fidelity fix. SwephLib.cs's swi_cutstr did not implement the C
+   sitting commented out directly above it, in three ways, all in how the field count is kept.
+   The C seeds n = 1 with cpos[0] = s before its loop, so a field always exists and its
+   "n < nmax" test is on a count that already includes the first field.
+     ""       C 1 field {""},        port 0 fields {}
+     "a,"     C 2 fields {"a", ""},  port 1 field  {"a"}
+     "a;b;c" with nmax 2:  C 2 fields {"a", "b;c"}, port 3 fields {"a", "b", "c"}
+   The third contradicts this function's own doc comment, which promises the last field is
+   left un-cut once nmax is reached. Fixed by testing result.Count + 1 against nmax, adding
+   the trailing field unconditionally, and skipping separator runs the way the C does (advance
+   while the NEXT character is a separator, so the next field starts after the run).
+   Also matched the C's ordering around line endings: the C tests *s after the cut branch may
+   have overwritten it with a terminator, so a separator that was cut can never also be read
+   as a line ending. Only reachable if '
+' or '' were themselves in cutlist, which no
+   caller does, but the port tested the original character and would have diverged if one did.
+   Blast radius checked rather than assumed: both live callers pass nmax = 20, swi_fopen's
+   path split (Sweph.cs:2841) and fixstar_cut_string's comma split (Sweph.cs:7350), so the
+   count test only bites at nineteen or more fields while the empty and trailing-separator
+   cases bite on any such input. Fixed-star parsing is a path the characterization baseline
+   structurally cannot see, so the evidence that nothing moved is the oracle and the
+   conformance corpus, not the baseline: regenerating both oracle grids leaves the port's
+   dump files byte-identical (dump-net.tsv b36a007e..., dump-net-files.tsv f3fa03aa...), and
+   the conformance run reports no known-fail movement. Tests/SwissEphNet.Tests/CutStrTest.cs
+   adds 9 cases, every expectation derived from the C by hand rather than from prior output.
+   SwissEphNet/CPort: 48487 -> 48518 lines, sha256 8B5C2BAE... -> 91F5C3E6....
