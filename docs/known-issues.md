@@ -1724,96 +1724,80 @@ early return the C does, and the `serr` text agrees on all 110 `SEFLG_JPLHOR` ro
 side gets past `swi_fopen` because neither `eop_1962_today.txt` nor `eop_finals.txt` is
 retrievable -- see the entry above on what the oracle grids do not cover.
 
-## The analytic grid is environment-dependent, and the port and the C disagree about how
+## The analytic grid's recorded artefacts depend on SE_EPHE_PATH; the port and the C do not disagree
 
-Supersedes an earlier version of this section, which was wrong in its headline, its mechanism and
-the fix it proposed. What follows is measured. The earlier version's error is recorded at the end
-because the way it was reached is worth not repeating.
+Second correction of this section. The first version claimed the ayanamsa values moved; they never
+did. The second claimed a C-versus-port divergence; there is none. Both errors and how they were
+reached are recorded at the end, because the same mistake produced both.
 
-### What is actually true
+### What is true, measured on the current tree
 
-Replaying `grid-analytic.tsv` (17,789 rows) through each driver twice, once with `SE_EPHE_PATH`
-unset and once pointing at `external/swisseph/ephe`, then comparing the drivers against each other:
+Replaying `grid-analytic.tsv` (22,289 rows) through each driver, in three configurations:
 
-| | rows differing | value columns | err column |
-|---|---|---|---|
-| C vs port, variable unset | **0** | 0 | 0 |
-| C vs port, variable set | **210** | **18** | 192 |
-| C alone, unset vs set | 192 | 0 | 192 |
-| port alone, unset vs set | 18 | 18 | 0 |
+| | C vs port |
+|---|---|
+| `SE_EPHE_PATH` unset (the CI configuration) | **0 rows differ** |
+| `SE_EPHE_PATH` set to a real ephemeris directory | **0 rows differ** |
+| explicit `ephe-dir` argument to both drivers | **0 rows differ** |
 
-Two separate divergences, pointing in opposite directions.
+The port and the C agree bit for bit in every configuration tested, including the ones where real
+ephemeris files are found and used.
 
-**192 rows, `serr` only.** `AYANAMSA_EX` 96 and `AYANAMSA_EX_UT` 96. Every value and every return
-code is bit-identical; the ayanamsa numbers do not move at all. What moves is the search path
-`swi_fopen` copies into `serr`. The C picks up the configured path, the port keeps the compiled-in
-default:
+What does move is *both sides together*. Comparing either driver against itself, environment unset
+versus set:
 
 ```
-C   no path : SwissEph file 'seplm24.se1' not found in PATH '\sweph\ephe\'
-C   w/ path : SwissEph file 'seplm24.se1' not found in PATH 'C:/.../external/swisseph/ephe/'
-port w/ path: SwissEph file 'seplm24.se1' not found in PATH '\sweph\ephe\'
+621 rows, every one a value change, no err changes
+   AYANAMSA 73   AYANAMSA_UT 168   HOUSES_EX 190   HOUSES_EX2 190
 ```
 
-**18 rows, values.** `HOUSES_EX`, hsys `'I'` and `'i'`, `SEFLG_SIDEREAL`. Here it is the other way
-round: the port's cusps move when an ephemeris path is visible and the C's do not.
+Identical row sets, identical counts, on both drivers. The grid is environment-sensitive; the port
+is not divergent.
 
-The port is not simply ignoring the variable -- `Sweph.cs:1581` reads it through
-`Environment.GetEnvironmentVariable("SE_EPHE_PATH")`, and the 18 rows prove it takes effect
-somewhere. Why it reaches the house path and not the ayanamsa `serr`, while the C does the reverse,
-is not established. That is the open question, not a settled one.
+### Why the earlier measurement showed 210 rows differing
 
-### Why any of it happens
+It did, on the tree at `8814b33`, and that measurement was correct for that tree. It was a
+**harness artefact, not a port defect**. Neither driver pinned an ephemeris path for the analytic
+grid, so each row started from whatever implicit state its own runtime produced -- the C from its
+compiled-in default, the port from its own -- and the two implicit states were not the same. Once
+both drivers call `swe_set_ephe_path` explicitly before every row, the disagreement is gone.
 
-Neither func passes an ephemeris flag down. `swi_get_ayanamsa_ex` masks `iflag` to `SEFLG_EPHMASK`
-and the grid supplies `0` or `SEFLG_NONUT`, so `epheflag == 0`. `swe_houses_ex2`'s Sunshine branch
-calls `swe_calc_ut(tjd_ut, SE_SUN, SEFLG_SPEED | SEFLG_EQUATORIAL, xp, NULL)`
-(`swehouse.c:260-268`) with no ephemeris flag at all. Both therefore reach
+The proof that it was never in the port is that the change which closed it touched no port file at
+all. `git diff --name-only` across the two commits lists only `Tools/`, `scripts/`, `docs/`,
+`.github/` and the regenerated grid and classification artefacts. Nothing under `SwissEphNet/`.
+A defect in `SwissEphNet/CPort/` cannot be fixed by editing a driver.
 
-```c
-/* sweph.c:639-640 */
-if (epheflag != SEFLG_MOSEPH && !swed.ephe_path_is_set && !swed.jpl_file_is_open)
-    swe_set_ephe_path(NULL);
-```
+### The residual, which is real and is not closed
 
-and `swe_set_ephe_path(NULL)` reads `getenv("SE_EPHE_PATH")` at `sweph.c:1327`.
+The 621 rows are still environment-sensitive, and the sentinel path cannot close that.
+`swe_set_ephe_path` gives the environment variable priority over the path it was passed
+(`sweph.c:1327`), so an exported `SE_EPHE_PATH` overrides the sentinel on both sides. The drivers'
+own comments say so rather than implying otherwise.
 
-The file that fails to open is a **planetary** one, `seplm24.se1`, not a star file. All four
-`$AyanamsaJds` (1000000, 1533333.33, 2066666.67, 2600000) fall outside the era the shipped `.se1`
-files cover, so the open fails whatever the path is -- which is the only reason the ayanamsa
-*values* are stable. That stability is luck, not design: a contributor with an ephemeris
-installation covering JD 1000000 would see the values move too, and the recorded artefacts with
-them.
+The consequence is bounded and worth stating exactly: `verify-oracle` is unaffected, because both
+sides move together and are compared against each other. What is affected is reproducibility of
+the *recorded artefacts* -- `dump-c-2.10.03.tsv`'s SHA-256, and the classification derived from it,
+hold only on a machine whose environment matches the one that produced them.
 
-### The fix, and what it does not fix
+Two of the four funcs cannot be fixed by a flag. `swe_get_ayanamsa(double tjd_et)` and
+`swe_get_ayanamsa_ut(double tjd_ut)` take no `iflag` parameter at all (`swephexp.h:758-759`), so
+there is nothing to OR `SEFLG_MOSEPH` into; the ephemeris is chosen internally. Closing those
+would mean either clearing the variable in the drivers before the analytic leg, or accepting and
+documenting the sensitivity.
 
-OR `SEFLG_MOSEPH` into the `AYANAMSA_EX`/`AYANAMSA_EX_UT` rows' `iflag`. With it set, `sweph.c:639`
-never calls `swe_set_ephe_path(NULL)` and no environment-derived path can reach `serr`. The 32
-`CALC`/`CALC_UT` `SIDEREAL` rows on these same sid modes already carry
-`SEFLG_MOSEPH | SEFLG_SIDEREAL` and do not move in either environment, which is the direct evidence
-that this works.
+### What the two earlier versions got wrong, and how
 
-Pinning the ephemeris path to a sentinel directory in both drivers, for the analytic grid, closes
-the reproducibility problem for every func at once rather than one at a time.
+The first version reported "192 rows change answer". The measurement was `diff` on whole lines; the
+count of differing *lines* was written up as a count of differing *values*. Comparing field by
+field afterwards: 0 value differences, 192 in the `serr` column alone. It then built a causal story
+around the twelve sid modes matching the twelve names in `swi_get_ayanamsa_ex`'s guard
+(`sweph.c:3031-3045`) exactly, one for one -- and on the strength of that coincidence rejected the
+one-line fix that was in fact correct. `sweph.c:6755-6800` hardcodes those star records, so
+`sefstars.txt` was never the dependency.
 
-Neither closes the 210-row divergence. Both remove the environment's ability to *expose* it; the
-port and the C still disagree about how they respond to an ephemeris path, and every gate is blind
-to it because CI leaves the variable unset. That divergence is queued as its own investigation and
-must not be described anywhere as fixed by the grid change.
+The second version isolated the columns correctly but attributed the result wrongly, calling a
+harness asymmetry a disagreement between the port and the C. The measurement was sound; the
+inference from it was not, and it was written as a finding rather than as a hypothesis.
 
-### What the earlier version of this section got wrong, and how
-
-It claimed the 192 rows "change answer", that the twelve sid modes resolve through `swe_fixstar`
-reading `sefstars.txt`, and that OR-ing `SEFLG_MOSEPH` therefore could not help because the star
-file would be read regardless.
-
-All three are false. `sweph.c:6755-6800` hardcodes the star records for exactly these modes
-(`Spica`, `,zePsc`, `,deCnc`, `,laSco`, `,SgrA*`, `,GP1958`, `,GPol`) and `swe_fixstar2` consults
-that built-in table before `search_star_in_list` (`sweph.c:6846-6853`), so `sefstars.txt` never
-decides the number. The rejected one-line fix was the correct one.
-
-The mechanism of the error is worth naming, because it is the same one that produced two other
-defects in this branch. The measurement was `diff` on whole lines, and the count of differing
-*lines* was reported as a count of differing *values*. No column was ever isolated. The twelve sid
-modes matching the twelve names in `swi_get_ayanamsa_ex`'s guard (`sweph.c:3031-3045`) exactly, one
-for one, made a wrong causal story look confirmed. A matching count is not a mechanism.
+The lesson both share: a number that lines up is a lead to test, not a mechanism found, and the
+attribution of a difference needs its own evidence separate from the difference itself.
