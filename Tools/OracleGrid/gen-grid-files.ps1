@@ -478,19 +478,25 @@ function New-PctrRow {
 }
 
 # swe_get_current_file_data -- new in 2.10.03 (absent from external/pyswisseph-2.08/swephexp.h
-# entirely; see this script's own header). Ifno alone (Ipl/Tjd/Star all $null) tests the
-# boundary/no-data branches -- see process_get_current_file_data's own comment in
-# Tools/CReference/sedump.c for exactly which slot is already populated with no other input on the
-# row at all (ifno 1, the Moon file, via main()'s/AttachEpheDir's own swe_set_ephe_path call), and
-# which is not. Ipl+Tjd (Star left $null) trigger a preceding swe_calc, reusing the same columns
-# CALC already carries, to populate ifno 0 (planet file) or ifno 2 (main asteroid file) with real
-# data instead; Star+Tjd (Ipl left $null) trigger a preceding swe_fixstar2 instead, for ifno 4 (the
-# star file). Ifno 3 (SEI_FILE_ANY_AST -- an individually-numbered asteroid or planetary-moon file)
-# has no row here that reaches it with real data: this repo's ephemeris checkout ships no such
-# file (only sepl/semo/seas_{12,18}.se1 and sefstars.txt -- see -EpheDir's own manifest,
-# Tests/conformance/required-ephemeris-files.tsv), so every ifno-3 row this script emits only ever
-# exercises the empty-fnam reject branch (sweph.c:8301), the same branch an ifno-0/2/4 row with no
-# preceding call also exercises.
+# entirely; see this script's own header). Ifno alone (Ipl/Tjd/Star all $null) tests the boundary
+# reject and, for ifno 2/3/4, the empty-fnam reject -- see process_get_current_file_data's own
+# comment in Tools/CReference/sedump.c for exactly which slot is already populated with no other
+# input on the row at all. That set is ifno 0 AND ifno 1, not ifno 1 alone: main()'s/
+# AttachEpheDir's own swe_set_ephe_path call opens the lunar ephemeris directly (populating ifno 1,
+# the Moon file), and populates ifno 0 (the planet file) as a side effect too, because the Moon's
+# own SEFLG_SWIEPH light-time computation also computes Earth's position (sweph.c:4169's sweplan
+# call), and Earth's data lives in the planet file. This grid's own NODATA|0 case_id therefore
+# measures real data, not the empty-fnam branch its label suggests. Ipl+Tjd (Star left $null)
+# trigger a preceding swe_calc, reusing the same columns CALC already carries, to populate ifno 2
+# (main asteroid file) with real data too -- a row targeting ifno 0 this way is redundant with the
+# free ifno 0 above, kept anyway at no cost; Star+Tjd (Ipl left $null) trigger a preceding
+# swe_fixstar2 instead, for ifno 4 (the star file). Ifno 3 (SEI_FILE_ANY_AST -- an
+# individually-numbered asteroid or planetary-moon file) has no row here that reaches it with real
+# data: this repo's ephemeris checkout ships no such file (only sepl/semo/seas_{12,18}.se1 and
+# sefstars.txt -- see -EpheDir's own manifest, Tests/conformance/required-ephemeris-files.tsv), so
+# every ifno-3 row this script emits only ever exercises the empty-fnam reject branch
+# (sweph.c:8301), the same branch an ifno-2/4 row with no preceding call also exercises (ifno 0
+# does not, per above).
 function New-GetCurrentFileDataRow {
     param([string] $Label, [int] $Ifno, $Ipl, $Tjd, $IFlag, $Star)
     $caseId = "GETCURRENTFILEDATA|$Label|$(FmtI $Ifno)"
@@ -760,16 +766,24 @@ $PctrIdenticalIpl = 3  # Venus
 # ---------------------------------------------------------------------------------------
 # swe_get_current_file_data grid values -- see this script's own header and
 # New-GetCurrentFileDataRow's own comment. $GetCurrentFileDataBoundary/NoData/AutoReal cover the
-# five-line C function's every branch with no other input on the row at all (main()'s/
-# AttachEpheDir's own swe_set_ephe_path call already populates ifno 1 before any row-specific func
-# runs); $GetCurrentFileDataPreCalc/PreFixstar additionally trigger a preceding swe_calc/
-# swe_fixstar2 to reach ifno 0/2/4 with real (non-Moshier) file data instead of the empty-fnam
-# reject every other ifno here exercises.
+# five-line C function's every branch with no other input on the row at all: main()'s/
+# AttachEpheDir's own swe_set_ephe_path call already populates ifno 1 (the Moon file) directly, and
+# ifno 0 (the planet file) as a side effect of the Moon's own SEFLG_SWIEPH light-time computation
+# needing Earth's position -- so $GetCurrentFileDataNoData's own ifno-0 row is a second real-data
+# case, not an empty-fnam one, despite its label; see New-GetCurrentFileDataRow's own comment for
+# the citation. $GetCurrentFileDataPreCalc/PreFixstar additionally trigger a preceding swe_calc/
+# swe_fixstar2 to reach ifno 2/4 with real (non-Moshier) file data instead of the empty-fnam
+# reject every other ifno (other than 0 and 1) here exercises.
 # ---------------------------------------------------------------------------------------
 $GetCurrentFileDataBoundary = @(-1, 5)                 # sweph.c:8299's ifno < 0 || ifno > 4
-$GetCurrentFileDataNoData = @(0, 2, 3, 4)              # sweph.c:8301's strlen(fnam) == 0
+# ifno 0 in this list is NOT sweph.c:8301's strlen(fnam) == 0 -- it is populated for free, same as
+# ifno 1 below, via the Moon-calc-needs-Earth mechanism this script's own header paragraph above
+# explains. Kept in this list (not moved to $GetCurrentFileDataAutoReal) because the row still
+# exercises a real, distinct case_id (NODATA|0) worth having on file even though its outcome does
+# not match its own label; only ifno 2/3/4 here actually hit strlen(fnam) == 0.
+$GetCurrentFileDataNoData = @(0, 2, 3, 4)
 $GetCurrentFileDataAutoReal = 1                        # SEI_FILE_MOON -- populated for free
-$GetCurrentFileDataPreCalcIpl = 0                       # SE_SUN -> SEI_FILE_PLANET (ifno 0)
+$GetCurrentFileDataPreCalcIpl = 0                       # SE_SUN -> SEI_FILE_PLANET (ifno 0; redundant with the free ifno-0 row above, kept anyway)
 # SE_CERES (17): one of the six bodies swi_get_denum's own dispatch (sweph.c:2423-2429) routes to
 # SEI_FILE_MAIN_AST -- an arbitrary numbered asteroid (e.g. SE_AST_OFFSET-relative) routes to
 # SEI_FILE_ANY_AST (ifno 3) instead, not ifno 2 -- matches
@@ -1075,11 +1089,14 @@ $headerLines = @(
     '# one row exercising the "ipl and iplctr must not be identical" reject (sweph.c:8050-8054) --'
     '# see New-PctrRow''s own comment. swe_get_current_file_data reads swed.fidat, which'
     '# grid-analytic.tsv''s rows never populate at all, so it too is files-grid-only. Ifno alone'
-    '# (-1, 5 out of range; 0/2/3/4 in range but not yet populated) covers the boundary and'
-    '# empty-fnam reject branches; ifno 1 (the Moon file) reports real data with no other input on'
-    '# the row at all, because this grid''s own swe_set_ephe_path call already opens it (sweph.c:'
-    '# 1343-1350); ifno 0/2/4 reach real data too, through an optional preceding swe_calc or'
-    '# swe_fixstar2 this func''s own row reuses ipl/tjd/iflag/star to trigger -- see'
+    '# (-1, 5 out of range; 2/3/4 in range but not yet populated) covers the boundary reject and,'
+    '# for 2/3/4, the empty-fnam reject; ifno 0 and ifno 1 both report real data with no other'
+    '# input on the row at all, because this grid''s own swe_set_ephe_path call opens the Moon file'
+    '# directly (sweph.c:1343-1350) and the planet file as a side effect (the Moon''s own'
+    '# SEFLG_SWIEPH light-time computation needs Earth''s position, sweph.c:4169) -- so the ifno-0'
+    '# row in this func''s own "no data" set actually measures real data, not an empty-fnam reject,'
+    '# despite its case_id label; ifno 2/4 reach real data too, through an optional preceding'
+    '# swe_calc or swe_fixstar2 this func''s own row reuses ipl/tjd/iflag/star to trigger -- see'
     '# New-GetCurrentFileDataRow''s own comment for why ifno 3 has no real-data row at all in this'
     '# grid.'
     '#'

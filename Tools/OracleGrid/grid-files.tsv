@@ -73,11 +73,14 @@
 # one row exercising the "ipl and iplctr must not be identical" reject (sweph.c:8050-8054) --
 # see New-PctrRow's own comment. swe_get_current_file_data reads swed.fidat, which
 # grid-analytic.tsv's rows never populate at all, so it too is files-grid-only. Ifno alone
-# (-1, 5 out of range; 0/2/3/4 in range but not yet populated) covers the boundary and
-# empty-fnam reject branches; ifno 1 (the Moon file) reports real data with no other input on
-# the row at all, because this grid's own swe_set_ephe_path call already opens it (sweph.c:
-# 1343-1350); ifno 0/2/4 reach real data too, through an optional preceding swe_calc or
-# swe_fixstar2 this func's own row reuses ipl/tjd/iflag/star to trigger -- see
+# (-1, 5 out of range; 2/3/4 in range but not yet populated) covers the boundary reject and,
+# for 2/3/4, the empty-fnam reject; ifno 0 and ifno 1 both report real data with no other
+# input on the row at all, because this grid's own swe_set_ephe_path call opens the Moon file
+# directly (sweph.c:1343-1350) and the planet file as a side effect (the Moon's own
+# SEFLG_SWIEPH light-time computation needs Earth's position, sweph.c:4169) -- so the ifno-0
+# row in this func's own "no data" set actually measures real data, not an empty-fnam reject,
+# despite its case_id label; ifno 2/4 reach real data too, through an optional preceding
+# swe_calc or swe_fixstar2 this func's own row reuses ipl/tjd/iflag/star to trigger -- see
 # New-GetCurrentFileDataRow's own comment for why ifno 3 has no real-data row at all in this
 # grid.
 #

@@ -282,12 +282,13 @@ requires.
 
 How this is checked, and what checking it does and does not prove. The port's output is compared
 field by field against Astrodienst's own C, built from the same source and run against the same
-ephemeris files. On Windows (MSVC) and Linux (gcc), all but 5<!--doccount:oracle-known-diff-files-->
-of the 25,569<!--doccount:grid-total-combined--> rows in that comparison (22,289<!--doccount:grid-analytic-total-->
+ephemeris files. On Windows (MSVC) and Linux (gcc), all 25,569<!--doccount:grid-total-combined--> rows in that comparison (22,289<!--doccount:grid-analytic-total-->
 calls that need no ephemeris file plus 3,280<!--doccount:grid-files-total--> that read the shipped `.se1` files) come back
-bit-identical, not merely close; the tracked difference lists carry a combined 5 recorded
-exceptions, all `SERR`-category and all traced to the same deliberate, cross-platform path-separator
-choice (`docs/compliance-2.10.03.md`'s "The last two 2.10.03-only entry points" section). macOS (clang,
+bit-identical, not merely close; both tracked difference lists (0<!--doccount:oracle-known-diff-files-->
+recorded exceptions each) are empty. A `GET_CURRENT_FILE_DATA` row records only the basename of
+the file it opened, deliberately, not the full path -- see `docs/compliance-2.10.03.md`'s "The
+last two 2.10.03-only entry points" section for why, and for the five `SERR` rows that briefly
+existed before that scoping decision. macOS (clang,
 arm64) matched at an earlier, smaller grid size once clang was told not to substitute its own math
 builtins for individual libm calls (`-fno-builtin`) -- see the table below for exactly what is and
 is not re-verified against the current 25,569-row grid; unlike Windows and Linux, macOS cannot be
@@ -606,7 +607,7 @@ platform:
 
 | Platform | C reference | Result |
 |---|---|---|
-| Windows x64 | MSVC 19.51, `/O2 /fp:precise /MD` | 25,564 of 25,569<!--doccount:grid-total-combined--> rows bit-identical, 5 recorded `SERR` exceptions accounted for (gated) |
+| Windows x64 | MSVC 19.51, `/O2 /fp:precise /MD` | 25,569<!--doccount:grid-total-combined--> of 25,569 rows bit-identical (gated) |
 | Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | Gated at the same total on every push and pull request; the 22,289-analytic/3,251-files local replay this row previously cited was from the addition before this one (`HOUSES_EX2`/`HOUSES_ARMC_EX2`) and has not been independently re-run against the current 3,280-row files grid outside CI -- see `docs/compliance-2.10.03.md`'s "The last two 2.10.03-only entry points" for what was actually checked, and on which platform |
 | macOS arm64 | clang, `-O2 -ffp-contract=off -fno-builtin` | 20,532 of 20,532 rows bit-identical at last CI run (gated by `macos-exactness`; not re-run locally against the current 25,569-row grid -- macOS has no local reproduction path here, so this row is CI's own last result, not a claim made outside it) |
 

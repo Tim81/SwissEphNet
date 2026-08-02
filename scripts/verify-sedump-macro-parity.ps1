@@ -11,9 +11,13 @@
     lets one source file serve both the 2.10.03 driver and the 2.08 one.
 
     The failure mode this gate exists for, measured rather than imagined: sedump.c is compiled
-    against 2.10.03 in SIX places -- once in scripts/run-oracle-dump.ps1 and four times in
-    .github/workflows/oracle.yml (two clang, two gcc), plus the deliberate 2.08 build in
-    Tools/CReference/build-c.ps1. When SWISSEPH_HAS_HOUSES_EX2 was added it was added to the
+    against 2.10.03 in FIVE places -- once in scripts/run-oracle-dump.ps1 and four times in
+    .github/workflows/oracle.yml (two clang, two gcc). (Six, not five, if the deliberate 2.08
+    build in Tools/CReference/build-c.ps1 is counted alongside them -- but that build is compiled
+    against 2.08, not 2.10.03, and is the one site required to define NONE of these macros, so
+    folding it into "compiled against 2.10.03" undercounts the 2.10.03 sites by one; an earlier
+    revision of this sentence did exactly that and the six-vs-five confusion it caused reached a
+    PR description before being caught here.) When SWISSEPH_HAS_HOUSES_EX2 was added it was added to the
     Windows build only. The four non-Windows lines kept taking the #else branch, so the C side
     emitted the sentinel for 4,500 analytic rows while the port computed real values, and
     linux-exactness and macos-exactness failed at their cmp step. Reproduced under gcc in a

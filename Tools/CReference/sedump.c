@@ -340,7 +340,8 @@
  * column" convention as GET_PLANET_NAME/HOUSE_NAME, but with a synthesized retc (OK when non-NULL,
  * ERR when NULL) rather than a fixed one, since NULL vs non-NULL is this func's only outcome to
  * report and both drivers already compute a synthetic retc for the crossing functions the same
- * way -- see process_get_current_file_data.
+ * way -- only the BASENAME of the returned string goes into the err column, not the full path --
+ * see process_get_current_file_data's own "ONLY THE BASENAME..." comment for why.
  *
  * THE CROSSING FUNCTIONS' retc COLUMN: ONE REAL, SIX SYNTHETIC
  *
@@ -537,6 +538,30 @@ static int parse_hsys(const char *s, const char *case_id)
         die("hsys must be exactly one character at case %s: '%s'", case_id, s);
     }
     return (unsigned char)s[0];
+}
+
+/*
+ * GET_CURRENT_FILE_DATA only: the last path component of a directory+filename string, splitting
+ * on EITHER '\\' or '/' (not just the one this platform's own DIR_GLUE happens to be), so the
+ * -EpheDir this driver was invoked with -- an input the row does not exist to measure -- never
+ * reaches the dump. See process_get_current_file_data's own comment for what that scoping
+ * decision gives up and why it is deliberate, not an oversight; docs/known-issues.md's "DIR_GLUE
+ * is always '/', so the 'not found' message reads wrong on Windows" is the standing record of the
+ * separator difference this specifically stops the dump from exposing. Returns the input
+ * unchanged if it contains neither separator (nothing to strip). Never returns NULL; s itself is
+ * never NULL on either call site below (swe_get_current_file_data already returned non-NULL by
+ * the time this runs).
+ */
+static const char *basename_of(const char *s)
+{
+    const char *last = s;
+    const char *p;
+    for (p = s; *p != '\0'; p++) {
+        if (*p == '\\' || *p == '/') {
+            last = p + 1;
+        }
+    }
+    return last;
 }
 
 static void emit_value(FILE *out, double v)
@@ -1308,21 +1333,53 @@ static void process_pctr(FILE *out, const char *case_id, char *fields[], int sid
  * process_helio_cross already applies to jd_cross. denum is widened to double for emit_value --
  * exact for any int32.
  *
- * ifno alone tests the boundary/no-data branches. Whether a slot is already POPULATED before this
- * row runs is a property of what ran earlier in THIS row, not of ifno by itself: main()'s own
- * swe_set_ephe_path() call before every grid-files.tsv row (sweph.c:1315-1350) already opens the
- * lunar ephemeris to pin tidal acceleration, so ifno 1 (SEI_FILE_MOON, sweph.h:174) reports real
- * data with no other input on this row at all. ipl_idx/tjd_idx/iflag_idx (when both ipl and tjd
- * are non-empty) trigger a preceding swe_calc first -- the same three columns CALC already reads
- * -- so this row can also observe ifno 0 (SEI_FILE_PLANET) or ifno 2 (SEI_FILE_MAIN_AST) with real
- * data; star_idx (when both star and tjd are non-empty, and ipl is empty) triggers a preceding
- * swe_fixstar2 instead, for ifno 4 (SEI_FILE_FIXSTAR) -- both preceding calls' own retc/serr/xx
- * are discarded here; only what they leave in swed.fidat matters to this row. ifno 3
- * (SEI_FILE_ANY_AST -- an individually-numbered asteroid or planetary-moon file) is not reachable
- * with real data by any row in this grid: this repo's ephemeris checkout ships no such file
- * (external/swisseph/ephe has sepl/semo/seas_{12,18}.se1 and sefstars.txt only), so ifno 3 rows
- * here only ever exercise the empty-fnam reject branch, the same branch ifno 0/2/4 rows exercise
- * before any preceding call populates them.
+ * ifno alone tests the boundary reject and, for ifno 2/3/4, the empty-fnam reject too. Whether a
+ * slot is already POPULATED before this row runs is a property of what ran earlier in THIS row,
+ * not of ifno by itself: main()'s own swe_set_ephe_path() call before every grid-files.tsv row
+ * (sweph.c:1315-1350) already opens the lunar ephemeris to pin tidal acceleration, via an internal
+ * swe_calc(J2000, SE_MOON, SEFLG_SWIEPH|..., xx, serr). That call populates ifno 1 (SEI_FILE_MOON,
+ * sweph.h:174) directly, AND ifno 0 (SEI_FILE_PLANET) as a side effect: under SEFLG_SWIEPH the
+ * Moon's own light-time computation calls sweplan(t, SEI_MOON, SEI_FILE_MOON, iflag, NO_SAVE, xx,
+ * xe, xs, NULL, serr) (sweph.c:4169), whose xe output parameter is Earth's own position -- Earth's
+ * data lives in the planet file, so computing it opens/reads SEI_FILE_PLANET too. So ifno 0 and
+ * ifno 1 BOTH report real data with no other input on this row at all; the NODATA|0 case_id this
+ * grid carries therefore measures that directly (a real-data row, same mechanism as AUTOREAL|1),
+ * not the empty-fnam branch its own label suggests -- see New-GetCurrentFileDataRow's own comment
+ * in gen-grid-files.ps1. ipl_idx/tjd_idx/iflag_idx (when both ipl and tjd are non-empty) trigger a
+ * preceding swe_calc first -- the same three columns CALC already reads -- so this row can also
+ * reach ifno 2 (SEI_FILE_MAIN_AST) with real data (PRECALC|0's own preceding swe_calc on ifno 0 is
+ * therefore redundant with NODATA|0, not a second, independent proof -- kept anyway, since a row
+ * this grid already carries costs nothing to keep and a future change to the Moon-calc's own file
+ * dependencies could make it the only one still reaching ifno 0 with real data); star_idx (when
+ * both star and tjd are non-empty, and ipl is empty) triggers a preceding swe_fixstar2 instead,
+ * for ifno 4 (SEI_FILE_FIXSTAR) -- both preceding calls' own retc/serr/xx are discarded here; only
+ * what they leave in swed.fidat matters to this row. ifno 3 (SEI_FILE_ANY_AST -- an
+ * individually-numbered asteroid or planetary-moon file) is not reachable with real data by any
+ * row in this grid: this repo's ephemeris checkout ships no such file (external/swisseph/ephe has
+ * sepl/semo/seas_{12,18}.se1 and sefstars.txt only), so ifno 3 rows here only ever exercise the
+ * empty-fnam reject branch, the same branch ifno 2/4 rows exercise before any preceding call
+ * populates them -- ifno 0 does not, per the paragraph above.
+ *
+ * ONLY THE BASENAME OF fnam GOES INTO THE DUMP, DELIBERATELY, NOT THE FULL RETURNED STRING
+ *
+ * swe_get_current_file_data's own fnam is swed.ephepath (whatever -EpheDir/-JplEpheDir this
+ * process was invoked with) joined to a filename swi_fopen chose. The directory half is this
+ * row's own INPUT, supplied by the invocation, not a result the function computed -- keeping it
+ * in the dump would make the recorded output (and its SHA-256) depend on the absolute path of
+ * whatever machine and checkout generated it, for no return: the file identity this row exists to
+ * measure is which FILE opened, not which directory it happened to sit in this run. basename_of
+ * strips that prefix on both sides before the value is written.
+ *
+ * The join itself is real, measured port behaviour, not stripped by accident: swi_fopen builds
+ * the full path with DIR_GLUE, deliberately '/' on every platform this port targets, where the C
+ * reference joins with the platform's own separator (backslash on Windows) -- see
+ * docs/known-issues.md's "DIR_GLUE is always '/', so the 'not found' message reads wrong on
+ * Windows" for the standing record of that exact difference, already visible elsewhere in this
+ * repository (11 Tests/swetest/known-diff.tsv rows). Emitting only the basename is a deliberate
+ * scoping decision, not a fix and not a workaround: this func's own row does not measure that
+ * join, on either side, on purpose. A row that wanted to measure the join itself would need the
+ * full path, and would need -EpheDir pinned to something reproducible across machines first --
+ * neither is what GET_CURRENT_FILE_DATA rows are for.
  */
 static void process_get_current_file_data(FILE *out, const char *case_id, char *fields[], int ifno_idx, int ipl_idx, int tjd_idx, int iflag_idx, int star_idx)
 {
@@ -1359,7 +1416,8 @@ static void process_get_current_file_data(FILE *out, const char *case_id, char *
     retc = (fnam != NULL) ? OK : ERR;
 
     fprintf(out, "%s\t%d\t", case_id, retc);
-    emit_escaped(out, fnam != NULL ? fnam : "");
+    /* basename only -- see this function's own "ONLY THE BASENAME..." comment above */
+    emit_escaped(out, fnam != NULL ? basename_of(fnam) : "");
     emit_value(out, tfstart);
     emit_value(out, tfend);
     emit_value(out, (double)denum);

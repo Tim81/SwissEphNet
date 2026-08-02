@@ -944,16 +944,42 @@ internal static class Program
     // Whether a slot is already populated before this row runs is a property of what ran earlier
     // in THIS row, not of ifno by itself: AttachEpheDir's swe_set_ephe_path call, unconditional on
     // every row (this file's own header comment, "INVOCATION"), already opens the lunar
-    // ephemeris to pin tidal acceleration (sweph.c:1343-1350), so ifno 1 (SEI_FILE_MOON) reports
-    // real data with no other input on this row at all. When both fields[2] (ipl) and fields[3]
-    // (tjd) are non-empty, this method calls swe_calc first (discarding its own result) to
-    // populate ifno 0 (SEI_FILE_PLANET) or ifno 2 (SEI_FILE_MAIN_AST) with real data instead; when
-    // fields[2] is empty but fields[5] (star) and fields[3] are non-empty, it calls swe_fixstar2
-    // first instead, for ifno 4 (SEI_FILE_FIXSTAR). ifno 3 (SEI_FILE_ANY_AST) is not reachable
-    // with real data by any row in this grid -- see gen-grid-files.ps1's own comment on
-    // New-GetCurrentFileDataRow for why -- so ifno 3 rows here only ever exercise the empty-fnam
-    // reject branch, the same branch ifno 0/2/4 rows exercise before any preceding call populates
-    // them.
+    // ephemeris to pin tidal acceleration (sweph.c:1343-1350) via an internal
+    // swe_calc(J2000, SE_MOON, ...). That call populates ifno 1 (SEI_FILE_MOON) directly, AND ifno
+    // 0 (SEI_FILE_PLANET) as a side effect: under SEFLG_SWIEPH the Moon's own light-time
+    // computation also computes Earth's position (sweph.c:4169's sweplan call, its own xe output
+    // parameter), and Earth's data lives in the planet file, so ifno 0 and ifno 1 both report real
+    // data with no other input on this row at all -- the NODATA|0 case_id gen-grid-files.ps1
+    // carries therefore measures that directly, not the empty-fnam branch its own label suggests,
+    // matching sedump.c's process_get_current_file_data comment for the same finding. When both
+    // fields[2] (ipl) and fields[3] (tjd) are non-empty, this method calls swe_calc first
+    // (discarding its own result) to populate ifno 2 (SEI_FILE_MAIN_AST) with real data (this path
+    // also runs for a row targeting ifno 0, but is then redundant with the free ifno 0 above --
+    // kept anyway, at no cost, as a second, less coupled proof); when fields[2] is empty but
+    // fields[5] (star) and fields[3] are non-empty, it calls swe_fixstar2 first instead, for ifno 4
+    // (SEI_FILE_FIXSTAR). ifno 3 (SEI_FILE_ANY_AST) is not reachable with real data by any row in
+    // this grid -- see gen-grid-files.ps1's own comment on New-GetCurrentFileDataRow for why -- so
+    // ifno 3 rows here only ever exercise the empty-fnam reject branch, the same branch ifno 2/4
+    // rows exercise before any preceding call populates them (ifno 0 does not, per above).
+    //
+    // ONLY THE BASENAME OF fnam GOES INTO THE DUMP, DELIBERATELY, NOT THE FULL RETURNED STRING
+    //
+    // swe_get_current_file_data's own fnam is swed.ephepath (whichever ephe-dir/jpl-file argument
+    // this process was invoked with) joined to a filename swi_fopen chose. The directory half is
+    // this row's own INPUT, supplied on the command line, not a result the function computed --
+    // keeping it in the dump would make the recorded output (and its SHA-256) depend on the
+    // absolute path of whatever machine and checkout generated it, for no return: the file
+    // identity this row exists to measure is which FILE opened, not which directory it happened to
+    // sit in this run. BasenameOf strips that prefix here, matching sedump.c's own basename_of.
+    //
+    // The join itself is real, measured port behaviour, not stripped by accident: swi_fopen builds
+    // the full path with DIR_GLUE, deliberately '/' on every platform this port targets
+    // (SwissEph.sweodef.h.cs), where the C reference joins with the platform's own separator
+    // (backslash on Windows) -- see docs/known-issues.md's "DIR_GLUE is always '/', so the 'not
+    // found' message reads wrong on Windows" for the standing record of that exact difference,
+    // already visible elsewhere in this repository (11 Tests/swetest/known-diff.tsv rows).
+    // Emitting only the basename is a deliberate scoping decision, not a fix and not a workaround:
+    // this func's own row does not measure that join, on either side, on purpose.
     private static void ProcessGetCurrentFileData(SwissEph swe, string caseId, string[] fields, int ifnoIndex, TextWriter writer)
     {
         var ifno = ParseInt(fields[ifnoIndex], caseId, "ifno");
@@ -987,7 +1013,8 @@ internal static class Program
         writer.Write('\t');
         writer.Write(retc.ToString(CultureInfo.InvariantCulture));
         writer.Write('\t');
-        writer.Write(EscapeErr(fnam));
+        // Basename only -- see this method's own "ONLY THE BASENAME..." comment above.
+        writer.Write(EscapeErr(fnam != null ? BasenameOf(fnam) : null));
         EmitValue(writer, tfstart);
         EmitValue(writer, tfend);
         EmitValue(writer, (double)denum);
@@ -1145,6 +1172,18 @@ internal static class Program
             throw new InvalidDataException($"cannot parse '{column}' as an int at case {caseId}: '{field}'");
         }
         return value;
+    }
+
+    // GET_CURRENT_FILE_DATA only -- mirrors sedump.c's basename_of. Splits on EITHER '\' or '/'
+    // (not just Path.DirectorySeparatorChar, and not Path.GetFileName, which throws on a string
+    // containing characters invalid on the *current* platform's paths -- a path built with the
+    // C reference's Windows backslash join running through this .NET driver on Linux is exactly
+    // the input that would trip); see ProcessGetCurrentFileData's own "ONLY THE BASENAME..."
+    // comment for why the directory half is deliberately never written to the dump at all.
+    private static string BasenameOf(string s)
+    {
+        var lastSeparator = s.LastIndexOfAny(['\\', '/']);
+        return lastSeparator < 0 ? s : s[(lastSeparator + 1)..];
     }
 
     // Mirrors sedump.c's emit_escaped and Tools/BaselineMatrix/Format.cs's S(): a raw serr

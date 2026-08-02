@@ -1,6 +1,1 @@
 case_id	category	max_ulp	reason
-GETCURRENTFILEDATA|AUTOREAL|1	SERR	0	serr: c="C:\\Users\\Timothy\\source\\repos\\SwissEphNet\\external\\swisseph\\ephe\\semo_18.se1", net="C:\\Users\\Timothy\\source\\repos\\SwissEphNet\\external\\swisseph\\ephe/semo_18.se1"
-GETCURRENTFILEDATA|NODATA|0	SERR	0	serr: c="C:\\Users\\Timothy\\source\\repos\\SwissEphNet\\external\\swisseph\\ephe\\sepl_18.se1", net="C:\\Users\\Timothy\\source\\repos\\SwissEphNet\\external\\swisseph\\ephe/sepl_18.se1"
-GETCURRENTFILEDATA|PRECALC|0	SERR	0	serr: c="C:\\Users\\Timothy\\source\\repos\\SwissEphNet\\external\\swisseph\\ephe\\sepl_12.se1", net="C:\\Users\\Timothy\\source\\repos\\SwissEphNet\\external\\swisseph\\ephe/sepl_12.se1"
-GETCURRENTFILEDATA|PRECALC|2	SERR	0	serr: c="C:\\Users\\Timothy\\source\\repos\\SwissEphNet\\external\\swisseph\\ephe\\seas_12.se1", net="C:\\Users\\Timothy\\source\\repos\\SwissEphNet\\external\\swisseph\\ephe/seas_12.se1"
-GETCURRENTFILEDATA|PREFIXSTAR|4	SERR	0	serr: c="C:\\Users\\Timothy\\source\\repos\\SwissEphNet\\external\\swisseph\\ephe\\sefstars.txt", net="C:\\Users\\Timothy\\source\\repos\\SwissEphNet\\external\\swisseph\\ephe/sefstars.txt"
