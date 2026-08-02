@@ -1,7 +1,7 @@
 /*
  * sedump.c -- the C side of the bit-exact comparison harness.
  *
- * Replays two committed grids against Astrodienst's own C, linked in as libswe -- see
+ * Replays the committed grids against Astrodienst's own C, linked in as libswe -- see
  * scripts/run-oracle-dump.ps1, which builds this file and picks which .lib it links against
  * (2.10.03 by default, 2.08 for isolating transliteration defects from porting differences).
  * Tools/OracleDump/Program.cs is this file's .NET counterpart; the two must produce output in
@@ -20,11 +20,22 @@
  *                                          eight crossing functions under SEFLG_SWIEPH. Opens
  *                                          the shipped .se1/sefstars.txt files. See
  *                                          gen-grid-files.ps1's header.
+ *   Tools/OracleGrid/grid-jpl.tsv       -- swe_calc/swe_calc_ut (SEFLG_JPLEPH), including the
+ *                                          SEFLG_JPLHOR/SEFLG_JPLHOR_APPROX combinations no other
+ *                                          grid can reach (sweph.c:6110-6112 strips both unless
+ *                                          the ephemeris flag is SEFLG_JPLEPH). Opens a JPL DE
+ *                                          file this repo does not ship, named by the optional
+ *                                          fourth argument below. See gen-grid-jpl.ps1's header.
  *
- * Both grids share one output shape (see OUTPUT COLUMN LAYOUT below) and one row-processing loop
- * in main(); which grid a given input file is dispatches on its header line, checked against
- * EXPECTED_HEADER_ANALYTIC and EXPECTED_HEADER_FILES below -- the two grids have different
- * column counts (14 vs 12), so a header mismatch is caught before any row is parsed.
+ * Every grid shares one output shape (see OUTPUT COLUMN LAYOUT below) and one row-processing loop
+ * in main(); which column layout a given input file uses dispatches on its header line, checked
+ * against EXPECTED_HEADER_ANALYTIC and EXPECTED_HEADER_FILES below -- those two layouts have
+ * different column counts (16 vs 14), so a header mismatch is caught before any row is parsed.
+ * grid-jpl.tsv carries grid-files.tsv's header verbatim and is therefore read in MODE_FILES: it
+ * needs exactly the columns that layout already defines, and what makes it a distinct grid is the
+ * ephemeris flag its rows carry and the JPL file this driver is pointed at, not its schema -- see
+ * gen-grid-jpl.ps1's own header for why a third, identical-but-differently-named header would
+ * have bought nothing but a third parsing mode.
  *
  * SWISSEPH_HAS_CROSSING: THE EIGHT CROSSING FUNCTIONS DO NOT EXIST IN 2.08
  *
@@ -45,7 +56,7 @@
  *
  * INVOCATION
  *
- *   sedump.exe <grid.tsv> <output.tsv> [ephe-dir]
+ *   sedump.exe <grid.tsv> <output.tsv> [ephe-dir [jpl-file]]
  *
  * ephe-dir is optional. grid-analytic.tsv needs it never (every row forces SEFLG_MOSEPH, so no
  * row ever opens a file) and the existing two-argument invocation is untouched -- passing it is
@@ -57,6 +68,48 @@
  * the .NET side (sweph.c:1315-1350: swe_set_ephe_path is not a setter, it closes every open file
  * and eagerly opens the Moon file to pin tidal acceleration, so the path has to be set before any
  * row-specific call runs, not after).
+ *
+ * jpl-file is optional too, and only grid-jpl.tsv needs it. When given, swe_set_jpl_file(jpl-file)
+ * runs immediately AFTER swe_set_ephe_path, once per row. That order is not incidental and cannot
+ * be swapped: swe_set_jpl_file opens the file eagerly, right there in the call, resolving the name
+ * against swed.ephepath as it stands at that moment (sweph.c:1499-1505). Called before
+ * swe_set_ephe_path it would resolve against whatever path was left over -- SE_EPHE_PATH's
+ * compiled-in default on the first row -- almost certainly fail to find the file, and so never
+ * reach the jpldenum >= 403 branch below; swe_set_ephe_path would then close the JPL file it did
+ * not manage to open anyway. Every SEFLG_JPLEPH row would fall back through SEFLG_SWIEPH to
+ * Moshier (sweph.c:894-913) and compare bit-identical between the two sides while measuring
+ * nothing about the JPL backend at all. For the same reason, passing jpl-file with an empty
+ * ephe-dir is rejected outright in main() instead of being left to resolve against SE_EPHE_PATH.
+ *
+ * Passing jpl-file also has one effect no other argument does: swe_set_jpl_file is the only caller
+ * of load_dpsi_deps in the whole library (sweph.c:1503-1504, on the branch where the file it just
+ * opened reports jpldenum >= 403), so this argument is the only way either driver reaches that
+ * function at all. gen-grid-jpl.ps1's header describes how the SEFLG_JPLHOR rows make that
+ * reachability observable in the err column instead of merely asserted.
+ *
+ * ONE PIECE OF STATE swe_close() DOES NOT RESET: swed.eop_dpsi_loaded
+ *
+ * swe_close() frees swed.dpsi and swed.deps but leaves swed.eop_dpsi_loaded at whatever
+ * load_dpsi_deps last wrote (sweph.c's swe_close: the two free() calls have no accompanying
+ * assignment, and the port mirrors that faithfully in SwissEphNet/CPort/Sweph.cs). This driver's
+ * per-row swe_close() therefore does NOT give a row a fresh eop state, while
+ * Tools/OracleDump/Program.cs's fresh SwissEph instance does -- the same shape of difference this
+ * file's FRESH LIBRARY STATE PER ROW section already documents for swe_houses_armc_ex2's
+ * saved_sundec, and like that one it does not currently bite, for a reason worth writing down:
+ *
+ *   load_dpsi_deps returns early only when eop_dpsi_loaded > 0, i.e. only after a SUCCESSFUL
+ *   load. With neither eop_1962_today.txt nor eop_finals.txt in ephe-dir -- which is the case for
+ *   every directory this repo declares -- the very first row's call fails at swi_fopen and writes
+ *   ERR (-1). -1 is not > 0, so every later row runs the same code and writes the same -1, and the
+ *   C side's carried-over value is indistinguishable from the .NET side's freshly-computed one.
+ *
+ * Put those two files in ephe-dir and that stops being true: row 1 would write 1 or 2 and
+ * allocate dpsi/deps, row 2's swe_close() would free both arrays while leaving the > 0 marker in
+ * place, and load_dpsi_deps would then return early without reallocating -- leaving the C side
+ * claiming loaded EOP data it no longer has, against a .NET side that reloaded it. That is a real
+ * asymmetry in this harness (arguably a latent defect in the C's own swe_close), so if this driver
+ * is ever pointed at a directory carrying the EOP files, it needs a way to reset that field
+ * between rows before the resulting diff can be read as a statement about the port.
  *
  * FRESH LIBRARY STATE PER ROW
  *
@@ -701,6 +754,7 @@ int main(int argc, char **argv)
 {
     FILE *in, *out;
     const char *ephe_dir = NULL;
+    const char *jpl_file = NULL;
     char line[MAX_LINE];
     char buf[MAX_LINE];
     int header_seen = 0;
@@ -708,11 +762,22 @@ int main(int argc, char **argv)
     int expected_columns = ANALYTIC_COLUMNS;
     long row_count = 0;
 
-    if (argc != 3 && argc != 4) {
-        fprintf(stderr, "Usage: sedump <grid.tsv> <output.tsv> [ephe-dir]\n");
+    if (argc < 3 || argc > 5) {
+        fprintf(stderr, "Usage: sedump <grid.tsv> <output.tsv> [ephe-dir [jpl-file]]\n");
         return 1;
     }
-    if (argc == 4) ephe_dir = argv[3];
+    if (argc >= 4) ephe_dir = argv[3];
+    if (argc == 5) jpl_file = argv[4];
+    /* swe_set_jpl_file resolves its argument against swed.ephepath (sweph.c:1500), so a jpl-file
+     * with no ephe-dir would resolve against whatever SE_EPHE_PATH or the compiled-in default
+     * happens to be -- almost certainly not finding the file, and then silently falling back
+     * through SEFLG_SWIEPH to Moshier on every row. Rejected here rather than left to produce a
+     * run that looks fine and measures nothing. The argc parsing above cannot express it anyway
+     * (argv[4] implies argv[3]); this guard is for an explicitly empty ephe-dir. */
+    if (jpl_file != NULL && (ephe_dir == NULL || ephe_dir[0] == '\0')) {
+        fprintf(stderr, "sedump: jpl-file was given but ephe-dir is empty; swe_set_jpl_file resolves against the ephemeris path, so both are required together.\n");
+        return 1;
+    }
 
     in = fopen(argv[1], "rb");
     if (!in) die("cannot open grid file %s", argv[1]);
@@ -755,6 +820,9 @@ int main(int argc, char **argv)
 
         swe_close(); /* fresh library state before every row -- see header comment */
         if (ephe_dir != NULL) swe_set_ephe_path(ephe_dir); /* see INVOCATION in header comment */
+        /* Strictly after swe_set_ephe_path, never before it -- see INVOCATION in the header
+         * comment for what swapping the two would silently turn every SEFLG_JPLEPH row into. */
+        if (jpl_file != NULL) swe_set_jpl_file(jpl_file);
 
         if (mode == MODE_ANALYTIC) {
             if (strcmp(func, "CALC") == 0 || strcmp(func, "CALC_UT") == 0) {

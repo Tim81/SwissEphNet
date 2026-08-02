@@ -199,13 +199,18 @@ __pycache__/
 # otherwise be excluded by the blanket "*.log" rule above.
 !/Tests/conformance/regenerations.log
 
-# Same for the bit-exact comparison harness's two known-diff lists. A full
+# Same for the bit-exact comparison harness's three known-diff lists. A full
 # regenerate can add or worsen rows and so requires a written reason; the reason
 # only means anything if the log recording it is in the repo. Excluded by the
 # blanket "*.log" rule otherwise, which silently cost the first commit of
 # Tests/oracle/known-diff.tsv its provenance log.
 !/Tests/oracle/regenerations.log
 !/Tests/oracle/regenerations-files.log
+# The JPL grid's log carries more than a row-count delta: the DE file it was measured against
+# lives outside the repo (190 MB - 2.6 GB, never committable), so its size and SHA-256 exist
+# nowhere else, and losing this file to the blanket rule would make the measurement
+# unreproducible rather than merely unexplained.
+!/Tests/oracle/regenerations-jpl.log
 
 # Same for the three-way (port vs 2.08 C vs 2.10.03 C) version-classification regeneration log --
 # see scripts/classify-oracle-versions.ps1. Excluded by the blanket "*.log" rule otherwise.

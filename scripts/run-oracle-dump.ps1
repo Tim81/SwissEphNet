@@ -1,11 +1,11 @@
 #Requires -Version 7.3
 <#
 .SYNOPSIS
-    Builds and runs both sides of the bit-exact oracle harness against both committed grids, and
+    Builds and runs both sides of the bit-exact oracle harness against the committed grids, and
     writes their raw output for a later, separate comparison pass.
 
 .DESCRIPTION
-    Two grids, each replayed by three drivers: Tools/CReference/sedump.c, compiled here and
+    Two grids by default, each replayed by three drivers: Tools/CReference/sedump.c, compiled here and
     linked against Astrodienst's own 2.10.03 C (the port's target); Tools/CReference/build-c.ps1's
     prebuilt sedump-2.08.exe, linked against Astrodienst's own 2.08 C (the port's current
     version) and compiled against 2.08's own headers -- see that script's header for why it is
@@ -18,6 +18,44 @@
                                               family, and swe_get_planet_name. Opens the shipped
                                               .se1/sefstars.txt files under -EpheDir. See that
                                               file's own header.
+
+    A third grid is OPT-IN and off by default:
+
+      Tools/OracleGrid/grid-jpl.tsv       -- SEFLG_JPLEPH swe_calc/swe_calc_ut, including the
+                                              SEFLG_JPLHOR/SEFLG_JPLHOR_APPROX combinations no
+                                              other grid can reach. See that file's own header.
+
+    THE JPL GRID IS OPT-IN BECAUSE THIS REPO SHIPS NO DE FILE, AND CANNOT
+
+    A JPL DE file is 190 MB (DE406) to 2.6 GB (DE431). Nothing that size goes in git and no CI
+    runner has one, so this leg runs only when a DE file is explicitly named -- via -JplFile, or
+    the SWISSEPH_ORACLE_JPL_FILE environment variable when that parameter is not passed. With
+    neither set, this script prints a SKIP line for the JPL grid and everything else behaves
+    exactly as it did before the grid existed: same two grids, same six dump files, same five
+    provenance rows. That is the same opt-in shape the correctness oracle already uses for its own
+    SEFLG_JPLEPH iterations (SWISSEPH_CONFORMANCE_INCLUDE_JPL/SWISSEPH_CONFORMANCE_JPL_FILE, see
+    Tests/SwissEphNet.Conformance.Tests/Dispatch/EphemerisFileResolver.cs).
+
+    Unlike the correctness oracle, this grid does not care WHICH DE file it is given. setest
+    hardcodes swe_set_jpl_file("de431.eph") at suite scope, so t.exp's expected values are DE431's
+    and running that corpus against another DE file produces real differences indistinguishable
+    from port defects. Here both sides open the SAME file on the SAME machine over the SAME inputs
+    and their raw bit patterns are compared against each other, so any difference is a port defect
+    by construction. Only the grid's date range depends on the file at all -- grid-jpl.tsv's dates
+    sit inside DE406's span, which DE431's contains.
+
+    The JPL grid gets its own ephemeris directory (-JplEpheDir, defaulting to the directory the
+    DE file itself sits in), NOT -EpheDir, and Assert-EphemerisManifest is not applied to it: the
+    declared file set under Tests/conformance/required-ephemeris-files.tsv describes the shipped
+    .se1/.txt core set, and a directory holding a DE file is a different thing that this repo makes
+    no claim about. Keeping the two directories separate also means a SEFLG_JPLEPH row cannot
+    quietly resolve against a .se1 file when the JPL path fails -- if it falls back, it falls back
+    to Moshier, which is visible in the result rather than hidden behind a plausible number.
+
+    The 2.08 driver is deliberately not run against this grid. sedump-2.08.exe would build and run
+    against it (swe_set_jpl_file exists in 2.08), but scripts/classify-oracle-versions.ps1's
+    three-way classification has no JPL grid wired into it, so a 2.08 JPL dump would be produced
+    and never read. Adding it belongs with that classifier, not here.
 
     Building sedump.exe needs a libswe .lib to link against. Tools/CReference/build-c.ps1
     produces one at external/.c-reference/build-2.10.03/libswe-2.10.03.lib by default, which is
@@ -90,7 +128,24 @@
 .PARAMETER EpheDir
     Directory both drivers open grid-files.tsv's ephemeris data files from. Defaults to
     external/swisseph/ephe (the sparse submodule checkout CONTRIBUTING.md documents). Never
-    passed to grid-analytic.tsv's run -- see the .DESCRIPTION.
+    passed to grid-analytic.tsv's run, and never to grid-jpl.tsv's either -- see the .DESCRIPTION.
+
+.PARAMETER JplGridPath
+    The JPL grid TSV both drivers replay when the JPL leg runs at all. Defaults to
+    Tools/OracleGrid/grid-jpl.tsv.
+
+.PARAMETER JplFile
+    The JPL DE file to pass to swe_set_jpl_file, e.g. de406.eph. Supplying it (or setting
+    SWISSEPH_ORACLE_JPL_FILE when it is not supplied) is what opts the JPL leg in; with neither,
+    that leg is skipped entirely. May be an absolute path or a bare file name -- a bare name is
+    resolved relative to -JplEpheDir, and an absolute path has its directory become -JplEpheDir's
+    default, since swe_set_jpl_file resolves the name it is handed against the ephemeris path
+    rather than against the working directory.
+
+.PARAMETER JplEpheDir
+    Ephemeris directory the JPL leg runs under. Defaults to the directory -JplFile resolves to.
+    Deliberately separate from -EpheDir and not checked against
+    Tests/conformance/required-ephemeris-files.tsv -- see the .DESCRIPTION.
 
 .PARAMETER OutputDir
     Where build products and the dump files are written. Defaults to external/.c-reference,
@@ -106,7 +161,10 @@ param(
     [string] $GridPath,
     [string] $FilesGridPath,
     [string] $EpheDir,
-    [string] $OutputDir
+    [string] $OutputDir,
+    [string] $JplGridPath,
+    [string] $JplFile,
+    [string] $JplEpheDir
 )
 
 Set-StrictMode -Version Latest
@@ -125,6 +183,14 @@ if (-not $OutputDir) { $OutputDir = Join-Path $repoRoot 'external/.c-reference' 
 # Depends on $OutputDir's own default just above -- Tools/CReference/build-c.ps1 writes
 # sedump-2.08.exe to that same directory by default.
 if (-not $Sedump208Path) { $Sedump208Path = Join-Path $OutputDir 'sedump-2.08.exe' }
+if (-not $JplGridPath) { $JplGridPath = Join-Path $repoRoot 'Tools/OracleGrid/grid-jpl.tsv' }
+
+# The JPL leg's opt-in switch. -JplFile wins; SWISSEPH_ORACLE_JPL_FILE is the environment-variable
+# form CI (which never sets it) and a contributor without a DE file both rely on -- see this
+# script's own .DESCRIPTION. An empty or whitespace-only value means "not set", so exporting the
+# variable as an empty string does not accidentally opt in and then fail on a missing file.
+if (-not $JplFile) { $JplFile = $env:SWISSEPH_ORACLE_JPL_FILE }
+$runJplGrid = -not [string]::IsNullOrWhiteSpace($JplFile)
 
 $LibPath = [System.IO.Path]::GetFullPath($LibPath)
 $Sedump208Path = [System.IO.Path]::GetFullPath($Sedump208Path)
@@ -132,6 +198,27 @@ $GridPath = [System.IO.Path]::GetFullPath($GridPath)
 $FilesGridPath = [System.IO.Path]::GetFullPath($FilesGridPath)
 $EpheDir = [System.IO.Path]::GetFullPath($EpheDir)
 $OutputDir = [System.IO.Path]::GetFullPath($OutputDir)
+$JplGridPath = [System.IO.Path]::GetFullPath($JplGridPath)
+
+# -JplEpheDir defaults to wherever -JplFile resolves to, and the name actually handed to
+# swe_set_jpl_file is always the bare file name: the C strips everything up to the last DIR_GLUE
+# before storing it (sweph.c:1490-1497) and then resolves that basename against swed.ephepath, so
+# passing a full path through would resolve to "<ephepath>/<basename>" regardless. Splitting it
+# here makes the directory the drivers are actually pointed at explicit rather than implied.
+$jplFileName = $null
+if ($runJplGrid) {
+    $JplFile = $JplFile.Trim()
+    if ([System.IO.Path]::IsPathRooted($JplFile)) {
+        $JplFile = [System.IO.Path]::GetFullPath($JplFile)
+        if (-not $JplEpheDir) { $JplEpheDir = [System.IO.Path]::GetDirectoryName($JplFile) }
+    }
+    elseif (-not $JplEpheDir) {
+        Write-Host "FAIL: -JplFile ('$JplFile') is a bare file name, so there is nothing to derive -JplEpheDir from. Pass an absolute path, or pass -JplEpheDir as well." -ForegroundColor Red
+        exit 1
+    }
+    $jplFileName = [System.IO.Path]::GetFileName($JplFile)
+    $JplEpheDir = [System.IO.Path]::GetFullPath($JplEpheDir)
+}
 
 # Only external/.c-reference/ (not all of external/, most of which is tracked submodule/fetched
 # source -- see .gitignore) is excluded by .gitignore. Resolved and checked the same way
@@ -336,6 +423,33 @@ try {
     if ($expectedFilesRows -eq 0) { Fail "$FilesGridPath contains zero data rows." }
     Write-Host "Files grid:    $expectedFilesRows data row(s) in $FilesGridPath"
 
+    # ---------------------------------------------------------------------------------------
+    # JPL leg (opt-in) -- validated here, before anything is built, so a missing DE file or a
+    # missing grid fails immediately rather than after a full C build and two grid runs. Not
+    # reaching this block at all is the normal, expected case; see this script's .DESCRIPTION.
+    # ---------------------------------------------------------------------------------------
+
+    $expectedJplRows = 0
+    if ($runJplGrid) {
+        if (-not (Test-Path -LiteralPath $JplGridPath -PathType Leaf)) {
+            Fail "JPL grid not found at $JplGridPath. Run: pwsh Tools/OracleGrid/gen-grid-jpl.ps1"
+        }
+        if (-not (Test-Path -LiteralPath $JplEpheDir -PathType Container)) {
+            Fail "-JplEpheDir '$JplEpheDir' does not exist."
+        }
+        $jplFileFullPath = Join-Path $JplEpheDir $jplFileName
+        if (-not (Test-Path -LiteralPath $jplFileFullPath -PathType Leaf)) {
+            Fail "JPL ephemeris file not found at $jplFileFullPath. swe_set_jpl_file resolves '$jplFileName' against the ephemeris path, so it has to sit directly in -JplEpheDir."
+        }
+        $expectedJplRows = Get-GridDataRowCount -Path $JplGridPath
+        if ($expectedJplRows -eq 0) { Fail "$JplGridPath contains zero data rows." }
+        Write-Host "JPL grid:      $expectedJplRows data row(s) in $JplGridPath"
+        Write-Host "JPL file:      $jplFileFullPath ($([System.IO.FileInfo]::new($jplFileFullPath).Length) bytes)"
+    }
+    else {
+        Write-Host "SKIP: the JPL grid ($JplGridPath) needs a DE file this repo does not ship. Pass -JplFile, or set SWISSEPH_ORACLE_JPL_FILE, to opt in." -ForegroundColor Yellow
+    }
+
     $requiredFilesManifest = Join-Path $repoRoot 'Tests/conformance/required-ephemeris-files.tsv'
     Assert-EphemerisManifest -ManifestPath $requiredFilesManifest -EpheDir $EpheDir
 
@@ -441,6 +555,32 @@ try {
     $oracleDumpFilesOutput | Write-Host
 
     # ---------------------------------------------------------------------------------------
+    # JPL grid -- four-argument invocation (its own ephemeris directory, plus the DE file name
+    # swe_set_jpl_file is handed), separate output files, and only when opted in. The 2.08 driver
+    # is deliberately not run here -- see the .DESCRIPTION.
+    # ---------------------------------------------------------------------------------------
+
+    $cJplOutputPath = Join-Path $OutputDir 'dump-c-2.10.03-jpl.tsv'
+    $netJplOutputPath = Join-Path $OutputDir 'dump-net-jpl.tsv'
+    if ($runJplGrid) {
+        Write-Host 'Running sedump.exe (JPL grid)...'
+        $sedumpJplOutput = @(& $sedumpExe $JplGridPath $cJplOutputPath $JplEpheDir $jplFileName 2>&1)
+        if ($LASTEXITCODE -ne 0) {
+            $sedumpJplOutput | Write-Host
+            Fail "sedump.exe exited $LASTEXITCODE on the JPL grid."
+        }
+        $sedumpJplOutput | Write-Host
+
+        Write-Host 'Running OracleDump.exe (JPL grid)...'
+        $oracleDumpJplOutput = @(& $oracleDumpExe $JplGridPath $netJplOutputPath $JplEpheDir $jplFileName 2>&1)
+        if ($LASTEXITCODE -ne 0) {
+            $oracleDumpJplOutput | Write-Host
+            Fail "OracleDump.exe exited $LASTEXITCODE on the JPL grid."
+        }
+        $oracleDumpJplOutput | Write-Host
+    }
+
+    # ---------------------------------------------------------------------------------------
     # 2.08 grid runs -- the prebuilt driver, not compiled by this script (see the .DESCRIPTION
     # and -Sedump208Path). swe_close() runs at the top of every row inside sedump.c regardless of
     # which library it is linked against, so this needs no fresh-state handling beyond what the
@@ -499,6 +639,17 @@ try {
         Fail "sedump-2.08.exe wrote $c208FilesRowCount row(s) to $c208FilesOutputPath but the files grid has $expectedFilesRows data row(s). A driver that silently emits fewer (or more) rows than the grid must not read as a pass."
     }
 
+    if ($runJplGrid) {
+        $cJplRowCount = Get-FileLineCount -Path $cJplOutputPath
+        $netJplRowCount = Get-FileLineCount -Path $netJplOutputPath
+        if ($cJplRowCount -ne $expectedJplRows) {
+            Fail "sedump.exe wrote $cJplRowCount row(s) to $cJplOutputPath but the JPL grid has $expectedJplRows data row(s). A driver that silently emits fewer (or more) rows than the grid must not read as a pass."
+        }
+        if ($netJplRowCount -ne $expectedJplRows) {
+            Fail "OracleDump.exe wrote $netJplRowCount row(s) to $netJplOutputPath but the JPL grid has $expectedJplRows data row(s). A driver that silently emits fewer (or more) rows than the grid must not read as a pass."
+        }
+    }
+
     # ---------------------------------------------------------------------------------------
     # Provenance sidecar -- written only once every row-count guard above has passed, so a run
     # that fails never leaves behind a sidecar claiming a dump it did not finish producing. See
@@ -522,6 +673,18 @@ try {
         (@('sedump_exe', $sedumpExe, (Get-Sha256Hex -Path $sedumpExe)) -join "`t")
         (@('sedump_208_exe', $Sedump208Path, (Get-Sha256Hex -Path $Sedump208Path)) -join "`t")
     )
+
+    # Two more rows, and only when the JPL leg actually ran. A skipped run must leave no trace of
+    # a grid it did not replay -- scripts/verify-oracle.ps1 -Grid Jpl requires both rows and fails
+    # with a "re-run with -JplFile" message when they are absent, which is exactly the right answer
+    # for "the JPL dumps on disk are left over from some earlier run". jpl_ephe_file is hashed like
+    # any other input: it is 190 MB - 2.6 GB and lives outside the repo, so it is the one recorded
+    # input a reader has no other way to identify, and swapping DE406 for DE431 under the same file
+    # name would otherwise change every value in the dump with nothing recording that it had.
+    if ($runJplGrid) {
+        $provenanceRows += (@('grid_jpl', $JplGridPath, (Get-Sha256Hex -Path $JplGridPath)) -join "`t")
+        $provenanceRows += (@('jpl_ephe_file', $jplFileFullPath, (Get-Sha256Hex -Path $jplFileFullPath)) -join "`t")
+    }
     $provenanceLines = @(
         '# Written by scripts/run-oracle-dump.ps1 on a successful run. scripts/verify-oracle.ps1'
         '# reads this and refuses to report PASS when any row no longer matches what is on disk'
@@ -533,13 +696,18 @@ try {
     [System.IO.File]::WriteAllText($provenancePath, ($provenanceLines -join "`n") + "`n")
 
     Write-Host ''
-    Write-Host "PASS: every driver wrote $expectedAnalyticRows analytic-grid row(s) and $expectedFilesRows files-grid row(s), matching their grids." -ForegroundColor Green
+    $jplSummary = if ($runJplGrid) { " and $expectedJplRows JPL-grid row(s)" } else { '' }
+    Write-Host "PASS: every driver wrote $expectedAnalyticRows analytic-grid row(s) and $expectedFilesRows files-grid row(s)$jplSummary, matching their grids." -ForegroundColor Green
     Write-Host "  $cOutputPath"
     Write-Host "  $c208OutputPath"
     Write-Host "  $netOutputPath"
     Write-Host "  $cFilesOutputPath"
     Write-Host "  $c208FilesOutputPath"
     Write-Host "  $netFilesOutputPath"
+    if ($runJplGrid) {
+        Write-Host "  $cJplOutputPath"
+        Write-Host "  $netJplOutputPath"
+    }
     Write-Host "  $provenancePath"
 }
 catch {

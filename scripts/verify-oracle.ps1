@@ -46,7 +46,10 @@
 
     Before comparing anything, this script checks external/.c-reference/oracle-provenance.tsv
     (written by scripts/run-oracle-dump.ps1) against what is on disk now: the two grids' current
-    content, sedump.exe and sedump-2.08.exe as they currently sit on disk, and the port's own
+    content -- three under -Grid Jpl, which additionally requires and rehashes the grid_jpl and
+    jpl_ephe_file rows, the latter being the DE file itself, so that swapping one DE file for
+    another under the same name cannot go unnoticed -- sedump.exe and sedump-2.08.exe as they
+    currently sit on disk, and the port's own
     source under SwissEphNet/ -- every *.cs file plus SwissEphNet.csproj, excluding bin/ and
     obj/ -- rehashed the same way scripts/run-oracle-dump.ps1 hashed it. Recomputing that hash at
     verify time is what catches the scenario this check exists for: edit SwissEphNet/CPort/, then
@@ -66,10 +69,14 @@
     though the dumps still matched the code that produced them.
 
 .PARAMETER Grid
-    'Analytic', 'Files' or 'Both' (default). 'Both' runs the check for each grid in turn and
-    exits non-zero if either fails; -CDumpPath/-NetDumpPath/-KnownDiffPath cannot be combined
-    with 'Both' since a single set of overrides cannot name two grids' worth of files -- pass a
-    single grid name to use them.
+    'Analytic', 'Files', 'Jpl' or 'Both' (default). 'Both' means Analytic and Files -- it does NOT
+    include Jpl, and deliberately so: that grid's dumps only exist when scripts/run-oracle-dump.ps1
+    was opted in with a DE file this repo does not ship, so folding it into the default would turn
+    every CI run and every contributor without a 190 MB DE file red for a reason that has nothing
+    to do with the port. Pass -Grid Jpl explicitly to check it, after a run that produced its
+    dumps. 'Both' runs the check for each of its grids in turn and exits non-zero if either fails;
+    -CDumpPath/-NetDumpPath/-KnownDiffPath cannot be combined with 'Both' since a single set of
+    overrides cannot name two grids' worth of files -- pass a single grid name to use them.
 
 .PARAMETER CDumpPath
     Only valid with -Grid Analytic or -Grid Files. Defaults to
@@ -91,7 +98,7 @@
 
 [CmdletBinding()]
 param(
-    [ValidateSet('Analytic', 'Files', 'Both')]
+    [ValidateSet('Analytic', 'Files', 'Jpl', 'Both')]
     [string] $Grid = 'Both',
 
     [string] $CDumpPath,
@@ -120,6 +127,13 @@ function Get-GridDefaults {
             CDumpPath     = Join-Path $repoRoot 'external/.c-reference/dump-c-2.10.03.tsv'
             NetDumpPath   = Join-Path $repoRoot 'external/.c-reference/dump-net.tsv'
             KnownDiffPath = Join-Path $repoRoot 'Tests/oracle/known-diff.tsv'
+        }
+    }
+    if ($GridName -eq 'Jpl') {
+        return [pscustomobject]@{
+            CDumpPath     = Join-Path $repoRoot 'external/.c-reference/dump-c-2.10.03-jpl.tsv'
+            NetDumpPath   = Join-Path $repoRoot 'external/.c-reference/dump-net-jpl.tsv'
+            KnownDiffPath = Join-Path $repoRoot 'Tests/oracle/known-diff-jpl.tsv'
         }
     }
     return [pscustomobject]@{
@@ -196,12 +210,17 @@ function Invoke-GridVerify {
     # mismatches are caught by OracleVerify.exe itself (Tools/OracleVerify/Program.cs's
     # LoadAndCompare), which already produces a specific, actionable message for each -- duplicating
     # that logic here would just be a second place for the two checks to drift out of sync.
+    $regenerateHint = if ($GridName -eq 'Jpl') {
+        'Run: pwsh scripts/run-oracle-dump.ps1 -JplFile <path-to-a-DE-file> (or set SWISSEPH_ORACLE_JPL_FILE) -- this grid is opt-in and produces no dumps otherwise'
+    } else {
+        'Run: pwsh scripts/run-oracle-dump.ps1'
+    }
     if (-not (Test-Path -LiteralPath $cPath -PathType Leaf)) {
-        Write-Host "FAIL: C dump not found at $cPath. Run: pwsh scripts/run-oracle-dump.ps1" -ForegroundColor Red
+        Write-Host "FAIL: C dump not found at $cPath. $regenerateHint" -ForegroundColor Red
         return 1
     }
     if (-not (Test-Path -LiteralPath $netPath -PathType Leaf)) {
-        Write-Host "FAIL: .NET dump not found at $netPath. Run: pwsh scripts/run-oracle-dump.ps1" -ForegroundColor Red
+        Write-Host "FAIL: .NET dump not found at $netPath. $regenerateHint" -ForegroundColor Red
         return 1
     }
 
@@ -282,7 +301,7 @@ function Get-PortSourceHash {
 }
 
 function Read-Provenance {
-    param([string] $Path)
+    param([string] $Path, [bool] $RequireJpl)
 
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
         throw "Provenance sidecar not found at $Path. Run: pwsh scripts/run-oracle-dump.ps1"
@@ -313,6 +332,17 @@ function Read-Provenance {
         throw "$Path is missing required row(s): $($missingRows -join ', '). Re-run: pwsh scripts/run-oracle-dump.ps1"
     }
 
+    # grid_jpl/jpl_ephe_file are written only by a run that actually replayed the JPL grid, which
+    # needs a DE file this repo does not ship. Their absence is the normal case and not an error
+    # in itself -- it only becomes one when this run was asked to check that grid, in which case
+    # the JPL dumps on disk (if any) are left over from an earlier run and must not be trusted.
+    if ($RequireJpl) {
+        $missingJpl = @(@('grid_jpl', 'jpl_ephe_file') | Where-Object { -not $rows.ContainsKey($_) })
+        if ($missingJpl.Count -gt 0) {
+            throw "$Path is missing row(s) $($missingJpl -join ', '), so the last run of scripts/run-oracle-dump.ps1 did not replay the JPL grid. Any dump-*-jpl.tsv on disk is from an earlier run. Re-run with -JplFile (or SWISSEPH_ORACLE_JPL_FILE) pointing at a DE file, then re-run this gate."
+        }
+    }
+
     return $rows
 }
 
@@ -320,7 +350,7 @@ function Read-Provenance {
 # input still matches what is on disk now. Never modifies $Rows, the dumps, or anything else --
 # this function only looks.
 function Get-ProvenanceMismatches {
-    param([hashtable] $Rows, [string] $RepoRoot)
+    param([hashtable] $Rows, [string] $RepoRoot, [bool] $CheckJpl)
 
     $mismatches = [System.Collections.Generic.List[string]]::new()
 
@@ -341,6 +371,16 @@ function Get-ProvenanceMismatches {
     Test-RecordedFile -Key 'grid_files' -Description 'The files grid (Tools/OracleGrid/grid-files.tsv)'
     Test-RecordedFile -Key 'sedump_exe' -Description 'sedump.exe (2.10.03, Tools/CReference/sedump.c)'
     Test-RecordedFile -Key 'sedump_208_exe' -Description 'sedump-2.08.exe'
+
+    # Only when this run was asked to check the JPL grid -- Read-Provenance has already refused
+    # outright if the rows are missing in that case, so both keys exist by the time this runs.
+    # Re-hashing the DE file is the point of recording it: it is the one input that lives outside
+    # the repo, and swapping DE406 for DE431 under the same name would change every value in the
+    # dump with nothing else noticing.
+    if ($CheckJpl) {
+        Test-RecordedFile -Key 'grid_jpl' -Description 'The JPL grid (Tools/OracleGrid/grid-jpl.tsv)'
+        Test-RecordedFile -Key 'jpl_ephe_file' -Description 'The JPL DE file the dumps were generated against'
+    }
 
     # swisseph_net_source is rehashed straight from the tree with Get-PortSourceHash -- see this
     # script's STALE-DUMP CHECK header section for why that makes this comparison mean something
@@ -376,8 +416,9 @@ try {
     }
     else {
         Write-Host "Checking dump provenance ($ProvenancePath)..."
-        $provenanceRows = Read-Provenance -Path $ProvenancePath
-        $mismatches = Get-ProvenanceMismatches -Rows $provenanceRows -RepoRoot $repoRoot
+        $checkJpl = ($Grid -eq 'Jpl')
+        $provenanceRows = Read-Provenance -Path $ProvenancePath -RequireJpl $checkJpl
+        $mismatches = Get-ProvenanceMismatches -Rows $provenanceRows -RepoRoot $repoRoot -CheckJpl $checkJpl
         if ($mismatches.Count -gt 0) {
             Write-Host ''
             Write-Host 'FAIL: the dumps no longer reflect what is on disk:' -ForegroundColor Red
@@ -385,7 +426,8 @@ try {
             Write-Host ''
             throw 'Run: pwsh scripts/run-oracle-dump.ps1, then re-run this gate.'
         }
-        Write-Host 'PASS: grids, the port source and the sedump executables all still match the recorded provenance.' -ForegroundColor Green
+        $provenanceSubject = if ($checkJpl) { 'grids (including the JPL grid and the DE file it was run against), the port source and the sedump executables' } else { 'grids, the port source and the sedump executables' }
+        Write-Host "PASS: $provenanceSubject all still match the recorded provenance." -ForegroundColor Green
         Write-Host ''
     }
 

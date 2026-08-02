@@ -59,7 +59,14 @@
     that grid -- see DESCRIPTION.
 
 .PARAMETER Grid
-    'Analytic', 'Files' or 'Both' (default). Selects which known-diff list(s) to regenerate.
+    'Analytic', 'Files', 'Jpl' or 'Both' (default). Selects which known-diff list(s) to
+    regenerate. 'Both' means Analytic and Files only -- it does not include Jpl, matching
+    scripts/verify-oracle.ps1's own -Grid Both, because that grid's dumps only exist when
+    scripts/run-oracle-dump.ps1 was opted in with a DE file this repo does not ship. Selecting Jpl
+    therefore requires SWISSEPH_ORACLE_JPL_FILE to be set before this script runs, and refuses
+    outright if it is not: without it the dump run this script kicks off first would skip the JPL
+    leg entirely, and this script would then regenerate a known-diff list from whatever JPL dumps
+    happened to be left on disk from some earlier run.
 
 .PARAMETER PR
     Optional. The pull request number this regeneration belongs to, e.g. "34". Same convention as
@@ -79,7 +86,7 @@ param(
 
     [switch]$PruneOnly,
 
-    [ValidateSet('Analytic', 'Files', 'Both')]
+    [ValidateSet('Analytic', 'Files', 'Jpl', 'Both')]
     [string]$Grid = 'Both',
 
     [string]$PR,
@@ -116,6 +123,15 @@ function Get-GridPaths {
             # before, so no self-test case here can see it either way.
             CDumpPath     = Join-Path $repoRoot 'external/.c-reference/dump-c-2.10.03.tsv'
             NetDumpPath   = Join-Path $repoRoot 'external/.c-reference/dump-net.tsv'
+        }
+    }
+    if ($GridName -eq 'Jpl') {
+        return [pscustomobject]@{
+            Name          = 'Jpl'
+            KnownDiffPath = Join-Path $oracleDir 'known-diff-jpl.tsv'
+            LogPath       = Join-Path $oracleDir 'regenerations-jpl.log'
+            CDumpPath     = Join-Path $repoRoot 'external/.c-reference/dump-c-2.10.03-jpl.tsv'
+            NetDumpPath   = Join-Path $repoRoot 'external/.c-reference/dump-net-jpl.tsv'
         }
     }
     return [pscustomobject]@{
@@ -494,7 +510,14 @@ if ($SelfTest) {
 
 # ---------------------------------------------------------------------------------------------
 
-Write-Host 'Rebuilding both sides of the oracle harness, both grids (scripts/run-oracle-dump.ps1)...'
+# -Grid Jpl reads dumps only an opted-in run produces -- see that parameter's own help. Checked
+# before the dump run rather than after, so the refusal costs nothing.
+if ($Grid -eq 'Jpl' -and [string]::IsNullOrWhiteSpace($env:SWISSEPH_ORACLE_JPL_FILE)) {
+    Write-Error "-Grid Jpl needs SWISSEPH_ORACLE_JPL_FILE set to a JPL DE file, or scripts/run-oracle-dump.ps1 below will skip the JPL leg and this script would regenerate Tests/oracle/known-diff-jpl.tsv from stale dumps."
+    exit 1
+}
+
+Write-Host 'Rebuilding both sides of the oracle harness (scripts/run-oracle-dump.ps1)...'
 & $dumpScript
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

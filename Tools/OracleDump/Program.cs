@@ -1,4 +1,4 @@
-// The .NET side of the bit-exact comparison harness. Replays two committed grids against this
+// The .NET side of the bit-exact comparison harness. Replays the committed grids against this
 // port, printing each result's raw IEEE-754 bit pattern so scripts/run-oracle-dump.ps1 can queue
 // it up against Tools/CReference/sedump.c's C output for a later, separate comparison pass.
 //
@@ -13,17 +13,25 @@
 //                                          crossing functions under SEFLG_SWIEPH. Opens the
 //                                          shipped .se1/sefstars.txt files. See
 //                                          gen-grid-files.ps1's header.
+//   Tools/OracleGrid/grid-jpl.tsv       -- swe_calc/swe_calc_ut (SEFLG_JPLEPH), including the
+//                                          SEFLG_JPLHOR/SEFLG_JPLHOR_APPROX combinations no other
+//                                          grid can reach. Opens a JPL DE file this repo does not
+//                                          ship, named by the optional fourth argument below. See
+//                                          gen-grid-jpl.ps1's header.
 //
-// Both grids share one output shape (see sedump.c's own header for the exact layout) and are
-// dispatched on in Main below by comparing the grid's header line against
-// ExpectedHeaderAnalytic/ExpectedHeaderFiles.
+// Every grid shares one output shape (see sedump.c's own header for the exact layout). Which
+// column layout a grid uses is dispatched on in Main below by comparing its header line against
+// ExpectedHeaderAnalytic/ExpectedHeaderFiles; grid-jpl.tsv carries grid-files.tsv's header
+// verbatim and is therefore read in GridMode.Files, matching sedump.c -- see gen-grid-jpl.ps1's
+// own header for why it reuses that layout rather than introducing a third identical one.
 //
 // INVOCATION
 //
-//   OracleDump.exe <grid.tsv> <output.tsv> [ephe-dir]
+//   OracleDump.exe <grid.tsv> <output.tsv> [ephe-dir [jpl-file]]
 //
-// ephe-dir is optional. grid-analytic.tsv needs it never; grid-files.tsv needs it always -- see
-// AttachEpheDir below.
+// ephe-dir is optional. grid-analytic.tsv needs it never; grid-files.tsv and grid-jpl.tsv need it
+// always -- see AttachEpheDir below. jpl-file is optional too and only grid-jpl.tsv needs it --
+// see AttachJplFile, including why it must be applied strictly after AttachEpheDir.
 //
 // A FRESH SwissEph INSTANCE PER ROW
 //
@@ -35,6 +43,14 @@
 // swe_close() before every row, and swe_set_ephe_path() again for grid-files.tsv) for a reason
 // that has nothing to do with the port, so a brand new SwissEph is constructed for every row
 // here too, and for grid-files.tsv rows, a fresh swe_set_ephe_path() call on that new instance.
+//
+// A fresh instance is strictly MORE reset than sedump.c's per-row swe_close(), and for one field
+// that difference is observable in principle: swe_close() frees swed.dpsi/swed.deps but leaves
+// swed.eop_dpsi_loaded set, so the C side carries a prior row's EOP outcome forward while this
+// side recomputes it. sedump.c's own header ("ONE PIECE OF STATE swe_close() DOES NOT RESET")
+// works through why that costs nothing as long as the EOP text files are absent from ephe-dir --
+// the failing path writes ERR every time on both sides -- and what would have to change first if
+// they were ever present.
 
 using System.Globalization;
 using SwissEphNet;
@@ -63,15 +79,28 @@ internal static class Program
 
     private static int Main(string[] args)
     {
-        if (args.Length is not 2 and not 3)
+        if (args.Length is < 2 or > 4)
         {
-            Console.Error.WriteLine("Usage: OracleDump <grid.tsv> <output.tsv> [ephe-dir]");
+            Console.Error.WriteLine("Usage: OracleDump <grid.tsv> <output.tsv> [ephe-dir [jpl-file]]");
             return 1;
         }
 
         var gridPath = args[0];
         var outputPath = args[1];
-        var epheDir = args.Length == 3 ? args[2] : null;
+        var epheDir = args.Length >= 3 ? args[2] : null;
+        var jplFile = args.Length == 4 ? args[3] : null;
+
+        // swe_set_jpl_file resolves its argument against swed.ephepath, so a jpl-file with no
+        // ephe-dir would resolve against the compiled-in default -- almost certainly not finding
+        // the file, and then silently falling back through SEFLG_SWIEPH to Moshier on every row.
+        // Rejected here rather than left to produce a run that looks fine and measures nothing.
+        // Mirrors sedump.c's identical guard in main().
+        if (jplFile != null && string.IsNullOrEmpty(epheDir))
+        {
+            Console.Error.WriteLine(
+                "OracleDump: jpl-file was given but ephe-dir is empty; swe_set_jpl_file resolves against the ephemeris path, so both are required together.");
+            return 1;
+        }
 
         using var reader = new StreamReader(gridPath);
         using var writer = new StreamWriter(outputPath, append: false, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false))
@@ -123,7 +152,7 @@ internal static class Program
                 throw new InvalidDataException($"row has {fields.Length} column(s), expected {expectedColumns}: {line}");
             }
 
-            ProcessRow(mode, fields, epheDir, writer);
+            ProcessRow(mode, fields, epheDir, jplFile, writer);
             rowCount++;
         }
 
@@ -140,7 +169,7 @@ internal static class Program
         return 0;
     }
 
-    private static void ProcessRow(GridMode mode, string[] fields, string? epheDir, TextWriter writer)
+    private static void ProcessRow(GridMode mode, string[] fields, string? epheDir, string? jplFile, TextWriter writer)
     {
         var caseId = fields[0];
         var func = fields[1];
@@ -150,6 +179,11 @@ internal static class Program
         if (epheDir != null)
         {
             AttachEpheDir(swe, epheDir);
+        }
+        // Strictly after AttachEpheDir, never before -- see AttachJplFile.
+        if (jplFile != null)
+        {
+            AttachJplFile(swe, jplFile);
         }
 
         if (mode == GridMode.Analytic)
@@ -243,6 +277,21 @@ internal static class Program
     private static void AttachEpheDir(SwissEph swe, string epheDir)
     {
         swe.swe_set_ephe_path(epheDir);
+    }
+
+    // grid-jpl.tsv only. swe_set_jpl_file is not a setter either: it closes every open file and
+    // then opens the named DE file immediately, resolving the name against swed.ephepath as it
+    // stands at that moment (sweph.c:1499-1505). Calling it before AttachEpheDir would resolve
+    // against the compiled-in default path instead of the directory the DE file lives in, fail to
+    // open it, and so never reach the jpldenum >= 403 branch that calls load_dpsi_deps -- and
+    // every SEFLG_JPLEPH row would then fall back through SEFLG_SWIEPH to Moshier and compare
+    // bit-identical against a C side doing exactly the same thing, measuring nothing about the JPL
+    // backend at all. sedump.c issues the identical call in the identical position for the same
+    // reason; this driver receives the file name as an explicit argument rather than through
+    // environment-variable resolution, the same way it already receives its ephemeris directory.
+    private static void AttachJplFile(SwissEph swe, string jplFile)
+    {
+        swe.swe_set_jpl_file(jplFile);
     }
 
     // t0/ayan_t0 (swe_set_sid_mode's own SE_SIDM_USER parameters) always sit exactly 3 and 4
