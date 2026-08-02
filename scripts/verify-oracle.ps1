@@ -94,6 +94,13 @@
 .PARAMETER ProvenancePath
     The sidecar scripts/run-oracle-dump.ps1 writes on a successful run -- see STALE-DUMP CHECK
     above. Defaults to external/.c-reference/oracle-provenance.tsv.
+
+.PARAMETER SelfTest
+    Plants the known provenance bypasses (an old-format sidecar with no dump_c_*/dump_net_* rows;
+    a dump substituted for another dump after the sidecar recorded it; a sidecar naming a
+    self-consistent decoy grid instead of the committed one) into scratch files under a temporary
+    directory and asserts Read-Provenance/Get-ProvenanceMismatches refuse each. Builds nothing,
+    runs no dotnet project, and touches no tracked file.
 #>
 
 [CmdletBinding()]
@@ -104,7 +111,9 @@ param(
     [string] $CDumpPath,
     [string] $NetDumpPath,
     [string] $KnownDiffPath,
-    [string] $ProvenancePath
+    [string] $ProvenancePath,
+
+    [switch] $SelfTest
 )
 
 Set-StrictMode -Version Latest
@@ -326,18 +335,28 @@ function Read-Provenance {
         $rows[$parts[0]] = [pscustomobject]@{ Path = $parts[1]; Sha256 = $parts[2] }
     }
 
-    $required = @('grid_analytic', 'grid_files', 'swisseph_net_source', 'sedump_exe', 'sedump_208_exe')
+    # dump_c_*/dump_net_* are as required as the grids themselves: without them, a dump swapped
+    # for another dump after a legitimate run left every recorded row still matching, since nothing
+    # here ever hashed the dumps -- only what produced them. Measured directly: copying
+    # dump-c-2.10.03.tsv over dump-net.tsv against a sidecar with only the five older rows still
+    # reported "grids ... still match the recorded provenance" and this gate exited 0.
+    $required = @(
+        'grid_analytic', 'grid_files',
+        'dump_c_analytic', 'dump_net_analytic', 'dump_c_files', 'dump_net_files',
+        'swisseph_net_source', 'sedump_exe', 'sedump_208_exe'
+    )
     $missingRows = @($required | Where-Object { -not $rows.ContainsKey($_) })
     if ($missingRows.Count -gt 0) {
         throw "$Path is missing required row(s): $($missingRows -join ', '). Re-run: pwsh scripts/run-oracle-dump.ps1"
     }
 
-    # grid_jpl/jpl_ephe_file are written only by a run that actually replayed the JPL grid, which
-    # needs a DE file this repo does not ship. Their absence is the normal case and not an error
-    # in itself -- it only becomes one when this run was asked to check that grid, in which case
-    # the JPL dumps on disk (if any) are left over from an earlier run and must not be trusted.
+    # grid_jpl/dump_c_jpl/dump_net_jpl/jpl_ephe_file are written only by a run that actually
+    # replayed the JPL grid, which needs a DE file this repo does not ship. Their absence is the
+    # normal case and not an error in itself -- it only becomes one when this run was asked to
+    # check that grid, in which case the JPL dumps on disk (if any) are left over from an earlier
+    # run and must not be trusted.
     if ($RequireJpl) {
-        $missingJpl = @(@('grid_jpl', 'jpl_ephe_file') | Where-Object { -not $rows.ContainsKey($_) })
+        $missingJpl = @(@('grid_jpl', 'dump_c_jpl', 'dump_net_jpl', 'jpl_ephe_file') | Where-Object { -not $rows.ContainsKey($_) })
         if ($missingJpl.Count -gt 0) {
             throw "$Path is missing row(s) $($missingJpl -join ', '), so the last run of scripts/run-oracle-dump.ps1 did not replay the JPL grid. Any dump-*-jpl.tsv on disk is from an earlier run. Re-run with -JplFile (or SWISSEPH_ORACLE_JPL_FILE) pointing at a DE file, then re-run this gate."
         }
@@ -367,19 +386,48 @@ function Get-ProvenanceMismatches {
         }
     }
 
+    # A recorded row is only as trustworthy as the path it names. Rehashing $recorded.Path proves
+    # that path's content has not moved since generation, but proves nothing about WHICH file that
+    # path is -- a sidecar can name any file at all, including one nobody reviewed, and pass this
+    # far by construction (scripts/run-oracle-dump.ps1 hashes whatever -GridPath it is given, so a
+    # 1-row decoy grid produces a perfectly self-consistent row). This is the second, independent
+    # check: the recorded path itself must equal the one committed file this repo actually ships at
+    # that name, not merely some file that has not changed since it was hashed.
+    function Test-RecordedPathIsCanonical {
+        param([string] $Key, [string] $ExpectedPath, [string] $Description)
+        $recorded = $Rows[$Key]
+        $recordedFull = [System.IO.Path]::GetFullPath($recorded.Path)
+        $expectedFull = [System.IO.Path]::GetFullPath($ExpectedPath)
+        if (-not [string]::Equals($recordedFull, $expectedFull, [StringComparison]::OrdinalIgnoreCase)) {
+            $mismatches.Add("$Description was generated from a different file than this repo ships: recorded path $recordedFull, expected $expectedFull. A sidecar naming any other file passes the content-hash check on its own; this is the check that the path itself is the committed one.")
+        }
+    }
+
     Test-RecordedFile -Key 'grid_analytic' -Description 'The analytic grid (Tools/OracleGrid/grid-analytic.tsv)'
     Test-RecordedFile -Key 'grid_files' -Description 'The files grid (Tools/OracleGrid/grid-files.tsv)'
+    Test-RecordedFile -Key 'dump_c_analytic' -Description 'The C dump (analytic grid, dump-c-2.10.03.tsv)'
+    Test-RecordedFile -Key 'dump_net_analytic' -Description 'The .NET dump (analytic grid, dump-net.tsv)'
+    Test-RecordedFile -Key 'dump_c_files' -Description 'The C dump (files grid, dump-c-2.10.03-files.tsv)'
+    Test-RecordedFile -Key 'dump_net_files' -Description 'The .NET dump (files grid, dump-net-files.tsv)'
     Test-RecordedFile -Key 'sedump_exe' -Description 'sedump.exe (2.10.03, Tools/CReference/sedump.c)'
     Test-RecordedFile -Key 'sedump_208_exe' -Description 'sedump-2.08.exe'
 
+    Test-RecordedPathIsCanonical -Key 'grid_analytic' -ExpectedPath (Join-Path $RepoRoot 'Tools/OracleGrid/grid-analytic.tsv') -Description 'The analytic grid'
+    Test-RecordedPathIsCanonical -Key 'grid_files' -ExpectedPath (Join-Path $RepoRoot 'Tools/OracleGrid/grid-files.tsv') -Description 'The files grid'
+
     # Only when this run was asked to check the JPL grid -- Read-Provenance has already refused
-    # outright if the rows are missing in that case, so both keys exist by the time this runs.
+    # outright if the rows are missing in that case, so all four keys exist by the time this runs.
     # Re-hashing the DE file is the point of recording it: it is the one input that lives outside
     # the repo, and swapping DE406 for DE431 under the same name would change every value in the
-    # dump with nothing else noticing.
+    # dump with nothing else noticing. jpl_ephe_file carries no canonical in-repo path to pin
+    # against -- it names wherever the caller's DE file happens to sit -- so only its content hash
+    # is checked, the same as before.
     if ($CheckJpl) {
         Test-RecordedFile -Key 'grid_jpl' -Description 'The JPL grid (Tools/OracleGrid/grid-jpl.tsv)'
+        Test-RecordedFile -Key 'dump_c_jpl' -Description 'The C dump (JPL grid, dump-c-2.10.03-jpl.tsv)'
+        Test-RecordedFile -Key 'dump_net_jpl' -Description 'The .NET dump (JPL grid, dump-net-jpl.tsv)'
         Test-RecordedFile -Key 'jpl_ephe_file' -Description 'The JPL DE file the dumps were generated against'
+        Test-RecordedPathIsCanonical -Key 'grid_jpl' -ExpectedPath (Join-Path $RepoRoot 'Tools/OracleGrid/grid-jpl.tsv') -Description 'The JPL grid'
     }
 
     # swisseph_net_source is rehashed straight from the tree with Get-PortSourceHash -- see this
@@ -397,6 +445,176 @@ function Get-ProvenanceMismatches {
     # provenance-row construction hit earlier (see the comment there). The comma operator forces
     # $mismatches through as one object.
     return , $mismatches
+}
+
+# ---------------------------------------------------------------------------------------
+# Self-test -- see -SelfTest above. Placed after every function this gate needs (Get-Sha256Hex,
+# Get-PortSourceHash, Read-Provenance, Get-ProvenanceMismatches) and before the real run, so it
+# exercises those functions directly rather than shelling out to a full run of this script.
+# ---------------------------------------------------------------------------------------
+
+if ($SelfTest) {
+    $failures = 0
+    $lab = Join-Path ([System.IO.Path]::GetTempPath()) ("verify-oracle-selftest-" + [System.Guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Force -Path $lab | Out-Null
+    try {
+        function New-LabFile {
+            param([string] $RelPath, [string] $Content)
+            $full = Join-Path $lab $RelPath
+            New-Item -ItemType Directory -Force -Path (Split-Path $full -Parent) | Out-Null
+            [System.IO.File]::WriteAllText($full, $Content, (New-Object System.Text.UTF8Encoding $false))
+            return $full
+        }
+
+        # Minimal port source tree so Get-PortSourceHash has something real to hash -- this gate's
+        # provenance check always rehashes SwissEphNet/ unconditionally, so every case needs one.
+        New-LabFile 'SwissEphNet/SwissEphNet.csproj' '<Project Sdk="Microsoft.NET.Sdk"></Project>' | Out-Null
+        New-LabFile 'SwissEphNet/Foo.cs' 'class Foo {}' | Out-Null
+
+        $gridAnalytic = New-LabFile 'Tools/OracleGrid/grid-analytic.tsv' "case_id`tfoo`nA|1`t1`n"
+        $gridFiles = New-LabFile 'Tools/OracleGrid/grid-files.tsv' "case_id`tfoo`nF|1`t1`n"
+        # A file that is NOT Tools/OracleGrid/grid-analytic.tsv, but whose content a sidecar could
+        # still hash truthfully -- the shape HIGH 1's second bypass needs: self-consistent, wrong
+        # file.
+        $decoyGrid = New-LabFile 'Tools/OracleGrid/decoy-grid.tsv' "case_id`tfoo`nA|1`t1`n"
+
+        # Deliberately different content on the two sides: case 3 below swaps one into the other's
+        # file, which is only a real test of the substitution check if that swap actually changes
+        # what is on disk.
+        $dumpCAnalytic = New-LabFile 'external/.c-reference/dump-c-2.10.03.tsv' "A|1`t0x1`n"
+        $dumpNetAnalytic = New-LabFile 'external/.c-reference/dump-net.tsv' "A|1`t0x2`n"
+        $dumpCFiles = New-LabFile 'external/.c-reference/dump-c-2.10.03-files.tsv' "F|1`t0x1`n"
+        $dumpNetFiles = New-LabFile 'external/.c-reference/dump-net-files.tsv' "F|1`t0x1`n"
+        $sedumpExe = New-LabFile 'external/.c-reference/oracle-dump-c/sedump.exe' 'fake-exe'
+        $sedump208Exe = New-LabFile 'external/.c-reference/sedump-2.08.exe' 'fake-exe-208'
+
+        $sourceHash = Get-PortSourceHash -RepoRoot $lab
+
+        function Write-Sidecar {
+            param([string] $Path, [System.Collections.Specialized.OrderedDictionary] $Rows)
+            $lines = [System.Collections.Generic.List[string]]::new()
+            $lines.Add('# selftest sidecar')
+            $lines.Add((@('name', 'path', 'sha256') -join "`t"))
+            foreach ($key in $Rows.Keys) {
+                $r = $Rows[$key]
+                $lines.Add((@($key, $r.Path, $r.Sha256) -join "`t"))
+            }
+            [System.IO.File]::WriteAllText($Path, (($lines -join "`n") + "`n"), (New-Object System.Text.UTF8Encoding $false))
+        }
+
+        function New-BaseRows {
+            $rows = [ordered]@{}
+            $rows['grid_analytic'] = @{ Path = $gridAnalytic; Sha256 = (Get-Sha256Hex -Path $gridAnalytic) }
+            $rows['grid_files'] = @{ Path = $gridFiles; Sha256 = (Get-Sha256Hex -Path $gridFiles) }
+            $rows['dump_c_analytic'] = @{ Path = $dumpCAnalytic; Sha256 = (Get-Sha256Hex -Path $dumpCAnalytic) }
+            $rows['dump_net_analytic'] = @{ Path = $dumpNetAnalytic; Sha256 = (Get-Sha256Hex -Path $dumpNetAnalytic) }
+            $rows['dump_c_files'] = @{ Path = $dumpCFiles; Sha256 = (Get-Sha256Hex -Path $dumpCFiles) }
+            $rows['dump_net_files'] = @{ Path = $dumpNetFiles; Sha256 = (Get-Sha256Hex -Path $dumpNetFiles) }
+            $rows['swisseph_net_source'] = @{ Path = (Join-Path $lab 'SwissEphNet'); Sha256 = $sourceHash }
+            $rows['sedump_exe'] = @{ Path = $sedumpExe; Sha256 = (Get-Sha256Hex -Path $sedumpExe) }
+            $rows['sedump_208_exe'] = @{ Path = $sedump208Exe; Sha256 = (Get-Sha256Hex -Path $sedump208Exe) }
+            return $rows
+        }
+
+        # Read-Provenance's real return shape is @{ key -> pscustomobject{Path;Sha256} } -- built
+        # here directly from a Write-Sidecar row set, rather than round-tripped through a real
+        # sidecar file, for the cases that exercise Get-ProvenanceMismatches alone.
+        function Convert-RowsToHashtable {
+            param([System.Collections.Specialized.OrderedDictionary] $Rows)
+            $ht = @{}
+            foreach ($key in $Rows.Keys) {
+                $ht[$key] = [pscustomobject]@{ Path = $Rows[$key].Path; Sha256 = $Rows[$key].Sha256 }
+            }
+            return $ht
+        }
+
+        function Assert-NoMismatches {
+            param([string] $Case, [hashtable] $Rows)
+            $mismatches = Get-ProvenanceMismatches -Rows $Rows -RepoRoot $lab -CheckJpl $false
+            if ($mismatches.Count -eq 0) {
+                Write-Host "  PASS  $Case (accepted)" -ForegroundColor DarkGray
+            }
+            else {
+                Write-Host "  FAIL  $Case`n          expected no mismatches, got:`n$((($mismatches | ForEach-Object { "            $_" }) -join "`n"))" -ForegroundColor Red
+                $script:failures++
+            }
+        }
+
+        function Assert-Mismatch {
+            param([string] $Case, [hashtable] $Rows, [string] $Matching)
+            $mismatches = Get-ProvenanceMismatches -Rows $Rows -RepoRoot $lab -CheckJpl $false
+            $joined = $mismatches -join ' | '
+            if ($mismatches.Count -gt 0 -and $joined -match $Matching) {
+                Write-Host "  PASS  $Case (refused: $joined)" -ForegroundColor DarkGray
+            }
+            else {
+                Write-Host "  FAIL  $Case`n          expected a mismatch matching /$Matching/, got: $joined" -ForegroundColor Red
+                $script:failures++
+            }
+        }
+
+        Write-Host 'verify-oracle self-test'
+        Write-Host ''
+
+        # 1. Control: a fully valid, self-consistent, canonically-pathed provenance record must
+        #    pass with zero mismatches -- otherwise every refusal case below proves only that this
+        #    harness makes the check red no matter what.
+        Assert-NoMismatches 'a fully valid provenance record is accepted' (Convert-RowsToHashtable (New-BaseRows))
+
+        # 2. HIGH 1, first half: an old-format sidecar recording only the original five rows (no
+        #    dump_c_*/dump_net_* at all) must be rejected by Read-Provenance's required-row check
+        #    before Get-ProvenanceMismatches ever runs -- this is exactly what let a dump
+        #    substitution go completely unrecorded before this fix.
+        $oldRows = New-BaseRows
+        $oldRows.Remove('dump_c_analytic'); $oldRows.Remove('dump_net_analytic')
+        $oldRows.Remove('dump_c_files'); $oldRows.Remove('dump_net_files')
+        $oldSidecar = Join-Path $lab 'old-provenance.tsv'
+        Write-Sidecar -Path $oldSidecar -Rows $oldRows
+        $threw = $false
+        $message = $null
+        try { Read-Provenance -Path $oldSidecar -RequireJpl $false | Out-Null }
+        catch { $threw = $true; $message = $_.Exception.Message }
+        if ($threw -and $message -match 'dump_c_analytic') {
+            Write-Host "  PASS  an old-format sidecar with no dump rows is rejected (refused: $message)" -ForegroundColor DarkGray
+        }
+        else {
+            Write-Host "  FAIL  an old-format sidecar with no dump rows is rejected`n          expected Read-Provenance to throw naming dump_c_analytic, got: threw=$threw message=$message" -ForegroundColor Red
+            $failures++
+        }
+
+        # 3. HIGH 1, second half: with the dump rows present, substituting the C dump's content
+        #    into the .NET dump's file AFTER the sidecar recorded the .NET dump's own (different)
+        #    hash must be caught -- the exact "copy dump-c-2.10.03.tsv over dump-net.tsv"
+        #    reproduction from the review, run against this lab's own files.
+        $rows = New-BaseRows
+        $originalNetContent = [System.IO.File]::ReadAllText($dumpNetAnalytic)
+        [System.IO.File]::WriteAllText($dumpNetAnalytic, [System.IO.File]::ReadAllText($dumpCAnalytic), (New-Object System.Text.UTF8Encoding $false))
+        try {
+            Assert-Mismatch 'a dump swapped for another dump after recording is caught' (Convert-RowsToHashtable $rows) 'dump-net\.tsv\) changed'
+        }
+        finally {
+            [System.IO.File]::WriteAllText($dumpNetAnalytic, $originalNetContent, (New-Object System.Text.UTF8Encoding $false))
+        }
+
+        # 4. HIGH 1, second bypass: a sidecar naming a self-consistent DECOY grid (its recorded
+        #    path is not Tools/OracleGrid/grid-analytic.tsv, but its hash matches that decoy's own
+        #    content) must still be refused -- a content-hash check alone cannot see this, since
+        #    the decoy is internally consistent by construction. Only path pinning catches it.
+        $decoyRows = New-BaseRows
+        $decoyRows['grid_analytic'] = @{ Path = $decoyGrid; Sha256 = (Get-Sha256Hex -Path $decoyGrid) }
+        Assert-Mismatch 'a sidecar naming a self-consistent decoy grid is refused' (Convert-RowsToHashtable $decoyRows) 'different file than this repo ships'
+
+        Write-Host ''
+        if ($failures -gt 0) {
+            Write-Host "FAIL: $failures self-test case(s) did not behave as required." -ForegroundColor Red
+            exit 1
+        }
+        Write-Host 'PASS: all verify-oracle self-test cases behaved as required.' -ForegroundColor Green
+        exit 0
+    }
+    finally {
+        Remove-Item -LiteralPath $lab -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 
 $exitCode = 0

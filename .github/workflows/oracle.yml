@@ -508,6 +508,10 @@ jobs:
         shell: pwsh
         run: pwsh scripts/run-oracle-dump.ps1
 
+      - name: Self-test the oracle provenance gate
+        shell: pwsh
+        run: pwsh scripts/verify-oracle.ps1 -SelfTest
+
       - name: Compare port vs 2.10.03 C reference against known-diff.tsv
         shell: pwsh
         run: pwsh scripts/verify-oracle.ps1

@@ -673,23 +673,37 @@ try {
     $sourceHash = Get-PortSourceHash -RepoRoot $repoRoot
 
     $provenanceHeader = @('name', 'path', 'sha256') -join "`t"
+    # dump_c_*/dump_net_* rows are what close the substitution this sidecar exists to catch:
+    # without them, scripts/verify-oracle.ps1 hashed nothing but the grids, the port source and the
+    # two sedump executables, so overwriting dump-net.tsv with a copy of dump-c-2.10.03.tsv after a
+    # legitimate run (or the reverse) left every one of those five rows still matching -- the
+    # dumps themselves were never in the sidecar to begin with. Each dump is recorded here, at the
+    # moment it was written, so a later substitution changes the file's content without changing
+    # what this row says it should be.
     $provenanceRows = @(
         (@('grid_analytic', $GridPath, (Get-Sha256Hex -Path $GridPath)) -join "`t")
         (@('grid_files', $FilesGridPath, (Get-Sha256Hex -Path $FilesGridPath)) -join "`t")
+        (@('dump_c_analytic', $cOutputPath, (Get-Sha256Hex -Path $cOutputPath)) -join "`t")
+        (@('dump_net_analytic', $netOutputPath, (Get-Sha256Hex -Path $netOutputPath)) -join "`t")
+        (@('dump_c_files', $cFilesOutputPath, (Get-Sha256Hex -Path $cFilesOutputPath)) -join "`t")
+        (@('dump_net_files', $netFilesOutputPath, (Get-Sha256Hex -Path $netFilesOutputPath)) -join "`t")
         (@('swisseph_net_source', $srcDir, $sourceHash) -join "`t")
         (@('sedump_exe', $sedumpExe, (Get-Sha256Hex -Path $sedumpExe)) -join "`t")
         (@('sedump_208_exe', $Sedump208Path, (Get-Sha256Hex -Path $Sedump208Path)) -join "`t")
     )
 
-    # Two more rows, and only when the JPL leg actually ran. A skipped run must leave no trace of
-    # a grid it did not replay -- scripts/verify-oracle.ps1 -Grid Jpl requires both rows and fails
-    # with a "re-run with -JplFile" message when they are absent, which is exactly the right answer
-    # for "the JPL dumps on disk are left over from some earlier run". jpl_ephe_file is hashed like
-    # any other input: it is 190 MB - 2.6 GB and lives outside the repo, so it is the one recorded
-    # input a reader has no other way to identify, and swapping DE406 for DE431 under the same file
-    # name would otherwise change every value in the dump with nothing recording that it had.
+    # Four more rows, and only when the JPL leg actually ran. A skipped run must leave no trace of
+    # a grid it did not replay -- scripts/verify-oracle.ps1 -Grid Jpl requires all four rows and
+    # fails with a "re-run with -JplFile" message when they are absent, which is exactly the right
+    # answer for "the JPL dumps on disk are left over from some earlier run". jpl_ephe_file is
+    # hashed like any other input: it is 190 MB - 2.6 GB and lives outside the repo, so it is the
+    # one recorded input a reader has no other way to identify, and swapping DE406 for DE431 under
+    # the same file name would otherwise change every value in the dump with nothing recording that
+    # it had.
     if ($runJplGrid) {
         $provenanceRows += (@('grid_jpl', $JplGridPath, (Get-Sha256Hex -Path $JplGridPath)) -join "`t")
+        $provenanceRows += (@('dump_c_jpl', $cJplOutputPath, (Get-Sha256Hex -Path $cJplOutputPath)) -join "`t")
+        $provenanceRows += (@('dump_net_jpl', $netJplOutputPath, (Get-Sha256Hex -Path $netJplOutputPath)) -join "`t")
         $provenanceRows += (@('jpl_ephe_file', $jplFileFullPath, (Get-Sha256Hex -Path $jplFileFullPath)) -join "`t")
     }
     $provenanceLines = @(
@@ -697,7 +711,10 @@ try {
         '# reads this and refuses to report PASS when any row no longer matches what is on disk'
         '# now -- swisseph_net_source is a hash over every *.cs file under SwissEphNet/ plus'
         '# SwissEphNet.csproj, recomputed the same way at verify time; it is not a hash of any'
-        '# built artifact. See verify-oracle.ps1 for the check itself.'
+        '# built artifact. dump_c_*/dump_net_* pin each dump file itself, not just the grids that'
+        '# produced it, so a dump swapped for another dump after this run is caught even though the'
+        '# grids, the source and the sedump binaries never changed. See verify-oracle.ps1 for the'
+        '# check itself.'
     ) + $provenanceHeader + $provenanceRows
     $provenancePath = Join-Path $OutputDir 'oracle-provenance.tsv'
     [System.IO.File]::WriteAllText($provenancePath, ($provenanceLines -join "`n") + "`n")
