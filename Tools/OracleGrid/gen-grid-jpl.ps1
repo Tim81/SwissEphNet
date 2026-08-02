@@ -209,10 +209,14 @@ function New-CalcJplRow {
     $geolatField  = if ($null -eq $GeoLat)  { '' } else { Fmt ([double]$GeoLat) }
     $heightField  = if ($null -eq $Height)  { '' } else { Fmt ([double]$Height) }
     $sidModeField = if ($null -eq $SidMode) { '' } else { FmtI ([int]$SidMode) }
+    # The two trailing empties are method and hsys, appended to grid-files.tsv's layout when
+    # NOD_APS_UT and HOUSES_EX were added to that grid. Neither func appears here -- this grid is
+    # swe_calc/swe_calc_ut only -- but the column count is what both drivers assert against, so
+    # every row carries them.
     $fields = @(
         $caseId, $Func, (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
         $geolonField, $geolatField, $heightField, $sidModeField, '', '',
-        '', ''
+        '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -375,12 +379,20 @@ $headerLines = @(
     '#'
     '# COLUMN LAYOUT'
     '#'
-    '# Byte-for-byte grid-files.tsv''s own fourteen-column header, deliberately: both drivers'
+    '# Byte-for-byte grid-files.tsv''s own sixteen-column header, deliberately: both drivers'
     '# dispatch their column layout on which header they read, and this grid needs exactly the'
     '# columns that one already defines. What makes this a distinct grid is the ephemeris flag'
     '# every row carries and the JPL file the drivers are pointed at, not its schema. See'
-    '# Tools/OracleGrid/gen-grid-files.ps1''s header for the full description of all fourteen'
-    '# columns. star, x2cross, dir, t0 and ayan_t0 are always empty here.'
+    '# Tools/OracleGrid/gen-grid-files.ps1''s header for the full description of all sixteen'
+    '# columns. star, x2cross, dir, t0, ayan_t0, method and hsys are always empty here.'
+    '#'
+    '# That coupling is the point and also the cost: this grid has to be regenerated whenever'
+    '# grid-files.tsv''s layout changes, and it was not when method/hsys were appended for'
+    '# NOD_APS_UT and HOUSES_EX. Nothing caught it, because this grid is opt-in -- it needs a'
+    '# multi-hundred-MB JPL DE file no runner has, so no gate replays it. The header assertion in'
+    '# both drivers did fail loudly the first time it was run by hand, which is the design working;'
+    '# what is missing is anything that runs it. Treat a files-grid schema change as a two-grid'
+    '# change.'
     '#'
     '# Lines starting with ''#'' are comments. The first non-comment line is the column-name header'
     '# below and is not a data row -- both drivers assert it matches verbatim before reading any'
@@ -388,7 +400,7 @@ $headerLines = @(
 )
 $columnHeader = 'case_id' + "`t" + 'func' + "`t" + 'ipl' + "`t" + 'tjd' + "`t" + 'iflag' + "`t" +
     'star' + "`t" + 'geolon' + "`t" + 'geolat' + "`t" + 'height' + "`t" + 'sid_mode' + "`t" +
-    'x2cross' + "`t" + 'dir' + "`t" + 't0' + "`t" + 'ayan_t0'
+    'x2cross' + "`t" + 'dir' + "`t" + 't0' + "`t" + 'ayan_t0' + "`t" + 'method' + "`t" + 'hsys'
 
 $writer = [System.IO.StreamWriter]::new($outputPath, $false, [System.Text.UTF8Encoding]::new($false))
 try {
