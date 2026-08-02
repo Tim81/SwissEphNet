@@ -152,6 +152,33 @@ function Test-SidecarPair {
     $baseCount = $baseEntries.Count
     $headCount = $headEntries.Count
 
+    # HIGH 2 fix: a commit that REMOVES entries (headCount < baseCount) must be refused
+    # unconditionally, regardless of $changed -- an append-only log must never shrink, whether or
+    # not the paired manifest also changed in the same commit. Checked before the count-must-rise
+    # block below (which only ever fires when $changed is true) and before the per-entry loops,
+    # which index $headEntries[$i] for $i up to $baseCount - 1: without this guard, a head log
+    # shorter than the base one reached that loop with headCount < baseCount and threw "Index was
+    # outside the bounds of the array" once $i reached headCount, a bare .NET exception instead of
+    # this gate's own message, which also aborts the calling foreach in the real run below --
+    # pairs after the one that crashed are never checked in that run. Measured directly: a 2-entry
+    # base log truncated to 0 entries at head, with $changed forced true, hit this exact exception
+    # before this fix; the same shape with $changed false (only the sidecar itself truncated, the
+    # manifest untouched) reached the same crash by the $changedSidecar route above.
+    if ($headCount -lt $baseCount) {
+        return [pscustomobject]@{
+            Ok      = $false
+            Message = @"
+[$Label] $SidecarRelPath entry count decreased ($baseCount -> $headCount) between $BaseRef and
+HEAD. An append-only log must never shrink, regardless of whether $($ManifestRelPaths -join ', ')
+itself changed in the same commit -- entries are removed only by history rewriting, which this
+gate exists to catch, not append-only regeneration.
+
+If a log entry was published in error, add a NEW entry noting the correction instead of removing
+the old one.
+"@
+        }
+    }
+
     if ($changed -and $headCount -le $baseCount) {
         return [pscustomobject]@{
             Ok      = $false
@@ -169,7 +196,11 @@ this gate exists to catch: revert the hand edit and go through the regeneration 
         }
     }
 
-    for ($i = 0; $i -lt $baseCount; $i++) {
+    # Bounded by Math.Min even though headCount >= baseCount is now guaranteed above -- defense in
+    # depth against this exact class of indexing bug recurring here, not a claim that it is
+    # currently reachable.
+    $commonCount = [Math]::Min($baseCount, $headCount)
+    for ($i = 0; $i -lt $commonCount; $i++) {
         if (-not (Test-DateLogEntryUnchangedOrPrFilled -BaseEntry $baseEntries[$i] -HeadEntry $headEntries[$i])) {
             return [pscustomobject]@{
                 Ok      = $false
@@ -191,7 +222,13 @@ place.
     }
 
     for ($i = $baseCount; $i -lt $headCount; $i++) {
-        if (-not (Test-DateLogEntryHasSubstance $headEntries[$i])) {
+        # See scripts/lib/DateLogGate.ps1's own comment on Test-DateLogEntryHasSubstance: a
+        # duplicate-of-previous-entry check was tried here and reverted -- measured directly
+        # against this repository's own Tests/oracle/regenerations-files.log, it refused a real,
+        # already-merged commit range over two legitimate, independently-run -PruneOnly entries
+        # that happen to share identical boilerplate text (both "0 fewer rows", same day, same
+        # PR). Left as the character-count floor alone.
+        if (-not (Test-DateLogEntryHasSubstance -Entry $headEntries[$i])) {
             return [pscustomobject]@{
                 Ok      = $false
                 Message = @"
@@ -479,6 +516,49 @@ if ($SelfTest) {
     $editedFirstEntry = $BaseEntries[0] -replace 'no reason is required', 'no reason at all is needed'
     Set-LabHead $lab (New-LogText (@($editedFirstEntry) + $NewEntry3)) $null -ChangeKnownDiff
     Assert-GateRefuses 'a base sidecar with exactly one prior entry still refuses an edit to it' $lab 'append-only, but entry #1 differs'
+
+    # ------------------------------------------------------------------------------------------
+    # HIGH 2 crash reproduction: a commit that REMOVES entries from an already-populated sidecar
+    # (baseCount=2 -> headCount=0), which the per-entry loops indexed $headEntries[$i] for $i up to
+    # $baseCount - 1 without bounding by $headCount -- "Index was outside the bounds of the array."
+    # instead of this gate's own message, and (in the real run below) aborted the calling foreach,
+    # so pairs after the one that crashed were never checked in that run. ' ' (a single space, not
+    # an empty string) is passed as the head log text so it clears Set-LabHead's own
+    # IsNullOrEmpty guard and is written verbatim -- Get-DateLogEntries(' ') still finds zero
+    # "YYYY-MM-DD " prefixed lines, so headCount is genuinely 0.
+
+    # 13. Entries removed AND the manifest also changed in the same commit -- $changed is true, so
+    #     this reaches the count-must-rise check before HIGH 2's guard was added; that check alone
+    #     (`$headCount -le $baseCount`) does not crash on its own, but the per-entry loops right
+    #     after it did, on every real range where the count-must-rise check's own refusal wasn't
+    #     reached first for an unrelated reason. Covered here for completeness alongside case 14,
+    #     which is the shape that could not be caught by any check upstream of the crash at all.
+    $lab = New-Lab 'entries-removed-manifest-also-changed'
+    Set-LabHead $lab ' ' $null -ChangeKnownDiff
+    Assert-GateRefuses 'entries removed (2 -> 0) while the manifest also changed does not crash, and is refused' $lab 'entry count decreased'
+
+    # 14. Entries removed while the manifest itself did NOT change -- the shape this gate's own
+    #     header comment (:106-108) says $changedSidecar exists to catch: "a commit that guts the
+    #     log while leaving every manifest alone must not silently report 'nothing to check'."
+    #     $changed is false here (known-diff.tsv untouched), so before this fix the count-must-rise
+    #     check never fired at all (it is gated on $changed), and execution reached the per-entry
+    #     loop with headCount (0) < baseCount (2) directly -- the exact crash the review reproduced
+    #     against the real merge-base range: "2 entries -> 0 gives 'Index was outside the bounds of
+    #     the array.', exit 1".
+    $lab = New-Lab 'entries-removed-manifest-unchanged'
+    Set-LabHead $lab ' ' $null
+    Assert-GateRefuses 'entries removed (2 -> 0) while the manifest itself is untouched does not crash, and is refused' $lab 'entry count decreased'
+
+    # 15. MEDIUM 5, control: a byte-for-byte duplicate of the newest already-published entry (same
+    #     date, same PR, same boilerplate outcome text) IS accepted, not refused -- see
+    #     scripts/lib/DateLogGate.ps1's Test-DateLogEntryHasSubstance for why a duplicate-content
+    #     check was tried and reverted: measured against this repository's own committed
+    #     Tests/oracle/regenerations-files.log, two legitimate, independently-run -PruneOnly
+    #     entries share this exact shape, and a check that refuses this case refuses real, already-
+    #     merged history along with any genuine bypass attempt.
+    $lab = New-Lab 'duplicate-of-newest-entry-appended'
+    Set-LabHead $lab (New-LogText ($BaseEntries + $BaseEntries[1])) $null -ChangeKnownDiff
+    Assert-GateAccepts 'a byte-for-byte duplicate of the newest entry is accepted -- see this case''s own comment for why' $lab 'gained 1 entry'
 
     Write-Host ''
     Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue

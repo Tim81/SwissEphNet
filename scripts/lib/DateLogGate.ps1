@@ -40,6 +40,23 @@ Set-StrictMode -Version Latest
 # lets a multi-paragraph entry (Tests/conformance/regenerations.log's own 2026-07-31 Phase 6 probe
 # entry, several paragraphs separated by blank lines) stay one entry instead of fragmenting at every
 # blank line.
+#
+# LOW: this function's return statements comma-force their array (`return , @(...)`, see the
+# comments on each below); scripts/verify-known-fail-log.ps1's own Get-LogEntries and its two
+# freeze/baseline siblings return a bare `@()`/`.ToArray()` with no comma. Both conventions are
+# deliberate, not an oversight either way: comma-forcing exists because Set-StrictMode -Version
+# Latest turns a caller receiving $null (what a bare return of a 0- or 1-element array unrolls to)
+# into a PropertyNotFoundException the moment it reads .Count -- and this file's own caller,
+# scripts/verify-oracle-log.ps1, runs under Set-StrictMode. The three siblings do not run under
+# Set-StrictMode at all (see scripts/verify-oracle-log.ps1's own HIGH-2 fix comment on
+# Test-SidecarPair for why: without it, indexing a $null the same way degrades to $null and
+# refuses on its own rather than throwing), so a bare return costs them nothing today. The rule
+# this repository actually follows, stated once here rather than left to be inferred from the
+# diff between files: comma-force an array return in any function whose caller runs under
+# Set-StrictMode; a bare return is fine, and simpler, where it does not. Adding Set-StrictMode to
+# the three siblings so they could drop that difference is a separate, larger change (each would
+# need auditing for the same class of latent unbound-array-index bug HIGH 2 fixed here) and is
+# deliberately out of scope for this fix.
 function Get-DateLogEntries {
     param([string] $Content)
     if ([string]::IsNullOrEmpty($Content)) {
@@ -72,6 +89,26 @@ function Get-DateLogEntries {
 # enough actual content to be worth a reviewer's time. $MinChars matches
 # scripts/verify-known-fail-log.ps1's own floor: well under every genuine entry in any of these
 # logs today, and well over what a placeholder like a bare date, or a date plus ".", can reach.
+#
+# MEDIUM 5 considered and rejected a duplicate-of-previous-entry check here (reject a newly-added
+# entry whose normalized body byte-for-byte matches one already published in this log). Measured
+# directly against this repository's OWN committed history before shipping it: Tests/oracle/
+# regenerations-files.log's entries #3 and #4 are two separate, legitimate -PruneOnly runs, both
+# dated 2026-07-30, both under PR #32, both finding zero newly-passing rows to prune -- "2026-07-30
+# PR #32 (1233 -> 1233, 0 fewer rows): Pruned 0 newly-passing row(s); no reason required for a pure
+# removal or a max_ulp improvement.", word for word, twice. A duplicate-content check flagged the
+# second as a fabricated copy and refused a real, already-merged commit range outright. This is not
+# a corner case unique to that one pair: scripts/regenerate-oracle-known-diff.ps1's own -PruneOnly
+# mode (and scripts/classify-oracle-versions.ps1) both emit fully deterministic boilerplate for a
+# "ran again, nothing changed" outcome -- same template, same numbers when the count truly did not
+# move -- so two independent, honest re-verifications on the same day under the same PR are
+# EXPECTED to produce byte-identical entries, not evidence of tampering. No text-only heuristic
+# (this file's own $meaningfulChars normalization included) can tell that legitimate recurrence
+# apart from a copy-pasted duplicate meant to inflate the count without a real regeneration behind
+# it; only a human reviewing the actual regeneration run can. The character-count floor below is
+# therefore left as it was -- it does not close the bypass MEDIUM 5 named (a duplicate-of-previous
+# entry still passes it), but the alternative measured worse: a check that also fails honest,
+# already-merged history is not a safe trade for one that only would have refused a hypothetical.
 function Test-DateLogEntryHasSubstance {
     param([string] $Entry, [int] $MinChars = 20)
     $body = $Entry -replace '^\d{4}-\d{2}-\d{2}\s*', ''
