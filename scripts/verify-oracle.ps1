@@ -152,6 +152,39 @@ function Get-GridDefaults {
     }
 }
 
+# True only when a resolved -CDumpPath/-NetDumpPath/-KnownDiffPath actually differs from that
+# grid's own default -- not merely when the parameter was passed. Without this, `-CDumpPath
+# external/.c-reference/dump-c-2.10.03.tsv` (spelled out explicitly, but identical to what the
+# default would have resolved to anyway) disabled the stale-dump check below just as completely as
+# pointing it at a genuinely different file: $overridesGiven only ever asked "was a parameter
+# passed", never "does it name something other than the file the provenance sidecar already
+# describes". The provenance sidecar's own rows are unaffected by which parameter spelling named
+# them, so skipping the check in that case skipped a check that was still perfectly meaningful.
+function Test-ResolvedOverridesDiffer {
+    param(
+        [string] $GridName,
+        [string] $GivenCDumpPath,
+        [string] $GivenNetDumpPath,
+        [string] $GivenKnownDiffPath
+    )
+    if ($GridName -eq 'Both') { return $false }
+    $defaults = Get-GridDefaults -GridName $GridName
+    $pairs = @(
+        @{ Given = $GivenCDumpPath; Default = $defaults.CDumpPath }
+        @{ Given = $GivenNetDumpPath; Default = $defaults.NetDumpPath }
+        @{ Given = $GivenKnownDiffPath; Default = $defaults.KnownDiffPath }
+    )
+    foreach ($pair in $pairs) {
+        if (-not $pair.Given) { continue }
+        $givenFull = [System.IO.Path]::GetFullPath($pair.Given)
+        $defaultFull = [System.IO.Path]::GetFullPath($pair.Default)
+        if (-not [string]::Equals($givenFull, $defaultFull, [StringComparison]::OrdinalIgnoreCase)) {
+            return $true
+        }
+    }
+    return $false
+}
+
 # True when a known-diff TSV (Tests/oracle/known-diff.tsv or -files.tsv) has no data rows below
 # its header -- i.e. the grid claims every row is bit-identical, with nothing on the exemption
 # list. That claim is what the file-level SHA-256 check below actually verifies; a non-empty list
@@ -415,6 +448,29 @@ function Get-ProvenanceMismatches {
     Test-RecordedPathIsCanonical -Key 'grid_analytic' -ExpectedPath (Join-Path $RepoRoot 'Tools/OracleGrid/grid-analytic.tsv') -Description 'The analytic grid'
     Test-RecordedPathIsCanonical -Key 'grid_files' -ExpectedPath (Join-Path $RepoRoot 'Tools/OracleGrid/grid-files.tsv') -Description 'The files grid'
 
+    # HIGH 1 fix: the content-hash check above (Test-RecordedFile) proves the path the sidecar
+    # names has not changed since it was hashed -- it proves nothing about WHICH file that path is.
+    # Before this, only the two grid rows and (under -CheckJpl) grid_jpl got the canonical-path
+    # check; the six dump rows and both sedump executables did not, so repointing e.g.
+    # dump_net_analytic's path column at a kept-aside REGRESSED copy of dump-net.tsv, with that
+    # copy's own true SHA-256 recorded alongside it, passed Test-RecordedFile outright (the hash
+    # matches the file the path now names) and this whole gate reported PASS -- the exact bypass
+    # 38e9d1c was written to close, reopened by only ever having closed it for the two grid rows.
+    # Measured directly: one column edit (the path, not the hash) in an otherwise-honest sidecar,
+    # against a dump-net.tsv regressed by one ULP with the regression hidden behind a copy of the
+    # C dump, exited 0 before this fix and is refused by it now -- see -SelfTest cases 5 and 6.
+    # NOT Get-GridDefaults: that function closes over the top-level script's own $repoRoot
+    # variable rather than taking one as a parameter, so calling it from inside this function
+    # would resolve against the real repository root even when this function itself was called
+    # with a different -RepoRoot (exactly what -SelfTest below does) -- built directly against the
+    # $RepoRoot this function received instead, matching Get-GridDefaults' own relative paths.
+    Test-RecordedPathIsCanonical -Key 'dump_c_analytic' -ExpectedPath (Join-Path $RepoRoot 'external/.c-reference/dump-c-2.10.03.tsv') -Description 'The C dump (analytic grid)'
+    Test-RecordedPathIsCanonical -Key 'dump_net_analytic' -ExpectedPath (Join-Path $RepoRoot 'external/.c-reference/dump-net.tsv') -Description 'The .NET dump (analytic grid)'
+    Test-RecordedPathIsCanonical -Key 'dump_c_files' -ExpectedPath (Join-Path $RepoRoot 'external/.c-reference/dump-c-2.10.03-files.tsv') -Description 'The C dump (files grid)'
+    Test-RecordedPathIsCanonical -Key 'dump_net_files' -ExpectedPath (Join-Path $RepoRoot 'external/.c-reference/dump-net-files.tsv') -Description 'The .NET dump (files grid)'
+    Test-RecordedPathIsCanonical -Key 'sedump_exe' -ExpectedPath (Join-Path $RepoRoot 'external/.c-reference/oracle-dump-c/sedump.exe') -Description 'sedump.exe (2.10.03, Tools/CReference/sedump.c)'
+    Test-RecordedPathIsCanonical -Key 'sedump_208_exe' -ExpectedPath (Join-Path $RepoRoot 'external/.c-reference/sedump-2.08.exe') -Description 'sedump-2.08.exe'
+
     # Only when this run was asked to check the JPL grid -- Read-Provenance has already refused
     # outright if the rows are missing in that case, so all four keys exist by the time this runs.
     # Re-hashing the DE file is the point of recording it: it is the one input that lives outside
@@ -428,6 +484,8 @@ function Get-ProvenanceMismatches {
         Test-RecordedFile -Key 'dump_net_jpl' -Description 'The .NET dump (JPL grid, dump-net-jpl.tsv)'
         Test-RecordedFile -Key 'jpl_ephe_file' -Description 'The JPL DE file the dumps were generated against'
         Test-RecordedPathIsCanonical -Key 'grid_jpl' -ExpectedPath (Join-Path $RepoRoot 'Tools/OracleGrid/grid-jpl.tsv') -Description 'The JPL grid'
+        Test-RecordedPathIsCanonical -Key 'dump_c_jpl' -ExpectedPath (Join-Path $RepoRoot 'external/.c-reference/dump-c-2.10.03-jpl.tsv') -Description 'The C dump (JPL grid)'
+        Test-RecordedPathIsCanonical -Key 'dump_net_jpl' -ExpectedPath (Join-Path $RepoRoot 'external/.c-reference/dump-net-jpl.tsv') -Description 'The .NET dump (JPL grid)'
     }
 
     # swisseph_net_source is rehashed straight from the tree with Get-PortSourceHash -- see this
@@ -604,6 +662,45 @@ if ($SelfTest) {
         $decoyRows['grid_analytic'] = @{ Path = $decoyGrid; Sha256 = (Get-Sha256Hex -Path $decoyGrid) }
         Assert-Mismatch 'a sidecar naming a self-consistent decoy grid is refused' (Convert-RowsToHashtable $decoyRows) 'different file than this repo ships'
 
+        # 5. HIGH 1, the exact review reproduction: a REGRESSED .NET dump kept aside at a
+        #    non-canonical path, with the sidecar's dump_net_analytic PATH COLUMN repointed at it
+        #    and its SHA-256 recorded truthfully (the hash of the regressed file itself, not of
+        #    dump-net.tsv). Test-RecordedFile alone cannot see this -- the recorded path's content
+        #    matches its own recorded hash by construction -- so before this fix this case would
+        #    have shown no mismatch at all. dump-net.tsv on disk (the canonical path) is left
+        #    untouched by this case, standing in for "the regression was never actually written to
+        #    the file this repo ships at that name".
+        $regressedNetDump = New-LabFile 'external/.c-reference/kept-aside-regressed-dump-net.tsv' "A|1`t0xBAD`n"
+        $repointedRows = New-BaseRows
+        $repointedRows['dump_net_analytic'] = @{ Path = $regressedNetDump; Sha256 = (Get-Sha256Hex -Path $regressedNetDump) }
+        Assert-Mismatch 'a dump row repointed at a self-consistent regressed file (path, not content) is refused' `
+            (Convert-RowsToHashtable $repointedRows) 'different file than this repo ships'
+
+        # 6. The same shape as case 5, applied to sedump_exe rather than a dump row -- proving the
+        #    fix reaches "both sedump executables" as required, not only the six dump rows.
+        $decoySedumpExe = New-LabFile 'external/.c-reference/kept-aside-sedump.exe' 'a different sedump.exe'
+        $repointedSedumpRows = New-BaseRows
+        $repointedSedumpRows['sedump_exe'] = @{ Path = $decoySedumpExe; Sha256 = (Get-Sha256Hex -Path $decoySedumpExe) }
+        Assert-Mismatch 'sedump_exe repointed at a self-consistent decoy executable is refused' `
+            (Convert-RowsToHashtable $repointedSedumpRows) 'different file than this repo ships'
+
+        # 7. LOW: Test-ResolvedOverridesDiffer must say "no" for an override spelled out identically
+        #    to the default it would have resolved to anyway (the provenance check must NOT be
+        #    skipped in that case -- see this function's own comment), and "yes" for one that
+        #    actually names something else. Exercised against the real repo's own Analytic defaults
+        #    (Get-GridDefaults closes over the real script's $repoRoot, not $lab, so this case does
+        #    not use the lab fixtures above at all).
+        $realAnalyticDefaults = Get-GridDefaults -GridName 'Analytic'
+        $sameAsDefault = Test-ResolvedOverridesDiffer -GridName 'Analytic' -GivenCDumpPath $realAnalyticDefaults.CDumpPath -GivenNetDumpPath $null -GivenKnownDiffPath $null
+        $differentFromDefault = Test-ResolvedOverridesDiffer -GridName 'Analytic' -GivenCDumpPath (Join-Path $lab 'not-the-default.tsv') -GivenNetDumpPath $null -GivenKnownDiffPath $null
+        if (-not $sameAsDefault -and $differentFromDefault) {
+            Write-Host '  PASS  Test-ResolvedOverridesDiffer: identical-to-default is false, genuinely-different is true' -ForegroundColor DarkGray
+        }
+        else {
+            Write-Host "  FAIL  Test-ResolvedOverridesDiffer`n          expected `$false/`$true, got sameAsDefault=$sameAsDefault differentFromDefault=$differentFromDefault" -ForegroundColor Red
+            $script:failures++
+        }
+
         Write-Host ''
         if ($failures -gt 0) {
             Write-Host "FAIL: $failures self-test case(s) did not behave as required." -ForegroundColor Red
@@ -628,7 +725,7 @@ try {
     }
     Write-Host ''
 
-    if ($overridesGiven) {
+    if ($overridesGiven -and (Test-ResolvedOverridesDiffer -GridName $Grid -GivenCDumpPath $CDumpPath -GivenNetDumpPath $NetDumpPath -GivenKnownDiffPath $KnownDiffPath)) {
         Write-Host "NOTE: -CDumpPath/-NetDumpPath/-KnownDiffPath point this run at non-default dumps; skipping the stale-dump check against $ProvenancePath, which only describes scripts/run-oracle-dump.ps1's own default outputs." -ForegroundColor Yellow
         Write-Host ''
     }
