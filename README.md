@@ -879,11 +879,28 @@ ever confirmed as port defects were fixed and pruned.
   is checkable in either direction: the MD5 ties this file to Astrodienst, and the
   SHA-256 is what anyone reproducing the run should actually match.
 
-  Astrodienst name three places to get these files: their own
-  `swisseph-download/jplfiles/` page (which points at NASA's JPL FTP area), Alois
-  Treindl's Dropbox, and `https://ephe.scryr.io/jpl/`, a web space provided by
-  Phillip McCabe. Since the strong hash is the one to check, the host matters less than
-  which hash you check it with.
+  Get it from NASA rather than a mirror, because `de431.eph` is not a Swiss Ephemeris
+  format at all: it is JPL's own Linux binary, renamed. Upstream's `readme.md` links
+  straight to it, and the sizes confirm the rename is all that happens --
+  `lnxm13000p17000.431` is 2,788,676,624 bytes, the same count as the file measured
+  above, so nothing is converted in between.
+
+  ```
+  de431.eph  https://ssd.jpl.nasa.gov/ftp/eph/planets/Linux/de431/lnxm13000p17000.431   2.6 GB
+  de406.eph  https://ssd.jpl.nasa.gov/ftp/eph/planets/Linux/de406/lnxm3000p3000.406     190 MB
+  de200.eph  https://ssd.jpl.nasa.gov/ftp/eph/planets/Linux/de200/lnxm1600p2170.200      41 MB
+  ```
+
+  Download, rename to the `.eph` name, check the SHA-256. Astrodienst also list Alois
+  Treindl's Dropbox and `https://ephe.scryr.io/jpl/` (a web space provided by Phillip
+  McCabe) as alternatives, which are useful if NASA's FTP area is slow, but the point
+  of taking JPL's own copy is that the mirror stops being part of the trust chain.
+
+  Only `de431.eph` reproduces the numbers above. `setest`'s suites hardcode it, so the
+  expected values in `t.exp` are DE431 values, and running the corpus against DE200 or
+  DE406 produces real differences that look exactly like port defects. The smaller
+  files are useful for a different job: `load_dpsi_deps` is reached only when the
+  opened file reports `jpldenum >= 403`, which DE406 clears and DE200 does not.
 
   Nothing in CI measures that, and the reason is size rather than doubt. `de431.eph`
   is 2.6 GB, cannot be committed, and no runner will fetch it per job, so the result
