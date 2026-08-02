@@ -43,3 +43,4 @@ What the probe does not establish is whether the divergence is a port defect. Th
    the probe used is the one Astrodienst distribute, and the SHA-256 is now the strong hash to
    reproduce against. Nothing about the 500-of-538 result changes; this only replaces a weak
    checksum with a strong one over the same bytes.
+2026-08-02 (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) (1423 -> 1423, no change in row count) [ephe: 8 files matching Tests/conformance/required-ephemeris-files.tsv]: Re-measured against external/swisseph bumped to v2.10.3bfinal (f4dcd18e); six core ephemeris files changed data (not source), so some already-failing iterations' magnitude_key shifted. No iterations newly pass or newly fail.
