@@ -1723,3 +1723,56 @@ What the fix does *not* close is `load_dpsi_deps`'s parsing loop. The port now r
 early return the C does, and the `serr` text agrees on all 110 `SEFLG_JPLHOR` rows, but neither
 side gets past `swi_fopen` because neither `eop_1962_today.txt` nor `eop_finals.txt` is
 retrievable -- see the entry above on what the oracle grids do not cover.
+
+## 192 analytic-grid ayanamsa rows change answer if SE_EPHE_PATH is set
+
+Found while checking whether the new `HOUSES_EX` rows kept the analytic grid machine-independent.
+They do. These do not, and they predate that change.
+
+`grid-analytic.tsv`'s own header states its premise: every row carries `SEFLG_MOSEPH` explicitly
+"so the result depends on no ephemeris data file and is reproducible on any machine". The
+`AYANAMSA_EX`/`AYANAMSA_EX_UT` rows are the exception. `swe_get_ayanamsa_ex` takes an `iflag`, and
+`gen-grid-analytic.ps1`'s `$AyanamsaExIflagCombos` supplies `0` and `SEFLG_NONUT` -- no ephemeris
+bit in either. The rows have looked like that since direct ayanamsa coverage was added.
+
+Measured, not inferred. Replaying `grid-analytic.tsv` through the same MSVC-built `sedump.exe`
+twice, once with `SE_EPHE_PATH` unset and once pointing at `external/swisseph/ephe`:
+
+```
+differing rows   192
+funcs            AYANAMSA_EX 96, AYANAMSA_EX_UT 96
+sid_modes        17 27 28 29 30 31 32 33 35 36 39 40
+```
+
+Those twelve are exactly the twelve `swi_get_ayanamsa_ex` names in its own warning guard
+(`sweph.c:3031-3045`), one for one:
+
+| | |
+|---|---|
+| 27, 28, 29, 39, 35 | `SE_SIDM_TRUE_CITRA`, `TRUE_REVATI`, `TRUE_PUSHYA`, `TRUE_SHEORAN`, `TRUE_MULA` |
+| 17, 30, 36, 40 | `SE_SIDM_GALCENT_0SAG`, `GALCENT_RGILBRAND`, `GALCENT_MULA_WILHELM`, `GALCENT_COCHRANE` |
+| 31, 32, 33 | `SE_SIDM_GALEQU_IAU1958`, `GALEQU_TRUE`, `GALEQU_MULA` |
+
+The guard reads `if (swi_init_swed_if_start() == 1 && !(epheflag & SEFLG_MOSEPH) && (sid_mode == ...
+one of those twelve ...))` and writes `"Please call swe_set_ephe_path() or swe_set_jplfile() before
+calling swe_get_ayanamsa_ex()"`. Each of the twelve resolves its reference point through
+`swe_fixstar`, which reads `sefstars.txt`. With no path they take the not-found path; with a path
+they compute a real star position. Both drivers see the same environment, so the comparison stays
+green either way -- which is precisely why nothing caught it.
+
+**What it does and does not threaten.** It is not a port defect and it does not weaken
+`verify-oracle`: C and .NET agree in any given environment. What it costs is reproducibility of the
+recorded artefacts. `dump-c-2.10.03.tsv`'s SHA-256, and the classification in
+`version-classification.tsv` derived from it, are only reproducible on a machine whose environment
+matches the one that produced them. A contributor with `SE_EPHE_PATH` exported would get different
+bytes for 192 rows and no explanation of why.
+
+**Not fixed here, and the reason is precedent.** The obvious one-line change -- OR `SEFLG_MOSEPH`
+into `$AyanamsaExIflagCombos` -- would silence the guard but not the file access, because
+`swe_fixstar` reads `sefstars.txt` whatever the ephemeris flag says. These twelve modes need star
+data, so their direct-ayanamsa rows belong in `grid-files.tsv`, which provides it. That is the same
+category error, with the same fix, that `gen-grid-analytic.ps1`'s `$HelioCrossIplFiles` comment
+already records for `SE_CHIRON`: a row placed in the file-free grid that cannot reach the branch it
+was written to cover, and was moved to the file-backed grid instead. Moving them is a coverage
+change owing its own measurement and its own log entry, not a rider on the change that found it.
+
