@@ -140,14 +140,18 @@ defects this report was about. Every library translation unit (<code>sweph.c</co
 <code>swephlib.c</code>, <code>swecl.c</code>, <code>swehouse.c</code>, <code>swejpl.c</code>,
 <code>swehel.c</code>, <code>swedate.c</code>, <code>swemmoon.c</code>, <code>swemplan.c</code>)
 and <code>swephexp.h</code> are byte-identical to <code>v2.10.3final</code>, so this did not touch
-anything our port measures itself against beyond the two fixes and the six ephemeris data files
-that also changed in the same release.</p>
+anything our port measures itself against beyond the two fixes and the ephemeris data files that
+also changed in the same release &mdash; 156 files under <code>ephe/</code> differ between the two
+tags (<code>git diff --name-status af9823fe f4dcd18e -- ephe/</code>: 153 modified, 3 new), not
+six; six is only how many of those 156 sit in the sparse checkout our own fork vendors. Your own
+<code>readme.md</code> says why: &ldquo;As of 14 April 2026, all .se1 data files for planets and
+for asteroids have been rebuilt with JPL Ephemeris DE441.&rdquo;</p>
 
 <p>One correction to what we told you above, though. In "One thing worth knowing" we said
 <code>do_printf</code> switching to <code>fprintf(fp, info)</code> under <code>_WINDOWS</code> was
 "fine on <code>master</code>, where the rest of the tree expects <code>_WINDOWS</code>". We had not
 actually compiled that branch when we wrote that &mdash; only reasoned about it from the diff
-&mdash; and it was wrong. <code>fp</code> (<code>swetest.c:3958</code>) is declared nowhere in
+&mdash; and it was wrong. <code>fp</code> (<code>swetest.c:3959</code>) is declared nowhere in
 <code>swetest.c</code>, on <code>master</code> same as on the tag (<code>git ls-remote</code> shows
 <code>master</code> and <code>v2.10.3bfinal</code> at the same commit), so
 <code>#define _WINDOWS</code> activates a second hard compile error the moment the first one
@@ -191,8 +195,22 @@ ever compiled already did.</p>
 <p>We would also gently suggest <code>fputs</code> over <code>fprintf(stdout, info)</code> even if
 you keep a conditional. <code>info</code> is assembled from computed values rather than being a
 literal, so passing it as a format string means any <code>%</code> in a body position is
-interpreted. That is also what <code>cl.exe</code> warns about on the original line (C4047 and
-C4024, which is how we first found this).</p>
+interpreted. One correction here too: we originally said <code>cl.exe</code>'s C4047/C4024 on the
+original line were about that format-string hazard; they are not. Compiled, both warnings name
+parameter 1 (<code>fp</code>), not parameter 2 (<code>info</code>):</p>
+
+<pre>
+_tmp.c(5): error C2065: 'fp': undeclared identifier
+_tmp.c(5): warning C4047: 'function': 'FILE *const ' differs in levels of indirection from 'int'
+_tmp.c(5): warning C4024: 'fprintf': different types for formal and actual parameter 1
+</pre>
+
+<p><code>cl.exe</code> recovers from the C2065 undeclared-identifier error by treating <code>fp</code>
+as <code>int</code>, then warns that an <code>int</code> was passed where <code>fprintf</code>
+expects a <code>FILE *</code> &mdash; a consequence of the undeclared variable, unrelated to the
+format-string hazard we were describing. We found this defect by compiling the branch and hitting
+C2065 directly, not by way of these two warnings; naming them as if they flagged the hazard we were
+discussing was our error, not a second thing <code>cl.exe</code> caught.</p>
 
 <hr>
 

@@ -309,8 +309,12 @@ function Get-ArchBaseline {
 # stdout; fputs is the one substitution that cannot change what reaches it for any `info`
 # do_printf is called with. fprintf(stdout, info) would too for well-behaved input, but
 # treats info (built from swe_calc results, not a literal) as a format string, which
-# fputs does not -- and is exactly the substitution cl.exe itself warns about
-# (C4047/C4024, seen when this defect was first hit) on the original fprintf(fp, info).
+# fputs does not. cl.exe's C4047/C4024 on the original fprintf(fp, info) are NOT evidence
+# of that hazard, despite an earlier version of this comment and of
+# docs/upstream/swetest-2.10.03-build-defects.md/.html claiming they were: compiled, both
+# warnings name parameter 1 (fp, recovered as int after the C2065 undeclared-identifier
+# error), not parameter 2 (info) -- see that doc's "Update, 2 August 2026" section for the
+# measured warning text and the correction sent to Astrodienst.
 function New-PatchedSwetestSource {
     param([string] $SourcePath, [string] $DestinationPath)
 

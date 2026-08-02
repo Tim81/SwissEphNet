@@ -74,6 +74,21 @@ reference on macOS arm64 (Apple libSystem)" both passing, alongside the Windows 
 current 25,569-row grid -- the same way they did for the `HOUSES_EX2`/`HOUSES_ARMC_EX2` addition
 above.
 
+**Files-grid dump hash correction.** The `0c672071ceb868252f25166c1ed05ac1b7c69577a0403b0120b090ce63697be3`
+above is not the current `dump-c-2.10.03-files.tsv`/`dump-net-files.tsv` hash; it is
+`237625f5d69e989b9c7d7395d3239563d0ea01d53e990c98f98df3a55f86d996`, measured directly
+(`scripts/verify-oracle.ps1 -Grid Files`, exit 0, both dumps SHA-256 identical at that value) and
+confirmed against `external/.c-reference/oracle-provenance.tsv`'s own `dump_c_files`/`dump_net_files`
+rows, which record the same value against the currently-committed `Tools/OracleGrid/grid-files.tsv`
+(SHA-256 `2ab8195a3232260b399e79709cf79240147586ea7f1403067db821acd11b3efb`). Left as `0c672071…` above
+rather than rewritten in place -- per this record's own rule (see the opening paragraph of "1.
+Bit-exact oracle" above): a past, already-quoted measurement is not corrected in place, only
+superseded. Row count (3,280) and `known-diff-files.tsv` (empty) are unchanged from the paragraph
+above; only the dump's own bytes differ, and this record cannot say why without a bisect this
+session did not do -- the port source hash recorded alongside it
+(`swisseph_net_source`, `external/.c-reference/oracle-provenance.tsv`) matches what is on disk now,
+so whatever changed the bytes did not change `SwissEphNet/`.
+
 Windows is gated by `oracle-dump`, the `.github/workflows/oracle.yml` job that replays this grid
 end to end on every push and pull request; Linux is gated the same way by `linux-exactness`, and
 macOS by `macos-exactness`. The Linux row was originally a single hand-run of the grid in a WSL2

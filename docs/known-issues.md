@@ -1379,7 +1379,7 @@ it for the `v` planetary-moon selector) without declaring it, and called `gethos
 unconditionally at `:1282` with the variable it writes into declared only under `#if HPUNIX`
 (`:826-828`) -- both hard compile errors in `v2.10.3final`, the tag this port previously pinned.
 `Tools/CReference/build-c.ps1` used to patch a copy of `swetest.c` at build time to work around
-both; `Programs/SweTest/Program.cs:759` carries the equivalent `spmoon` default for the port.
+both; `Programs/SweTest/Program.cs:770` carries the equivalent `spmoon` default for the port.
 
 Astrodienst fixed both upstream, released in `v2.10.3bfinal` (`f4dcd18e`), the tag this port now
 pins: `static char spmoon[AS_MAXCH] = "9501";  // Jupiter Moon Io` (matching the value this fork's

@@ -687,9 +687,10 @@ jobs:
   # MSVC, so a runner toolset bump genuinely can move them without this port changing. Everything
   # before the comparison step -- the gitlink assertion, the submodule checkout, the 2.08 sdist
   # fetch and build-c.ps1 -- is a hard failure. Not because those steps are toolchain-independent;
-  # build-c.ps1 is the MSVC build, and it already patches around two upstream compile defects
-  # (Tools/CReference/build-c.ps1:239-263 documents both), so a future toolset is exactly what can
-  # break it. Rather because a compile break is a real defect worth seeing, and
+  # build-c.ps1 is the MSVC build, and it already patches around one upstream compile defect
+  # (Tools/CReference/build-c.ps1:260-313 documents it, and the two now-fixed-upstream defects it
+  # used to patch), so a future toolset is exactly what can break it. Rather because a compile
+  # break is a real defect worth seeing, and
   # c-reference-validate above already gates on that same step with no flag.
   #
   # Be clear about what the flag on the final step does and does not absorb, because

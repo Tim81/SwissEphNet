@@ -118,13 +118,17 @@ Thank you for cutting the patch release. We have moved our pin from `v2.10.3fina
 guarded, and `swetest.c` compiles clean of both defects this report was about. Every library
 translation unit (`sweph.c`, `swephlib.c`, `swecl.c`, `swehouse.c`, `swejpl.c`, `swehel.c`,
 `swedate.c`, `swemmoon.c`, `swemplan.c`) and `swephexp.h` are byte-identical to `v2.10.3final`, so
-this did not touch anything our port measures itself against beyond the two fixes and the six
-ephemeris data files that also changed in the same release.
+this did not touch anything our port measures itself against beyond the two fixes and the
+ephemeris data files that also changed in the same release -- 156 files under `ephe/` differ
+between the two tags (`git diff --name-status af9823fe f4dcd18e -- ephe/`: 153 modified, 3 new),
+not six; six is only how many of those 156 sit in the sparse checkout our own fork vendors. Your
+own `readme.md` says why: "As of 14 April 2026, all .se1 data files for planets and for asteroids
+have been rebuilt with JPL Ephemeris DE441."
 
 One correction to what we told you above, though. In "One thing worth knowing" we said `do_printf`
 switching to `fprintf(fp, info)` under `_WINDOWS` was "fine on `master`, where the rest of the tree
 expects `_WINDOWS`". We had not actually compiled that branch when we wrote that -- only reasoned
-about it from the diff -- and it was wrong. `fp` (`swetest.c:3958`) is declared nowhere in
+about it from the diff -- and it was wrong. `fp` (`swetest.c:3959`) is declared nowhere in
 `swetest.c`, on `master` same as on the tag (`git ls-remote` shows `master` and `v2.10.3bfinal` at
 the same commit), so `#define _WINDOWS` activates a second hard compile error the moment the first
 one (`gethostname`) is fixed:
@@ -165,8 +169,21 @@ do what every build that has ever compiled already did.
 
 We would also gently suggest `fputs` over `fprintf(stdout, info)` even if you keep a conditional.
 `info` is assembled from computed values rather than being a literal, so passing it as a format
-string means any `%` in a body position is interpreted. That is also what `cl.exe` warns about on
-the original line (C4047 and C4024, which is how we first found this).
+string means any `%` in a body position is interpreted. One correction here too: we originally
+said `cl.exe`'s C4047/C4024 on the original line were about that format-string hazard; they are
+not. Compiled, both warnings name parameter 1 (`fp`), not parameter 2 (`info`):
+
+```
+_tmp.c(5): error C2065: 'fp': undeclared identifier
+_tmp.c(5): warning C4047: 'function': 'FILE *const ' differs in levels of indirection from 'int'
+_tmp.c(5): warning C4024: 'fprintf': different types for formal and actual parameter 1
+```
+
+`cl.exe` recovers from the C2065 undeclared-identifier error by treating `fp` as `int`, then warns
+that an `int` was passed where `fprintf` expects a `FILE *` -- a consequence of the undeclared
+variable, unrelated to the format-string hazard we were describing. We found this defect by
+compiling the branch and hitting C2065 directly, not by way of these two warnings; naming them as
+if they flagged the hazard we were discussing was our error, not a second thing `cl.exe` caught.
 
 ---
 

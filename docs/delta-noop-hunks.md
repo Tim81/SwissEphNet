@@ -1,6 +1,6 @@
 # The 2.10.03 delta's no-op hunks
 
-`scripts/gen-delta-hunk-counts.tsv` pins 403 filtered hunks across 24 files for the 2.08-to-2.10.03
+`scripts/gen-delta-hunk-counts.tsv` pins 405 filtered hunks across 24 files for the 2.08-to-2.10.03
 delta. Of those, 33 hunks across eight files carry no semantic content for the C# port: `void`
 added to empty C parameter lists, dead local variables, comment and license-header churn,
 formatting-only reindentation, and a Windows-only header with no C# counterpart. Four further
