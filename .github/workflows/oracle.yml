@@ -267,6 +267,26 @@ jobs:
         shell: pwsh
         run: pwsh scripts/verify-grid-header-parity.ps1
 
+  # Gate. Unit tests for Tools/OracleVerify's own comparer logic (RowComparer, FieldLabels,
+  # KnownDiffList, OracleVerifyReport, UlpMath, DumpRow) -- mirrors Tools/BaselineVerify.Tests,
+  # which exists for BaselineVerify's equivalent logic. Needs no submodule, no MSVC build and no C
+  # reference: these types only read/compare already-in-memory dump rows and TSV text, so this runs
+  # on ubuntu-latest with nothing but the .NET SDK, independent of every other job in this file.
+  oracle-verify-tests:
+    name: "Gate: Tools/OracleVerify unit tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: dotnet test Tools/OracleVerify.Tests
+        shell: pwsh
+        run: dotnet test Tools/OracleVerify.Tests -c Release --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type mini
+
   # Gate. Compares MSVC C against .NET, both built on this runner in this run -- see
   # scripts/verify-crt-parity.ps1's own .DESCRIPTION for what it checks; a FAIL here means the
   # bit-exact oracle's own premise has broken, independent of anything sweph.c does. Needs no
