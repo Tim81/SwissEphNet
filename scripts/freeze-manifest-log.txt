@@ -295,7 +295,7 @@ b"} where the C gives {"a", ""}); that one is fixed
    2,400 bit-identical, 0 differing. The analytic and files grids are untouched, dump-net.tsv
    b36a007e... and dump-net-files.tsv f3fa03aa... byte-identical either side of the change.
    SwissEphNet/CPort: 48530 -> 48549 lines, sha256 23B9CDB0... -> EBBE1B4F....
-15. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-02: Two fidelity fixes to
+15. PR #32 2026-08-02: Two fidelity fixes to
    Programs/SweTest/Program.cs, both from swetest.c's v2.10.3final -> v2.10.3bfinal delta
    (af9823fe..f4dcd18e, the same bump 629f205 re-pinned the hunk count for), and a correction
    to that commit's own explanation of what moved.
