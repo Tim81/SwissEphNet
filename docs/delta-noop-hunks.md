@@ -10,7 +10,9 @@ hunk actually contains, checked against `pwsh scripts/gen-delta.ps1 -File <name>
 C at the cited lines, so a future porter can retire them without re-deriving the analysis.
 
 Regenerate any of these with `pwsh scripts/gen-delta.ps1 -File <name>` -- the citations below are
-`file:line` ranges into `external/swisseph` at the pinned `v2.10.3final` tag.
+`file:line` ranges into `external/swisseph` at the pinned `v2.10.3bfinal` tag (unchanged from
+`v2.10.3final` for every file cited here: the two tags differ only in `sweodef.h`, `swetest.c` and
+`ephe/`, none of which any hunk below touches).
 
 ## `swehel.c` -- 22 raw hunks (18 filtered, 4 license-noise); 14 confirmed no-op, 4 not
 
@@ -114,8 +116,8 @@ re-audit did correct this document's own accounting for `swehel.c`, though: its 
 of 18 was right, but the itemized table was missing the `476-485` reindentation hunk, and the
 four `DEBUG`-to-`SWEHEL_DEBUG` hunks were wrongly classified as no-op (see that section above).
 Neither correction moves any `scripts/gen-delta-hunk-counts.tsv` number. Each hunk listed here
-was read individually against `external/swisseph` at `v2.10.3final`, not assumed from the
-original summary this document verifies.
+was read individually against `external/swisseph` at `v2.10.3final` (unchanged in `swehel.c`
+after the `v2.10.3bfinal` bump), not assumed from the original summary this document verifies.
 
 ## swecl.c: two of its 29 hunks are formatting
 

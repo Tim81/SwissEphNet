@@ -238,7 +238,7 @@ did not have:
 None of this replaces existing API. It is purely additive.
 
 With those additions the port now covers the C library's whole public surface. `swephexp.h` at
-`v2.10.3final` declares 106 `swe_*` functions, and all 106 are present and public here. The count
+`v2.10.3bfinal` declares 106 `swe_*` functions, and all 106 are present and public here. The count
 is not an estimate: it comes from parsing the header and diffing it against the committed
 public-API list under `Tests/SwissEphNet.Tests/PublicApi/`, which a test regenerates and compares
 on every run, so a member appearing or disappearing fails the build rather than going unnoticed.
@@ -808,7 +808,7 @@ answer, the other 664 sit outside the tolerance Astrodienst's own suite allows, 
 ever confirmed as port defects were fixed and pruned.
 
 - `external/swisseph` -- a git submodule, sparse-checked-out, pinned to tag
-  `v2.10.3final`. It serves two purposes:
+  `v2.10.3bfinal`. It serves two purposes:
   1. **The reference corpus** for the conformance oracle: `setest/t.exp`
      (expected values) and `setest/t.fix` (tolerances), plus the core `.se1`
      ephemeris files, `sefstars.txt`, `seorbel.txt`, and `seleapsec.txt` that

@@ -17,7 +17,8 @@ public class SetestSourceModelTests
     {
         var model = SetestSourceModel.Default;
 
-        // Measured against external/swisseph @ v2.10.3final. Asserted exactly,
+        // Measured against external/swisseph @ v2.10.3final, still exact at v2.10.3bfinal
+        // (setest/* is byte-identical between the two tags). Asserted exactly,
         // not as floors: the floors inside Load exist to catch a parser that
         // stopped matching, this exists to catch one that started matching the
         // wrong thing. If a submodule bump moves these, update them and say so

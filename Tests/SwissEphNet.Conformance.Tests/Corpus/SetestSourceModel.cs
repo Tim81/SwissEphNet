@@ -283,7 +283,8 @@ public sealed class SetestSourceModel
 
     /// <summary>
     /// Floors, not exact counts. Measured against the pinned submodule
-    /// (v2.10.3final): 39 distinct GET_* input names, 46 distinct CHECK_* names
+    /// (v2.10.3final, unchanged in v2.10.3bfinal -- setest/* is byte-identical between the
+    /// two tags): 39 distinct GET_* input names, 46 distinct CHECK_* names
     /// once an indexed form like "xx[0]" is folded onto its base, 60 testcases
     /// across 10 suites, 5 shared checkers. The floors sit below those so an
     /// upstream bump that adds or renames a testcase does not trip them, but far
@@ -317,8 +318,9 @@ public sealed class SetestSourceModel
         // The floor is presence, not a count: one occurrence is enough to prove the family
         // still matches, and anything higher would have to be revised on an upstream bump
         // that merely moves assertions around. CHECK_II is deliberately absent from this
-        // list -- it is a real macro (testsuite.m4:76-89) with zero uses at v2.10.3final,
-        // so requiring it would fail on a correct parse of the pinned source.
+        // list -- it is a real macro (testsuite.m4:76-89) with zero uses at v2.10.3final
+        // (still zero at v2.10.3bfinal; testsuite.m4 is byte-identical between the two
+        // tags), so requiring it would fail on a correct parse of the pinned source.
         foreach (var family in new[] { "D", "I", "S", "DD" })
         {
             _checkFamilyCounts.TryGetValue(family, out var used);

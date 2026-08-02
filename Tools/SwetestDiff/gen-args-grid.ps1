@@ -39,7 +39,9 @@
     Building this grid meant running real invocations against both binaries first (never guess
     swetest's argument grammar from reading C alone), and that surfaced three genuine divergences
     in Programs/SweTest/Program.cs, confirmed against external/.c-reference/swetest.exe (built from
-    the real v2.10.3final swetest.c) before being trusted as port bugs rather than harness mistakes:
+    the real swetest.c, v2.10.3final when this grid was first built and v2.10.3bfinal since --
+    the -p/-x argument-parsing code these three defects live in is byte-identical between the two
+    tags) before being trusted as port bugs rather than harness mistakes:
 
       1. -p<selection> BODY-LIST TRUNCATION (Program.cs ~line 1221-1234). The C -p option takes the
          whole remainder of the argument as a multi-letter body-selection string. The C# only reads

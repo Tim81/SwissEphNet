@@ -7,7 +7,7 @@
     <PackageId>SwissEphSharp</PackageId>
     <!--
       Version scheme: upstream Swiss Ephemeris version + port revision, e.g.
-      2.10.3 tracks Swiss Ephemeris C 2.10.03 (upstream tag v2.10.3final),
+      2.10.3 tracks Swiss Ephemeris C 2.10.03 (upstream tag v2.10.3bfinal),
       the version the port itself now targets end to end: SE_VERSION,
       sweph.c, swecl.c, swehouse.c and swetest.c have all landed. This is
       the version intended for the first nuget.org release, under the
@@ -92,7 +92,7 @@ SwissEphNet):
   This follows Astrodienst's own relicensing of Swiss Ephemeris and applies to the C library
   just as much as to this port. LICENSE, agpl-3.0.txt and NOTICE ship at the package root.
 - SE_VERSION now reports "2.10.03", matching the C library this port tracks (upstream tag
-  v2.10.3final). Every stage of the 2.10.03 delta has landed: the header/constants stage,
+  v2.10.3bfinal). Every stage of the 2.10.03 delta has landed: the header/constants stage,
   swephlib.c, the ayanamsha machinery, sweph.c, swecl.c, swehouse.c and swetest.c.
 - swe_houses, swe_houses_ex, swe_houses_armc, swe_house_pos and swe_house_name each gained an
   int hsys overload alongside the existing char hsys overload, matching upstream swephexp.h.
@@ -210,7 +210,7 @@ SwissEphNet):
   -->
   <ItemGroup>
     <AssemblyMetadata Include="UpstreamSwissEphemerisVersion" Value="2.10.03" />
-    <AssemblyMetadata Include="UpstreamSwissEphemerisTag" Value="v2.10.3final" />
+    <AssemblyMetadata Include="UpstreamSwissEphemerisTag" Value="v2.10.3bfinal" />
   </ItemGroup>
 
   <!--

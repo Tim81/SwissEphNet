@@ -10,7 +10,7 @@ upstream changes".
 Required for any change to SwissEphNet/CPort/, Programs/SweTest/Program.cs or
 Programs/SweMini/Program.cs. Cite the exact upstream hunk(s) this PR implements, e.g.:
 
-  sweph.c:2310-2358 (v2.10.3final, external/swisseph)
+  sweph.c:2310-2358 (v2.10.3bfinal, external/swisseph)
 
 Generate the candidate diff with:
 

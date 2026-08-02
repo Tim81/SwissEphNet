@@ -17,9 +17,11 @@ this fork has tracked:
 This repository has now adopted the 2.10 license text ahead of the 2.10.03 port itself:
 
 - `LICENSE` replaced with a verbatim copy of upstream's 2.10.3 `LICENSE`
-  (`https://github.com/aloistr/swisseph/blob/v2.10.3final/LICENSE`).
+  (`https://github.com/aloistr/swisseph/blob/v2.10.3bfinal/LICENSE` -- byte-identical to
+  `v2.10.3final`'s copy).
 - `agpl-3.0.txt` added, a verbatim copy of upstream's
-  `https://github.com/aloistr/swisseph/blob/v2.10.3final/agpl-3.0.txt`.
+  `https://github.com/aloistr/swisseph/blob/v2.10.3bfinal/agpl-3.0.txt` (likewise unchanged from
+  `v2.10.3final`).
 - `NOTICE` added, recording attribution for Astrodienst, Yan Grenier's original port, and this
   fork's maintenance.
 - The per-file license header comment (the block starting `/* Copyright (C) 1997 - 2008
