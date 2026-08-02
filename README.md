@@ -858,20 +858,32 @@ ever confirmed as port defects were fixed and pruned.
   **Skipped is not untested.** Both were run once, against real data, and the
   measurement is recorded in `Tests/conformance/regenerations.log`'s entry of
   2026-07-31: the full 12,757-iteration corpus with `SWISSEPH_CONFORMANCE_INCLUDE_JPL=1`
-  and `SWISSEPH_CONFORMANCE_JPL_FILE` pointed at `de431.eph` (2,788,676,624 bytes,
-  MD5 `fad0f432ae18c330f9e14915fbf8960a`), which is the file `setest`'s own suites 1
-  and 10 call `swe_set_jpl_file` with. That MD5 is Astrodienst's own published one --
-  their `readme.md` lists `fad0f432ae18c330f9e14915fbf8960a  de431.eph` among the
-  md5-keys for the JPL files, so the run used a file matching upstream's checksum
-  rather than an arbitrary copy. **500 of the 538 JPL rows pass outright** once the
-  data is present, along with 4 of the 18 `sat` rows. The JPL backend works; what it
-  lacks is a way to keep proving it.
+  and `SWISSEPH_CONFORMANCE_JPL_FILE` pointed at `de431.eph`, the file `setest`'s own
+  suites 1 and 10 call `swe_set_jpl_file` with:
+
+  ```
+  size    2,788,676,624 bytes
+  sha256  fe3d0323d26ada11f8d8228fda9ca590c7eb00cee8b22dff1839f74f5be71149
+  md5     fad0f432ae18c330f9e14915fbf8960a
+  ```
+
+  **500 of the 538 JPL rows pass outright** once the data is present, along with 4 of
+  the 18 `sat` rows. The JPL backend works; what it lacks is a way to keep proving it.
+
+  Verify with the SHA-256, not the MD5. Upstream publishes only an MD5 -- their
+  `readme.md` lists `fad0f432ae18c330f9e14915fbf8960a  de431.eph` among the md5-keys --
+  and MD5 has had practical chosen-prefix collisions since 2019, so it establishes that
+  a download was not corrupted in transit, not that nobody chose its contents. The
+  SHA-256 above was computed here from the file that produced the result, after
+  confirming its MD5 against upstream's published one. Both are recorded so the chain
+  is checkable in either direction: the MD5 ties this file to Astrodienst, and the
+  SHA-256 is what anyone reproducing the run should actually match.
 
   Astrodienst name three places to get these files: their own
   `swisseph-download/jplfiles/` page (which points at NASA's JPL FTP area), Alois
   Treindl's Dropbox, and `https://ephe.scryr.io/jpl/`, a web space provided by
-  Phillip McCabe. All three are listed in upstream's `readme.md` next to the md5-keys,
-  so the checksum is the thing to verify against, not the host.
+  Phillip McCabe. Since the strong hash is the one to check, the host matters less than
+  which hash you check it with.
 
   Nothing in CI measures that, and the reason is size rather than doubt. `de431.eph`
   is 2.6 GB, cannot be committed, and no runner will fetch it per job, so the result

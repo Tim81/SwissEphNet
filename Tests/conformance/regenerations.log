@@ -29,3 +29,17 @@ What the probe does not establish is whether the divergence is a port defect. Th
 2026-07-31 PR #32 (1427 -> 1427, 0 fewer rows) [ephe: 8 files matching Tests/conformance/required-ephemeris-files.tsv]: Pruned 0 newly-passing row(s); no reason required for a pure removal.
 2026-08-01 PR #32 (1427 -> 1427, no change in row count) [ephe: 8 files matching Tests/conformance/required-ephemeris-files.tsv]: Reclassify 56 rows the dispatcher never routed through a DataMissing check: numbered-asteroid files (se00433s.se1 Eros, se00010s.se1 Hygiea, 16 rows) and SEFLG_CENTER_BODY's per-planet ephe/sat/ record (sepm9599..9999.se1, 30 rows), both citing files this repo never ships at any tier -- port and a fresh MSVC build of Astrodienst's own 2.10.03 C agree exactly (identical rc and file-not-found serr) on all, the same shape as the existing suite 4 Eros row.
 2026-08-01 PR #32 (1427 -> 1423, 4 fewer rows) [ephe: 8 files matching Tests/conformance/required-ephemeris-files.tsv]: Pruned 4 newly-passing row(s); no reason required for a pure removal.
+2026-08-02 PR #32 (1423 -> 1423, no change -- this entry records a hash, it runs nothing and
+   regenerates nothing): Adds a SHA-256 for the de431.eph the 2026-07-31 DATA-MISSING probe
+   above measured against, and confirms that file against upstream. Astrodienst publish only an
+   MD5 for the JPL files (their readme.md md5-keys list), and MD5 has had practical
+   chosen-prefix collisions since 2019, so it shows a download was not corrupted in transit but
+   not that nobody chose its contents. Recomputed both from the file still on disk at the size
+   that entry records:
+     size    2,788,676,624 bytes
+     sha256  fe3d0323d26ada11f8d8228fda9ca590c7eb00cee8b22dff1839f74f5be71149
+     md5     fad0f432ae18c330f9e14915fbf8960a
+   The MD5 matches upstream's published fad0f432ae18c330f9e14915fbf8960a exactly, so the file
+   the probe used is the one Astrodienst distribute, and the SHA-256 is now the strong hash to
+   reproduce against. Nothing about the 500-of-538 result changes; this only replaces a weak
+   checksum with a strong one over the same bytes.
