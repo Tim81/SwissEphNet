@@ -13,7 +13,10 @@
  *                                          swe_mooncross_node/_ut, swe_helio_cross/_ut), also
  *                                          under SEFLG_MOSEPH, swe_get_ayanamsa/_ex/_ex_ut
  *                                          (direct ayanamsa coverage -- every predefined sid_mode
- *                                          plus SE_SIDM_USER), swe_houses_ex
+ *                                          plus SE_SIDM_USER; AYANAMSA_EX/AYANAMSA_EX_UT rows now
+ *                                          always carry SEFLG_MOSEPH too -- see
+ *                                          gen-grid-analytic.ps1's $AyanamsaExIflagCombos comment),
+ *                                          swe_houses_ex
  *                                          (the sidereal/radians house path), swe_houses_ex2 and
  *                                          swe_houses_armc_ex2 (the 2.10.03 speed-bearing forms
  *                                          of swe_houses_ex/swe_houses_armc -- see
@@ -82,6 +85,26 @@
  * NOT_IN_208_RETC and an explanatory serr, for the same row-count-parity reason
  * SWISSEPH_HAS_CROSSING's own comment gives. swe_fixstar2_mag needs no such guard: it is declared
  * (and implemented) in external/pyswisseph-2.08/swephexp.h:708.
+ *
+ * THE SENTINEL EPHEMERIS PATH: grid-analytic.tsv MUST NOT DEPEND ON THE ENVIRONMENT OR CWD
+ *
+ * grid-analytic.tsv's own header claims every row "depends on no ephemeris data file and is
+ * reproducible on any machine". Before this addition, the two-argument invocation (no ephe-dir)
+ * left swed.ephepath at whatever swi_init_swed_if_start() set it to at process start
+ * (sweph.c:1186: strcpy(swed.ephepath, SE_EPHE_PATH), the compiled-in default) UNTIL the first row
+ * whose epheflag was not SEFLG_MOSEPH ran far enough to trigger sweph.c:639-640's lazy
+ * `swe_set_ephe_path(NULL)` -- and swe_set_ephe_path checks getenv("SE_EPHE_PATH") before it looks
+ * at its own argument at all (sweph.c:1327-1330), so from that row onward, for the rest of the
+ * process, swed.ephepath reflected whichever of the environment variable or the compiled default
+ * happened to apply on THIS run, on THIS machine. main() below now calls swe_set_ephe_path
+ * unconditionally before every row -- SENTINEL_EPHE_DIR when the grid gave no ephe-dir argument,
+ * the real ephe-dir otherwise -- so ephe_path_is_set is TRUE from row 1 and every row sees the
+ * same, deterministic, guaranteed-nonexistent path regardless of iteration order, CWD or whether
+ * "\sweph\ephe\" happens to exist on this machine. See SENTINEL_EPHE_DIR's own comment for what
+ * this does NOT close: SE_EPHE_PATH still overrides the sentinel when the environment variable is
+ * set, exactly as it would override a real path -- that is swe_set_ephe_path's own documented
+ * priority (sweph.c:1326: "environment variable SE_EPHE_PATH has priority"), faithfully ported at
+ * SwissEphNet/CPort/Sweph.cs:1569-1583, and not something a driver calling that API can override.
  *
  * INVOCATION
  *
@@ -298,6 +321,23 @@
  * friends (or this driver's own synthetic OK/ERR for them) could produce, so it cannot be
  * mistaken for a real result. */
 #define NOT_IN_208_RETC (-9999)
+
+/* Pinned when a row's grid gives no ephe-dir argument (today: only grid-analytic.tsv's
+ * two-argument invocation -- see main()'s own SENTINEL_EPHE_DIR use). Deliberately contains '?',
+ * which is not a legal character in a Windows path component, so no real directory can ever
+ * match it: swi_fopen's search fails the same deterministic way regardless of the machine's
+ * current directory, whether "\sweph\ephe\" (the compiled-in SE_EPHE_PATH default under MSDOS --
+ * swephexp.h:399-408) happens to exist, or which files that default or a stray CWD happen to
+ * contain. It does NOT insulate a row from the SE_EPHE_PATH environment variable: swe_set_ephe_path
+ * checks getenv("SE_EPHE_PATH") BEFORE looking at the path argument passed to it at all
+ * (sweph.c:1327-1330) and uses the environment value instead when it is set, so a caller with
+ * SE_EPHE_PATH exported still sees that path, sentinel argument or not -- this fix removes the
+ * grid's dependency on the compiled-in default and the process's current directory, not on the
+ * environment, which is a real and separate library behavior this driver has no way to override
+ * from outside CPort (and must not: swe_set_ephe_path is a frozen transliteration). See
+ * scripts/run-oracle-dump.ps1's own sentinel-path measurement for what this does and does not
+ * close. */
+#define SENTINEL_EPHE_DIR "swisseph-oracle-sentinel-path?that-cannot-exist"
 
 /* Mode dispatches on which of these two headers the grid's first non-comment line matches --
  * see this file's own top-of-file comment. x2cross, dir, t0 and ayan_t0 are appended after
@@ -1184,7 +1224,15 @@ int main(int argc, char **argv)
         func = fields[1];
 
         swe_close(); /* fresh library state before every row -- see header comment */
-        if (ephe_dir != NULL) swe_set_ephe_path(ephe_dir); /* see INVOCATION in header comment */
+        /* Unconditional, not `if (ephe_dir != NULL)`: SENTINEL_EPHE_DIR when the grid gave no
+         * ephe-dir argument (today: only grid-analytic.tsv's two-argument invocation), the real
+         * ephe-dir otherwise -- see SENTINEL_EPHE_DIR's own comment and THE SENTINEL EPHEMERIS
+         * PATH in this file's own top-of-file comment for why leaving this call unmade at all was
+         * the actual defect: it let the first non-MOSEPH row's lazy internal
+         * swe_set_ephe_path(NULL) (sweph.c:639-640) decide swed.ephepath for the rest of the
+         * process, from either SE_EPHE_PATH or the compiled-in default, depending on iteration
+         * order and the machine this ran on. */
+        swe_set_ephe_path(ephe_dir != NULL ? ephe_dir : SENTINEL_EPHE_DIR);
         /* Strictly after swe_set_ephe_path, never before it -- see INVOCATION in the header
          * comment for what swapping the two would silently turn every SEFLG_JPLEPH row into. */
         if (jpl_file != NULL) swe_set_jpl_file(jpl_file);

@@ -673,7 +673,26 @@ $AyanamsaJds = Get-JdSpread -Count 4 -Lo 1000000 -Hi 2600000
 
 # Matches Tools/BaselineMatrix/Ayanamsa.cs's own ExIflagCombos: swe_get_ayanamsa_ex(_ut) takes an
 # iflag (unlike plain swe_get_ayanamsa/_ut, which do not), and SEFLG_NONUT is the one bit whose
-# effect on the ayanamsa value itself is worth freezing on its own.
+# effect on the ayanamsa value itself is worth freezing on its own. Flag here is the caller-chosen
+# bit only; SEFLG_MOSEPH is OR-ed in separately at each of this grid's two AYANAMSA_EX/
+# AYANAMSA_EX_UT build-row loops below, not baked in here, matching how $FlagCombos above keeps
+# SEFLG_MOSEPH out of its own Flag field too.
+#
+# Read directly off the C body (not assumed from the header declaration): swi_get_ayanamsa_ex's
+# own guard (sweph.c:3031-3045) is not what leaks the environment into these rows.
+# get_builtin_star (sweph.c:6750-6803) hardcodes the star record for exactly the twelve sid_modes
+# that guard names, and swe_fixstar2 (sweph.c:6818-6853) consults it BEFORE
+# search_star_in_list -- so sefstars.txt is never the file that decides the ayanamsa value here.
+# What actually leaks the environment is fixstar_calc_from_struct's OWN
+# !(epheflag & SEFLG_MOSEPH) check on the first non-MOSEPH call in the process (sweph.c:6407-6425,
+# one call deeper than swi_get_ayanamsa_ex's own guard), which reaches sweph.c:639-640's
+# swe_set_ephe_path(NULL) and so SE_EPHE_PATH -- through the same lazy-init mechanism CALC/CALC_UT
+# rows are already protected from by $SEFLG_MOSEPH's own explicit OR, not through sefstars.txt.
+# A column-level diff of the analytic dump with SE_EPHE_PATH set against unset (value columns and
+# retc, not just row count) found only err-column movement on these rows, never a value or retc
+# change. OR-ing SEFLG_MOSEPH into these two funcs' iflag closes that gap directly, rather than
+# adding separate file-backed coverage for a file dependency that get_builtin_star already shows
+# does not exist for these twelve sid_modes.
 $AyanamsaExIflagCombos = @(
     [pscustomobject]@{ Name = '0';     Flag = 0 }
     [pscustomobject]@{ Name = 'NONUT'; Flag = $SEFLG_NONUT }
@@ -957,12 +976,21 @@ foreach ($sidMode in 0..($SidModeSweepCount - 1)) {
         $ayanamsaCount++
 
         foreach ($combo in $AyanamsaExIflagCombos) {
+            # SEFLG_MOSEPH OR-ed in explicitly -- see $AyanamsaExIflagCombos' own comment for why:
+            # without it, swi_get_ayanamsa_ex's twelve star/galactic-based sid_modes
+            # (sweph.c:3031-3045) route through fixstar_calc_from_struct and its own
+            # !(epheflag & SEFLG_MOSEPH) check (sweph.c: fixstar_calc_from_struct), which calls
+            # swe_set_ephe_path(NULL) via the sweph.c:639-640 lazy-init path the first time any
+            # non-MOSEPH call runs in the process -- letting SE_EPHE_PATH or the compiled-in
+            # default leak into this row's serr text even though grid-analytic.tsv's own premise is
+            # that no row here touches a file or the environment at all.
+            $iflag = $SEFLG_MOSEPH -bor $combo.Flag
             $rows.Add((New-AyanamsaExRow -Func 'AYANAMSA_EX' -SidMode $sidMode -Tjd $tjd `
-                -FlagName $combo.Name -IFlag $combo.Flag -T0 0.0 -AyanT0 0.0 -IsUser:$false))
+                -FlagName $combo.Name -IFlag $iflag -T0 0.0 -AyanT0 0.0 -IsUser:$false))
             $ayanamsaExCount++
 
             $rows.Add((New-AyanamsaExRow -Func 'AYANAMSA_EX_UT' -SidMode $sidMode -Tjd $tjd `
-                -FlagName $combo.Name -IFlag $combo.Flag -T0 0.0 -AyanT0 0.0 -IsUser:$false))
+                -FlagName $combo.Name -IFlag $iflag -T0 0.0 -AyanT0 0.0 -IsUser:$false))
             $ayanamsaExUtCount++
         }
     }
@@ -974,12 +1002,17 @@ foreach ($p in $AyanamsaUserParams) {
         $ayanamsaCount++
 
         foreach ($combo in $AyanamsaExIflagCombos) {
+            # SEFLG_MOSEPH OR-ed in -- see the identical predefined-mode loop above for why.
+            # SE_SIDM_USER is never one of swi_get_ayanamsa_ex's twelve star/galactic sid_modes, so
+            # this row was never exposed to the same env-dependence, but forcing it here too keeps
+            # every AYANAMSA_EX/AYANAMSA_EX_UT row in this grid on one uniform iflag convention.
+            $iflag = $SEFLG_MOSEPH -bor $combo.Flag
             $rows.Add((New-AyanamsaExRow -Func 'AYANAMSA_EX' -SidMode $SE_SIDM_USER -Tjd $tjd `
-                -FlagName $combo.Name -IFlag $combo.Flag -T0 $p.T0 -AyanT0 $p.AyanT0 -IsUser:$true))
+                -FlagName $combo.Name -IFlag $iflag -T0 $p.T0 -AyanT0 $p.AyanT0 -IsUser:$true))
             $ayanamsaExCount++
 
             $rows.Add((New-AyanamsaExRow -Func 'AYANAMSA_EX_UT' -SidMode $SE_SIDM_USER -Tjd $tjd `
-                -FlagName $combo.Name -IFlag $combo.Flag -T0 $p.T0 -AyanT0 $p.AyanT0 -IsUser:$true))
+                -FlagName $combo.Name -IFlag $iflag -T0 $p.T0 -AyanT0 $p.AyanT0 -IsUser:$true))
             $ayanamsaExUtCount++
         }
     }
@@ -1208,6 +1241,15 @@ $headerLines = @(
     '# arrays, emitting cusp[0..36]+ascmc[0..9]+cusp_speed[0..36]+ascmc_speed[0..9] (94 doubles) plus'
     '# a real serr. Same input columns as HOUSES_EX/HOUSES_ARMC respectively. Guarded behind'
     '# SWISSEPH_HAS_HOUSES_EX2 in both drivers, the same pattern SWISSEPH_HAS_CROSSING already uses.'
+    '#'
+    '# AYANAMSA_EX/AYANAMSA_EX_UT now OR SEFLG_MOSEPH into every row''s iflag, closing a gap where'
+    '# twelve sid_modes (swi_get_ayanamsa_ex''s own guard, sweph.c:3031-3045) reached'
+    '# fixstar_calc_from_struct''s own epheflag check (sweph.c:6407-6425) with no ephemeris bit set'
+    '# at all, letting SE_EPHE_PATH leak into the row''s err column even though this grid''s whole'
+    '# premise is that no row touches a file or the environment. Measured (see $AyanamsaExIflagCombos'''
+    '# own comment for the exact row-level result): only the err column moved; the star position'
+    '# itself comes from a hardcoded built-in table (get_builtin_star, sweph.c:6750-6803), not'
+    '# sefstars.txt, so the fix removes an environment dependency without changing any value.'
     '#'
     '# Lines starting with ''#'' are comments. The first non-comment line is the column-name header'
     '# below and is not a data row -- both drivers assert it matches verbatim before reading any'

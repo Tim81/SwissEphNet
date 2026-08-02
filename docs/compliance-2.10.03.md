@@ -64,7 +64,8 @@ this grid.
 1,000 direct ayanamsa rows -- `AYANAMSA` (plain `swe_get_ayanamsa`) 200<!--doccount:grid-analytic-func-ayanamsa-->,
 `AYANAMSA_EX` (`swe_get_ayanamsa_ex`) 400<!--doccount:grid-analytic-func-ayanamsa-ex-->, `AYANAMSA_EX_UT` (`swe_get_ayanamsa_ex_ut`) 400<!--doccount:grid-analytic-func-ayanamsa-ex-ut-->
 -- covering every predefined `sid_mode` (0..46) crossed with four Julian days (`AYANAMSA_EX`/`_EX_UT`
-also crossed with a plain/`SEFLG_NONUT` iflag pair), plus
+also crossed with a plain/`SEFLG_NONUT` iflag pair, both now always OR-ing in `SEFLG_MOSEPH` too --
+see "The sentinel ephemeris path and the AYANAMSA_EX/AYANAMSA_EX_UT environment leak" below), plus
 `SE_SIDM_USER` (mode 255) with three `t0`/`ayan_t0` pairs, plus 1,969 rows across six more entry
 points added in an earlier record (see "Six astrology-program entry points" below) and a further
 4,500 rows across `HOUSES_EX2`/`HOUSES_ARMC_EX2` (see "Two 2.10.03-only entry points" below). Earlier
@@ -81,7 +82,8 @@ across both grids combined -- plus 499 rows across two of the six entry points a
 record, plus a further 500 rows across `HOUSES_EX2`/`HOUSES_ARMC_EX2` (below).
 `grid-files.tsv` carries no `AYANAMSA`/`AYANAMSA_EX`/`AYANAMSA_EX_UT`/`AYANAMSA_UT` rows of its own:
 none of the four opens an ephemeris file, so all direct ayanamsa coverage lives in
-`grid-analytic.tsv`.
+`grid-analytic.tsv` -- see "The sentinel ephemeris path..." below for why that premise needed its
+own fix rather than a new file-backed grid.
 Both `Tests/oracle/known-diff.tsv` and `Tests/oracle/known-diff-files.tsv`
 are empty (0<!--doccount:oracle-known-diff-analytic--> and 0<!--doccount:oracle-known-diff-files--> rows respectively): there is no recorded exception on either grid, on any platform.
 
@@ -104,6 +106,41 @@ such guard (it is declared and implemented in `external/pyswisseph-2.08/swephexp
 drivers previously called only `swe_fixstar_mag`, and `FIXSTAR2_MAG`'s 8<!--doccount:grid-files-func-fixstar2-mag-->
 rows close that gap. All new rows compare bit-identical against Astrodienst's own C, zero
 `known-diff.tsv` entries.
+
+**The sentinel ephemeris path and the AYANAMSA_EX/AYANAMSA_EX_UT environment leak.**
+`grid-analytic.tsv`'s own header claims every row "depends on no ephemeris data file and is
+reproducible on any machine". Measured false in two ways, both closed in this record. First, the
+grid's own two-argument invocation (no `-EpheDir`) left `swed.ephepath` at whatever
+`swi_init_swed_if_start()` set at process start until the first row whose `epheflag` was not
+`SEFLG_MOSEPH` ran far enough to trigger `sweph.c:639-640`'s lazy `swe_set_ephe_path(NULL)` --
+and `swe_set_ephe_path` checks `getenv("SE_EPHE_PATH")` before its own path argument
+(`sweph.c:1327-1330`), so from that row onward the whole run's `swed.ephepath` reflected whichever
+of the environment variable or the compiled-in default happened to apply on that machine, that run.
+Both drivers now call `swe_set_ephe_path` unconditionally before every row -- a guaranteed-nonexistent
+sentinel path when the grid gave no `-EpheDir`, the real directory otherwise -- so every row sees a
+deterministic path regardless of iteration order, CWD or whether the compiled-in default happens to
+exist. Proven byte-identical: with `SE_EPHE_PATH` unset, the recorded dump is SHA-256 identical
+before and after this fix (`4ac1a3c0…7640` both times). This does **not** close the environment's
+influence when `SE_EPHE_PATH` genuinely is set -- the variable still overrides whatever path either
+driver passes, exactly as it overrides a real path, which is `swe_set_ephe_path`'s own documented
+priority, faithfully ported. Second, `AYANAMSA_EX`/`AYANAMSA_EX_UT` rows now OR `SEFLG_MOSEPH` into
+their `iflag`, closing a *different* leak specific to twelve `sid_mode`s
+`swi_get_ayanamsa_ex`'s own guard names (`sweph.c:3031-3045`): those modes resolve their star
+position from a hardcoded built-in table (`get_builtin_star`, `sweph.c:6750-6803`), not
+`sefstars.txt`, but `fixstar_calc_from_struct`'s own `!(epheflag & SEFLG_MOSEPH)` check
+(`sweph.c:6407-6425`) still reached the same `sweph.c:639-640` lazy path when no ephemeris bit was
+set at all. A column-level diff (value columns and retc, not just row count) found only err-column
+movement on these rows before the fix, never a value or retc change, so this closes a
+reproducibility gap without changing any value. `swe_get_ayanamsa`/`swe_get_ayanamsa_ut` have no
+`iflag` parameter to carry `SEFLG_MOSEPH` on at all -- `swi_guess_ephe_flag()`
+(`swephlib.c:3186-3196`) always resolves them to `SEFLG_SWIEPH` -- and `HOUSES_EX`/`HOUSES_EX2`'s own
+`SIDEREAL` rows carry no `SEFLG_MOSEPH` either; both remain genuinely environment-sensitive
+(measured: pointing `SE_EPHE_PATH` at a real, populated ephemeris directory changes `AYANAMSA`/
+`AYANAMSA_UT` *values*, and `HOUSES_EX`/`HOUSES_EX2`'s `SIDEREAL` rows for every house-system
+letter, not merely the hsys `'I'`/`'i'` Sunshine sub-call). The sentinel-path fix above is the
+mitigation for those two: it makes the grid deterministic when the variable is unset, which is the
+normal case, without pretending to close what only clearing the variable (or forcing `SEFLG_MOSEPH`
+where the API allows it) can close.
 
 **Six astrology-program entry points, added in this record.** `HOUSES_EX`, `AYANAMSA_UT`,
 `SIDTIME`, `AZALT`, `HOUSE_NAME` and `NOD_APS_UT` are calls a real astrology program makes (this

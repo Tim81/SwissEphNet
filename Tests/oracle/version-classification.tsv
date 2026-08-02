@@ -25,805 +25,805 @@
 # No counts or worked examples are given here on purpose -- read them from this file's own
 # rows, which stay current by construction; prose here would not.
 case_id	classification	port_vs_2.08	port_vs_2.10.03	c208_vs_c210
-AYANAMSAEXUT|0|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=1964522465)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=1964522465)
-AYANAMSAEXUT|0|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=1962334913)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=1962334913)
-AYANAMSAEXUT|0|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=1964140476)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=1964140476)
-AYANAMSAEXUT|0|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=1963761990)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=1963761990)
-AYANAMSAEXUT|0|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=62866588285)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=62866588285)
-AYANAMSAEXUT|0|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=62865386562)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=62865386562)
-AYANAMSAEXUT|0|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=31435214864)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=31435214864)
-AYANAMSAEXUT|0|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=31435214864)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=31435214864)
-AYANAMSAEXUT|10|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=472213)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=472213)
-AYANAMSAEXUT|10|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=1715339)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=1715339)
-AYANAMSAEXUT|10|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=90763)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=90763)
-AYANAMSAEXUT|10|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=287723)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=287723)
-AYANAMSAEXUT|10|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=17026107)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=17026107)
-AYANAMSAEXUT|10|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=15824384)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=15824384)
-AYANAMSAEXUT|10|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10438672)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10438672)
-AYANAMSAEXUT|10|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10438672)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10438672)
-AYANAMSAEXUT|11|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=472213)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=472213)
-AYANAMSAEXUT|11|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=1715339)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=1715339)
-AYANAMSAEXUT|11|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=90762)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=90762)
-AYANAMSAEXUT|11|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=287724)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=287724)
-AYANAMSAEXUT|11|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=17026107)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=17026107)
-AYANAMSAEXUT|11|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=15824384)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=15824384)
-AYANAMSAEXUT|11|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10438672)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10438672)
-AYANAMSAEXUT|11|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10438672)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10438672)
-AYANAMSAEXUT|12|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=472212)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=472212)
-AYANAMSAEXUT|12|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=1715340)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=1715340)
-AYANAMSAEXUT|12|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=90762)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=90762)
-AYANAMSAEXUT|12|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=287724)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=287724)
-AYANAMSAEXUT|12|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=17026107)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=17026107)
-AYANAMSAEXUT|12|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=15824384)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=15824384)
-AYANAMSAEXUT|12|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10438672)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10438672)
-AYANAMSAEXUT|12|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10438672)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10438672)
-AYANAMSAEXUT|13|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=490674)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=490674)
-AYANAMSAEXUT|13|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=1696878)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=1696878)
-AYANAMSAEXUT|13|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=109224)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=109224)
-AYANAMSAEXUT|13|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=269262)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=269262)
-AYANAMSAEXUT|13|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=17616891)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=17616891)
-AYANAMSAEXUT|13|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=16415168)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=16415168)
-AYANAMSAEXUT|13|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10734064)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10734064)
-AYANAMSAEXUT|13|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10734064)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10734064)
-AYANAMSAEXUT|14|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=8833332904)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=8833332904)
-AYANAMSAEXUT|14|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=8831145352)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=8831145352)
-AYANAMSAEXUT|14|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=8832951453)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=8832951453)
-AYANAMSAEXUT|14|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=8832572967)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=8832572967)
-AYANAMSAEXUT|14|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=282668568219)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=282668568219)
-AYANAMSAEXUT|14|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=282667366496)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=282667366496)
-AYANAMSAEXUT|14|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=141336209728)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=141336209728)
-AYANAMSAEXUT|14|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=141336209728)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=141336209728)
-AYANAMSAEXUT|15|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=489722)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=489722)
-AYANAMSAEXUT|15|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=1697830)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=1697830)
-AYANAMSAEXUT|15|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=108271)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=108271)
-AYANAMSAEXUT|15|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=270215)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=270215)
-AYANAMSAEXUT|15|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=35172790)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=35172790)
-AYANAMSAEXUT|15|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=32769344)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=32769344)
-AYANAMSAEXUT|15|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10718832)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10718832)
-AYANAMSAEXUT|15|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10718832)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10718832)
-AYANAMSAEXUT|16|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=119478)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=119478)
-AYANAMSAEXUT|16|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2068074)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2068074)
-AYANAMSAEXUT|16|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=261983)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=261983)
-AYANAMSAEXUT|16|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=640469)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=640469)
-AYANAMSAEXUT|16|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=11475894)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=11475894)
-AYANAMSAEXUT|16|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=9072448)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=9072448)
-AYANAMSAEXUT|16|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=4794688)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=4794688)
-AYANAMSAEXUT|16|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=4794688)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=4794688)
-AYANAMSAEXUT|17|1000000|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=768)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=768)
-AYANAMSAEXUT|17|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2188320)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2188320)
-AYANAMSAEXUT|17|1533333.3333333335|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2681464)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2681464)
-AYANAMSAEXUT|17|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=3059950)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=3059950)
-AYANAMSAEXUT|17|2066666.6666666667|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=16437349)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=16437349)
-AYANAMSAEXUT|17|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=17639072)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=17639072)
-AYANAMSAEXUT|17|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|17|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|18|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180170)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180170)
-AYANAMSAEXUT|18|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2367722)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2367722)
-AYANAMSAEXUT|18|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561633)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561633)
-AYANAMSAEXUT|18|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=940119)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=940119)
-AYANAMSAEXUT|18|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=120356)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=120356)
-AYANAMSAEXUT|18|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=157910)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=157910)
-AYANAMSAEXUT|18|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs	MATCH	retc 66!=2; serr differs
-AYANAMSAEXUT|18|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|19|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180170)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180170)
-AYANAMSAEXUT|19|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2367722)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2367722)
-AYANAMSAEXUT|19|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561634)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561634)
-AYANAMSAEXUT|19|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=940120)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=940120)
-AYANAMSAEXUT|19|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=120357)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=120357)
-AYANAMSAEXUT|19|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=157911)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=157911)
-AYANAMSAEXUT|19|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs	MATCH	retc 66!=2; serr differs
-AYANAMSAEXUT|19|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|1|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=675695391)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=675695391)
-AYANAMSAEXUT|1|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=677882943)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=677882943)
-AYANAMSAEXUT|1|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=676076854)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=676076854)
-AYANAMSAEXUT|1|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=676455340)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=676455340)
-AYANAMSAEXUT|1|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=21620338484)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=21620338484)
-AYANAMSAEXUT|1|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=21621540207)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=21621540207)
-AYANAMSAEXUT|1|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10808243520)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10808243520)
-AYANAMSAEXUT|1|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10808243520)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10808243520)
-AYANAMSAEXUT|20|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180170)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180170)
-AYANAMSAEXUT|20|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2367722)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2367722)
-AYANAMSAEXUT|20|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561633)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561633)
-AYANAMSAEXUT|20|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=940119)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=940119)
-AYANAMSAEXUT|20|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=120357)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=120357)
-AYANAMSAEXUT|20|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=157911)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=157911)
-AYANAMSAEXUT|20|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs	MATCH	retc 66!=2; serr differs
-AYANAMSAEXUT|20|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|21|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=148048)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=148048)
-AYANAMSAEXUT|21|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2039504)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2039504)
-AYANAMSAEXUT|21|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=233412)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=233412)
-AYANAMSAEXUT|21|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=611898)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=611898)
-AYANAMSAEXUT|21|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=13304502)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=13304502)
-AYANAMSAEXUT|21|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10901056)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10901056)
-AYANAMSAEXUT|21|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEXUT|21|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEXUT|22|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=148048)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=148048)
-AYANAMSAEXUT|22|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2039504)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2039504)
-AYANAMSAEXUT|22|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=233412)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=233412)
-AYANAMSAEXUT|22|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=611898)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=611898)
-AYANAMSAEXUT|22|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=13304502)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=13304502)
-AYANAMSAEXUT|22|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10901056)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10901056)
-AYANAMSAEXUT|22|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEXUT|22|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEXUT|23|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=148048)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=148048)
-AYANAMSAEXUT|23|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2039504)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2039504)
-AYANAMSAEXUT|23|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=233414)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=233414)
-AYANAMSAEXUT|23|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=611900)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=611900)
-AYANAMSAEXUT|23|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=13304438)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=13304438)
-AYANAMSAEXUT|23|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10900992)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10900992)
-AYANAMSAEXUT|23|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEXUT|23|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEXUT|24|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=148049)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=148049)
-AYANAMSAEXUT|24|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2039503)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2039503)
-AYANAMSAEXUT|24|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=233413)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=233413)
-AYANAMSAEXUT|24|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=611899)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=611899)
-AYANAMSAEXUT|24|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=13304438)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=13304438)
-AYANAMSAEXUT|24|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10900992)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10900992)
-AYANAMSAEXUT|24|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEXUT|24|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEXUT|25|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=148049)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=148049)
-AYANAMSAEXUT|25|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2039503)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2039503)
-AYANAMSAEXUT|25|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=233413)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=233413)
-AYANAMSAEXUT|25|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=611899)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=611899)
-AYANAMSAEXUT|25|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=13304502)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=13304502)
-AYANAMSAEXUT|25|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10901056)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10901056)
-AYANAMSAEXUT|25|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEXUT|25|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEXUT|26|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=148049)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=148049)
-AYANAMSAEXUT|26|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2039503)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2039503)
-AYANAMSAEXUT|26|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=233413)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=233413)
-AYANAMSAEXUT|26|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=611899)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=611899)
-AYANAMSAEXUT|26|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=6652251)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=6652251)
-AYANAMSAEXUT|26|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5450528)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5450528)
-AYANAMSAEXUT|26|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEXUT|26|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEXUT|27|1000000|0	TRACKS-2.10.03	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|27|1000000|NONUT	TRACKS-2.10.03	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|27|1533333.3333333335|0	TRACKS-2.10.03	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|27|1533333.3333333335|NONUT	TRACKS-2.10.03	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|27|2066666.6666666667|0	TRACKS-2.10.03	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|27|2066666.6666666667|NONUT	TRACKS-2.10.03	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|27|2600000|0	TRACKS-2.10.03	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|27|2600000|NONUT	TRACKS-2.10.03	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|28|1000000|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5740567)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5740567)
-AYANAMSAEXUT|28|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=3553015)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=3553015)
-AYANAMSAEXUT|28|1533333.3333333335|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=1476209)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=1476209)
-AYANAMSAEXUT|28|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=1097723)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=1097723)
-AYANAMSAEXUT|28|2066666.6666666667|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=8407050)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=8407050)
-AYANAMSAEXUT|28|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10810496)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10810496)
-AYANAMSAEXUT|28|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|28|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|29|1000000|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=4439265)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=4439265)
-AYANAMSAEXUT|29|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=6626817)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=6626817)
-AYANAMSAEXUT|29|1533333.3333333335|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=128572)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=128572)
-AYANAMSAEXUT|29|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=249914)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=249914)
-AYANAMSAEXUT|29|2066666.6666666667|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=7903027)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=7903027)
-AYANAMSAEXUT|29|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=6701304)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=6701304)
-AYANAMSAEXUT|29|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|29|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|2|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=94530460612)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=94530460612)
-AYANAMSAEXUT|2|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=94532648164)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=94532648164)
-AYANAMSAEXUT|2|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=100899885794)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=100899885794)
-AYANAMSAEXUT|2|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=100900264280)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=100900264280)
-AYANAMSAEXUT|2|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=3431864153191)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=3431864153191)
-AYANAMSAEXUT|2|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=3431865354914)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=3431865354914)
-AYANAMSAEXUT|2|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=853343777176)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=853343777176)
-AYANAMSAEXUT|2|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=853343777176)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=853343777176)
-AYANAMSAEXUT|30|1000000|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=769)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=769)
-AYANAMSAEXUT|30|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2188321)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2188321)
-AYANAMSAEXUT|30|1533333.3333333335|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2681463)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2681463)
-AYANAMSAEXUT|30|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=3059949)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=3059949)
-AYANAMSAEXUT|30|2066666.6666666667|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=32874698)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=32874698)
-AYANAMSAEXUT|30|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=35278144)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=35278144)
-AYANAMSAEXUT|30|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|30|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|31|1000000|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=193468)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=193468)
-AYANAMSAEXUT|31|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2381020)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2381020)
-AYANAMSAEXUT|31|1533333.3333333335|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=566875)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=566875)
-AYANAMSAEXUT|31|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=945361)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=945361)
-AYANAMSAEXUT|31|2066666.6666666667|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=3878917)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=3878917)
-AYANAMSAEXUT|31|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5080640)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5080640)
-AYANAMSAEXUT|31|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|31|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|32|1000000|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=193468)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=193468)
-AYANAMSAEXUT|32|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2381020)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2381020)
-AYANAMSAEXUT|32|1533333.3333333335|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=566875)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=566875)
-AYANAMSAEXUT|32|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=945361)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=945361)
-AYANAMSAEXUT|32|2066666.6666666667|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=3878933)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=3878933)
-AYANAMSAEXUT|32|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5080656)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5080656)
-AYANAMSAEXUT|32|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|32|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|33|1000000|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=193468)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=193468)
-AYANAMSAEXUT|33|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2381020)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2381020)
-AYANAMSAEXUT|33|1533333.3333333335|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=566875)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=566875)
-AYANAMSAEXUT|33|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=945361)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=945361)
-AYANAMSAEXUT|33|2066666.6666666667|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=3878933)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=3878933)
-AYANAMSAEXUT|33|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5080656)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5080656)
-AYANAMSAEXUT|33|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|33|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|34|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180170)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180170)
-AYANAMSAEXUT|34|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2367722)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2367722)
-AYANAMSAEXUT|34|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561633)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561633)
-AYANAMSAEXUT|34|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=940119)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=940119)
-AYANAMSAEXUT|34|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=3851414)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=3851414)
-AYANAMSAEXUT|34|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5053137)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5053137)
-AYANAMSAEXUT|34|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs	MATCH	retc 66!=2; serr differs
-AYANAMSAEXUT|34|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|35|1000000|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=414344)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=414344)
-AYANAMSAEXUT|35|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2601896)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2601896)
-AYANAMSAEXUT|35|1533333.3333333335|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2783594)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2783594)
-AYANAMSAEXUT|35|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=3162080)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=3162080)
-AYANAMSAEXUT|35|2066666.6666666667|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=16583029)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=16583029)
-AYANAMSAEXUT|35|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=17784752)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=17784752)
-AYANAMSAEXUT|35|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|35|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|36|1000000|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=183090)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=183090)
-AYANAMSAEXUT|36|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2370642)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2370642)
-AYANAMSAEXUT|36|1533333.3333333335|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2813557)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2813557)
-AYANAMSAEXUT|36|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=3192043)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=3192043)
-AYANAMSAEXUT|36|2066666.6666666667|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=34216970)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=34216970)
-AYANAMSAEXUT|36|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=36620416)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=36620416)
-AYANAMSAEXUT|36|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|36|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|37|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=137790)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=137790)
-AYANAMSAEXUT|37|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2049762)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2049762)
-AYANAMSAEXUT|37|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=243672)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=243672)
-AYANAMSAEXUT|37|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=622158)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=622158)
-AYANAMSAEXUT|37|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=12647862)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=12647862)
-AYANAMSAEXUT|37|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10244416)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10244416)
-AYANAMSAEXUT|37|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5087680)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5087680)
-AYANAMSAEXUT|37|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5087680)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5087680)
-AYANAMSAEXUT|38|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=410511)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=410511)
-AYANAMSAEXUT|38|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=1777041)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=1777041)
-AYANAMSAEXUT|38|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=29058)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=29058)
-AYANAMSAEXUT|38|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=349428)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=349428)
-AYANAMSAEXUT|38|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=15051515)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=15051515)
-AYANAMSAEXUT|38|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=13849792)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=13849792)
-AYANAMSAEXUT|38|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=9451408)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=9451408)
-AYANAMSAEXUT|38|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=9451408)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=9451408)
-AYANAMSAEXUT|39|1000000|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=4439265)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=4439265)
-AYANAMSAEXUT|39|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=6626817)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=6626817)
-AYANAMSAEXUT|39|1533333.3333333335|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=128572)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=128572)
-AYANAMSAEXUT|39|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=249914)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=249914)
-AYANAMSAEXUT|39|2066666.6666666667|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=7903027)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=7903027)
-AYANAMSAEXUT|39|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=6701304)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=6701304)
-AYANAMSAEXUT|39|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|39|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|3|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=4045802394)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=4045802394)
-AYANAMSAEXUT|3|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=4043614842)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=4043614842)
-AYANAMSAEXUT|3|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=4045420931)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=4045420931)
-AYANAMSAEXUT|3|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=4045042445)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=4045042445)
-AYANAMSAEXUT|3|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=258935181337)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=258935181337)
-AYANAMSAEXUT|3|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=258932777891)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=258932777891)
-AYANAMSAEXUT|3|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=64735721040)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=64735721040)
-AYANAMSAEXUT|3|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=64735721040)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=64735721040)
-AYANAMSAEXUT|40|1000000|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=768)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=768)
-AYANAMSAEXUT|40|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2188320)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2188320)
-AYANAMSAEXUT|40|1533333.3333333335|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2681464)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2681464)
-AYANAMSAEXUT|40|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=3059950)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=3059950)
-AYANAMSAEXUT|40|2066666.6666666667|0	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=513667)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=513667)
-AYANAMSAEXUT|40|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=551221)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=551221)
-AYANAMSAEXUT|40|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|40|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|41|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180170)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180170)
-AYANAMSAEXUT|41|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2367722)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2367722)
-AYANAMSAEXUT|41|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561632)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561632)
-AYANAMSAEXUT|41|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=940118)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=940118)
-AYANAMSAEXUT|41|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=3851416)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=3851416)
-AYANAMSAEXUT|41|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5053139)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5053139)
-AYANAMSAEXUT|41|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs	MATCH	retc 66!=2; serr differs
-AYANAMSAEXUT|41|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|42|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=323660)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=323660)
-AYANAMSAEXUT|42|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=1863892)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=1863892)
-AYANAMSAEXUT|42|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=57795)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=57795)
-AYANAMSAEXUT|42|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=436281)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=436281)
-AYANAMSAEXUT|42|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=12272123)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=12272123)
-AYANAMSAEXUT|42|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=11070400)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=11070400)
-AYANAMSAEXUT|42|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=8061744)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=8061744)
-AYANAMSAEXUT|42|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=8061744)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=8061744)
-AYANAMSAEXUT|43|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=15799745253829)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=15799745253829)
-AYANAMSAEXUT|43|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=15799743066277)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=15799743066277)
-AYANAMSAEXUT|43|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=15799617610213)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=15799617610213)
-AYANAMSAEXUT|43|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=15799617231727)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=15799617231727)
-AYANAMSAEXUT|43|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|43|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|43|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|43|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|44|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=15439138632492)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=15439138632492)
-AYANAMSAEXUT|44|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=15439136444940)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=15439136444940)
-AYANAMSAEXUT|44|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=15433729094020)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=15433729094020)
-AYANAMSAEXUT|44|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=15433728715534)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=15433728715534)
-AYANAMSAEXUT|44|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|44|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|44|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|44|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|45|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=16901300301464)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=16901300301464)
-AYANAMSAEXUT|45|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=16901298113912)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=16901298113912)
-AYANAMSAEXUT|45|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=16895913339519)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=16895913339519)
-AYANAMSAEXUT|45|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=16895912961033)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=16895912961033)
-AYANAMSAEXUT|45|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|45|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|45|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|45|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|46|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=15544803317918)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=15544803317918)
-AYANAMSAEXUT|46|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=15544801130366)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=15544801130366)
-AYANAMSAEXUT|46|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=15544818565818)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=15544818565818)
-AYANAMSAEXUT|46|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=15544818187332)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=15544818187332)
-AYANAMSAEXUT|46|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|46|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|46|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|46|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEXUT|4|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180171)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180171)
-AYANAMSAEXUT|4|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2367723)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2367723)
-AYANAMSAEXUT|4|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561634)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561634)
-AYANAMSAEXUT|4|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=940120)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=940120)
-AYANAMSAEXUT|4|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=7702840)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=7702840)
-AYANAMSAEXUT|4|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10106286)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10106286)
-AYANAMSAEXUT|4|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs	MATCH	retc 66!=2; serr differs
-AYANAMSAEXUT|4|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|5|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=4045802396)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=4045802396)
-AYANAMSAEXUT|5|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=4043614844)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=4043614844)
-AYANAMSAEXUT|5|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=4045420931)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=4045420931)
-AYANAMSAEXUT|5|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=4045042445)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=4045042445)
-AYANAMSAEXUT|5|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=129467590669)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=129467590669)
-AYANAMSAEXUT|5|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=129466388946)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=129466388946)
-AYANAMSAEXUT|5|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=64735721040)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=64735721040)
-AYANAMSAEXUT|5|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=64735721040)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=64735721040)
-AYANAMSAEXUT|6|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180171)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180171)
-AYANAMSAEXUT|6|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2367723)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2367723)
-AYANAMSAEXUT|6|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561634)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561634)
-AYANAMSAEXUT|6|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=940120)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=940120)
-AYANAMSAEXUT|6|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=3851420)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=3851420)
-AYANAMSAEXUT|6|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5053143)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5053143)
-AYANAMSAEXUT|6|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs	MATCH	retc 66!=2; serr differs
-AYANAMSAEXUT|6|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|7|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180170)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180170)
-AYANAMSAEXUT|7|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2367722)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2367722)
-AYANAMSAEXUT|7|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561634)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561634)
-AYANAMSAEXUT|7|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=940120)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=940120)
-AYANAMSAEXUT|7|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=7702840)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=7702840)
-AYANAMSAEXUT|7|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10106286)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10106286)
-AYANAMSAEXUT|7|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs	MATCH	retc 66!=2; serr differs
-AYANAMSAEXUT|7|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|8|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180171)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180171)
-AYANAMSAEXUT|8|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2367723)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2367723)
-AYANAMSAEXUT|8|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561634)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561634)
-AYANAMSAEXUT|8|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=940120)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=940120)
-AYANAMSAEXUT|8|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=3851420)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=3851420)
-AYANAMSAEXUT|8|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5053143)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5053143)
-AYANAMSAEXUT|8|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs	MATCH	retc 66!=2; serr differs
-AYANAMSAEXUT|8|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|9|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=472213)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=472213)
-AYANAMSAEXUT|9|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=1715339)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=1715339)
-AYANAMSAEXUT|9|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=90762)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=90762)
-AYANAMSAEXUT|9|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=287724)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=287724)
-AYANAMSAEXUT|9|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=17026107)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=17026107)
-AYANAMSAEXUT|9|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=15824384)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=15824384)
-AYANAMSAEXUT|9|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10438672)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10438672)
-AYANAMSAEXUT|9|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10438672)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10438672)
-AYANAMSAEXUT|USER|2299160.5|-5.5|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180171)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180171)
-AYANAMSAEXUT|USER|2299160.5|-5.5|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2367723)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2367723)
-AYANAMSAEXUT|USER|2299160.5|-5.5|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561637)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561637)
-AYANAMSAEXUT|USER|2299160.5|-5.5|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=940123)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=940123)
-AYANAMSAEXUT|USER|2299160.5|-5.5|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=120357)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=120357)
-AYANAMSAEXUT|USER|2299160.5|-5.5|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=157911)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=157911)
-AYANAMSAEXUT|USER|2299160.5|-5.5|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs	MATCH	retc 66!=2; serr differs
-AYANAMSAEXUT|USER|2299160.5|-5.5|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|USER|2415020|24|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180170)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180170)
-AYANAMSAEXUT|USER|2415020|24|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2367722)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2367722)
-AYANAMSAEXUT|USER|2415020|24|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561634)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561634)
-AYANAMSAEXUT|USER|2415020|24|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=940120)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=940120)
-AYANAMSAEXUT|USER|2415020|24|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=3851420)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=3851420)
-AYANAMSAEXUT|USER|2415020|24|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5053143)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5053143)
-AYANAMSAEXUT|USER|2415020|24|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs	MATCH	retc 66!=2; serr differs
-AYANAMSAEXUT|USER|2415020|24|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEXUT|USER|2451545|0|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180170)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=180170)
-AYANAMSAEXUT|USER|2451545|0|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=2367722)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=2367722)
-AYANAMSAEXUT|USER|2451545|0|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561633)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=561633)
-AYANAMSAEXUT|USER|2451545|0|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=940119)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=940119)
-AYANAMSAEXUT|USER|2451545|0|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=120356)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=120356)
-AYANAMSAEXUT|USER|2451545|0|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=157910)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=157910)
-AYANAMSAEXUT|USER|2451545|0|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs	MATCH	retc 66!=2; serr differs
-AYANAMSAEXUT|USER|2451545|0|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|0|1000000|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=1964702636)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=1964702636)
+AYANAMSAEXUT|0|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=1964702636)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=1964702636)
+AYANAMSAEXUT|0|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=1964702636)	MATCH	1 field(s) differ, worst daya (ulp=1964702636)
+AYANAMSAEXUT|0|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=1964702109)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=1964702109)
+AYANAMSAEXUT|0|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=1964702109)	MATCH	1 field(s) differ, worst daya (ulp=1964702109)
+AYANAMSAEXUT|0|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=62870439701)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=62870439701)
+AYANAMSAEXUT|0|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=62870439701)	MATCH	1 field(s) differ, worst daya (ulp=62870439701)
+AYANAMSAEXUT|0|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=31435214864)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=31435214864)
+AYANAMSAEXUT|0|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=31435214864)	MATCH	1 field(s) differ, worst daya (ulp=31435214864)
+AYANAMSAEXUT|10|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|10|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|10|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|10|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|10|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|10|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|10|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|10|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|11|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|11|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|11|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|11|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|11|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|11|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|11|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|11|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|12|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|12|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|12|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|12|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|12|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|12|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|12|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|12|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|13|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|13|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|13|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|13|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|13|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|13|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|13|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|13|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|14|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=8832860691)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=8832860691)
+AYANAMSAEXUT|14|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=8832860691)	MATCH	1 field(s) differ, worst daya (ulp=8832860691)
+AYANAMSAEXUT|14|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=8832860691)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=8832860691)
+AYANAMSAEXUT|14|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=8832860691)	MATCH	1 field(s) differ, worst daya (ulp=8832860691)
+AYANAMSAEXUT|14|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=282651542112)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=282651542112)
+AYANAMSAEXUT|14|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=282651542112)	MATCH	1 field(s) differ, worst daya (ulp=282651542112)
+AYANAMSAEXUT|14|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=141325771056)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=141325771056)
+AYANAMSAEXUT|14|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=141325771056)	MATCH	1 field(s) differ, worst daya (ulp=141325771056)
+AYANAMSAEXUT|15|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|15|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|15|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|15|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|15|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|15|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|15|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|15|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|16|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|16|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|16|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|16|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|16|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|16|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|16|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|16|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|17|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|17|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|17|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|17|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|17|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|17|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|17|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|17|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|18|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|18|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|18|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|18|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|18|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|18|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|18|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|18|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|19|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|19|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|19|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|19|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|19|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|19|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|19|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|19|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|1|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=675515221)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=675515221)
+AYANAMSAEXUT|1|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=675515221)	MATCH	1 field(s) differ, worst daya (ulp=675515221)
+AYANAMSAEXUT|1|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=675515221)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=675515221)
+AYANAMSAEXUT|1|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=675515221)	MATCH	1 field(s) differ, worst daya (ulp=675515221)
+AYANAMSAEXUT|1|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=21616487068)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=21616487068)
+AYANAMSAEXUT|1|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=21616487068)	MATCH	1 field(s) differ, worst daya (ulp=21616487068)
+AYANAMSAEXUT|1|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=10808243520)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=10808243520)
+AYANAMSAEXUT|1|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=10808243520)	MATCH	1 field(s) differ, worst daya (ulp=10808243520)
+AYANAMSAEXUT|20|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|20|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|20|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|20|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|20|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|20|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|20|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|20|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|21|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|21|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|21|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|21|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|21|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|21|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|21|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|21|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|22|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|22|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|22|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|22|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|22|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|22|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|22|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|22|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|23|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|23|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|23|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|23|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|23|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|23|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|23|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|23|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|24|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|24|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|24|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|24|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|24|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|24|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|24|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|24|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|25|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|25|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|25|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|25|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|25|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|25|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|25|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|25|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|26|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|26|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|26|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|26|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|26|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|26|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|26|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|26|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|27|1000000|0	TRACKS-2.10.03	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|27|1000000|NONUT	TRACKS-2.10.03	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|27|1533333.3333333335|0	TRACKS-2.10.03	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|27|1533333.3333333335|NONUT	TRACKS-2.10.03	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|27|2066666.6666666667|0	TRACKS-2.10.03	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|27|2066666.6666666667|NONUT	TRACKS-2.10.03	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|27|2600000|0	TRACKS-2.10.03	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|27|2600000|NONUT	TRACKS-2.10.03	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|28|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|28|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|28|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|28|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|28|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|28|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|28|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|28|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|29|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|29|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|29|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|29|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|29|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|29|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|29|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|29|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|2|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=94530871123)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=94530871123)
+AYANAMSAEXUT|2|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=94530871123)	MATCH	1 field(s) differ, worst daya (ulp=94530871123)
+AYANAMSAEXUT|2|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=100899914852)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=100899914852)
+AYANAMSAEXUT|2|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=100899914852)	MATCH	1 field(s) differ, worst daya (ulp=100899914852)
+AYANAMSAEXUT|2|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=3431879204706)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=3431879204706)
+AYANAMSAEXUT|2|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=3431879204706)	MATCH	1 field(s) differ, worst daya (ulp=3431879204706)
+AYANAMSAEXUT|2|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=853348502880)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=853348502880)
+AYANAMSAEXUT|2|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=853348502880)	MATCH	1 field(s) differ, worst daya (ulp=853348502880)
+AYANAMSAEXUT|30|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|30|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|30|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|30|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|30|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|30|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|30|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|30|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|31|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|31|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|31|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|31|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|31|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|31|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|31|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|31|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|32|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|32|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|32|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|32|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|32|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|32|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|32|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|32|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|33|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|33|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|33|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|33|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|33|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|33|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|33|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|33|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|34|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|34|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|34|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|34|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|34|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|34|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|34|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|34|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|35|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|35|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|35|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|35|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|35|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|35|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|35|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|35|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|36|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|36|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|36|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|36|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|36|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|36|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|36|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|36|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|37|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|37|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|37|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|37|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|37|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|37|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|37|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|37|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|38|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|38|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|38|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|38|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|38|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|38|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|38|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|38|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|39|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|39|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|39|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|39|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|39|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|39|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|39|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|39|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|3|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=4045982565)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=4045982565)
+AYANAMSAEXUT|3|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=4045982565)	MATCH	1 field(s) differ, worst daya (ulp=4045982565)
+AYANAMSAEXUT|3|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=4045982565)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=4045982565)
+AYANAMSAEXUT|3|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=4045982565)	MATCH	1 field(s) differ, worst daya (ulp=4045982565)
+AYANAMSAEXUT|3|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=258942884177)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=258942884177)
+AYANAMSAEXUT|3|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=258942884177)	MATCH	1 field(s) differ, worst daya (ulp=258942884177)
+AYANAMSAEXUT|3|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=64735721040)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=64735721040)
+AYANAMSAEXUT|3|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=64735721040)	MATCH	1 field(s) differ, worst daya (ulp=64735721040)
+AYANAMSAEXUT|40|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|40|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|40|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|40|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|40|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|40|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|40|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|40|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|41|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|41|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|41|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|41|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|41|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|41|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|41|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|41|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|42|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|42|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|42|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|42|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|42|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|42|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|42|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|42|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|43|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=15799745433999)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=15799745433999)
+AYANAMSAEXUT|43|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=15799745433999)	MATCH	1 field(s) differ, worst daya (ulp=15799745433999)
+AYANAMSAEXUT|43|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=15799618171847)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=15799618171847)
+AYANAMSAEXUT|43|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=15799618171847)	MATCH	1 field(s) differ, worst daya (ulp=15799618171847)
+AYANAMSAEXUT|43|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|43|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (unrelated)	MATCH	1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|43|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|43|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (unrelated)	MATCH	1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|44|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=15439138812679)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=15439138812679)
+AYANAMSAEXUT|44|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=15439138812679)	MATCH	1 field(s) differ, worst daya (ulp=15439138812679)
+AYANAMSAEXUT|44|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=15433729655671)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=15433729655671)
+AYANAMSAEXUT|44|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=15433729655671)	MATCH	1 field(s) differ, worst daya (ulp=15433729655671)
+AYANAMSAEXUT|44|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|44|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (unrelated)	MATCH	1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|44|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|44|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (unrelated)	MATCH	1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|45|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=16901300481651)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=16901300481651)
+AYANAMSAEXUT|45|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=16901300481651)	MATCH	1 field(s) differ, worst daya (ulp=16901300481651)
+AYANAMSAEXUT|45|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=16895913901171)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=16895913901171)
+AYANAMSAEXUT|45|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=16895913901171)	MATCH	1 field(s) differ, worst daya (ulp=16895913901171)
+AYANAMSAEXUT|45|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|45|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (unrelated)	MATCH	1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|45|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|45|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (unrelated)	MATCH	1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|46|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=15544803498088)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=15544803498088)
+AYANAMSAEXUT|46|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=15544803498088)	MATCH	1 field(s) differ, worst daya (ulp=15544803498088)
+AYANAMSAEXUT|46|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=15544819127451)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=15544819127451)
+AYANAMSAEXUT|46|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=15544819127451)	MATCH	1 field(s) differ, worst daya (ulp=15544819127451)
+AYANAMSAEXUT|46|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|46|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (unrelated)	MATCH	1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|46|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|46|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (unrelated)	MATCH	1 field(s) differ, worst daya (unrelated)
+AYANAMSAEXUT|4|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|4|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|4|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|4|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|4|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|4|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|4|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|4|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|5|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=4045982566)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=4045982566)
+AYANAMSAEXUT|5|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=4045982566)	MATCH	1 field(s) differ, worst daya (ulp=4045982566)
+AYANAMSAEXUT|5|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=4045982565)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=4045982565)
+AYANAMSAEXUT|5|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=4045982565)	MATCH	1 field(s) differ, worst daya (ulp=4045982565)
+AYANAMSAEXUT|5|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=129471442089)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=129471442089)
+AYANAMSAEXUT|5|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=129471442089)	MATCH	1 field(s) differ, worst daya (ulp=129471442089)
+AYANAMSAEXUT|5|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=64735721040)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=64735721040)
+AYANAMSAEXUT|5|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=64735721040)	MATCH	1 field(s) differ, worst daya (ulp=64735721040)
+AYANAMSAEXUT|6|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|6|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|6|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|6|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|6|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|6|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|6|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|6|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|7|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|7|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|7|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|7|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|7|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|7|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|7|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|7|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|8|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|8|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|8|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|8|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|8|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|8|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|8|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|8|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|9|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|9|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|9|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|9|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|9|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|9|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|9|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|9|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|USER|2299160.5|-5.5|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|USER|2299160.5|-5.5|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|USER|2299160.5|-5.5|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|USER|2299160.5|-5.5|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|USER|2299160.5|-5.5|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|USER|2299160.5|-5.5|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|USER|2299160.5|-5.5|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|USER|2299160.5|-5.5|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|USER|2415020|24|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|USER|2415020|24|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|USER|2415020|24|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|USER|2415020|24|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|USER|2415020|24|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|USER|2415020|24|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|USER|2415020|24|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|USER|2415020|24|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|USER|2451545|0|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|USER|2451545|0|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|USER|2451545|0|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|USER|2451545|0|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|USER|2451545|0|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|USER|2451545|0|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEXUT|USER|2451545|0|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEXUT|USER|2451545|0|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|0|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=1964702636)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=1964702636)
 AYANAMSAEX|0|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=1964702636)	MATCH	1 field(s) differ, worst daya (ulp=1964702636)
-AYANAMSAEX|0|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=1964702108)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=1964702108)
+AYANAMSAEX|0|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=1964702108)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=1964702108)
 AYANAMSAEX|0|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=1964702108)	MATCH	1 field(s) differ, worst daya (ulp=1964702108)
-AYANAMSAEX|0|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=62870439701)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=62870439701)
+AYANAMSAEX|0|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=62870439701)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=62870439701)
 AYANAMSAEX|0|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=62870439701)	MATCH	1 field(s) differ, worst daya (ulp=62870439701)
-AYANAMSAEX|0|2600000|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=31435214864)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=31435214864)
+AYANAMSAEX|0|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=31435214864)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=31435214864)
 AYANAMSAEX|0|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=31435214864)	MATCH	1 field(s) differ, worst daya (ulp=31435214864)
-AYANAMSAEX|10|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=652408)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=652408)
-AYANAMSAEX|10|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=652408)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=652408)
-AYANAMSAEX|10|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=652418)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=652418)
-AYANAMSAEX|10|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=652418)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=652418)
-AYANAMSAEX|10|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=20877536)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=20877536)
-AYANAMSAEX|10|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=20877536)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=20877536)
-AYANAMSAEX|10|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10438688)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10438688)
-AYANAMSAEX|10|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10438688)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10438688)
-AYANAMSAEX|11|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=652408)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=652408)
-AYANAMSAEX|11|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=652408)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=652408)
-AYANAMSAEX|11|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=652418)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=652418)
-AYANAMSAEX|11|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=652418)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=652418)
-AYANAMSAEX|11|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=20877536)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=20877536)
-AYANAMSAEX|11|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=20877536)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=20877536)
-AYANAMSAEX|11|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10438688)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10438688)
-AYANAMSAEX|11|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10438688)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10438688)
-AYANAMSAEX|12|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=652408)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=652408)
-AYANAMSAEX|12|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=652408)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=652408)
-AYANAMSAEX|12|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=652418)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=652418)
-AYANAMSAEX|12|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=652418)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=652418)
-AYANAMSAEX|12|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=20877536)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=20877536)
-AYANAMSAEX|12|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=20877536)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=20877536)
-AYANAMSAEX|12|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10438688)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10438688)
-AYANAMSAEX|12|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10438688)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10438688)
-AYANAMSAEX|13|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=670869)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=670869)
-AYANAMSAEX|13|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=670869)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=670869)
-AYANAMSAEX|13|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=670879)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=670879)
-AYANAMSAEX|13|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=670879)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=670879)
-AYANAMSAEX|13|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=21468320)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=21468320)
-AYANAMSAEX|13|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=21468320)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=21468320)
-AYANAMSAEX|13|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10734064)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10734064)
-AYANAMSAEX|13|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10734064)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10734064)
-AYANAMSAEX|14|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=8833513099)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=8833513099)
-AYANAMSAEX|14|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=8833513099)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=8833513099)
-AYANAMSAEX|14|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=8833513109)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=8833513109)
-AYANAMSAEX|14|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=8833513109)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=8833513109)
-AYANAMSAEX|14|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=282672419648)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=282672419648)
-AYANAMSAEX|14|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=282672419648)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=282672419648)
-AYANAMSAEX|14|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=141336209744)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=141336209744)
-AYANAMSAEX|14|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=141336209744)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=141336209744)
-AYANAMSAEX|15|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=669916)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=669916)
-AYANAMSAEX|15|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=669916)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=669916)
-AYANAMSAEX|15|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=669927)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=669927)
-AYANAMSAEX|15|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=669927)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=669927)
-AYANAMSAEX|15|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=42875776)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=42875776)
-AYANAMSAEX|15|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=42875776)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=42875776)
-AYANAMSAEX|15|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10718816)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10718816)
-AYANAMSAEX|15|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10718816)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10718816)
-AYANAMSAEX|16|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=299661)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=299661)
-AYANAMSAEX|16|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=299661)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=299661)
-AYANAMSAEX|16|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=299665)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=299665)
-AYANAMSAEX|16|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=299665)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=299665)
-AYANAMSAEX|16|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=19178816)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=19178816)
-AYANAMSAEX|16|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=19178816)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=19178816)
-AYANAMSAEX|16|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=4794656)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=4794656)
-AYANAMSAEX|16|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=4794656)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=4794656)
-AYANAMSAEX|17|1000000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|17|1000000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|17|1533333.3333333335|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|17|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|17|2066666.6666666667|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|17|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|17|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|17|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|18|1000000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|10|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|10|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|10|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|10|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|10|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|10|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|10|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|10|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|11|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|11|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|11|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|11|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|11|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|11|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|11|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|11|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|12|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|12|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|12|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|12|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|12|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|12|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|12|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|12|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|13|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|13|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|13|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|13|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|13|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|13|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|13|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|13|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|14|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=8832860692)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=8832860692)
+AYANAMSAEX|14|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=8832860692)	MATCH	1 field(s) differ, worst daya (ulp=8832860692)
+AYANAMSAEX|14|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=8832860691)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=8832860691)
+AYANAMSAEX|14|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=8832860691)	MATCH	1 field(s) differ, worst daya (ulp=8832860691)
+AYANAMSAEX|14|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=282651542112)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=282651542112)
+AYANAMSAEX|14|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=282651542112)	MATCH	1 field(s) differ, worst daya (ulp=282651542112)
+AYANAMSAEX|14|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=141325771056)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=141325771056)
+AYANAMSAEX|14|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=141325771056)	MATCH	1 field(s) differ, worst daya (ulp=141325771056)
+AYANAMSAEX|15|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|15|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|15|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|15|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|15|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|15|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|15|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|15|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|16|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|16|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|16|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|16|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|16|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|16|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|16|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|16|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|17|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|17|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|17|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|17|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|17|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|17|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|17|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|17|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|18|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|18|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|18|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|18|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|18|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|18|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|18|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|18|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|18|2600000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|18|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|18|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|19|1000000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|19|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|19|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|19|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|19|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|19|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|19|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|19|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|19|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|19|2600000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|19|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|19|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|1|1000000|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=675515221)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=675515221)
+AYANAMSAEX|1|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=675515221)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=675515221)
 AYANAMSAEX|1|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=675515221)	MATCH	1 field(s) differ, worst daya (ulp=675515221)
-AYANAMSAEX|1|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=675515221)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=675515221)
+AYANAMSAEX|1|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=675515221)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=675515221)
 AYANAMSAEX|1|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=675515221)	MATCH	1 field(s) differ, worst daya (ulp=675515221)
-AYANAMSAEX|1|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=21616487068)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=21616487068)
+AYANAMSAEX|1|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=21616487068)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=21616487068)
 AYANAMSAEX|1|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=21616487068)	MATCH	1 field(s) differ, worst daya (ulp=21616487068)
-AYANAMSAEX|1|2600000|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=10808243520)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=10808243520)
+AYANAMSAEX|1|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=10808243520)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=10808243520)
 AYANAMSAEX|1|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=10808243520)	MATCH	1 field(s) differ, worst daya (ulp=10808243520)
-AYANAMSAEX|20|1000000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|20|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|20|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|20|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|20|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|20|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|20|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|20|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|20|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|20|2600000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|20|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|20|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|21|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328232)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328232)
-AYANAMSAEX|21|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=328232)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=328232)
-AYANAMSAEX|21|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328237)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328237)
-AYANAMSAEX|21|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=328237)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=328237)
-AYANAMSAEX|21|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=21007360)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=21007360)
-AYANAMSAEX|21|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=21007360)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=21007360)
-AYANAMSAEX|21|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEX|21|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEX|22|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328232)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328232)
-AYANAMSAEX|22|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=328232)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=328232)
-AYANAMSAEX|22|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328237)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328237)
-AYANAMSAEX|22|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=328237)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=328237)
-AYANAMSAEX|22|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=21007360)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=21007360)
-AYANAMSAEX|22|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=21007360)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=21007360)
-AYANAMSAEX|22|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEX|22|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEX|23|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328231)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328231)
-AYANAMSAEX|23|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=328231)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=328231)
-AYANAMSAEX|23|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328236)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328236)
-AYANAMSAEX|23|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=328236)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=328236)
-AYANAMSAEX|23|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=21007360)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=21007360)
-AYANAMSAEX|23|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=21007360)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=21007360)
-AYANAMSAEX|23|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEX|23|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEX|24|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328231)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328231)
-AYANAMSAEX|24|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=328231)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=328231)
-AYANAMSAEX|24|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328237)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328237)
-AYANAMSAEX|24|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=328237)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=328237)
-AYANAMSAEX|24|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=21007360)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=21007360)
-AYANAMSAEX|24|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=21007360)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=21007360)
-AYANAMSAEX|24|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEX|24|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEX|25|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328232)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328232)
-AYANAMSAEX|25|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=328232)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=328232)
-AYANAMSAEX|25|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328237)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328237)
-AYANAMSAEX|25|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=328237)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=328237)
-AYANAMSAEX|25|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=21007360)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=21007360)
-AYANAMSAEX|25|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=21007360)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=21007360)
-AYANAMSAEX|25|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEX|25|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEX|26|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328232)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328232)
-AYANAMSAEX|26|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=328232)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=328232)
-AYANAMSAEX|26|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328237)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=328237)
-AYANAMSAEX|26|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=328237)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=328237)
-AYANAMSAEX|26|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10503680)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10503680)
-AYANAMSAEX|26|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10503680)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10503680)
-AYANAMSAEX|26|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEX|26|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5251824)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5251824)
-AYANAMSAEX|27|1000000|0	TRACKS-2.10.03	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEX|27|1000000|NONUT	TRACKS-2.10.03	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEX|27|1533333.3333333335|0	TRACKS-2.10.03	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEX|27|1533333.3333333335|NONUT	TRACKS-2.10.03	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEX|27|2066666.6666666667|0	TRACKS-2.10.03	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEX|27|2066666.6666666667|NONUT	TRACKS-2.10.03	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEX|27|2600000|0	TRACKS-2.10.03	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEX|27|2600000|NONUT	TRACKS-2.10.03	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=2; serr differs; 1 field(s) differ, worst daya (unrelated)
-AYANAMSAEX|28|1000000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|28|1000000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|28|1533333.3333333335|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|28|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|28|2066666.6666666667|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|28|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|28|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|28|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|29|1000000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|29|1000000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|29|1533333.3333333335|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|29|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|29|2066666.6666666667|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|29|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|29|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|29|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|2|1000000|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=94530277110)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=94530277110)
-AYANAMSAEX|2|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=94530277110)	MATCH	1 field(s) differ, worst daya (ulp=94530277110)
-AYANAMSAEX|2|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=100899321263)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=100899321263)
-AYANAMSAEX|2|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=100899321263)	MATCH	1 field(s) differ, worst daya (ulp=100899321263)
-AYANAMSAEX|2|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=3431860297386)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=3431860297386)
-AYANAMSAEX|2|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=3431860297386)	MATCH	1 field(s) differ, worst daya (ulp=3431860297386)
-AYANAMSAEX|2|2600000|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=853343777624)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=853343777624)
-AYANAMSAEX|2|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=853343777624)	MATCH	1 field(s) differ, worst daya (ulp=853343777624)
-AYANAMSAEX|30|1000000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|30|1000000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|30|1533333.3333333335|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|30|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|30|2066666.6666666667|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|30|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|30|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|30|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|31|1000000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|31|1000000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|31|1533333.3333333335|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|31|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|31|2066666.6666666667|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|31|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|31|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|31|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|32|1000000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|32|1000000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|32|1533333.3333333335|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|32|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|32|2066666.6666666667|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|32|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|32|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|32|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|33|1000000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|33|1000000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|33|1533333.3333333335|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|33|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|33|2066666.6666666667|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|33|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|33|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|33|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|34|1000000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|21|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|21|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|21|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|21|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|21|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|21|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|21|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|21|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|22|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|22|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|22|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|22|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|22|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|22|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|22|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|22|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|23|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|23|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|23|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|23|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|23|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|23|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|23|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|23|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|24|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|24|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|24|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|24|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|24|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|24|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|24|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|24|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|25|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|25|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|25|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|25|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|25|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|25|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|25|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|25|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|26|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|26|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|26|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|26|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|26|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|26|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|26|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|26|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|27|1000000|0	TRACKS-2.10.03	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEX|27|1000000|NONUT	TRACKS-2.10.03	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEX|27|1533333.3333333335|0	TRACKS-2.10.03	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEX|27|1533333.3333333335|NONUT	TRACKS-2.10.03	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEX|27|2066666.6666666667|0	TRACKS-2.10.03	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEX|27|2066666.6666666667|NONUT	TRACKS-2.10.03	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEX|27|2600000|0	TRACKS-2.10.03	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEX|27|2600000|NONUT	TRACKS-2.10.03	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)	MATCH	retc -1!=4; serr differs; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEX|28|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|28|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|28|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|28|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|28|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|28|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|28|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|28|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|29|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|29|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|29|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|29|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|29|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|29|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|29|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|29|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|2|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=94530867813)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=94530867813)
+AYANAMSAEX|2|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=94530867813)	MATCH	1 field(s) differ, worst daya (ulp=94530867813)
+AYANAMSAEX|2|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=100899911976)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=100899911976)
+AYANAMSAEX|2|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=100899911976)	MATCH	1 field(s) differ, worst daya (ulp=100899911976)
+AYANAMSAEX|2|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=3431879200362)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=3431879200362)
+AYANAMSAEX|2|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=3431879200362)	MATCH	1 field(s) differ, worst daya (ulp=3431879200362)
+AYANAMSAEX|2|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=853348503336)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=853348503336)
+AYANAMSAEX|2|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=853348503336)	MATCH	1 field(s) differ, worst daya (ulp=853348503336)
+AYANAMSAEX|30|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|30|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|30|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|30|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|30|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|30|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|30|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|30|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|31|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|31|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|31|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|31|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|31|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|31|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|31|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|31|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|32|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|32|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|32|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|32|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|32|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|32|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|32|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|32|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|33|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|33|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|33|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|33|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|33|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|33|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|33|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|33|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|34|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|34|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|34|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|34|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|34|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|34|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|34|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|34|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|34|2600000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|34|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|34|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|35|1000000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|35|1000000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|35|1533333.3333333335|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|35|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|35|2066666.6666666667|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|35|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|35|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|35|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|36|1000000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|36|1000000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|36|1533333.3333333335|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|36|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|36|2066666.6666666667|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|36|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|36|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|36|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|37|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=317972)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=317972)
-AYANAMSAEX|37|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=317972)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=317972)
-AYANAMSAEX|37|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=317977)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=317977)
-AYANAMSAEX|37|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=317977)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=317977)
-AYANAMSAEX|37|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=20350784)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=20350784)
-AYANAMSAEX|37|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=20350784)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=20350784)
-AYANAMSAEX|37|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5087680)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=5087680)
-AYANAMSAEX|37|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=5087680)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=5087680)
-AYANAMSAEX|38|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=590703)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=590703)
-AYANAMSAEX|38|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=590703)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=590703)
-AYANAMSAEX|38|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=590712)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=590712)
-AYANAMSAEX|38|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=590712)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=590712)
-AYANAMSAEX|38|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=18902976)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=18902976)
-AYANAMSAEX|38|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=18902976)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=18902976)
-AYANAMSAEX|38|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=9451424)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=9451424)
-AYANAMSAEX|38|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=9451424)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=9451424)
-AYANAMSAEX|39|1000000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|39|1000000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|39|1533333.3333333335|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|39|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|39|2066666.6666666667|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|39|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|39|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|39|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|3|1000000|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=4045982566)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=4045982566)
+AYANAMSAEX|35|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|35|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|35|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|35|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|35|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|35|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|35|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|35|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|36|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|36|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|36|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|36|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|36|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|36|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|36|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|36|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|37|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|37|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|37|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|37|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|37|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|37|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|37|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|37|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|38|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|38|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|38|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|38|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|38|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|38|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|38|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|38|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|39|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|39|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|39|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|39|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|39|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|39|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|39|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|39|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|3|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=4045982566)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=4045982566)
 AYANAMSAEX|3|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=4045982566)	MATCH	1 field(s) differ, worst daya (ulp=4045982566)
-AYANAMSAEX|3|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=4045982565)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=4045982565)
+AYANAMSAEX|3|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=4045982565)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=4045982565)
 AYANAMSAEX|3|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=4045982565)	MATCH	1 field(s) differ, worst daya (ulp=4045982565)
-AYANAMSAEX|3|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=258942884177)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=258942884177)
+AYANAMSAEX|3|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=258942884177)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=258942884177)
 AYANAMSAEX|3|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=258942884177)	MATCH	1 field(s) differ, worst daya (ulp=258942884177)
-AYANAMSAEX|3|2600000|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=64735721040)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=64735721040)
+AYANAMSAEX|3|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=64735721040)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=64735721040)
 AYANAMSAEX|3|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=64735721040)	MATCH	1 field(s) differ, worst daya (ulp=64735721040)
-AYANAMSAEX|40|1000000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|40|1000000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|40|1533333.3333333335|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|40|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|40|2066666.6666666667|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|40|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|40|2600000|0	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|40|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|41|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs	MATCH	retc 66!=2; serr differs
-AYANAMSAEX|41|1000000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|41|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs	MATCH	retc 66!=2; serr differs
-AYANAMSAEX|41|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|41|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs	MATCH	retc 66!=2; serr differs
-AYANAMSAEX|41|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|41|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs	MATCH	retc 66!=2; serr differs
-AYANAMSAEX|41|2600000|NONUT	TRACKS-2.10.03	serr differs	MATCH	serr differs
-AYANAMSAEX|42|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=503850)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=503850)
-AYANAMSAEX|42|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=503850)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=503850)
-AYANAMSAEX|42|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=503858)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=503858)
-AYANAMSAEX|42|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=503858)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=503858)
-AYANAMSAEX|42|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=16123616)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=16123616)
-AYANAMSAEX|42|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=16123616)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=16123616)
-AYANAMSAEX|42|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=8061744)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=8061744)
-AYANAMSAEX|42|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=8061744)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=8061744)
-AYANAMSAEX|43|1000000|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=15799745434007)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=15799745434007)
+AYANAMSAEX|40|1000000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|40|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|40|1533333.3333333335|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|40|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|40|2066666.6666666667|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|40|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|40|2600000|0	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|40|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|41|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|41|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|41|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|41|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|41|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|41|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|41|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|41|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|42|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|42|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|42|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|42|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|42|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|42|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|42|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|42|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|43|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=15799745434007)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=15799745434007)
 AYANAMSAEX|43|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=15799745434007)	MATCH	1 field(s) differ, worst daya (ulp=15799745434007)
-AYANAMSAEX|43|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=15799618171922)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=15799618171922)
+AYANAMSAEX|43|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=15799618171922)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=15799618171922)
 AYANAMSAEX|43|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=15799618171922)	MATCH	1 field(s) differ, worst daya (ulp=15799618171922)
-AYANAMSAEX|43|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEX|43|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (unrelated)
 AYANAMSAEX|43|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (unrelated)	MATCH	1 field(s) differ, worst daya (unrelated)
-AYANAMSAEX|43|2600000|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEX|43|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (unrelated)
 AYANAMSAEX|43|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (unrelated)	MATCH	1 field(s) differ, worst daya (unrelated)
-AYANAMSAEX|44|1000000|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=15439138815174)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=15439138815174)
+AYANAMSAEX|44|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=15439138815174)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=15439138815174)
 AYANAMSAEX|44|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=15439138815174)	MATCH	1 field(s) differ, worst daya (ulp=15439138815174)
-AYANAMSAEX|44|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=15433729658216)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=15433729658216)
+AYANAMSAEX|44|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=15433729658216)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=15433729658216)
 AYANAMSAEX|44|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=15433729658216)	MATCH	1 field(s) differ, worst daya (ulp=15433729658216)
-AYANAMSAEX|44|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEX|44|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (unrelated)
 AYANAMSAEX|44|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (unrelated)	MATCH	1 field(s) differ, worst daya (unrelated)
-AYANAMSAEX|44|2600000|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEX|44|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (unrelated)
 AYANAMSAEX|44|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (unrelated)	MATCH	1 field(s) differ, worst daya (unrelated)
-AYANAMSAEX|45|1000000|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=16901300484130)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=16901300484130)
+AYANAMSAEX|45|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=16901300484130)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=16901300484130)
 AYANAMSAEX|45|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=16901300484130)	MATCH	1 field(s) differ, worst daya (ulp=16901300484130)
-AYANAMSAEX|45|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=16895913903707)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=16895913903707)
+AYANAMSAEX|45|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=16895913903707)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=16895913903707)
 AYANAMSAEX|45|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=16895913903707)	MATCH	1 field(s) differ, worst daya (ulp=16895913903707)
-AYANAMSAEX|45|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEX|45|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (unrelated)
 AYANAMSAEX|45|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (unrelated)	MATCH	1 field(s) differ, worst daya (unrelated)
-AYANAMSAEX|45|2600000|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEX|45|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (unrelated)
 AYANAMSAEX|45|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (unrelated)	MATCH	1 field(s) differ, worst daya (unrelated)
-AYANAMSAEX|46|1000000|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=15544803498088)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=15544803498088)
+AYANAMSAEX|46|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=15544803498088)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=15544803498088)
 AYANAMSAEX|46|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=15544803498088)	MATCH	1 field(s) differ, worst daya (ulp=15544803498088)
-AYANAMSAEX|46|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=15544819127441)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=15544819127441)
+AYANAMSAEX|46|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=15544819127441)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=15544819127441)
 AYANAMSAEX|46|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=15544819127441)	MATCH	1 field(s) differ, worst daya (ulp=15544819127441)
-AYANAMSAEX|46|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEX|46|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (unrelated)
 AYANAMSAEX|46|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (unrelated)	MATCH	1 field(s) differ, worst daya (unrelated)
-AYANAMSAEX|46|2600000|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (unrelated)
+AYANAMSAEX|46|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (unrelated)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (unrelated)
 AYANAMSAEX|46|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (unrelated)	MATCH	1 field(s) differ, worst daya (unrelated)
-AYANAMSAEX|4|1000000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|4|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|4|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|4|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|4|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|4|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|4|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|4|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|4|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|4|2600000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|4|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|4|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|5|1000000|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=4045982565)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=4045982565)
+AYANAMSAEX|5|1000000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=4045982565)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=4045982565)
 AYANAMSAEX|5|1000000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=4045982565)	MATCH	1 field(s) differ, worst daya (ulp=4045982565)
-AYANAMSAEX|5|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=4045982565)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=4045982565)
+AYANAMSAEX|5|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=4045982565)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=4045982565)
 AYANAMSAEX|5|1533333.3333333335|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=4045982565)	MATCH	1 field(s) differ, worst daya (ulp=4045982565)
-AYANAMSAEX|5|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=129471442089)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=129471442089)
+AYANAMSAEX|5|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=129471442089)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=129471442089)
 AYANAMSAEX|5|2066666.6666666667|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=129471442089)	MATCH	1 field(s) differ, worst daya (ulp=129471442089)
-AYANAMSAEX|5|2600000|0	TRACKS-2.10.03	retc 66!=2; 1 field(s) differ, worst daya (ulp=64735721040)	MATCH	retc 66!=2; 1 field(s) differ, worst daya (ulp=64735721040)
+AYANAMSAEX|5|2600000|0	TRACKS-2.10.03	retc 68!=4; 1 field(s) differ, worst daya (ulp=64735721040)	MATCH	retc 68!=4; 1 field(s) differ, worst daya (ulp=64735721040)
 AYANAMSAEX|5|2600000|NONUT	TRACKS-2.10.03	1 field(s) differ, worst daya (ulp=64735721040)	MATCH	1 field(s) differ, worst daya (ulp=64735721040)
-AYANAMSAEX|6|1000000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|6|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|6|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|6|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|6|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|6|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|6|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|6|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|6|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|6|2600000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|6|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|6|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|7|1000000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|7|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|7|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|7|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|7|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|7|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|7|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|7|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|7|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|7|2600000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|7|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|7|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|8|1000000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|8|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|8|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|8|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|8|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|8|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|8|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|8|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|8|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|8|2600000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|8|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|8|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|9|1000000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=652408)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=652408)
-AYANAMSAEX|9|1000000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=652408)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=652408)
-AYANAMSAEX|9|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=652418)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=652418)
-AYANAMSAEX|9|1533333.3333333335|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=652418)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=652418)
-AYANAMSAEX|9|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=20877536)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=20877536)
-AYANAMSAEX|9|2066666.6666666667|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=20877536)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=20877536)
-AYANAMSAEX|9|2600000|0	TRACKS-2.10.03	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10438688)	MATCH	retc 66!=2; serr differs; 1 field(s) differ, worst daya (ulp=10438688)
-AYANAMSAEX|9|2600000|NONUT	TRACKS-2.10.03	serr differs; 1 field(s) differ, worst daya (ulp=10438688)	MATCH	serr differs; 1 field(s) differ, worst daya (ulp=10438688)
-AYANAMSAEX|USER|2299160.5|-5.5|1000000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|9|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|9|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|9|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|9|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|9|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|9|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|9|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
+AYANAMSAEX|9|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
+AYANAMSAEX|USER|2299160.5|-5.5|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|USER|2299160.5|-5.5|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|USER|2299160.5|-5.5|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|USER|2299160.5|-5.5|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|USER|2299160.5|-5.5|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|USER|2299160.5|-5.5|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|USER|2299160.5|-5.5|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|USER|2299160.5|-5.5|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|USER|2299160.5|-5.5|2600000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|USER|2299160.5|-5.5|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|USER|2299160.5|-5.5|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|USER|2415020|24|1000000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|USER|2415020|24|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|USER|2415020|24|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|USER|2415020|24|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|USER|2415020|24|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|USER|2415020|24|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|USER|2415020|24|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|USER|2415020|24|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|USER|2415020|24|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|USER|2415020|24|2600000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|USER|2415020|24|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|USER|2415020|24|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|USER|2451545|0|1000000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|USER|2451545|0|1000000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|USER|2451545|0|1000000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|USER|2451545|0|1533333.3333333335|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|USER|2451545|0|1533333.3333333335|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|USER|2451545|0|1533333.3333333335|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|USER|2451545|0|2066666.6666666667|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|USER|2451545|0|2066666.6666666667|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|USER|2451545|0|2066666.6666666667|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
-AYANAMSAEX|USER|2451545|0|2600000|0	TRACKS-2.10.03	retc 66!=2	MATCH	retc 66!=2
+AYANAMSAEX|USER|2451545|0|2600000|0	TRACKS-2.10.03	retc 68!=4	MATCH	retc 68!=4
 AYANAMSAEX|USER|2451545|0|2600000|NONUT	AGREES-BOTH	MATCH	MATCH	MATCH
 AYANAMSAUT|0|1000000	TRACKS-2.10.03	1 field(s) differ, worst ayanamsa (ulp=1962334913)	MATCH	1 field(s) differ, worst ayanamsa (ulp=1962334913)
 AYANAMSAUT|0|1533333.3333333335	TRACKS-2.10.03	1 field(s) differ, worst ayanamsa (ulp=1963761990)	MATCH	1 field(s) differ, worst ayanamsa (ulp=1963761990)

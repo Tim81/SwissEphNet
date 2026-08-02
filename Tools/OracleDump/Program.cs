@@ -12,7 +12,10 @@
 //                                          see ProcessHousesEx2/ProcessHousesArmcEx2 below),
 //                                          swe_get_ayanamsa_ut, swe_sidtime, swe_azalt,
 //                                          swe_house_name and swe_nod_aps_ut. Touches no
-//                                          ephemeris data file. See gen-grid-analytic.ps1's header.
+//                                          ephemeris data file. AYANAMSA_EX/AYANAMSA_EX_UT rows
+//                                          now always carry SEFLG_MOSEPH too -- see
+//                                          gen-grid-analytic.ps1's $AyanamsaExIflagCombos comment.
+//                                          See gen-grid-analytic.ps1's header.
 //   Tools/OracleGrid/grid-files.tsv     -- swe_calc/swe_calc_ut (SEFLG_SWIEPH), the swe_fixstar
 //                                          family (including swe_fixstar2_mag), swe_get_planet_name,
 //                                          the same eight crossing functions under SEFLG_SWIEPH,
@@ -39,9 +42,11 @@
 //
 //   OracleDump.exe <grid.tsv> <output.tsv> [ephe-dir [jpl-file]]
 //
-// ephe-dir is optional. grid-analytic.tsv needs it never; grid-files.tsv and grid-jpl.tsv need it
-// always -- see AttachEpheDir below. jpl-file is optional too and only grid-jpl.tsv needs it --
-// see AttachJplFile, including why it must be applied strictly after AttachEpheDir.
+// ephe-dir is optional; when omitted, every row now pins swe_set_ephe_path to
+// SentinelEpheDir rather than leaving it unset -- see SentinelEpheDir's own comment and
+// sedump.c's identical "THE SENTINEL EPHEMERIS PATH" section for why grid-analytic.tsv's
+// "reproducible on any machine" premise needed this and what it does not close (SE_EPHE_PATH
+// still overrides whatever path this driver passes -- see AttachEpheDir).
 //
 // A FRESH SwissEph INSTANCE PER ROW
 //
@@ -73,6 +78,17 @@ internal static class Program
     private const int FilesColumns = 18;
     private const int CuspCount = 37; // cusp[0..36]
     private const int AscmcCount = 10; // ascmc[0..9]
+
+    // Pinned when a row's grid gives no ephe-dir argument (today: only grid-analytic.tsv's
+    // two-argument invocation -- see AttachEpheDir's own call site in ProcessRow). Deliberately
+    // contains '?', which is not a legal character in a Windows path component, so no real
+    // directory can ever match it -- mirrors sedump.c's identical SENTINEL_EPHE_DIR constant and
+    // comment, including what this does NOT close: SE_EPHE_PATH still overrides whatever path is
+    // passed to swe_set_ephe_path (CPort/Sweph.cs:1581-1583 checks the environment variable
+    // before the path argument, faithfully porting sweph.c:1327-1330), so this fix removes the
+    // grid's dependency on the compiled-in default and the process's current directory, not on
+    // the environment.
+    private const string SentinelEpheDir = "swisseph-oracle-sentinel-path?that-cannot-exist";
 
     // x2cross, dir, t0 and ayan_t0 are appended after sid_mode in both headers, not interleaved
     // among the original columns, so every column this file's other Process* methods already
@@ -193,10 +209,11 @@ internal static class Program
 
         // Fresh library state before every row -- see this file's header comment.
         using var swe = new SwissEph();
-        if (epheDir != null)
-        {
-            AttachEpheDir(swe, epheDir);
-        }
+        // Unconditional, not `if (epheDir != null)`: SentinelEpheDir when the grid gave no
+        // ephe-dir argument, the real ephe-dir otherwise -- see SentinelEpheDir's own comment and
+        // this file's "INVOCATION" header section for why leaving this call unmade at all was the
+        // actual defect, mirroring sedump.c's identical fix.
+        AttachEpheDir(swe, epheDir ?? SentinelEpheDir);
         // Strictly after AttachEpheDir, never before -- see AttachJplFile.
         if (jplFile != null)
         {
