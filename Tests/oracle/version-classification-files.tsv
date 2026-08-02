@@ -2033,6 +2033,16 @@ FIXSTAR|Spica|2382332|PLAIN	TRACKS-2.10.03	5 field(s) differ, worst xx[5] (unrel
 FIXSTAR|Spica|2382332|SPEED	TRACKS-2.10.03	5 field(s) differ, worst xx[1] (ulp=546)	MATCH	5 field(s) differ, worst xx[1] (ulp=546)
 FIXSTAR|Spica|2561120|PLAIN	TRACKS-2.10.03	6 field(s) differ, worst xx[5] (unrelated)	MATCH	6 field(s) differ, worst xx[5] (unrelated)
 FIXSTAR|Spica|2561120|SPEED	TRACKS-2.10.03	6 field(s) differ, worst xx[5] (ulp=14760573177818)	MATCH	6 field(s) differ, worst xx[5] (ulp=14760573177818)
+GETCURRENTFILEDATA|AUTOREAL|1	TRACKS-2.10.03	retc -9999!=0; serr differs; 3 field(s) differ, worst tfend (unrelated)	MATCH	retc -9999!=0; serr differs; 3 field(s) differ, worst tfend (unrelated)
+GETCURRENTFILEDATA|BOUNDARY|-1	TRACKS-2.10.03	retc -9999!=-1; serr differs	MATCH	retc -9999!=-1; serr differs
+GETCURRENTFILEDATA|BOUNDARY|5	TRACKS-2.10.03	retc -9999!=-1; serr differs	MATCH	retc -9999!=-1; serr differs
+GETCURRENTFILEDATA|NODATA|0	TRACKS-2.10.03	retc -9999!=0; serr differs; 3 field(s) differ, worst tfend (unrelated)	MATCH	retc -9999!=0; serr differs; 3 field(s) differ, worst tfend (unrelated)
+GETCURRENTFILEDATA|NODATA|2	TRACKS-2.10.03	retc -9999!=-1; serr differs	MATCH	retc -9999!=-1; serr differs
+GETCURRENTFILEDATA|NODATA|3	TRACKS-2.10.03	retc -9999!=-1; serr differs	MATCH	retc -9999!=-1; serr differs
+GETCURRENTFILEDATA|NODATA|4	TRACKS-2.10.03	retc -9999!=-1; serr differs	MATCH	retc -9999!=-1; serr differs
+GETCURRENTFILEDATA|PRECALC|0	TRACKS-2.10.03	retc -9999!=0; serr differs; 3 field(s) differ, worst tfend (unrelated)	MATCH	retc -9999!=0; serr differs; 3 field(s) differ, worst tfend (unrelated)
+GETCURRENTFILEDATA|PRECALC|2	TRACKS-2.10.03	retc -9999!=0; serr differs; 3 field(s) differ, worst tfend (unrelated)	MATCH	retc -9999!=0; serr differs; 3 field(s) differ, worst tfend (unrelated)
+GETCURRENTFILEDATA|PREFIXSTAR|4	TRACKS-2.10.03	retc -9999!=0; serr differs	MATCH	retc -9999!=0; serr differs
 HELIOCROSSUT|0|0|2195878|PLAIN|-1	TRACKS-2.10.03	retc -9999!=-1; serr differs	MATCH	retc -9999!=-1; serr differs
 HELIOCROSSUT|0|0|2195878|PLAIN|1	TRACKS-2.10.03	retc -9999!=-1; serr differs	MATCH	retc -9999!=-1; serr differs
 HELIOCROSSUT|0|0|2488072|PLAIN|-1	TRACKS-2.10.03	retc -9999!=-1; serr differs	MATCH	retc -9999!=-1; serr differs
@@ -3244,6 +3254,25 @@ NODAPSUT|9|2488072|257	TRACKS-2.10.03	12 field(s) differ, worst xndsc[1] (ulp=25
 NODAPSUT|9|2488072|258	TRACKS-2.10.03	12 field(s) differ, worst xndsc[1] (ulp=254201689508)	MATCH	12 field(s) differ, worst xndsc[1] (ulp=254201689508)
 NODAPSUT|9|2488072|260	TRACKS-2.10.03	12 field(s) differ, worst xndsc[1] (ulp=246424350)	MATCH	12 field(s) differ, worst xndsc[1] (ulp=246424350)
 NODAPSUT|9|2488072|4	TRACKS-2.10.03	12 field(s) differ, worst xndsc[1] (ulp=246424350)	MATCH	12 field(s) differ, worst xndsc[1] (ulp=246424350)
+PCTR|0|14|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=2; serr differs; 3 field(s) differ, worst xx[0] (unrelated)	MATCH	retc -9999!=2; serr differs; 3 field(s) differ, worst xx[0] (unrelated)
+PCTR|0|14|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=65602; serr differs; 3 field(s) differ, worst xx[0] (unrelated)	MATCH	retc -9999!=65602; serr differs; 3 field(s) differ, worst xx[0] (unrelated)
+PCTR|0|14|2269091|SPEED	TRACKS-2.10.03	retc -9999!=258; serr differs; 6 field(s) differ, worst xx[0] (unrelated)	MATCH	retc -9999!=258; serr differs; 6 field(s) differ, worst xx[0] (unrelated)
+PCTR|0|14|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=2; serr differs; 3 field(s) differ, worst xx[0] (unrelated)	MATCH	retc -9999!=2; serr differs; 3 field(s) differ, worst xx[0] (unrelated)
+PCTR|0|14|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=65602; serr differs; 3 field(s) differ, worst xx[0] (unrelated)	MATCH	retc -9999!=65602; serr differs; 3 field(s) differ, worst xx[0] (unrelated)
+PCTR|0|14|2488072|SPEED	TRACKS-2.10.03	retc -9999!=258; serr differs; 6 field(s) differ, worst xx[0] (unrelated)	MATCH	retc -9999!=258; serr differs; 6 field(s) differ, worst xx[0] (unrelated)
+PCTR|3|14|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=2; serr differs; 3 field(s) differ, worst xx[0] (unrelated)	MATCH	retc -9999!=2; serr differs; 3 field(s) differ, worst xx[0] (unrelated)
+PCTR|3|14|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=65602; serr differs; 3 field(s) differ, worst xx[0] (unrelated)	MATCH	retc -9999!=65602; serr differs; 3 field(s) differ, worst xx[0] (unrelated)
+PCTR|3|14|2269091|SPEED	TRACKS-2.10.03	retc -9999!=258; serr differs; 6 field(s) differ, worst xx[0] (unrelated)	MATCH	retc -9999!=258; serr differs; 6 field(s) differ, worst xx[0] (unrelated)
+PCTR|3|14|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=2; serr differs; 3 field(s) differ, worst xx[0] (unrelated)	MATCH	retc -9999!=2; serr differs; 3 field(s) differ, worst xx[0] (unrelated)
+PCTR|3|14|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=65602; serr differs; 3 field(s) differ, worst xx[0] (unrelated)	MATCH	retc -9999!=65602; serr differs; 3 field(s) differ, worst xx[0] (unrelated)
+PCTR|3|14|2488072|SPEED	TRACKS-2.10.03	retc -9999!=258; serr differs; 6 field(s) differ, worst xx[0] (unrelated)	MATCH	retc -9999!=258; serr differs; 6 field(s) differ, worst xx[0] (unrelated)
+PCTR|3|3|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=-1; serr differs	MATCH	retc -9999!=-1; serr differs
+PCTR|4|5|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=2; serr differs; 3 field(s) differ, worst xx[0] (unrelated)	MATCH	retc -9999!=2; serr differs; 3 field(s) differ, worst xx[0] (unrelated)
+PCTR|4|5|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=65602; serr differs; 3 field(s) differ, worst xx[0] (unrelated)	MATCH	retc -9999!=65602; serr differs; 3 field(s) differ, worst xx[0] (unrelated)
+PCTR|4|5|2269091|SPEED	TRACKS-2.10.03	retc -9999!=258; serr differs; 6 field(s) differ, worst xx[0] (unrelated)	MATCH	retc -9999!=258; serr differs; 6 field(s) differ, worst xx[0] (unrelated)
+PCTR|4|5|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=2; serr differs; 3 field(s) differ, worst xx[0] (unrelated)	MATCH	retc -9999!=2; serr differs; 3 field(s) differ, worst xx[0] (unrelated)
+PCTR|4|5|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=65602; serr differs; 3 field(s) differ, worst xx[2] (unrelated)	MATCH	retc -9999!=65602; serr differs; 3 field(s) differ, worst xx[2] (unrelated)
+PCTR|4|5|2488072|SPEED	TRACKS-2.10.03	retc -9999!=258; serr differs; 6 field(s) differ, worst xx[0] (unrelated)	MATCH	retc -9999!=258; serr differs; 6 field(s) differ, worst xx[0] (unrelated)
 SOLCROSSUT|0|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 1 field(s) differ, worst jd_cross (unrelated)	MATCH	retc -9999!=0; serr differs; 1 field(s) differ, worst jd_cross (unrelated)
 SOLCROSSUT|0|2269091|TRUEPOS	TRACKS-2.10.03	retc -9999!=0; serr differs; 1 field(s) differ, worst jd_cross (unrelated)	MATCH	retc -9999!=0; serr differs; 1 field(s) differ, worst jd_cross (unrelated)
 SOLCROSSUT|0|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 1 field(s) differ, worst jd_cross (unrelated)	MATCH	retc -9999!=0; serr differs; 1 field(s) differ, worst jd_cross (unrelated)
