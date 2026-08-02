@@ -258,31 +258,59 @@ function Get-ArchBaseline {
 }
 
 # ---------------------------------------------------------------------------------------
-# swetest.c does not compile as shipped in v2.10.3final
+# swetest.c: two build defects fixed upstream in v2.10.3bfinal; a third surfaced by that
+# same fix and still open
 # ---------------------------------------------------------------------------------------
-
-<#
-    Two defects, both upstream, both in the tagged release:
-
-      1. spmoon is written at swetest.c:1139-1140 and read at :1621, and is declared nowhere
-         in the entire source tree. It arrived with -xv (planetary moons), new in 2.10, and
-         its declaration did not. This is a hard compile error for any C compiler on any
-         platform, so the shipped swetest.c cannot ever have been built from this tag.
-
-      2. hostname is declared under `#if HPUNIX` (:826-828) but gethostname() is called
-         unconditionally at :1282. The call only exists to raise line_limit on a host named
-         "as80", which is Astrodienst's own machine, so guarding it changes nothing anywhere
-         else.
-
-    The fixes are applied to a copy. The submodule stays pristine -- gen-delta.ps1 asserts the
-    gitlink matches the pinned commit, and a modified working tree would break the delta the
-    whole port is derived from.
-
-    Every replacement asserts both that it found exactly one place to anchor to, and that the
-    defect it is patching is still present -- so a future upstream tag that declares spmoon (or
-    guards gethostname) itself fails loudly here instead of compiling something other than what
-    this comment describes.
-#>
+#
+# v2.10.3final had two defects, both upstream, both in that tagged release:
+#
+#   1. spmoon was written at swetest.c:1139-1140 and read at :1621, and was declared
+#      nowhere in the entire source tree. It arrived with -xv (planetary moons), new in
+#      2.10, and its declaration did not. Hard compile error on any C compiler, any
+#      platform -- the shipped swetest.c could never have been built from that tag.
+#   2. hostname was declared under `#if HPUNIX` (:826-828) but gethostname() was called
+#      unconditionally at :1282. The call only ever raised line_limit on a host named
+#      "as80" (Astrodienst's own machine), so guarding it changed nothing anywhere else.
+#
+# This script used to patch a copy of swetest.c at build time to work around both (see
+# git history for New-PatchedSwetestSource before this comment's own revision). Both are
+# now fixed upstream: swetest.c declares `static char spmoon[AS_MAXCH] = "9501";  //
+# Jupiter Moon Io` (the same value this script's patch used to supply) and wraps the
+# gethostname block in `#ifndef _WINDOWS`, with sweodef.h now defining _WINDOWS under
+# `#ifdef _WIN32` to match. Reported upstream by this fork; see docs/upstream/
+# swetest-2.10.03-build-defects.md for the exchange. external/swisseph is now pinned to
+# v2.10.3bfinal (f4dcd18e).
+#
+# THE THIRD DEFECT, surfaced by that same sweodef.h change, still open as of f4dcd18e:
+#
+# do_printf (swetest.c:3956-3963, called by every line swetest prints) reads:
+#
+#   #ifdef _WINDOWS
+#     fprintf(fp, info);
+#   #else
+#     fputs(info,stdout);
+#   #endif
+#
+# and `fp` is declared nowhere in swetest.c (zero other matches). This was dead code under
+# v2.10.3final -- _WINDOWS was never defined there, so the #ifdef branch never compiled --
+# but sweodef.h's own new `#define _WINDOWS` under `#ifdef _WIN32` activates it on every
+# MSVC build (_WIN32 is always defined by MSVC), which is a hard compile error, not a
+# stream change. docs/upstream/swetest-2.10.03-build-defects.md's own closing note (this
+# fork's prior report to Astrodienst) told them this branch was "fine on master, where the
+# rest of the tree expects _WINDOWS" -- that was wrong, and unstated at the time because
+# fp had never actually been compiled against. master and v2.10.3bfinal are the same
+# commit (git ls-remote origin master resolves to f4dcd18e), so there is no further fix to
+# pull; this is reported back as a follow-up, unresolved as of this commit.
+#
+# The patch below makes the _WINDOWS branch behave exactly as the #else branch always has
+# -- fputs(info, stdout) -- rather than guessing at what `fp` was meant to be. This
+# script's own smoke test (Invoke-SwetestSmoke) and every downstream comparison
+# (scripts/verify-swetest-diff.ps1, Tools/SwetestDiff) assume swetest's output arrives on
+# stdout; fputs is the one substitution that cannot change what reaches it for any `info`
+# do_printf is called with. fprintf(stdout, info) would too for well-behaved input, but
+# treats info (built from swe_calc results, not a literal) as a format string, which
+# fputs does not -- and is exactly the substitution cl.exe itself warns about
+# (C4047/C4024, seen when this defect was first hit) on the original fprintf(fp, info).
 function New-PatchedSwetestSource {
     param([string] $SourcePath, [string] $DestinationPath)
 
@@ -291,88 +319,26 @@ function New-PatchedSwetestSource {
     # swetest.c corrupt the patched source with no error anywhere in this script.
     $text = [System.IO.File]::ReadAllText($SourcePath, [System.Text.UTF8Encoding]::new($false, $true))
 
-    $spmoonDeclPattern = '(?m)^\s*static\s+char\s+spmoon\b'
-    if ($text -match $spmoonDeclPattern) {
-        Fail 'swetest.c: spmoon is already declared. The upstream compile defect this patch exists for may no longer apply -- check whether this tag declares it, and drop this patch if so instead of applying it on top.'
+    $doPrintfPattern = "(?m)^#ifdef _WINDOWS`r?`n  fprintf\(fp, info\);`r?`n#else`r?`n  fputs\(info,stdout\);`r?`n#endif"
+    $doPrintfCount = ([regex]::Matches($text, $doPrintfPattern)).Count
+    if ($doPrintfCount -ne 1) {
+        Fail "swetest.c: expected exactly one do_printf '#ifdef _WINDOWS / fprintf(fp, info) / #else / fputs' block to patch, found $doPrintfCount. If upstream has fixed this (declared fp, or removed the branch), drop this patch instead of applying it on top."
     }
 
-    $sastnoDecl = 'static char sastno[AS_MAXCH] = "433";'
-    $sastnoCount = ([regex]::Matches($text, [regex]::Escape($sastnoDecl))).Count
-    if ($sastnoCount -ne 1) {
-        Fail "swetest.c: expected exactly one sastno declaration to anchor the spmoon fix to, found $sastnoCount."
-    }
-    # Same shape as its siblings sastno ("433", a real asteroid number) and shyp ("1", a real
-    # hypothetical-body number): file-scope, AS_MAXCH, and a real id rather than blank.
-    # swetest.c:1619-1621 runs `ipl = atoi(spmoon)` unconditionally whenever 'v' appears in
-    # plsel, with no offset added -- unlike the 's' and 'z' selectors, which add
-    # SE_AST_OFFSET/SE_FICT_OFFSET_1 inline, so spmoon has to hold a full id already. A blank
-    # default made atoi("") == 0 == SE_SUN, so `swetest -pv` with no `-xv` silently printed the
-    # Sun labelled as a planetary moon -- a defect in a reference artifact this build feeds an
-    # oracle. "9501" is Io: SE_PLMOON_OFFSET (9000) plus the host planet's number times 100, so
-    # 94xx is a Mars moon, 95xx a Jupiter moon (Io is Jupiter's first), 96xx a Saturn moon, and
-    # so on -- 9001 is not a moon of anything. Confirmed against upstream's own later fix for
-    # this same missing-declaration defect: swetest.c on the aloistr/swisseph master branch (past
-    # the v2.10.3final tag this build otherwise pins to) declares
-    # `static char spmoon[AS_MAXCH] = "9501";  // Jupiter Moon Io`, matching the usage text's own
-    # `v -xv9501 Io/Jupiter` example. This patch adopts that value rather than inventing one. This
-    # repo's ephemeris checkout does not carry the sepm9*.se1 files planetary-moon calc needs (see
-    # CONTRIBUTING.md's required-ephemeris-files.tsv list), so the untested default now fails
-    # visibly with a data-missing error instead of quietly returning a wrong body's position.
-    $text = $text.Replace($sastnoDecl, $sastnoDecl + "`nstatic char spmoon[AS_MAXCH] = `"9501`";")
-
-    $gethostnamePattern = '(?m)^  gethostname \(hostname, 80\);\r?\n  if \(strstr\(hostname, "as80"\) != NULL\) *\r?\n    line_limit = 2 \* 36525;'
-    $gethostnameCount = ([regex]::Matches($text, $gethostnamePattern)).Count
-    if ($gethostnameCount -ne 1) {
-        Fail "swetest.c: expected exactly one unguarded gethostname block to guard, found $gethostnameCount. If upstream now guards it itself, drop this patch instead of applying it on top."
+    # The count above cannot detect upstream declaring fp elsewhere in the file (it only matches
+    # the four-line block itself, present or not, regardless of what fp resolves to). This scans
+    # the whole file separately so a future release that adds a real `fp` declaration is caught
+    # even though the four-line block above it would still match unchanged.
+    $fpDeclPattern = '(?m)^\s*(static\s+)?FILE\s*\*\s*fp\b|^\s*extern\s+FILE\s*\*\s*fp\b'
+    if ($text -match $fpDeclPattern) {
+        Fail 'swetest.c: fp now appears to be declared somewhere. The do_printf compile defect this patch exists for may no longer apply -- check, and drop this patch if so instead of applying it on top.'
     }
 
-    # The count above cannot detect upstream guarding the call, despite what that message says.
-    # $gethostnamePattern anchors on the three body lines only, so it matches whether or not those
-    # lines sit inside a preprocessor conditional: measured against a copy carrying upstream's own
-    # fix, the count is 1 exactly as it is for the unguarded original. Without the check below, a
-    # future tag that fixes this would be patched anyway, nesting our #if HPUNIX inside upstream's
-    # guard. That nests harmlessly rather than miscompiling, which is worse for our purposes than
-    # breaking, because the whole reason this assertion exists is to notice when upstream moves.
-    #
-    # Upstream's fix is #ifndef _WINDOWS around the call plus #define _WINDOWS under #ifdef _WIN32
-    # in sweodef.h -- read directly off aloistr/swisseph master, not taken on description. Only the
-    # first is visible in this file, so that is what this looks for: any preprocessor conditional
-    # immediately above the call.
-    #
-    # WHY THIS PATCH USES #if HPUNIX AND NOT UPSTREAM'S OWN #ifndef _WINDOWS. Taking their guard
-    # verbatim would mean taking both halves, and the second half cannot be retrofitted onto
-    # v2.10.3final. _WINDOWS does not appear anywhere in the tag's sweodef.h (zero matches), so the
-    # guard alone leaves it undefined, #ifndef is true, the block compiles and the build breaks
-    # exactly as it does today. Defining it to compensate reaches two other sites in the tag:
-    #
-    #   swephexp.h:615  #if defined(MAKE_DLL) || defined(USE_DLL) || defined(_WINDOWS)
-    #                   pulls in <windows.h> and declares `extern HANDLE dllhandle`, which the
-    #                   comment beside it says is set by swedllst::DllMain. This is a static-lib
-    #                   build with no DllMain, and the header is included by every translation unit
-    #                   of libswe, so this changes how the reference LIBRARY compiles, not just
-    #                   swetest.
-    #   swetest.c:3944  do_printf switches from fputs(info, stdout) to fprintf(fp, info) -- a
-    #                   different stream, and a non-literal format string. Every line swetest
-    #                   prints would stop going to stdout, which is precisely what
-    #                   scripts/verify-swetest-diff.ps1 captures and compares.
-    #
-    # Upstream's fix is coherent on master because master's tree is consistent with _WINDOWS being
-    # defined on Windows. On the pinned tag it is not, and adopting it here would quietly change
-    # the C reference this whole harness is measured against. #if HPUNIX reaches the same place by
-    # the tag's own existing machinery: sweodef.h:96-98 defines MSDOS MY_TRUE under _WIN32, and
-    # :143-144 derives HPUNIX MY_FALSE from MSDOS, so the block compiles out on Windows and on Unix
-    # stays exactly where upstream's own guard would leave it,
-    # which is the entire intent. The spmoon half of the workaround IS taken from upstream verbatim
-    # (see the "9501" note above); only this half has a reason not to be.
-    $gethostnameGuardedPattern = '(?m)^#\s*(if|ifdef|ifndef)\b[^\r\n]*\r?\n  gethostname \(hostname, 80\);'
-    if ($text -match $gethostnameGuardedPattern) {
-        Fail 'swetest.c: the gethostname call is already inside a preprocessor conditional, so upstream has fixed this itself. Drop this patch rather than applying it on top, and re-check whether the spmoon patch above is still needed too.'
-    }
-    $text = [regex]::Replace($text, $gethostnamePattern,
-        "#if HPUNIX`n  gethostname (hostname, 80);`n  if (strstr(hostname, `"as80`") != NULL)`n    line_limit = 2 * 36525;`n#endif")
+    $text = [regex]::Replace($text, $doPrintfPattern, "#ifdef _WINDOWS`n  fputs(info,stdout);`n#else`n  fputs(info,stdout);`n#endif")
 
     [System.IO.File]::WriteAllText($DestinationPath, $text)
 }
+
 
 # ---------------------------------------------------------------------------------------
 # Build
@@ -762,7 +728,7 @@ try {
         "env__CL_                  $(if ($envClUnderscoreOriginal) { $envClUnderscoreOriginal } else { 'not set' })"
         "pyswisseph_2_08_manifest  $manifest208Sha256 (scripts/pyswisseph-2.08.manifest.tsv)"
         "swisseph_commit           $submoduleHead"
-        "swetest_patches           spmoon declaration (default `"9501`"); gethostname guarded by HPUNIX"
+        "swetest_patches           do_printf's fp undeclared under _WINDOWS (fputs substituted; v2.10.3final's spmoon/gethostname defects are fixed upstream as of v2.10.3bfinal and no longer patched here -- see this script's own comment above the swetest build step)"
         "swetest_patched_sha256    $patchedSha256"
         "libswe_2_10_03_sha256     $lib210Sha256"
         "libswe_2_08_sha256        $lib208Sha256"
