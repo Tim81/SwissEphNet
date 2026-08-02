@@ -1,0 +1,123 @@
+<h1>Closing out our swetest.c reports, and one request about the release tag</h1>
+
+<p>Everything we raised is resolved. One was our mistake and we withdrew it; the other you had
+already fixed. This note records where each ended up, so the thread has a clear close, and leaves
+one request standing about the tag itself.</p>
+
+<p>This comes from the SwissEphNet fork, a C# port of the library. We found these while diffing our
+port's output against a reference <code>swetest</code> binary built from your source.</p>
+
+<h2>Status</h2>
+
+<table border="1" cellpadding="6" cellspacing="0">
+<tr><th>Reported</th><th>Where it stands</th><th>Fixed in</th></tr>
+<tr>
+  <td><code>dms()</code> loses the minus sign in the zodiac format</td>
+  <td><b>withdrawn by us</b> &mdash; you were right</td>
+  <td>n/a</td>
+</tr>
+<tr>
+  <td><code>gethostname</code> called with a variable declared only under <code>HPUNIX</code></td>
+  <td><b>fixed on <code>master</code></b></td>
+  <td><code>#ifndef _WINDOWS</code> guard</td>
+</tr>
+<tr>
+  <td><code>spmoon</code> used but never declared</td>
+  <td><b>fixed on <code>master</code></b></td>
+  <td><code>22cfd73</code></td>
+</tr>
+</table>
+
+<p>Verified against <code>master</code> as fetched on 2 August 2026. Both fixes are on
+<code>master</code> only; neither is in any tag.</p>
+
+<h2>The two you fixed</h2>
+
+<p><code>swetest.c</code> on <code>master</code> now declares the variable at file scope:</p>
+
+<pre>
+static char spmoon[AS_MAXCH] = "9501";	// Jupiter Moon Io
+</pre>
+
+<p>and guards the call:</p>
+
+<pre>
+#ifndef _WINDOWS
+  gethostname (hostname, 80);
+  if (strstr(hostname, "as80") != NULL)
+    line_limit = 2 * 36525;
+#endif
+</pre>
+
+<p>On the <code>#ifndef _WINDOWS</code> guard we owe you a correction. We wrote back questioning
+whether it covers MSVC, on the grounds that <code>_WINDOWS</code> did not appear to be defined
+anywhere. You told us it is, because <code>_WIN32</code> is defined by every known Windows C
+compiler and <code>sweodef.h</code> derives <code>_WINDOWS</code> from it. You were right and our
+check was not a real one: we had compiled a probe with no headers included, so nothing could have
+defined it. Compiled properly against your headers, the guard does what you said it does. Our
+apologies for the noise.</p>
+
+<h2>The one we withdrew</h2>
+
+<p>Astrodienst's answer on <code>dms()</code> was that a zodiacal position format is not a way to
+express an angular difference, so <code>-d</code> with <code>-fZ</code> is an application-level
+error, and <code>-fL</code> or <code>-fl</code> is the correct format. We checked that and it holds.
+<code>swetest.c</code> has three sites passing <code>BIT_ZODIAC</code> (<code>:2241</code>,
+<code>:2527</code>, <code>:2532</code>); the two node-longitude sites return values normalised to
+0-360, verified across three bodies, all four output arrays and all three methods, so a
+differential value is the only route by which a negative reaches that formatter.
+<code>swetest.c:534</code> documents <code>Z</code> as <code>longitude ddsignmm'ss"</code>, a
+position format. The combination is a category error by the format's own definition.</p>
+
+<p>One narrow observation survives and we are not pressing it. Reaching that path still executes
+<code>*(sp-1)</code>, a one-byte write before the start of a static buffer, which AddressSanitizer
+or <code>/RTCs</code> will flag whether or not the input was sensible. Rejecting <code>-d</code>
+together with <code>-fZ</code> at argument-parse time would close it and tell the user what they
+did wrong. Entirely your call; the numbers were never the problem.</p>
+
+<h2>A separate observation, unchanged</h2>
+
+<p>The guarded block doubles <code>line_limit</code> when the host is named <code>as80</code>, which
+reads as an Astrodienst machine. It is harmless, but it means <code>swetest</code> has one output
+limit inside your network and another everywhere else, which is awkward for anyone using
+<code>swetest</code> as a reference for expected output. Dropping it from the public source, or
+driving it from a command-line option, would make the limit the same everywhere.</p>
+
+<hr>
+
+<h2>The request: a tag that builds</h2>
+
+<p><code>v2.10.3final</code> is still the newest tag, and it does not build, on any platform.
+<code>spmoon</code> is used at <code>swetest.c:1139</code>, <code>:1140</code> and
+<code>:1621</code> and declared nowhere, which is a constraint violation no compiler accepts.</p>
+
+<pre>
+git clone https://github.com/aloistr/swisseph
+cd swisseph
+git checkout v2.10.3final
+make swetest
+</pre>
+
+<p>On Windows that also stops on the unguarded <code>gethostname</code>. Isolating the one
+translation unit removes any linker or library question:</p>
+
+<pre>
+cl /nologo /c /O2 /fp:precise /MD swetest.c
+</pre>
+
+<p>Both fixes have been on <code>master</code> since June, but the tag is what people fetch, package
+and vendor, so anyone starting from the current release still hits the break. A patch release would
+settle it. Failing that, a line in the release notes saying <code>swetest</code> does not build from
+<code>v2.10.3final</code>, and pointing at <code>master</code>, would save the next person the
+bisect.</p>
+
+<p>We work around it downstream by patching a copy: we adopt your own <code>spmoon</code>
+declaration verbatim, <code>"9501"</code>, so our reference binary and yours agree on what
+<code>-pv</code> means without an <code>-xv</code>.</p>
+
+<hr>
+
+<p>Reported from the SwissEphNet fork
+(<a href="https://github.com/Tim81/SwissEphNet">https://github.com/Tim81/SwissEphNet</a>), a C#
+port of the Swiss Ephemeris tracking <code>v2.10.3final</code>. Original port by Yan Grenier; fork
+work by Timothy van der Ham.</p>

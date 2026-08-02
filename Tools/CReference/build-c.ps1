@@ -329,9 +329,10 @@ function New-PatchedSwetestSource {
     # guard. That nests harmlessly rather than miscompiling, which is worse for our purposes than
     # breaking, because the whole reason this assertion exists is to notice when upstream moves.
     #
-    # Upstream's fix, as described by Astrodienst, is #ifndef _WINDOWS around the call plus
-    # #define _WINDOWS under #ifdef _WIN32 in sweodef.h. Only the first is visible in this file, so
-    # that is what this looks for: any preprocessor conditional immediately above the call.
+    # Upstream's fix is #ifndef _WINDOWS around the call plus #define _WINDOWS under #ifdef _WIN32
+    # in sweodef.h -- read directly off aloistr/swisseph master, not taken on description. Only the
+    # first is visible in this file, so that is what this looks for: any preprocessor conditional
+    # immediately above the call.
     $gethostnameGuardedPattern = '(?m)^#\s*(if|ifdef|ifndef)\b[^\r\n]*\r?\n  gethostname \(hostname, 80\);'
     if ($text -match $gethostnameGuardedPattern) {
         Fail 'swetest.c: the gethostname call is already inside a preprocessor conditional, so upstream has fixed this itself. Drop this patch rather than applying it on top, and re-check whether the spmoon patch above is still needed too.'
