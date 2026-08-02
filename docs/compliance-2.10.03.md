@@ -190,9 +190,15 @@ indistinguishable from 17,064 rows' own 0.78s on the same machine -- the added `
 the sid-mode cycling (same row count, different values) do not measurably change per-row cost.
 
 **Linux is now gated too, by `linux-exactness` in `.github/workflows/oracle.yml`.** It reuses both
-grids and both drivers unchanged; `sedump.c` needs only `-DSWISSEPH_HAS_CROSSING=1` and an
-explicit source list to build there, the same macro the Windows build already sets
-(`scripts/run-oracle-dump.ps1`). At last measurement (14,820 and 2,244 rows, before this record's
+grids and both drivers unchanged; `sedump.c` needs `-DSWISSEPH_HAS_CROSSING=1`,
+`-DSWISSEPH_HAS_HOUSES_EX2=1` and an explicit source list to build there, the same two macros the
+Windows build sets (`scripts/run-oracle-dump.ps1`). That is two macros, not one, and the second
+was added later: `sedump.c` is compiled against 2.10.03 in six places, and a macro added to the
+Windows build alone leaves the four non-Windows compile lines taking the 2.08 sentinel branch.
+Measured when exactly that happened -- gcc, both grids, this repository's own `oracle.yml` compile
+line -- the C side emitted the sentinel for 4,500 analytic rows while the port computed real
+values, and the job's `cmp` failed. Nothing catches it earlier, because the sentinel branch
+compiles cleanly; a macro added here has to be added to all six. At last measurement (14,820 and 2,244 rows, before this record's
 own 1,000-row ayanamsa addition -- see the footnote above; `linux-exactness` re-verifies the
 current row count on the next push or pull request, not measured fresh from this workstation),
 both grids produced exactly that many rows on Linux, matching Windows row for row, and every row

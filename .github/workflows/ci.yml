@@ -132,6 +132,21 @@ jobs:
       # real run below. Deliberately in the same job as the gate, so it runs on the same runner
       # OS -- a path built with a Windows-only separator passes on windows-latest and fails on
       # ubuntu-latest, and only a same-OS self-test catches that.
+      # Runs beside the freeze gate rather than in oracle.yml, deliberately: it costs no compiler
+      # and no ephemeris data, and the defect it guards is invisible until the expensive
+      # cross-platform replay at the very end of oracle.yml. sedump.c is compiled against 2.10.03
+      # in six places; SWISSEPH_HAS_HOUSES_EX2 was once added to the Windows build alone, and the
+      # four non-Windows lines silently took the 2.08 sentinel branch -- 4,500 analytic rows of
+      # sentinel output against a port computing real values, caught only by linux-exactness and
+      # macos-exactness failing their cmp step.
+      - name: Self-test the sedump macro-parity gate
+        shell: pwsh
+        run: pwsh scripts/verify-sedump-macro-parity.ps1 -SelfTest
+
+      - name: Verify every 2.10.03 sedump build defines the same guard macros
+        shell: pwsh
+        run: pwsh scripts/verify-sedump-macro-parity.ps1
+
       - name: Self-test the freeze gate
         shell: pwsh
         run: pwsh scripts/verify-freeze.ps1 -SelfTest

@@ -759,7 +759,7 @@ jobs:
         run: |
           clang --version | head -1
           E=external/swisseph
-          clang -O2 -ffp-contract=off -fno-builtin -DSWISSEPH_HAS_CROSSING=1 -I "$E" -o sedump \
+          clang -O2 -ffp-contract=off -fno-builtin -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -I "$E" -o sedump \
             Tools/CReference/sedump.c \
             "$E/sweph.c" "$E/swephlib.c" "$E/swemmoon.c" "$E/swemplan.c" "$E/swejpl.c" \
             "$E/swedate.c" "$E/swehouse.c" "$E/swecl.c" "$E/swehel.c" -lm
@@ -789,7 +789,7 @@ jobs:
         shell: bash
         run: |
           E=external/swisseph
-          clang -O2 -ffp-contract=off -DSWISSEPH_HAS_CROSSING=1 -I "$E" -o sedump-nb \
+          clang -O2 -ffp-contract=off -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -I "$E" -o sedump-nb \
             Tools/CReference/sedump.c \
             "$E/sweph.c" "$E/swephlib.c" "$E/swemmoon.c" "$E/swemplan.c" "$E/swejpl.c" \
             "$E/swedate.c" "$E/swehouse.c" "$E/swecl.c" "$E/swehel.c" -lm
@@ -953,7 +953,7 @@ jobs:
         run: |
           gcc --version | head -1
           E=external/swisseph
-          gcc -O2 -DSWISSEPH_HAS_CROSSING=1 -I "$E" -o sedump \
+          gcc -O2 -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -I "$E" -o sedump \
             Tools/CReference/sedump.c \
             "$E/sweph.c" "$E/swephlib.c" "$E/swemmoon.c" "$E/swemplan.c" "$E/swejpl.c" \
             "$E/swedate.c" "$E/swehouse.c" "$E/swecl.c" "$E/swehel.c" -lm
@@ -996,7 +996,7 @@ jobs:
         shell: bash
         run: |
           E=external/swisseph
-          gcc -O2 -ffp-contract=off -fno-builtin -DSWISSEPH_HAS_CROSSING=1 -I "$E" -o sedump-strict \
+          gcc -O2 -ffp-contract=off -fno-builtin -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -I "$E" -o sedump-strict \
             Tools/CReference/sedump.c \
             "$E/sweph.c" "$E/swephlib.c" "$E/swemmoon.c" "$E/swemplan.c" "$E/swejpl.c" \
             "$E/swedate.c" "$E/swehouse.c" "$E/swecl.c" "$E/swehel.c" -lm
