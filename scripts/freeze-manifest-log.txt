@@ -243,3 +243,33 @@ not exist on the integration branch once it lands).
    the conformance run reports no known-fail movement. Tests/SwissEphNet.Tests/CutStrTest.cs
    adds 9 cases, every expectation derived from the C by hand rather than from prior output.
    SwissEphNet/CPort: 48487 -> 48518 lines, sha256 8B5C2BAE... -> 91F5C3E6....
+13. PR #32 2026-08-02: Comment only, correcting a false claim entry 12 introduced. The line
+   ending guard in swi_cutstr carried a comment saying the port "would diverge if one ever
+   did" put '
+' or '' in cutlist, implying it does not diverge now. It does. Shown by
+   review, against a faithful simulation of the C over 131,064 exhaustive cases: the C tests
+   *s at the position its run-skip advanced to, so a run of two or more separators ending in a
+   line terminator DOES break there, and that break leaves the final field running to the real
+   end of the string. This port skips the test whenever a cut happened and keeps cutting.
+     cutlist ",
+"  s="a,
+a
+"   C {"a", "a
+"}   port {"a", "a", ""}
+     cutlist ",
+"  s="a
+
+;,"   C {"a", ";,"}    port {"a", ";", ""}
+   Unreachable: Sweph.cs:2841 passes PATH_SEPARATOR and :7350 passes ',', so no caller puts a
+   line terminator in the cut-list. Matching the C would mean letting the final field survive
+   the break un-truncated, a structural change to a frozen function for a path with no caller,
+   so the divergence is now recorded in place rather than removed or misdescribed. The same
+   review confirmed the rest of entry 12 exhaustively: 131,064 cases, 0 mismatches, and it
+   found a fourth divergence in the pre-entry-12 code that entry 12 did not mention (the inner
+   run-skip advanced p and then p++ advanced again, leaving one character unexamined, so
+   "a,
+b" with cutlist "," gave {"a", "
+b"} where the C gives {"a", ""}); that one is fixed
+   too.
+   No behaviour change in this entry. SwissEphNet/CPort: 48518 -> 48530 lines, sha256
+   91F5C3E6... -> 23B9CDB0....

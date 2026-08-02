@@ -1,4 +1,4 @@
-/*
+﻿/*
    This is a port of the Swiss Ephemeris Free Edition, Version 2.00.00
    of Astrodienst AG, Switzerland from the original C Code to .Net. For
    copyright see the original copyright notices below and additional

@@ -3918,9 +3918,21 @@ namespace SwissEphNet.CPort
                     ps = p + 1;
                 }
                 // The C tests *s after the branch above may have overwritten it with '\0', so
-                // a separator that was cut can never also be seen as a line ending here. Only
-                // reachable when '\n' or '\r' is itself in cutlist, which no caller does, but
-                // testing the original character would diverge if one ever did.
+                // a separator that was cut can never also be seen as a line ending here.
+                //
+                // This is NOT full parity with the C, and the difference is worth stating
+                // rather than implying it away. When a line terminator is itself in cutlist,
+                // the C tests *s at the position the run-skip advanced to, so a run of two or
+                // more separators ending in '\n' or '\r' does break there, and its break leaves
+                // the final field running to the real end of the string. This skips the test
+                // whenever a cut happened and keeps cutting instead:
+                //     cutlist ",\n"  s="a,\na\n"   C {"a", "a\n"}   here {"a", "a", ""}
+                //     cutlist ",\n"  s="a\n\n;,"   C {"a", ";,"}    here {"a", ";", ""}
+                // Neither caller puts a line terminator in the cut-list (Sweph.cs:2841 passes
+                // PATH_SEPARATOR, :7350 passes ','), so nothing reaches it. Matching the C here
+                // would mean letting the final field survive the break un-truncated, which is a
+                // structural change to a frozen function for a path with no caller, so the
+                // divergence is recorded instead of removed.
                 if (!cut && (c == '\n' || c == '\r'))
                 {
                     pe = p;
