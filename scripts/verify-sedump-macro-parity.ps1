@@ -50,14 +50,24 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 function Get-RequiredMacros {
     param([string] $SedumpPath)
     $text = [System.IO.File]::ReadAllText($SedumpPath, [System.Text.UTF8Encoding]::new($false, $true))
-    # Only #ifdef/#ifndef/#if defined() lines, not prose mentions in the header comment -- the
-    # file's own comment block names these macros many times and must not inflate the set.
+    # Only #ifdef/#ifndef/#if/#elif lines, not prose mentions in the header comment -- the file's
+    # own comment block names these macros many times and must not inflate the set.
     $names = [System.Collections.Generic.SortedSet[string]]::new([System.StringComparer]::Ordinal)
     foreach ($m in [regex]::Matches($text, '(?m)^\s*#\s*(?:ifdef|ifndef)\s+(SWISSEPH_HAS_[A-Z0-9_]+)')) {
         [void]$names.Add($m.Groups[1].Value)
     }
-    foreach ($m in [regex]::Matches($text, '(?m)^\s*#\s*if\s+.*?\bdefined\s*\(\s*(SWISSEPH_HAS_[A-Z0-9_]+)\s*\)')) {
-        [void]$names.Add($m.Groups[1].Value)
+    # #if / #elif, one or more defined(...) terms per line -- e.g. "#if defined(A) || defined(B)".
+    # Matched per LINE first, then every defined(...) occurrence on THAT line extracted
+    # independently. A single file-wide regex anchored at the line start with one .*? capture group
+    # (this function's own earlier form) can only ever find the FIRST defined() on a line: once it
+    # matches, [regex]::Matches resumes searching right after that match -- no longer at a line
+    # start -- so a second defined() on the same #if never gets a chance to match, and #elif was not
+    # matched at all under an #if-only pattern. Splitting "find the qualifying lines" from "extract
+    # every defined() on each one" fixes both at once.
+    foreach ($lineMatch in [regex]::Matches($text, '(?m)^\s*#\s*(?:if|elif)\b.*$')) {
+        foreach ($dm in [regex]::Matches($lineMatch.Value, '\bdefined\s*\(\s*(SWISSEPH_HAS_[A-Z0-9_]+)\s*\)')) {
+            [void]$names.Add($dm.Groups[1].Value)
+        }
     }
     return , @($names)
 }
@@ -69,6 +79,15 @@ function Get-RequiredMacros {
 # each one to define ALL of them. That is precisely the defect: a compile line updated for one
 # macro and not the other. Ordinal matching throughout; PowerShell's -match and -like are
 # culture-aware and case-insensitive by default and this repository has been bitten by both.
+#
+# Comment lines are excluded ('#' is a comment marker in every file this gate scans -- PowerShell
+# and the bash `run:` blocks inside GitHub Actions workflow YAML alike): a prose comment that
+# happens to mention "-DSWISSEPH_HAS_..." must not count as a compile site, or deleting every real
+# -D flag and leaving one such stale comment behind would keep this gate green. This repository
+# already has a comment that goes out of its way to avoid the literal "/D" + name adjacency this
+# scan matches (see run-oracle-dump.ps1's own comment on its $commonFlags line) precisely because
+# of this risk; excluding comment lines outright removes the need for every future comment to be
+# equally careful.
 function Get-MacroBearingLines {
     param([string[]] $Files)
     $sites = @()
@@ -77,6 +96,7 @@ function Get-MacroBearingLines {
         $lineNo = 0
         foreach ($line in [System.IO.File]::ReadAllLines($file)) {
             $lineNo++
+            if ($line.TrimStart().StartsWith('#')) { continue }
             if ([regex]::IsMatch($line, '[/-]D\s*SWISSEPH_HAS_[A-Z0-9_]+')) {
                 $sites += [pscustomobject]@{ File = $file; Line = $lineNo; Text = $line }
             }
@@ -95,8 +115,20 @@ function Get-DefinedMacros {
     return , @($found)
 }
 
+# *.yml and *.yaml -- GitHub Actions accepts both extensions for a workflow file, and a scan that
+# only looked for *.yml would silently drop coverage of any workflow saved with the other one.
+# Factored out so -SelfTest can exercise it directly rather than only indirectly through the whole
+# gate, matching how Get-RequiredMacros/Get-MacroBearingLines/Test-Parity are each tested on their
+# own below.
+function Get-WorkflowScanFiles {
+    param([string] $WorkflowsDir)
+    return @(Get-ChildItem -LiteralPath $WorkflowsDir -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.Extension -in '.yml', '.yaml' } |
+            ForEach-Object { $_.FullName })
+}
+
 function Test-Parity {
-    param([string] $SedumpPath, [string[]] $ScanFiles, [string] $Build208File)
+    param([string] $SedumpPath, [string[]] $ScanFiles, [string] $Build208File, [int] $ExpectedSiteCount)
 
     $problems = @()
     $required = Get-RequiredMacros -SedumpPath $SedumpPath
@@ -109,6 +141,19 @@ function Test-Parity {
     if ($sites.Count -eq 0) {
         $problems += "no line anywhere defines a SWISSEPH_HAS_* macro, yet sedump.c guards $($required.Count) of them. Every 2.10.03 build would take the 2.08 sentinel branch. A gate that matches nothing is not a passing gate."
         return [pscustomobject]@{ Required = $required; Problems = $problems; Sites = $sites }
+    }
+
+    # The count itself is asserted, not just "at least one site found". A compile site that dropped
+    # every SWISSEPH_HAS_* macro (defining none at all, rather than some) is invisible to the -D scan
+    # above -- it simply never becomes a "site" -- so the per-site loop below never sees it and has
+    # nothing to complain about. That is the worst form of the original defect: not a site with a
+    # missing guard, but a whole compile line no check even knows exists. Comparing the found count
+    # against the number of 2.10.03 compile sites this repository actually has (measured, not
+    # guessed -- see $expectedSiteCount below) is what catches a site vanishing from this scan
+    # entirely, the same way it would catch a spurious extra one.
+    if ($sites.Count -ne $ExpectedSiteCount) {
+        $siteList = ($sites | ForEach-Object { "$($_.File):$($_.Line)" }) -join ', '
+        $problems += "found $($sites.Count) compile site(s) defining at least one SWISSEPH_HAS_* guard macro ($siteList), expected exactly $ExpectedSiteCount. A site that dropped every guard macro (so it defines none) is invisible to this scan on its own -- this count is what catches it."
     }
 
     foreach ($site in $sites) {
@@ -136,11 +181,18 @@ function Test-Parity {
 
 $sedump = Join-Path $repoRoot 'Tools/CReference/sedump.c'
 $build208 = 'build-c.ps1'
+$workflowsDir = Join-Path $repoRoot '.github/workflows'
 $scan = @(
     (Join-Path $repoRoot 'scripts/run-oracle-dump.ps1')
     (Join-Path $repoRoot 'Tools/CReference/build-c.ps1')
-) + @(Get-ChildItem -LiteralPath (Join-Path $repoRoot '.github/workflows') -Filter *.yml -ErrorAction SilentlyContinue |
-        ForEach-Object { $_.FullName })
+) + @(Get-WorkflowScanFiles -WorkflowsDir $workflowsDir)
+
+# Measured, not guessed: scripts/run-oracle-dump.ps1's own $commonFlags line (one site) plus the
+# four clang/gcc invocations in .github/workflows/oracle.yml (two clang -- the strict build and the
+# builtins-left-on diagnostic -- and two gcc, the same pair) -- see this file's own .DESCRIPTION.
+# Tools/CReference/build-c.ps1's 2.08 build defines none of these macros by design, so it never
+# becomes a "site" under Get-MacroBearingLines' -D scan and is correctly excluded from this count.
+$expectedSiteCount = 5
 
 if ($SelfTest) {
     $lab = Join-Path ([System.IO.Path]::GetTempPath()) ("sedump-macro-parity-selftest-" + [System.Guid]::NewGuid().ToString('N'))
@@ -154,34 +206,54 @@ if ($SelfTest) {
             '#endif'
         ) | Set-Content -LiteralPath $fakeSedump -Encoding utf8
 
+        # ExpectedSiteCount is per-case: it is how many lines in that case's own fixture actually
+        # define at least one SWISSEPH_HAS_* macro (via the -D scan), which the site-count assertion
+        # requires Test-Parity be told up front -- exactly as the real invocation is told 5, below.
         $cases = @(
             @{ Name = 'both macros on the one line'; Lines = @(
-                'gcc -O2 -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -o sedump sedump.c'); Expect = 0 }
+                'gcc -O2 -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -o sedump sedump.c'); Expect = 0; ExpectedSiteCount = 1 }
             @{ Name = 'the real defect: a line updated for one macro and not the other'; Lines = @(
-                'gcc -O2 -DSWISSEPH_HAS_CROSSING=1 -o sedump sedump.c'); Expect = 1 }
+                'gcc -O2 -DSWISSEPH_HAS_CROSSING=1 -o sedump sedump.c'); Expect = 1; ExpectedSiteCount = 1 }
             @{ Name = 'the other way round'; Lines = @(
-                'clang -DSWISSEPH_HAS_HOUSES_EX2=1 -o sedump-nb sedump.c'); Expect = 1 }
+                'clang -DSWISSEPH_HAS_HOUSES_EX2=1 -o sedump-nb sedump.c'); Expect = 1; ExpectedSiteCount = 1 }
             @{ Name = 'four lines, one of them stale'; Lines = @(
                 'clang -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -o a sedump.c'
                 'clang -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -o b sedump.c'
                 'gcc   -DSWISSEPH_HAS_CROSSING=1 -o c sedump.c'
-                'gcc   -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -o d sedump.c'); Expect = 1 }
+                'gcc   -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -o d sedump.c'); Expect = 1; ExpectedSiteCount = 4 }
             @{ Name = 'MSVC slash-D spelling counts as defined'; Lines = @(
-                '$commonFlags = ''/O2 /DSWISSEPH_HAS_CROSSING=1 /DSWISSEPH_HAS_HOUSES_EX2=1 /MD'''); Expect = 0 }
+                '$commonFlags = ''/O2 /DSWISSEPH_HAS_CROSSING=1 /DSWISSEPH_HAS_HOUSES_EX2=1 /MD'''); Expect = 0; ExpectedSiteCount = 1 }
             @{ Name = 'spaces between -D and the name'; Lines = @(
-                'gcc -D SWISSEPH_HAS_CROSSING=1 -D SWISSEPH_HAS_HOUSES_EX2=1 -o sedump sedump.c'); Expect = 0 }
+                'gcc -D SWISSEPH_HAS_CROSSING=1 -D SWISSEPH_HAS_HOUSES_EX2=1 -o sedump sedump.c'); Expect = 0; ExpectedSiteCount = 1 }
             @{ Name = 'prose naming sedump.c and gcc is not a definition and must not be flagged'; Lines = @(
                 'echo "::error::Tools/CReference/sedump.c now calls sincos() -- can only be gcc''s own substitution"'
-                'gcc -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -o sedump sedump.c'); Expect = 0 }
+                'gcc -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -o sedump sedump.c'); Expect = 0; ExpectedSiteCount = 1 }
             @{ Name = 'nothing defines any macro at all is a vacuous pass, not a pass'; Lines = @(
-                '# nothing here defines anything'); Expect = 1 }
+                '# nothing here defines anything'); Expect = 1; ExpectedSiteCount = 0 }
+            # Bypass (d): a stale comment claiming both macros, with no real compile line anywhere.
+            # Before comment lines were excluded from Get-MacroBearingLines, this fixture's single
+            # comment line was itself counted as "a site defining both macros", so Test-Parity
+            # reported zero problems -- exactly "deleting every real -D and leaving one stale
+            # comment keeps it green". With comments excluded, this fixture has zero real sites, so
+            # it falls into the same "no line anywhere defines a macro" refusal as the case above.
+            @{ Name = 'bypass (d): a stale comment mentioning both macros, no real invocation anywhere'; Lines = @(
+                '# stale: gcc -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -o sedump sedump.c'); Expect = 1; ExpectedSiteCount = 0 }
+            # Bypass (b): one real, fully-defined site plus one compile invocation that dropped
+            # every guard macro. The second line defines nothing at all, so Get-MacroBearingLines'
+            # -D scan cannot see it as a site to begin with -- there is no "missing macro" for the
+            # per-site loop to complain about, because the loop never visits a line that isn't a
+            # site. Only comparing the found count (1) against how many 2.10.03 compile sites this
+            # fixture is DECLARED to have (2, passed as ExpectedSiteCount) catches it.
+            @{ Name = 'bypass (b): a compile site dropping every guard macro is invisible to the -D scan alone'; Lines = @(
+                'gcc -O2 -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -o a sedump.c'
+                'gcc -O2 -o b sedump.c'); Expect = 1; ExpectedSiteCount = 2 }
         )
 
         $failed = 0
         foreach ($case in $cases) {
             $wf = Join-Path $lab 'fake-workflow.yml'
             $case.Lines | Set-Content -LiteralPath $wf -Encoding utf8
-            $result = Test-Parity -SedumpPath $fakeSedump -ScanFiles @($wf) -Build208File $build208
+            $result = Test-Parity -SedumpPath $fakeSedump -ScanFiles @($wf) -Build208File $build208 -ExpectedSiteCount $case.ExpectedSiteCount
             $actual = if ($result.Problems.Count -gt 0) { 1 } else { 0 }
             if ($actual -ne $case.Expect) {
                 Write-Host "  SELFTEST FAIL: $($case.Name) -- expected $($case.Expect), got $actual" -ForegroundColor Red
@@ -199,12 +271,50 @@ if ($SelfTest) {
             Set-Content -LiteralPath $threeMacro -Encoding utf8
         $wf = Join-Path $lab 'fake-workflow.yml'
         @('gcc -DSWISSEPH_HAS_CROSSING=1 -o sedump sedump.c') | Set-Content -LiteralPath $wf -Encoding utf8
-        $r = Test-Parity -SedumpPath $threeMacro -ScanFiles @($wf) -Build208File $build208
+        $r = Test-Parity -SedumpPath $threeMacro -ScanFiles @($wf) -Build208File $build208 -ExpectedSiteCount 1
         if ($r.Problems.Count -eq 0) {
             Write-Host "  SELFTEST FAIL: a macro sedump.c tests but no compile line defines was not caught" -ForegroundColor Red
             $failed++
         } else {
             Write-Host "  ok: a newly added guard with no compile site updated is caught" -ForegroundColor DarkGray
+        }
+
+        # Bypass (c): #elif, and more than one defined(...) on the same #if/#elif line. An earlier
+        # version's file-wide, single-capture-per-line pattern anchored on "#if" alone found only
+        # the FIRST defined() on a line and never matched "#elif" at all -- a guard added in either
+        # shape was silently exempt from every check below it, since Get-RequiredMacros never even
+        # knew it existed.
+        $elifSedump = Join-Path $lab 'sedump-elif.c'
+        @(
+            '#if defined(SWISSEPH_HAS_CROSSING) || defined(SWISSEPH_HAS_HOUSES_EX2)'
+            '#elif defined(SWISSEPH_HAS_CALC_PCTR)'
+            '#endif'
+        ) | Set-Content -LiteralPath $elifSedump -Encoding utf8
+        $elifRequired = Get-RequiredMacros -SedumpPath $elifSedump
+        $expectedElif = @('SWISSEPH_HAS_CALC_PCTR', 'SWISSEPH_HAS_CROSSING', 'SWISSEPH_HAS_HOUSES_EX2')
+        $elifDiff = @(Compare-Object $expectedElif $elifRequired -SyncWindow 0)
+        if ($elifDiff.Count -eq 0) {
+            Write-Host "  ok: bypass (c): #elif and multiple defined() on one #if line are both recognized" -ForegroundColor DarkGray
+        } else {
+            Write-Host "  SELFTEST FAIL: bypass (c): #elif/multi-defined() -- expected [$($expectedElif -join ', ')], got [$($elifRequired -join ', ')]" -ForegroundColor Red
+            $failed++
+        }
+
+        # Bypass (a): *.yaml, not just *.yml. GitHub Actions accepts both extensions for a workflow
+        # file; a scan that only globbed *.yml silently dropped an entire workflow's worth of
+        # compile sites with no error at all -- the site COUNT this gate now asserts (see bypass
+        # (b) above) would have caught the resulting undercount too, but this exercises the file
+        # discovery itself directly.
+        $wfLab = Join-Path $lab 'workflows'
+        New-Item -ItemType Directory -Force -Path $wfLab | Out-Null
+        'gcc -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -o a sedump.c' | Set-Content -LiteralPath (Join-Path $wfLab 'a.yml') -Encoding utf8
+        'gcc -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -o b sedump.c' | Set-Content -LiteralPath (Join-Path $wfLab 'b.yaml') -Encoding utf8
+        $found = @(Get-WorkflowScanFiles -WorkflowsDir $wfLab)
+        if ($found.Count -eq 2 -and @($found | Where-Object { $_ -like '*.yaml' }).Count -eq 1) {
+            Write-Host "  ok: bypass (a): both .yml and .yaml workflow files are scanned" -ForegroundColor DarkGray
+        } else {
+            Write-Host "  SELFTEST FAIL: bypass (a): expected 2 files (one .yml, one .yaml), got $($found.Count): $($found -join ', ')" -ForegroundColor Red
+            $failed++
         }
 
         if ($failed -gt 0) {
@@ -219,15 +329,15 @@ if ($SelfTest) {
     }
 }
 
-$result = Test-Parity -SedumpPath $sedump -ScanFiles $scan -Build208File $build208
+$result = Test-Parity -SedumpPath $sedump -ScanFiles $scan -Build208File $build208 -ExpectedSiteCount $expectedSiteCount
 
 Write-Host "sedump.c guards: $($result.Required -join ', ')"
-Write-Host "compile sites found: $($result.Sites.Count)"
+Write-Host "compile sites found: $($result.Sites.Count) (expected $expectedSiteCount)"
 
 if ($result.Problems.Count -gt 0) {
     foreach ($p in $result.Problems) { Write-Host "FAIL: $p" -ForegroundColor Red }
     exit 1
 }
 
-Write-Host "PASS: every 2.10.03 compile site defines all $($result.Required.Count) guard macro(s); the 2.08 build defines none." -ForegroundColor Green
+Write-Host "PASS: every 2.10.03 compile site ($($result.Sites.Count) of them) defines all $($result.Required.Count) guard macro(s); the 2.08 build defines none." -ForegroundColor Green
 exit 0
