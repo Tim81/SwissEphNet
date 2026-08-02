@@ -708,6 +708,24 @@ $AyanamsaJds = Get-JdSpread -Count 4 -Lo 1000000 -Hi 2600000
 # never reads swed.ephepath or opens a file at all -- rather than adding separate file-backed
 # coverage for a file dependency that get_builtin_star already shows does not exist for these
 # twelve sid_modes.
+#
+# NAME '0' IS STALE, AND STAYS THAT WAY ON PURPOSE
+#
+# Elsewhere in this script the "no extra bits beyond the baseline" combo is named 'PLAIN' (see
+# $FlagCombos, $CrossingFlagCombos and others below) precisely because SEFLG_MOSEPH/SEFLG_SWIEPH
+# get OR-ed into the baseline separately, after the combo list is built, so the row's actual iflag
+# is never really 0. This list's '0' is the same shape and should read 'PLAIN' by that same
+# convention -- it does not, because it predates the fix a few lines below (the explicit `-bor
+# $SEFLG_MOSEPH` at this loop's own call site) that first made this combo's row carry a nonzero
+# iflag at all. That fix intentionally left this Name unchanged: renaming it changes the FlagName
+# token in every AYANAMSA_EX/AYANAMSA_EX_UT case_id built from this combo (200 rows each, 400
+# total, of the 800 these two funcs carry in this grid), and those case_ids are keys in
+# Tests/oracle/version-classification.tsv (both rows verified present there, e.g.
+# "AYANAMSAEX|0|1000000|0") and would still be keys in Tests/oracle/known-diff.tsv or
+# known-diff-files.tsv the day either ever gains an AYANAMSA_EX entry. Case-id stability across
+# an unrelated fix was judged the greater good here, so the label stays wrong rather than the key
+# changing silently underneath a regenerated, gated file -- this comment is what keeps that choice
+# from being silent.
 $AyanamsaExIflagCombos = @(
     [pscustomobject]@{ Name = '0';     Flag = 0 }
     [pscustomobject]@{ Name = 'NONUT'; Flag = $SEFLG_NONUT }
@@ -1258,7 +1276,10 @@ $headerLines = @(
     '# (swehouse.c:642-647). These two funcs are called directly, with real cusp_speed/ascmc_speed'
     '# arrays, emitting cusp[0..36]+ascmc[0..9]+cusp_speed[0..36]+ascmc_speed[0..9] (94 doubles) plus'
     '# a real serr. Same input columns as HOUSES_EX/HOUSES_ARMC respectively. Guarded behind'
-    '# SWISSEPH_HAS_HOUSES_EX2 in both drivers, the same pattern SWISSEPH_HAS_CROSSING already uses.'
+    '# SWISSEPH_HAS_HOUSES_EX2 in sedump.c, the same pattern SWISSEPH_HAS_CROSSING already uses --'
+    '# Tools/OracleDump/Program.cs has no SWISSEPH_HAS_* symbol at all, correctly, since the port'
+    '# is single-version and has nothing to guard; only sedump.c is compiled against two library'
+    '# versions.'
     '#'
     '# AYANAMSA_EX/AYANAMSA_EX_UT now OR SEFLG_MOSEPH into every row''s iflag, closing a gap where'
     '# twelve sid_modes (swi_get_ayanamsa_ex''s own guard, sweph.c:3031-3045) call swe_fixstar'

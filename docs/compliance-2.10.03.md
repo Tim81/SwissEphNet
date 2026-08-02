@@ -40,10 +40,10 @@ full parity with 2.10.03; it is not, and the next section says by how much.
 | Platform | C reference | Result |
 |---|---|---|
 | Windows x64 | MSVC 19.51.36248, `/O2 /fp:precise /MD` | 25,540 of 25,540 oracle rows bit-identical (gated) |
-| Linux x64, Ubuntu 24.04.4 | gcc 13.3.0, `-O2` | 20,532 of 20,532 oracle rows bit-identical at last CI run (gated; not yet re-run against the 25,540-row grid) |
-| macOS arm64 (Apple libSystem) | clang, `-O2 -ffp-contract=off -fno-builtin` | 20,532 of 20,532 oracle rows bit-identical at last CI run (gated; not yet re-run against the 25,540-row grid) |
+| Linux x64, Ubuntu 24.04.4 | gcc 13.3.0, `-O2` | 25,540 of 25,540 oracle rows bit-identical (gated; also confirmed by a full local replay against this grid: 22,289 analytic rows, sha256 `41f84577d86e296f86ba06444002977c`, and 3,251 files rows, sha256 `900308e9acd05d48dd846cd778f7a90a`, both bit-identical) |
+| macOS arm64 (Apple libSystem) | clang, `-O2 -ffp-contract=off -fno-builtin` | 20,532 of 20,532 oracle rows bit-identical at last CI run (gated by `macos-exactness`; not re-run locally against the current 25,540-row grid -- macOS has no local reproduction path here, so this row is CI's own last result, not a claim made outside it) |
 
-**25,540 was measured directly on Windows** (this record's own oracle numbers, `scripts/run-oracle-dump.ps1` + `scripts/verify-oracle.ps1`, both grids' known-diff lists empty and both dump files SHA-256 identical to Astrodienst's own C: `dump-c-2.10.03.tsv`/`dump-net.tsv` at `4ac1a3c0…c7640`, `dump-c-2.10.03-files.tsv`/`dump-net-files.tsv` at `aef136bd…d72f2d0`; the JPL grid, opt-in and not part of either total above, also ran clean at 2,400 of 2,400 rows, `dump-c-2.10.03-jpl.tsv`/`dump-net-jpl.tsv` at `bc0ca597…d7067724`). Linux and macOS are re-verified by their own CI jobs against the identical committed grids and drivers on the next push or pull request, not re-run from this workstation; their prior runs at the smaller row count (20,532) were bit-identical, and this addition (5,008 rows: 4,500 across `HOUSES_EX2`/`HOUSES_ARMC_EX2` in both grids plus 8 `FIXSTAR2_MAG` rows) has not yet been measured on either platform. Unlike the ayanamsa addition that grew the grid from 17,064 to 18,064, this addition is not a re-sweep of code paths this grid already reached: `swe_houses_ex2`/`swe_houses_armc_ex2` are new in 2.10.03 and `swe_fixstar2_mag` had no row anywhere before this addition, so Windows is the only platform this specific claim has actually been checked on until Linux/macOS CI next runs.
+**25,540 was measured directly on Windows and Linux** (Windows: this record's own oracle numbers, `scripts/run-oracle-dump.ps1` + `scripts/verify-oracle.ps1`, both grids' known-diff lists empty and both dump files SHA-256 identical to Astrodienst's own C: `dump-c-2.10.03.tsv`/`dump-net.tsv` at `4ac1a3c0…c7640`, `dump-c-2.10.03-files.tsv`/`dump-net-files.tsv` at `aef136bd…d72f2d0`; the JPL grid, opt-in and not part of either total above, also ran clean at 2,400 of 2,400 rows, `dump-c-2.10.03-jpl.tsv`/`dump-net-jpl.tsv` at `bc0ca597…d7067724`. Linux: gcc, a full local replay of both grids against the port, bit-identical at the sha256 pair in the table row above). macOS is re-verified by its own CI job (`macos-exactness`) against the identical committed grids and drivers on the next push or pull request, not re-run from this workstation or reproducible outside CI here; its prior run at the smaller row count (20,532) was bit-identical, and this addition (5,008 rows: 4,500 across `HOUSES_EX2`/`HOUSES_ARMC_EX2` in both grids plus 8 `FIXSTAR2_MAG` rows) has not yet been measured on that platform. Unlike the ayanamsa addition that grew the grid from 17,064 to 18,064, this addition is not a re-sweep of code paths this grid already reached: `swe_houses_ex2`/`swe_houses_armc_ex2` are new in 2.10.03 and `swe_fixstar2_mag` had no row anywhere before this addition, so Windows and Linux are the only platforms this specific claim has actually been checked on until macOS CI next runs.
 
 Windows is gated by `oracle-dump`, the `.github/workflows/oracle.yml` job that replays this grid
 end to end on every push and pull request; Linux is gated the same way by `linux-exactness`, and
@@ -100,8 +100,11 @@ exactly. `HOUSES_ARMC_EX2` (`swe_houses_armc_ex2`) is 3,000<!--doccount:grid-ana
 analytic rows plus 200<!--doccount:grid-files-func-houses-armc-ex2--> file-backed rows; the
 file-backed rows exist for dispatch/schema parity with `grid-analytic.tsv` even though
 `swe_houses_armc_ex2` itself opens no file (pure geometry, like `swe_houses_armc`). Both guarded
-behind `SWISSEPH_HAS_HOUSES_EX2` in both drivers, the same compiled-in-2.10.03-only pattern
-`SWISSEPH_HAS_CROSSING` already uses for the eight crossing functions. `swe_fixstar2_mag` needed no
+behind `SWISSEPH_HAS_HOUSES_EX2` in `sedump.c`, the same compiled-in-2.10.03-only pattern
+`SWISSEPH_HAS_CROSSING` already uses for the eight crossing functions -- `Tools/OracleDump/Program.cs`
+has no `SWISSEPH_HAS_*` symbol at all, correctly, since the port is single-version and has nothing
+to guard; only `sedump.c` is compiled against two library versions (2.10.03 with the macros
+defined, 2.08 without). `swe_fixstar2_mag` needed no
 such guard (it is declared and implemented in `external/pyswisseph-2.08/swephexp.h:708`); both
 drivers previously called only `swe_fixstar_mag`, and `FIXSTAR2_MAG`'s 8<!--doccount:grid-files-func-fixstar2-mag-->
 rows close that gap. All new rows compare bit-identical against Astrodienst's own C, zero
@@ -140,7 +143,10 @@ through a file-open path rather than a fresh lazy re-init. A column-level diff (
 movement on these rows before the fix, never a value or retc change, so this closes a
 reproducibility gap without changing any value. `swe_get_ayanamsa`/`swe_get_ayanamsa_ut` have no
 `iflag` parameter to carry `SEFLG_MOSEPH` on at all -- `swi_guess_ephe_flag()`
-(`swephlib.c:3186-3196`) always resolves them to `SEFLG_SWIEPH` -- and `HOUSES_EX`/`HOUSES_EX2`'s own
+(`swephlib.c:3186-3195`) resolves them to `SEFLG_SWIEPH` on this grid, but the function itself is
+not unconditional: it returns `SEFLG_JPLEPH` whenever `swed.jpl_file_is_open` (`swephlib.c:3190-3192`),
+which is true of grid-analytic.tsv specifically -- it opens no JPL file -- not of
+`swi_guess_ephe_flag()` in general -- and `HOUSES_EX`/`HOUSES_EX2`'s own
 `SIDEREAL` rows carry no `SEFLG_MOSEPH` either; both remain genuinely environment-sensitive
 (measured: pointing `SE_EPHE_PATH` at a real, populated ephemeris directory changes `AYANAMSA`/
 `AYANAMSA_UT` *values*, and `HOUSES_EX`/`HOUSES_EX2`'s `SIDEREAL` rows for every house-system
@@ -205,12 +211,15 @@ Windows build alone leaves the four non-Windows compile lines taking the 2.08 se
 Measured when exactly that happened -- gcc, both grids, this repository's own `oracle.yml` compile
 line -- the C side emitted the sentinel for 4,500 analytic rows while the port computed real
 values, and the job's `cmp` failed. Nothing catches it earlier, because the sentinel branch
-compiles cleanly; a macro added here has to be added to all six. At last measurement (14,820 and 2,244 rows, before this record's
-own 1,000-row ayanamsa addition -- see the footnote above; `linux-exactness` re-verifies the
-current row count on the next push or pull request, not measured fresh from this workstation),
-both grids produced exactly that many rows on Linux, matching Windows row for row, and every row
-matched Astrodienst's own C bit for bit, on `ubuntu-latest` (gcc 13.3.0, glibc), matching the
-Windows and macOS results. Unlike macOS, the gate
+compiles cleanly; a macro added here has to be added to all six. At last measurement from this
+workstation (14,820 and 2,244 rows -- the grid's size at that time, two additions before the
+current 25,540<!--doccount:grid-total-combined--> total this record's "Of the 25,540 oracle rows"
+paragraph below cites; not re-quoted as a "current" figure here because it was not current even
+when this sentence was first written, only "at last measurement"), both grids produced exactly
+that many rows on Linux, matching Windows row for row, and every row matched Astrodienst's own C
+bit for bit, on `ubuntu-latest` (gcc 13.3.0, glibc), matching the Windows and macOS results at that
+same row count; `linux-exactness` re-verifies the current row count on every push and pull
+request, not measured fresh from this workstation since. Unlike macOS, the gate
 build needs neither `-ffp-contract=off` nor `-fno-builtin`: base x86-64 has no FMA3 encoding at
 all (`linux-exactness`'s own `objdump` check, mirroring `macos-exactness`'s `otool` check, finds
 zero fused multiply-add instructions at plain `-O2`), and although gcc does substitute glibc's
@@ -229,26 +238,30 @@ third libm alongside `ucrtbase.dll` and glibc above) and replays both grids agai
 way the Windows and Linux jobs do. It builds the C reference twice: once with `-fno-builtin`,
 which is the gate, and once, kept alongside as a diagnostic rather than gated, with clang's math
 builtins left on. With `-fno-builtin`, both grids are bit-identical against the port. At last
-measurement (before this record's own 1,000-row ayanamsa addition -- `macos-exactness` re-verifies
-the current row count on the next push or pull request, not measured fresh from this workstation),
-with the diagnostic build's builtins left on, 62 of 14,819 analytic rows and 10 of 2,243
-file-backed rows differed from the port -- clang's default behavior substitutes its own builtins
-for libm calls (e.g. fusing an adjacent `sin`/`cos` call on the same argument into a single
-`__sincos`), and Apple's `__sincos` does not return bit-identically to calling the two functions
-separately the way the port does; `-fno-builtin` removes that substitution. That run's own printed
-row counts (14,819 and 2,243) were one short of each grid's then-true 14,820/2,244: that step
+measurement from this workstation -- two grid additions before the current
+25,540<!--doccount:grid-total-combined--> total, so the figures below are what that specific,
+older run found, not a current claim; `macos-exactness` re-verifies the current row count on every
+push and pull request -- with the diagnostic build's builtins left on, 62 of 14,819 analytic rows
+and 10 of 2,243 file-backed rows differed from the port -- clang's default behavior substitutes
+its own builtins for libm calls (e.g. fusing an adjacent `sin`/`cos` call on the same argument into
+a single `__sincos`), and Apple's `__sincos` does not return bit-identically to calling the two
+functions separately the way the port does; `-fno-builtin` removes that substitution. That run's
+own printed row counts (14,819 and 2,243) were one short of each grid's then-true 14,820/2,244
+(the grid's size at that time, matching the Linux paragraph's own figures above): that step
 computes its total by subtracting a header line from `sedump`'s output file, but unlike the input
 grid `.tsv` files, the output dump (`Tools/CReference/sedump.c`) never writes one, so the
 arithmetic drops one real row from the printed total. The gate itself compares the output files
 for whole-file equality, not this printed count, so the off-by-one affects only the diagnostic
 step's own summary line, not what is actually gated.
 
-Of the 20,532 oracle rows, 19,524 exercise the default nutation path rather than opting out via
-`SEFLG_NONUT`: 16,781 of the analytic grid's 17,789 rows (1,008 opt out -- unchanged by this
-record's own addition, since none of its six new funcs' rows carry `SEFLG_NONUT`) and all 2,743
-files-grid rows (0 opt out). All 19,524 are among the bit-identical rows above -- see "What this
-record does not cover" for what that does and does not establish about the nutation coefficient
-tables themselves.
+Of the 25,540<!--doccount:grid-total-combined--> oracle rows, 24,532<!--doccount:grid-total-default-nutation--> exercise
+the default nutation path rather than opting out via `SEFLG_NONUT`: 21,281<!--doccount:grid-analytic-default-nutation-->
+of the analytic grid's 22,289<!--doccount:grid-analytic-total--> rows (1,008<!--doccount:grid-analytic-nonut-optout-->
+opt out) and all 3,251<!--doccount:grid-files-default-nutation--> files-grid rows
+(0<!--doccount:grid-files-nonut-optout--> opt out). Recomputed directly from both grids' `iflag`
+columns (bit 64, `swephexp.h:193`), not carried forward from an earlier row count. All 24,532 are
+among the bit-identical rows above -- see "What this record does not cover" for what that does and
+does not establish about the nutation coefficient tables themselves.
 
 ## 2. Characterization baseline
 
@@ -454,7 +467,8 @@ independently diffed, value by value, against `external/swisseph/swenut2000a.h`.
 lengths match exactly on both sides (`NLS` 678, `NLS_2000B` 77, `NPL` 687), which rules out gross
 truncation, but that is a length check, not a value check, and no commit or script in this
 repository's history performs the latter. The indirect evidence is real but is not the same
-claim: 19,524 of the 20,532 bit-exact oracle rows exercise the default (non-`SEFLG_NONUT`)
+claim: 24,532<!--doccount:grid-total-default-nutation--> of the 25,540<!--doccount:grid-total-combined-->
+bit-exact oracle rows exercise the default (non-`SEFLG_NONUT`)
 nutation path and match Astrodienst's own C bit for bit, which a wrong coefficient of any
 consequence would be very unlikely to survive. That is strong corroboration through the oracle,
 not a direct audit of the table itself.

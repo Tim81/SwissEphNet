@@ -97,10 +97,13 @@
                                  grid's own sid_mode/hsys sweeps rather than a wider one, matching
                                  how every other file-backed func here is a smaller cross-section of
                                  its grid-analytic.tsv counterpart. Guarded behind
-                                 SWISSEPH_HAS_HOUSES_EX2 in both drivers, the same
+                                 SWISSEPH_HAS_HOUSES_EX2 in sedump.c, the same
                                  compiled-in-2.10.03-only pattern SWISSEPH_HAS_CROSSING already uses
                                  for the eight crossing functions -- see sedump.c's own top-of-file
-                                 comment.
+                                 comment. Tools/OracleDump/Program.cs has no SWISSEPH_HAS_* symbol
+                                 at all, correctly, since the port is single-version and has
+                                 nothing to guard; only sedump.c is compiled against two library
+                                 versions.
 
       swe_fixstar2_mag -- both drivers previously called only swe_fixstar_mag (the plain form);
                                  swe_fixstar2_mag (present in 2.08 too -- external/pyswisseph-2.08/
@@ -898,8 +901,10 @@ $headerLines = @(
     '# so h.do_speed/h.do_hspeed (swehouse.c:642-647) stay FALSE and the 2.10 speed feature is'
     '# switched off in every row that reaches it that way. These rows call the _ex2 forms directly,'
     '# with real cusp_speed/ascmc_speed arrays, so the speed writes actually execute. Guarded'
-    '# behind SWISSEPH_HAS_HOUSES_EX2 in both drivers, the same pattern SWISSEPH_HAS_CROSSING'
-    '# already uses for the eight crossing functions. HOUSES_ARMC_EX2 touches no file itself (pure'
+    '# behind SWISSEPH_HAS_HOUSES_EX2 in sedump.c, the same pattern SWISSEPH_HAS_CROSSING already'
+    '# uses for the eight crossing functions -- Tools/OracleDump/Program.cs has no SWISSEPH_HAS_*'
+    '# symbol at all, correctly, since the port is single-version and has nothing to guard; only'
+    '# sedump.c is compiled against two library versions. HOUSES_ARMC_EX2 touches no file itself (pure'
     '# geometry, like HOUSES_ARMC), so it is added here for dispatch/schema parity with'
     '# grid-analytic.tsv, not file-layer coverage -- see New-HousesArmcEx2Row''s own comment.'
     '#'

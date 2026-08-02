@@ -215,6 +215,28 @@ function Invoke-DocCountCheck {
         return [pscustomobject]@{ Total = $rows.Count; ByFunc = $byFunc }
     }
 
+    # -- nutation-path split: how many rows carry SEFLG_NONUT (64, swephexp.h:193) in their iflag
+    # column, opting out of the default nutation path, versus how many do not. A row whose func has
+    # no iflag column at all (HOUSES, GET_PLANET_NAME, AYANAMSA, SIDTIME, ...) leaves the field
+    # empty, which counts toward "default nutation path" here -- this is a coarse classification
+    # ("did this row opt out via SEFLG_NONUT" vs not), not a claim that every counted row actually
+    # exercises nutation code internally. docs/compliance-2.10.03.md's own prose describes exactly
+    # this classification, not a narrower one.
+    function Get-GridNonutOptOutCount {
+        param([Parameter(Mandatory)][string] $Path)
+        $lines = @(Get-DataRows $Path)
+        $header = $lines[0] -split "`t"
+        $iflagIdx = Get-TsvColumnIndex -HeaderCells $header -ColumnName 'iflag'
+        $rows = @($lines[1..($lines.Count - 1)])
+        $optOut = 0
+        foreach ($row in $rows) {
+            $iflagStr = $row.Split("`t")[$iflagIdx]
+            if ($iflagStr -eq '') { continue }
+            if (([int64]$iflagStr) -band 64) { $optOut++ }
+        }
+        return $optOut
+    }
+
     $analyticGrid = Get-GridFuncCounts (Join-Path $RepoRoot 'Tools/OracleGrid/grid-analytic.tsv')
     $GroundTruth['grid-analytic-total'] = $analyticGrid.Total
     foreach ($func in $analyticGrid.ByFunc.Keys) {
@@ -233,12 +255,32 @@ function Invoke-DocCountCheck {
     }
     $GroundTruth['grid-files-crossing-total'] = ($filesGrid.ByFunc.Keys |
         Where-Object { $_ -like '*CROSS*' } | ForEach-Object { $filesGrid.ByFunc[$_] } | Measure-Object -Sum).Sum
-    # swe_fixstar family subtotal (FIXSTAR, FIXSTAR_UT, FIXSTAR2, FIXSTAR2_UT, FIXSTAR_MAG): cited as
-    # "200 across the swe_fixstar family" rather than as five separate inline numbers.
+    # swe_fixstar family subtotal: the -like 'FIXSTAR*' glob below matches all six funcs this grid
+    # carries under that name -- FIXSTAR, FIXSTAR_UT, FIXSTAR2, FIXSTAR2_UT, FIXSTAR_MAG and
+    # FIXSTAR2_MAG (the glob catches FIXSTAR2_MAG too; an earlier version of this comment named
+    # only the first five and said "200", which was the five-func subtotal, not what this glob
+    # actually computes) -- cited as "208 across the swe_fixstar family" rather than as six
+    # separate inline numbers.
     $GroundTruth['grid-files-fixstar-family-total'] = ($filesGrid.ByFunc.Keys |
         Where-Object { $_ -like 'FIXSTAR*' } | ForEach-Object { $filesGrid.ByFunc[$_] } | Measure-Object -Sum).Sum
 
     $GroundTruth['grid-total-combined'] = $analyticGrid.Total + $filesGrid.Total
+
+    # -- nutation-path split: see Get-GridNonutOptOutCount's own comment for exactly what "opt out"
+    # means here. grid-files.tsv has no row carrying SEFLG_NONUT today, but this is still computed
+    # from the file rather than hardcoded to 0, so a future files-grid addition that does carry it
+    # fails this check instead of leaving a silently wrong "0 opt out" claim in prose.
+    $analyticNonutOptOut = Get-GridNonutOptOutCount (Join-Path $RepoRoot 'Tools/OracleGrid/grid-analytic.tsv')
+    $filesNonutOptOut = Get-GridNonutOptOutCount (Join-Path $RepoRoot 'Tools/OracleGrid/grid-files.tsv')
+    $GroundTruth['grid-analytic-nonut-optout'] = $analyticNonutOptOut
+    $GroundTruth['grid-analytic-default-nutation'] = $analyticGrid.Total - $analyticNonutOptOut
+    $GroundTruth['grid-files-nonut-optout'] = $filesNonutOptOut
+    $GroundTruth['grid-files-default-nutation'] = $filesGrid.Total - $filesNonutOptOut
+    # No grid-total-nonut-optout: today it would always equal grid-analytic-nonut-optout (the files
+    # grid opts out 0 rows), so prose cites the analytic-only id directly rather than carrying a
+    # second id with no distinct claim behind it -- add one back if a files-grid row ever does
+    # carry SEFLG_NONUT and prose needs the combined figure.
+    $GroundTruth['grid-total-default-nutation'] = ($analyticGrid.Total + $filesGrid.Total) - ($analyticNonutOptOut + $filesNonutOptOut)
 
     # ---------------------------------------------------------------------------
     # Scan the documents for citation markers and check each one.
@@ -467,15 +509,19 @@ $knownFailTsv = @(
 $oracleKnownDiffTsv = @('# lab', "func`tnote", "CALC`ta", "CALC`tb")
 $oracleKnownDiffFilesTsv = @('# lab', "func`tnote", "CALC`ta")
 $swetestKnownDiffTsv = @('# lab', "func`tnote", "CALC`ta", "CALC`tb", "CALC`tc", "CALC`td")
+
+# iflag carries SEFLG_NONUT (64) on exactly one row per grid, and one files-grid row leaves iflag
+# empty -- the same "no iflag column value for this row's func" shape HOUSES/GET_PLANET_NAME/etc.
+# leave in the real grids -- so Get-GridNonutOptOutCount's empty-string tolerance is exercised too.
 $gridAnalyticTsv = @(
-    '# lab', "func`targ",
-    "CALC`t1", "CALC`t2",
-    "SOLCROSS`t1", "SOLCROSS`t2", "SOLCROSS`t3")
+    '# lab', "func`targ`tiflag",
+    "CALC`t1`t0", "CALC`t2`t64",
+    "SOLCROSS`t1`t0", "SOLCROSS`t2`t0", "SOLCROSS`t3`t0")
 $gridFilesTsv = @(
-    '# lab', "func`targ",
-    "CALC`t1",
-    "FIXSTAR`t1", "FIXSTAR`t2",
-    "MOONCROSS`t1")
+    '# lab', "func`targ`tiflag",
+    "CALC`t1`t0",
+    "FIXSTAR`t1`t", "FIXSTAR`t2`t64",
+    "MOONCROSS`t1`t0")
 
 # A document citing every id the lab's ground truth defines, each with the value those files
 # actually produce. An id with no marker anywhere is a failure in its own right, so this has to be
@@ -502,7 +548,12 @@ $readmeLines = @(
     '- of them MOONCROSS: 1<!--doccount:grid-files-func-mooncross-->',
     '- file-backed crossing rows: 1<!--doccount:grid-files-crossing-total-->',
     '- the swe_fixstar family: 2<!--doccount:grid-files-fixstar-family-total-->',
-    '- both grids together: 9<!--doccount:grid-total-combined-->')
+    '- both grids together: 9<!--doccount:grid-total-combined-->',
+    '- analytic rows opting out of nutation via SEFLG_NONUT: 1<!--doccount:grid-analytic-nonut-optout-->',
+    '- analytic rows on the default nutation path: 4<!--doccount:grid-analytic-default-nutation-->',
+    '- file-backed rows opting out of nutation via SEFLG_NONUT: 1<!--doccount:grid-files-nonut-optout-->',
+    '- file-backed rows on the default nutation path: 3<!--doccount:grid-files-default-nutation-->',
+    '- both grids together on the default nutation path: 7<!--doccount:grid-total-default-nutation-->')
 
 # The one line most cases rewrite, matched by its id rather than by index so reordering the
 # document above cannot silently point a case at the wrong line.

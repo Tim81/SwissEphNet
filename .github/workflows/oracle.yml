@@ -780,11 +780,12 @@ jobs:
       # single __sincos(x), among others -- and Apple's __sincos does not return bit-identically
       # to calling the two separately, which is what the port does one call at a time. With
       # builtins on, 62 of 14,820 analytic rows and 10 of 2,244 file-backed rows differed from
-      # the port; with -fno-builtin both grids were bit-identical. This build keeps that number
-      # visible so a change in it is noticed. (14,820 and 2,244, not the 14,819/2,243 wc -l would
-      # report below: the grid/dump files have no trailing newline on the last row, so wc -l
-      # undercounts the true row total by one -- see the row-count guard's own comment in the
-      # compare step below.)
+      # the port at that first run's row count; with -fno-builtin both grids were bit-identical.
+      # This build keeps that comparison running so a change in it is noticed -- the 62/10 figures
+      # are from the grid's size at that first run and have not been re-measured since (the grid
+      # has grown twice since then; see docs/compliance-2.10.03.md's own "macOS is now measured"
+      # section for the current row counts and for why they are not re-quoted here). This step's
+      # own PASS/FAIL output on every run is the current measurement, not this comment.
       - name: Build a diagnostic C reference with clang's builtins left on
         shell: bash
         run: |
@@ -832,10 +833,13 @@ jobs:
           # everything below reads plain POSIX diff output.
           for g in analytic files; do
             # wc -l counts newlines, not lines -- the grid/dump files here have no trailing
-            # newline on the last row, so this undercounts the true row total by one (14,820 and
-            # 2,244 are the true totals; wc -l reports 14,819 and 2,243, which is also why the
-            # builtins-on comment above states the corrected figures explicitly rather than
-            # quoting wc -l). Row-count guard below: without it, two empty files compare
+            # newline on the last row, so this undercounts the true row total by one; the `- 1`
+            # below is why $total, not wc -l's own output, is what gets reported and compared
+            # (see the builtins-on comment above for the same off-by-one, and
+            # Tools/OracleGrid/grid-analytic.tsv/grid-files.tsv for the grid's current row
+            # count -- not repeated here as a literal number, since a hardcoded figure in this
+            # comment has already gone stale twice across two later grid additions). Row-count
+            # guard below: without it, two empty files compare
             # bit-identical (cmp -s on two zero-byte files succeeds) and total comes out -1,
             # which would report "BIT-IDENTICAL, -1 rows" and exit 0 -- a grid that silently
             # shrank to nothing would still pass.
@@ -1034,8 +1038,10 @@ jobs:
           for g in analytic files; do
             # wc -l counts newlines, not lines -- the grid/dump files here have no trailing
             # newline on the last row, so this undercounts the true row total by one (the same
-            # off-by-one macos-exactness's own comment carries: 14,819/2,243 there should read
-            # 14,820/2,244). Row-count guard below: without it, two empty files compare
+            # off-by-one macos-exactness's own comment carries -- see its row-count guard for the
+            # full explanation; neither copy hardcodes the grid's current row count, since a
+            # literal figure in this comment has already gone stale twice across two later grid
+            # additions). Row-count guard below: without it, two empty files compare
             # bit-identical (cmp -s on two zero-byte files succeeds) and total comes out -1,
             # which would report "BIT-IDENTICAL, -1 rows" and exit 0 -- a grid that silently
             # shrank to nothing would still pass.

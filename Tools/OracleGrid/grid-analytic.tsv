@@ -130,7 +130,10 @@
 # (swehouse.c:642-647). These two funcs are called directly, with real cusp_speed/ascmc_speed
 # arrays, emitting cusp[0..36]+ascmc[0..9]+cusp_speed[0..36]+ascmc_speed[0..9] (94 doubles) plus
 # a real serr. Same input columns as HOUSES_EX/HOUSES_ARMC respectively. Guarded behind
-# SWISSEPH_HAS_HOUSES_EX2 in both drivers, the same pattern SWISSEPH_HAS_CROSSING already uses.
+# SWISSEPH_HAS_HOUSES_EX2 in sedump.c, the same pattern SWISSEPH_HAS_CROSSING already uses --
+# Tools/OracleDump/Program.cs has no SWISSEPH_HAS_* symbol at all, correctly, since the port
+# is single-version and has nothing to guard; only sedump.c is compiled against two library
+# versions.
 #
 # AYANAMSA_EX/AYANAMSA_EX_UT now OR SEFLG_MOSEPH into every row's iflag, closing a gap where
 # twelve sid_modes (swi_get_ayanamsa_ex's own guard, sweph.c:3031-3045) call swe_fixstar

@@ -104,9 +104,14 @@ internal static class Program
     // Pinned when a row's grid gives no ephe-dir argument (today: only grid-analytic.tsv's
     // two-argument invocation -- see AttachEpheDir's own call site in ProcessRow). Deliberately
     // contains '?', which is not a legal character in a Windows path component, so no real
-    // directory can ever match it -- mirrors sedump.c's identical SENTINEL_EPHE_DIR constant and
-    // comment. On its own this constant does not insulate a row from the SE_EPHE_PATH environment
-    // variable -- see the header comment's "CLEARING THIS PROCESS'S OWN SE_EPHE_PATH" section for
+    // directory can ever match it there -- mirrors sedump.c's identical SENTINEL_EPHE_DIR constant
+    // and comment. That guarantee is Windows-specific, not universal: '?' is a legal filename byte
+    // on ext4 and APFS (POSIX forbids only NUL and '/' in a pathname component; APFS additionally
+    // reserves ':', not '?'), and this same driver, built with this same sentinel, runs under both
+    // linux-exactness and macos-exactness. The practical risk stays negligible, but the guarantee
+    // itself only holds on the one platform named in the sentence. On its own this constant does
+    // not insulate a row from the SE_EPHE_PATH environment variable -- see the header comment's
+    // "CLEARING THIS PROCESS'S OWN SE_EPHE_PATH" section for
     // what actually closes that gap now. This constant's own job stays narrower: removing the
     // grid's dependency on the compiled-in default and the process's current directory.
     private const string SentinelEpheDir = "swisseph-oracle-sentinel-path?that-cannot-exist";

@@ -19,14 +19,14 @@
 
     IT REUSES grid-files.tsv's COLUMN LAYOUT VERBATIM
 
-    The header line below is byte-for-byte grid-files.tsv's own fourteen-column header, and that is
+    The header line below is byte-for-byte grid-files.tsv's own eighteen-column header, and that is
     deliberate: both drivers dispatch their column layout on which header they read (see
     sedump.c's EXPECTED_HEADER_ANALYTIC/EXPECTED_HEADER_FILES and OracleDump's
     ExpectedHeaderAnalytic/ExpectedHeaderFiles), and this grid needs exactly the columns
     grid-files.tsv already defines -- ipl, tjd, iflag, the three topocentric columns, sid_mode,
     and the t0/ayan_t0 pair -- with nothing added and nothing dropped. Introducing a third,
     identical-but-differently-named header would have forced a third parsing mode into both
-    drivers to describe the same fourteen columns. What makes this a distinct grid is the ephemeris
+    drivers to describe the same eighteen columns. What makes this a distinct grid is the ephemeris
     flag every row carries and the JPL file the drivers are pointed at, not its schema.
 
     THE DE FILE IS SUPPLIED BY THE RUNNER, NOT BY THIS REPO
@@ -380,11 +380,11 @@ $headerLines = @(
     '#'
     '# COLUMN LAYOUT'
     '#'
-    '# Byte-for-byte grid-files.tsv''s own sixteen-column header, deliberately: both drivers'
+    '# Byte-for-byte grid-files.tsv''s own eighteen-column header, deliberately: both drivers'
     '# dispatch their column layout on which header they read, and this grid needs exactly the'
     '# columns that one already defines. What makes this a distinct grid is the ephemeris flag'
     '# every row carries and the JPL file the drivers are pointed at, not its schema. See'
-    '# Tools/OracleGrid/gen-grid-files.ps1''s header for the full description of all sixteen'
+    '# Tools/OracleGrid/gen-grid-files.ps1''s header for the full description of all eighteen'
     '# columns. star, x2cross, dir, t0, ayan_t0, method, hsys, armc and eps are always empty here.'
     '#'
     '# That coupling is the point and also the cost: this grid has to be regenerated whenever'

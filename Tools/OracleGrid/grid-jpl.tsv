@@ -48,11 +48,11 @@
 #
 # COLUMN LAYOUT
 #
-# Byte-for-byte grid-files.tsv's own sixteen-column header, deliberately: both drivers
+# Byte-for-byte grid-files.tsv's own eighteen-column header, deliberately: both drivers
 # dispatch their column layout on which header they read, and this grid needs exactly the
 # columns that one already defines. What makes this a distinct grid is the ephemeris flag
 # every row carries and the JPL file the drivers are pointed at, not its schema. See
-# Tools/OracleGrid/gen-grid-files.ps1's header for the full description of all sixteen
+# Tools/OracleGrid/gen-grid-files.ps1's header for the full description of all eighteen
 # columns. star, x2cross, dir, t0, ayan_t0, method, hsys, armc and eps are always empty here.
 #
 # That coupling is the point and also the cost: this grid has to be regenerated whenever

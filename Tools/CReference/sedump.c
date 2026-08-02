@@ -357,10 +357,17 @@
 /* Pinned when a row's grid gives no ephe-dir argument (today: only grid-analytic.tsv's
  * two-argument invocation -- see main()'s own SENTINEL_EPHE_DIR use). Deliberately contains '?',
  * which is not a legal character in a Windows path component, so no real directory can ever
- * match it: swi_fopen's search fails the same deterministic way regardless of the machine's
- * current directory, whether "\sweph\ephe\" (the compiled-in SE_EPHE_PATH default under MSDOS --
- * swephexp.h:399-408) happens to exist, or which files that default or a stray CWD happen to
- * contain. On its own this constant does not insulate a row from the SE_EPHE_PATH environment
+ * match it there: swi_fopen's search fails the same deterministic way regardless of the
+ * machine's current directory, whether "\sweph\ephe\" (the compiled-in SE_EPHE_PATH default
+ * under MSDOS -- swephexp.h:399-408) happens to exist, or which files that default or a stray
+ * CWD happen to contain. That guarantee is Windows-specific, not universal: '?' is a legal
+ * filename byte on ext4 and APFS (POSIX forbids only NUL and '/' in a pathname component; APFS
+ * additionally reserves ':', not '?'), and this same driver, built with this same sentinel, runs
+ * under both linux-exactness and macos-exactness. The practical risk stays negligible -- a real
+ * directory named literally "swisseph-oracle-sentinel-path?that-cannot-exist" would have to exist
+ * on the CI runner or a contributor's machine -- but the sentence above is an absolute that is
+ * false on two of the three platforms this driver is gated on, so it is stated as a Windows fact,
+ * not a cross-platform one. On its own this constant does not insulate a row from the SE_EPHE_PATH environment
  * variable: swe_set_ephe_path checks getenv("SE_EPHE_PATH") BEFORE looking at the path argument
  * passed to it at all (sweph.c:1327-1330) and uses the environment value instead when it is set,
  * so a caller with SE_EPHE_PATH exported would still see that path, sentinel argument or not.
