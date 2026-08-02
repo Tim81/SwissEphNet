@@ -2046,18 +2046,33 @@ namespace SweTest
                                 if (iflgret != SwissEph.ERR && fmt.IndexOfAny("+-*/=".ToCharArray()) >= 0)
                                     iflgret = sweph.swe_pheno(te, ipl, iflag, attr, ref serr);
                                 se_pname = sweph.swe_get_planet_name(ipl);
-                                if (show_file_limit && ipl > SwissEph.SE_AST_OFFSET)
+                                if (show_file_limit) //  && ipl > SwissEph.SE_AST_OFFSET)
                                 {
                                     string sbeg, send;
                                     double tfstart = 0, tfend = 0;
                                     int denum = 0;
-                                    var fnam = sweph.swe_get_current_file_data(3, ref tfstart, ref tfend, ref denum);
+                                    int ifno = 3;
+                                    if (ipl == SwissEph.SE_SUN || (ipl >= SwissEph.SE_MERCURY && ipl < SwissEph.SE_CHIRON))
+                                    {
+                                        ifno = 0;
+                                    }
+                                    else if (ipl == SwissEph.SE_MOON)
+                                    {
+                                        ifno = 1;
+                                    }
+                                    else if (ipl <= SwissEph.SE_VESTA)
+                                    {
+                                        ifno = 2;
+                                    }
+                                    var fnam = sweph.swe_get_current_file_data(ifno, ref tfstart, ref tfend, ref denum);
                                     if (fnam != null)
                                     {
-                                        sweph.swe_revjul(tfstart, gregflag, ref jyear, ref jmon, ref jday, ref jut);
-                                        sbeg = C.sprintf("%d.%02d.%04d", jday, jmon, jyear);
-                                        sweph.swe_revjul(tfend, gregflag, ref jyear, ref jmon, ref jday, ref jut);
-                                        send = C.sprintf("%d.%02d.%04d", jday, jmon, jyear);
+                                        int jy = 0, jm = 0, jd = 0;
+                                        double jt = 0;
+                                        sweph.swe_revjul(tfstart, gregflag, ref jy, ref jm, ref jd, ref jt);
+                                        sbeg = C.sprintf("%d.%02d.%04d", jd, jm, jy);
+                                        sweph.swe_revjul(tfend, gregflag, ref jy, ref jm, ref jd, ref jt);
+                                        send = C.sprintf("%d.%02d.%04d", jd, jm, jy);
                                         printf("range %s: %.1lf = %s to %.1lf = %s de=%d\n", fnam, tfstart, sbeg, tfend, send, denum);
                                         show_file_limit = false;
                                     }
@@ -2112,6 +2127,7 @@ namespace SweTest
                                       || ipl == SwissEph.SE_MEAN_NODE || ipl == SwissEph.SE_TRUE_NODE
                                       || ipl == SwissEph.SE_CERES || ipl == SwissEph.SE_PALLAS || ipl == SwissEph.SE_JUNO || ipl == SwissEph.SE_VESTA
                                       || ipl == SwissEph.SE_CHIRON || ipl == SwissEph.SE_PHOLUS || ipl == SwissEph.SE_CUPIDO
+                                      || (ipl > SwissEph.SE_FICT_OFFSET_1 && ipl <= SwissEph.SE_FICT_MAX)
                                       || ipl >= SwissEph.SE_PLMOON_OFFSET
                                       || ipl >= SwissEph.SE_AST_OFFSET || ipl == SwissEph.SE_FIXSTAR
                                       || psp == 'y'))

@@ -569,7 +569,7 @@ not replayed (`swe_close()` at suite 6's own start already firewalls it from any
 
 ## 4. SweTest text-output comparison
 
-`scripts/verify-swetest-diff.ps1` runs every row of `Tools/SwetestDiff/args-grid.tsv` (253 rows,
+`scripts/verify-swetest-diff.ps1` runs every row of `Tools/SwetestDiff/args-grid.tsv` (254 rows,
 one CLI argument string each) through both `Programs/SweTest` and Astrodienst's own compiled
 `swetest.exe`, and diffs their printed output line for line. `Tests/swetest/known-diff.tsv` is
 the same shape as the correctness oracle's `known-fail.tsv`: one row per `case_id` whose output
@@ -577,14 +577,16 @@ does not match, checked by category so a listed row whose difference has changed
 fails the gate.
 
 **This is the one instrument in this document that is not currently clean**, though it is closer
-than it was. `Tests/swetest/known-diff.tsv` carries 12<!--doccount:swetest-known-diff--> rows, all category `OUTPUT-DIFFERS`, so 241
-of 253 argument strings (95.3%) produce output that matches Astrodienst's C exactly. All 12 are
+than it was. `Tests/swetest/known-diff.tsv` carries 13<!--doccount:swetest-known-diff--> rows, all category `OUTPUT-DIFFERS`, so 241
+of 254 argument strings (94.9%) produce output that matches Astrodienst's C exactly. All 13 are
 path-separator or placeholder cosmetics rather than computational divergence: most print an
 ephemeris-file-not-found message that embeds the search path, where the C reports it with `\`
 (`'<ephe-dir>\'`) and the port with `/` (`'<ephe-dir>/'`), or the C reports a literal directory
 where the port reports the `[ephe]` placeholder token this comparison substitutes for the actual
-(machine-specific) ephemeris directory. One further row (`FMT_MULTI|6`) differs only in how
-not-a-number prints: C's `-nan(ind)` against the port's `NaN`.
+(machine-specific) ephemeris directory. `NEW_2_10_FLAGS|LIM_PLANET` is the same `\`-vs-`/` DIR_GLUE
+divergence on a file that *is* found: `-lim`'s `range <path>: ... de=441` line embeds the resolved
+path of `sepl_18.se1` itself, not a not-found diagnostic. One further row (`FMT_MULTI|6`) differs
+only in how not-a-number prints: C's `-nan(ind)` against the port's `NaN`.
 
 The three `PLSEL_TRUNCATION` rows that used to sit here were the one real output-shape gap in
 this list, and they are gone. `Programs/SweTest` read `-p<seq>`'s body as a single `char` where
@@ -593,7 +595,7 @@ where the C computes ten. Fixing that made all three match outright, and a `HOUS
 added to the grid at the same time for the Gauquelin argument string that used to throw before it
 could print anything.
 
-None of the 12 rows is `Tests/swetest/known-diff.tsv`-invisible: every one is category
+None of the 13 rows is `Tests/swetest/known-diff.tsv`-invisible: every one is category
 `OUTPUT-DIFFERS` and none is `ERROR` or unrecognized. `.github/workflows/oracle.yml`'s
 `swetest-diff` job carries `continue-on-error` on the comparison step alone (not on the gitlink
 assertion, submodule checkout, or C build before it) because `known-diff.tsv` records printed

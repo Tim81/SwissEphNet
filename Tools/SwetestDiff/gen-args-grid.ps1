@@ -415,10 +415,19 @@ foreach ($c in $DiffGeoHelCases) {
 # NEW_2_10_FLAGS -- 2.10.03 additions with no dedicated category above: -lim (ephemeris file
 # range via swe_get_current_file_data), -ep (extra output precision), -tpm (SEFLG_TEST_PLMOON),
 # -sidbit<N> (extra sidereal-mode bits, paired with -sid so the bit is visible in output).
+#
+# LIM and LIM_PLANET both hit -lim but take different branches of swetest.c's per-body ifno
+# lookup (swetest.c:1661-1671, v2.10.3bfinal): LIM's -xs433 is ipl > SE_AST_OFFSET, so ifno stays
+# the default 3 (asteroid file) on both sides of the ifno rewrite this port's show_file_limit
+# block absorbed. LIM_PLANET's -p2 (Mercury) hits ifno=0 (planet file, sepl*.se1) instead, the
+# branch that was unreachable before Program.cs:2049 stopped gating this block on
+# `ipl > SE_AST_OFFSET`; a single-asteroid grid never exercised it, which is how the port
+# printed no "range" line at all for every planet body until this row existed.
 # ---------------------------------------------------------------------------------------
 
 $New210FlagCases = @(
     @{ Id = 'LIM'; Args = '-ps -xs433 -lim' }
+    @{ Id = 'LIM_PLANET'; Args = '-p2 -lim' }
     @{ Id = 'EP'; Args = '-p0 -ep' }
     @{ Id = 'TPM'; Args = '-p1 -tpm' }
     @{ Id = 'SIDBIT'; Args = '-p0 -sid1 -sidbit256' }

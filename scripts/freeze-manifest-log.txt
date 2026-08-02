@@ -295,3 +295,75 @@ b"} where the C gives {"a", ""}); that one is fixed
    2,400 bit-identical, 0 differing. The analytic and files grids are untouched, dump-net.tsv
    b36a007e... and dump-net-files.tsv f3fa03aa... byte-identical either side of the change.
    SwissEphNet/CPort: 48530 -> 48549 lines, sha256 23B9CDB0... -> EBBE1B4F....
+15. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-02: Two fidelity fixes to
+   Programs/SweTest/Program.cs, both from swetest.c's v2.10.3final -> v2.10.3bfinal delta
+   (af9823fe..f4dcd18e, the same bump 629f205 re-pinned the hunk count for), and a correction
+   to that commit's own explanation of what moved.
+   First, the -lim per-body ephemeris-file lookup. swetest.c:1658-1671 changed the
+   show_file_limit block from `if (show_file_limit && ipl > SE_AST_OFFSET)` calling
+   `swe_get_current_file_data(3, ...)` unconditionally, to `if (show_file_limit)` with an
+   `ifno` computed per body (0 for Sun/Mercury..Chiron's planet file, 1 for the Moon, 2 for
+   Ceres..Vesta, 3 default for asteroids/fictitious bodies/planetary moons). The port only ever
+   ported the old gate (Program.cs:2049, `ipl > SwissEph.SE_AST_OFFSET`), so `-lim` printed the
+   "range ...: ... de=..." line for asteroids only and silently printed nothing for every
+   planet, the Moon, or a main-belt body -- confirmed against
+   external/.c-reference/swetest.exe: "-b1.1.2000 -p2 -lim -fPLBRS -eswe" prints the sepl_18.se1
+   range line on the C and nothing on the pre-fix port. Ported the ifno branch verbatim. The C
+   also switched swe_revjul's four out-parameters from the function-wide jyear/jmon/jday/jut to
+   locals (jy/jm/jd/jt) scoped to the new `if (fnam != NULL)` block; that is not cosmetic here.
+   Program.cs's jyear/jmon/jday/jut (declared :791-792) are class-level fields the same row's
+   later format letters read for the date column (e.g. :2625, :2709, :2739), so with the old
+   gate's narrow reach this collision was latent -- reusing the C's local variables, not the
+   shared fields, avoids the show_file_limit block overwriting the row's own date once -lim
+   actually fires on a non-asteroid body, which the old gate never allowed to happen.
+   Second, the error-message whitelist. swetest.c:1728 adds
+   `|| (ipl > SE_FICT_OFFSET_1 && ipl <= SE_FICT_MAX)` to the `if (iflgret < 0)` guard at
+   :1723-1731 that decides whether a repeated swe_calc error is printed at all, so a fictitious
+   body's error is no longer suppressed after the first occurrence. Ported the same disjunct
+   into Program.cs's copy of that block (SwissEph.SE_FICT_OFFSET_1, SwissEph.SE_FICT_MAX, both
+   already defined in SwissEph.swephexp.h.cs). This corrects 83616b2's commit message, which
+   places this change in "the ayanamsa-name check": the ayanamsha block is a separate `if
+   (psp == 'b')` site calling swe_get_ayanamsa_ex a few lines below, and does not touch ipl at
+   all. Confirmed directly against the C diff hunk (external/swisseph, `git diff af9823fe
+   f4dcd18e -- swetest.c`), which anchors the new disjunct inside the `if (iflgret < 0)` hunk,
+   not the ayanamsha one.
+   Two hunks from the same diff needed no port change, for reasons checked rather than assumed.
+   swetest.c:2799's `char sdateperi[20]` -> `[40]` widens a C stack buffer against overflow;
+   Program.cs's orbital_elements (:3409-3431) builds sdateperi as a C# string via C.sprintf with
+   no fixed-size buffer, so there is nothing for a widened array to protect. swetest.c:1281-1284
+   wraps the pre-existing gethostname()/as80 line_limit-doubling call in `#ifndef _WINDOWS`;
+   Program.cs has had both lines fully commented out (:1566-1568), on every platform, since
+   before this delta, so the C's Windows-only skip and the port's always-skip already agree on
+   Windows, and the port's pre-existing non-Windows simplification is unaffected by this hunk
+   either way. Neither is recorded as a divergence needing a future fix: the first because a
+   managed string has no analogous overflow, the second because it predates this delta and is
+   already the documented state in docs/known-issues.md's spmoon/gethostname section.
+   This also corrects 629f205's own explanation of the hunk count it re-pinned. That commit
+   attributes the filtered-hunk bump (swetest.c 99 -> 100) to "the spmoon declaration and the
+   #ifndef _WINDOWS guard around gethostname." Neither is the +1: comparing the hunk-header
+   sets of `diff -u external/pyswisseph-2.08/swetest.c <af9823fe checkout>` against the same
+   diff run against the f4dcd18e checkout (`grep '^@@'` over each, then diffed against each
+   other) shows every hunk boundary identical except one, a brand-new hunk at old-side line 2554
+   / new-side line 2796 -- squarely the orbital_elements/sdateperi region -- while spmoon's
+   one-line declaration (near the pre-existing sastno/shyp hunk, old/new ~642-663) and
+   gethostname's two-line guard (inside the pre-existing block at ~1281-1298) both land within
+   hunk boundaries that already existed relative to the 2.08 baseline, so neither moves the
+   count. The +1 hunk is sdateperi. Commit messages are immutable, so 629f205's text stands as
+   written; this entry is the correction on record, and docs/compliance-2.10.03.md and
+   .github/workflows/oracle.yml were not touched by that misattribution (neither cites hunk
+   provenance, only known-diff.tsv's row count) and needed no edit for it.
+   Tools/SwetestDiff/gen-args-grid.ps1 gained NEW_2_10_FLAGS|LIM_PLANET (-p2 -lim, ifno=0) so a
+   planet exercises the fixed branch; the pre-existing LIM row's -xs433 only ever exercised the
+   default ifno=3 (asteroid) branch, which both sides already agreed on and is exactly why this
+   defect shipped uncaught. args-grid.tsv: 253 -> 254 rows. Tests/swetest/known-diff.tsv: 12 ->
+   13 rows -- the new row differs from the C only in the pre-existing, documented DIR_GLUE `\`
+   vs `/` path-separator divergence (Sweph.cs pinned to '/', 11 other rows already carry the
+   same shape), not a new defect; see Tests/swetest/regenerations.log's own entry.
+   verify-swetest-diff.ps1: 241/253 byte-identical (12 known-diff) before this commit,
+   241/254 (13 known-diff) after, both green. Proven to discriminate: "-b1.1.2000 -p2 -lim
+   -fPLBRS -eswe -edir<dir>" against external/.c-reference/swetest.exe (v2.10.3bfinal) now
+   prints "range <dir>\sepl_18.se1: 2378496.5 = 1.01.1800 to 2597651.4 = 10.01.2400 de=441"
+   identically on both sides (module the pre-existing DIR_GLUE separator), where the pre-fix
+   port printed nothing at all for that line.
+   Programs/SweTest/Program.cs: 4989 -> 5005 lines, 65 kr_braces (was 65), 68 trailing-ws (was
+   68), sha256 873AADAC... -> 947D21A7....
