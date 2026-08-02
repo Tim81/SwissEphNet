@@ -195,6 +195,31 @@ function Read-KnownDiffTable {
 function Get-PruneOnlyRefusals {
     param($Current, $Fresh)
 
+    # Vacuity floor: $Fresh with zero rows and $Current with more than zero looks exactly like
+    # "every known difference now matches outright" to the loop below -- $added, $recategorized,
+    # $categoricalFlipped and $grew all stay empty (nothing in $Fresh to iterate), so the refusal
+    # never fires and every surviving-row check afterward finds nothing in $Fresh to survive,
+    # pruning the entire list. That is indistinguishable, from this script's point of view, from
+    # the freshly rebuilt dumps having silently failed to compare anything (both dumps run against
+    # an empty/truncated grid, LoadAndCompare's own "zero rows were compared" floor notwithstanding
+    # a bug upstream of it) -- see scripts/regenerate-known-fail.ps1's identical floor, added by
+    # commit 849599b for exactly this shape of defect. Refusing here is deliberate: if the port
+    # genuinely reaches zero outstanding differences for a grid, that transition is worth a
+    # human-reviewed -Reason in the default (full regenerate) mode, the same way any other change
+    # this size already requires one, rather than passing silently through the one mode designed to
+    # need no review at all.
+    if ($Fresh.Count -eq 0 -and $Current.Count -gt 0) {
+        return [pscustomobject]@{
+            Added              = @()
+            Recategorized      = @()
+            CategoricalFlipped = @()
+            Grew               = @()
+            Any                = $true
+            Vacuous            = $true
+            CurrentCount       = $Current.Count
+        }
+    }
+
     $added = @()
     $recategorized = @()
     $categoricalFlipped = @()
@@ -224,6 +249,8 @@ function Get-PruneOnlyRefusals {
         CategoricalFlipped = $categoricalFlipped
         Grew               = $grew
         Any                = ($added.Count -gt 0 -or $recategorized.Count -gt 0 -or $categoricalFlipped.Count -gt 0 -or $grew.Count -gt 0)
+        Vacuous            = $false
+        CurrentCount       = $Current.Count
     }
 }
 
@@ -260,6 +287,14 @@ function Invoke-GridRegeneration {
             $recategorized = $refusals.Recategorized
             $categoricalFlipped = $refusals.CategoricalFlipped
             $grew = $refusals.Grew
+
+            if ($refusals.Vacuous) {
+                Write-Host ''
+                Write-Host "-PruneOnly refuses: the freshly built dumps produced ZERO differing rows for the $($Paths.Name) grid, while $knownDiffPath currently has $($refusals.CurrentCount)." -ForegroundColor Red
+                Write-Host 'Treating this as "every row now matches" and pruning the whole list is indistinguishable here from the dump run having silently failed to compare anything for this grid -- see this function''s own comment above Get-PruneOnlyRefusals.' -ForegroundColor Red
+                Write-Host "$($Paths.Name) known-diff list was NOT modified. If the port genuinely has zero outstanding differences for this grid now, use the full regenerate (scripts/regenerate-oracle-known-diff.ps1 -Reason `"...`") instead, which requires a human-reviewed reason for a change this size."
+                return $false
+            }
 
             if ($refusals.Any) {
                 Write-Host ''
@@ -323,27 +358,48 @@ function Invoke-GridRegeneration {
 
     $beforeCount = Get-RowCount -Path $knownDiffPath
 
-    Write-Host 'Running OracleVerify in generate mode against the freshly built dumps...'
-    $generateOutput = dotnet run --project $verifyProject -c Release --no-build -- generate $cDumpPath $netDumpPath $knownDiffPath
-    $generateOutput | Write-Host
-    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    # Staged to a temp file, then moved over $knownDiffPath only once OracleVerify has exited 0 --
+    # the same pattern -PruneOnly already uses above, rather than "generate" writing straight over
+    # the committed file the way this block used to. KnownDiffList.Save (Tools/OracleVerify/
+    # KnownDiffList.cs:85) opens the destination with append:false, truncating it immediately on
+    # open -- so passing $knownDiffPath directly meant the committed file was gone from the moment
+    # the process started, before a single row had been written back, let alone before the exit
+    # code below was checked. A crash partway through (an unhandled exception, an OOM, a killed
+    # process) left $knownDiffPath empty or truncated with the original content already destroyed
+    # and the $LASTEXITCODE check at the end never reached in time to stop it. Matches
+    # scripts/regenerate-known-fail.ps1's identical fix from commit 849599b, which this script's own
+    # -PruneOnly mode already mirrored but this default mode did not.
+    $tempKnownDiffPath = [System.IO.Path]::GetTempFileName()
+    try {
+        Write-Host 'Running OracleVerify in generate mode against the freshly built dumps...'
+        $generateOutput = dotnet run --project $verifyProject -c Release --no-build -- generate $cDumpPath $netDumpPath $tempKnownDiffPath
+        $generateOutput | Write-Host
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-    $afterCount = Get-RowCount -Path $knownDiffPath
-    $delta = $afterCount - $beforeCount
-    $deltaDescription = if ($delta -eq 0) { 'no change in row count' }
-    elseif ($delta -lt 0) { "$([Math]::Abs($delta)) fewer rows" }
-    else { "$delta more rows" }
+        $afterCount = Get-RowCount -Path $tempKnownDiffPath
+        $delta = $afterCount - $beforeCount
+        $deltaDescription = if ($delta -eq 0) { 'no change in row count' }
+        elseif ($delta -lt 0) { "$([Math]::Abs($delta)) fewer rows" }
+        else { "$delta more rows" }
 
-    $date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
-    $prCitation = if ($PR) { "PR #$PR" } else { "(no PR yet -- fill in `"PR #N`" before merging, per CONTRIBUTING.md)" }
+        # Only now, with a complete and exit-0 generator run sitting safely in a temp file, does
+        # anything under Tests/oracle/ get touched.
+        Copy-Item -LiteralPath $tempKnownDiffPath -Destination $knownDiffPath -Force
 
-    $logEntry = "$date $prCitation ($beforeCount -> $afterCount, $deltaDescription): $Reason"
-    Add-Content -Path $logPath -Value $logEntry -Encoding utf8NoBOM
+        $date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
+        $prCitation = if ($PR) { "PR #$PR" } else { "(no PR yet -- fill in `"PR #N`" before merging, per CONTRIBUTING.md)" }
 
-    Write-Host ''
-    Write-Host "Done. $beforeCount -> $afterCount rows ($deltaDescription)."
-    Write-Host "Logged to $logPath"
-    return $true
+        $logEntry = "$date $prCitation ($beforeCount -> $afterCount, $deltaDescription): $Reason"
+        Add-Content -Path $logPath -Value $logEntry -Encoding utf8NoBOM
+
+        Write-Host ''
+        Write-Host "Done. $beforeCount -> $afterCount rows ($deltaDescription)."
+        Write-Host "Logged to $logPath"
+        return $true
+    }
+    finally {
+        Remove-Item -Path $tempKnownDiffPath -ErrorAction SilentlyContinue
+    }
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -496,6 +552,31 @@ if ($SelfTest) {
     Assert-Refuses 'a case-only collision cannot hide a max_ulp that grew' `
         @((New-Row 'HOUSESARMC|i|1' 'PORT-VERSION' '5'), (New-Row 'HOUSESARMC|I|1' 'PORT-VERSION' '20')) `
         @((New-Row 'HOUSESARMC|i|1' 'PORT-VERSION' '12'), (New-Row 'HOUSESARMC|I|1' 'PORT-VERSION' '20')) 'Grew'
+
+    # 10. MEDIUM 4's vacuity floor: a fresh run producing ZERO rows while the committed list has
+    #     some looks, to the loop above, exactly like "every row now matches" -- $Fresh has nothing
+    #     to iterate, so $added/$recategorized/$categoricalFlipped/$grew all stay empty and the
+    #     ordinary refusal never fires. Without the floor, this pruned the whole list to nothing and
+    #     logged it as "no reason required for a pure removal", indistinguishable from the dump run
+    #     having silently failed to compare anything for this grid. Matches
+    #     scripts/regenerate-known-fail.ps1's identical floor (commit 849599b).
+    $pair = Read-Pair @((New-Row 'CALC|1' 'PORT-VERSION' '4'), (New-Row 'CALC|2' 'PORT-VERSION' '9')) @()
+    $refusals = Get-PruneOnlyRefusals -Current $pair.Current -Fresh $pair.Fresh
+    if ($refusals.Any -and $refusals.Vacuous -and $refusals.CurrentCount -eq 2) {
+        Write-Host ("  PASS  {0} (refused: Vacuous, CurrentCount={1})" -f 'a fresh run producing zero rows while the committed list has some is refused, not pruned to empty', $refusals.CurrentCount)
+    }
+    else {
+        Write-Host ("  FAIL  {0}`n          expected Vacuous=true and CurrentCount=2, got Vacuous={1} CurrentCount={2} Any={3}" -f
+            'a fresh run producing zero rows while the committed list has some is refused, not pruned to empty', $refusals.Vacuous, $refusals.CurrentCount, $refusals.Any)
+        $script:failures++
+    }
+
+    # 11. Control for case 10: both sides genuinely empty (a grid with zero outstanding
+    #     differences, freshly regenerated to confirm it still has zero) must NOT trip the vacuity
+    #     floor -- it only fires when $Current had rows and $Fresh lost all of them, not when both
+    #     start and stay empty. Tests/oracle/regenerations.log's own 2026-07-31 entry (0 -> 0) is
+    #     exactly this shape.
+    Assert-Accepts 'both sides empty (already zero outstanding differences) is accepted, not vacuous' @() @()
 
     Write-Host ''
     Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
