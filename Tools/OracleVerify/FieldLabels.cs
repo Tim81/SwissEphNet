@@ -36,12 +36,23 @@ namespace OracleVerify;
 /// returned name is written into the err column instead -- see
 /// Tools/CReference/sedump.c's process_house_name. NODAPSUT (both grids) carries 24: swe_nod_aps_ut's
 /// four six-double output arrays (xnasc, xndsc, xperi, xaphe), in that order.
+///
+/// HOUSESEX2/HOUSESARMCEX2 (both grids) are the 2.10.03 speed-bearing siblings of HOUSESEX/
+/// HOUSESARMC: cusp[0..36]+ascmc[0..9]+cusp_speed[0..36]+ascmc_speed[0..9], 94 doubles -- see
+/// Tools/CReference/sedump.c's own top-of-file comment on why swe_houses_ex2/swe_houses_armc_ex2
+/// need real, non-null speed-output arrays to actually populate the trailing 47. FIXSTAR2MAG
+/// shares FIXSTARMAG's one-double (mag) shape -- swe_fixstar2_mag, not swe_fixstar_mag.
 /// </summary>
 internal static class FieldLabels
 {
     private static readonly string[] XxLabels = BuildLabels("xx", 6);
     private static readonly string[] HouseLabels = BuildLabels("cusp", 37)
         .Concat(BuildLabels("ascmc", 10))
+        .ToArray();
+    private static readonly string[] HouseSpeedLabels = BuildLabels("cusp", 37)
+        .Concat(BuildLabels("ascmc", 10))
+        .Concat(BuildLabels("cusp_speed", 37))
+        .Concat(BuildLabels("ascmc_speed", 10))
         .ToArray();
     private static readonly string[] MagLabels = ["mag"];
     private static readonly string[] NameLabels = [];
@@ -61,8 +72,9 @@ internal static class FieldLabels
     {
         "CALC" or "CALCUT" => XxLabels,
         "HOUSES" or "HOUSESARMC" or "HOUSESEX" => HouseLabels,
+        "HOUSESEX2" or "HOUSESARMCEX2" => HouseSpeedLabels,
         "FIXSTAR" or "FIXSTARUT" or "FIXSTAR2" or "FIXSTAR2UT" => XxLabels,
-        "FIXSTARMAG" => MagLabels,
+        "FIXSTARMAG" or "FIXSTAR2MAG" => MagLabels,
         "NAME" or "HOUSENAME" => NameLabels,
         "SOLCROSS" or "SOLCROSSUT" or "MOONCROSS" or "MOONCROSSUT" or "HELIOCROSS" or "HELIOCROSSUT" => JdCrossLabels,
         "MOONCROSSNODE" or "MOONCROSSNODEUT" => MoonCrossNodeLabels,

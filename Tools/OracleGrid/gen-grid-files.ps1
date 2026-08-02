@@ -80,6 +80,33 @@
                                  no Moshier model at all. See the COLUMNS section below for the
                                  method/hsys columns this needs.
 
+      swe_houses_ex2 / swe_houses_armc_ex2 -- new in 2.10.03 (absent from
+                                 external/pyswisseph-2.08/swephexp.h entirely -- verified: zero
+                                 matches for either name anywhere under that tree). The oracle
+                                 already reaches both on every HOUSES/HOUSES_EX row, because
+                                 swe_houses/swe_houses_ex delegate to them (swehouse.c:173, :186),
+                                 but always with cusp_speed/ascmc_speed/serr hardcoded NULL, so
+                                 h.do_speed/h.do_hspeed (swehouse.c:642-647) stay FALSE and the 2.10
+                                 speed feature is switched off in every row that reaches it that way.
+                                 This grid calls swe_houses_ex2/swe_houses_armc_ex2 directly, with
+                                 real cusp_speed/ascmc_speed arrays, so do_speed/do_hspeed are TRUE
+                                 and the speed writes (swehouse.c:663,671,685) actually execute.
+                                 Same input columns HOUSES_EX/HOUSES_ARMC already use (armc/eps are
+                                 new to this grid only because it never carried HOUSES_ARMC rows of
+                                 its own before -- see the COLUMNS section below); reuses this
+                                 grid's own sid_mode/hsys sweeps rather than a wider one, matching
+                                 how every other file-backed func here is a smaller cross-section of
+                                 its grid-analytic.tsv counterpart. Guarded behind
+                                 SWISSEPH_HAS_HOUSES_EX2 in both drivers, the same
+                                 compiled-in-2.10.03-only pattern SWISSEPH_HAS_CROSSING already uses
+                                 for the eight crossing functions -- see sedump.c's own top-of-file
+                                 comment.
+
+      swe_fixstar2_mag -- both drivers previously called only swe_fixstar_mag (the plain form);
+                                 swe_fixstar2_mag (present in 2.08 too -- external/pyswisseph-2.08/
+                                 swephexp.h:708 -- so it needs no version guard) had no grid row of
+                                 its own anywhere. Same star-name sweep as FIXSTAR_MAG.
+
     THE STAR NAME LOOKUP AND THE PLANET NAME ARE CARRIED IN THE err/serr COLUMN
 
     swe_get_planet_name returns a string, not a double, so it has no xx[]/mag output to hex-encode
@@ -109,15 +136,16 @@
     verbatim. Empty string means "does not apply to this row's func":
 
       case_id, func, ipl, tjd, iflag, star, geolon, geolat, height, sid_mode, x2cross, dir, t0,
-      ayan_t0
+      ayan_t0, method, hsys, armc, eps
 
-    Fourteen columns, not grid-analytic.tsv's sixteen: there is no house system here, so hsys, armc
-    and eps are dropped, and a star column takes their place; x2cross, dir, t0 and ayan_t0 are
-    appended after sid_mode for the same reason and in the same relative position
-    gen-grid-analytic.ps1 appends them. t0/ayan_t0 carry swe_set_sid_mode's SE_SIDM_USER
-    parameters; this grid's own SIDEREAL rows never use SE_SIDM_USER (predefined modes only, via
-    Get-NextSidMode's cycle), so both columns are always empty here today, but the columns exist so
-    a driver reading this grid does not need a schema that differs from grid-analytic.tsv's.
+    Eighteen columns today. method and hsys were appended for NOD_APS_UT/HOUSES_EX; armc and eps
+    are this addition's own appension, needed only because HOUSES_ARMC_EX2 is the first func this
+    grid has ever carried that takes an armc/eps pair directly (HOUSES_EX/HOUSES_EX2 derive armc
+    from geolon/tjd internally and never need it as an input column) -- additive, at the end, for
+    the same reason every earlier column here landed at the end rather than interleaved: every
+    column an existing func already reads keeps the same index it always had.
+    grid-jpl.tsv carries this header byte-for-byte (see gen-grid-jpl.ps1's own header for why), so
+    this addition is a two-grid schema change, not a one-grid one.
 
 .NOTES
     Deterministic by construction: no timestamps, no randomness, no machine-dependent state (the
@@ -243,7 +271,7 @@ function New-CalcFileRow {
     $fields = @(
         $caseId, $Func, (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
         $geolonField, $geolatField, $heightField, $sidModeField, '', '',
-        $t0Field, $ayanT0Field, '', ''
+        $t0Field, $ayanT0Field, '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -260,17 +288,23 @@ function New-FixstarRow {
     $caseId = "$Prefix|$Star|$(Fmt $Tjd)|$FlagName"
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), $Star,
-        '', '', '', '', '', '', '', '', '', ''
+        '', '', '', '', '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
 
+# FIXSTAR_MAG (swe_fixstar_mag) and FIXSTAR2_MAG (swe_fixstar2_mag) share this shape -- neither
+# takes a date or flag, only the star search string -- with a distinct case_id prefix per func so
+# Tools/OracleVerify/FieldLabels.cs's func-token dispatch (case_id.Split('|')[0]) tells the two
+# apart; both resolve to the same one-double (mag) shape there. swe_fixstar2_mag needs no version
+# guard: it is declared in external/pyswisseph-2.08/swephexp.h:708, unlike swe_houses_ex2/
+# swe_houses_armc_ex2 below.
 function New-FixstarMagRow {
-    param([string] $Star)
-    $caseId = "FIXSTARMAG|$Star"
+    param([string] $Prefix, [string] $Func, [string] $Star)
+    $caseId = "$Prefix|$Star"
     $fields = @(
-        $caseId, 'FIXSTAR_MAG', '', '', '', $Star,
-        '', '', '', '', '', '', '', '', '', ''
+        $caseId, $Func, '', '', '', $Star,
+        '', '', '', '', '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -280,7 +314,7 @@ function New-NameRow {
     $caseId = "NAME|$(FmtI $Ipl)"
     $fields = @(
         $caseId, 'GET_PLANET_NAME', (FmtI $Ipl), '', '', '',
-        '', '', '', '', '', '', '', '', '', ''
+        '', '', '', '', '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -301,7 +335,7 @@ function New-SolarLunarCrossRow {
     $caseId = "$Prefix|$(Fmt $X2Cross)|$(Fmt $Tjd)|$FlagName"
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
-        '', '', '', '', (Fmt $X2Cross), '', '', '', '', ''
+        '', '', '', '', (Fmt $X2Cross), '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -320,7 +354,7 @@ function New-MoonCrossNodeRow {
     $caseId = "$Prefix|$(Fmt $Tjd)|$FlagName"
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
-        '', '', '', '', '', '', '', '', '', ''
+        '', '', '', '', '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -341,7 +375,7 @@ function New-HelioCrossRow {
     $caseId = "$Prefix|$(FmtI $Ipl)|$(Fmt $X2Cross)|$(Fmt $Tjd)|$FlagName|$(FmtI $Dir)"
     $fields = @(
         $caseId, $Func, (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
-        '', '', '', '', (Fmt $X2Cross), (FmtI $Dir), '', '', '', ''
+        '', '', '', '', (Fmt $X2Cross), (FmtI $Dir), '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -350,15 +384,35 @@ function New-HelioCrossRow {
 # gen-grid-analytic.ps1's own New-HousesExRow for the full rationale. This grid's own reason to
 # carry it at all (rather than leaving it to grid-analytic.tsv) is its SIDEREAL rows: some
 # sid_modes drive the ayanamsa through a file-backed swe_calc (e.g. the true-position-of-a-star
-# modes), which SEFLG_MOSEPH can never reach -- see this script's own header.
+# modes), which SEFLG_MOSEPH can never reach -- see this script's own header. Shared by
+# New-HousesEx2Row below (Func distinguishes swe_houses_ex from swe_houses_ex2 -- same input shape,
+# see sedump.c's own process_houses_ex/process_houses_ex2 for the output-side difference).
 function New-HousesExRow {
-    param([char] $Hsys, [double] $GeoLat, [double] $GeoLon, [double] $Tjd, [string] $FlagName, [int] $IFlag, $SidMode)
-    $caseId = "HOUSESEX|$Hsys|$(Fmt $GeoLat)|$(Fmt $GeoLon)|$(Fmt $Tjd)|$FlagName"
+    param([string] $Prefix, [string] $Func, [char] $Hsys, [double] $GeoLat, [double] $GeoLon, [double] $Tjd, [string] $FlagName, [int] $IFlag, $SidMode)
+    $caseId = "$Prefix|$Hsys|$(Fmt $GeoLat)|$(Fmt $GeoLon)|$(Fmt $Tjd)|$FlagName"
     $sidModeField = if ($null -eq $SidMode) { '' } else { FmtI ([int]$SidMode) }
     $fields = @(
-        $caseId, 'HOUSES_EX', '', (Fmt $Tjd), (FmtI $IFlag), '',
+        $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
         (Fmt $GeoLon), (Fmt $GeoLat), '', $sidModeField, '', '', '', '',
-        '', "$Hsys"
+        '', "$Hsys", '', ''
+    )
+    return ($fields -join "`t")
+}
+
+# swe_houses_armc_ex2 -- new in 2.10.03 (absent from external/pyswisseph-2.08/swephexp.h entirely;
+# see this script's own header). Unlike HOUSES_EX2 above, this grid never carried a plain
+# HOUSES_ARMC row before this addition (grid-analytic.tsv already covers swe_houses_armc, and
+# swe_houses_armc_ex2 itself never opens a file -- see this script's own header on why it is added
+# here anyway, for dispatch/schema parity with grid-analytic.tsv rather than for file-layer
+# coverage), so armc and eps are new columns (see the COLUMN LAYOUT section of this script's own
+# header) rather than reused ones.
+function New-HousesArmcEx2Row {
+    param([char] $Hsys, [double] $GeoLat, [double] $Eps, [double] $Armc)
+    $caseId = "HOUSESARMCEX2|$Hsys|$(Fmt $GeoLat)|$(Fmt $Eps)|$(Fmt $Armc)"
+    $fields = @(
+        $caseId, 'HOUSES_ARMC_EX2', '', '', '', '',
+        '', (Fmt $GeoLat), '', '', '', '', '', '',
+        '', "$Hsys", (Fmt $Armc), (Fmt $Eps)
     )
     return ($fields -join "`t")
 }
@@ -374,7 +428,7 @@ function New-NodApsUtRow {
     $fields = @(
         $caseId, 'NOD_APS_UT', (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
         '', '', '', '', '', '', '', '',
-        (FmtI $Method), ''
+        (FmtI $Method), '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -562,6 +616,21 @@ $HousesExFlagCombos = @(
 )
 
 # ---------------------------------------------------------------------------------------
+# swe_houses_armc_ex2 grid values -- see this script's own header and New-HousesArmcEx2Row's own
+# comment for why this func is added here despite touching no file itself (dispatch/schema parity
+# with grid-analytic.tsv, not file-layer coverage). Same $HouseLetters sweep as HOUSES_EX/
+# HOUSES_EX2 above (includes 'I'/'i' -- the hsys the saved_sundec static and the ascmc[9] == 99
+# branch both concern; see New-HousesArmcEx2Row and sedump.c's own process_houses_armc_ex2 for why
+# ascmc[9] is zero-initialized on every row here exactly as HOUSES_ARMC already is, so this grid
+# never exercises the ascmc[9] == 99 read branch either). Armc/eps are a small, representative set
+# -- gen-grid-analytic.ps1's own HOUSES_ARMC already covers the geometry in full; this grid's job
+# is dispatch coverage, not re-proving arithmetic gen-grid-analytic.ps1 already proves.
+# ---------------------------------------------------------------------------------------
+$HousesArmcEx2GeoLats = @(-66, 66)
+$HousesArmcEx2Eps = 23.4392911
+$HousesArmcEx2Armcs = @(0.0, 90.0, 180.0, 270.0)
+
+# ---------------------------------------------------------------------------------------
 # swe_nod_aps_ut grid values -- see this script's own header for why SE_CHIRON is included here
 # (the one place either grid tests it): unlike gen-grid-analytic.ps1's accepted-ipl list, there is
 # no orbital-period search-margin concern for swe_nod_aps_ut the way there is for
@@ -607,6 +676,9 @@ $moonCrossNodeUtCount = 0
 $helioCrossCount = 0
 $helioCrossUtCount = 0
 $housesExCount = 0
+$housesEx2Count = 0
+$housesArmcEx2Count = 0
+$fixstar2MagCount = 0
 $nodApsUtCount = 0
 
 foreach ($ipl in $Bodies) {
@@ -653,8 +725,11 @@ foreach ($star in $StarNames) {
 }
 
 foreach ($star in $StarNames) {
-    $rows.Add((New-FixstarMagRow -Star $star))
+    $rows.Add((New-FixstarMagRow -Prefix 'FIXSTARMAG' -Func 'FIXSTAR_MAG' -Star $star))
     $fixstarMagCount++
+
+    $rows.Add((New-FixstarMagRow -Prefix 'FIXSTAR2MAG' -Func 'FIXSTAR2_MAG' -Star $star))
+    $fixstar2MagCount++
 }
 
 foreach ($ipl in $NameBodies) {
@@ -719,10 +794,23 @@ foreach ($hsys in $HouseLetters) {
                 $iflag = $combo.Flag
                 $sidMode = if ($combo.NeedsSid) { Get-NextSidMode } else { $null }
 
-                $rows.Add((New-HousesExRow -Hsys $hsys -GeoLat $geolat -GeoLon $HousesExGeoLon -Tjd $tjd `
+                $rows.Add((New-HousesExRow -Prefix 'HOUSESEX' -Func 'HOUSES_EX' -Hsys $hsys -GeoLat $geolat -GeoLon $HousesExGeoLon -Tjd $tjd `
                     -FlagName $combo.Name -IFlag $iflag -SidMode $sidMode))
                 $housesExCount++
+
+                $rows.Add((New-HousesExRow -Prefix 'HOUSESEX2' -Func 'HOUSES_EX2' -Hsys $hsys -GeoLat $geolat -GeoLon $HousesExGeoLon -Tjd $tjd `
+                    -FlagName $combo.Name -IFlag $iflag -SidMode $sidMode))
+                $housesEx2Count++
             }
+        }
+    }
+}
+
+foreach ($hsys in $HouseLetters) {
+    foreach ($geolat in $HousesArmcEx2GeoLats) {
+        foreach ($armc in $HousesArmcEx2Armcs) {
+            $rows.Add((New-HousesArmcEx2Row -Hsys $hsys -GeoLat $geolat -Eps $HousesArmcEx2Eps -Armc $armc))
+            $housesArmcEx2Count++
         }
     }
 }
@@ -741,9 +829,9 @@ foreach ($ipl in $NodApsRejectedIplFiles) {
 }
 
 $totalRows = $rows.Count
-$expectedTotal = $calcCount + $calcUtCount + $fixstarCount + $fixstarUtCount + $fixstar2Count + $fixstar2UtCount + $fixstarMagCount + $nameCount +
+$expectedTotal = $calcCount + $calcUtCount + $fixstarCount + $fixstarUtCount + $fixstar2Count + $fixstar2UtCount + $fixstarMagCount + $fixstar2MagCount + $nameCount +
     $solCrossCount + $solCrossUtCount + $moonCrossCount + $moonCrossUtCount + $moonCrossNodeCount + $moonCrossNodeUtCount + $helioCrossCount + $helioCrossUtCount +
-    $housesExCount + $nodApsUtCount
+    $housesExCount + $housesEx2Count + $housesArmcEx2Count + $nodApsUtCount
 if ($totalRows -ne $expectedTotal) {
     throw 'Row count bookkeeping is inconsistent -- this is a bug in this script, not a data problem.'
 }
@@ -775,11 +863,11 @@ $headerLines = @(
     '# dates straddle the 1800 file boundary (sepl/semo/seas_12.se1 covers 1200-1799, _18.se1'
     '# covers 1800-2399) on purpose, so the grid as a whole exercises both files.'
     '#'
-    '# swe_fixstar / swe_fixstar_ut / swe_fixstar2 / swe_fixstar2_ut / swe_fixstar_mag: eight star'
-    '# search strings covering a plain name, a multi-word name, a leading-comma'
-    '# Bayer-designation-only string, and a combined "name,bayer" string, crossed with three'
-    '# Julian days and two iflag combinations (swe_fixstar_mag takes neither a date nor a flag,'
-    '# so it gets one row per star name).'
+    '# swe_fixstar / swe_fixstar_ut / swe_fixstar2 / swe_fixstar2_ut / swe_fixstar_mag /'
+    '# swe_fixstar2_mag: eight star search strings covering a plain name, a multi-word name, a'
+    '# leading-comma Bayer-designation-only string, and a combined "name,bayer" string, crossed'
+    '# with three Julian days and two iflag combinations (swe_fixstar_mag/swe_fixstar2_mag take'
+    '# neither a date nor a flag, so each gets one row per star name).'
     '#'
     '# swe_get_planet_name: every body number that resolves through a named switch case (0-22),'
     '# plus one arbitrary asteroid number this repo ships no per-asteroid data file for, to'
@@ -804,6 +892,17 @@ $headerLines = @(
     '# search can take up to about one orbital period to converge, and Uranus/Neptune/Pluto''s'
     '# 84/165/248-year periods are close enough to this grid''s file-era margins to risk it).'
     '#'
+    '# swe_houses_ex2 / swe_houses_armc_ex2: new in 2.10.03 (absent from'
+    '# external/pyswisseph-2.08/swephexp.h entirely). Reached today only through swe_houses/'
+    '# swe_houses_ex, which always pass cusp_speed/ascmc_speed/serr as NULL (swehouse.c:173,186),'
+    '# so h.do_speed/h.do_hspeed (swehouse.c:642-647) stay FALSE and the 2.10 speed feature is'
+    '# switched off in every row that reaches it that way. These rows call the _ex2 forms directly,'
+    '# with real cusp_speed/ascmc_speed arrays, so the speed writes actually execute. Guarded'
+    '# behind SWISSEPH_HAS_HOUSES_EX2 in both drivers, the same pattern SWISSEPH_HAS_CROSSING'
+    '# already uses for the eight crossing functions. HOUSES_ARMC_EX2 touches no file itself (pure'
+    '# geometry, like HOUSES_ARMC), so it is added here for dispatch/schema parity with'
+    '# grid-analytic.tsv, not file-layer coverage -- see New-HousesArmcEx2Row''s own comment.'
+    '#'
     '# A FRESH LIBRARY INSTANCE PER ROW, AND A FRESH swe_set_ephe_path PER ROW'
     '#'
     '# Every row here touches file-backed state (which segment is cached, which file handle is'
@@ -818,10 +917,11 @@ $headerLines = @(
     '#'
     '#   case_id    stable, unique, pipe-delimited id; ordinal comparison sorts it deterministically'
     '#   func       CALC | CALC_UT | FIXSTAR | FIXSTAR_UT | FIXSTAR2 | FIXSTAR2_UT | FIXSTAR_MAG |'
-    '#              GET_PLANET_NAME | SOLCROSS | SOLCROSS_UT | MOONCROSS | MOONCROSS_UT |'
-    '#              MOONCROSS_NODE | MOONCROSS_NODE_UT | HELIO_CROSS | HELIO_CROSS_UT'
+    '#              FIXSTAR2_MAG | GET_PLANET_NAME | SOLCROSS | SOLCROSS_UT | MOONCROSS |'
+    '#              MOONCROSS_UT | MOONCROSS_NODE | MOONCROSS_NODE_UT | HELIO_CROSS |'
+    '#              HELIO_CROSS_UT | HOUSES_EX | HOUSES_EX2 | HOUSES_ARMC_EX2 | NOD_APS_UT'
     '#   ipl        body number                                        [CALC, CALC_UT,'
-    '#              GET_PLANET_NAME, HELIO_CROSS, HELIO_CROSS_UT]'
+    '#              GET_PLANET_NAME, HELIO_CROSS, HELIO_CROSS_UT, NOD_APS_UT]'
     '#   tjd        Julian day (ET for CALC/FIXSTAR/FIXSTAR2/SOLCROSS/MOONCROSS/MOONCROSS_NODE/'
     '#              HELIO_CROSS; UT for the corresponding _UT funcs)'
     '#              [CALC, CALC_UT, FIXSTAR, FIXSTAR_UT, FIXSTAR2, FIXSTAR2_UT, SOLCROSS,'
@@ -831,11 +931,11 @@ $headerLines = @(
     '#              [CALC, CALC_UT, FIXSTAR, FIXSTAR_UT, FIXSTAR2, FIXSTAR2_UT, SOLCROSS,'
     '#              SOLCROSS_UT, MOONCROSS, MOONCROSS_UT, MOONCROSS_NODE, MOONCROSS_NODE_UT,'
     '#              HELIO_CROSS, HELIO_CROSS_UT]'
-    '#   star       star name or search string                         [FIXSTAR, FIXSTAR_UT, FIXSTAR2, FIXSTAR2_UT, FIXSTAR_MAG]'
-    '#   geolon     geographic longitude, degrees east                 [CALC/CALC_UT topo rows only]'
-    '#   geolat     geographic latitude, degrees north                 [CALC/CALC_UT topo rows only]'
+    '#   star       star name or search string                         [FIXSTAR, FIXSTAR_UT, FIXSTAR2, FIXSTAR2_UT, FIXSTAR_MAG, FIXSTAR2_MAG]'
+    '#   geolon     geographic longitude, degrees east                 [CALC/CALC_UT topo rows; HOUSES_EX/HOUSES_EX2]'
+    '#   geolat     geographic latitude, degrees north                 [CALC/CALC_UT topo rows; HOUSES_EX/HOUSES_EX2; HOUSES_ARMC_EX2]'
     '#   height     observer height above sea level, metres            [CALC/CALC_UT topo rows only]'
-    '#   sid_mode   swe_set_sid_mode mode, applied before the row runs [CALC/CALC_UT rows whose iflag carries SEFLG_SIDEREAL];'
+    '#   sid_mode   swe_set_sid_mode mode, applied before the row runs [CALC/CALC_UT/HOUSES_EX/HOUSES_EX2 rows whose iflag carries SEFLG_SIDEREAL];'
     '#              cycled across all 47 predefined modes (Get-NextSidMode), not pinned to one'
     '#   x2cross    target ecliptic longitude to cross, degrees        [SOLCROSS, SOLCROSS_UT,'
     '#              MOONCROSS, MOONCROSS_UT, HELIO_CROSS, HELIO_CROSS_UT]'
@@ -846,7 +946,9 @@ $headerLines = @(
     '#              gen-grid-analytic.ps1''s, which does use it'
     '#   ayan_t0    SE_SIDM_USER ayanamsa at t0, degrees; same emptiness note as t0'
     '#   method     swe_nod_aps_ut method bitmask                        [NOD_APS_UT]'
-    '#   hsys       house-system letter                                  [HOUSES_EX]'
+    '#   hsys       house-system letter               [HOUSES_EX, HOUSES_EX2, HOUSES_ARMC_EX2]'
+    '#   armc       ARMC, degrees                                       [HOUSES_ARMC_EX2]'
+    '#   eps        obliquity of the ecliptic, degrees                  [HOUSES_ARMC_EX2]'
     '#'
     '# x2cross and dir are appended after sid_mode, and t0/ayan_t0 after those, rather than'
     '# interleaved among the original ten columns, so every column this grid''s other funcs already'
@@ -861,7 +963,11 @@ $headerLines = @(
     '# hsys sits where it does, rather than reusing a column HOUSES/HOUSES_ARMC might have shared'
     '# the way grid-analytic.tsv''s HOUSES_EX rows reuse fields[5], because this grid never carries'
     '# swe_houses/swe_houses_armc rows of its own and so never allocated an hsys column at all'
-    '# until HOUSES_EX needed one.'
+    '# until HOUSES_EX needed one. armc and eps are a THIRD additive tail, at the very end, for the'
+    '# same reason again: HOUSES_ARMC_EX2 is the first func this grid has ever carried that takes'
+    '# an armc/eps pair as direct input (grid-analytic.tsv already carries them, for its own'
+    '# HOUSES_ARMC rows) -- this addition is therefore a two-grid schema change, since'
+    '# grid-jpl.tsv carries this header byte-for-byte (see gen-grid-jpl.ps1''s own header).'
     '#'
     '# Lines starting with ''#'' are comments. The first non-comment line is the column-name header'
     '# below and is not a data row -- both drivers assert it matches verbatim before reading any'
@@ -869,7 +975,8 @@ $headerLines = @(
 )
 $columnHeader = 'case_id' + "`t" + 'func' + "`t" + 'ipl' + "`t" + 'tjd' + "`t" + 'iflag' + "`t" +
     'star' + "`t" + 'geolon' + "`t" + 'geolat' + "`t" + 'height' + "`t" + 'sid_mode' + "`t" +
-    'x2cross' + "`t" + 'dir' + "`t" + 't0' + "`t" + 'ayan_t0' + "`t" + 'method' + "`t" + 'hsys'
+    'x2cross' + "`t" + 'dir' + "`t" + 't0' + "`t" + 'ayan_t0' + "`t" + 'method' + "`t" + 'hsys' + "`t" +
+    'armc' + "`t" + 'eps'
 
 $writer = [System.IO.StreamWriter]::new($outputPath, $false, [System.Text.UTF8Encoding]::new($false))
 try {
@@ -890,6 +997,7 @@ Write-Host "  FIXSTAR_UT         $fixstarUtCount"
 Write-Host "  FIXSTAR2           $fixstar2Count"
 Write-Host "  FIXSTAR2_UT        $fixstar2UtCount"
 Write-Host "  FIXSTAR_MAG        $fixstarMagCount"
+Write-Host "  FIXSTAR2_MAG       $fixstar2MagCount"
 Write-Host "  GET_PLANET_NAME    $nameCount"
 Write-Host "  SOLCROSS           $solCrossCount"
 Write-Host "  SOLCROSS_UT        $solCrossUtCount"
@@ -900,4 +1008,6 @@ Write-Host "  MOONCROSS_NODE_UT  $moonCrossNodeUtCount"
 Write-Host "  HELIO_CROSS        $helioCrossCount"
 Write-Host "  HELIO_CROSS_UT     $helioCrossUtCount"
 Write-Host "  HOUSES_EX          $housesExCount"
+Write-Host "  HOUSES_EX2         $housesEx2Count"
+Write-Host "  HOUSES_ARMC_EX2    $housesArmcEx2Count"
 Write-Host "  NOD_APS_UT         $nodApsUtCount"

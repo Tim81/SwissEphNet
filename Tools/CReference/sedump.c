@@ -13,20 +13,28 @@
  *                                          swe_mooncross_node/_ut, swe_helio_cross/_ut), also
  *                                          under SEFLG_MOSEPH, swe_get_ayanamsa/_ex/_ex_ut
  *                                          (direct ayanamsa coverage -- every predefined sid_mode
- *                                          plus SE_SIDM_USER), swe_houses_ex (the sidereal/
- *                                          radians house path), swe_get_ayanamsa_ut,
+ *                                          plus SE_SIDM_USER), swe_houses_ex
+ *                                          (the sidereal/radians house path), swe_houses_ex2 and
+ *                                          swe_houses_armc_ex2 (the 2.10.03 speed-bearing forms
+ *                                          of swe_houses_ex/swe_houses_armc -- see
+ *                                          SWISSEPH_HAS_HOUSES_EX2 below), swe_get_ayanamsa_ut,
  *                                          swe_sidtime, swe_azalt, swe_house_name and
  *                                          swe_nod_aps_ut. Touches no ephemeris data file.
  *                                          See gen-grid-analytic.ps1's header.
  *   Tools/OracleGrid/grid-files.tsv     -- swe_calc/swe_calc_ut (SEFLG_SWIEPH), the
- *                                          swe_fixstar family, swe_get_planet_name, the same
+ *                                          swe_fixstar family (including swe_fixstar2_mag, not
+ *                                          just swe_fixstar_mag), swe_get_planet_name, the same
  *                                          eight crossing functions under SEFLG_SWIEPH,
- *                                          swe_houses_ex and swe_nod_aps_ut (the two of the six
- *                                          new funcs where a real .se1 file changes what gets
- *                                          exercised -- the sidereal ayanamsa behind
- *                                          swe_houses_ex, and swe_nod_aps_ut's planetary
- *                                          positions). Opens the shipped .se1/sefstars.txt
- *                                          files. See gen-grid-files.ps1's header.
+ *                                          swe_houses_ex/swe_houses_ex2 and swe_nod_aps_ut (the
+ *                                          two of the six new funcs from grid-analytic.tsv's list
+ *                                          where a real .se1 file changes what gets exercised --
+ *                                          the sidereal ayanamsa behind swe_houses_ex(2), and
+ *                                          swe_nod_aps_ut's planetary positions), and
+ *                                          swe_houses_armc_ex2 (added for dispatch/schema parity
+ *                                          with grid-analytic.tsv even though it touches no file
+ *                                          itself -- pure geometry, like swe_houses_armc). Opens
+ *                                          the shipped .se1/sefstars.txt files.
+ *                                          See gen-grid-files.ps1's header.
  *   Tools/OracleGrid/grid-jpl.tsv       -- swe_calc/swe_calc_ut (SEFLG_JPLEPH), including the
  *                                          SEFLG_JPLHOR/SEFLG_JPLHOR_APPROX combinations no other
  *                                          grid can reach (sweph.c:6110-6112 strips both unless
@@ -37,7 +45,7 @@
  * Every grid shares one output shape (see OUTPUT COLUMN LAYOUT below) and one row-processing loop
  * in main(); which column layout a given input file uses dispatches on its header line, checked
  * against EXPECTED_HEADER_ANALYTIC and EXPECTED_HEADER_FILES below -- those two layouts have
- * different column counts (16 vs 14), so a header mismatch is caught before any row is parsed.
+ * different column counts (22 vs 18), so a header mismatch is caught before any row is parsed.
  * grid-jpl.tsv carries grid-files.tsv's header verbatim and is therefore read in MODE_FILES: it
  * needs exactly the columns that layout already defines, and what makes it a distinct grid is the
  * ephemeris flag its rows carry and the JPL file this driver is pointed at, not its schema -- see
@@ -60,6 +68,20 @@
  * count for a crossing-bearing grid still matches the grid's own row count (see
  * scripts/run-oracle-dump.ps1's own row-count guards, which fail loudly on any mismatch) and the
  * row still parses cleanly for any future three-way classification that reads the 2.08 dump.
+ *
+ * SWISSEPH_HAS_HOUSES_EX2: swe_houses_ex2/swe_houses_armc_ex2 DO NOT EXIST IN 2.08 EITHER
+ *
+ * Same shape as SWISSEPH_HAS_CROSSING immediately above, for a different pair of functions:
+ * swe_houses_ex2 and swe_houses_armc_ex2 are absent from external/pyswisseph-2.08/swephexp.h
+ * entirely (verified: zero matches for either name anywhere under external/pyswisseph-2.08/), so
+ * a 2.08 build has no declaration for either. scripts/run-oracle-dump.ps1 also defines
+ * SWISSEPH_HAS_HOUSES_EX2=1 alongside SWISSEPH_HAS_CROSSING when it compiles this file against
+ * 2.10.03; Tools/CReference/build-c.ps1's 2.08 build does not define it either, so the #else
+ * branch (process_houses_ex2/process_houses_armc_ex2's own NOT_IN_208 path) applies there,
+ * emitting the same 94-double (188 value column) shape the real branch would, with
+ * NOT_IN_208_RETC and an explanatory serr, for the same row-count-parity reason
+ * SWISSEPH_HAS_CROSSING's own comment gives. swe_fixstar2_mag needs no such guard: it is declared
+ * (and implemented) in external/pyswisseph-2.08/swephexp.h:708.
  *
  * INVOCATION
  *
@@ -156,7 +178,7 @@
  *   CALC, CALC_UT                            xx[0..5]                 (6 doubles  -> 12 value columns)
  *   HOUSES, HOUSES_ARMC                      cusp[0..36], ascmc[0..9] (47 doubles -> 94 value columns)
  *   FIXSTAR, FIXSTAR_UT, FIXSTAR2, FIXSTAR2_UT  xx[0..5]              (6 doubles  -> 12 value columns)
- *   FIXSTAR_MAG                              mag                      (1 double   -> 2 value columns)
+ *   FIXSTAR_MAG, FIXSTAR2_MAG                mag                      (1 double   -> 2 value columns)
  *   GET_PLANET_NAME                          (none)                   (0 value columns)
  *   SOLCROSS, SOLCROSS_UT, MOONCROSS,
  *     MOONCROSS_UT, HELIO_CROSS,
@@ -164,6 +186,9 @@
  *   MOONCROSS_NODE, MOONCROSS_NODE_UT        jd_cross, xlon, xla      (3 doubles  -> 6 value columns)
  *   AYANAMSA, AYANAMSA_EX, AYANAMSA_EX_UT    daya                     (1 double   -> 2 value columns)
  *   HOUSES_EX                                cusp[0..36], ascmc[0..9] (47 doubles -> 94 value columns)
+ *   HOUSES_EX2, HOUSES_ARMC_EX2              cusp[0..36], ascmc[0..9],
+ *                                            cusp_speed[0..36],
+ *                                            ascmc_speed[0..9]        (94 doubles -> 188 value columns)
  *   AYANAMSA_UT                              daya                     (1 double   -> 2 value columns)
  *   SIDTIME                                  tsid                     (1 double   -> 2 value columns)
  *   AZALT                                    xaz[0..2]                (3 doubles  -> 6 value columns)
@@ -200,6 +225,28 @@
  * (xnasc, xndsc, xperi, xaphe) are zeroed only on its "not implemented" reject branch
  * (swecl.c:5134-5146) -- see process_nod_aps_ut for why both drivers zero-initialize all four
  * before every call regardless.
+ *
+ * HOUSES_EX2 (swe_houses_ex2, swehouse.c:207) and HOUSES_ARMC_EX2 (swe_houses_armc_ex2,
+ * swehouse.c:622) are the 2.10.03 forms HOUSES_EX/HOUSES_ARMC/HOUSES call with cusp_speed/
+ * ascmc_speed/serr hardcoded NULL (swehouse.c:173, 186, 598, 173-again via swe_houses ->
+ * swe_houses_armc_ex2), switching the speed feature off entirely (h.do_speed/h.do_hspeed stay
+ * FALSE whenever both pointers are NULL, swehouse.c:642-647). Both take real, non-NULL
+ * cusp_speed/ascmc_speed arrays here, so do_speed/do_hspeed are TRUE and swehouse.c:663,671,685
+ * actually write. Both also have a REAL serr, unlike HOUSES/HOUSES_ARMC/HOUSES_EX above (whose err
+ * columns are either always empty or repurposed): swe_houses_armc_ex2 writes serr on its hsys 'I'
+ * out-of-range-declination reject (swehouse.c:656-659, "House system I (Sunshine) needs valid Sun
+ * declination in ascmc[9]") and on CalcH failure (swehouse.c:667, strcpy(serr, h.serr)); swe_houses_ex2
+ * forwards whatever the delegated armc_ex2/sidereal_houses_* call wrote (swehouse.c:277,
+ * 271-275). cusp_speed/ascmc_speed are zero-initialized before every call, the same rule
+ * process_helio_cross applies to jd_cross: swehouse.c:663/671 write cusp_speed[0..ito] only when
+ * do_hspeed is TRUE (always true here) but only up to `ito` (12 for every hsys but 'G', which
+ * uses 36), so cusp_speed[ito+1..36] is never written by that loop on a non-'G' row and would
+ * otherwise hold whatever was on the stack; ascmc_speed[0..9] is written in full whenever
+ * do_speed is TRUE (swehouse.c:685-696), but only inside that guard, so a caller that zero-inits
+ * first is safe regardless of which branch runs. See process_houses_armc_ex2's own comment for
+ * why ascmc[9] is zero-initialized too, exactly as HOUSES_ARMC already does, and what that means
+ * for the saved_sundec static this file's own "FRESH LIBRARY STATE PER ROW" section already
+ * documents.
  *
  * THE CROSSING FUNCTIONS' retc COLUMN: ONE REAL, SIX SYNTHETIC
  *
@@ -242,7 +289,7 @@
 
 #define MAX_LINE 4096
 #define ANALYTIC_COLUMNS 22
-#define FILES_COLUMNS 16
+#define FILES_COLUMNS 18
 #define CUSP_COUNT 37   /* cusp[0..36] */
 #define ASCMC_COUNT 10  /* ascmc[0..9] */
 #define STAR_BUF_LEN AS_MAXCH
@@ -273,7 +320,7 @@ static const char *EXPECTED_HEADER_ANALYTIC =
     "\tmethod\tcalc_flag\tatpress\tattemp\txin0\txin1";
 static const char *EXPECTED_HEADER_FILES =
     "case_id\tfunc\tipl\ttjd\tiflag\tstar\tgeolon\tgeolat\theight\tsid_mode\tx2cross\tdir\tt0\tayan_t0"
-    "\tmethod\thsys";
+    "\tmethod\thsys\tarmc\teps";
 
 enum grid_mode { MODE_ANALYTIC, MODE_FILES };
 
@@ -509,8 +556,12 @@ static void process_fixstar(FILE *out, const char *case_id, const char *func, ch
     fputc('\n', out);
 }
 
-/* grid-files.tsv only: swe_fixstar_mag takes no date or flag, only the star search string. */
-static void process_fixstar_mag(FILE *out, const char *case_id, char *fields[])
+/* grid-files.tsv only: swe_fixstar_mag and swe_fixstar2_mag both take no date or flag, only the
+ * star search string -- share this one function the same way process_fixstar shares FIXSTAR/
+ * FIXSTAR_UT/FIXSTAR2/FIXSTAR2_UT. swe_fixstar2_mag needs no 2.08 version guard (unlike
+ * swe_houses_ex2/swe_houses_armc_ex2 below): it is declared and implemented in
+ * external/pyswisseph-2.08/swephexp.h:708 -- see this file's own top-of-file comment. */
+static void process_fixstar_mag(FILE *out, const char *case_id, const char *func, char *fields[])
 {
     char star[STAR_BUF_LEN];
     double mag = 0;
@@ -521,7 +572,10 @@ static void process_fixstar_mag(FILE *out, const char *case_id, char *fields[])
     star[sizeof star - 1] = '\0';
     serr[0] = '\0';
 
-    retc = swe_fixstar_mag(star, &mag, serr);
+    if (strcmp(func, "FIXSTAR_MAG") == 0)
+        retc = swe_fixstar_mag(star, &mag, serr);
+    else
+        retc = swe_fixstar2_mag(star, &mag, serr);
 
     fprintf(out, "%s\t%d\t", case_id, retc);
     emit_escaped(out, serr);
@@ -823,6 +877,116 @@ static void process_houses_ex(FILE *out, const char *case_id, char *fields[], in
     fputc('\n', out);
 }
 
+/* cusp + ascmc + cusp_speed + ascmc_speed = 94 doubles -> 188 value columns -- see this file's own
+ * top-of-file OUTPUT COLUMN LAYOUT comment. */
+#define HOUSES_EX2_DOUBLE_COUNT (CUSP_COUNT + ASCMC_COUNT + CUSP_COUNT + ASCMC_COUNT)
+
+/* Emits HOUSES_EX2_DOUBLE_COUNT zero doubles -- the #else (2.08) branch of process_houses_ex2 and
+ * process_houses_armc_ex2 below, matching process_crossing_deg's identical #else pattern for the
+ * eight crossing functions (see SWISSEPH_HAS_HOUSES_EX2 in this file's own top-of-file comment). */
+static void emit_not_in_208_houses_ex2(FILE *out, const char *case_id, const char *func)
+{
+    char msg[AS_MAXCH];
+    int i;
+    sprintf(msg, "%s does not exist in Swiss Ephemeris 2.08", func);
+    fprintf(out, "%s\t%d\t", case_id, NOT_IN_208_RETC);
+    emit_escaped(out, msg);
+    for (i = 0; i < HOUSES_EX2_DOUBLE_COUNT; i++) emit_value(out, 0.0);
+    fputc('\n', out);
+}
+
+/*
+ * HOUSES_EX2: swe_houses_ex2 (swehouse.c:207), the 2.10.03 speed-bearing sibling of HOUSES_EX --
+ * see this file's own top-of-file comment for the do_speed/do_hspeed gating and the zero-init
+ * rule cusp_speed/ascmc_speed both need. Same input columns and hsys_idx-style parameter as
+ * process_houses_ex; unlike that function, this one HAS a real serr (see this file's own
+ * top-of-file comment on why).
+ */
+static void process_houses_ex2(FILE *out, const char *case_id, const char *func, char *fields[], int sid_mode_idx, int hsys_idx)
+{
+#ifdef SWISSEPH_HAS_HOUSES_EX2
+    double tjd = parse_double(fields[3], case_id, "tjd");
+    int32 iflag = (int32)parse_int(fields[4], case_id, "iflag");
+    int hsys = parse_hsys(fields[hsys_idx], case_id);
+    double geolon = parse_double(fields[6], case_id, "geolon");
+    double geolat = parse_double(fields[7], case_id, "geolat");
+    double cusp[40] = { 0 };
+    double ascmc[10] = { 0 };
+    double cusp_speed[40] = { 0 };
+    double ascmc_speed[10] = { 0 };
+    char serr[AS_MAXCH];
+    int retc, i;
+
+    serr[0] = '\0';
+    apply_sid_mode(fields, case_id, sid_mode_idx);
+
+    retc = swe_houses_ex2(tjd, iflag, geolat, geolon, hsys, cusp, ascmc, cusp_speed, ascmc_speed, serr);
+
+    fprintf(out, "%s\t%d\t", case_id, retc);
+    emit_escaped(out, serr);
+    for (i = 0; i < CUSP_COUNT; i++) emit_value(out, cusp[i]);
+    for (i = 0; i < ASCMC_COUNT; i++) emit_value(out, ascmc[i]);
+    for (i = 0; i < CUSP_COUNT; i++) emit_value(out, cusp_speed[i]);
+    for (i = 0; i < ASCMC_COUNT; i++) emit_value(out, ascmc_speed[i]);
+    fputc('\n', out);
+#else
+    (void)fields; (void)sid_mode_idx; (void)hsys_idx;
+    emit_not_in_208_houses_ex2(out, case_id, func);
+#endif
+}
+
+/*
+ * HOUSES_ARMC_EX2: swe_houses_armc_ex2 (swehouse.c:622), the 2.10.03 speed-bearing sibling of
+ * HOUSES_ARMC. hsys_idx/armc_idx/eps_idx are the differences between the two grids: analytic's
+ * hsys sits at fields[5] (shared with HOUSES/HOUSES_ARMC) and its armc/eps at fields[9]/[10]
+ * (shared with HOUSES_ARMC); the files grid has its own hsys at fields[15] (shared with
+ * HOUSES_EX, not fields[5] -- that grid's star column) and no armc/eps columns of its own before
+ * this addition, so it gets the two new trailing ones instead. Matches process_houses_ex's own
+ * hsys_idx-style parameter for the same reason. ascmc is zero-initialized before the call exactly
+ * as process_houses_armc's already is, so ascmc[9] is 0.0 (not 99) on every row --
+ * swehouse.c:648-660 only ever reads the saved_sundec static when ascmc[9] == 99, so this
+ * driver's per-row swe_close() (which does not reset that static -- see this file's own "FRESH
+ * LIBRARY STATE PER ROW" section) still never bites, for hsys 'I'/'i' rows from HOUSES_ARMC_EX2
+ * exactly as it already does not bite for HOUSES_ARMC's own hsys 'I'/'i' rows.
+ */
+static void process_houses_armc_ex2(FILE *out, const char *case_id, const char *func, char *fields[], int sid_mode_idx, int hsys_idx, int armc_idx, int eps_idx)
+{
+#ifdef SWISSEPH_HAS_HOUSES_EX2
+    double armc, eps, geolat;
+    int hsys, retc, i;
+    double cusp[40] = { 0 };
+    double ascmc[10] = { 0 };
+    double cusp_speed[40] = { 0 };
+    double ascmc_speed[10] = { 0 };
+    char serr[AS_MAXCH];
+
+    refuse_if_sid_mode_set(case_id, func, fields, sid_mode_idx);
+
+    armc = parse_double(fields[armc_idx], case_id, "armc");
+    eps = parse_double(fields[eps_idx], case_id, "eps");
+    hsys = parse_hsys(fields[hsys_idx], case_id);
+    geolat = parse_double(fields[7], case_id, "geolat");
+    serr[0] = '\0';
+
+    retc = swe_houses_armc_ex2(armc, geolat, eps, hsys, cusp, ascmc, cusp_speed, ascmc_speed, serr);
+
+    fprintf(out, "%s\t%d\t", case_id, retc);
+    emit_escaped(out, serr);
+    for (i = 0; i < CUSP_COUNT; i++) emit_value(out, cusp[i]);
+    for (i = 0; i < ASCMC_COUNT; i++) emit_value(out, ascmc[i]);
+    for (i = 0; i < CUSP_COUNT; i++) emit_value(out, cusp_speed[i]);
+    for (i = 0; i < ASCMC_COUNT; i++) emit_value(out, ascmc_speed[i]);
+    fputc('\n', out);
+#else
+    /* refuse_if_sid_mode_set still runs here -- see process_mooncross_node's identical #else
+     * comment for why: a row's sid_mode column is a property of the grid row, not of which C
+     * version this translation unit is linked against. */
+    refuse_if_sid_mode_set(case_id, func, fields, sid_mode_idx);
+    (void)hsys_idx; (void)armc_idx; (void)eps_idx;
+    emit_not_in_208_houses_ex2(out, case_id, func);
+#endif
+}
+
 /* AYANAMSA_UT: swe_get_ayanamsa_ut (sweph.c:3260), the UT sibling of AYANAMSA -- same fixed-OK,
  * empty-err convention as process_ayanamsa, and the same apply_sid_mode call, since the ayanamsa
  * it returns still depends on whichever sid_mode swe_set_sid_mode last configured. Analytic-grid
@@ -1045,6 +1209,10 @@ int main(int argc, char **argv)
                 process_ayanamsa_ex(out, case_id, func, fields);
             } else if (strcmp(func, "HOUSES_EX") == 0) {
                 process_houses_ex(out, case_id, fields, 11, 5);
+            } else if (strcmp(func, "HOUSES_EX2") == 0) {
+                process_houses_ex2(out, case_id, func, fields, 11, 5);
+            } else if (strcmp(func, "HOUSES_ARMC_EX2") == 0) {
+                process_houses_armc_ex2(out, case_id, func, fields, 11, 5, 9, 10);
             } else if (strcmp(func, "AYANAMSA_UT") == 0) {
                 process_ayanamsa_ut(out, case_id, fields);
             } else if (strcmp(func, "SIDTIME") == 0) {
@@ -1064,8 +1232,8 @@ int main(int argc, char **argv)
             } else if (strcmp(func, "FIXSTAR") == 0 || strcmp(func, "FIXSTAR_UT") == 0
                        || strcmp(func, "FIXSTAR2") == 0 || strcmp(func, "FIXSTAR2_UT") == 0) {
                 process_fixstar(out, case_id, func, fields, 9);
-            } else if (strcmp(func, "FIXSTAR_MAG") == 0) {
-                process_fixstar_mag(out, case_id, fields);
+            } else if (strcmp(func, "FIXSTAR_MAG") == 0 || strcmp(func, "FIXSTAR2_MAG") == 0) {
+                process_fixstar_mag(out, case_id, func, fields);
             } else if (strcmp(func, "GET_PLANET_NAME") == 0) {
                 process_name(out, case_id, fields);
             } else if (strcmp(func, "SOLCROSS") == 0 || strcmp(func, "SOLCROSS_UT") == 0
@@ -1077,6 +1245,10 @@ int main(int argc, char **argv)
                 process_helio_cross(out, case_id, func, fields, 9, 10, 11);
             } else if (strcmp(func, "HOUSES_EX") == 0) {
                 process_houses_ex(out, case_id, fields, 9, 15);
+            } else if (strcmp(func, "HOUSES_EX2") == 0) {
+                process_houses_ex2(out, case_id, func, fields, 9, 15);
+            } else if (strcmp(func, "HOUSES_ARMC_EX2") == 0) {
+                process_houses_armc_ex2(out, case_id, func, fields, 9, 15, 16, 17);
             } else if (strcmp(func, "NOD_APS_UT") == 0) {
                 process_nod_aps_ut(out, case_id, fields, 9, 14);
             } else {

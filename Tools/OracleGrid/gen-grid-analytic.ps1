@@ -278,6 +278,30 @@ function New-HousesArmcRow {
     return ($fields -join "`t")
 }
 
+# swe_houses_armc_ex2 -- new in 2.10.03 (absent from external/pyswisseph-2.08/swephexp.h entirely
+# -- verified: zero matches for either "swe_houses_ex2" or "swe_houses_armc_ex2" anywhere under
+# that tree). swe_houses/swe_houses_ex already reach it on every HOUSES/HOUSES_EX row
+# (swehouse.c:173,186 delegate to it), but always with cusp_speed/ascmc_speed/serr hardcoded NULL,
+# so h.do_speed/h.do_hspeed (swehouse.c:642-647) stay FALSE and the 2.10 speed feature the _ex2
+# form adds is switched off in every row that reaches it that way. This func is called directly,
+# with real cusp_speed/ascmc_speed arrays, so those writes (swehouse.c:663,671,685) actually
+# execute. Same armc/eps/hsys input shape as HOUSES_ARMC above; ascmc is zero-initialized by both
+# drivers before the call exactly as it already is for HOUSES_ARMC, so ascmc[9] is 0.0 (not 99) on
+# every row here too -- swe_houses_armc_ex2's hsys 'I' branch (swehouse.c:648-660) only ever reads
+# the saved_sundec static when ascmc[9] == 99, so every row here still takes the write branch,
+# never the carried-over-state read branch; see sedump.c's own "FRESH LIBRARY STATE PER ROW"
+# section for the fuller reasoning, unchanged by this addition.
+function New-HousesArmcEx2Row {
+    param([char] $Hsys, [double] $GeoLat, [double] $Eps, [double] $Armc)
+    $caseId = "HOUSESARMCEX2|$Hsys|$(Fmt $GeoLat)|$(Fmt $Eps)|$(Fmt $Armc)"
+    $fields = @(
+        $caseId, 'HOUSES_ARMC_EX2', '', '', '', "$Hsys",
+        '', (Fmt $GeoLat), '', (Fmt $Armc), (Fmt $Eps), '', '', '', '', '',
+        '', '', '', '', '', ''
+    )
+    return ($fields -join "`t")
+}
+
 # swe_solcross/_ut and swe_mooncross/_ut share one C signature shape (x2cross, tjd, iflag, serr)
 # and one row shape here: neither takes a body, a house system, a geoposition or an ARMC/eps
 # pair, so every column except tjd/iflag/sid_mode/x2cross stays empty.
@@ -376,13 +400,15 @@ function New-AyanamsaExRow {
 
 # swe_houses_ex -- the sidereal/radians-capable sibling of swe_houses (see New-HousesRow above).
 # Unlike swe_houses, it takes an iflag, so a sid_mode/t0/ayan_t0 triple may be present -- SidMode
-# is $null for a non-sidereal row, matching every other *SidMode param in this script.
+# is $null for a non-sidereal row, matching every other *SidMode param in this script. Shared with
+# HOUSES_EX2 below (Prefix/Func distinguish swe_houses_ex from swe_houses_ex2 -- identical input
+# shape; see sedump.c's process_houses_ex/process_houses_ex2 for the output-side difference).
 function New-HousesExRow {
-    param([char] $Hsys, [double] $GeoLat, [double] $GeoLon, [double] $Tjd, [string] $FlagName, [int] $IFlag, $SidMode)
-    $caseId = "HOUSESEX|$Hsys|$(Fmt $GeoLat)|$(Fmt $GeoLon)|$(Fmt $Tjd)|$FlagName"
+    param([string] $Prefix, [string] $Func, [char] $Hsys, [double] $GeoLat, [double] $GeoLon, [double] $Tjd, [string] $FlagName, [int] $IFlag, $SidMode)
+    $caseId = "$Prefix|$Hsys|$(Fmt $GeoLat)|$(Fmt $GeoLon)|$(Fmt $Tjd)|$FlagName"
     $sidModeField = if ($null -eq $SidMode) { '' } else { FmtI ([int]$SidMode) }
     $fields = @(
-        $caseId, 'HOUSES_EX', '', (Fmt $Tjd), (FmtI $IFlag), "$Hsys",
+        $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), "$Hsys",
         (Fmt $GeoLon), (Fmt $GeoLat), '', '', '', $sidModeField, '', '', '', '',
         '', '', '', '', '', ''
     )
@@ -780,6 +806,7 @@ $calcCount = 0
 $calcUtCount = 0
 $housesCount = 0
 $housesArmcCount = 0
+$housesArmcEx2Count = 0
 $solCrossCount = 0
 $solCrossUtCount = 0
 $moonCrossCount = 0
@@ -792,6 +819,7 @@ $ayanamsaCount = 0
 $ayanamsaExCount = 0
 $ayanamsaExUtCount = 0
 $housesExCount = 0
+$housesEx2Count = 0
 $ayanamsaUtCount = 0
 $sidtimeCount = 0
 $azaltCount = 0
@@ -838,6 +866,20 @@ foreach ($hsys in $HouseLetters) {
             foreach ($armc in $HouseArmcs) {
                 $rows.Add((New-HousesArmcRow -Hsys $hsys -GeoLat $geolat -Eps $eps -Armc $armc))
                 $housesArmcCount++
+            }
+        }
+    }
+}
+
+# HOUSES_ARMC_EX2: a smaller cross-section of the sweep above ($HousesExGeoLats' 5 latitudes, not
+# $HouseGeoLats' 11) -- HOUSES_ARMC already proves the geometry in full; this only needs to prove
+# the _ex2 speed outputs are wired up across every hsys letter, including 'I'/'i'.
+foreach ($hsys in $HouseLetters) {
+    foreach ($geolat in $HousesExGeoLats) {
+        foreach ($eps in $HouseEps) {
+            foreach ($armc in $HouseArmcs) {
+                $rows.Add((New-HousesArmcEx2Row -Hsys $hsys -GeoLat $geolat -Eps $eps -Armc $armc))
+                $housesArmcEx2Count++
             }
         }
     }
@@ -951,9 +993,13 @@ foreach ($hsys in $HouseLetters) {
                     $iflag = $combo.Flag
                     $sidMode = if ($combo.NeedsSid) { Get-NextSidMode } else { $null }
 
-                    $rows.Add((New-HousesExRow -Hsys $hsys -GeoLat $geolat -GeoLon $geolon -Tjd $tjd `
+                    $rows.Add((New-HousesExRow -Prefix 'HOUSESEX' -Func 'HOUSES_EX' -Hsys $hsys -GeoLat $geolat -GeoLon $geolon -Tjd $tjd `
                         -FlagName $combo.Name -IFlag $iflag -SidMode $sidMode))
                     $housesExCount++
+
+                    $rows.Add((New-HousesExRow -Prefix 'HOUSESEX2' -Func 'HOUSES_EX2' -Hsys $hsys -GeoLat $geolat -GeoLon $geolon -Tjd $tjd `
+                        -FlagName $combo.Name -IFlag $iflag -SidMode $sidMode))
+                    $housesEx2Count++
                 }
             }
         }
@@ -1013,11 +1059,11 @@ foreach ($ipl in $NodApsRejectedIpl) {
 }
 
 $totalRows = $rows.Count
-$expectedTotal = $calcCount + $calcUtCount + $housesCount + $housesArmcCount +
+$expectedTotal = $calcCount + $calcUtCount + $housesCount + $housesArmcCount + $housesArmcEx2Count +
     $solCrossCount + $solCrossUtCount + $moonCrossCount + $moonCrossUtCount +
     $moonCrossNodeCount + $moonCrossNodeUtCount + $helioCrossCount + $helioCrossUtCount +
     $ayanamsaCount + $ayanamsaExCount + $ayanamsaExUtCount +
-    $housesExCount + $ayanamsaUtCount + $sidtimeCount + $azaltCount + $houseNameCount + $nodApsUtCount
+    $housesExCount + $housesEx2Count + $ayanamsaUtCount + $sidtimeCount + $azaltCount + $houseNameCount + $nodApsUtCount
 if ($totalRows -ne $expectedTotal) {
     throw 'Row count bookkeeping is inconsistent -- this is a bug in this script, not a data problem.'
 }
@@ -1089,8 +1135,9 @@ $headerLines = @(
     '# does not apply to that row''s func)'
     '#'
     '#   case_id    stable, unique, pipe-delimited id; ordinal comparison sorts it deterministically'
-    '#   func       CALC | CALC_UT | HOUSES | HOUSES_ARMC | SOLCROSS | SOLCROSS_UT | MOONCROSS |'
-    '#              MOONCROSS_UT | MOONCROSS_NODE | MOONCROSS_NODE_UT | HELIO_CROSS | HELIO_CROSS_UT'
+    '#   func       CALC | CALC_UT | HOUSES | HOUSES_ARMC | HOUSES_ARMC_EX2 | SOLCROSS | SOLCROSS_UT |'
+    '#              MOONCROSS | MOONCROSS_UT | MOONCROSS_NODE | MOONCROSS_NODE_UT | HELIO_CROSS |'
+    '#              HELIO_CROSS_UT | HOUSES_EX | HOUSES_EX2'
     '#   ipl        body number                                        [CALC, CALC_UT, HELIO_CROSS, HELIO_CROSS_UT]'
     '#   tjd        Julian day (ET for CALC/SOLCROSS/MOONCROSS/MOONCROSS_NODE/HELIO_CROSS; UT for'
     '#              the corresponding _UT funcs and HOUSES)'
@@ -1099,12 +1146,13 @@ $headerLines = @(
     '#   iflag      swe_calc/crossing-func iflag, with SEFLG_MOSEPH already OR-ed in'
     '#              [CALC, CALC_UT, SOLCROSS, SOLCROSS_UT, MOONCROSS, MOONCROSS_UT, MOONCROSS_NODE,'
     '#              MOONCROSS_NODE_UT, HELIO_CROSS, HELIO_CROSS_UT]'
-    '#   hsys       house-system letter                                [HOUSES, HOUSES_ARMC]'
-    '#   geolon     geographic longitude, degrees east                 [HOUSES; CALC/CALC_UT topo rows]'
-    '#   geolat     geographic latitude, degrees north                 [HOUSES, HOUSES_ARMC; CALC/CALC_UT topo rows]'
+    '#   hsys       house-system letter          [HOUSES, HOUSES_ARMC, HOUSES_ARMC_EX2, HOUSES_EX, HOUSES_EX2]'
+    '#   geolon     geographic longitude, degrees east    [HOUSES, HOUSES_EX, HOUSES_EX2; CALC/CALC_UT topo rows]'
+    '#   geolat     geographic latitude, degrees north    [HOUSES, HOUSES_ARMC, HOUSES_ARMC_EX2, HOUSES_EX,'
+    '#              HOUSES_EX2; CALC/CALC_UT topo rows]'
     '#   height     observer height above sea level, metres            [CALC/CALC_UT topo rows only]'
-    '#   armc       ARMC, degrees                                      [HOUSES_ARMC]'
-    '#   eps        obliquity of the ecliptic, degrees                 [HOUSES_ARMC]'
+    '#   armc       ARMC, degrees                                      [HOUSES_ARMC, HOUSES_ARMC_EX2]'
+    '#   eps        obliquity of the ecliptic, degrees                 [HOUSES_ARMC, HOUSES_ARMC_EX2]'
     '#   sid_mode   swe_set_sid_mode mode, applied before the row runs [CALC/CALC_UT rows whose iflag'
     '#              carries SEFLG_SIDEREAL; SOLCROSS/MOONCROSS rows whose iflag carries it too]'
     '#   x2cross    target ecliptic longitude to cross, degrees        [SOLCROSS, SOLCROSS_UT, MOONCROSS,'
@@ -1152,6 +1200,15 @@ $headerLines = @(
     '# parameter); both accepted and rejected ipl values are covered, to exercise the serr path as'
     '# well as the real one.'
     '#'
+    '# HOUSES_EX2 / HOUSES_ARMC_EX2: new in 2.10.03 (absent from'
+    '# external/pyswisseph-2.08/swephexp.h entirely). swe_houses/swe_houses_ex already reach both'
+    '# on every HOUSES/HOUSES_EX row (swehouse.c:173,186 delegate to them), but always with'
+    '# cusp_speed/ascmc_speed/serr hardcoded NULL, switching the 2.10 speed feature off'
+    '# (swehouse.c:642-647). These two funcs are called directly, with real cusp_speed/ascmc_speed'
+    '# arrays, emitting cusp[0..36]+ascmc[0..9]+cusp_speed[0..36]+ascmc_speed[0..9] (94 doubles) plus'
+    '# a real serr. Same input columns as HOUSES_EX/HOUSES_ARMC respectively. Guarded behind'
+    '# SWISSEPH_HAS_HOUSES_EX2 in both drivers, the same pattern SWISSEPH_HAS_CROSSING already uses.'
+    '#'
     '# Lines starting with ''#'' are comments. The first non-comment line is the column-name header'
     '# below and is not a data row -- both drivers assert it matches verbatim before reading any'
     '# data, so a schema change here that a driver was not updated for fails loudly instead of'
@@ -1178,6 +1235,7 @@ Write-Host "  CALC               $calcCount"
 Write-Host "  CALC_UT            $calcUtCount"
 Write-Host "  HOUSES             $housesCount"
 Write-Host "  HOUSES_ARMC        $housesArmcCount"
+Write-Host "  HOUSES_ARMC_EX2    $housesArmcEx2Count"
 Write-Host "  SOLCROSS           $solCrossCount"
 Write-Host "  SOLCROSS_UT        $solCrossUtCount"
 Write-Host "  MOONCROSS          $moonCrossCount"
@@ -1190,6 +1248,7 @@ Write-Host "  AYANAMSA           $ayanamsaCount"
 Write-Host "  AYANAMSA_EX        $ayanamsaExCount"
 Write-Host "  AYANAMSA_EX_UT     $ayanamsaExUtCount"
 Write-Host "  HOUSES_EX          $housesExCount"
+Write-Host "  HOUSES_EX2         $housesEx2Count"
 Write-Host "  AYANAMSA_UT        $ayanamsaUtCount"
 Write-Host "  SIDTIME            $sidtimeCount"
 Write-Host "  AZALT              $azaltCount"

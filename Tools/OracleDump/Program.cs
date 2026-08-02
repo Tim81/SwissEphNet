@@ -7,17 +7,22 @@
 //                                          functions (swe_solcross/_ut, swe_mooncross/_ut,
 //                                          swe_mooncross_node/_ut, swe_helio_cross/_ut), also
 //                                          under SEFLG_MOSEPH, plus swe_houses_ex (the sidereal/
-//                                          radians house path), swe_get_ayanamsa_ut,
-//                                          swe_sidtime, swe_azalt, swe_house_name and
-//                                          swe_nod_aps_ut. Touches no ephemeris data file.
-//                                          See gen-grid-analytic.ps1's header.
+//                                          radians house path), swe_houses_ex2 and
+//                                          swe_houses_armc_ex2 (the speed-bearing forms --
+//                                          see ProcessHousesEx2/ProcessHousesArmcEx2 below),
+//                                          swe_get_ayanamsa_ut, swe_sidtime, swe_azalt,
+//                                          swe_house_name and swe_nod_aps_ut. Touches no
+//                                          ephemeris data file. See gen-grid-analytic.ps1's header.
 //   Tools/OracleGrid/grid-files.tsv     -- swe_calc/swe_calc_ut (SEFLG_SWIEPH), the swe_fixstar
-//                                          family, swe_get_planet_name, the same eight
-//                                          crossing functions under SEFLG_SWIEPH, plus
-//                                          swe_houses_ex and swe_nod_aps_ut (the two of the six
-//                                          new funcs where a real .se1 file changes what gets
-//                                          exercised). Opens the shipped .se1/sefstars.txt
-//                                          files. See gen-grid-files.ps1's header.
+//                                          family (including swe_fixstar2_mag), swe_get_planet_name,
+//                                          the same eight crossing functions under SEFLG_SWIEPH,
+//                                          plus swe_houses_ex/swe_houses_ex2 and swe_nod_aps_ut
+//                                          (the two of grid-analytic.tsv's new funcs where a real
+//                                          .se1 file changes what gets exercised), and
+//                                          swe_houses_armc_ex2 (dispatch/schema parity with
+//                                          grid-analytic.tsv -- touches no file itself). Opens the
+//                                          shipped .se1/sefstars.txt files. See gen-grid-files.ps1's
+//                                          header.
 //   Tools/OracleGrid/grid-jpl.tsv       -- swe_calc/swe_calc_ut (SEFLG_JPLEPH), including the
 //                                          SEFLG_JPLHOR/SEFLG_JPLHOR_APPROX combinations no other
 //                                          grid can reach. Opens a JPL DE file this repo does not
@@ -65,7 +70,7 @@ namespace OracleDump;
 internal static class Program
 {
     private const int AnalyticColumns = 22;
-    private const int FilesColumns = 16;
+    private const int FilesColumns = 18;
     private const int CuspCount = 37; // cusp[0..36]
     private const int AscmcCount = 10; // ascmc[0..9]
 
@@ -85,7 +90,7 @@ internal static class Program
 
     private static readonly string ExpectedHeaderFiles = string.Join('\t',
         "case_id", "func", "ipl", "tjd", "iflag", "star", "geolon", "geolat", "height", "sid_mode", "x2cross", "dir", "t0", "ayan_t0",
-        "method", "hsys");
+        "method", "hsys", "armc", "eps");
 
     private enum GridMode { Analytic, Files }
 
@@ -236,6 +241,12 @@ internal static class Program
                 case "HOUSES_EX":
                     ProcessHousesEx(swe, caseId, fields, sidModeIndex: 11, hsysIndex: 5, writer);
                     break;
+                case "HOUSES_EX2":
+                    ProcessHousesEx2(swe, caseId, fields, sidModeIndex: 11, hsysIndex: 5, writer);
+                    break;
+                case "HOUSES_ARMC_EX2":
+                    ProcessHousesArmcEx2(swe, caseId, func, fields, sidModeIndex: 11, hsysIndex: 5, armcIndex: 9, epsIndex: 10, writer);
+                    break;
                 case "AYANAMSA_UT":
                     ProcessAyanamsaUt(swe, caseId, fields, writer);
                     break;
@@ -270,7 +281,8 @@ internal static class Program
                     ProcessFixstar(swe, caseId, func, fields, sidModeIndex: 9, writer);
                     break;
                 case "FIXSTAR_MAG":
-                    ProcessFixstarMag(swe, caseId, fields, writer);
+                case "FIXSTAR2_MAG":
+                    ProcessFixstarMag(swe, caseId, func, fields, writer);
                     break;
                 case "GET_PLANET_NAME":
                     ProcessName(swe, caseId, fields, writer);
@@ -291,6 +303,12 @@ internal static class Program
                     break;
                 case "HOUSES_EX":
                     ProcessHousesEx(swe, caseId, fields, sidModeIndex: 9, hsysIndex: 15, writer);
+                    break;
+                case "HOUSES_EX2":
+                    ProcessHousesEx2(swe, caseId, fields, sidModeIndex: 9, hsysIndex: 15, writer);
+                    break;
+                case "HOUSES_ARMC_EX2":
+                    ProcessHousesArmcEx2(swe, caseId, func, fields, sidModeIndex: 9, hsysIndex: 15, armcIndex: 16, epsIndex: 17, writer);
                     break;
                 case "NOD_APS_UT":
                     ProcessNodApsUt(swe, caseId, fields, sidModeIndex: 9, methodIndex: 14, writer);
@@ -573,6 +591,94 @@ internal static class Program
         WriteHousesRow(writer, caseId, retc, cusp, ascmc);
     }
 
+    // HOUSES_EX2: swe_houses_ex2, the 2.10.03 speed-bearing sibling of HOUSES_EX. swe_houses/
+    // swe_houses_ex reach the underlying swe_houses_armc_ex2 already (SwissEphNet/CPort/
+    // SweHouse.cs), but always with cuspSpeed/ascmcSpeed/serr null, so the port's own
+    // h.do_speed/h.do_hspeed gating (matching swehouse.c:642-647) stays false and the speed
+    // writes never happen that way. This calls swe_houses_ex2 directly with real arrays, so those
+    // writes execute -- see sedump.c's own top-of-file comment for the C-side citations this
+    // shares. Unlike ProcessHousesEx, this one has a real serr (swe_houses_ex2 forwards whatever
+    // the delegated call wrote), and cuspSpeed/ascmcSpeed are zero-initialized by `new double[...]`
+    // (.NET arrays are always zero-initialized) before the call, matching sedump.c's explicit
+    // `= { 0 }` for the same reason process_helio_cross zero-initializes jdCross.
+    private static void ProcessHousesEx2(SwissEph swe, string caseId, string[] fields, int sidModeIndex, int hsysIndex, TextWriter writer)
+    {
+        var tjd = ParseDouble(fields[3], caseId, "tjd");
+        var iflag = ParseInt(fields[4], caseId, "iflag");
+        var hsys = ParseHsys(fields[hsysIndex], caseId);
+        var geolon = ParseDouble(fields[6], caseId, "geolon");
+        var geolat = ParseDouble(fields[7], caseId, "geolat");
+
+        ApplySidMode(swe, fields, caseId, sidModeIndex);
+
+        var cusp = new double[40];
+        var ascmc = new double[10];
+        var cuspSpeed = new double[40];
+        var ascmcSpeed = new double[10];
+        string? serr = null;
+        var retc = swe.swe_houses_ex2(tjd, iflag, geolat, geolon, hsys, cusp, ascmc, cuspSpeed, ascmcSpeed, ref serr);
+
+        WriteHousesSpeedRow(writer, caseId, retc, serr, cusp, ascmc, cuspSpeed, ascmcSpeed);
+    }
+
+    // HOUSES_ARMC_EX2: swe_houses_armc_ex2, the 2.10.03 speed-bearing sibling of HOUSES_ARMC.
+    // hsysIndex/armcIndex/epsIndex are the differences between the two grids: analytic's hsys
+    // sits at fields[5] (shared with HOUSES/HOUSES_ARMC) and its armc/eps at fields[9]/[10]
+    // (shared with HOUSES_ARMC); the files grid's own hsys sits at fields[15] (shared with
+    // HOUSES_EX, not fields[5] -- that grid's star column) and has no armc/eps columns of its own
+    // before this addition, so it gets the two new trailing ones instead -- see sedump.c's own
+    // process_houses_armc_ex2 comment for the full rationale, including why ascmc is
+    // zero-initialized before the call exactly as ProcessHousesArmc's already is (ascmc[9] stays
+    // 0.0, not 99, so the saved_sundec-reading branch is never taken here either).
+    private static void ProcessHousesArmcEx2(SwissEph swe, string caseId, string func, string[] fields, int sidModeIndex, int hsysIndex, int armcIndex, int epsIndex, TextWriter writer)
+    {
+        RefuseIfSidModeSet(caseId, func, fields, sidModeIndex);
+
+        var armc = ParseDouble(fields[armcIndex], caseId, "armc");
+        var eps = ParseDouble(fields[epsIndex], caseId, "eps");
+        var hsys = ParseHsys(fields[hsysIndex], caseId);
+        var geolat = ParseDouble(fields[7], caseId, "geolat");
+
+        var cusp = new double[40];
+        var ascmc = new double[10];
+        var cuspSpeed = new double[40];
+        var ascmcSpeed = new double[10];
+        string? serr = null;
+        var retc = swe.swe_houses_armc_ex2(armc, geolat, eps, hsys, cusp, ascmc, cuspSpeed, ascmcSpeed, ref serr);
+
+        WriteHousesSpeedRow(writer, caseId, retc, serr, cusp, ascmc, cuspSpeed, ascmcSpeed);
+    }
+
+    // Shared by ProcessHousesEx2/ProcessHousesArmcEx2: cusp[0..36]+ascmc[0..9]+cuspSpeed[0..36]+
+    // ascmcSpeed[0..9], 94 doubles -> 188 value columns, plus the real serr both funcs carry --
+    // see WriteHousesRow's own comment for why HOUSES/HOUSES_ARMC/HOUSES_EX never write an err
+    // column at all, unlike these two.
+    private static void WriteHousesSpeedRow(TextWriter writer, string caseId, int retc, string? serr, double[] cusp, double[] ascmc, double[] cuspSpeed, double[] ascmcSpeed)
+    {
+        writer.Write(caseId);
+        writer.Write('\t');
+        writer.Write(retc.ToString(CultureInfo.InvariantCulture));
+        writer.Write('\t');
+        writer.Write(EscapeErr(serr));
+        for (var c = 0; c < CuspCount; c++)
+        {
+            EmitValue(writer, cusp[c]);
+        }
+        for (var a = 0; a < AscmcCount; a++)
+        {
+            EmitValue(writer, ascmc[a]);
+        }
+        for (var c = 0; c < CuspCount; c++)
+        {
+            EmitValue(writer, cuspSpeed[c]);
+        }
+        for (var a = 0; a < AscmcCount; a++)
+        {
+            EmitValue(writer, ascmcSpeed[a]);
+        }
+        writer.Write('\n');
+    }
+
     // AYANAMSA_UT: swe_get_ayanamsa_ut, the UT sibling of AYANAMSA -- same fixed-OK, empty-err
     // convention as ProcessAyanamsa, and the same ApplySidMode call, since the ayanamsa it
     // returns still depends on whichever sid_mode swe_set_sid_mode last configured.
@@ -753,13 +859,17 @@ internal static class Program
         writer.Write('\n');
     }
 
-    // grid-files.tsv only: swe_fixstar_mag takes no date or flag, only the star search string.
-    private static void ProcessFixstarMag(SwissEph swe, string caseId, string[] fields, TextWriter writer)
+    // grid-files.tsv only: swe_fixstar_mag and swe_fixstar2_mag both take no date or flag, only
+    // the star search string -- share this one method the same way ProcessFixstar shares FIXSTAR/
+    // FIXSTAR_UT/FIXSTAR2/FIXSTAR2_UT. Mirrors sedump.c's identical process_fixstar_mag.
+    private static void ProcessFixstarMag(SwissEph swe, string caseId, string func, string[] fields, TextWriter writer)
     {
         var star = fields[5];
         var mag = 0.0;
         string? serr = null;
-        var retc = swe.swe_fixstar_mag(ref star, ref mag, ref serr);
+        var retc = func == "FIXSTAR_MAG"
+            ? swe.swe_fixstar_mag(ref star, ref mag, ref serr)
+            : swe.swe_fixstar2_mag(ref star, ref mag, ref serr);
 
         writer.Write(caseId);
         writer.Write('\t');

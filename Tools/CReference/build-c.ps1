@@ -23,22 +23,25 @@
     already has both source trees and the toolchain set up, and mixing a 2.10.03 header with the
     2.08 library (or vice versa) is a real hazard: the struct layouts and prototypes usually
     agree, so a mismatched pairing would still link and run, and would silently produce wrong
-    values rather than fail to build. Every function sedump.c calls (swe_calc, swe_calc_ut,
-    swe_houses, swe_houses_armc, swe_close, swe_set_ephe_path, swe_set_topo, swe_set_sid_mode,
-    swe_get_planet_name, swe_fixstar, swe_fixstar_ut, swe_fixstar2, swe_fixstar2_ut,
-    swe_fixstar_mag) is declared in external/pyswisseph-2.08/swephexp.h with the same signature it
-    has in 2.10.03, and swe_fixstar2/swe_fixstar2_ut -- the ones most likely to be 2.10-only,
-    since Astrodienst kept extending the fixed-star API across releases -- are both implemented in
-    external/pyswisseph-2.08/sweph.c, not just declared.
+    values rather than fail to build. Every function sedump.c calls unconditionally (swe_calc,
+    swe_calc_ut, swe_houses, swe_houses_armc, swe_close, swe_set_ephe_path, swe_set_topo,
+    swe_set_sid_mode, swe_get_planet_name, swe_fixstar, swe_fixstar_ut, swe_fixstar2,
+    swe_fixstar2_ut, swe_fixstar_mag, swe_fixstar2_mag, swe_get_ayanamsa, swe_get_ayanamsa_ex,
+    swe_get_ayanamsa_ex_ut, swe_get_ayanamsa_ut, swe_houses_ex, swe_sidtime, swe_azalt,
+    swe_house_name, swe_nod_aps_ut) is declared in external/pyswisseph-2.08/swephexp.h with the
+    same signature it has in 2.10.03, and swe_fixstar2/swe_fixstar2_ut/swe_fixstar2_mag -- the
+    ones most likely to be 2.10-only, since Astrodienst kept extending the fixed-star API across
+    releases -- are all implemented in external/pyswisseph-2.08/sweph.c, not just declared.
 
-    One exception: swe_solcross, swe_mooncross, swe_mooncross_node, swe_helio_cross and their _ut
-    variants do not exist in 2.08 at all (verified: zero matches anywhere under
-    external/pyswisseph-2.08/), so sedump.c guards every call to them behind
-    #ifdef SWISSEPH_HAS_CROSSING -- see that file's own top-of-file comment for the full
-    reasoning. scripts/run-oracle-dump.ps1 defines that macro when it compiles sedump.exe against
-    2.10.03; this script's own $compile command below for sedump-2.08.exe deliberately does not,
-    so the 2.08 build takes sedump.c's #else branch (a fixed sentinel row per crossing case)
-    without needing a flag added here.
+    Two exceptions, both guarded the same way: swe_solcross, swe_mooncross, swe_mooncross_node,
+    swe_helio_cross and their _ut variants, and separately swe_houses_ex2/swe_houses_armc_ex2, do
+    not exist in 2.08 at all (verified: zero matches anywhere under external/pyswisseph-2.08/ for
+    either group), so sedump.c guards every call to either group behind
+    #ifdef SWISSEPH_HAS_CROSSING / #ifdef SWISSEPH_HAS_HOUSES_EX2 respectively -- see that file's
+    own top-of-file comment for the full reasoning. scripts/run-oracle-dump.ps1 defines both
+    macros when it compiles sedump.exe against 2.10.03; this script's own $compile command below
+    for sedump-2.08.exe deliberately defines neither, so the 2.08 build takes sedump.c's #else
+    branch for both groups (a fixed sentinel row per case) without needing a flag added here.
 
     The compiler identity is part of the result, not an incidental detail: reference values
     depend on it. Every run writes toolchain.txt recording the compiler and linker versions, the
