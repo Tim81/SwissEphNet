@@ -163,6 +163,37 @@ same way as before, patching a copy: substituting <code>fputs(info, stdout)</cod
 <code>fprintf(fp, info)</code> call, matching what the <code>#else</code> branch has always done.
 Sorry for the bad information last time; we should have compiled it before saying it was fine.</p>
 
+<p>A patch is attached as <code>swetest-do_printf-fp.patch</code>, verified to apply cleanly to
+<code>v2.10.3bfinal</code>. It deletes the conditional and keeps the <code>#else</code> body:</p>
+
+<pre>
+ static void do_printf(char *info)
+ {
+-#ifdef _WINDOWS
+-  fprintf(fp, info);
+-#else
+   fputs(info,stdout);
+-#endif
+ }
+</pre>
+
+<p>Two notes on why that shape, since the choice is yours and we may be missing your intent.</p>
+
+<p>The <code>_WINDOWS</code> branch has never compiled anywhere, on any tag we can find &mdash;
+<code>fp</code> is undeclared, and the branch was simply unreachable until <code>sweodef.h</code>
+began defining <code>_WINDOWS</code>. So this is not a regression the release introduced; it is
+dead code the release woke up. If the branch was meant for a GUI build that writes to a file handle
+rather than a console, then deleting it loses that intent and the right fix is instead to declare
+and open <code>fp</code> in whatever build defines <code>_WINDOWS</code>. We cannot tell which from
+the source, so we have proposed the conservative one: make every build do what every build that has
+ever compiled already did.</p>
+
+<p>We would also gently suggest <code>fputs</code> over <code>fprintf(stdout, info)</code> even if
+you keep a conditional. <code>info</code> is assembled from computed values rather than being a
+literal, so passing it as a format string means any <code>%</code> in a body position is
+interpreted. That is also what <code>cl.exe</code> warns about on the original line (C4047 and
+C4024, which is how we first found this).</p>
+
 <hr>
 
 <p>Reported from the SwissEphNet fork

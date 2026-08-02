@@ -139,6 +139,35 @@ a copy: substituting `fputs(info, stdout)` for the `fprintf(fp, info)` call, mat
 `#else` branch has always done. Sorry for the bad information last time; we should have compiled
 it before saying it was fine.
 
+A patch is attached as `swetest-do_printf-fp.patch`, verified to apply cleanly to
+`v2.10.3bfinal`. It deletes the conditional and keeps the `#else` body:
+
+```diff
+ static void do_printf(char *info)
+ {
+-#ifdef _WINDOWS
+-  fprintf(fp, info);
+-#else
+   fputs(info,stdout);
+-#endif
+ }
+```
+
+Two notes on why that shape, since the choice is yours and we may be missing your intent.
+
+The `_WINDOWS` branch has never compiled anywhere, on any tag we can find -- `fp` is undeclared,
+and the branch was simply unreachable until `sweodef.h` began defining `_WINDOWS`. So this is not
+a regression the release introduced; it is dead code the release woke up. If the branch was meant
+for a GUI build that writes to a file handle rather than a console, then deleting it loses that
+intent and the right fix is instead to declare and open `fp` in whatever build defines `_WINDOWS`.
+We cannot tell which from the source, so we have proposed the conservative one: make every build
+do what every build that has ever compiled already did.
+
+We would also gently suggest `fputs` over `fprintf(stdout, info)` even if you keep a conditional.
+`info` is assembled from computed values rather than being a literal, so passing it as a format
+string means any `%` in a body position is interpreted. That is also what `cl.exe` warns about on
+the original line (C4047 and C4024, which is how we first found this).
+
 ---
 
 Reported from the SwissEphNet fork (`https://github.com/Tim81/SwissEphNet`), a C# port of the

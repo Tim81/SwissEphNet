@@ -1,0 +1,13 @@
+--- a/swetest.c
++++ b/swetest.c
+@@ -3955,10 +3955,6 @@
+
+ static void do_printf(char *info)
+ {
+-#ifdef _WINDOWS
+-  fprintf(fp, info);
+-#else
+   fputs(info,stdout);
+-#endif
+ }
+
