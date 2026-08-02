@@ -165,13 +165,23 @@ public class KnownDiffListTests
         // moment the writer opens, before a single row is written back. This test pins that
         // documented behavior so a future change to append:true would be caught here rather than
         // discovered as a silent behavior change in the regeneration script.
+        //
+        // Asserts the file's FULL content equals exactly what Save should have written, not merely
+        // DoesNotContain a marker string from the old content (MEDIUM 4): DoesNotContain passes
+        // just as readily if Save appended instead of truncating (the marker is gone from view but
+        // still physically present ahead of the new bytes would not be true here since append adds
+        // AFTER existing content, so DoesNotContain would actually still catch a naive append -- but
+        // it is satisfied just as well by Save writing nothing at all, i.e. an empty file, which is
+        // a real, different bug append:false failing silently could produce and DoesNotContain
+        // cannot distinguish from a correct truncate-then-write). Equal against the exact expected
+        // bytes rules out both.
         var path = Path.Combine(Path.GetTempPath(), $"known-diff-truncate-{Guid.NewGuid():N}.tsv");
         try
         {
             File.WriteAllText(path, "this content must not survive a Save call\n\n\n\n\n\n\n\n\n\n");
             KnownDiffList.Save(path, [new KnownDiffEntry("A|1", DiffCategory.Retc, 0, "x")]);
             var text = File.ReadAllText(path);
-            Assert.DoesNotContain("must not survive", text, StringComparison.Ordinal);
+            Assert.Equal("case_id\tcategory\tmax_ulp\treason\nA|1\tRETC\t0\tx\n", text);
         }
         finally { File.Delete(path); }
     }

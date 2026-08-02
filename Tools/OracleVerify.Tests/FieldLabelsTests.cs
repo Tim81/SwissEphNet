@@ -68,4 +68,50 @@ public class FieldLabelsTests
         Assert.Equal("ascmc_speed[0]", labels[84]);
         Assert.Equal("ascmc_speed[9]", labels[93]);
     }
+
+    // MEDIUM 4: the two facts above pinned label TEXT for CALC and HOUSESEX2 only -- 2 of the 22
+    // func tokens For_returns_the_documented_column_count already covers by count alone, which
+    // proves the right NUMBER of labels but nothing about what they are actually named. A label
+    // list that kept the right column count but silently renamed or reordered one of these would
+    // pass every count-only assertion above. These four close that gap for the remaining
+    // multi-value shapes the count-only theory does not already share a text assertion with:
+    // AZALT's own three-element xaz[] labels (not the xx[]/cusp[]/ascmc[] families the two facts
+    // above already cover), NODAPSUT's four six-double blocks with DIFFERENT base names in a fixed
+    // order, MOONCROSSNODE's three mixed-name fields (not a BuildLabels sequence at all), and
+    // HOUSESARMCEX2 sharing HouseSpeedLabels with HOUSESEX2 -- proving the "or" branch in
+    // FieldLabels.For's switch actually returns the same array, not a same-shaped but differently
+    // spelled one.
+    [Fact]
+    public void For_AZALT_labels_are_xaz_0_through_2_in_order()
+    {
+        var labels = FieldLabels.For("AZALT", "AZALT|1");
+        Assert.Equal(["xaz[0]", "xaz[1]", "xaz[2]"], labels);
+    }
+
+    [Fact]
+    public void For_NODAPSUT_labels_are_xnasc_then_xndsc_then_xperi_then_xaphe_six_each_in_order()
+    {
+        var labels = FieldLabels.For("NODAPSUT", "NODAPSUT|1");
+        Assert.Equal("xnasc[0]", labels[0]);
+        Assert.Equal("xnasc[5]", labels[5]);
+        Assert.Equal("xndsc[0]", labels[6]);
+        Assert.Equal("xndsc[5]", labels[11]);
+        Assert.Equal("xperi[0]", labels[12]);
+        Assert.Equal("xperi[5]", labels[17]);
+        Assert.Equal("xaphe[0]", labels[18]);
+        Assert.Equal("xaphe[5]", labels[23]);
+    }
+
+    [Fact]
+    public void For_MOONCROSSNODE_labels_are_jd_cross_xlon_xlat_in_order()
+    {
+        var labels = FieldLabels.For("MOONCROSSNODE", "MOONCROSSNODE|1");
+        Assert.Equal(["jd_cross", "xlon", "xlat"], labels);
+    }
+
+    [Fact]
+    public void For_HOUSESARMCEX2_shares_HOUSESEX2s_own_label_array_not_just_its_shape()
+    {
+        Assert.Equal(FieldLabels.For("HOUSESEX2", "HOUSESEX2|1"), FieldLabels.For("HOUSESARMCEX2", "HOUSESARMCEX2|1"));
+    }
 }

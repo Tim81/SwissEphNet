@@ -142,6 +142,25 @@ public class OracleVerifyReportTests
     }
 
     [Fact]
+    public void Build_with_zero_outcomes_and_an_empty_known_diff_reports_Passed_with_nothing_to_report()
+    {
+        // MEDIUM 4: OracleVerifyReport.Build([], {}) trivially returns Passed == true -- there is
+        // nothing to disagree about -- but nothing previously asserted that this is the actual
+        // contract rather than an accident of empty collections defaulting to "no problems found".
+        // Program.cs's own LoadAndCompare refuses a zero-outcome comparison before Build is ever
+        // called with one in the real CLI (see its own "Zero rows were compared" floor), so this
+        // input never reaches Build through the CLI -- but Build itself is a public (internal)
+        // entry point other callers could reach directly, and this pins what it actually does
+        // rather than leaving that undocumented and untested.
+        var report = OracleVerifyReport.Build([], new Dictionary<string, KnownDiffEntry>());
+        Assert.Empty(report.All);
+        Assert.Empty(report.Regressions);
+        Assert.Empty(report.NewlyPassing);
+        Assert.Empty(report.Stale);
+        Assert.True(report.Passed);
+    }
+
+    [Fact]
     public void A_row_that_still_matches_the_shape_and_magnitude_it_was_recorded_under_passes()
     {
         var knownDiff = new Dictionary<string, KnownDiffEntry>
