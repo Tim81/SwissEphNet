@@ -198,3 +198,22 @@ not exist on the integration branch once it lands).
    covers Programs/SweTest only), so this changes nothing any gate measures; it was found by
    reading for output calls that bypass printf rather than by a failure.
    Programs/SweMini/Program.cs: 165 -> 170 lines, sha256 D1274D16... -> F692F611....
+11. PR #32 2026-08-02: One fidelity fix. SwissEphNet/CPort/Sweph.cs:2642 compared with
+   s.StartsWith(subdirnam, Ordinal) where sweph.c:2219 is
+   "if (subdirlen > 0 && strncmp(s, subdirnam, (size_t) subdirlen) == 0)". The dropped
+   conjunct is not redundant in C#. strncmp with a length of 0 returns 0, so the C needs the
+   guard to stop an empty subdirnam matching everything, and "x".StartsWith("") is
+   unconditionally true, so the port took the branch, stripped subdirlen + 1 == 1 character
+   per pass, and walked s down to an ArgumentOutOfRangeException where the C returns
+   NOT_AVAILABLE. The sibling site at Sweph.cs:2605 already carried the guard and cites the
+   same C line one occurrence earlier (sweph.c:2196, byte-identical to :2219), so this was an
+   inconsistency inside one function rather than a considered divergence.
+   Latent at this tag and not driven by a test, which the added test says plainly rather than
+   implying coverage it does not have: subdirnam is empty only when the generated filename has
+   no directory component, and swi_gen_filename writes DIR_GLUE into both formats that reach
+   this retry ("ast%d%sse%05d.%s" and "sat%ssepm%d.%s"). Tests/SwissEphNet.Tests/
+   GenFilenameSubdirTest.cs pins that invariant instead, so a later generator change that made
+   this guard load-bearing fails loudly in the file that caused it. Proved non-vacuous by
+   flattening the asteroid format: 5 of its 7 cases fail, the 2 planetary-moon cases correctly
+   do not.
+   SwissEphNet/CPort: 48476 -> 48487 lines, sha256 0AEEA27E... -> 8B5C2BAE....

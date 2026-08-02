@@ -2639,7 +2639,18 @@ namespace SwissEphNet.CPort
                         // sweph.c:2219 uses strncmp(s, subdirnam, subdirlen), a byte-wise
                         // comparison; StartsWith without StringComparison is culture-sensitive,
                         // so make it ordinal.
-                        if (s.StartsWith(subdirnam, StringComparison.Ordinal))
+                        //
+                        // The subdirlen > 0 half is the C's too, and dropping it changed the
+                        // result rather than just the wording. strncmp with a length of 0
+                        // returns 0, so the C needs the guard to stop an empty subdirnam
+                        // matching, and it has one at both sites (sweph.c:2196 and :2219, the
+                        // same line twice). "x".StartsWith("") is unconditionally true in C#,
+                        // so without it an empty subdirnam took this branch, stripped
+                        // subdirlen + 1 == 1 character per pass, and walked s down to an
+                        // ArgumentOutOfRangeException where the C returns NOT_AVAILABLE. The
+                        // sibling at :2605 already carried the guard, so this was an
+                        // inconsistency inside one function rather than a considered choice.
+                        if (subdirlen > 0 && s.StartsWith(subdirnam, StringComparison.Ordinal))
                         {
                             s = s.Substring(subdirlen + 1);
                             goto again;
