@@ -94,6 +94,7 @@ param(
     [switch]$SelfTest
 )
 
+Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 if (-not $SelfTest -and -not $PruneOnly -and [string]::IsNullOrWhiteSpace($Reason)) {
@@ -179,6 +180,18 @@ function Read-KnownDiffTable {
         $line = $lines[$i]
         if ([string]::IsNullOrEmpty($line)) { continue }
         $cols = $line -split "`t"
+        # LOW fix: PowerShell array indexing past the end returns $null rather than throwing --
+        # Set-StrictMode does not change that -- so a truncated/malformed row used to make
+        # $cols[2] silently $null, `-eq 'categorical'` silently $false, and `[uint64]$null`
+        # silently coerce to 0, all without any error at all. A row this -PruneOnly refusal guard
+        # and the default regenerate mode both trust to decide "did this get better or worse"
+        # deserves better than a corrupted row quietly reading as MaxUlp=0, Category=$null,
+        # non-categorical -- exactly the shape that could hide a real regression instead of
+        # flagging one. Explicit column-count check instead, matching
+        # Tools/OracleVerify/KnownDiffList.cs's own Load, which throws rather than tolerates.
+        if ($cols.Count -ne 4) {
+            throw "$Path`:$($i + 1): expected 4 tab-separated columns, got $($cols.Count): '$line'"
+        }
         $isCategorical = $cols[2] -eq 'categorical'
         $maxUlp = if ($isCategorical) { [uint64]0 } else { [uint64]$cols[2] }
         $table[$cols[0]] = [pscustomobject]@{ Category = $cols[1]; MaxUlp = $maxUlp; IsCategorical = $isCategorical }
@@ -522,6 +535,27 @@ if ($SelfTest) {
     New-KnownDiffFile $categoricalPath @((New-Row 'CALC|1' 'PORT-VERSION' 'categorical'))
     $categoricalTable = Read-KnownDiffTable -Path $categoricalPath
     Assert-Equal "the 'categorical' max_ulp marker is read as a flag, not a number" $true $categoricalTable['CALC|1'].IsCategorical
+
+    # LOW: a truncated row (fewer than 4 tab-separated columns) must throw rather than silently
+    # read as case_id='CALC|1', category='PORT-VERSION', MaxUlp=0, IsCategorical=false --
+    # PowerShell array indexing past the end returns $null instead of throwing, so $cols[2] on a
+    # 2-column row used to become $null, `-eq 'categorical'` silently $false, and `[uint64]$null`
+    # silently 0, with no error anywhere. Measured directly against the pre-fix code: a row with
+    # only case_id and category (no max_ulp, no reason) round-tripped through Read-KnownDiffTable
+    # without complaint.
+    $truncatedPath = Join-Path $root 'truncated.tsv'
+    [System.IO.File]::WriteAllText($truncatedPath, "case_id`tcategory`tmax_ulp`treason`nCALC|1`tPORT-VERSION`n", (New-Object System.Text.UTF8Encoding $false))
+    $threwOnTruncated = $false
+    $truncatedMessage = $null
+    try { Read-KnownDiffTable -Path $truncatedPath | Out-Null }
+    catch { $threwOnTruncated = $true; $truncatedMessage = $_.Exception.Message }
+    if ($threwOnTruncated -and $truncatedMessage -match 'expected 4 tab-separated columns') {
+        Write-Host "  PASS  a truncated row (fewer than 4 columns) throws rather than silently reading as MaxUlp=0 (refused: $truncatedMessage)" -ForegroundColor DarkGray
+    }
+    else {
+        Write-Host "  FAIL  a truncated row (fewer than 4 columns) throws rather than silently reading as MaxUlp=0`n          expected a throw matching /expected 4 tab-separated columns/, got: threw=$threwOnTruncated message=$truncatedMessage" -ForegroundColor Red
+        $script:failures++
+    }
 
     # 7. case_ids differing only in case must stay distinct. Measured against
     #    Tests/oracle/grid-analytic.tsv: 15,916 ordinal-distinct case_ids collapse to 15,520 under
