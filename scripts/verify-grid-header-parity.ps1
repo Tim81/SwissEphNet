@@ -53,7 +53,13 @@ function Get-FirstNonCommentLine {
         throw "$Path not found."
     }
     foreach ($line in [System.IO.File]::ReadLines($Path)) {
-        if ($line.Length -eq 0) { continue }
+        # LOW fix: Trim().Length, not Length -- a whitespace-only line (a stray space or tab, no
+        # visible content) has Length -gt 0 but is not a real header any more than a genuinely
+        # empty line is. Before this fix, such a line would have been returned as "the header",
+        # comparing it against the other grid's real header and reporting a parity mismatch (or,
+        # if both grids happened to carry the same whitespace-only first line, a false parity
+        # match) instead of being skipped the way a blank line already was.
+        if ($line.Trim().Length -eq 0) { continue }
         if ($line[0] -eq '#') { continue }
         return $line
     }
@@ -115,6 +121,25 @@ if ($SelfTest) {
         }
         else {
             Write-Host '  SELFTEST FAIL: a comment-only grid TSV did not throw' -ForegroundColor Red
+            $failures++
+        }
+
+        # LOW: a whitespace-only line (a stray space, no visible content) between the comment and
+        # the real header must not itself be returned as "the header" -- it has Length -gt 0 (so
+        # the old `$line.Length -eq 0` skip missed it) but is not real content either. Two grids
+        # whose whitespace-only lines happen to be byte-identical (both a single space here) but
+        # whose REAL headers differ must still be refused, which only holds if the whitespace-only
+        # line is skipped rather than compared.
+        $wsFiles = Join-Path $lab 'grid-files-ws.tsv'
+        $wsJpl = Join-Path $lab 'grid-jpl-ws.tsv'
+        @('# comment', ' ', "case_id`tfunc`tipl`tmethod`thsys") | Set-Content -LiteralPath $wsFiles -Encoding utf8
+        @('# comment', ' ', "case_id`tfunc`tipl") | Set-Content -LiteralPath $wsJpl -Encoding utf8
+        $r3 = Test-GridHeaderParity -FilesPath $wsFiles -JplPath $wsJpl
+        if (-not $r3.Ok -and $r3.FilesHeader -eq "case_id`tfunc`tipl`tmethod`thsys" -and $r3.JplHeader -eq "case_id`tfunc`tipl") {
+            Write-Host '  ok: a whitespace-only line is skipped, not returned as the header' -ForegroundColor DarkGray
+        }
+        else {
+            Write-Host "  SELFTEST FAIL: a whitespace-only line was not skipped -- got Ok=$($r3.Ok) FilesHeader='$($r3.FilesHeader)' JplHeader='$($r3.JplHeader)'" -ForegroundColor Red
             $failures++
         }
 
