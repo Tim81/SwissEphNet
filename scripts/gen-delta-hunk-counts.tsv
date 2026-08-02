@@ -21,10 +21,10 @@ swemmoon.c	6
 swemplan.c	0
 swemptab.h	0
 swenut2000a.h	0
-sweodef.h	5
+sweodef.h	6
 sweph.c	125
 sweph.h	4
 swephexp.h	14
 swephlib.c	29
 swephlib.h	3
-swetest.c	99
+swetest.c	100
