@@ -139,7 +139,7 @@ SwissEphNet):
   consumer needed to make was the PackageReference itself. The assembly was renamed too, later,
   at 2.10.3 above -- see that entry and the "Package name" section of README.md.
 - Retarget the library to netstandard2.0;net8.0;net10.0, dropping net40 and netstandard1.0.
-- Relicense from GPL-2.0-or-later to the Swiss Ephemeris 2.10.3 dual license: AGPL-3.0-or-later
+- Relicense from GPL-2.0-or-later to the Swiss Ephemeris 2.10.3 dual license: AGPL-3.0
   or a Swiss Ephemeris Professional License from Astrodienst. See LICENSE and NOTICE.
 - Fix SwissEph.DIR_GLUE: was hardcoded to '\\' on every platform, now '/' per the upstream C
   source. Asteroid file names passed to OnLoadFile change accordingly, e.g. "ast4/se04179.se1"
@@ -188,7 +188,7 @@ SwissEphNet):
       accepts OSI/FSF-approved SPDX identifiers in PackageLicenseExpression, and
       the Swiss Ephemeris Professional License arm of this dual license has no
       SPDX identifier, so the dual license cannot be expressed that way. Do not
-      "fix" this to PackageLicenseExpression=AGPL-3.0-or-later: that would drop
+      "fix" this to PackageLicenseExpression=AGPL-3.0: that would drop
       the Professional option from the package metadata and misrepresent the
       license under which this library is actually offered. See LICENSE and
       NOTICE for the real terms.

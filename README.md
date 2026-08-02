@@ -85,7 +85,7 @@ trust the answers you get.
 Check this one first, because for some projects it is the answer and the rest does not matter.
 
 The licence changed, and not in a direction that suits everyone. 2.8.0.2 was GPL-2.0-or-later.
-This release is AGPL-3.0-or-later, or a Swiss Ephemeris Professional License bought from
+This release is AGPL-3.0, or a Swiss Ephemeris Professional License bought from
 Astrodienst. The practical difference is the AGPL's network clause. Under GPL-2.0 you could run
 2.8.0.2 inside a web service and owed nobody source, because you were not distributing anything.
 Under AGPL-3.0 operating the service is itself the trigger: users who interact with it over a
