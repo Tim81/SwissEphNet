@@ -282,12 +282,15 @@ requires.
 
 How this is checked, and what checking it does and does not prove. The port's output is compared
 field by field against Astrodienst's own C, built from the same source and run against the same
-ephemeris files. On Windows (MSVC) and Linux (gcc), all 25,540<!--doccount:grid-total-combined--> rows in that comparison (22,289<!--doccount:grid-analytic-total-->
-calls that need no ephemeris file plus 3,251<!--doccount:grid-files-total--> that read the shipped `.se1` files) come back
-bit-identical, not merely close; the tracked difference lists for both are empty. macOS (clang,
+ephemeris files. On Windows (MSVC) and Linux (gcc), all but 5<!--doccount:oracle-known-diff-files-->
+of the 25,569<!--doccount:grid-total-combined--> rows in that comparison (22,289<!--doccount:grid-analytic-total-->
+calls that need no ephemeris file plus 3,280<!--doccount:grid-files-total--> that read the shipped `.se1` files) come back
+bit-identical, not merely close; the tracked difference lists carry a combined 5 recorded
+exceptions, all `SERR`-category and all traced to the same deliberate, cross-platform path-separator
+choice (`docs/compliance-2.10.03.md`'s "The last two 2.10.03-only entry points" section). macOS (clang,
 arm64) matched at an earlier, smaller grid size once clang was told not to substitute its own math
 builtins for individual libm calls (`-fno-builtin`) -- see the table below for exactly what is and
-is not re-verified against the current 25,540-row grid; unlike Windows and Linux, macOS cannot be
+is not re-verified against the current 25,569-row grid; unlike Windows and Linux, macOS cannot be
 measured outside its own CI runner, so this section does not claim a current macOS number. None of
 that proves agreement between platforms: comparing the port's own
 frozen output, generated on Windows and on Linux from the same commit, finds 66,342 of 3,547,367
@@ -603,9 +606,9 @@ platform:
 
 | Platform | C reference | Result |
 |---|---|---|
-| Windows x64 | MSVC 19.51, `/O2 /fp:precise /MD` | 25,540<!--doccount:grid-total-combined--> of 25,540 rows bit-identical (gated) |
-| Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | 25,540 of 25,540 rows bit-identical (gated; also confirmed by a full local replay against this grid: 22,289 analytic rows, sha256 `41f84577d86e296f86ba06444002977c`, and 3,251 files rows, sha256 `900308e9acd05d48dd846cd778f7a90a`, both bit-identical) |
-| macOS arm64 | clang, `-O2 -ffp-contract=off -fno-builtin` | 20,532 of 20,532 rows bit-identical at last CI run (gated by `macos-exactness`; not re-run locally against the current 25,540-row grid -- macOS has no local reproduction path here, so this row is CI's own last result, not a claim made outside it) |
+| Windows x64 | MSVC 19.51, `/O2 /fp:precise /MD` | 25,564 of 25,569<!--doccount:grid-total-combined--> rows bit-identical, 5 recorded `SERR` exceptions accounted for (gated) |
+| Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | Gated at the same total on every push and pull request; the 22,289-analytic/3,251-files local replay this row previously cited was from the addition before this one (`HOUSES_EX2`/`HOUSES_ARMC_EX2`) and has not been independently re-run against the current 3,280-row files grid outside CI -- see `docs/compliance-2.10.03.md`'s "The last two 2.10.03-only entry points" for what was actually checked, and on which platform |
+| macOS arm64 | clang, `-O2 -ffp-contract=off -fno-builtin` | 20,532 of 20,532 rows bit-identical at last CI run (gated by `macos-exactness`; not re-run locally against the current 25,569-row grid -- macOS has no local reproduction path here, so this row is CI's own last result, not a claim made outside it) |
 
 The characterization baseline (`scripts/verify-baseline.ps1`) separately runs on both `net8.0` and
 `net10.0` and reports them field-identical to each other on the platform that generated it. That
@@ -996,9 +999,10 @@ is for, and it is the source of the "Numerical compatibility" table above.
   `swe_get_ayanamsa`/`_ex`/`_ex_ut`/`_ut`,
   `swe_sidtime`, `swe_azalt`, `swe_house_name` and `swe_nod_aps_ut`, swept across every predefined
   `sid_mode` plus `SE_SIDM_USER`, opening no ephemeris file) and
-  `grid-files.tsv` (3,251<!--doccount:grid-files-total--> rows, `SEFLG_SWIEPH swe_calc`/`swe_calc_ut`, the `swe_fixstar` family
+  `grid-files.tsv` (3,280<!--doccount:grid-files-total--> rows, `SEFLG_SWIEPH swe_calc`/`swe_calc_ut`, the `swe_fixstar` family
   (including `swe_fixstar2_mag`),
-  `swe_get_planet_name`, `swe_houses_ex`/`swe_houses_ex2`/`swe_houses_armc_ex2` and `swe_nod_aps_ut`, reading the
+  `swe_get_planet_name`, `swe_houses_ex`/`swe_houses_ex2`/`swe_houses_armc_ex2`, `swe_nod_aps_ut`,
+  `swe_calc_pctr` and `swe_get_current_file_data`, reading the
   shipped `.se1`/`sefstars.txt` files).
 - Each grid is replayed by a pair of drivers built from the same inputs: `Tools/CReference/sedump.c`,
   compiled against Astrodienst's own vendored 2.10.03 C, and `Tools/OracleDump`, built against this

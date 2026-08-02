@@ -110,6 +110,30 @@
                                  swephexp.h:708 -- so it needs no version guard) had no grid row of
                                  its own anywhere. Same star-name sweep as FIXSTAR_MAG.
 
+      swe_calc_pctr / swe_get_current_file_data -- the remaining two of the twelve entry points
+                                 new in 2.10.03 (absent from external/pyswisseph-2.08/swephexp.h
+                                 entirely, guarded behind SWISSEPH_HAS_CALC_PCTR/
+                                 SWISSEPH_HAS_GET_CURRENT_FILE_DATA in sedump.c). Both are
+                                 files-grid-only: swe_calc_pctr forces SEFLG_BARYCTR
+                                 unconditionally (sweph.c:8061), and
+                                 SEFLG_BARYCTR|SEFLG_MOSEPH is rejected before any geometry runs
+                                 (sweph.c:634-638), so grid-analytic.tsv's forced-SEFLG_MOSEPH rows
+                                 could only ever reach that reject -- the same SE_CHIRON category
+                                 error this script's own $HelioCrossIplFiles comment already
+                                 documents for a different func. swe_get_current_file_data reads
+                                 swed.fidat, which grid-analytic.tsv's rows never populate at all.
+                                 PCTR: three body pairs x two dates x three iflag combinations
+                                 (PLAIN, SPEED, SIDEREAL), plus one row exercising the "ipl and
+                                 iplctr must not be identical" reject. GET_CURRENT_FILE_DATA: the
+                                 boundary and empty-fnam reject branches, plus real data for ifno 0
+                                 (planet file, via an optional preceding swe_calc), ifno 1 (Moon
+                                 file, populated for free by this grid's own swe_set_ephe_path
+                                 call), ifno 2 (main asteroid file, via the same preceding
+                                 swe_calc mechanism) and ifno 4 (star file, via an optional
+                                 preceding swe_fixstar2) -- see New-PctrRow's and
+                                 New-GetCurrentFileDataRow's own comments for the full detail,
+                                 including why ifno 3 has no real-data row in this grid at all.
+
     THE STAR NAME LOOKUP AND THE PLANET NAME ARE CARRIED IN THE err/serr COLUMN
 
     swe_get_planet_name returns a string, not a double, so it has no xx[]/mag output to hex-encode
@@ -274,7 +298,7 @@ function New-CalcFileRow {
     $fields = @(
         $caseId, $Func, (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
         $geolonField, $geolatField, $heightField, $sidModeField, '', '',
-        $t0Field, $ayanT0Field, '', '', '', ''
+        $t0Field, $ayanT0Field, '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -291,7 +315,7 @@ function New-FixstarRow {
     $caseId = "$Prefix|$Star|$(Fmt $Tjd)|$FlagName"
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), $Star,
-        '', '', '', '', '', '', '', '', '', '', '', ''
+        '', '', '', '', '', '', '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -307,7 +331,7 @@ function New-FixstarMagRow {
     $caseId = "$Prefix|$Star"
     $fields = @(
         $caseId, $Func, '', '', '', $Star,
-        '', '', '', '', '', '', '', '', '', '', '', ''
+        '', '', '', '', '', '', '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -317,7 +341,7 @@ function New-NameRow {
     $caseId = "NAME|$(FmtI $Ipl)"
     $fields = @(
         $caseId, 'GET_PLANET_NAME', (FmtI $Ipl), '', '', '',
-        '', '', '', '', '', '', '', '', '', '', '', ''
+        '', '', '', '', '', '', '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -338,7 +362,7 @@ function New-SolarLunarCrossRow {
     $caseId = "$Prefix|$(Fmt $X2Cross)|$(Fmt $Tjd)|$FlagName"
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
-        '', '', '', '', (Fmt $X2Cross), '', '', '', '', '', '', ''
+        '', '', '', '', (Fmt $X2Cross), '', '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -357,7 +381,7 @@ function New-MoonCrossNodeRow {
     $caseId = "$Prefix|$(Fmt $Tjd)|$FlagName"
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
-        '', '', '', '', '', '', '', '', '', '', '', ''
+        '', '', '', '', '', '', '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -378,7 +402,7 @@ function New-HelioCrossRow {
     $caseId = "$Prefix|$(FmtI $Ipl)|$(Fmt $X2Cross)|$(Fmt $Tjd)|$FlagName|$(FmtI $Dir)"
     $fields = @(
         $caseId, $Func, (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
-        '', '', '', '', (Fmt $X2Cross), (FmtI $Dir), '', '', '', '', '', ''
+        '', '', '', '', (Fmt $X2Cross), (FmtI $Dir), '', '', '', '', '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -397,7 +421,7 @@ function New-HousesExRow {
     $fields = @(
         $caseId, $Func, '', (Fmt $Tjd), (FmtI $IFlag), '',
         (Fmt $GeoLon), (Fmt $GeoLat), '', $sidModeField, '', '', '', '',
-        '', "$Hsys", '', ''
+        '', "$Hsys", '', '', '', ''
     )
     return ($fields -join "`t")
 }
@@ -415,7 +439,7 @@ function New-HousesArmcEx2Row {
     $fields = @(
         $caseId, 'HOUSES_ARMC_EX2', '', '', '', '',
         '', (Fmt $GeoLat), '', '', '', '', '', '',
-        '', "$Hsys", (Fmt $Armc), (Fmt $Eps)
+        '', "$Hsys", (Fmt $Armc), (Fmt $Eps), '', ''
     )
     return ($fields -join "`t")
 }
@@ -431,7 +455,53 @@ function New-NodApsUtRow {
     $fields = @(
         $caseId, 'NOD_APS_UT', (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
         '', '', '', '', '', '', '', '',
-        (FmtI $Method), '', '', ''
+        (FmtI $Method), '', '', '', '', ''
+    )
+    return ($fields -join "`t")
+}
+
+# swe_calc_pctr -- new in 2.10.03 (absent from external/pyswisseph-2.08/swephexp.h entirely; see
+# this script's own header). Reuses ipl/tjd/iflag, the same columns CALC already carries, for its
+# first body; iplctr (this addition's own new, additive-tail column) is the second. iplctr = Ipl is
+# a legitimate row shape here, not a mistake to guard against: it exercises swe_calc_pctr's own
+# "ipl and iplctr must not be identical" reject (sweph.c:8050-8054) rather than the geometry path.
+function New-PctrRow {
+    param([int] $Ipl, [int] $Iplctr, [double] $Tjd, [string] $FlagName, [int] $IFlag, $SidMode)
+    $caseId = "PCTR|$(FmtI $Ipl)|$(FmtI $Iplctr)|$(Fmt $Tjd)|$FlagName"
+    $sidModeField = if ($null -eq $SidMode) { '' } else { FmtI ([int]$SidMode) }
+    $fields = @(
+        $caseId, 'PCTR', (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
+        '', '', '', $sidModeField, '', '', '', '',
+        '', '', '', '', (FmtI $Iplctr), ''
+    )
+    return ($fields -join "`t")
+}
+
+# swe_get_current_file_data -- new in 2.10.03 (absent from external/pyswisseph-2.08/swephexp.h
+# entirely; see this script's own header). Ifno alone (Ipl/Tjd/Star all $null) tests the
+# boundary/no-data branches -- see process_get_current_file_data's own comment in
+# Tools/CReference/sedump.c for exactly which slot is already populated with no other input on the
+# row at all (ifno 1, the Moon file, via main()'s/AttachEpheDir's own swe_set_ephe_path call), and
+# which is not. Ipl+Tjd (Star left $null) trigger a preceding swe_calc, reusing the same columns
+# CALC already carries, to populate ifno 0 (planet file) or ifno 2 (main asteroid file) with real
+# data instead; Star+Tjd (Ipl left $null) trigger a preceding swe_fixstar2 instead, for ifno 4 (the
+# star file). Ifno 3 (SEI_FILE_ANY_AST -- an individually-numbered asteroid or planetary-moon file)
+# has no row here that reaches it with real data: this repo's ephemeris checkout ships no such
+# file (only sepl/semo/seas_{12,18}.se1 and sefstars.txt -- see -EpheDir's own manifest,
+# Tests/conformance/required-ephemeris-files.tsv), so every ifno-3 row this script emits only ever
+# exercises the empty-fnam reject branch (sweph.c:8301), the same branch an ifno-0/2/4 row with no
+# preceding call also exercises.
+function New-GetCurrentFileDataRow {
+    param([string] $Label, [int] $Ifno, $Ipl, $Tjd, $IFlag, $Star)
+    $caseId = "GETCURRENTFILEDATA|$Label|$(FmtI $Ifno)"
+    $iplField   = if ($null -eq $Ipl)  { '' } else { FmtI ([int]$Ipl) }
+    $tjdField   = if ($null -eq $Tjd)  { '' } else { Fmt ([double]$Tjd) }
+    $iflagField = if ($null -eq $IFlag) { '' } else { FmtI ([int]$IFlag) }
+    $starField  = if ($null -eq $Star) { '' } else { [string]$Star }
+    $fields = @(
+        $caseId, 'GET_CURRENT_FILE_DATA', $iplField, $tjdField, $iflagField, $starField,
+        '', '', '', '', '', '', '', '',
+        '', '', '', '', '', (FmtI $Ifno)
     )
     return ($fields -join "`t")
 }
@@ -658,6 +728,59 @@ $NodApsTjdFiles = @($CalcJdsFiles[1], $CalcJdsFiles[7])
 $NodApsRejectedTjdFiles = $CalcJdsFiles[1]
 
 # ---------------------------------------------------------------------------------------
+# swe_calc_pctr grid values -- see this script's own header and New-PctrRow's own comment for why
+# this func is here rather than grid-analytic.tsv (SEFLG_BARYCTR|SEFLG_MOSEPH is rejected before
+# any geometry runs, sweph.c:634-638, and grid-analytic.tsv never configures an ephemeris path, so
+# every row there would hit only that reject). Three body pairs -- Mars-from-Jupiter, Sun-from-
+# Earth (heliocentric Earth is just the antipode of geocentric Sun, an unusual but legal
+# planetocentric target) and Venus-from-Earth (nearly geocentric, but computed through
+# swe_calc_pctr's own light-time/aberration algorithm rather than swe_calc's, so a genuinely
+# different code path from a CALC row using the same two bodies) -- crossed with two of the ten
+# SWIEPH dates above and three iflag combinations (PLAIN, SPEED -- the iterative apparent-speed
+# branch at sweph.c:8079-8104,8119-8122,8164-8167 -- and SIDEREAL -- the ayanamsa branch at
+# sweph.c:8217-8243). Smaller than gen-grid-analytic.ps1-style sweeps on purpose, matching how
+# every other file-backed-only func in this grid is sized smaller than a full cross product: this
+# grid's job is proving the real (non-Moshier) path is exercised, not re-covering every body pair.
+# ---------------------------------------------------------------------------------------
+$PctrBodyPairs = @(
+    [pscustomobject]@{ Ipl = 4;  Iplctr = 5 }   # Mars as seen from Jupiter
+    [pscustomobject]@{ Ipl = 0;  Iplctr = 14 }  # Sun as seen from Earth (heliocentric Earth)
+    [pscustomobject]@{ Ipl = 3;  Iplctr = 14 }  # Venus as seen from Earth
+)
+$PctrTjdFiles = @($CalcJdsFiles[1], $CalcJdsFiles[7])
+$PctrFlagCombos = @(
+    [pscustomobject]@{ Name = 'PLAIN';    Flag = 0;               NeedsSid = $false }
+    [pscustomobject]@{ Name = 'SPEED';    Flag = $SEFLG_SPEED;    NeedsSid = $false }
+    [pscustomobject]@{ Name = 'SIDEREAL'; Flag = $SEFLG_SIDEREAL; NeedsSid = $true }
+)
+# One representative pair for the "ipl and iplctr must not be identical" reject (sweph.c:8050-8054)
+# -- New-PctrRow's own comment explains why iplctr = ipl is a deliberate row shape, not a mistake.
+$PctrIdenticalIpl = 3  # Venus
+
+# ---------------------------------------------------------------------------------------
+# swe_get_current_file_data grid values -- see this script's own header and
+# New-GetCurrentFileDataRow's own comment. $GetCurrentFileDataBoundary/NoData/AutoReal cover the
+# five-line C function's every branch with no other input on the row at all (main()'s/
+# AttachEpheDir's own swe_set_ephe_path call already populates ifno 1 before any row-specific func
+# runs); $GetCurrentFileDataPreCalc/PreFixstar additionally trigger a preceding swe_calc/
+# swe_fixstar2 to reach ifno 0/2/4 with real (non-Moshier) file data instead of the empty-fnam
+# reject every other ifno here exercises.
+# ---------------------------------------------------------------------------------------
+$GetCurrentFileDataBoundary = @(-1, 5)                 # sweph.c:8299's ifno < 0 || ifno > 4
+$GetCurrentFileDataNoData = @(0, 2, 3, 4)              # sweph.c:8301's strlen(fnam) == 0
+$GetCurrentFileDataAutoReal = 1                        # SEI_FILE_MOON -- populated for free
+$GetCurrentFileDataPreCalcIpl = 0                       # SE_SUN -> SEI_FILE_PLANET (ifno 0)
+# SE_CERES (17): one of the six bodies swi_get_denum's own dispatch (sweph.c:2423-2429) routes to
+# SEI_FILE_MAIN_AST -- an arbitrary numbered asteroid (e.g. SE_AST_OFFSET-relative) routes to
+# SEI_FILE_ANY_AST (ifno 3) instead, not ifno 2 -- matches
+# Tests/SwissEphNet.Tests/GetCurrentFileDataCoverageTest.cs's own choice of SE_CERES for the same
+# real-ifno-2-data assertion.
+$GetCurrentFileDataPreCalcAsteroidIpl = 17              # SE_CERES -> SEI_FILE_MAIN_AST (ifno 2)
+$GetCurrentFileDataPreCalcTjd = $CalcJdsFiles[1]
+$GetCurrentFileDataPreCalcIFlag = $SEFLG_SWIEPH
+$GetCurrentFileDataPreFixstarStar = 'Sirius'            # -> SEI_FILE_FIXSTAR (ifno 4)
+
+# ---------------------------------------------------------------------------------------
 # Build rows
 # ---------------------------------------------------------------------------------------
 
@@ -683,6 +806,8 @@ $housesEx2Count = 0
 $housesArmcEx2Count = 0
 $fixstar2MagCount = 0
 $nodApsUtCount = 0
+$pctrCount = 0
+$getCurrentFileDataCount = 0
 
 foreach ($ipl in $Bodies) {
     foreach ($tjd in $CalcJdsFiles) {
@@ -831,10 +956,41 @@ foreach ($ipl in $NodApsRejectedIplFiles) {
     $nodApsUtCount++
 }
 
+foreach ($pair in $PctrBodyPairs) {
+    foreach ($tjd in $PctrTjdFiles) {
+        foreach ($combo in $PctrFlagCombos) {
+            $iflag = $SEFLG_SWIEPH -bor $combo.Flag
+            $sidMode = if ($combo.NeedsSid) { Get-NextSidMode } else { $null }
+
+            $rows.Add((New-PctrRow -Ipl $pair.Ipl -Iplctr $pair.Iplctr -Tjd $tjd -FlagName $combo.Name -IFlag $iflag -SidMode $sidMode))
+            $pctrCount++
+        }
+    }
+}
+$rows.Add((New-PctrRow -Ipl $PctrIdenticalIpl -Iplctr $PctrIdenticalIpl -Tjd $PctrTjdFiles[0] -FlagName 'PLAIN' -IFlag $SEFLG_SWIEPH -SidMode $null))
+$pctrCount++
+
+foreach ($ifno in $GetCurrentFileDataBoundary) {
+    $rows.Add((New-GetCurrentFileDataRow -Label 'BOUNDARY' -Ifno $ifno -Ipl $null -Tjd $null -IFlag $null -Star $null))
+    $getCurrentFileDataCount++
+}
+foreach ($ifno in $GetCurrentFileDataNoData) {
+    $rows.Add((New-GetCurrentFileDataRow -Label 'NODATA' -Ifno $ifno -Ipl $null -Tjd $null -IFlag $null -Star $null))
+    $getCurrentFileDataCount++
+}
+$rows.Add((New-GetCurrentFileDataRow -Label 'AUTOREAL' -Ifno $GetCurrentFileDataAutoReal -Ipl $null -Tjd $null -IFlag $null -Star $null))
+$getCurrentFileDataCount++
+$rows.Add((New-GetCurrentFileDataRow -Label 'PRECALC' -Ifno 0 -Ipl $GetCurrentFileDataPreCalcIpl -Tjd $GetCurrentFileDataPreCalcTjd -IFlag $GetCurrentFileDataPreCalcIFlag -Star $null))
+$getCurrentFileDataCount++
+$rows.Add((New-GetCurrentFileDataRow -Label 'PRECALC' -Ifno 2 -Ipl $GetCurrentFileDataPreCalcAsteroidIpl -Tjd $GetCurrentFileDataPreCalcTjd -IFlag $GetCurrentFileDataPreCalcIFlag -Star $null))
+$getCurrentFileDataCount++
+$rows.Add((New-GetCurrentFileDataRow -Label 'PREFIXSTAR' -Ifno 4 -Ipl $null -Tjd $GetCurrentFileDataPreCalcTjd -IFlag $GetCurrentFileDataPreCalcIFlag -Star $GetCurrentFileDataPreFixstarStar))
+$getCurrentFileDataCount++
+
 $totalRows = $rows.Count
 $expectedTotal = $calcCount + $calcUtCount + $fixstarCount + $fixstarUtCount + $fixstar2Count + $fixstar2UtCount + $fixstarMagCount + $fixstar2MagCount + $nameCount +
     $solCrossCount + $solCrossUtCount + $moonCrossCount + $moonCrossUtCount + $moonCrossNodeCount + $moonCrossNodeUtCount + $helioCrossCount + $helioCrossUtCount +
-    $housesExCount + $housesEx2Count + $housesArmcEx2Count + $nodApsUtCount
+    $housesExCount + $housesEx2Count + $housesArmcEx2Count + $nodApsUtCount + $pctrCount + $getCurrentFileDataCount
 if ($totalRows -ne $expectedTotal) {
     throw 'Row count bookkeeping is inconsistent -- this is a bug in this script, not a data problem.'
 }
@@ -908,6 +1064,25 @@ $headerLines = @(
     '# geometry, like HOUSES_ARMC), so it is added here for dispatch/schema parity with'
     '# grid-analytic.tsv, not file-layer coverage -- see New-HousesArmcEx2Row''s own comment.'
     '#'
+    '# swe_calc_pctr (PCTR) / swe_get_current_file_data (GET_CURRENT_FILE_DATA): the remaining two'
+    '# of the twelve entry points new in 2.10.03, and files-grid-only. swe_calc_pctr forces'
+    '# SEFLG_BARYCTR unconditionally (sweph.c:8061), and SEFLG_BARYCTR|SEFLG_MOSEPH is rejected'
+    '# outright before any geometry runs (sweph.c:634-638) -- grid-analytic.tsv''s forced-'
+    '# SEFLG_MOSEPH rows could only ever reach that reject, the same SE_CHIRON category error this'
+    '# script''s own $HelioCrossIplFiles comment already documents for a different func, so PCTR'
+    '# rows live here instead. Three body pairs (Mars-from-Jupiter, Sun-from-Earth, Venus-from-'
+    '# Earth) crossed with two dates and three iflag combinations (PLAIN, SPEED, SIDEREAL), plus'
+    '# one row exercising the "ipl and iplctr must not be identical" reject (sweph.c:8050-8054) --'
+    '# see New-PctrRow''s own comment. swe_get_current_file_data reads swed.fidat, which'
+    '# grid-analytic.tsv''s rows never populate at all, so it too is files-grid-only. Ifno alone'
+    '# (-1, 5 out of range; 0/2/3/4 in range but not yet populated) covers the boundary and'
+    '# empty-fnam reject branches; ifno 1 (the Moon file) reports real data with no other input on'
+    '# the row at all, because this grid''s own swe_set_ephe_path call already opens it (sweph.c:'
+    '# 1343-1350); ifno 0/2/4 reach real data too, through an optional preceding swe_calc or'
+    '# swe_fixstar2 this func''s own row reuses ipl/tjd/iflag/star to trigger -- see'
+    '# New-GetCurrentFileDataRow''s own comment for why ifno 3 has no real-data row at all in this'
+    '# grid.'
+    '#'
     '# A FRESH LIBRARY INSTANCE PER ROW, AND A FRESH swe_set_ephe_path PER ROW'
     '#'
     '# Every row here touches file-backed state (which segment is cached, which file handle is'
@@ -924,24 +1099,31 @@ $headerLines = @(
     '#   func       CALC | CALC_UT | FIXSTAR | FIXSTAR_UT | FIXSTAR2 | FIXSTAR2_UT | FIXSTAR_MAG |'
     '#              FIXSTAR2_MAG | GET_PLANET_NAME | SOLCROSS | SOLCROSS_UT | MOONCROSS |'
     '#              MOONCROSS_UT | MOONCROSS_NODE | MOONCROSS_NODE_UT | HELIO_CROSS |'
-    '#              HELIO_CROSS_UT | HOUSES_EX | HOUSES_EX2 | HOUSES_ARMC_EX2 | NOD_APS_UT'
+    '#              HELIO_CROSS_UT | HOUSES_EX | HOUSES_EX2 | HOUSES_ARMC_EX2 | NOD_APS_UT | PCTR |'
+    '#              GET_CURRENT_FILE_DATA'
     '#   ipl        body number                                        [CALC, CALC_UT,'
-    '#              GET_PLANET_NAME, HELIO_CROSS, HELIO_CROSS_UT, NOD_APS_UT]'
+    '#              GET_PLANET_NAME, HELIO_CROSS, HELIO_CROSS_UT, NOD_APS_UT, PCTR (first body);'
+    '#              GET_CURRENT_FILE_DATA (optional, triggers a preceding swe_calc)]'
     '#   tjd        Julian day (ET for CALC/FIXSTAR/FIXSTAR2/SOLCROSS/MOONCROSS/MOONCROSS_NODE/'
-    '#              HELIO_CROSS; UT for the corresponding _UT funcs)'
+    '#              HELIO_CROSS/PCTR; UT for the corresponding _UT funcs)'
     '#              [CALC, CALC_UT, FIXSTAR, FIXSTAR_UT, FIXSTAR2, FIXSTAR2_UT, SOLCROSS,'
     '#              SOLCROSS_UT, MOONCROSS, MOONCROSS_UT, MOONCROSS_NODE, MOONCROSS_NODE_UT,'
-    '#              HELIO_CROSS, HELIO_CROSS_UT]'
-    '#   iflag      swe_calc/swe_fixstar/crossing-func iflag, with SEFLG_SWIEPH already OR-ed in'
-    '#              [CALC, CALC_UT, FIXSTAR, FIXSTAR_UT, FIXSTAR2, FIXSTAR2_UT, SOLCROSS,'
-    '#              SOLCROSS_UT, MOONCROSS, MOONCROSS_UT, MOONCROSS_NODE, MOONCROSS_NODE_UT,'
-    '#              HELIO_CROSS, HELIO_CROSS_UT]'
-    '#   star       star name or search string                         [FIXSTAR, FIXSTAR_UT, FIXSTAR2, FIXSTAR2_UT, FIXSTAR_MAG, FIXSTAR2_MAG]'
+    '#              HELIO_CROSS, HELIO_CROSS_UT, PCTR; GET_CURRENT_FILE_DATA (optional, paired with'
+    '#              ipl or star to trigger a preceding swe_calc/swe_fixstar2)]'
+    '#   iflag      swe_calc/swe_fixstar/crossing-func/swe_calc_pctr iflag, with SEFLG_SWIEPH'
+    '#              already OR-ed in [CALC, CALC_UT, FIXSTAR, FIXSTAR_UT, FIXSTAR2, FIXSTAR2_UT,'
+    '#              SOLCROSS, SOLCROSS_UT, MOONCROSS, MOONCROSS_UT, MOONCROSS_NODE,'
+    '#              MOONCROSS_NODE_UT, HELIO_CROSS, HELIO_CROSS_UT, PCTR; GET_CURRENT_FILE_DATA'
+    '#              (optional, paired with ipl or star)]'
+    '#   star       star name or search string                         [FIXSTAR, FIXSTAR_UT,'
+    '#              FIXSTAR2, FIXSTAR2_UT, FIXSTAR_MAG, FIXSTAR2_MAG; GET_CURRENT_FILE_DATA'
+    '#              (optional, triggers a preceding swe_fixstar2)]'
     '#   geolon     geographic longitude, degrees east                 [CALC/CALC_UT topo rows; HOUSES_EX/HOUSES_EX2]'
     '#   geolat     geographic latitude, degrees north                 [CALC/CALC_UT topo rows; HOUSES_EX/HOUSES_EX2; HOUSES_ARMC_EX2]'
     '#   height     observer height above sea level, metres            [CALC/CALC_UT topo rows only]'
-    '#   sid_mode   swe_set_sid_mode mode, applied before the row runs [CALC/CALC_UT/HOUSES_EX/HOUSES_EX2 rows whose iflag carries SEFLG_SIDEREAL];'
-    '#              cycled across all 47 predefined modes (Get-NextSidMode), not pinned to one'
+    '#   sid_mode   swe_set_sid_mode mode, applied before the row runs [CALC/CALC_UT/HOUSES_EX/'
+    '#              HOUSES_EX2/PCTR rows whose iflag carries SEFLG_SIDEREAL]; cycled across all 47'
+    '#              predefined modes (Get-NextSidMode), not pinned to one'
     '#   x2cross    target ecliptic longitude to cross, degrees        [SOLCROSS, SOLCROSS_UT,'
     '#              MOONCROSS, MOONCROSS_UT, HELIO_CROSS, HELIO_CROSS_UT]'
     '#   dir        swe_helio_cross(_ut) search direction: >= 0 forward, < 0 backward'
@@ -954,6 +1136,8 @@ $headerLines = @(
     '#   hsys       house-system letter               [HOUSES_EX, HOUSES_EX2, HOUSES_ARMC_EX2]'
     '#   armc       ARMC, degrees                                       [HOUSES_ARMC_EX2]'
     '#   eps        obliquity of the ecliptic, degrees                  [HOUSES_ARMC_EX2]'
+    '#   iplctr     swe_calc_pctr''s second body (the planetocentric center)        [PCTR]'
+    '#   ifno       swe_get_current_file_data''s file-slot index, 0-4 in range      [GET_CURRENT_FILE_DATA]'
     '#'
     '# x2cross and dir are appended after sid_mode, and t0/ayan_t0 after those, rather than'
     '# interleaved among the original ten columns, so every column this grid''s other funcs already'
@@ -968,11 +1152,14 @@ $headerLines = @(
     '# hsys sits where it does, rather than reusing a column HOUSES/HOUSES_ARMC might have shared'
     '# the way grid-analytic.tsv''s HOUSES_EX rows reuse fields[5], because this grid never carries'
     '# swe_houses/swe_houses_armc rows of its own and so never allocated an hsys column at all'
-    '# until HOUSES_EX needed one. armc and eps are a THIRD additive tail, at the very end, for the'
+    '# until HOUSES_EX needed one. armc and eps are a THIRD additive tail, for the'
     '# same reason again: HOUSES_ARMC_EX2 is the first func this grid has ever carried that takes'
     '# an armc/eps pair as direct input (grid-analytic.tsv already carries them, for its own'
-    '# HOUSES_ARMC rows) -- this addition is therefore a two-grid schema change, since'
-    '# grid-jpl.tsv carries this header byte-for-byte (see gen-grid-jpl.ps1''s own header).'
+    '# HOUSES_ARMC rows). iplctr and ifno are a FOURTH additive tail, at the very end, for PCTR/'
+    '# GET_CURRENT_FILE_DATA -- the two funcs this addition brings in reuse ipl/tjd/iflag/star for'
+    '# everything else they need, so iplctr and ifno are the only genuinely new inputs. Each of'
+    '# these additive tails is a two-grid schema change, since grid-jpl.tsv carries this header'
+    '# byte-for-byte (see gen-grid-jpl.ps1''s own header).'
     '#'
     '# Lines starting with ''#'' are comments. The first non-comment line is the column-name header'
     '# below and is not a data row -- both drivers assert it matches verbatim before reading any'
@@ -981,7 +1168,7 @@ $headerLines = @(
 $columnHeader = 'case_id' + "`t" + 'func' + "`t" + 'ipl' + "`t" + 'tjd' + "`t" + 'iflag' + "`t" +
     'star' + "`t" + 'geolon' + "`t" + 'geolat' + "`t" + 'height' + "`t" + 'sid_mode' + "`t" +
     'x2cross' + "`t" + 'dir' + "`t" + 't0' + "`t" + 'ayan_t0' + "`t" + 'method' + "`t" + 'hsys' + "`t" +
-    'armc' + "`t" + 'eps'
+    'armc' + "`t" + 'eps' + "`t" + 'iplctr' + "`t" + 'ifno'
 
 $writer = [System.IO.StreamWriter]::new($outputPath, $false, [System.Text.UTF8Encoding]::new($false))
 try {
@@ -1016,3 +1203,5 @@ Write-Host "  HOUSES_EX          $housesExCount"
 Write-Host "  HOUSES_EX2         $housesEx2Count"
 Write-Host "  HOUSES_ARMC_EX2    $housesArmcEx2Count"
 Write-Host "  NOD_APS_UT         $nodApsUtCount"
+Write-Host "  PCTR               $pctrCount"
+Write-Host "  GET_CURRENT_FILE_DATA $getCurrentFileDataCount"

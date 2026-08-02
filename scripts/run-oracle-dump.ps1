@@ -469,15 +469,21 @@ try {
     Remove-Item Env:\_CL_ -ErrorAction SilentlyContinue
 
     # Same flags as Tools/CReference/build-c.ps1's $commonFlags: /O2 /fp:precise /MD so this
-    # compiles against the identical toolchain the linked .lib itself was built with.
-    # /DSWISSEPH_HAS_CROSSING=1 and /DSWISSEPH_HAS_HOUSES_EX2=1 are this build's own addition, not
-    # shared with build-c.ps1's 2.08 build: swe_solcross/swe_mooncross/swe_mooncross_node/
-    # swe_helio_cross and their _ut variants, and separately swe_houses_ex2/swe_houses_armc_ex2,
-    # do not exist in Swiss Ephemeris 2.08 at all (see sedump.c's own top-of-file comment on
-    # SWISSEPH_HAS_CROSSING and SWISSEPH_HAS_HOUSES_EX2), so only the 2.10.03 build linked here
-    # defines either; the 2.08 build's compile command in build-c.ps1 is left untouched and picks
-    # up both macros' #else branches by simply not defining them.
-    $commonFlags = '/O2 /fp:precise /D_CRT_SECURE_NO_WARNINGS /DSWISSEPH_HAS_CROSSING=1 /DSWISSEPH_HAS_HOUSES_EX2=1 /MD'
+    # compiles against the identical toolchain the linked .lib itself was built with. The four
+    # SWISSEPH_HAS_* guard macros below (spelled out together, with their /D prefix, only on the
+    # $commonFlags line itself -- scripts/verify-sedump-macro-parity.ps1 treats each physical line
+    # mentioning "-D"/"/D" plus a guard name as a compile site and requires every site to define
+    # the same set, so this comment refers to them by bare name, never split across lines with the
+    # /D prefix attached, to avoid tripping that gate on its own prose) are this build's own
+    # addition, not shared with build-c.ps1's 2.08 build: swe_solcross/swe_mooncross/
+    # swe_mooncross_node/swe_helio_cross and their _ut variants (SWISSEPH_HAS_CROSSING),
+    # swe_houses_ex2/swe_houses_armc_ex2 (SWISSEPH_HAS_HOUSES_EX2), swe_calc_pctr
+    # (SWISSEPH_HAS_CALC_PCTR) and swe_get_current_file_data (SWISSEPH_HAS_GET_CURRENT_FILE_DATA)
+    # do not exist in Swiss Ephemeris 2.08 at all (see sedump.c's own top-of-file comment on each
+    # macro), so only the 2.10.03 build linked here defines any of them; the 2.08 build's compile
+    # command in build-c.ps1 is left untouched and picks up all four macros' #else branches by
+    # simply not defining them.
+    $commonFlags = '/O2 /fp:precise /D_CRT_SECURE_NO_WARNINGS /DSWISSEPH_HAS_CROSSING=1 /DSWISSEPH_HAS_HOUSES_EX2=1 /DSWISSEPH_HAS_CALC_PCTR=1 /DSWISSEPH_HAS_GET_CURRENT_FILE_DATA=1 /MD'
     $swephIncludeDir = Join-Path $repoRoot 'external/swisseph'
     $sedumpSource = Join-Path $repoRoot 'Tools/CReference/sedump.c'
     $cBuildDir = Join-Path $OutputDir 'oracle-dump-c'

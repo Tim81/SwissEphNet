@@ -411,9 +411,14 @@ jobs:
   #
   # First, the exemption's premise no longer holds. It was justified by Tests/oracle/known-diff*.tsv
   # recording ULP distances captured from one specific compiler, which a future windows-latest MSVC
-  # could shift without any change to this port. Both lists are now header-only: every one of the
-  # 22,289<!--doccount:grid-analytic-total--> analytic and 3,251<!--doccount:grid-files-total--> file-backed rows is required to be bit-identical, so there is no
-  # recorded toolchain-sensitive value left to protect.
+  # could shift without any change to this port. Neither list records anything toolchain-sensitive
+  # any more: known-diff.tsv (analytic) is header-only, and every one of the
+  # 22,289<!--doccount:grid-analytic-total--> analytic rows is required to be bit-identical;
+  # known-diff-files.tsv (file-backed) carries 5 recorded SERR entries, all a single deliberate,
+  # platform-portable path-separator choice (DIR_GLUE) rather than a compiler-version-sensitive
+  # ULP, so that list is not "no recorded exceptions" but is still "no recorded toolchain-sensitive
+  # value left to protect" -- every one of the 3,280<!--doccount:grid-files-total--> file-backed
+  # rows is required to be either bit-identical or exactly one of those 5.
   #
   # Second, verify-oracle.ps1 does far more than that comparison. It exits 1 on a missing or
   # malformed provenance sidecar, a missing dump, a failed Tools/OracleVerify build, and
@@ -752,14 +757,15 @@ jobs:
 
       # An explicit source list, not a glob: external/swisseph also ships obama.c, sweephe4.c
       # and swephgen4.c, and at least one carries its own main(), so a glob build fails at link.
-      # SWISSEPH_HAS_CROSSING=1 matches what scripts/run-oracle-dump.ps1 defines for the 2.10.03
-      # build; the eight crossing functions do not exist in 2.08 and sedump.c guards on it.
+      # These four -D flags match what scripts/run-oracle-dump.ps1 defines for the 2.10.03 build;
+      # the eight crossing functions, swe_houses_ex2/swe_houses_armc_ex2, swe_calc_pctr and
+      # swe_get_current_file_data do not exist in 2.08 and sedump.c guards on all four macros.
       - name: Build the C reference with clang (no contraction, no builtin substitution)
         shell: bash
         run: |
           clang --version | head -1
           E=external/swisseph
-          clang -O2 -ffp-contract=off -fno-builtin -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -I "$E" -o sedump \
+          clang -O2 -ffp-contract=off -fno-builtin -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -DSWISSEPH_HAS_CALC_PCTR=1 -DSWISSEPH_HAS_GET_CURRENT_FILE_DATA=1 -I "$E" -o sedump \
             Tools/CReference/sedump.c \
             "$E/sweph.c" "$E/swephlib.c" "$E/swemmoon.c" "$E/swemplan.c" "$E/swejpl.c" \
             "$E/swedate.c" "$E/swehouse.c" "$E/swecl.c" "$E/swehel.c" -lm
@@ -790,7 +796,7 @@ jobs:
         shell: bash
         run: |
           E=external/swisseph
-          clang -O2 -ffp-contract=off -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -I "$E" -o sedump-nb \
+          clang -O2 -ffp-contract=off -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -DSWISSEPH_HAS_CALC_PCTR=1 -DSWISSEPH_HAS_GET_CURRENT_FILE_DATA=1 -I "$E" -o sedump-nb \
             Tools/CReference/sedump.c \
             "$E/sweph.c" "$E/swephlib.c" "$E/swemmoon.c" "$E/swemplan.c" "$E/swejpl.c" \
             "$E/swedate.c" "$E/swehouse.c" "$E/swecl.c" "$E/swehel.c" -lm
@@ -945,8 +951,9 @@ jobs:
 
       # An explicit source list, not a glob -- same reason as macos-exactness's copy of this
       # step: external/swisseph also ships obama.c, sweephe4.c and swephgen4.c, and at least one
-      # carries its own main(), so a glob build fails at link. SWISSEPH_HAS_CROSSING=1 matches
-      # what scripts/run-oracle-dump.ps1 defines for the 2.10.03 build.
+      # carries its own main(), so a glob build fails at link. These four -D flags match what
+      # scripts/run-oracle-dump.ps1 defines for the 2.10.03 build -- see that job's own comment
+      # above for which four functions each macro guards.
       #
       # No -ffp-contract=off, no -fno-builtin: see the job comment above for what was measured
       # about each on this platform. gcc --version is printed for the same reason clang --version
@@ -957,7 +964,7 @@ jobs:
         run: |
           gcc --version | head -1
           E=external/swisseph
-          gcc -O2 -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -I "$E" -o sedump \
+          gcc -O2 -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -DSWISSEPH_HAS_CALC_PCTR=1 -DSWISSEPH_HAS_GET_CURRENT_FILE_DATA=1 -I "$E" -o sedump \
             Tools/CReference/sedump.c \
             "$E/sweph.c" "$E/swephlib.c" "$E/swemmoon.c" "$E/swemplan.c" "$E/swejpl.c" \
             "$E/swedate.c" "$E/swehouse.c" "$E/swecl.c" "$E/swehel.c" -lm
@@ -1000,7 +1007,7 @@ jobs:
         shell: bash
         run: |
           E=external/swisseph
-          gcc -O2 -ffp-contract=off -fno-builtin -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -I "$E" -o sedump-strict \
+          gcc -O2 -ffp-contract=off -fno-builtin -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -DSWISSEPH_HAS_CALC_PCTR=1 -DSWISSEPH_HAS_GET_CURRENT_FILE_DATA=1 -I "$E" -o sedump-strict \
             Tools/CReference/sedump.c \
             "$E/sweph.c" "$E/swephlib.c" "$E/swemmoon.c" "$E/swemplan.c" "$E/swejpl.c" \
             "$E/swedate.c" "$E/swehouse.c" "$E/swecl.c" "$E/swehel.c" -lm

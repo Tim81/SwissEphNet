@@ -45,6 +45,18 @@ full parity with 2.10.03; it is not, and the next section says by how much.
 
 **25,540 was measured directly on Windows and Linux** (Windows: this record's own oracle numbers, `scripts/run-oracle-dump.ps1` + `scripts/verify-oracle.ps1`, both grids' known-diff lists empty and both dump files SHA-256 identical to Astrodienst's own C: `dump-c-2.10.03.tsv`/`dump-net.tsv` at `4ac1a3c0…c7640`, `dump-c-2.10.03-files.tsv`/`dump-net-files.tsv` at `aef136bd…d72f2d0`; the JPL grid, opt-in and not part of either total above, also ran clean at 2,400 of 2,400 rows, `dump-c-2.10.03-jpl.tsv`/`dump-net-jpl.tsv` at `bc0ca597…d7067724`. Linux: gcc, a full local replay of both grids against the port, bit-identical at the sha256 pair in the table row above). macOS is re-verified by its own CI job (`macos-exactness`) against the identical committed grids and drivers on the next push or pull request, not re-run from this workstation or reproducible outside CI here; its prior run at the smaller row count (20,532) was bit-identical, and this addition (5,008 rows: 4,500 across `HOUSES_EX2`/`HOUSES_ARMC_EX2` in both grids plus 8 `FIXSTAR2_MAG` rows) has not yet been measured on that platform. Unlike the ayanamsa addition that grew the grid from 17,064 to 18,064, this addition is not a re-sweep of code paths this grid already reached: `swe_houses_ex2`/`swe_houses_armc_ex2` are new in 2.10.03 and `swe_fixstar2_mag` had no row anywhere before this addition, so Windows and Linux are the only platforms this specific claim has actually been checked on until macOS CI next runs.
 
+**Superseded by `PCTR`/`GET_CURRENT_FILE_DATA` (29 more rows, all in `grid-files.tsv`).** The
+table and the two paragraphs above are that specific point-in-time record's own numbers (25,540,
+20,532) and are left as measured, not updated here -- rewriting them to the current total would
+misrepresent what was actually checked on Linux and macOS at that time. The grid's current total
+is 25,569<!--doccount:grid-total-combined-->, per "The last two 2.10.03-only entry points" above;
+`scripts/verify-oracle.ps1 -Grid Analytic`/`-Grid Files`/`-Grid Jpl` all exited 0 on Windows this
+session (both grids' known-diff-analytic list stays empty, known-diff-files/known-diff-jpl each
+carry the five/one `SERR` rows described above). Linux and macOS have not been independently
+re-run against this total by this record -- `linux-exactness`/`macos-exactness` do that on the
+next push or pull request, the same way they did for the `HOUSES_EX2`/`HOUSES_ARMC_EX2` addition
+above.
+
 Windows is gated by `oracle-dump`, the `.github/workflows/oracle.yml` job that replays this grid
 end to end on every push and pull request; Linux is gated the same way by `linux-exactness`, and
 macOS by `macos-exactness`. The Linux row was originally a single hand-run of the grid in a WSL2
@@ -55,7 +67,7 @@ request, the same way `oracle-dump` and `macos-exactness` already did for their 
 (`crt-parity`, `c-reference-validate`, `swetest-diff`) check instead, since none of them replay
 this grid.
 
-25,540<!--doccount:grid-total-combined--> is the sum of the two grids, and neither is a single homogeneous function. Recounted by
+25,569<!--doccount:grid-total-combined--> is the sum of the two grids, and neither is a single homogeneous function. Recounted by
 `func` column rather than trusted from an earlier draft of this document:
 `Tools/OracleGrid/grid-analytic.tsv` is 22,289<!--doccount:grid-analytic-total--> rows -- 6,600<!--doccount:grid-analytic-func-houses-armc--> `HOUSES_ARMC`, 3,300<!--doccount:grid-analytic-func-houses--> `HOUSES`, 2,160<!--doccount:grid-analytic-func-calc-->
 `CALC`, 2,160<!--doccount:grid-analytic-func-calc-ut--> `CALC_UT` (all `SEFLG_MOSEPH`, opening no ephemeris file), 600<!--doccount:grid-analytic-crossing-total--> crossing rows
@@ -72,20 +84,23 @@ points added in an earlier record (see "Six astrology-program entry points" belo
 text here described the grid as just `swe_calc`/`swe_calc_ut` plus `swe_houses`/`swe_houses_armc`
 and omitted all 600 crossing rows; before that it also had no direct ayanamsa coverage at all --
 see "Direct vs. indirect ayanamsa coverage" below.
-`Tools/OracleGrid/grid-files.tsv` is 3,251<!--doccount:grid-files-total--> rows -- 900<!--doccount:grid-files-func-calc--> `CALC`, 900<!--doccount:grid-files-func-calc-ut--> `CALC_UT` (`SEFLG_SWIEPH`,
+`Tools/OracleGrid/grid-files.tsv` is 3,280<!--doccount:grid-files-total--> rows -- 900<!--doccount:grid-files-func-calc--> `CALC`, 900<!--doccount:grid-files-func-calc-ut--> `CALC_UT` (`SEFLG_SWIEPH`,
 reading the shipped `.se1` files), 208<!--doccount:grid-files-fixstar-family-total--> across the `swe_fixstar` family (`FIXSTAR`/`FIXSTAR_UT`/
 `FIXSTAR2`/`FIXSTAR2_UT` 48<!--doccount:grid-files-func-fixstar--><!--doccount:grid-files-func-fixstar-ut--><!--doccount:grid-files-func-fixstar2--><!--doccount:grid-files-func-fixstar2-ut--> each, `FIXSTAR_MAG` 8<!--doccount:grid-files-func-fixstar-mag-->, `FIXSTAR2_MAG` 8<!--doccount:grid-files-func-fixstar2-mag-->, reading `sefstars.txt`), 24<!--doccount:grid-files-func-get-planet-name-->
 `GET_PLANET_NAME`, 220<!--doccount:grid-files-crossing-total--> crossing rows (`HELIO_CROSS`/`HELIO_CROSS_UT` 72<!--doccount:grid-files-func-helio-cross--><!--doccount:grid-files-func-helio-cross-ut--> each,
 `SOLCROSS`/`SOLCROSS_UT` 16<!--doccount:grid-files-func-solcross--><!--doccount:grid-files-func-solcross-ut--> each, `MOONCROSS`/`MOONCROSS_UT` 16<!--doccount:grid-files-func-mooncross--><!--doccount:grid-files-func-mooncross-ut--> each,
 `MOONCROSS_NODE`/`MOONCROSS_NODE_UT` 6<!--doccount:grid-files-func-mooncross-node--><!--doccount:grid-files-func-mooncross-node-ut--> each) -- 820 crossing rows omitted from an earlier draft
 across both grids combined -- plus 499 rows across two of the six entry points added in an earlier
-record, plus a further 500 rows across `HOUSES_EX2`/`HOUSES_ARMC_EX2` (below).
+record, plus a further 500 rows across `HOUSES_EX2`/`HOUSES_ARMC_EX2` (below), plus 19<!--doccount:grid-files-func-pctr--> `PCTR`
+and 10<!--doccount:grid-files-func-get-current-file-data--> `GET_CURRENT_FILE_DATA` (see "The last two 2.10.03-only entry points" below).
 `grid-files.tsv` carries no `AYANAMSA`/`AYANAMSA_EX`/`AYANAMSA_EX_UT`/`AYANAMSA_UT` rows of its own:
 none of the four opens an ephemeris file, so all direct ayanamsa coverage lives in
 `grid-analytic.tsv` -- see "The sentinel ephemeris path..." below for why that premise needed its
 own fix rather than a new file-backed grid.
-Both `Tests/oracle/known-diff.tsv` and `Tests/oracle/known-diff-files.tsv`
-are empty (0<!--doccount:oracle-known-diff-analytic--> and 0<!--doccount:oracle-known-diff-files--> rows respectively): there is no recorded exception on either grid, on any platform.
+`Tests/oracle/known-diff.tsv` is empty (0<!--doccount:oracle-known-diff-analytic--> rows): no
+recorded exception on the analytic grid, on any platform. `Tests/oracle/known-diff-files.tsv`
+carries 5<!--doccount:oracle-known-diff-files--> rows, all five `GET_CURRENT_FILE_DATA` and all
+five `SERR`-category -- see "The last two 2.10.03-only entry points" below for what they record.
 
 **Two 2.10.03-only entry points, `HOUSES_EX2`/`HOUSES_ARMC_EX2`.** `swe_houses_ex2` and
 `swe_houses_armc_ex2` are new in 2.10.03 (absent from `external/pyswisseph-2.08/swephexp.h`
@@ -109,6 +124,63 @@ such guard (it is declared and implemented in `external/pyswisseph-2.08/swephexp
 drivers previously called only `swe_fixstar_mag`, and `FIXSTAR2_MAG`'s 8<!--doccount:grid-files-func-fixstar2-mag-->
 rows close that gap. All new rows compare bit-identical against Astrodienst's own C, zero
 `known-diff.tsv` entries.
+
+**The last two 2.10.03-only entry points, `PCTR`/`GET_CURRENT_FILE_DATA`.** `swe_calc_pctr`
+(planetocentric coordinates) and `swe_get_current_file_data` (ephemeris-file introspection) are the
+remaining two of the twelve entry points new in 2.10.03 -- absent from
+`external/pyswisseph-2.08/swephexp.h` entirely (`grep -oE '\bswe_[A-Za-z0-9_]+\s*\('` finds
+neither name among that header's 96 distinct `swe_*` declarations, both among the 108 in
+`external/swisseph/swephexp.h`), guarded behind their own `SWISSEPH_HAS_CALC_PCTR`/
+`SWISSEPH_HAS_GET_CURRENT_FILE_DATA` in `sedump.c` -- one macro per function, not one shared macro,
+because the two are unrelated features (unlike `HOUSES_EX2`/`HOUSES_ARMC_EX2` above, two entry
+points onto the same speed-bearing house feature).
+
+Both are `grid-files.tsv`-only. `swe_calc_pctr` forces `SEFLG_BARYCTR` unconditionally
+(`sweph.c:8061`), and `SEFLG_BARYCTR|SEFLG_MOSEPH` is rejected outright before any geometry runs
+(`sweph.c:634-638`, "barycentric Moshier positions are not supported"): every `PCTR` row under
+`grid-analytic.tsv`'s forced `SEFLG_MOSEPH` would reach only that reject, never the function's own
+geometry -- the identical `SE_CHIRON` category error `Tools/OracleGrid/gen-grid-analytic.ps1`'s own
+`$HelioCrossValidIpl` comment already documents for a different func, caught here before it landed
+rather than after. `swe_get_current_file_data` reads `swed.fidat`, which `grid-analytic.tsv`'s rows
+never populate at all, so it is files-grid-only for the same underlying reason.
+
+`PCTR` is 19<!--doccount:grid-files-func-pctr--> rows: three body pairs (Mars-from-Jupiter,
+Sun-from-Earth, Venus-from-Earth) crossed with two dates and three `iflag` combinations (`PLAIN`,
+`SPEED`, `SIDEREAL`), plus one row exercising the "ipl and iplctr must not be identical" reject
+(`sweph.c:8050-8054`). `GET_CURRENT_FILE_DATA` is 10<!--doccount:grid-files-func-get-current-file-data-->
+rows: the `ifno` boundary reject (`sweph.c:8299`, -1 and 5) and the empty-`fnam` reject
+(`sweph.c:8301`, `ifno` 0/2/3/4 with nothing populated yet) cover the function's every branch with
+no other input at all; `ifno` 1 (the Moon file) reports real data for free, because this grid's own
+`swe_set_ephe_path` call already opens it (`sweph.c:1343-1350`) before any row-specific func runs;
+`ifno` 0/2/4 reach real data too, through an optional preceding `swe_calc`/`swe_fixstar2` this
+func's own row reuses `ipl`/`tjd`/`iflag`/`star` to trigger. `ifno` 3 (an individually-numbered
+asteroid or planetary-moon file) has no real-data row anywhere in this grid: this repository's
+ephemeris checkout ships no such file.
+
+Five `GET_CURRENT_FILE_DATA` rows differ from the C reference, all recorded in
+`Tests/oracle/known-diff-files.tsv` as `SERR`: the returned file path itself. `retc` and every hex
+value column (`tfstart`/`tfend`/`denum`) match exactly on all five, so the file actually opened is
+the same file on both sides -- only the separator character before the final path component
+differs (`...\ephe\semo_18.se1` in the C reference, `...\ephe/semo_18.se1` in the port). This is
+not a new defect: it is the port's own existing, deliberate `DIR_GLUE` choice (`'/'` on every
+platform this port targets -- `SwissEphNet/SwissEph.swephexp.h.cs`'s `SE_EPHE_PATH` comment already
+calls the identical mismatch, for a different string, "a cosmetic mismatch in the exact bytes of an
+error message, not a functional one") becoming visible for the first time through a func that
+returns a file path as its own value rather than as an incidental piece of a longer message.
+`grid-jpl.tsv` picks up the identical `SERR` entry once (`Tests/oracle/known-diff-jpl.tsv`), for a
+row with a different mechanism worth recording precisely rather than assumed: `ifno` 0 reports the
+JPL DE file itself (not the Moon `.se1` file), because `swi_open_jpl_file` opens the DE file via
+`swi_fopen(SEI_FILE_PLANET, ...)` (`swejpl.c:200`) -- `SEI_FILE_PLANET` is `ifno` 0 -- so the DE
+file's path lands in `swed.fidat[0].fnam`. `swed.jpldenum`, the field that actually carries the DE
+number, is written only by `swe_set_jpl_file` and has nothing to do with `swed.fidat`, so
+`GET_CURRENT_FILE_DATA` cannot report the DE number itself, only the DE file's path, at `ifno` 0.
+`ifno` 1 (the Moon slot) reports NULL on `grid-jpl.tsv`, not a failed-lookup path string: the DE
+file's own directory carries no `semo_*.se1`, so `AttachEpheDir`'s preceding `swe_set_ephe_path`
+call does attempt and fail to open one, but `AttachJplFile`'s `swe_set_jpl_file` call runs
+immediately afterward on the same row and its own first action, `swi_close_keep_topo_etc`
+(`sweph.c:1481`), resets every `swed.fidat` slot (`sweph.c:1202-1206`) before `swi_open_jpl_file`
+ever runs -- see `Tools/OracleGrid/gen-grid-jpl.ps1`'s own "WHAT THIS GRID MEASURES ABOUT
+swe_get_current_file_data" for the full trace.
 
 **The sentinel ephemeris path and the AYANAMSA_EX/AYANAMSA_EX_UT environment leak.**
 `grid-analytic.tsv`'s own header claims every row "depends on no ephemeris data file and is
@@ -213,7 +285,7 @@ line -- the C side emitted the sentinel for 4,500 analytic rows while the port c
 values, and the job's `cmp` failed. Nothing catches it earlier, because the sentinel branch
 compiles cleanly; a macro added here has to be added to all six. At last measurement from this
 workstation (14,820 and 2,244 rows -- the grid's size at that time, two additions before the
-current 25,540<!--doccount:grid-total-combined--> total this record's "Of the 25,540 oracle rows"
+current 25,569<!--doccount:grid-total-combined--> total this record's "Of the 25,569 oracle rows"
 paragraph below cites; not re-quoted as a "current" figure here because it was not current even
 when this sentence was first written, only "at last measurement"), both grids produced exactly
 that many rows on Linux, matching Windows row for row, and every row matched Astrodienst's own C
@@ -239,7 +311,7 @@ way the Windows and Linux jobs do. It builds the C reference twice: once with `-
 which is the gate, and once, kept alongside as a diagnostic rather than gated, with clang's math
 builtins left on. With `-fno-builtin`, both grids are bit-identical against the port. At last
 measurement from this workstation -- two grid additions before the current
-25,540<!--doccount:grid-total-combined--> total, so the figures below are what that specific,
+25,569<!--doccount:grid-total-combined--> total, so the figures below are what that specific,
 older run found, not a current claim; `macos-exactness` re-verifies the current row count on every
 push and pull request -- with the diagnostic build's builtins left on, 62 of 14,819 analytic rows
 and 10 of 2,243 file-backed rows differed from the port -- clang's default behavior substitutes
@@ -254,13 +326,16 @@ arithmetic drops one real row from the printed total. The gate itself compares t
 for whole-file equality, not this printed count, so the off-by-one affects only the diagnostic
 step's own summary line, not what is actually gated.
 
-Of the 25,540<!--doccount:grid-total-combined--> oracle rows, 24,532<!--doccount:grid-total-default-nutation--> exercise
+Of the 25,569<!--doccount:grid-total-combined--> oracle rows, 24,561<!--doccount:grid-total-default-nutation--> exercise
 the default nutation path rather than opting out via `SEFLG_NONUT`: 21,281<!--doccount:grid-analytic-default-nutation-->
 of the analytic grid's 22,289<!--doccount:grid-analytic-total--> rows (1,008<!--doccount:grid-analytic-nonut-optout-->
-opt out) and all 3,251<!--doccount:grid-files-default-nutation--> files-grid rows
-(0<!--doccount:grid-files-nonut-optout--> opt out). Recomputed directly from both grids' `iflag`
-columns (bit 64, `swephexp.h:193`), not carried forward from an earlier row count. All 24,532 are
-among the bit-identical rows above -- see "What this record does not cover" for what that does and
+opt out) and all 3,280<!--doccount:grid-files-default-nutation--> files-grid rows
+(0<!--doccount:grid-files-nonut-optout--> opt out) -- the 29 `PCTR`/`GET_CURRENT_FILE_DATA` rows
+this record adds carry no `SEFLG_NONUT` row of their own. Recomputed directly from both grids'
+`iflag` columns (bit 64, `swephexp.h:193`), not carried forward from an earlier row count. All
+24,561 are among the bit-identical (or, for the five `GET_CURRENT_FILE_DATA` rows recorded in
+`Tests/oracle/known-diff-files.tsv`, `SERR`-only-differing) rows above -- see "What this record
+does not cover" for what that does and
 does not establish about the nutation coefficient tables themselves.
 
 ## 2. Characterization baseline
@@ -467,7 +542,7 @@ independently diffed, value by value, against `external/swisseph/swenut2000a.h`.
 lengths match exactly on both sides (`NLS` 678, `NLS_2000B` 77, `NPL` 687), which rules out gross
 truncation, but that is a length check, not a value check, and no commit or script in this
 repository's history performs the latter. The indirect evidence is real but is not the same
-claim: 24,532<!--doccount:grid-total-default-nutation--> of the 25,540<!--doccount:grid-total-combined-->
+claim: 24,561<!--doccount:grid-total-default-nutation--> of the 25,569<!--doccount:grid-total-combined-->
 bit-exact oracle rows exercise the default (non-`SEFLG_NONUT`)
 nutation path and match Astrodienst's own C bit for bit, which a wrong coefficient of any
 consequence would be very unlikely to survive. That is strong corroboration through the oracle,

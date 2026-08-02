@@ -1641,6 +1641,30 @@ arithmetic, siblings of `swe_utc_time_zone` (already covered in `datetime`); and
 zero-value one, since the "no file open" response itself is behavior worth freezing. Recorded as
 a work queue, not fixed here: closing this gap is new matrix coverage, not a tooling defect fix.
 
+**107 here vs. 108 elsewhere in this repository is not a typo; the two count different
+populations, measured and reconciled below.** `Tools/OracleGrid/gen-grid-files.ps1`'s own header
+comment (and `docs/compliance-2.10.03.md`'s "The last two 2.10.03-only entry points" section) cite
+108 as the count of distinct `swe_*` names declared in the current, 2.10.03
+`external/swisseph/swephexp.h` (`grep -oE '\bswe_[A-Za-z0-9_]+\s*\(' external/swisseph/swephexp.h
+| sed -E 's/\s*\($//' | sort -u | wc -l`; the 2.08 header, `external/pyswisseph-2.08/swephexp.h`,
+gives 96 by the identical measure). The 107 immediately above is a different count entirely: the
+port's own public `swe_*` API surface (every `public` method named `swe_*` across
+`SwissEphNet/SwissEph*.cs`), which is what `Tools/BaselineMatrix`'s coverage question is actually
+asked against -- a matrix gap has to be a method that exists to have no coverage.
+
+The two are close but not the same population, and the 1-off gap is fully accounted for by three
+names, not by rounding or an approximation: comparing the two name lists directly
+(`comm -23`/`comm -13` between the header's 108 and the port's 107, both sorted) finds `swe_rise_transit`
+and `swe_set_timeout` in the 2.10.03 header with no same-named public method anywhere in the port
+at all (not merely missing from `Tools/BaselineMatrix` -- absent from the port's public surface
+entirely, a porting gap wider than a matrix-coverage one), and `swe_dotnet_version` in the port's
+public surface with no counterpart in Astrodienst's header at all (a port-only addition, this
+fork's own informational sibling to `swe_version`). 108 header names minus those 2, plus that 1,
+is 107 -- the port's own count, exactly. Whether `swe_rise_transit`/`swe_set_timeout` themselves
+belong on some future work queue is a separate question this section does not answer; the point
+here is only that "107" and "108" are two different, correctly-computed numbers, not one stale and
+one current.
+
 ## SweJPL rejected a DE file whose constant-name block is not plain ASCII; fixed
 
 Found by the third bit-exact oracle grid (`Tools/OracleGrid/grid-jpl.tsv`), the first

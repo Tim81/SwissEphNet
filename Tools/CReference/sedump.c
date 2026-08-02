@@ -35,7 +35,18 @@
  *                                          swe_nod_aps_ut's planetary positions), and
  *                                          swe_houses_armc_ex2 (added for dispatch/schema parity
  *                                          with grid-analytic.tsv even though it touches no file
- *                                          itself -- pure geometry, like swe_houses_armc). Opens
+ *                                          itself -- pure geometry, like swe_houses_armc), plus
+ *                                          swe_calc_pctr (PCTR) and swe_get_current_file_data
+ *                                          (GET_CURRENT_FILE_DATA), the remaining two of the
+ *                                          twelve entry points new in 2.10.03. Both are
+ *                                          files-grid-only: swe_calc_pctr forces SEFLG_BARYCTR
+ *                                          unconditionally (sweph.c:8061) and
+ *                                          SEFLG_BARYCTR|SEFLG_MOSEPH is rejected outright
+ *                                          (sweph.c:634-638), so grid-analytic.tsv's forced-
+ *                                          SEFLG_MOSEPH rows could only ever reach that reject,
+ *                                          never real geometry -- see process_pctr's own comment;
+ *                                          swe_get_current_file_data reads swed.fidat, which
+ *                                          grid-analytic.tsv's rows never populate at all. Opens
  *                                          the shipped .se1/sefstars.txt files.
  *                                          See gen-grid-files.ps1's header.
  *   Tools/OracleGrid/grid-jpl.tsv       -- swe_calc/swe_calc_ut (SEFLG_JPLEPH), including the
@@ -85,6 +96,23 @@
  * NOT_IN_208_RETC and an explanatory serr, for the same row-count-parity reason
  * SWISSEPH_HAS_CROSSING's own comment gives. swe_fixstar2_mag needs no such guard: it is declared
  * (and implemented) in external/pyswisseph-2.08/swephexp.h:708.
+ *
+ * SWISSEPH_HAS_CALC_PCTR / SWISSEPH_HAS_GET_CURRENT_FILE_DATA: NEITHER EXISTS IN 2.08
+ *
+ * A third pair, same shape again, one macro per function this time rather than one macro for
+ * both: swe_calc_pctr and swe_get_current_file_data are two unrelated features (planetocentric
+ * coordinates; ephemeris-file introspection), unlike swe_houses_ex2/swe_houses_armc_ex2 above,
+ * which are two entry points onto the same speed-bearing house feature. Both are absent from
+ * external/pyswisseph-2.08/swephexp.h entirely (verified: `grep -oE '\bswe_[A-Za-z0-9_]+\s*\('
+ * external/pyswisseph-2.08/swephexp.h` finds neither name anywhere in that file's 96 distinct
+ * swe_* declarations -- do not assume otherwise from how small the diff to add them looks; the
+ * same check against external/swisseph/swephexp.h, the 2.10.03 header, finds both among its 108).
+ * scripts/run-oracle-dump.ps1 defines SWISSEPH_HAS_CALC_PCTR=1 and
+ * SWISSEPH_HAS_GET_CURRENT_FILE_DATA=1 alongside the other two when it compiles this file against
+ * 2.10.03; Tools/CReference/build-c.ps1's 2.08 build defines neither, so the #else branches
+ * (process_pctr/process_get_current_file_data's own NOT_IN_208 paths) apply there, at the same
+ * column count the real branch uses, for the same row-count-parity reason SWISSEPH_HAS_CROSSING's
+ * own comment gives.
  *
  * THE SENTINEL EPHEMERIS PATH: grid-analytic.tsv MUST NOT DEPEND ON THE ENVIRONMENT OR CWD
  *
@@ -249,6 +277,8 @@
  *   AZALT                                    xaz[0..2]                (3 doubles  -> 6 value columns)
  *   HOUSE_NAME                               (none)                   (0 value columns)
  *   NOD_APS_UT             xnasc[0..5], xndsc[0..5], xperi[0..5], xaphe[0..5] (24 doubles -> 48 value columns)
+ *   PCTR                                      xxret[0..5]              (6 doubles  -> 12 value columns)
+ *   GET_CURRENT_FILE_DATA                    tfstart, tfend, denum    (3 doubles  -> 6 value columns)
  *
  * GET_PLANET_NAME has no value column at all: swe_get_planet_name returns a string, not a
  * double, so there is nothing to hex-encode. Its returned name is written into the err column
@@ -303,6 +333,15 @@
  * for the saved_sundec static this file's own "FRESH LIBRARY STATE PER ROW" section already
  * documents.
  *
+ * PCTR (swe_calc_pctr, sweph.c:8042) has a real int32 retc and a real serr, same shape as CALC --
+ * see process_pctr for why xxret is zero-initialized before the call. GET_CURRENT_FILE_DATA
+ * (swe_get_current_file_data, sweph.c:8297) returns const char *, NULL on either of two reject
+ * branches (ifno out of [0,4]; swed.fidat[ifno].fnam empty) -- same "the string goes in the err
+ * column" convention as GET_PLANET_NAME/HOUSE_NAME, but with a synthesized retc (OK when non-NULL,
+ * ERR when NULL) rather than a fixed one, since NULL vs non-NULL is this func's only outcome to
+ * report and both drivers already compute a synthetic retc for the crossing functions the same
+ * way -- see process_get_current_file_data.
+ *
  * THE CROSSING FUNCTIONS' retc COLUMN: ONE REAL, SIX SYNTHETIC
  *
  * swe_helio_cross(_ut) is the only one of the eight with a real int32 return code (OK/ERR); its
@@ -344,7 +383,7 @@
 
 #define MAX_LINE 4096
 #define ANALYTIC_COLUMNS 22
-#define FILES_COLUMNS 18
+#define FILES_COLUMNS 20
 #define CUSP_COUNT 37   /* cusp[0..36] */
 #define ASCMC_COUNT 10  /* ascmc[0..9] */
 #define STAR_BUF_LEN AS_MAXCH
@@ -395,13 +434,21 @@
  * swe_azalt's own parameters (xin[2] is never read by swe_azalt -- see process_azalt -- so there
  * is no xin2 column); hsys (files grid only) carries HOUSES_EX's house-system letter, since the
  * files grid has no hsys column of its own the way the analytic grid's HOUSES/HOUSES_ARMC rows
- * already share at fields[5]. */
+ * already share at fields[5]. armc/eps (files grid only) are a third additive tail, for
+ * HOUSES_ARMC_EX2 (see gen-grid-files.ps1's own header). iplctr/ifno (files grid only) are a
+ * fourth: iplctr carries swe_calc_pctr's second body (PCTR reuses ipl/tjd/iflag for its first
+ * body and iflag the same way CALC does -- see process_pctr); ifno carries
+ * swe_get_current_file_data's file-slot index (GET_CURRENT_FILE_DATA also reuses ipl/tjd/iflag,
+ * to trigger an optional preceding swe_calc, and star, to trigger an optional preceding
+ * swe_fixstar2 -- see process_get_current_file_data). Neither PCTR nor GET_CURRENT_FILE_DATA
+ * appears in grid-analytic.tsv (see this file's own top-of-file comment for why), so
+ * EXPECTED_HEADER_ANALYTIC carries neither column. */
 static const char *EXPECTED_HEADER_ANALYTIC =
     "case_id\tfunc\tipl\ttjd\tiflag\thsys\tgeolon\tgeolat\theight\tarmc\teps\tsid_mode\tx2cross\tdir\tt0\tayan_t0"
     "\tmethod\tcalc_flag\tatpress\tattemp\txin0\txin1";
 static const char *EXPECTED_HEADER_FILES =
     "case_id\tfunc\tipl\ttjd\tiflag\tstar\tgeolon\tgeolat\theight\tsid_mode\tx2cross\tdir\tt0\tayan_t0"
-    "\tmethod\thsys\tarmc\teps";
+    "\tmethod\thsys\tarmc\teps\tiplctr\tifno";
 
 enum grid_mode { MODE_ANALYTIC, MODE_FILES };
 
@@ -1196,6 +1243,142 @@ static void process_nod_aps_ut(FILE *out, const char *case_id, char *fields[], i
     fputc('\n', out);
 }
 
+/*
+ * PCTR: swe_calc_pctr (sweph.c:8042), planetocentric coordinates -- new in 2.10.03, guarded
+ * behind SWISSEPH_HAS_CALC_PCTR (see this file's own top-of-file comment). grid-files.tsv only:
+ * iflag2 forces SEFLG_BARYCTR unconditionally (sweph.c:8061) regardless of what the caller's own
+ * iflag requests, and SEFLG_BARYCTR|SEFLG_MOSEPH is rejected outright, before any geometry runs
+ * (sweph.c:634-638, "barycentric Moshier positions are not supported"). grid-analytic.tsv OR-s
+ * SEFLG_MOSEPH into every row it carries and never configures an ephemeris path, so every PCTR row
+ * there would hit that reject and nothing else -- the identical SE_CHIRON category error
+ * gen-grid-analytic.ps1's own $HelioCrossValidIpl comment already documents and gen-grid-files.ps1
+ * moved SE_CHIRON out of grid-analytic.tsv to avoid a second time. ipl/tjd/iflag are the same
+ * columns CALC already reads (fields[2]/fields[3]/fields[4]); iplctr_idx is this addition's own
+ * new, additive-tail column. xxret is zero-initialized before the call: the two inner swe_calc
+ * calls (sweph.c:8063,8066) both `return ERR` without touching xxret on failure, the same
+ * zero-init rule process_helio_cross already applies to jd_cross. sid_mode_idx applies
+ * swe_set_sid_mode the same way process_calc does, since a PCTR row can carry SEFLG_SIDEREAL in
+ * its iflag exactly as a CALC row can.
+ */
+static void process_pctr(FILE *out, const char *case_id, char *fields[], int sid_mode_idx, int iplctr_idx)
+{
+#ifdef SWISSEPH_HAS_CALC_PCTR
+    int ipl = (int)parse_int(fields[2], case_id, "ipl");
+    int iplctr = (int)parse_int(fields[iplctr_idx], case_id, "iplctr");
+    double tjd = parse_double(fields[3], case_id, "tjd");
+    int32 iflag = (int32)parse_int(fields[4], case_id, "iflag");
+    double xxret[6] = { 0 };
+    char serr[AS_MAXCH];
+    int32 retc;
+    int i;
+
+    serr[0] = '\0';
+    apply_sid_mode(fields, case_id, sid_mode_idx);
+
+    retc = swe_calc_pctr(tjd, ipl, iplctr, iflag, xxret, serr);
+
+    fprintf(out, "%s\t%d\t", case_id, retc);
+    emit_escaped(out, serr);
+    for (i = 0; i < 6; i++) emit_value(out, xxret[i]);
+    fputc('\n', out);
+#else
+    /* swe_calc_pctr does not exist in 2.08 -- see this file's own top-of-file comment on
+     * SWISSEPH_HAS_CALC_PCTR. */
+    char not_in_208_msg[AS_MAXCH];
+    int i;
+    sprintf(not_in_208_msg, "swe_calc_pctr does not exist in Swiss Ephemeris 2.08");
+    (void)fields; (void)sid_mode_idx; (void)iplctr_idx;
+    fprintf(out, "%s\t%d\t", case_id, NOT_IN_208_RETC);
+    emit_escaped(out, not_in_208_msg);
+    for (i = 0; i < 6; i++) emit_value(out, 0.0);
+    fputc('\n', out);
+#endif
+}
+
+/*
+ * GET_CURRENT_FILE_DATA: swe_get_current_file_data (sweph.c:8297-8306) -- new in 2.10.03, guarded
+ * behind SWISSEPH_HAS_GET_CURRENT_FILE_DATA (see this file's own top-of-file comment). Returns
+ * const char *, never empty on success -- same "the string goes in the err column, retc is
+ * synthesized" convention process_name/process_house_name already use for a C function with
+ * nothing else to report there. Synthesized retc is OK when the returned pointer is non-NULL, ERR
+ * when it is NULL (sweph.c:8299,8301's two reject branches: ifno outside [0,4], or
+ * swed.fidat[ifno].fnam empty). tfstart/tfend/denum are only WRITTEN on the non-NULL path
+ * (sweph.c:8302-8304); zero-initialized here so an ERR row's three value columns are a
+ * deterministic 0.0 on both sides rather than stack garbage, the same zero-init rule
+ * process_helio_cross already applies to jd_cross. denum is widened to double for emit_value --
+ * exact for any int32.
+ *
+ * ifno alone tests the boundary/no-data branches. Whether a slot is already POPULATED before this
+ * row runs is a property of what ran earlier in THIS row, not of ifno by itself: main()'s own
+ * swe_set_ephe_path() call before every grid-files.tsv row (sweph.c:1315-1350) already opens the
+ * lunar ephemeris to pin tidal acceleration, so ifno 1 (SEI_FILE_MOON, sweph.h:174) reports real
+ * data with no other input on this row at all. ipl_idx/tjd_idx/iflag_idx (when both ipl and tjd
+ * are non-empty) trigger a preceding swe_calc first -- the same three columns CALC already reads
+ * -- so this row can also observe ifno 0 (SEI_FILE_PLANET) or ifno 2 (SEI_FILE_MAIN_AST) with real
+ * data; star_idx (when both star and tjd are non-empty, and ipl is empty) triggers a preceding
+ * swe_fixstar2 instead, for ifno 4 (SEI_FILE_FIXSTAR) -- both preceding calls' own retc/serr/xx
+ * are discarded here; only what they leave in swed.fidat matters to this row. ifno 3
+ * (SEI_FILE_ANY_AST -- an individually-numbered asteroid or planetary-moon file) is not reachable
+ * with real data by any row in this grid: this repo's ephemeris checkout ships no such file
+ * (external/swisseph/ephe has sepl/semo/seas_{12,18}.se1 and sefstars.txt only), so ifno 3 rows
+ * here only ever exercise the empty-fnam reject branch, the same branch ifno 0/2/4 rows exercise
+ * before any preceding call populates them.
+ */
+static void process_get_current_file_data(FILE *out, const char *case_id, char *fields[], int ifno_idx, int ipl_idx, int tjd_idx, int iflag_idx, int star_idx)
+{
+#ifdef SWISSEPH_HAS_GET_CURRENT_FILE_DATA
+    int ifno = (int)parse_int(fields[ifno_idx], case_id, "ifno");
+    double tfstart = 0.0, tfend = 0.0;
+    int denum = 0;
+    const char *fnam;
+    int retc;
+
+    if (has_value(fields[ipl_idx]) && has_value(fields[tjd_idx])) {
+        int pre_ipl = (int)parse_int(fields[ipl_idx], case_id, "ipl");
+        double pre_tjd = parse_double(fields[tjd_idx], case_id, "tjd");
+        int32 pre_iflag = has_value(fields[iflag_idx]) ? (int32)parse_int(fields[iflag_idx], case_id, "iflag") : 0;
+        double pre_xx[6];
+        char pre_serr[AS_MAXCH];
+        pre_serr[0] = '\0';
+        /* discarded -- only the file-open side effect on swed.fidat matters to this row */
+        (void)swe_calc(pre_tjd, pre_ipl, pre_iflag, pre_xx, pre_serr);
+    } else if (has_value(fields[star_idx]) && has_value(fields[tjd_idx])) {
+        char pre_star[STAR_BUF_LEN];
+        double pre_tjd = parse_double(fields[tjd_idx], case_id, "tjd");
+        int32 pre_iflag = has_value(fields[iflag_idx]) ? (int32)parse_int(fields[iflag_idx], case_id, "iflag") : 0;
+        double pre_xx[6];
+        char pre_serr[AS_MAXCH];
+        strncpy(pre_star, fields[star_idx], sizeof pre_star - 1);
+        pre_star[sizeof pre_star - 1] = '\0';
+        pre_serr[0] = '\0';
+        /* discarded -- see above */
+        (void)swe_fixstar2(pre_star, pre_tjd, pre_iflag, pre_xx, pre_serr);
+    }
+
+    fnam = swe_get_current_file_data(ifno, &tfstart, &tfend, &denum);
+    retc = (fnam != NULL) ? OK : ERR;
+
+    fprintf(out, "%s\t%d\t", case_id, retc);
+    emit_escaped(out, fnam != NULL ? fnam : "");
+    emit_value(out, tfstart);
+    emit_value(out, tfend);
+    emit_value(out, (double)denum);
+    fputc('\n', out);
+#else
+    /* swe_get_current_file_data does not exist in 2.08 -- see this file's own top-of-file comment
+     * on SWISSEPH_HAS_GET_CURRENT_FILE_DATA. */
+    char not_in_208_msg[AS_MAXCH];
+    sprintf(not_in_208_msg, "swe_get_current_file_data does not exist in Swiss Ephemeris 2.08");
+    (void)fields; (void)ifno_idx; (void)ipl_idx; (void)tjd_idx; (void)iflag_idx; (void)star_idx;
+    fprintf(out, "%s\t%d\t", case_id, NOT_IN_208_RETC);
+    emit_escaped(out, not_in_208_msg);
+    emit_value(out, 0.0);
+    emit_value(out, 0.0);
+    emit_value(out, 0.0);
+    fputc('\n', out);
+#endif
+}
+
 int main(int argc, char **argv)
 {
     FILE *in, *out;
@@ -1358,6 +1541,10 @@ int main(int argc, char **argv)
                 process_houses_armc_ex2(out, case_id, func, fields, 9, 15, 16, 17);
             } else if (strcmp(func, "NOD_APS_UT") == 0) {
                 process_nod_aps_ut(out, case_id, fields, 9, 14);
+            } else if (strcmp(func, "PCTR") == 0) {
+                process_pctr(out, case_id, fields, 9, 18);
+            } else if (strcmp(func, "GET_CURRENT_FILE_DATA") == 0) {
+                process_get_current_file_data(out, case_id, fields, 19, 2, 3, 4, 5);
             } else {
                 die("unknown func '%s' at case %s", func, case_id);
             }

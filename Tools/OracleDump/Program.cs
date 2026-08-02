@@ -23,9 +23,21 @@
 //                                          (the two of grid-analytic.tsv's new funcs where a real
 //                                          .se1 file changes what gets exercised), and
 //                                          swe_houses_armc_ex2 (dispatch/schema parity with
-//                                          grid-analytic.tsv -- touches no file itself). Opens the
-//                                          shipped .se1/sefstars.txt files. See gen-grid-files.ps1's
-//                                          header.
+//                                          grid-analytic.tsv -- touches no file itself), plus
+//                                          swe_calc_pctr (PCTR) and swe_get_current_file_data
+//                                          (GET_CURRENT_FILE_DATA), the remaining two of the
+//                                          twelve entry points new in 2.10.03. Both are
+//                                          files-grid-only: swe_calc_pctr forces SEFLG_BARYCTR
+//                                          unconditionally (CPort/Sweph.cs:9566, sweph.c:8061) and
+//                                          SEFLG_BARYCTR|SEFLG_MOSEPH is rejected outright before
+//                                          any geometry runs (sweph.c:634-638), so
+//                                          grid-analytic.tsv's forced-SEFLG_MOSEPH rows could only
+//                                          ever reach that reject -- the same SE_CHIRON category
+//                                          error gen-grid-analytic.ps1's own $HelioCrossValidIpl
+//                                          comment already documents; swe_get_current_file_data
+//                                          reads swed.fidat, which grid-analytic.tsv's rows never
+//                                          populate at all. Opens the shipped .se1/sefstars.txt
+//                                          files. See gen-grid-files.ps1's header.
 //   Tools/OracleGrid/grid-jpl.tsv       -- swe_calc/swe_calc_ut (SEFLG_JPLEPH), including the
 //                                          SEFLG_JPLHOR/SEFLG_JPLHOR_APPROX combinations no other
 //                                          grid can reach. Opens a JPL DE file this repo does not
@@ -97,7 +109,7 @@ namespace OracleDump;
 internal static class Program
 {
     private const int AnalyticColumns = 22;
-    private const int FilesColumns = 18;
+    private const int FilesColumns = 20;
     private const int CuspCount = 37; // cusp[0..36]
     private const int AscmcCount = 10; // ascmc[0..9]
 
@@ -130,9 +142,17 @@ internal static class Program
         "case_id", "func", "ipl", "tjd", "iflag", "hsys", "geolon", "geolat", "height", "armc", "eps", "sid_mode", "x2cross", "dir", "t0", "ayan_t0",
         "method", "calc_flag", "atpress", "attemp", "xin0", "xin1");
 
+    // iplctr/ifno are a fourth additive tail, after method/hsys/armc/eps -- see this file's own
+    // header comment. iplctr carries swe_calc_pctr's second body (PCTR reuses ipl/tjd/iflag for
+    // its first body and iflag, the same columns CALC already reads); ifno carries
+    // swe_get_current_file_data's file-slot index (GET_CURRENT_FILE_DATA also reuses ipl/tjd/
+    // iflag, to trigger an optional preceding swe_calc, and star, to trigger an optional
+    // preceding swe_fixstar2 -- see ProcessGetCurrentFileData). Neither PCTR nor
+    // GET_CURRENT_FILE_DATA appears in grid-analytic.tsv (see this file's own header comment for
+    // why), so ExpectedHeaderAnalytic carries neither column.
     private static readonly string ExpectedHeaderFiles = string.Join('\t',
         "case_id", "func", "ipl", "tjd", "iflag", "star", "geolon", "geolat", "height", "sid_mode", "x2cross", "dir", "t0", "ayan_t0",
-        "method", "hsys", "armc", "eps");
+        "method", "hsys", "armc", "eps", "iplctr", "ifno");
 
     private enum GridMode { Analytic, Files }
 
@@ -362,6 +382,12 @@ internal static class Program
                     break;
                 case "NOD_APS_UT":
                     ProcessNodApsUt(swe, caseId, fields, sidModeIndex: 9, methodIndex: 14, writer);
+                    break;
+                case "PCTR":
+                    ProcessPctr(swe, caseId, fields, sidModeIndex: 9, iplctrIndex: 18, writer);
+                    break;
+                case "GET_CURRENT_FILE_DATA":
+                    ProcessGetCurrentFileData(swe, caseId, fields, ifnoIndex: 19, writer);
                     break;
                 default:
                     throw new InvalidDataException($"unknown func '{func}' at case {caseId}");
@@ -872,6 +898,99 @@ internal static class Program
         {
             EmitValue(writer, xaphe[i]);
         }
+        writer.Write('\n');
+    }
+
+    // PCTR: swe_calc_pctr, planetocentric coordinates -- new in 2.10.03. grid-files.tsv only --
+    // see this file's own header comment for why grid-analytic.tsv's forced SEFLG_MOSEPH rows
+    // cannot reach anything past swe_calc_pctr's own barycentric-Moshier reject. ipl/tjd/iflag are
+    // the same columns ProcessCalc already reads (fields[2]/fields[3]/fields[4]); iplctrIndex is
+    // this addition's own new, additive-tail column. xx is zero-initialized by `new double[6]`
+    // (.NET arrays always are) before the call: the two inner swe_calc calls
+    // (CPort/Sweph.cs:9568,9571, sweph.c:8063,8066) both return ERR without touching xxret on
+    // failure, the same zero-init rule ProcessHelioCross already applies to jdCross.
+    private static void ProcessPctr(SwissEph swe, string caseId, string[] fields, int sidModeIndex, int iplctrIndex, TextWriter writer)
+    {
+        var ipl = ParseInt(fields[2], caseId, "ipl");
+        var iplctr = ParseInt(fields[iplctrIndex], caseId, "iplctr");
+        var tjd = ParseDouble(fields[3], caseId, "tjd");
+        var iflag = ParseInt(fields[4], caseId, "iflag");
+
+        ApplySidMode(swe, fields, caseId, sidModeIndex);
+
+        var xx = new double[6];
+        string? serr = null;
+        var retc = swe.swe_calc_pctr(tjd, ipl, iplctr, iflag, xx, ref serr);
+
+        writer.Write(caseId);
+        writer.Write('\t');
+        writer.Write(retc.ToString(CultureInfo.InvariantCulture));
+        writer.Write('\t');
+        writer.Write(EscapeErr(serr));
+        for (var i = 0; i < 6; i++)
+        {
+            EmitValue(writer, xx[i]);
+        }
+        writer.Write('\n');
+    }
+
+    // GET_CURRENT_FILE_DATA: swe_get_current_file_data -- new in 2.10.03, reads swed.fidat, so
+    // grid-files.tsv only. Returns null on either of two reject branches (ifno outside [0,4];
+    // swed.fidat[ifno].fnam empty), same "the string goes in the err column" convention
+    // ProcessName/ProcessHouseName already use -- but with a synthesized retc (OK when non-null,
+    // ERR when null) rather than a fixed one, matching ProcessCrossingDeg's own synthesized-retc
+    // convention for a .NET API with no int return of its own.
+    //
+    // Whether a slot is already populated before this row runs is a property of what ran earlier
+    // in THIS row, not of ifno by itself: AttachEpheDir's swe_set_ephe_path call, unconditional on
+    // every row (this file's own header comment, "INVOCATION"), already opens the lunar
+    // ephemeris to pin tidal acceleration (sweph.c:1343-1350), so ifno 1 (SEI_FILE_MOON) reports
+    // real data with no other input on this row at all. When both fields[2] (ipl) and fields[3]
+    // (tjd) are non-empty, this method calls swe_calc first (discarding its own result) to
+    // populate ifno 0 (SEI_FILE_PLANET) or ifno 2 (SEI_FILE_MAIN_AST) with real data instead; when
+    // fields[2] is empty but fields[5] (star) and fields[3] are non-empty, it calls swe_fixstar2
+    // first instead, for ifno 4 (SEI_FILE_FIXSTAR). ifno 3 (SEI_FILE_ANY_AST) is not reachable
+    // with real data by any row in this grid -- see gen-grid-files.ps1's own comment on
+    // New-GetCurrentFileDataRow for why -- so ifno 3 rows here only ever exercise the empty-fnam
+    // reject branch, the same branch ifno 0/2/4 rows exercise before any preceding call populates
+    // them.
+    private static void ProcessGetCurrentFileData(SwissEph swe, string caseId, string[] fields, int ifnoIndex, TextWriter writer)
+    {
+        var ifno = ParseInt(fields[ifnoIndex], caseId, "ifno");
+
+        if (HasValue(fields[2]) && HasValue(fields[3]))
+        {
+            var preIpl = ParseInt(fields[2], caseId, "ipl");
+            var preTjd = ParseDouble(fields[3], caseId, "tjd");
+            var preIflag = HasValue(fields[4]) ? ParseInt(fields[4], caseId, "iflag") : 0;
+            var preXx = new double[6];
+            string? preSerr = null;
+            _ = swe.swe_calc(preTjd, preIpl, preIflag, preXx, ref preSerr); // discarded -- only the swed.fidat side effect matters here
+        }
+        else if (HasValue(fields[5]) && HasValue(fields[3]))
+        {
+            var preStar = fields[5];
+            var preTjd = ParseDouble(fields[3], caseId, "tjd");
+            var preIflag = HasValue(fields[4]) ? ParseInt(fields[4], caseId, "iflag") : 0;
+            var preXx = new double[6];
+            string? preSerr = null;
+            _ = swe.swe_fixstar2(ref preStar, preTjd, preIflag, preXx, ref preSerr); // discarded -- see above
+        }
+
+        double tfstart = 0.0;
+        double tfend = 0.0;
+        var denum = 0;
+        var fnam = swe.swe_get_current_file_data(ifno, ref tfstart, ref tfend, ref denum);
+        var retc = fnam != null ? SwissEph.OK : SwissEph.ERR;
+
+        writer.Write(caseId);
+        writer.Write('\t');
+        writer.Write(retc.ToString(CultureInfo.InvariantCulture));
+        writer.Write('\t');
+        writer.Write(EscapeErr(fnam));
+        EmitValue(writer, tfstart);
+        EmitValue(writer, tfend);
+        EmitValue(writer, (double)denum);
         writer.Write('\n');
     }
 

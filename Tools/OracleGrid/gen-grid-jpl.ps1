@@ -19,15 +19,16 @@
 
     IT REUSES grid-files.tsv's COLUMN LAYOUT VERBATIM
 
-    The header line below is byte-for-byte grid-files.tsv's own eighteen-column header, and that is
+    The header line below is byte-for-byte grid-files.tsv's own twenty-column header, and that is
     deliberate: both drivers dispatch their column layout on which header they read (see
     sedump.c's EXPECTED_HEADER_ANALYTIC/EXPECTED_HEADER_FILES and OracleDump's
     ExpectedHeaderAnalytic/ExpectedHeaderFiles), and this grid needs exactly the columns
     grid-files.tsv already defines -- ipl, tjd, iflag, the three topocentric columns, sid_mode,
-    and the t0/ayan_t0 pair -- with nothing added and nothing dropped. Introducing a third,
-    identical-but-differently-named header would have forced a third parsing mode into both
-    drivers to describe the same eighteen columns. What makes this a distinct grid is the ephemeris
-    flag every row carries and the JPL file the drivers are pointed at, not its schema.
+    the t0/ayan_t0 pair, and ifno (for the GET_CURRENT_FILE_DATA rows below) -- with nothing else
+    added and nothing dropped. Introducing a third, identical-but-differently-named header would
+    have forced a third parsing mode into both drivers to describe the same twenty columns. What
+    makes this a distinct grid is the ephemeris flag every row carries and the JPL file the
+    drivers are pointed at, not its schema.
 
     THE DE FILE IS SUPPLIED BY THE RUNNER, NOT BY THIS REPO
 
@@ -71,6 +72,41 @@
       SEFLG_JPLHOR and SEFLG_JPLHOR_APPROX are two of those eight combinations, and they are the
       reason this grid can say anything at all about load_dpsi_deps -- see below.
 
+      swe_get_current_file_data -- seven rows, ifno swept from -1 to 5 with no preceding call. See
+      "WHAT THIS GRID MEASURES ABOUT swe_get_current_file_data" below for what these rows actually
+      show, measured rather than assumed -- the result is not what a reading of swed.jpldenum's
+      own role would predict.
+
+    WHAT THIS GRID MEASURES ABOUT swe_get_current_file_data
+
+    Measured against DE406 (Tests/oracle/regenerations-jpl.log carries the run): ifno 0 reports
+    the JPL DE file itself -- "...swisseph-data\de406.eph", tfstart/tfend/denum all 0 -- and ifno
+    1-4 all report NULL (ERR); -1/5 report NULL too, for the ordinary out-of-range reason.
+
+    swed.jpldenum (written only by swe_set_jpl_file, sweph.c:7465) is a different field from
+    swed.fidat, and swe_get_current_file_data reads only the latter, so it was reasonable to
+    expect this func to have nothing to say about the JPL backend. That expectation is wrong for
+    ifno 0: swi_open_jpl_file (swejpl.c:200) opens the DE file by calling
+    swi_fopen(SEI_FILE_PLANET, ...) -- SEI_FILE_PLANET is ifno 0, the "planet file" slot -- so the
+    DE file's own path lands in swed.fidat[0].fnam, not swed.fidat[1] (the Moon slot) as this
+    grid's first draft assumed. tfstart/tfend/denum stay 0 because sweph.c:8296's own comment
+    already documents that all three "are zero for a jpl file or a star file" -- the same rule
+    ifno 4 (grid-files.tsv's star-file row) also exercises.
+
+    ifno 1 reports NULL, not a failed-lookup path string, for a reason worth spelling out because
+    it is not obvious from swi_fopen alone: AttachEpheDir's own swe_set_ephe_path call (pointed at
+    -JplEpheDir, the DE file's directory, which carries no semo_*.se1) DOES attempt to open the
+    lunar ephemeris and DOES write the failed candidate path into swed.fidat[1].fnam before
+    failing (sweph.c:2371-2404, swi_fopen writes fnamp before checking whether fopen succeeded).
+    But AttachJplFile's swe_set_jpl_file call runs immediately afterward on the same row
+    (Tools/OracleDump/Program.cs's ProcessRow, sedump.c's main()), and swe_set_jpl_file's own first
+    action is swi_close_keep_topo_etc() (sweph.c:1481) -- which resets swed.fidat before
+    swi_open_jpl_file ever runs. Whatever swe_set_ephe_path wrote into fidat[1] is gone by the time
+    this row's own GET_CURRENT_FILE_DATA call reads it; only what swi_open_jpl_file itself writes
+    (fidat[0]) survives to be read. This is a property of the row order both drivers already use
+    for every SEFLG_JPLEPH row, not something this addition changed. This section states
+    the mechanism; it does not substitute for reading that log.
+
     SEFLG_JPLHOR IS HOW load_dpsi_deps BECOMES OBSERVABLE
 
     load_dpsi_deps (sweph.c:1380, SwissEphNet/CPort/Sweph.cs:1637) has exactly one caller in the
@@ -107,10 +143,12 @@
     COLUMN LAYOUT
 
     Identical to grid-files.tsv's; see gen-grid-files.ps1's own header for the full description of
-    all eighteen columns. star, x2cross and dir are always empty here (this grid has no fixed-star
+    all twenty columns. star, x2cross and dir are always empty here (this grid has no fixed-star
     or crossing rows at all), and so are t0/ayan_t0 (its SIDEREAL rows use predefined modes only,
-    the same as grid-files.tsv's), method and hsys (no NOD_APS_UT/HOUSES_EX rows here), and armc/
-    eps (no HOUSES_ARMC_EX2 rows here either).
+    the same as grid-files.tsv's), method and hsys (no NOD_APS_UT/HOUSES_EX rows here), armc/eps
+    (no HOUSES_ARMC_EX2 rows here either) and iplctr (no PCTR rows here -- swe_calc_pctr under
+    SEFLG_JPLEPH is not this addition's own scope; only ifno, for the seven
+    GET_CURRENT_FILE_DATA rows above, is ever non-empty among this addition's two new columns).
 
 .NOTES
     Deterministic by construction: no timestamps, no randomness, no machine-dependent state (the
@@ -210,14 +248,32 @@ function New-CalcJplRow {
     $geolatField  = if ($null -eq $GeoLat)  { '' } else { Fmt ([double]$GeoLat) }
     $heightField  = if ($null -eq $Height)  { '' } else { Fmt ([double]$Height) }
     $sidModeField = if ($null -eq $SidMode) { '' } else { FmtI ([int]$SidMode) }
-    # The four trailing empties are method, hsys, armc and eps -- appended to grid-files.tsv's
-    # layout when NOD_APS_UT/HOUSES_EX and, later, HOUSES_ARMC_EX2 were added to that grid. None of
-    # those funcs appears here -- this grid is swe_calc/swe_calc_ut only -- but the column count is
-    # what both drivers assert against, so every row carries them.
+    # The six trailing empties are method, hsys, armc, eps, iplctr and ifno -- appended to
+    # grid-files.tsv's layout when NOD_APS_UT/HOUSES_EX, HOUSES_ARMC_EX2 and, later, PCTR/
+    # GET_CURRENT_FILE_DATA were added to that grid. None of those funcs appears here -- this row
+    # shape is swe_calc/swe_calc_ut only -- but the column count is what both drivers assert
+    # against, so every row carries them.
     $fields = @(
         $caseId, $Func, (FmtI $Ipl), (Fmt $Tjd), (FmtI $IFlag), '',
         $geolonField, $geolatField, $heightField, $sidModeField, '', '',
-        '', '', '', '', '', ''
+        '', '', '', '', '', '', '', ''
+    )
+    return ($fields -join "`t")
+}
+
+# GET_CURRENT_FILE_DATA -- see this script's own header, "WHAT THIS GRID MEASURES ABOUT
+# swe_get_current_file_data", for why these rows exist and what they do and do not prove about the
+# JPL backend. Ifno alone, no preceding call: this grid's own -JplEpheDir is not -EpheDir (it is
+# wherever the DE file the runner supplies actually sits, per -JplFile), so unlike
+# gen-grid-files.ps1's own AUTOREAL row there is no standing assumption here that any ifno is
+# already populated -- these rows exist to MEASURE that, not assert it.
+function New-GetCurrentFileDataJplRow {
+    param([int] $Ifno)
+    $caseId = "GETCURRENTFILEDATA|JPL|$(FmtI $Ifno)"
+    $fields = @(
+        $caseId, 'GET_CURRENT_FILE_DATA', '', '', '', '',
+        '', '', '', '', '', '', '', '',
+        '', '', '', '', '', (FmtI $Ifno)
     )
     return ($fields -join "`t")
 }
@@ -284,6 +340,7 @@ $FlagCombos = @(
 $rows = [System.Collections.Generic.List[string]]::new()
 $calcCount = 0
 $calcUtCount = 0
+$getCurrentFileDataCount = 0
 
 foreach ($ipl in $Bodies) {
     foreach ($tjd in $CalcJdsJpl) {
@@ -308,8 +365,15 @@ foreach ($ipl in $Bodies) {
     }
 }
 
+# -1 and 5 are sweph.c:8299's out-of-range boundary; 0-4 sweep every in-range ifno -- see
+# New-GetCurrentFileDataJplRow's own comment for why none of these carries a preceding call.
+foreach ($ifno in @(-1, 0, 1, 2, 3, 4, 5)) {
+    $rows.Add((New-GetCurrentFileDataJplRow -Ifno $ifno))
+    $getCurrentFileDataCount++
+}
+
 $totalRows = $rows.Count
-$expectedTotal = $calcCount + $calcUtCount
+$expectedTotal = $calcCount + $calcUtCount + $getCurrentFileDataCount
 if ($totalRows -ne $expectedTotal) {
     throw 'Row count bookkeeping is inconsistent -- this is a bug in this script, not a data problem.'
 }
@@ -380,12 +444,14 @@ $headerLines = @(
     '#'
     '# COLUMN LAYOUT'
     '#'
-    '# Byte-for-byte grid-files.tsv''s own eighteen-column header, deliberately: both drivers'
+    '# Byte-for-byte grid-files.tsv''s own twenty-column header, deliberately: both drivers'
     '# dispatch their column layout on which header they read, and this grid needs exactly the'
     '# columns that one already defines. What makes this a distinct grid is the ephemeris flag'
     '# every row carries and the JPL file the drivers are pointed at, not its schema. See'
-    '# Tools/OracleGrid/gen-grid-files.ps1''s header for the full description of all eighteen'
-    '# columns. star, x2cross, dir, t0, ayan_t0, method, hsys, armc and eps are always empty here.'
+    '# Tools/OracleGrid/gen-grid-files.ps1''s header for the full description of all twenty'
+    '# columns. star, x2cross, dir, t0, ayan_t0, method, hsys, armc, eps and iplctr are always'
+    '# empty here; ifno is non-empty only for the seven GET_CURRENT_FILE_DATA rows this grid adds'
+    '# -- see WHAT THIS GRID MEASURES ABOUT swe_get_current_file_data above.'
     '#'
     '# That coupling is the point and also the cost: this grid has to be regenerated whenever'
     '# grid-files.tsv''s layout changes, and it was not when method/hsys were appended for'
@@ -393,10 +459,10 @@ $headerLines = @(
     '# multi-hundred-MB JPL DE file no runner has, so no gate replays it. The header assertion in'
     '# both drivers did fail loudly the first time it was run by hand, which is the design working;'
     '# what is missing is anything that runs it. Treat a files-grid schema change as a two-grid'
-    '# change. This regeneration is itself the second half of one such change: armc/eps were'
-    '# appended to grid-files.tsv for HOUSES_ARMC_EX2 (swe_houses_ex2/swe_houses_armc_ex2 are new'
-    '# in 2.10.03), and this grid picked up the same two trailing empty columns in the same commit,'
-    '# not a later one.'
+    '# change. This regeneration is itself the second half of one such change: iplctr/ifno were'
+    '# appended to grid-files.tsv for PCTR/GET_CURRENT_FILE_DATA (swe_calc_pctr/'
+    '# swe_get_current_file_data are new in 2.10.03), and this grid picked up the same two'
+    '# trailing columns in the same commit, not a later one.'
     '#'
     '# Lines starting with ''#'' are comments. The first non-comment line is the column-name header'
     '# below and is not a data row -- both drivers assert it matches verbatim before reading any'
@@ -405,7 +471,7 @@ $headerLines = @(
 $columnHeader = 'case_id' + "`t" + 'func' + "`t" + 'ipl' + "`t" + 'tjd' + "`t" + 'iflag' + "`t" +
     'star' + "`t" + 'geolon' + "`t" + 'geolat' + "`t" + 'height' + "`t" + 'sid_mode' + "`t" +
     'x2cross' + "`t" + 'dir' + "`t" + 't0' + "`t" + 'ayan_t0' + "`t" + 'method' + "`t" + 'hsys' + "`t" +
-    'armc' + "`t" + 'eps'
+    'armc' + "`t" + 'eps' + "`t" + 'iplctr' + "`t" + 'ifno'
 
 $writer = [System.IO.StreamWriter]::new($outputPath, $false, [System.Text.UTF8Encoding]::new($false))
 try {
@@ -421,3 +487,4 @@ finally {
 Write-Host "PASS: wrote $totalRows data row(s) to $outputPath" -ForegroundColor Green
 Write-Host "  CALC     $calcCount"
 Write-Host "  CALC_UT  $calcUtCount"
+Write-Host "  GET_CURRENT_FILE_DATA $getCurrentFileDataCount"

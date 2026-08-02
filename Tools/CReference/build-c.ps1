@@ -33,15 +33,17 @@
     ones most likely to be 2.10-only, since Astrodienst kept extending the fixed-star API across
     releases -- are all implemented in external/pyswisseph-2.08/sweph.c, not just declared.
 
-    Two exceptions, both guarded the same way: swe_solcross, swe_mooncross, swe_mooncross_node,
-    swe_helio_cross and their _ut variants, and separately swe_houses_ex2/swe_houses_armc_ex2, do
-    not exist in 2.08 at all (verified: zero matches anywhere under external/pyswisseph-2.08/ for
-    either group), so sedump.c guards every call to either group behind
-    #ifdef SWISSEPH_HAS_CROSSING / #ifdef SWISSEPH_HAS_HOUSES_EX2 respectively -- see that file's
-    own top-of-file comment for the full reasoning. scripts/run-oracle-dump.ps1 defines both
+    Four exceptions, all guarded the same way: swe_solcross, swe_mooncross, swe_mooncross_node,
+    swe_helio_cross and their _ut variants; swe_houses_ex2/swe_houses_armc_ex2; swe_calc_pctr; and
+    swe_get_current_file_data do not exist in 2.08 at all (verified: zero matches anywhere under
+    external/pyswisseph-2.08/ for any of the four), so sedump.c guards every call to each group
+    behind its own #ifdef SWISSEPH_HAS_CROSSING / SWISSEPH_HAS_HOUSES_EX2 /
+    SWISSEPH_HAS_CALC_PCTR / SWISSEPH_HAS_GET_CURRENT_FILE_DATA -- see that file's own top-of-file
+    comment for the full reasoning. scripts/run-oracle-dump.ps1 defines all four
     macros when it compiles sedump.exe against 2.10.03; this script's own $compile command below
-    for sedump-2.08.exe deliberately defines neither, so the 2.08 build takes sedump.c's #else
-    branch for both groups (a fixed sentinel row per case) without needing a flag added here.
+    for sedump-2.08.exe deliberately defines none of the four, so the 2.08 build takes sedump.c's
+    #else branch for all four groups (a fixed sentinel row per case) without needing a flag added
+    here.
 
     The compiler identity is part of the result, not an incidental detail: reference values
     depend on it. Every run writes toolchain.txt recording the compiler and linker versions, the

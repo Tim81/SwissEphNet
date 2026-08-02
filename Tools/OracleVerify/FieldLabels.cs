@@ -42,6 +42,12 @@ namespace OracleVerify;
 /// Tools/CReference/sedump.c's own top-of-file comment on why swe_houses_ex2/swe_houses_armc_ex2
 /// need real, non-null speed-output arrays to actually populate the trailing 47. FIXSTAR2MAG
 /// shares FIXSTARMAG's one-double (mag) shape -- swe_fixstar2_mag, not swe_fixstar_mag.
+///
+/// PCTR (grid-files.tsv only) shares XxLabels' shape -- swe_calc_pctr fills xxret[0..5], the same
+/// six-double layout swe_calc's own xx[] uses. GETCURRENTFILEDATA (grid-files.tsv and
+/// grid-jpl.tsv) carries three: tfstart, tfend, denum (denum widened to double -- see
+/// Tools/CReference/sedump.c's process_get_current_file_data). Both are new in 2.10.03 -- see
+/// gen-grid-files.ps1's own header for why grid-analytic.tsv carries neither func token.
 /// </summary>
 internal static class FieldLabels
 {
@@ -67,6 +73,7 @@ internal static class FieldLabels
         .Concat(BuildLabels("xperi", 6))
         .Concat(BuildLabels("xaphe", 6))
         .ToArray();
+    private static readonly string[] GetCurrentFileDataLabels = ["tfstart", "tfend", "denum"];
 
     public static IReadOnlyList<string> For(string func, string caseId) => func switch
     {
@@ -83,6 +90,8 @@ internal static class FieldLabels
         "SIDTIME" => SidtimeLabels,
         "AZALT" => AzAltLabels,
         "NODAPSUT" => NodApsLabels,
+        "PCTR" => XxLabels,
+        "GETCURRENTFILEDATA" => GetCurrentFileDataLabels,
         _ => throw new FormatException($"case {caseId}: unrecognized func token '{func}' at the start of case_id."),
     };
 
