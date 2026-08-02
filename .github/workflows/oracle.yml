@@ -247,6 +247,26 @@ jobs:
         shell: pwsh
         run: pwsh scripts/verify-oracle-log.ps1 -BaseRef '${{ steps.base-ref.outputs.sha }}'
 
+  # Gate. Pure text comparison of two already-committed files, no DE file and no build needed --
+  # see scripts/verify-grid-header-parity.ps1's own .DESCRIPTION. Nothing else in this workflow
+  # reads grid-jpl.tsv at all (the JPL leg is opt-in, see run-oracle-dump.ps1's own header), so
+  # this is the only check that would catch its column header drifting from grid-files.tsv's own
+  # -- exactly what happened once already, caught by hand.
+  grid-header-parity:
+    name: "Gate: grid-files.tsv and grid-jpl.tsv declare the same column header"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Self-test the grid header parity gate
+        shell: pwsh
+        run: pwsh scripts/verify-grid-header-parity.ps1 -SelfTest
+
+      - name: Verify grid-files.tsv and grid-jpl.tsv declare the same column header
+        shell: pwsh
+        run: pwsh scripts/verify-grid-header-parity.ps1
+
   # Gate. Compares MSVC C against .NET, both built on this runner in this run -- see
   # scripts/verify-crt-parity.ps1's own .DESCRIPTION for what it checks; a FAIL here means the
   # bit-exact oracle's own premise has broken, independent of anything sweph.c does. Needs no
