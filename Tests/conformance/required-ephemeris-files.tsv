@@ -10,7 +10,10 @@
 # file (378 MB), and several iterations (suite 5 testcase 3 among them) only pass because a
 # file this repo does not declare happens to be present -- generating a known-fail.tsv that
 # looks right locally and is wrong for CI and every other contributor. One file per line, no
-# path prefix (relative to ephe/), '#' starts a comment.
+# path prefix (relative to ephe/). A line whose first non-whitespace character is '#' is a
+# whole-line comment; EphemerisManifest.Load (and the PowerShell clone in
+# scripts/run-oracle-dump.ps1 / scripts/verify-swetest-diff.ps1) only ever check that first
+# character, so '#' has no effect anywhere else on a line -- there is no inline-comment form.
 
 seas_12.se1
 seas_18.se1

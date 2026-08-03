@@ -120,6 +120,37 @@ public class EphemerisManifestTests
         }
     }
 
+    // Check's own remarks say a subdirectory is reported as a single extra entry ("sat/",
+    // trailing slash) rather than walked recursively -- that trailing slash is what makes a
+    // directory sharing a *name* with a required file (e.g. a stray "sepl_18.se1/" left behind
+    // by some other tool) show up as its own, distinct Extra entry rather than silently
+    // satisfying the Missing check. Removing the "/" in Check's `Directory.Exists(entry) ?
+    // name + "/" : name` line would collapse that directory's `present` key onto the plain file
+    // name, and the required file would incorrectly read as present.
+    [Fact]
+    public void Check_DirectoryNamedLikeARequiredFile_IsReportedAsBothMissingAndExtra()
+    {
+        var dir = NewTempDir();
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(dir, "sepl_18.se1"));
+
+            var result = EphemerisManifest.Check(["sepl_18.se1"], dir);
+
+            // The required *file* is still missing -- a directory of the same name is not the
+            // file the manifest declared.
+            Assert.Equal(["sepl_18.se1"], result.Missing);
+            // ...and the directory itself is reported as an extra entry, with the trailing "/"
+            // that distinguishes it from the plain file name a "flattened" (no trailing slash)
+            // comparison would have silently matched against.
+            Assert.Equal(["sepl_18.se1/"], result.Extra);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
     private static string NewTempDir()
     {
         var dir = Path.Combine(Path.GetTempPath(), "ephemeris-manifest-test-" + Guid.NewGuid().ToString("N"));
