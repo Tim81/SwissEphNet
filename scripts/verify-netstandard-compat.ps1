@@ -147,6 +147,23 @@ function Get-KnownDiffFailures {
         if (-not $cur.IsCategorical -and $cur.MaxUlp -gt $knownRow.MaxUlp) {
             $failures.Add("$caseId`'s max ULP distance grew: recorded $($knownRow.MaxUlp), now $($cur.MaxUlp).")
         }
+
+        # The Reason column names which fields diverge, and until this check existed it was parsed
+        # into both tables and then never compared -- so a field that had never diverged could start
+        # diverging on a listed case and pass, provided it stayed under that row's recorded ULP
+        # ceiling. The ceilings are not small: NSC|45|2451545 records 16,517,719,336,359 ULP, about
+        # 3.7e-3 relative, so a newly-diverging field had most of a percent to move in silence.
+        #
+        # Compared as a set, not as a string: the field order within the reason is not guaranteed
+        # stable and a pure string compare would fire on a reordering that means nothing. Only
+        # fields appearing now and NOT recorded are a failure; a field that stops diverging is
+        # caught by the stale-row sweep in the second loop rather than here.
+        $knownFields = @($knownRow.Reason -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+        $curFields = @($cur.Reason -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+        $newFields = @($curFields | Where-Object { $knownFields -notcontains $_ })
+        if ($newFields.Count -gt 0) {
+            $failures.Add("$caseId`: field(s) not previously diverging now diverge: $($newFields -join ', ') -- recorded '$($knownRow.Reason)', now '$($cur.Reason)'.")
+        }
     }
 
     foreach ($caseId in $Known.Keys) {
@@ -279,6 +296,27 @@ if ($SelfTest) {
         $knownEnough['A'] = [pscustomobject]@{ Category = 'RUNTIME-MATH'; MaxUlp = $currentUlp; IsCategorical = $false; Reason = 'longitude' }
         $failuresOk = Get-KnownDiffFailures -Current $currentNewDiff -Known $knownEnough
         Assert-True 'a listed row at or above its current ULP distance passes' ($failuresOk.Count -eq 0) "got: $($failuresOk -join ' | ')"
+
+        # 3b. A field that was not previously diverging starts diverging on a listed row, with the
+        #     ULP distance still well under the recorded ceiling. Before the Reason set was
+        #     compared, this passed: the Reason column was parsed into both tables and never read,
+        #     so the only thing standing between a newly-diverging field and a green gate was that
+        #     row's recorded max -- and the largest recorded max in the shipped lists is
+        #     16,517,719,336,359 ULP, roughly 3.7e-3 relative.
+        $knownOneField = [System.Collections.Generic.Dictionary[string, object]]::new([System.StringComparer]::Ordinal)
+        $knownOneField['A'] = [pscustomobject]@{ Category = 'RUNTIME-MATH'; MaxUlp = $currentUlp; IsCategorical = $false; Reason = 'latitude-speed,distance-speed' }
+        $currentTwoFields = [System.Collections.Generic.Dictionary[string, object]]::new([System.StringComparer]::Ordinal)
+        $currentTwoFields['A'] = [pscustomobject]@{ Category = 'RUNTIME-MATH'; MaxUlp = [uint64]1; IsCategorical = $false; Reason = 'latitude-speed,distance-speed,longitude' }
+        $failuresNewField = Get-KnownDiffFailures -Current $currentTwoFields -Known $knownOneField
+        Assert-True 'a field that was not previously diverging is refused even below the recorded ULP ceiling' ($failuresNewField.Count -eq 1 -and $failuresNewField[0] -match 'not previously diverging') "got: $($failuresNewField -join ' | ')"
+
+        # 3c. The control for 3b: the same fields in a different order must NOT fire. The order
+        #     within the Reason column is not guaranteed stable, and a gate that fails on a
+        #     reordering is one that gets its list regenerated to silence it.
+        $currentReordered = [System.Collections.Generic.Dictionary[string, object]]::new([System.StringComparer]::Ordinal)
+        $currentReordered['A'] = [pscustomobject]@{ Category = 'RUNTIME-MATH'; MaxUlp = [uint64]1; IsCategorical = $false; Reason = 'distance-speed,latitude-speed' }
+        $failuresReordered = Get-KnownDiffFailures -Current $currentReordered -Known $knownOneField
+        Assert-True 'the same diverging fields in a different order pass' ($failuresReordered.Count -eq 0) "got: $($failuresReordered -join ' | ')"
 
         # 4. A categorical/numeric flip in either direction is refused even when the case_id stays
         #    listed -- a magnitude comparison would be meaningless across that boundary.
