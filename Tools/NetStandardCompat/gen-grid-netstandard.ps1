@@ -77,15 +77,138 @@
     the first non-comment line is the column-name header, which the dump tool asserts against
     verbatim: case_id, ipl, tjd, iflag.
 
+.PARAMETER Reason
+    Required (outside -SelfTest). This grid is the ONLY place that decides which swe_calc calls
+    scripts/verify-netstandard-compat.ps1 compares -- every Tests/netstandard-compat/
+    known-diff-<fw>.tsv file downstream of it is invalidated the instant the grid's shape changes,
+    silently or otherwise. MEDIUM 5's own review: before this parameter existed, this script took
+    no parameters, required no reason and appended to no log, so a change that dropped exactly the
+    epochs where net48 diverges made every known-diff-<fw>.tsv legitimately header-only and every
+    downstream gate green -- a shrunken grid, not a fixed divergence. Recorded to the same sidecar
+    scripts/regenerate-netstandard-compat-known-diff.ps1 already writes to
+    (Tests/netstandard-compat/regenerations.log), since a grid change and a known-diff regeneration
+    are both "why did this instrument's measurement change" questions a reviewer needs answered the
+    same way.
+
+.PARAMETER PR
+    Optional. The pull request number this regeneration belongs to -- same convention as
+    scripts/regenerate-known-fail.ps1's own -PR.
+
+.PARAMETER SelfTest
+    Asserts -Reason is required (a real child-process invocation, matching
+    scripts/regenerate-netstandard-compat-known-diff.ps1's own self-test of the identical guard)
+    and this script's own log-line formatting, against scratch files in a temporary directory.
+    Never writes grid-netstandard.tsv or Tests/netstandard-compat/regenerations.log.
+
 .NOTES
     Deterministic by construction: no timestamps, no randomness, no machine-dependent state.
-    Running this script twice must produce a byte-identical file.
+    Running this script twice with the same -Reason (and -PR) must produce a byte-identical
+    grid-netstandard.tsv; the log entry it appends is the only non-deterministic output.
 #>
+
+param(
+    [string] $Reason,
+    [string] $PR,
+    [switch] $SelfTest
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $outputPath = Join-Path $PSScriptRoot 'grid-netstandard.tsv'
+$repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$logPath = Join-Path $repoRoot 'Tests/netstandard-compat/regenerations.log'
+
+function Get-DataRowCount {
+    # Data rows only: '#'-prefixed comment lines and the column-name header line excluded, matching
+    # this script's own generated-file shape (see $headerLines/$columnHeader below).
+    param([string] $Path)
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return 0 }
+    $lines = @(Get-Content -LiteralPath $Path)
+    $dataLines = @($lines | Where-Object { $_.Length -gt 0 -and -not $_.StartsWith('#') -and $_ -ne 'case_id	ipl	tjd	iflag' })
+    return $dataLines.Count
+}
+
+function Write-RegenerationLogLine {
+    param([int] $Before, [int] $After, [string] $ReasonText, [string] $PrNumber)
+    $prLabel = if ([string]::IsNullOrWhiteSpace($PrNumber)) { 'no PR yet' } else { "PR #$PrNumber" }
+    $date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
+    $delta = if ($After -eq $Before) { 'no change in row count' }
+    elseif ($After -gt $Before) { "$($After - $Before) more row(s)" }
+    else { "$($Before - $After) fewer rows" }
+    $line = "$date $prLabel (grid-netstandard.tsv: $Before -> $After, $delta): $ReasonText"
+    Add-Content -LiteralPath $logPath -Value $line -Encoding utf8NoBOM
+    return $line
+}
+
+if ($SelfTest) {
+    $failures = 0
+    $lab = Join-Path ([System.IO.Path]::GetTempPath()) ('gen-grid-netstandard-selftest-' + [System.Guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Force -Path $lab | Out-Null
+    try {
+        function Assert-True {
+            param([string] $Case, [bool] $Condition, [string] $Detail = '')
+            if ($Condition) { Write-Host "  PASS  $Case" -ForegroundColor DarkGray }
+            else { Write-Host "  FAIL  $Case`n          $Detail" -ForegroundColor Red; $script:failures++ }
+        }
+
+        Write-Host 'gen-grid-netstandard self-test'
+        Write-Host ''
+
+        # -Reason is required outside -SelfTest -- run as a real child-process invocation so the
+        # top-level guard actually fires, matching
+        # scripts/regenerate-netstandard-compat-known-diff.ps1's own self-test of the identical
+        # guard.
+        $pwshExe = (Get-Process -Id $PID).Path
+        $output = & $pwshExe -NoProfile -File $PSCommandPath *>&1
+        $code = $LASTEXITCODE
+        $text = (@($output) -join "`n")
+        Assert-True '-Reason is required and refused before the grid is written' `
+            ($code -ne 0 -and $text -match '-Reason is required') "exit=$code output: $text"
+
+        $script:logPath = Join-Path $lab 'regenerations.log'
+        New-Item -ItemType File -Path $script:logPath -Force | Out-Null
+
+        $lineGrew = Write-RegenerationLogLine -Before 96 -After 102 -ReasonText 'test' -PrNumber '99'
+        Assert-True 'growth is logged as "N more row(s)"' ($lineGrew -match '96 -> 102, 6 more row\(s\)') "got: $lineGrew"
+
+        $lineSame = Write-RegenerationLogLine -Before 102 -After 102 -ReasonText 'test' -PrNumber '99'
+        Assert-True 'no change is logged as "no change in row count"' ($lineSame -match '102 -> 102, no change in row count') "got: $lineSame"
+
+        $lineNoPr = Write-RegenerationLogLine -Before 0 -After 102 -ReasonText 'test' -PrNumber ''
+        Assert-True 'an empty -PR logs the "no PR yet" placeholder' ($lineNoPr -match 'no PR yet') "got: $lineNoPr"
+
+        $gridFixture = Join-Path $lab 'grid-fixture.tsv'
+        [System.IO.File]::WriteAllText($gridFixture, (@(
+            '# a comment line'
+            'case_id	ipl	tjd	iflag'
+            "NSC|0|2415020.5`t0`t2415020.5`t260"
+            "NSC|0|2451545`t0`t2451545`t260"
+        ) -join "`n") + "`n", (New-Object System.Text.UTF8Encoding($false)))
+        Assert-True 'Get-DataRowCount counts only data rows, not comments or the header' `
+            ((Get-DataRowCount -Path $gridFixture) -eq 2)
+        Assert-True 'Get-DataRowCount on a nonexistent file is zero' `
+            ((Get-DataRowCount -Path (Join-Path $lab 'does-not-exist.tsv')) -eq 0)
+
+        Write-Host ''
+        if ($failures -gt 0) {
+            Write-Host "FAIL: $failures self-test case(s) did not behave as required." -ForegroundColor Red
+            exit 1
+        }
+        Write-Host 'PASS: all gen-grid-netstandard self-test cases behaved as required.' -ForegroundColor Green
+        exit 0
+    }
+    finally {
+        Remove-Item -LiteralPath $lab -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+if ([string]::IsNullOrWhiteSpace($Reason)) {
+    Write-Error "-Reason is required: this grid is the only place that decides which swe_calc calls scripts/verify-netstandard-compat.ps1 compares, and every known-diff-<fw>.tsv file downstream of it is invalidated the moment the grid's shape changes. See this script's own -Reason parameter help."
+    exit 1
+}
+
+$beforeRowCount = Get-DataRowCount -Path $outputPath
 
 # swephexp.h constants used below, named rather than inlined -- same reasoning as
 # Tools/OracleGrid/gen-grid-analytic.ps1's own constant block.
@@ -154,7 +277,11 @@ finally {
     $writer.Dispose()
 }
 
+$afterRowCount = Get-DataRowCount -Path $outputPath
+$logLine = Write-RegenerationLogLine -Before $beforeRowCount -After $afterRowCount -ReasonText $Reason -PrNumber $PR
+
 Write-Host "PASS: wrote $($rows.Count) data row(s) to $outputPath" -ForegroundColor Green
 Write-Host "  Real bodies        $($RealBodies.Count)"
 Write-Host "  Fictitious bodies  $($FictitiousBodies.Count)"
 Write-Host "  Epochs             $($Epochs.Count)"
+Write-Host "Logged: $logLine"

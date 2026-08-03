@@ -174,6 +174,20 @@ function Get-ExePath {
     return Join-Path $dumpBinDir "$Tfm/NetStandardCompatDump.exe"
 }
 
+# MEDIUM 5's own vacuity floor: a reference dump with zero rows compares nothing against nothing,
+# every per-framework loop iteration below finds $current empty and $known's own SHA-256 staleness
+# check is satisfied trivially (an empty freshly-generated dump hashes identically to an empty
+# committed one) -- so a PASS here would mean this gate verified nothing, not that nothing
+# diverges. Compare scripts/verify-doc-no-removed-apis.ps1's own $checkedFiles -eq 0 floor: "a run
+# that scanned nothing is not a pass." The realistic route to this state is not the reference dump
+# itself going empty (a real byte-for-byte SHA-256 check already guards that from drifting silently)
+# but Tools/NetStandardCompat/grid-netstandard.tsv shrinking to nothing -- both dumps would then
+# legitimately agree on zero rows, and this floor is what refuses to call that a pass.
+function Test-ReferenceHasRows {
+    param([System.Collections.Generic.Dictionary[string, object]] $Reference)
+    return $Reference.Count -gt 0
+}
+
 # ---------------------------------------------------------------------------------------
 # Self-test -- see -SelfTest above. Exercises Get-FieldDistance/Compare-Dumps/Read-KnownDiffTable/
 # Get-KnownDiffFailures directly against small, hand-built fixtures. Builds nothing, runs no dump
@@ -312,7 +326,33 @@ if ($SelfTest) {
         $rowOk = $roundTripped.Count -eq 2 -and $roundTripped['NSC|1|1'].MaxUlp -eq 42 -and -not $roundTripped['NSC|1|1'].IsCategorical -and $roundTripped['NSC|2|2'].IsCategorical
         Assert-True 'Read-KnownDiffTable parses numeric and categorical max_ulp correctly' $rowOk
 
+        # 9. MEDIUM 5's vacuity floor: a reference dump with zero rows must be refused, not read as
+        #    "nothing differs".
+        $emptyReference = [System.Collections.Generic.Dictionary[string, object]]::new([System.StringComparer]::Ordinal)
+        Assert-True 'Test-ReferenceHasRows refuses a zero-row reference dump' (-not (Test-ReferenceHasRows -Reference $emptyReference))
+        Assert-True 'Test-ReferenceHasRows accepts a reference dump with at least one row' (Test-ReferenceHasRows -Reference $reference)
+
         Write-Host ''
+
+        # 10. MEDIUM 5: everything above is an in-process function test -- none of it ever invokes
+        #     this script's own real path in a CHILD process the way scripts/verify-freeze.ps1's own
+        #     -SelfTest does, so the build -> staleness check -> per-framework comparison loop ->
+        #     exit-code path was covered by nothing. -Framework Net8 (the fastest framework to
+        #     compare, and the one with an empty known-diff list today) keeps this cheap while still
+        #     exercising the full real pipeline end to end: `dotnet build` of the dump project, the
+        #     net10.0 staleness re-run and SHA-256 compare, one framework's dump-and-compare loop,
+        #     and this script's own real exit code. Runs against this actual checkout, not a
+        #     scratch repo -- there is nothing here for a synthetic fixture to stand in for; the
+        #     grid, the reference dump and the known-diff files it exercises are exactly the
+        #     committed inputs this gate exists to check in CI.
+        Write-Host 'Child-process case (the real path: build, staleness check, comparison loop, exit code)'
+        $pwshExe = (Get-Process -Id $PID).Path
+        $childOutput = & $pwshExe -NoProfile -File $PSCommandPath -Framework Net8 *>&1
+        $childCode = $LASTEXITCODE
+        $childText = (@($childOutput) -join "`n")
+        Assert-True 'a real child-process run (-Framework Net8) against this checkout exits 0 and reports PASS' `
+            ($childCode -eq 0 -and $childText -match 'matches the current run exactly') `
+            "exit=$childCode output: $childText"
         if ($failures -gt 0) {
             Write-Host "FAIL: $failures self-test case(s) did not behave as required." -ForegroundColor Red
             exit 1
@@ -373,6 +413,9 @@ try {
     }
 
     $reference = Read-DumpTable -Path $referenceDumpPath
+    if (-not (Test-ReferenceHasRows -Reference $reference)) {
+        throw "$referenceDumpPath has zero rows -- compares nothing against nothing. A PASS from here would mean this gate verified nothing, not that nothing diverges (see this script's own Test-ReferenceHasRows comment). If Tools/NetStandardCompat/grid-netstandard.tsv genuinely shrank to zero rows on purpose, that is not something this gate can pass through silently -- fix the grid deliberately (Tools/NetStandardCompat/gen-grid-netstandard.ps1 -Reason '...') rather than let it drift to empty."
+    }
 
     $frameworks = if ($Framework -eq 'All') { @('Net8', 'Net462', 'Net48') } else { @($Framework) }
     $failedFrameworks = @()
