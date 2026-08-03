@@ -68,11 +68,14 @@ and `dump-c-2.10.03-jpl.tsv`/`dump-net-jpl.tsv` now
 `bc0ca597…d7067724`). All three pairs are file-level SHA-256 identical between the C reference and
 the port, not merely row-level equal. Not independently re-run from this workstation against this
 total, but `linux-exactness` and `macos-exactness` both did, in CI: PR #32's "Oracle build gates"
-workflow run at commit `8547900` (`https://github.com/Tim81/SwissEphNet/actions/runs/30788012210`)
+workflow run at commit `f92c8ee` (`https://github.com/Tim81/SwissEphNet/actions/runs/30805814137`)
 shows "Gate: port matches the C reference on Linux x64 (glibc)" and "Gate: port matches the C
 reference on macOS arm64 (Apple libSystem)" both passing, alongside the Windows gate, at the
 current 25,569-row grid -- the same way they did for the `HOUSES_EX2`/`HOUSES_ARMC_EX2` addition
-above.
+above. (An earlier revision of this citation named commit `8547900`, run 30788012210; that commit
+no longer exists on this branch's history after a rewrite, which is why a CI citation should name a
+commit verified reachable from the current tip -- `git merge-base --is-ancestor <sha> HEAD` -- not
+just any past green run.)
 
 **Files-grid dump hash correction.** The `0c672071ceb868252f25166c1ed05ac1b7c69577a0403b0120b090ce63697be3`
 above is not the current `dump-c-2.10.03-files.tsv`/`dump-net-files.tsv` hash; it is
