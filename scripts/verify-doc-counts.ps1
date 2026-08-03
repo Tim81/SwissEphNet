@@ -65,11 +65,11 @@
     for the literal marker delimiter and fails if it finds one -- a marker has to be moved into an
     allowlisted document or deleted, not merely left where nothing reads it.
 
-    docs/upstream/ is tracked (8 files, correspondence with Astrodienst about defects found while
-    porting to 2.10.03) but out of scope for this script: it is outward-facing correspondence, not
-    a load-bearing count this script's ground-truth files define, and nothing in it currently cites
-    a number the way $docFiles' seven files do. Whether it should gain doccount markers of its own
-    is a judgement call about what counts as "documentation" here, not a factual one -- left as an
+    docs/upstream/ holds outbound correspondence with Astrodienst about defects found while
+    porting to 2.10.03. It is deliberately NOT tracked: those reports are drafted in the working
+    tree, sent by hand, and never merged to a release branch or shipped in the package, so they are
+    out of this script's reach by construction rather than by an exclusion rule. Nothing here needs
+    to change if that decision is ever revisited -- $docFiles names its inputs explicitly, so an
     open question for a maintainer rather than decided by this comment. external/ is out of scope
     for a different reason: it is Astrodienst's own vendored source, not this repository's
     documentation, tracked or not.

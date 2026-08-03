@@ -277,9 +277,9 @@ function Get-ArchBaseline {
 # now fixed upstream: swetest.c declares `static char spmoon[AS_MAXCH] = "9501";  //
 # Jupiter Moon Io` (the same value this script's patch used to supply) and wraps the
 # gethostname block in `#ifndef _WINDOWS`, with sweodef.h now defining _WINDOWS under
-# `#ifdef _WIN32` to match. Reported upstream by this fork; see docs/upstream/
-# swetest-2.10.03-build-defects.md for the exchange. external/swisseph is now pinned to
-# v2.10.3bfinal (f4dcd18e).
+# `#ifdef _WIN32` to match. Reported upstream by this fork; the report and Astrodienst's
+# replies are drafted outside the tracked tree and sent by hand, so there is no in-repo path
+# to follow. external/swisseph is now pinned to v2.10.3bfinal (f4dcd18e).
 #
 # THE THIRD DEFECT, surfaced by that same sweodef.h change, still open as of f4dcd18e:
 #
@@ -295,8 +295,8 @@ function Get-ArchBaseline {
 # v2.10.3final -- _WINDOWS was never defined there, so the #ifdef branch never compiled --
 # but sweodef.h's own new `#define _WINDOWS` under `#ifdef _WIN32` activates it on every
 # MSVC build (_WIN32 is always defined by MSVC), which is a hard compile error, not a
-# stream change. docs/upstream/swetest-2.10.03-build-defects.md's own closing note (this
-# fork's prior report to Astrodienst) told them this branch was "fine on master, where the
+# stream change. This fork's prior report to Astrodienst, in its closing note,
+# told them this branch was "fine on master, where the
 # rest of the tree expects _WINDOWS" -- that was wrong, and unstated at the time because
 # fp had never actually been compiled against. master and v2.10.3bfinal are the same
 # commit (git ls-remote origin master resolves to f4dcd18e), so there is no further fix to
@@ -310,8 +310,8 @@ function Get-ArchBaseline {
 # do_printf is called with. fprintf(stdout, info) would too for well-behaved input, but
 # treats info (built from swe_calc results, not a literal) as a format string, which
 # fputs does not. cl.exe's C4047/C4024 on the original fprintf(fp, info) are NOT evidence
-# of that hazard, despite an earlier version of this comment and of
-# docs/upstream/swetest-2.10.03-build-defects.md/.html claiming they were: compiled, both
+# of that hazard, despite an earlier version of this comment and of the report to
+# Astrodienst claiming they were: compiled, both
 # warnings name parameter 1 (fp, recovered as int after the C2065 undeclared-identifier
 # error), not parameter 2 (info) -- see that doc's "Update, 2 August 2026" section for the
 # measured warning text and the correction sent to Astrodienst.

@@ -60,11 +60,12 @@
     docs/compliance-2.10.03.md are excluded on purpose: neither packages with the library, and
     known-issues.md exists specifically as a historical record (its own removed-API entries, e.g.
     "OnLoadFile superseded", are the kind of content this script would otherwise have to
-    special-case line by line). docs/upstream/ is tracked (8 files, correspondence with Astrodienst
-    about defects found while porting to 2.10.03) but out of scope for this script for the same
-    reason known-issues.md and compliance-2.10.03.md are: it does not ship with the package either,
-    so a code sample inside it never reaches a consumer reading the package page the way one in
-    README.md would.
+    special-case line by line). docs/upstream/ is untracked by design -- outbound correspondence
+    with Astrodienst, drafted in the working tree and sent by hand, never merged to a release branch
+    -- so it is out of this script's reach without needing an exclusion. Even were it tracked it
+    would be out of scope for the same reason known-issues.md and compliance-2.10.03.md are: it does
+    not ship with the package, so a code sample inside it never reaches a consumer reading the
+    package page the way one in README.md would.
 
 .PARAMETER RepoRoot
     Repository root. Defaults to the checkout containing this script.

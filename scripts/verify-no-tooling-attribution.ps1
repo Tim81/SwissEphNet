@@ -97,10 +97,12 @@
     Recorded rather than fixed: it needs decoding diff hunks rather than files, and every such
     file is caught by check 1 for as long as it exists in the tree.
 
-    docs/upstream/ is tracked (8 files, correspondence with Astrodienst about defects found while
-    porting to 2.10.03), not untracked, and this scan carries no exclusion for it -- `git grep`
-    (which searches the index) reads it exactly like any other tracked file below, so it already
-    gets the same coverage as everything else this check scans.
+    docs/upstream/ is untracked by design: outbound correspondence with Astrodienst about defects
+    found while porting to 2.10.03, drafted in the working tree, sent by hand, and never merged to a
+    release branch. This scan reads the index, so untracked files are outside it -- which means the
+    one class of text this repository sends to a third party is NOT covered by this gate. That is
+    worth knowing rather than assuming: anything drafted there has to be read before it goes out,
+    because nothing here will read it for you.
 
     False positives are the one thing that gets a check like this disabled, so every pattern above
     was checked against this repository's current tree before being added, and the phrasing was

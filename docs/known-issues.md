@@ -1398,8 +1398,9 @@ The same `sweodef.h` change surfaces a third defect, still open as of `f4dcd18e`
 build now that it activates on every Windows build (`_WIN32` is always defined by MSVC). `master`
 and `v2.10.3bfinal` are the same commit, so there is no newer upstream fix to pull.
 `build-c.ps1` patches this one narrowly (`fputs(info, stdout)` substituted for both branches of
-the `#ifdef`, matching the `#else` branch's existing behaviour exactly) and reports it upstream --
-see `docs/upstream/swetest-2.10.03-build-defects.md`.
+the `#ifdef`, matching the `#else` branch's existing behaviour exactly), and the defect was reported
+to Astrodienst. The report itself is drafted outside the tracked tree and sent by hand, so there is
+no in-repo path to follow here.
 
 ## swe_set_jpl_file: the C's AS_MAXCH clamps are not reproduced, and the comments were 2.08's
 
