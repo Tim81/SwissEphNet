@@ -46,15 +46,33 @@
     scripts/regenerate-oracle-known-diff.ps1's own -PR: this repo squash-merges PRs, so a PR
     number survives the merge in a way a commit SHA captured on an open branch does not. If you do
     not know it yet, omit this and fill in the logged line by hand once you do, before the PR
-    merges.
+    merges. Restricted to bare digits (MEDIUM 7's own review): this value is interpolated
+    directly into the log entry written to version-classification-regenerations.log, and an
+    unvalidated value could carry a newline that forges a second, backdated-looking log entry --
+    the append-only log gates (scripts/verify-oracle-log.ps1) read entries by a "YYYY-MM-DD "
+    line-start prefix, so a crafted -PR value starting a new line with one would be indistinguishable
+    from a real second entry.
 #>
 
 param(
     [string]$Reason,
+    [ValidatePattern('^\d+$')]
     [string]$PR
 )
 
+Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+# -Reason is optional (see its own parameter help), but if given it must not carry a newline for
+# the same reason -PR is now restricted to bare digits: it is interpolated directly into the log
+# entry, and a newline inside it would start what Get-DateLogEntries (scripts/lib/DateLogGate.ps1)
+# reads as a second entry the moment it happens to begin with something matching
+# "^\d{4}-\d{2}-\d{2}\s" -- or, short of that, would still let a reviewer-facing log line carry
+# content that was never actually reviewed as a single line.
+if ($Reason -and ($Reason -match "`r" -or $Reason -match "`n")) {
+    Write-Error "-Reason must not contain a newline: it is written directly into version-classification-regenerations.log, and a newline could be read as the start of a second, forged log entry."
+    exit 1
+}
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $verifyProject = Join-Path $repoRoot 'Tools/OracleVerify/OracleVerify.csproj'
@@ -128,17 +146,36 @@ function Invoke-GridClassification {
     $before = Read-ClassificationTable -Path $Paths.OutputPath
     $beforeCount = $before.Count
 
-    $classifyOutput = dotnet run --project $verifyProject -c Release --no-build -- classify `
-        $Paths.C210DumpPath $Paths.C208DumpPath $Paths.NetDumpPath $Paths.OutputPath
-    $classifyOutput | Write-Host
-    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    # Staged to a temp file, then moved over $Paths.OutputPath only once OracleVerify has exited 0
+    # -- matching scripts/regenerate-oracle-known-diff.ps1's own Invoke-GridRegeneration. Passing
+    # $Paths.OutputPath directly meant the committed golden was the tool's own output target:
+    # Tools/OracleVerify's classify writer opens its destination with append: false, truncating it
+    # immediately on open, before a single row had been written back and long before this
+    # function's own $LASTEXITCODE check below runs. A crash partway through (an unhandled
+    # exception, an OOM, a killed process) left the committed
+    # Tests/oracle/version-classification*.tsv truncated or empty with the original content already
+    # destroyed and nothing to fall back to.
+    $tempOutputPath = [System.IO.Path]::GetTempFileName()
+    try {
+        $classifyOutput = dotnet run --project $verifyProject -c Release --no-build -- classify `
+            $Paths.C210DumpPath $Paths.C208DumpPath $Paths.NetDumpPath $tempOutputPath
+        $classifyOutput | Write-Host
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-    $after = Read-ClassificationTable -Path $Paths.OutputPath
-    $afterCount = $after.Count
+        $after = Read-ClassificationTable -Path $tempOutputPath
+        $afterCount = $after.Count
 
-    $changed = 0
-    foreach ($key in $after.Keys) {
-        if (-not $before.ContainsKey($key) -or $before[$key] -ne $after[$key]) { $changed++ }
+        $changed = 0
+        foreach ($key in $after.Keys) {
+            if (-not $before.ContainsKey($key) -or $before[$key] -ne $after[$key]) { $changed++ }
+        }
+
+        # Only now, with a complete and exit-0 classify run sitting safely in a temp file, does the
+        # committed golden get touched.
+        Copy-Item -LiteralPath $tempOutputPath -Destination $Paths.OutputPath -Force
+    }
+    finally {
+        Remove-Item -LiteralPath $tempOutputPath -ErrorAction SilentlyContinue
     }
 
     $date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
