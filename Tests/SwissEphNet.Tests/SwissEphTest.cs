@@ -284,6 +284,64 @@ namespace SwissEphNet.Tests
                 // Characterization values -- see comment above.
                 Assert.Equal(2.65625, dret[0], 6);
                 Assert.Equal(8.623237609863281, dret[1], 6);
+
+                // Spec-derived relational checks, alongside the characterization constants above:
+                // these catch a defect already present when this test was first captured, which a
+                // pure characterization pin cannot, and would not go red on a legitimate upstream
+                // retune the way a tighter pin on dret[0]/dret[1] themselves would. They still
+                // cannot catch a defect inside TopoArcVisionis/VisLimMagn's own computation --
+                // only an oracle grid extension could do that -- they only prove HeliacalAngle's
+                // bisection landed on a real local minimum of whatever TopoArcVisionis computes,
+                // and that dret[1] is genuinely that minimum's value rather than an unrelated
+                // number.
+                //
+                // SweHel.cs's HeliacalAngle bisects x over [2, 20], passing x as TopoArcVisionis's
+                // own AltO parameter at every candidate -- the same AltO that swe_topo_arcus_visionis's
+                // public alt_obj parameter maps directly onto (SweHel.cs's swe_topo_arcus_visionis
+                // wrapper). So calling swe_topo_arcus_visionis with alt_obj = x and every other
+                // argument held the same as this test's own swe_heliacal_angle call above
+                // reproduces exactly the Arc(x) value HeliacalAngle's search evaluated at that x.
+                double Arc(double altObj) {
+                    double arcDret = 0;
+                    string arcSerr = null;
+                    int arcRc = target.swe_topo_arcus_visionis(SwissEph.J2000, dgeo, datm, dobs, SwissEph.SEFLG_MOSEPH,
+                        -3.0, 100.0, altObj, 90.0, 95.0, 10.0, ref arcDret, ref arcSerr);
+                    Assert.Equal(SwissEph.OK, arcRc);
+                    return arcDret;
+                }
+
+                // Measured: arc(x) at five points straddling dret[0] = 2.65625 falls into 2.656
+                // (the nearest grid point) and rises back out on both sides, then keeps rising all
+                // the way to the far end of the [2, 20] search domain (21.13 at x = 20) -- so
+                // 2.65625 is not just a local dip inside a narrow window, it is the minimum of a
+                // curve with nowhere lower anywhere else in the domain the bisection searched.
+                double a2256 = Arc(2.256);
+                double a2456 = Arc(2.456);
+                double a2656 = Arc(2.656);
+                double a2856 = Arc(2.856);
+                double a3056 = Arc(3.056);
+                double a20 = Arc(20.0);
+
+                Assert.True(a2256 > a2456, $"expected arc(2.256)={a2256} > arc(2.456)={a2456}");
+                Assert.True(a2456 > a2656, $"expected arc(2.456)={a2456} > arc(2.656)={a2656}");
+                Assert.True(a2656 < a2856, $"expected arc(2.656)={a2656} < arc(2.856)={a2856}");
+                Assert.True(a2856 < a3056, $"expected arc(2.856)={a2856} < arc(3.056)={a3056}");
+                Assert.True(a3056 < a20, $"expected arc(3.056)={a3056} < arc(20)={a20}");
+
+                // dret[1] equals Arc(dret[0]) within the bisection's own 0.1-wide bracket -- Xm
+                // (swehel.c's own naming) is only ever located to that resolution, so dret[1]
+                // cannot agree with Arc(dret[0]) any more tightly than that without the two
+                // disagreeing about which candidate the search actually settled on.
+                double arcAtDret0 = Arc(dret[0]);
+                Assert.True(Math.Abs(dret[1] - arcAtDret0) < 0.1,
+                    $"dret[1] ({dret[1]}) should equal Arc(dret[0]) ({arcAtDret0}) within the bisection's own 0.1-wide bracket");
+
+                // Arc(5.0) is exactly Test_swe_topo_arcus_visionis's own pinned constant for
+                // altObj = 5.0 -- the two tests exercise the same TopoArcVisionis through two
+                // different call shapes (this bisection's internal search vs swe_topo_arcus_visionis
+                // called directly) and land on the same number, which they could not do if either
+                // call path were actually computing something else.
+                Assert.Equal(9.374427795410156, Arc(5.0), 6);
             }
         }
 
