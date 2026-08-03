@@ -136,11 +136,11 @@ To initialize it, do the sparse setup before the first checkout, so the partial 
 fetches blobs for the excluded paths in the first place -- this is the primary recipe, not a
 disk-conscious alternative for CI only. Measured: `git submodule update --init` (below) lands at
 the same commit but pulls the entire `aloistr/swisseph` history and every path, `ephe/` included
--- 423.9 MB of working tree across 445 files (the same figure the README's submodule-size note
+-- 423.9 MB of working tree across 448 files (the same figure the README's submodule-size note
 cites, both read from the tree's own content so the number holds regardless of platform
 line-ending settings) plus roughly 870 MB of git objects in a from-scratch checkout -- that
 second figure moves as upstream's own history grows, so treat it as an order of magnitude, not
-an exact count pinned to one moment. Either way, that is not the 19 MB / 86 files and roughly
+an exact count pinned to one moment. Either way, that is not the 19 MB / 85 files and roughly
 5.8 MB of git objects this sparse recipe gives:
 
 ```powershell
@@ -397,12 +397,14 @@ and even a SHA captured correctly would stop existing once the PR merges. A
 PR number does not have either problem. If you do not know the PR number yet,
 leave it blank and fill in the logged line by hand once you do, before the PR
 merges. This applies to every append-only log in the repository, not only
-this one. Eight tracked files carry the convention. An earlier version of
+this one. Nine tracked files carry the convention. An earlier version of
 this paragraph named five of them, which is how placeholders in the other
 two then-untracked ones (`regenerations-files.log`,
 `version-classification-regenerations.log`) went unnoticed; a later revision
 found those two and named seven, which is how a placeholder in the eighth
-(`regenerations-jpl.log`, added by a later entry point) went unnoticed in turn:
+(`regenerations-jpl.log`, added by a later entry point) went unnoticed in
+turn, and a ninth (`Tests/netstandard-compat/regenerations.log`, added
+alongside `scripts/verify-netstandard-compat-log.ps1`) joined afterward:
 
 - `Tests/conformance/regenerations.log` (this one)
 - `Tests/oracle/regenerations.log`
@@ -410,6 +412,8 @@ found those two and named seven, which is how a placeholder in the eighth
 - `Tests/oracle/regenerations-jpl.log`
 - `Tests/oracle/version-classification-regenerations.log`
 - `Tests/swetest/regenerations.log`
+- `Tests/netstandard-compat/regenerations.log` (checked by
+  `scripts/verify-netstandard-compat-log.ps1`)
 - `scripts/freeze-manifest-log.txt` (the freeze manifest's sidecar, checked by
   `scripts/verify-freeze-log.ps1`)
 - `Tests/baseline/baseline-2.8.0.2.env.txt` (the characterization baseline's
@@ -418,7 +422,7 @@ found those two and named seven, which is how a placeholder in the eighth
 
 Make filling in a placeholder "no PR yet" entry with the real PR number a
 checked step before merging, not a hoped-for follow-up. To see what is
-outstanding across all eight at once (naming the paths, rather than grepping
+outstanding across all nine at once (naming the paths, rather than grepping
 `Tests` and `scripts` wholesale, because three of the scripts contain the
 placeholder text as the string they emit):
 
@@ -427,7 +431,8 @@ git grep -c 'no PR yet' -- Tests/conformance/regenerations.log `
     Tests/oracle/regenerations.log Tests/oracle/regenerations-files.log `
     Tests/oracle/regenerations-jpl.log `
     Tests/oracle/version-classification-regenerations.log `
-    Tests/swetest/regenerations.log scripts/freeze-manifest-log.txt `
+    Tests/swetest/regenerations.log Tests/netstandard-compat/regenerations.log `
+    scripts/freeze-manifest-log.txt `
     Tests/baseline/baseline-2.8.0.2.env.txt
 ```
 
