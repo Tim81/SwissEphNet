@@ -539,21 +539,39 @@ Source-level and reflection-based consumers can be affected:
   release and works. The reason it goes away is measured, not a preference:
   `netstandard2.0` is a compatibility target, not a correctness one, and bit-exactness
   against Astrodienst's C (see "Numerical compatibility" below) is claimed for `net8.0`
-  and later only. Measured directly for this note: running the same `netstandard2.0`
-  asset's `swe_calc` over 111 calls (37 bodies, 3 epochs), .NET Framework 4.8 differs
-  from .NET 10 on 21 of those rows, across 11 real bodies and 6 fictitious ones -- the
-  worst is `SE_TRUE_NODE`'s longitude speed, 1.33e-7 relative, with `SE_NEPTUNE` and
-  `SE_URANUS` longitude speed at the same order; the previously cited `FICT_CUPIDO` 83
-  ULP is the small end of that range, not the largest, and is a latitude difference, not
-  longitude. The same asset run under `net8.0` and `net10.0` shows 0 of 111 rows
-  differing. The cause is the .NET Framework 4.8 runtime, not this port: its
-  `Math.Sin`/`Math.Tan` are measurably less accurate near pi, reproducible in a few
-  lines of BCL calls with this library absent entirely. On .NET Framework the results
-  are correct to well within any practical tolerance, just not the C's bits, and
-  that gap is not one this project can close. `Tests/NetStandard20Smoke.Tests` is not
-  evidence either way here: it never calls `swe_calc`, touches no file-loading path, and
-  sets no culture; it is a regression pin for a `net48`-only string-extension recursion
-  and nothing more.
+  and later only. This is now a committed, gated instrument
+  (`scripts/verify-netstandard-compat.ps1`, `Tools/NetStandardCompat/`,
+  `Tests/netstandard-compat/known-diff-*.tsv`) rather than an ad hoc, unreproducible
+  measurement, and it replaces an earlier note's numbers, which understated the gap: running
+  the same `netstandard2.0` asset's `swe_calc` over a committed 102-call grid (34 bodies --
+  `SE_SUN`..`SE_EARTH` plus every fictitious-body constant `swephexp.h` defines,
+  `SE_CUPIDO`..`SE_WALDEMATH` -- crossed with 3 epochs, `SEFLG_MOSEPH|SEFLG_SPEED`), .NET
+  Framework 4.8 and 4.6.2 both differ from .NET 10 on the identical 29 of those rows (byte-
+  identical between the two Framework versions), not the earlier note's "21 of 111". The
+  worst divergence is not `SE_TRUE_NODE`'s longitude speed either: it is `SE_ADMETOS` (a
+  fictitious body)'s latitude speed, 2.28e-3 relative, four orders of magnitude past what
+  was previously cited as the worst case. `SE_TRUE_NODE`'s own longitude speed still comes in
+  close to the earlier figure (1.33e-7 relative, reproducible from this same grid), so that
+  data point was not wrong, it just was not the worst case once fictitious bodies were swept
+  too. `net8.0` and `net10.0` still agree on all 102 calls, as the earlier note claimed. The
+  causal claim held up under direct testing: `Tools/NetStandardCompat/RawMathProbe` compares
+  raw `Math.Sin`/`Math.Cos`/`Math.Tan`/`Math.Atan2` between net48 and net10.0 over 14,006
+  swept arguments with no `SwissEphNet` code involved at all, and net48's results differ from
+  net10.0's on several thousand of them, concentrated at multiples of pi/2 (0, pi/2, pi,
+  3pi/2, 2pi), not spread uniformly across the sweep, and never in `Atan2`. That confirms
+  the mechanism is a real .NET Framework `Math.Sin`/`Math.Cos`/`Math.Tan` precision
+  difference near a quarter-turn boundary, not only "near pi" narrowly, and not this port;
+  what this measurement does not trace is the exact chain from a few-ULP `Math.Sin`/`Cos`
+  divergence through `SE_ADMETOS`'s iterative Kepler solve (`swi_kepler`, called from
+  `swi_osc_el_plan`) to a 2.28e-3 relative divergence in its derived speed -- plausible as
+  iterative amplification (a converging Newton's-method solve differentiated for speed can
+  turn a few ULP into a much larger swing), but not instrumented step by step, since doing
+  so would mean adding debug output to `SwissEphNet/CPort/`, which the transliteration
+  freeze forbids. On .NET Framework the results are correct to well within any practical
+  tolerance, just not the C's bits, and that gap is not one this project can close.
+  `Tests/NetStandard20Smoke.Tests` is not evidence either way here: it never calls
+  `swe_calc`, touches no file-loading path, and sets no culture; it is a regression pin for
+  a `net48`-only string-extension recursion and nothing more.
 
 ## V:2.6.0.21
 

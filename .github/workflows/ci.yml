@@ -102,6 +102,28 @@ jobs:
         if: runner.os == 'Windows'
         run: dotnet test Tests/NetStandard20Smoke.Tests/NetStandard20Smoke.Tests.csproj -c ${{ matrix.configuration }} --no-build --logger trx --results-directory TestResults --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type mini
 
+      # Beside the netstandard2.0 smoke job above, on Windows only, for the same net462/net48
+      # reason -- but measures a different thing: the smoke job pins one known recursion bug, this
+      # gate measures whether the netstandard2.0 asset's swe_calc agrees bit-for-bit with net10.0
+      # across target frameworks, and fails if the recorded divergence set
+      # (Tests/netstandard-compat/known-diff-*.tsv) stops matching a fresh run. See
+      # scripts/verify-netstandard-compat.ps1's own header and README.md's "V:2.10.3" section for
+      # what it backs. Builds its own project directly (Tools/NetStandardCompat/
+      # NetStandardCompatDump is not part of SwissEphNet.sln, matching every other Tools/ console
+      # app under that tree), so it needs no prior build step from this job and runs once, gated to
+      # -c Release matching what the script itself always builds internally regardless of which
+      # matrix.configuration this job iteration is on -- running it a second time under Debug would
+      # duplicate identical work for no new coverage.
+      - name: Self-test the netstandard2.0 compatibility gate
+        if: runner.os == 'Windows' && matrix.configuration == 'Release'
+        shell: pwsh
+        run: pwsh scripts/verify-netstandard-compat.ps1 -SelfTest
+
+      - name: Verify netstandard2.0 swe_calc compatibility across target frameworks
+        if: runner.os == 'Windows' && matrix.configuration == 'Release'
+        shell: pwsh
+        run: pwsh scripts/verify-netstandard-compat.ps1
+
       - name: Publish test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -205,6 +227,16 @@ jobs:
       - name: Self-test the oracle known-diff regeneration guard
         shell: pwsh
         run: pwsh scripts/regenerate-oracle-known-diff.ps1 -SelfTest
+
+      # Same reasoning as the oracle known-diff regeneration guard's own self-test above: this
+      # script is a regeneration tool, not a gate, so it has no gate of its own to sit beside in
+      # CI, and it needs no Windows runner (unlike the gate it feeds, scripts/verify-netstandard-
+      # compat.ps1's own build-and-test job step): -SelfTest never builds or runs
+      # NetStandardCompatDump, it only asserts -Reason is required before this script would ever
+      # touch a known-diff-<fw>.tsv file.
+      - name: Self-test the netstandard2.0 compatibility known-diff regeneration guard
+        shell: pwsh
+        run: pwsh scripts/regenerate-netstandard-compat-known-diff.ps1 -SelfTest
 
       - name: Self-test the freeze-manifest log gate
         shell: pwsh
