@@ -103,16 +103,50 @@ param(
 
     [switch]$PruneOnly,
 
+    # Restricted to bare digits: this value is interpolated directly into the log entry appended
+    # to Tests/conformance/regenerations.log, and an unvalidated value could carry a newline that
+    # forges a second, backdated-looking log entry -- the append-only log gates
+    # (scripts/lib/DateLogGate.ps1's Get-DateLogEntries) read entries by a "YYYY-MM-DD " line-start
+    # prefix, so a crafted -PR value starting a new line with one would be indistinguishable from a
+    # real second entry. Matches scripts/classify-oracle-versions.ps1's own -PR guard (MEDIUM 4's
+    # reference fix); this script was one of the five left unguarded when that one shipped.
+    [ValidatePattern('^\d+$')]
     [string]$PR,
 
-    [switch]$SelfTest
+    [switch]$SelfTest,
+
+    # ---------------------------------------------------------------------------------------
+    # Internal, used only by -SelfTest below (via a real child-process invocation, the way
+    # scripts/verify-freeze.ps1's own Assert-Gate drives its normal path). Not documented in
+    # .SYNOPSIS/.DESCRIPTION above because it is not a contributor-facing mode: it runs exactly the
+    # write step a real -PruneOnly run performs (Invoke-PruneOnlyWrite below) against caller-supplied
+    # paths, with no build and no oracle dispatch, so HIGH 1's own fix site (the `@()` wrap that
+    # feeds $header, not just Get-SurvivingLines) is reachable from a self-test case without paying
+    # for Tools/ConformanceKnownFailGen or the 12,757-iteration corpus. See the self-test case that
+    # uses it for why this exists: the self-test's own hand-built, pre-wrapped array (the original
+    # case 1 below) calls Get-SurvivingLines directly and never reaches the `$header =
+    # $currentRawLines[0]` line at all, so it could not have caught a deleted `@()` there even though
+    # its own comment claimed it did.
+    # ---------------------------------------------------------------------------------------
+    [switch]$SelfTestApplyPrune,
+    [string]$CurrentPath,
+    [string]$FreshPath,
+    [string]$OutputPath
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-if (-not $SelfTest -and -not $PruneOnly -and [string]::IsNullOrWhiteSpace($Reason)) {
+if (-not $SelfTest -and -not $SelfTestApplyPrune -and -not $PruneOnly -and [string]::IsNullOrWhiteSpace($Reason)) {
     Write-Error "-Reason is required in default (full regenerate) mode. Use -PruneOnly if you only want to remove newly-passing rows."
+    exit 1
+}
+
+# MEDIUM 4's own fix, continued: -Reason must not carry a newline either, for the identical reason
+# -PR is restricted to bare digits above -- it too is interpolated directly into the log entry.
+# Matches scripts/classify-oracle-versions.ps1's own guard.
+if ($Reason -and ($Reason -match "`r" -or $Reason -match "`n")) {
+    Write-Error "-Reason must not contain a newline: it is written directly into Tests/conformance/regenerations.log, and a newline could be read as the start of a second, forged log entry."
     exit 1
 }
 
@@ -139,6 +173,77 @@ function Get-RowCount {
     param([string]$Path)
     if (-not (Test-Path $Path)) { return 0 }
     return (Get-Content $Path | Measure-Object -Line).Lines - 1 # minus header
+}
+
+# LOW 6's own fix. Tools/ConformanceKnownFailGen/Program.cs:30-31 already prints
+# "iterations={doc.TotalIterationCount}" to its own stdout on every run; this script used to let
+# that line stream past unread and discard it, inferring corpus shrinkage only indirectly through
+# -PruneOnly's survival-ratio floor -- which is calibrated to fire only on SEVERE shrinkage (below
+# $PruneOnlySurvivalRatioFloor), not on any change to the corpus at all, and the default
+# full-regenerate mode has no such floor to lean on regardless. Capturing the generator's own count
+# and asserting it against the corpus's known total catches a shrunk OR grown t.exp exactly, in
+# both modes, the moment it happens, rather than only when the ratio math happens to notice.
+#
+# 12,757 -- setest/t.exp's total iteration count, matching CONTRIBUTING.md's "Reporting by
+# testcase" section and Tests/conformance/known-fail.tsv's own header. A future, legitimate corpus
+# change (an upstream t.exp update) moves this constant and known-fail.tsv together in the same
+# commit, the same way $PruneOnlySurvivalRatioFloor above is a calibrated, hand-updated figure
+# rather than something this script derives on its own.
+$ExpectedIterationCount = 12757
+
+# Pure: extracts the iteration count from Tools/ConformanceKnownFailGen's own captured stdout text
+# (Program.cs:30-31's "iterations={doc.TotalIterationCount}" line), or $null if that line is not
+# present at all. Factored out of Invoke-ConformanceGenerator below so -SelfTest can exercise the
+# parsing itself against synthetic text, without invoking dotnet.
+function Get-IterationCountFromOutput {
+    param([string]$Text)
+    $iterationsMatch = [regex]::Match($Text, 'iterations=(\d+)')
+    if ($iterationsMatch.Success) { return [int]$iterationsMatch.Groups[1].Value }
+    return $null
+}
+
+# Pure: the verdict Assert-IterationCount below turns into an exit. Factored out so -SelfTest can
+# exercise the decision itself -- missing count, mismatched count, matching count -- without
+# needing Assert-IterationCount's own `exit 1` to tear down the self-test process along with it.
+function Test-IterationCountOk {
+    param($Actual, [int]$Expected)
+    if ($null -eq $Actual) {
+        return [pscustomobject]@{ Ok = $false; Reason = "Tools/ConformanceKnownFailGen's own stdout carried no 'iterations=<N>' line to check against -- did its own Program.cs (lines 30-31) stop printing it?" }
+    }
+    if ($Actual -ne $Expected) {
+        return [pscustomobject]@{ Ok = $false; Reason = "the conformance corpus dispatched $Actual iteration(s) this run, expected exactly $Expected. A mismatch means setest/t.exp itself changed shape -- SWISSEPH_CONFORMANCE_SUBMODULE pointed at a different corpus, a truncated t.exp, or a real upstream corpus update -- which -PruneOnly's own survival-ratio floor is not guaranteed to catch on its own (it only fires on severe shrinkage, not any change). If this is a legitimate corpus change, update `$ExpectedIterationCount in this script's own constant in the same commit." }
+    }
+    return [pscustomobject]@{ Ok = $true; Reason = $null }
+}
+
+# Runs Tools/ConformanceKnownFailGen once against $OutputPath, capturing its stdout (rather than
+# letting it stream straight to the host, matching scripts/regenerate-oracle-known-diff.ps1's own
+# $generateOutput pattern and its identical comment on why an uncaptured native-command call cannot
+# be inspected afterward) so the "iterations=<N>" line can be parsed and asserted by both real-run
+# call sites below. Still written back to the host explicitly, so a contributor watching the run
+# sees the same console output as before, just no longer streamed live line-by-line.
+function Invoke-ConformanceGenerator {
+    param([string]$OutputPath)
+    $output = & dotnet run --project $genProject -c Release --no-build -- $OutputPath 2>&1
+    $output | Write-Host
+    $exitCode = $LASTEXITCODE
+    $text = (@($output) -join "`n")
+    return [pscustomobject]@{
+        ExitCode   = $exitCode
+        Iterations = Get-IterationCountFromOutput -Text $text
+    }
+}
+
+# Fails loudly, before either $knownFailPath or a temp file is touched by anything downstream, if
+# the generator's own printed iteration count is missing (its own Program.cs stopped printing the
+# line this depends on) or does not match $ExpectedIterationCount exactly.
+function Assert-IterationCount {
+    param($Actual)
+    $verdict = Test-IterationCountOk -Actual $Actual -Expected $ExpectedIterationCount
+    if (-not $verdict.Ok) {
+        Write-Host "FAIL: $($verdict.Reason)" -ForegroundColor Red
+        exit 1
+    }
 }
 
 function Get-EpheDescription {
@@ -228,6 +333,52 @@ function Get-SurvivingLines {
         }
     }
     return , @($survivingLines.ToArray())
+}
+
+# The exact write step a real -PruneOnly run performs once the refusal guard has already passed:
+# read $KnownFailPath's raw lines (header + data), compute the surviving data lines against $Fresh,
+# and return the header, the surviving lines and the joined output text. This is the literal code
+# shape HIGH 1's own fix lives in -- `@(Get-Content -LiteralPath $KnownFailPath)` feeding BOTH
+# `$header = $currentRawLines[0]` and Get-SurvivingLines -- factored into its own function so
+# -SelfTest's -SelfTestApplyPrune child-process case (below) can invoke this exact function, not a
+# hand-rewritten stand-in for it, against a header-only fixture. Get-SurvivingLines alone cannot
+# stand in for this: PowerShell coerces a bare scalar string into a one-element [string[]] at that
+# function's own parameter boundary, so Get-SurvivingLines quietly tolerates an unwrapped
+# Get-Content result -- it is the sibling `$header = $currentRawLines[0]` line, indexing a bare
+# [string] directly instead of an array, that actually breaks (down to the header's first
+# CHARACTER) when the `@()` wrap is missing, and nothing reaches that line except this function and
+# the real -PruneOnly block it replaces.
+function Invoke-PruneOnlyWrite {
+    param([string]$KnownFailPath, [System.Collections.Generic.Dictionary[string, string]]$Fresh)
+    $currentRawLines = @(Get-Content -LiteralPath $KnownFailPath)
+    $header = $currentRawLines[0]
+    $survivingLines = Get-SurvivingLines -CurrentRawLines $currentRawLines -Fresh $Fresh
+    $outputLines = @($header) + $survivingLines
+    $outputText = ($outputLines -join "`n") + "`n"
+    return [pscustomobject]@{
+        Header         = $header
+        SurvivingLines = $survivingLines
+        OutputText     = $outputText
+    }
+}
+
+# ---------------------------------------------------------------------------------------------
+# -SelfTestApplyPrune: internal, invoked only by -SelfTest below as a real child process. Runs
+# Invoke-PruneOnlyWrite above against caller-supplied paths and writes the result to -OutputPath.
+# No build, no oracle dispatch, no read of Tests/conformance/known-fail.tsv unless -CurrentPath
+# happens to point at it (the self-test always points it at a throwaway fixture instead).
+# ---------------------------------------------------------------------------------------------
+
+if ($SelfTestApplyPrune) {
+    if (-not $CurrentPath -or -not $FreshPath -or -not $OutputPath) {
+        Write-Error '-SelfTestApplyPrune requires -CurrentPath, -FreshPath and -OutputPath.'
+        exit 1
+    }
+    $freshTable = Read-KnownFailTable -Path $FreshPath
+    $result = Invoke-PruneOnlyWrite -KnownFailPath $CurrentPath -Fresh $freshTable
+    [System.IO.File]::WriteAllText($OutputPath, $result.OutputText)
+    Write-Host "Wrote $OutputPath ($($result.SurvivingLines.Count) surviving row(s))."
+    exit 0
 }
 
 # The -PruneOnly refusal guard itself, factored out of the real run below so -SelfTest can exercise
@@ -421,6 +572,87 @@ if ($SelfTest) {
         Assert-True '-Reason is required outside -PruneOnly and -SelfTest, refused before any build' `
             ($code -ne 0 -and $text -match '-Reason is required') "exit=$code output: $text"
 
+        # 10. HIGH 1's own bypass, reproduced against the PRODUCTION path in a REAL CHILD PROCESS --
+        #     matching scripts/verify-freeze.ps1's own Assert-Gate pattern. Case 1 above proves
+        #     Get-SurvivingLines tolerates an unwrapped Get-Content result (PowerShell coerces a
+        #     bare scalar into a one-element [string[]] at that function's own typed parameter
+        #     boundary), but it hand-wraps its own array and calls Get-SurvivingLines directly, so it
+        #     never reaches the line that actually breaks without the `@()` wrap: `$header =
+        #     $currentRawLines[0]`, inside Invoke-PruneOnlyWrite, which only a real
+        #     -SelfTestApplyPrune invocation of this SCRIPT FILE reaches. Deleting the `@()` wrap
+        #     there (the change this case exists to catch) makes $currentRawLines a bare [string] at
+        #     that assignment, so $header becomes the header line's first CHARACTER, not the header
+        #     -- this case fails, loudly, if that regresses.
+        $applyPruneCurrentPath = Join-Path $lab 'apply-prune-header-only.tsv'
+        [System.IO.File]::WriteAllText($applyPruneCurrentPath, "$headerLine`n", (New-Object System.Text.UTF8Encoding($false)))
+        $applyPruneFreshPath = Join-Path $lab 'apply-prune-fresh-empty.tsv'
+        [System.IO.File]::WriteAllText($applyPruneFreshPath, "$headerLine`n", (New-Object System.Text.UTF8Encoding($false)))
+        $applyPruneOutputPath = Join-Path $lab 'apply-prune-output.tsv'
+        $applyPruneOutput = & $pwshExe -NoProfile -File $PSCommandPath -SelfTestApplyPrune `
+            -CurrentPath $applyPruneCurrentPath -FreshPath $applyPruneFreshPath -OutputPath $applyPruneOutputPath *>&1
+        $applyPruneCode = $LASTEXITCODE
+        $applyPruneWritten = if (Test-Path -LiteralPath $applyPruneOutputPath) { [System.IO.File]::ReadAllText($applyPruneOutputPath) } else { $null }
+        Assert-True 'the real -SelfTestApplyPrune child process, run against a header-only current file, writes the FULL header line back, not its first character' `
+            ($applyPruneCode -eq 0 -and $applyPruneWritten -eq "$headerLine`n") `
+            "exit=$applyPruneCode written='$applyPruneWritten' output: $(@($applyPruneOutput) -join ' | ')"
+
+        # 11. Control for case 10: a current file with one surviving row and one pruned row, through
+        #     the same real child-process path, must keep the header and exactly the surviving row.
+        $applyPruneCurrentPath2 = Join-Path $lab 'apply-prune-two-rows.tsv'
+        [System.IO.File]::WriteAllText($applyPruneCurrentPath2, (@(
+            $headerLine
+            "1`t1`t1`tVALUE-MISMATCH`t-4`treason a"
+            "1`t1`t2`tVALUE-MISMATCH`t-4`treason b"
+        ) -join "`n") + "`n", (New-Object System.Text.UTF8Encoding($false)))
+        $applyPruneFreshPath2 = Join-Path $lab 'apply-prune-two-rows-fresh.tsv'
+        [System.IO.File]::WriteAllText($applyPruneFreshPath2, (@(
+            $headerLine
+            "1`t1`t1`tVALUE-MISMATCH`t-4`treason a (regenerated wording)"
+        ) -join "`n") + "`n", (New-Object System.Text.UTF8Encoding($false)))
+        $applyPruneOutputPath2 = Join-Path $lab 'apply-prune-two-rows-output.tsv'
+        & $pwshExe -NoProfile -File $PSCommandPath -SelfTestApplyPrune `
+            -CurrentPath $applyPruneCurrentPath2 -FreshPath $applyPruneFreshPath2 -OutputPath $applyPruneOutputPath2 *>&1 | Out-Null
+        $applyPruneWritten2 = if (Test-Path -LiteralPath $applyPruneOutputPath2) { @(Get-Content -LiteralPath $applyPruneOutputPath2) } else { @() }
+        Assert-True 'a real child-process prune write keeps the header and only the surviving row, verbatim from the current file (not the fresh run''s own wording)' `
+            ($applyPruneWritten2.Count -eq 2 -and $applyPruneWritten2[0] -eq $headerLine -and $applyPruneWritten2[1] -eq "1`t1`t1`tVALUE-MISMATCH`t-4`treason a") `
+            "got: $($applyPruneWritten2 -join ' || ')"
+
+        # 12. MEDIUM 4's own fix: -PR is restricted to bare digits. A crafted value carrying a
+        #     newline (the demonstrated log-injection shape: a backdated-looking second entry) must
+        #     be refused by parameter validation before this script's body ever runs.
+        $prOutput = & $pwshExe -NoProfile -File $PSCommandPath -PruneOnly -PR "32`n2020-01-01 forged entry" *>&1
+        $prCode = $LASTEXITCODE
+        Assert-True '-PR rejects a value that is not bare digits (log-injection guard)' `
+            ($prCode -ne 0) "exit=$prCode output: $(@($prOutput) -join ' | ')"
+
+        # 13. MEDIUM 4's own fix: -Reason must not contain a newline, for the identical reason -- it
+        #     is interpolated directly into Tests/conformance/regenerations.log.
+        $reasonOutput = & $pwshExe -NoProfile -File $PSCommandPath -PruneOnly -Reason "line one`nline two" *>&1
+        $reasonCode = $LASTEXITCODE
+        Assert-True '-Reason rejects a value containing a newline (log-injection guard)' `
+            ($reasonCode -ne 0 -and (@($reasonOutput) -join "`n") -match 'must not contain a newline') `
+            "exit=$reasonCode output: $(@($reasonOutput) -join ' | ')"
+
+        # 14. LOW 6's own fix: the generator's own "iterations={doc.TotalIterationCount}" line
+        #     (Tools/ConformanceKnownFailGen/Program.cs:30-31) is parsed out of its captured stdout.
+        Assert-True 'Get-IterationCountFromOutput parses the generator''s own iterations= line' `
+            ((Get-IterationCountFromOutput -Text "Done in 42.0s. suites=60 testcases=60 iterations=12757 valueLines=99999") -eq 12757)
+        Assert-True 'Get-IterationCountFromOutput returns $null when the line is absent (the generator stopped printing it)' `
+            ($null -eq (Get-IterationCountFromOutput -Text "Done in 42.0s. suites=60 testcases=60 valueLines=99999"))
+
+        # 15. Test-IterationCountOk's three verdicts: missing, mismatched, matching.
+        $verdictMissing = Test-IterationCountOk -Actual $null -Expected 12757
+        Assert-True 'a missing iteration count is not ok, and names why' `
+            (-not $verdictMissing.Ok -and $verdictMissing.Reason -match "stdout carried no 'iterations=") "got: $($verdictMissing | Out-String)"
+
+        $verdictMismatch = Test-IterationCountOk -Actual 12000 -Expected 12757
+        Assert-True 'a mismatched iteration count is not ok, and names the actual vs expected count' `
+            (-not $verdictMismatch.Ok -and $verdictMismatch.Reason -match '12000 iteration\(s\)' -and $verdictMismatch.Reason -match 'expected exactly 12757') `
+            "got: $($verdictMismatch | Out-String)"
+
+        $verdictMatch = Test-IterationCountOk -Actual 12757 -Expected 12757
+        Assert-True 'a matching iteration count is ok' ($verdictMatch.Ok)
+
         Write-Host ''
         if ($failures -gt 0) {
             Write-Host "FAIL: $failures self-test case(s) did not behave as required." -ForegroundColor Red
@@ -446,8 +678,9 @@ if ($PruneOnly) {
     $tempPath = [System.IO.Path]::GetTempFileName()
     try {
         Write-Host "Running the conformance oracle against the current build (dispatches all 12,757 iterations; expect a few minutes)..."
-        dotnet run --project $genProject -c Release --no-build -- $tempPath
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        $genResult = Invoke-ConformanceGenerator -OutputPath $tempPath
+        if ($genResult.ExitCode -ne 0) { exit $genResult.ExitCode }
+        Assert-IterationCount -Actual $genResult.Iterations
 
         $current = Read-KnownFailTable -Path $knownFailPath
         $fresh = Read-KnownFailTable -Path $tempPath
@@ -500,25 +733,24 @@ if ($PruneOnly) {
         # surviving row's reason on every prune (and would now do the same to magnitude_key). A
         # prune genuinely only removes lines: no row this block keeps is rewritten in any column.
         #
-        # HIGH 1 fix: @()-wrapped. Get-Content on a file with exactly one line (known-fail.tsv
-        # header-only -- zero known failures, the port's own goal state, and the state
-        # Tests/oracle/known-diff*.tsv is already in) returns a bare [string], not a one-element
-        # array. Unwrapped, $currentRawLines[0] then indexes the STRING, giving its first
-        # CHARACTER, and the loop below (bounded by .Count, which on a string is its character
-        # length) walks the header's own characters as if they were data rows -- none of which
-        # matches anything in $fresh, so $survivingLines stays empty and $outputLines collapses to
-        # just that first character. Measured directly: this wrote a 471 KB golden down to the
-        # single byte "s". @()-wrapping forces array shape regardless of line count, matching every
-        # other Get-Content call site in this codebase that has already been bitten by this.
-        $currentRawLines = @(Get-Content -LiteralPath $knownFailPath)
-        $header = $currentRawLines[0]
-        $survivingLines = Get-SurvivingLines -CurrentRawLines $currentRawLines -Fresh $fresh
+        # HIGH 1 fix, now the single Invoke-PruneOnlyWrite function above (defined once so
+        # -SelfTest's -SelfTestApplyPrune child-process case exercises this exact code, not a
+        # reimplementation of it): @()-wrapped. Get-Content on a file with exactly one line
+        # (known-fail.tsv header-only -- zero known failures, the port's own goal state, and the
+        # state Tests/oracle/known-diff*.tsv is already in) returns a bare [string], not a
+        # one-element array. Unwrapped, indexing element 0 of that result then indexes the STRING,
+        # giving its first CHARACTER, and the surviving-lines loop (bounded by .Count, which on a
+        # string is its character length) walks the header's own characters as if they were data
+        # rows -- none of which matches anything in $fresh, so the output collapses to just that
+        # first character. Measured directly: this wrote a 471 KB golden down to the single byte
+        # "s". @()-wrapping forces array shape regardless of line count, matching every other
+        # Get-Content call site in this codebase that has already been bitten by this.
+        $writeResult = Invoke-PruneOnlyWrite -KnownFailPath $knownFailPath -Fresh $fresh
 
         $beforeCount = $current.Count
-        $afterCount = $survivingLines.Count
+        $afterCount = $writeResult.SurvivingLines.Count
         $removed = $beforeCount - $afterCount
-        $outputLines = @($header) + $survivingLines
-        [System.IO.File]::WriteAllText($knownFailPath, (($outputLines -join "`n") + "`n"))
+        [System.IO.File]::WriteAllText($knownFailPath, $writeResult.OutputText)
 
         $date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
         $prCitation = if ($PR) { "PR #$PR" } else { "(no PR yet -- fill in `"PR #N`" before merging, per CONTRIBUTING.md)" }
@@ -553,10 +785,10 @@ $tempKnownFailPath = [System.IO.Path]::GetTempFileName()
 try {
     Write-Host "Running the conformance oracle against the current build (this dispatches all 12,757 iterations; expect a few minutes)..."
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    dotnet run --project $genProject -c Release --no-build -- $tempKnownFailPath
-    $exitCode = $LASTEXITCODE
+    $genResult = Invoke-ConformanceGenerator -OutputPath $tempKnownFailPath
     $stopwatch.Stop()
-    if ($exitCode -ne 0) { exit $exitCode }
+    if ($genResult.ExitCode -ne 0) { exit $genResult.ExitCode }
+    Assert-IterationCount -Actual $genResult.Iterations
 
     Write-Host ("Regeneration run took {0:F1}s wall-clock." -f $stopwatch.Elapsed.TotalSeconds)
 

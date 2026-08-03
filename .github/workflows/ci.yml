@@ -218,6 +218,19 @@ jobs:
           "sha=$base" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           Write-Host "Resolved manifest-log base: $base"
 
+      # scripts/regenerate-known-fail.ps1 is a regeneration tool rather than a gate, so it is not
+      # invoked anywhere in CI and its self-test had no gate to sit beside -- the same reasoning the
+      # oracle known-diff regeneration guard's own self-test step immediately below gives for why it
+      # runs here. What it protects is the same kind of refusal: -PruneOnly must not be tricked into
+      # writing a currently-failing row into known-fail.tsv, whether by an added/recategorized row or
+      # by a shrunken corpus sliding under the ratio floor -- and its -SelfTestApplyPrune case
+      # exercises the real write path (the `@()` wrap feeding $header, not just Get-SurvivingLines)
+      # in a real child process, the way scripts/verify-freeze.ps1's own Assert-Gate does, without
+      # building Tools/ConformanceKnownFailGen or dispatching the 12,757-iteration corpus.
+      - name: Self-test the known-fail regeneration guard
+        shell: pwsh
+        run: pwsh scripts/regenerate-known-fail.ps1 -SelfTest
+
       # regenerate-oracle-known-diff.ps1 is a regeneration tool rather than a gate, so it is not
       # invoked anywhere in CI and its self-test has no gate to sit beside. It runs here because
       # what it protects is a refusal: -PruneOnly must refuse to write a currently-failing row
