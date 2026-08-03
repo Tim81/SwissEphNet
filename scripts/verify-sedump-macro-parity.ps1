@@ -47,6 +47,12 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 
+# Get-WorkflowScanFiles -- shared with scripts/verify-workflow-continue-on-error.ps1 so both
+# scanners agree, byte for byte, on what counts as a workflow-shaped file under .github/. See that
+# library file's own header for why it is dot-sourced rather than the two scripts sharing code by
+# copy-paste.
+. (Join-Path $PSScriptRoot 'lib/WorkflowScan.ps1')
+
 function Get-RequiredMacros {
     param([string] $SedumpPath)
     $text = [System.IO.File]::ReadAllText($SedumpPath, [System.Text.UTF8Encoding]::new($false, $true))
@@ -113,24 +119,6 @@ function Get-DefinedMacros {
         [void]$found.Add($m.Groups[1].Value)
     }
     return , @($found)
-}
-
-# *.yml and *.yaml, and recursive over the WHOLE .github tree, not just .github/workflows -- see
-# MEDIUM 3's own review: a non-recursive scan of .github/workflows alone cannot see a compile site
-# in a nested workflow (.github/workflows/<subdir>/x.yml) or in a composite action
-# (.github/actions/*/action.yml, a supported, real GitHub Actions file that also carries a .yml
-# extension). Passing the .github directory itself (not .github/workflows) as -WorkflowsDir is
-# what makes this one recursive scan cover both shapes at once, plus every ordinary workflow file,
-# without scanning the same file twice under two different function calls. GitHub Actions accepts
-# both .yml and .yaml for either kind of file, and a scan that only looked for *.yml would silently
-# drop coverage of any file saved with the other extension. Factored out so -SelfTest can exercise
-# it directly rather than only indirectly through the whole gate, matching how
-# Get-RequiredMacros/Get-MacroBearingLines/Test-Parity are each tested on their own below.
-function Get-WorkflowScanFiles {
-    param([string] $WorkflowsDir)
-    return @(Get-ChildItem -LiteralPath $WorkflowsDir -File -Recurse -ErrorAction SilentlyContinue |
-            Where-Object { $_.Extension -in '.yml', '.yaml' } |
-            ForEach-Object { $_.FullName })
 }
 
 # scripts/*.sh -- MEDIUM 3's own review: a compile site in a shell script under scripts/ (this
