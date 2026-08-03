@@ -224,7 +224,12 @@ function Invoke-AttributionScan {
         # both. A leading "(?i)" makes that one pattern case-insensitive, its absence means
         # case-sensitive -- see the .DESCRIPTION for why each choice was made.
         $patterns = @(
-            @{ Regex = '\bClaude\b'; Label = "product name 'Claude'" }
+            # (?i): catches the all-caps assistant-config filename form ("CLAUDE.md") too, not just
+            # the mixed-case product name -- a case-sensitive \bClaude\b let "CLAUDE" straight
+            # through. Demonstrated against this repository's own history: commit 7fd154d added
+            # tracked-file text mentioning "CLAUDE.md" and this gate reported PASS having matched
+            # nothing.
+            @{ Regex = '(?i)\bClaude\b'; Label = "product name 'Claude'" }
             @{ Regex = '\bAnthropic\b'; Label = "company name 'Anthropic'" }
             @{ Regex = '\bChatGPT\b'; Label = "product name 'ChatGPT'" }
             @{ Regex = '(?i)\bcopilot\b'; Label = "'copilot'" }
@@ -884,7 +889,16 @@ Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'A note.')
 Add-LabCommit -LabRoot $lab -Message 'add a note' -Paths @('docs/notes.md') -AuthorName 'Claude' -AuthorEmail 'noreply@anthropic.com'
 Assert-Gate 'a tool identity on the commit, which no reserved-domain rule can see' 'fails' $lab -CommitRange "$base..HEAD" -Matching 'author name .* matches product name'
 
-# 26. A clean range. Without this every case above could be satisfied by a check that fails on
+# 26. MEDIUM 8: the all-caps assistant-config filename form ("CLAUDE.md") must also be caught --
+#     the previously case-sensitive '\bClaude\b' pattern let this straight through, since "CLAUDE"
+#     is spelled in a case that pattern never matched. This is the exact shape commit 7fd154d
+#     added to this repository's own tracked history and passed this gate at exit 0 with.
+$lab = New-AttributionLab 'all-caps-claude-config-filename'
+Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'See CLAUDE.md for local working notes.')
+Add-LabCommit -LabRoot $lab -Message 'add a note' -Paths @('docs/notes.md')
+Assert-Gate 'the all-caps assistant-config filename (CLAUDE.md)' 'fails' $lab -Matching "product name 'Claude'"
+
+# 27. A clean range. Without this every case above could be satisfied by a check that fails on
 #     everything -- and this one exercises the range legs too, which the tracked-file cases skip.
 $lab = New-AttributionLab 'clean'
 $base = Get-LabHead $lab
