@@ -176,9 +176,10 @@ public class SetestSourceModelTests
         // nonEmpty at all, because that suite's real names ("rc", "serr", "xx") are also asserted
         // by other suites in this synthetic set -- so the aggregate floors alone cannot see suite
         // 1 go dark. Every other floor is sized to pass: 30 GET_* input names, 46 distinct CHECK_*
-        // names (>= the 40 floor), 55 mapped testcases across 10 suites (the exact minimums), 5
-        // shared checkers, all four CHECK_D/I/S/DD families present, and every testcase in suites
-        // 2-10 carries a non-empty set -- only suite 1's five testcases are empty.
+        // names (>= the 40 floor), 59 mapped testcases across 10 suites (5 + 9*6, comfortably
+        // above the 55 floor -- see the exact count asserted just below), 5 shared checkers, all
+        // four CHECK_D/I/S/DD families present, and every testcase in suites 2-10 carries a
+        // non-empty set -- only suite 1's five testcases are empty.
         var inputNames = new HashSet<string>(StringComparer.Ordinal);
         for (var i = 0; i < 30; i++)
         {
@@ -237,6 +238,136 @@ public class SetestSourceModelTests
         var ex = Assert.Throws<InvalidOperationException>(() => model.AssertNonTrivialForTesting());
         Assert.Contains("TESTSUITE(s) 1", ex.Message, StringComparison.Ordinal);
         Assert.Contains("no testcase with any CHECK_* name", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SingleTestCaseWithNoCheckedNameIsFatalEvenWhenItsOwnSuiteHasOthers()
+    {
+        // Reproduces the narrower gap the per-suite floor above cannot see: blinding just one
+        // testcase (here, suite 6 testcase 3, matching the real corpus's own TESTSUITE(6)/
+        // TESTCASE(3) -- 1,080 iterations) inside a suite that still has other, non-empty
+        // testcases moves neither distinctChecked/nonEmpty (the aggregate floors) nor
+        // suitesWithoutACheckedName (the per-suite floor), because suite 6's other five
+        // testcases keep it off that list. Every other floor is sized to pass the same way
+        // SuiteWithNoCheckedNameAtAllIsFatalEvenWhenAggregateFloorsPass above does.
+        var inputNames = new HashSet<string>(StringComparer.Ordinal);
+        for (var i = 0; i < 30; i++)
+        {
+            inputNames.Add($"input{i}");
+        }
+
+        var checkedNames = new Dictionary<(int Suite, int TestCase), HashSet<string>>();
+        var distinctNames = new List<string> { "rc", "serr", "xx" };
+        for (var i = 0; i < 43; i++)
+        {
+            distinctNames.Add($"checked{i}");
+        }
+
+        var familyCounts = new Dictionary<string, int>(StringComparer.Ordinal)
+        {
+            ["D"] = 1,
+            ["I"] = 1,
+            ["S"] = 1,
+            ["DD"] = 1,
+        };
+
+        var nameIndex = 0;
+        for (var suite = 1; suite <= 10; suite++)
+        {
+            for (var tc = 1; tc <= 6; tc++)
+            {
+                // Suite 6 testcase 3 is the one blinded testcase -- everything else, including
+                // every other testcase in suite 6, gets a real, non-empty set.
+                if (suite == 6 && tc == 3)
+                {
+                    checkedNames[(suite, tc)] = new HashSet<string>(StringComparer.Ordinal);
+                    continue;
+                }
+
+                var names = new HashSet<string>(StringComparer.Ordinal) { "rc", "serr", "xx" };
+                names.Add(distinctNames[3 + (nameIndex % (distinctNames.Count - 3))]);
+                nameIndex++;
+                checkedNames[(suite, tc)] = names;
+            }
+        }
+
+        // 10*6 = 60 mapped testcases, well above the floor of 55.
+        Assert.True(checkedNames.Count >= 55);
+        Assert.Equal(
+            46,
+            checkedNames.Values.SelectMany(v => v).Distinct(StringComparer.Ordinal).Count());
+
+        var model = SetestSourceModel.BuildForTesting(
+            inputNames,
+            checkedNames,
+            sharedCheckerNames: new[] { "a", "b", "c", "d", "e" },
+            checkFamilyCounts: familyCounts);
+
+        var ex = Assert.Throws<InvalidOperationException>(() => model.AssertNonTrivialForTesting());
+        Assert.Contains("TESTSUITE(6)/TESTCASE(3)", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("no CHECK_* name at all", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void KnownLegitimateEmptyTestCaseDoesNotTripThePerTestCaseFloor()
+    {
+        // TESTSUITE(1)/TESTCASE(4) is the one testcase the pinned corpus itself leaves with an
+        // empty CHECK_* set (CHECK_EQUALS_I only -- see PinnedSubmodule_YieldsTheMeasuredNameSets
+        // and CheckEqualsFamilyIsNotMistakenForAnAssertedName above), so the per-testcase floor
+        // must tolerate exactly that one exception without also going blind to a second, real gap
+        // elsewhere. This mirrors SingleTestCaseWithNoCheckedNameIsFatalEvenWhenItsOwnSuiteHasOthers
+        // but leaves (1, 4) empty (the tolerated exception) while every other testcase, including
+        // every other testcase in suite 1, is non-empty -- so a clean run here proves the
+        // exception is honoured, not that the floor is silently disabled.
+        var inputNames = new HashSet<string>(StringComparer.Ordinal);
+        for (var i = 0; i < 30; i++)
+        {
+            inputNames.Add($"input{i}");
+        }
+
+        var checkedNames = new Dictionary<(int Suite, int TestCase), HashSet<string>>();
+        var distinctNames = new List<string> { "rc", "serr", "xx" };
+        for (var i = 0; i < 43; i++)
+        {
+            distinctNames.Add($"checked{i}");
+        }
+
+        var familyCounts = new Dictionary<string, int>(StringComparer.Ordinal)
+        {
+            ["D"] = 1,
+            ["I"] = 1,
+            ["S"] = 1,
+            ["DD"] = 1,
+        };
+
+        var nameIndex = 0;
+        for (var suite = 1; suite <= 10; suite++)
+        {
+            for (var tc = 1; tc <= 6; tc++)
+            {
+                if (suite == 1 && tc == 4)
+                {
+                    checkedNames[(suite, tc)] = new HashSet<string>(StringComparer.Ordinal);
+                    continue;
+                }
+
+                var names = new HashSet<string>(StringComparer.Ordinal) { "rc", "serr", "xx" };
+                names.Add(distinctNames[3 + (nameIndex % (distinctNames.Count - 3))]);
+                nameIndex++;
+                checkedNames[(suite, tc)] = names;
+            }
+        }
+
+        Assert.True(checkedNames.Count >= 55);
+
+        var model = SetestSourceModel.BuildForTesting(
+            inputNames,
+            checkedNames,
+            sharedCheckerNames: new[] { "a", "b", "c", "d", "e" },
+            checkFamilyCounts: familyCounts);
+
+        // Must not throw: (1, 4) is the one named, tolerated exception.
+        model.AssertNonTrivialForTesting();
     }
 
     private static SetestSourceModel LoadSynthetic(string suiteSource)

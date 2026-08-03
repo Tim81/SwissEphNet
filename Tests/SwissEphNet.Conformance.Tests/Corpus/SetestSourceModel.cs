@@ -402,6 +402,35 @@ public sealed class SetestSourceModel
                 "since another suite's testcases can happen to assert the same literal names.");
         }
 
+        // Per-testcase, because the per-suite floor above cannot see a single testcase go dark
+        // inside a suite that still has other, non-empty testcases: suite 6 alone maps 6
+        // testcases, so CollectCheckedNames returning {} for just (6, 3) leaves that suite's
+        // "has at least one non-empty testcase" check satisfied by its five siblings while
+        // (6, 3)'s own 1,080 iterations go completely unchecked. Measured against the pinned
+        // submodule: 59 of the 60 mapped testcases have a non-empty CHECK_* set; the sole
+        // exception is TESTSUITE(1)/TESTCASE(4), which asserts only through CHECK_EQUALS_I --
+        // CheckScalarRegex deliberately does not match that family (see its own comment: its
+        // operands compare two computed values, not a t.exp-recorded field, so they are not real
+        // corpus assertions this model is meant to see), so this testcase legitimately maps to
+        // an empty set and is layer 3's job to cover, not this one's. Naming that one exception
+        // keeps this a presence check rather than a count: tolerating "up to N empty testcases"
+        // would just move the blind spot from "one suite" to "any N testcases", including a
+        // second one silently going dark alongside the first.
+        var legitimatelyEmpty = (Suite: 1, TestCase: 4);
+        var unexpectedlyEmpty = _checkedNames
+            .Where(kv => kv.Value.Count == 0 && kv.Key != legitimatelyEmpty)
+            .Select(kv => kv.Key)
+            .OrderBy(k => k.Suite).ThenBy(k => k.TestCase)
+            .ToList();
+        if (unexpectedlyEmpty.Count > 0)
+        {
+            problems.Add(
+                $"testcase(s) {string.Join(", ", unexpectedlyEmpty.Select(k => $"TESTSUITE({k.Suite})/TESTCASE({k.TestCase})"))} " +
+                "have no CHECK_* name at all -- the per-suite floor above cannot see this when the same suite has " +
+                "another, non-empty testcase, and TESTSUITE(1)/TESTCASE(4) (CHECK_EQUALS_I only) is the one known " +
+                "legitimate exception.");
+        }
+
         if (problems.Count > 0)
         {
             throw new InvalidOperationException(
