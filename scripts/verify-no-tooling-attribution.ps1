@@ -38,17 +38,24 @@
 
     Pattern design, and why each one is shaped the way it is:
 
-      - Tool and vendor product names (case-sensitive, whole-word) -- "Claude", "Anthropic",
-        "ChatGPT" -- chosen case-sensitive because these are proper nouns; a false positive would
-        need an unrelated identifier that happens to capitalize the same way, which nothing in a
-        Swiss Ephemeris port does.
+      - Tool and vendor product names (case-INsensitive, whole-word) -- these are proper nouns, so
+        case-sensitivity was the original choice and it was wrong twice over. A branch commit
+        message named this repository's own agent-config file in all caps and the gate reported
+        PASS; separately, the lower-cased domain forms of two vendor names (an address, a URL)
+        matched nothing. Whole-word matching still bounds the false-positive risk, and the boundary
+        holds either side of a name embedded in an address or URL, so no separate domain pattern is
+        needed. Verified against the tree before widening: no legitimate text in this repository
+        contains any of these names in any casing.
       - "assistant", "copilot", "chatbot" (case-insensitive, whole-word) -- generic terms for a
         tool that writes text on someone's behalf. Whole-word matching keeps "assistant" from
         firing on a substring of some unrelated identifier; nothing in this codebase's domain
         (ephemeris calculation) uses any of these three words for anything else, verified with
         `git grep` against the tree this script was written against.
-      - "Co-Authored-By" and "Claude-Session" (case-sensitive) -- the specific trailers automated
-        commit tooling appends by default.
+      - The co-authorship and session trailers (case-INsensitive) -- the specific trailers automated
+        commit tooling appends by default. Case-insensitive because the co-authorship trailer has a
+        canonical lower-cased spelling that git itself writes (the --trailer option, the hosting
+        provider's web UI and its own documentation all use it), so the case-sensitive pattern
+        caught only the camel-cased variant and missed the likeliest spelling of the two.
       - "Generated with" (case-sensitive, capital G) -- the standard footer phrase
         ("Generated with [...]"), not the bare word "generated", which is ordinary and legitimate
         throughout this repository's own documentation ("the baseline is generated from the
