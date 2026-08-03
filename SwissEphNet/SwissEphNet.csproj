@@ -111,11 +111,12 @@ SwissEphNet):
   from the next release on, so the window in which this library is reachable from .NET Framework
   is this one version. Consumers on .NET Framework 4.6.1+ can take 2.10.3 and should pin to it
   deliberately rather than expect it to persist. netstandard2.0 is a compatibility target,
-  not a correctness one: measured on .NET Framework 4.8 against .NET 10, the same asset's
-  swe_calc differs on 21 of 111 calls (37 bodies, 3 epochs; worst case SE_TRUE_NODE longitude
-  speed, 1.33e-7 relative), while net8.0 and net10.0 agree on all 111. The cause is .NET
-  Framework 4.8's less accurate Math.Sin/Math.Tan near pi, not this port; see the "V:2.10.3"
-  section of README.md for the full measurement.
+  not a correctness one: measured on .NET Framework 4.8 and 4.6.2 against .NET 10, the same
+  asset's swe_calc differs on 29 of 102 calls (34 bodies x 3 epochs; worst case SE_ADMETOS
+  latitude speed, 2.28e-3 relative -- an absolute divergence of 1.4e-08 deg/day against a base
+  value of about -6.1e-06), while net8.0 and net10.0 agree on all 102. The cause is .NET
+  Framework's less accurate Math.Sin/Math.Cos/Math.Tan near quarter-turn boundaries, not this
+  port; see the "V:2.10.3" section of README.md for the full measurement.
 - Numerous port bug fixes surfaced by the 2.10.03 work, several of them upstream C bugs Astrodienst
   fixed between 2.08 and 2.10.03 that this port now also carries: swe_nod_aps/swe_nod_aps_ut
   returning all-zero nodes and apsides, an obliquity read that affected every SEFLG_SWIEPH
