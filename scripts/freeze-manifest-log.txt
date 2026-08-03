@@ -489,3 +489,29 @@ b"} where the C gives {"a", ""}); that one is fixed
    the file was re-verified.
    Programs/SweTest/Program.cs: 5025 -> 5025 lines (line count unchanged; only cited numbers and
    the spmoon comment's text moved), sha256 56E3C767... -> 86DBD9DB....
+22. PR #32 2026-08-03: Manifest correction only. No frozen file changed.
+
+    The recorded SwissEphNet/CPort hash moved from 0E29C549... to 7DDCD62B...
+    with the file count, line count, K&R brace count and trailing-whitespace
+    count all unchanged at 17 / 48551 / 1205 / 1258, because the hash covers each
+    frozen file's path as well as its content and one path was recorded with the
+    wrong letter case.
+
+    git tracks the file as SwissEphNet/CPort/SweCL.cs. This Windows working tree
+    had it on disk as SweCl.cs, a case-only difference NTFS resolves silently and
+    git does not report as a modification. Entry 21's -Update read the on-disk
+    name, so the manifest recorded a hash no case-sensitive checkout can
+    reproduce: every Linux CI run computed 7DDCD62B and compared it against
+    0E29C549. Reproduced locally by cloning with core.autocrlf=false, which
+    checks out the index's own casing and produced the runner's hash exactly.
+
+    Fixed by renaming the working-tree file back to the index's casing (via a
+    temporary name, since a case-only rename is a no-op on this filesystem) and
+    re-running -Update. Verified three ways: this tree now computes 7DDCD62B, the
+    case-correct clone computes 7DDCD62B against the new manifest and passes, and
+    both agree with what CI reported.
+
+    Worth recording for whoever hits this next: the gate is right to hash paths --
+    its own self-test plants a capitalisation-only rename and requires refusal --
+    but that makes -Update only as trustworthy as the working tree's filename
+    casing, which on Windows can drift from the index without any signal.
