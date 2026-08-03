@@ -253,9 +253,13 @@ jobs:
 
       # Same reasoning as the netstandard2.0 compatibility known-diff regeneration guard's own
       # self-test immediately above: this script is a regeneration tool for
-      # Tools/NetStandardCompat/grid-netstandard.tsv, not a gate, so it has none of its own to sit
-      # beside in CI. -SelfTest never writes that grid or the shared regenerations.log; it only
-      # asserts -Reason is required and checks this script's own log-line formatting.
+      # Tools/NetStandardCompat/grid-netstandard.tsv (currently 102<!--doccount:grid-netstandard-total-->
+      # data rows -- checked by scripts/verify-doc-counts.ps1 against that file directly, the same
+      # way it pins grid-analytic-total/grid-files-total/grid-jpl-total/known-fail-total; this is
+      # the citation, since nothing in this grid's own row count is otherwise mentioned in any of
+      # the prose documents that script's allowlist covers), not a gate, so it has none of its own
+      # to sit beside in CI. -SelfTest never writes that grid or the shared regenerations.log; it
+      # only asserts -Reason is required and checks this script's own log-line formatting.
       - name: Self-test the netstandard2.0 compatibility grid regeneration guard
         shell: pwsh
         run: pwsh Tools/NetStandardCompat/gen-grid-netstandard.ps1 -SelfTest

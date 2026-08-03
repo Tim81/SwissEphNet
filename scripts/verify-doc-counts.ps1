@@ -40,18 +40,21 @@
 
     Scope, "at minimum" per the class of defect this exists to catch: known-fail.tsv's total row
     count and its category split; known-diff.tsv's row count for all three oracle grids (analytic,
-    files, JPL) and for swetest; and all three oracle grid row counts together with their
-    per-`func` breakdown. $docFiles
-    below -- README.md, CONTRIBUTING.md, docs/compliance-2.10.03.md, docs/known-issues.md,
-    .github/workflows/oracle.yml, .github/workflows/conformance.yml and .github/workflows/
-    baseline.yml -- is the allowlist of files a marker is permitted to live in; a marker anywhere
-    else is a failure in its own right (see "Reverse check" below), not merely unread. As of this
-    writing, markers actually appear in README.md, CONTRIBUTING.md, docs/compliance-2.10.03.md and
-    .github/workflows/oracle.yml; docs/known-issues.md, conformance.yml and baseline.yml are
-    allowlisted destinations that happen to hold none today, not files this script currently reads
-    a number out of. Not every mention of every number in the repository carries a marker (some
-    are historical, e.g. "4,382 rows when the oracle was first wired up", which this script is not
-    meant to re-derive); a mention without a marker is not gated, by design.
+    files, JPL) and for swetest; all three oracle grid row counts together with their per-`func`
+    breakdown; and Tools/NetStandardCompat/grid-netstandard.tsv's own row count (grid-netstandard-
+    total), the only instrument's grid that shipped with no doccount id pinning its size until this
+    addition. $docFiles below -- README.md, CONTRIBUTING.md, docs/compliance-2.10.03.md,
+    docs/known-issues.md, .github/workflows/oracle.yml, .github/workflows/conformance.yml,
+    .github/workflows/baseline.yml and .github/workflows/ci.yml -- is the allowlist of files a
+    marker is permitted to live in; a marker anywhere else is a failure in its own right (see
+    "Reverse check" below), not merely unread. As of this writing, markers actually appear in
+    README.md, CONTRIBUTING.md, docs/compliance-2.10.03.md, .github/workflows/oracle.yml and
+    .github/workflows/ci.yml (grid-netstandard-total, cited in a step comment there rather than in
+    a prose document); docs/known-issues.md, conformance.yml and baseline.yml are allowlisted
+    destinations that happen to hold none today, not files this script currently reads a number out
+    of. Not every mention of every number in the repository carries a marker (some are historical,
+    e.g. "4,382 rows when the oracle was first wired up", which this script is not meant to
+    re-derive); a mention without a marker is not gated, by design.
 
     Reverse check: a marker outside $docFiles is invisible to every check above by construction --
     the loop above only ever opens the files in that list, so `9,999<!--doccount:known-fail-total-->`
@@ -62,8 +65,14 @@
     for the literal marker delimiter and fails if it finds one -- a marker has to be moved into an
     allowlisted document or deleted, not merely left where nothing reads it.
 
-    docs/upstream/ and external/ are out of scope: the former is untracked scratch work, the
-    latter is Astrodienst's own vendored source, not this repository's documentation.
+    docs/upstream/ is tracked (8 files, correspondence with Astrodienst about defects found while
+    porting to 2.10.03) but out of scope for this script: it is outward-facing correspondence, not
+    a load-bearing count this script's ground-truth files define, and nothing in it currently cites
+    a number the way $docFiles' seven files do. Whether it should gain doccount markers of its own
+    is a judgement call about what counts as "documentation" here, not a factual one -- left as an
+    open question for a maintainer rather than decided by this comment. external/ is out of scope
+    for a different reason: it is Astrodienst's own vendored source, not this repository's
+    documentation, tracked or not.
 
 .PARAMETER RepoRoot
     Repository root. Defaults to the checkout containing this script.
@@ -201,6 +210,17 @@ function Invoke-DocCountCheck {
     $GroundTruth['oracle-known-diff-jpl'] = @(Get-DataRows (Join-Path $RepoRoot 'Tests/oracle/known-diff-jpl.tsv')).Count - 1
     $GroundTruth['swetest-known-diff'] = @(Get-DataRows (Join-Path $RepoRoot 'Tests/swetest/known-diff.tsv')).Count - 1
 
+    # -- Tools/NetStandardCompat/grid-netstandard.tsv: the netstandard2.0-vs-net10.0 swe_calc
+    # comparison grid (scripts/verify-netstandard-compat.ps1, Tools/NetStandardCompat/
+    # gen-grid-netstandard.ps1). Unlike every older instrument's grid, this one had no doccount id
+    # pinning its size: shrinking it by hand left the reference dump non-empty, both known-diff
+    # lists (Tests/netstandard-compat/known-diff-*.tsv) legitimately header-only, and every gate
+    # green -- nothing anywhere re-derived 102 from the file the way this script already does for
+    # grid-analytic-total, grid-files-total, grid-jpl-total and known-fail-total. Counted the same
+    # way as those: Get-DataRows already strips '#'-prefixed commentary, so `.Count - 1` drops the
+    # column-name header row and leaves data rows only.
+    $GroundTruth['grid-netstandard-total'] = @(Get-DataRows (Join-Path $RepoRoot 'Tools/NetStandardCompat/grid-netstandard.tsv')).Count - 1
+
     # -- the two gated oracle grids: total rows and their per-func breakdown (the JPL grid, opt-in
     # and ungated, is tracked separately below) ---------------------------------------------------
     function Get-GridFuncCounts {
@@ -306,7 +326,13 @@ function Invoke-DocCountCheck {
         'docs/known-issues.md',
         '.github/workflows/oracle.yml',
         '.github/workflows/conformance.yml',
-        '.github/workflows/baseline.yml'
+        '.github/workflows/baseline.yml',
+        # Added for grid-netstandard-total: the netstandard2.0 comparison grid's row count is cited
+        # in ci.yml's own step comments (the job that actually runs
+        # scripts/verify-netstandard-compat.ps1), not in any of the seven documents above -- adding
+        # a citation there, rather than to README.md/CONTRIBUTING.md/docs/, keeps this addition
+        # inside scripts/ and .github/ instead of touching prose files.
+        '.github/workflows/ci.yml'
     )
     # @(), because a pipeline yielding exactly one surviving path returns that path as a bare
     # string rather than a one-element array, and `Set-StrictMode -Version Latest` makes .Count on
@@ -543,6 +569,13 @@ $gridJplTsv = @(
     '# lab', "func`targ`tiflag",
     "CALC`t1`t0",
     "CALC_UT`t1`t0", "CALC_UT`t2`t0")
+# grid-netstandard-total's own ground-truth file: same '#'-comment-block-then-header-then-data
+# shape as every other tracked grid this script reads, small and column-shaped differently again
+# (case_id/ipl/tjd/iflag, matching the real Tools/NetStandardCompat/grid-netstandard.tsv) so a case
+# that only reads one of the other grids cannot accidentally pass by reusing its count.
+$gridNetstandardTsv = @(
+    '# lab', "case_id`tipl`ttjd`tiflag",
+    "NSC|0|1`t0`t1`t260", "NSC|0|2`t0`t2`t260")
 
 # A document citing every id the lab's ground truth defines, each with the value those files
 # actually produce. An id with no marker anywhere is a failure in its own right, so this has to be
@@ -578,7 +611,8 @@ $readmeLines = @(
     '- analytic rows on the default nutation path: 4<!--doccount:grid-analytic-default-nutation-->',
     '- file-backed rows opting out of nutation via SEFLG_NONUT: 1<!--doccount:grid-files-nonut-optout-->',
     '- file-backed rows on the default nutation path: 3<!--doccount:grid-files-default-nutation-->',
-    '- both grids together on the default nutation path: 7<!--doccount:grid-total-default-nutation-->')
+    '- both grids together on the default nutation path: 7<!--doccount:grid-total-default-nutation-->',
+    '- netstandard2.0 comparison grid rows: 2<!--doccount:grid-netstandard-total-->')
 
 # The one line most cases rewrite, matched by its id rather than by index so reordering the
 # document above cannot silently point a case at the wrong line.
@@ -607,6 +641,7 @@ function New-DocCountLab {
     Set-LabFile $dir 'Tools/OracleGrid/grid-analytic.tsv' $gridAnalyticTsv
     Set-LabFile $dir 'Tools/OracleGrid/grid-jpl.tsv' $gridJplTsv
     Set-LabFile $dir 'Tools/OracleGrid/grid-files.tsv' $gridFilesTsv
+    Set-LabFile $dir 'Tools/NetStandardCompat/grid-netstandard.tsv' $gridNetstandardTsv
     Set-LabFile $dir 'README.md' $Readme
     if ($ExtraPath) {
         Set-LabFile $dir $ExtraPath $ExtraLines $ExtraEncoding
