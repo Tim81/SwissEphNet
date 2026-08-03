@@ -988,12 +988,14 @@ namespace SwissEphNet.CPort
                         }
                     } else {
                         /* a number */
-                        int cnt = sp.IndexOfFirstNot('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.');
-                        String sval = cnt < 0 ? sp : sp.Substring(0, cnt);
-                        // swemplan.c:959-960 is `if (atof(sp) != 0 || *sp == '0') fac *= atof(sp);`,
-                        // two atof(sp) calls on the same input; neither can throw. The port
-                        // already collapses them into one C.atof call reused for both checks.
-                        var val = C.atof(sval);
+                        // swemplan.c:958-959 is `if (atof(sp) != 0 || *sp == '0') fac *= atof(sp);`,
+                        // two atof(sp) calls on the untruncated remainder of sp. C.atof already
+                        // accepts a leading sign (Tools/C.cs:15), so C.atof(sp) is the faithful
+                        // transliteration. Truncating sp to its leading "0123456789." run before
+                        // calling C.atof strips a leading '-' (or '+'): for sp == "-3", the
+                        // truncated value was empty, so the term contributed nothing instead of
+                        // multiplying fac by -3.
+                        var val = C.atof(sp);
                         // swemplan.c:958 tests *sp == '0', a single-byte comparison;
                         // StartsWith without StringComparison is culture-sensitive, so make
                         // it ordinal.

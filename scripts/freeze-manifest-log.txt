@@ -367,3 +367,17 @@ b"} where the C gives {"a", ""}); that one is fixed
    port printed nothing at all for that line.
    Programs/SweTest/Program.cs: 4989 -> 5005 lines, 65 kr_braces (was 65), 68 trailing-ws (was
    68), sha256 873AADAC... -> 947D21A7....
+16. PR #33 2026-08-03: One fidelity fix. SwemPlan.cs's check_t_terms "a number" branch
+   (numeric term of a t_terms polynomial string) truncated sp at the first character outside
+   "0123456789." into a separate sval, then called C.atof(sval) for both the C's atof(sp) != 0
+   test and its fac *= atof(sp) multiply. swemplan.c:958-959 is
+   `if (atof(sp) != 0 || *sp == '0') fac *= atof(sp);` -- atof on the untruncated sp, not on a
+   pre-truncated copy. The truncation strips a leading sign before C.atof ever sees it (C.atof
+   itself already accepts one, Tools/C.cs:15, so C.atof(sp) is the faithful transliteration):
+   for sp == "-3", the truncated sval was empty, C.atof("") returned 0, and the term
+   contributed nothing where the C multiplies fac by -3. Fixed by calling C.atof(sp) directly
+   and removing the now-unnecessary cnt/sval truncation, and rewrote the adjacent comment,
+   which had claimed the port "already collapses them into one C.atof call" -- true of the
+   call count, false of the point being made, since the surviving call read the wrong string.
+   Fidelity fix, not a re-transliteration: no other line in SwissEphNet/CPort moved.
+   SwissEphNet/CPort: 48549 -> 48551 lines, sha256 EBBE1B4F... -> 81513380....
