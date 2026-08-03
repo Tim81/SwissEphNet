@@ -106,6 +106,14 @@ namespace SwissEphNet.Tests
         // on out-of-range hsys before the fix. These must not throw.
         // ---------------------------------------------------------------------------
 
+        // "DoesNotThrow" alone survives a mutant that guards the out-of-range hsys with an early
+        // "if (hsys < 0) return ERR;" before CalcH ever runs: that also does not throw, and
+        // leaves cusp[]/ascmc[] at the caller's zero-initialized defaults. Both out-of-range
+        // inputs here fall through to CalcH's own default: case (Placidus, swehouse.c) exactly
+        // like TestHousePos_..._TakesSimplifiedDefaultBranch above, so cusp[1] and ascmc[0] (the
+        // Ascendant) come back equal and well outside a zero-filled array's untouched state.
+        // Pinned value is a characterization value (captured from this test's own inputs run
+        // through the current, believed-correct Placidus fallback), not independently derived.
         [Fact]
         public void TestHousesArmc_NegativeInt_DoesNotThrow()
         {
@@ -119,6 +127,8 @@ namespace SwissEphNet.Tests
             {
                 var ex = Record.Exception(() => swe.swe_houses_armc(armc, geolat, eps, -1, cusp, ascmc));
                 Assert.Null(ex);
+                Assert.Equal(206.63647677053842, cusp[1], 6);
+                Assert.Equal(cusp[1], ascmc[0], 9); // ascmc[0] is the Ascendant, i.e. cusp[1]
             }
         }
 
@@ -135,6 +145,10 @@ namespace SwissEphNet.Tests
             {
                 var ex = Record.Exception(() => swe.swe_houses_armc(armc, geolat, eps, 70000, cusp, ascmc));
                 Assert.Null(ex);
+                // Same Placidus fallback and inputs as the sibling test above, so the same
+                // characterization value applies.
+                Assert.Equal(206.63647677053842, cusp[1], 6);
+                Assert.Equal(cusp[1], ascmc[0], 9);
             }
         }
 
@@ -193,6 +207,11 @@ namespace SwissEphNet.Tests
             }
         }
 
+        // See the comment on TestHousesArmc_NegativeInt_DoesNotThrow above: "does not throw" alone
+        // survives a mutant that guards out-of-range hsys with an early ERR return before any
+        // cusp is computed. swe_houses_ex/swe_houses both route through
+        // swe_houses_armc_ex2 -> CalcH's default: Placidus branch for an out-of-range hsys, so
+        // cusp[1] and ascmc[0] come back equal and non-zero here too.
         [Fact]
         public void TestHousesEx_NegativeInt_DoesNotThrow()
         {
@@ -204,6 +223,9 @@ namespace SwissEphNet.Tests
 
                 var ex = Record.Exception(() => swe.swe_houses_ex(tjd, 0, 40.0, -70.0, -1, cusp, ascmc));
                 Assert.Null(ex);
+                // Characterization value -- see comment above.
+                Assert.Equal(108.68354551535208, cusp[1], 6);
+                Assert.Equal(cusp[1], ascmc[0], 9); // ascmc[0] is the Ascendant, i.e. cusp[1]
             }
         }
 
@@ -218,6 +240,10 @@ namespace SwissEphNet.Tests
 
                 var ex = Record.Exception(() => swe.swe_houses(tjd, 40.0, -70.0, 70000, cusp, ascmc));
                 Assert.Null(ex);
+                // Same fallback and inputs as the sibling test above, so the same
+                // characterization value applies.
+                Assert.Equal(108.68354551535208, cusp[1], 6);
+                Assert.Equal(cusp[1], ascmc[0], 9);
             }
         }
 
