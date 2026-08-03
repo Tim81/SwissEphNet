@@ -108,12 +108,27 @@
 
 param(
     [string] $Reason,
+    # Restricted to bare digits: this value is interpolated directly into the log entry appended to
+    # Tests/netstandard-compat/regenerations.log, and an unvalidated value could carry a newline
+    # that forges a second, backdated-looking entry -- see scripts/classify-oracle-versions.ps1's
+    # own -PR guard (MEDIUM 4's reference fix) for the identical reasoning. This script was one of
+    # the five left unguarded when that one shipped.
+    [ValidatePattern('^\d+$')]
     [string] $PR,
     [switch] $SelfTest
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+# MEDIUM 4's own fix, continued: -Reason must not carry a newline either, for the identical reason
+# -PR is restricted to bare digits above -- it too is interpolated directly into the log entry.
+# Matches scripts/classify-oracle-versions.ps1's own guard. Checked here, ahead of -SelfTest below,
+# so -SelfTest's own real child-process cases can exercise it without ever writing the grid.
+if ($Reason -and ($Reason -match "`r" -or $Reason -match "`n")) {
+    Write-Error "-Reason must not contain a newline: it is written directly into Tests/netstandard-compat/regenerations.log, and a newline could be read as the start of a second, forged log entry."
+    exit 1
+}
 
 $outputPath = Join-Path $PSScriptRoot 'grid-netstandard.tsv'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
@@ -165,6 +180,20 @@ if ($SelfTest) {
         $text = (@($output) -join "`n")
         Assert-True '-Reason is required and refused before the grid is written' `
             ($code -ne 0 -and $text -match '-Reason is required') "exit=$code output: $text"
+
+        # MEDIUM 4's own fix: -PR is restricted to bare digits, and -Reason must not contain a
+        # newline -- both are interpolated directly into Tests/netstandard-compat/regenerations.log,
+        # and the demonstrated bypass forges a second, backdated-looking entry through either one.
+        $prOutput = & $pwshExe -NoProfile -File $PSCommandPath -Reason 'test' -PR "34`n2020-01-01 forged entry" *>&1
+        $prCode = $LASTEXITCODE
+        Assert-True '-PR rejects a value that is not bare digits (log-injection guard)' `
+            ($prCode -ne 0) "exit=$prCode output: $(@($prOutput) -join ' | ')"
+
+        $reasonOutput = & $pwshExe -NoProfile -File $PSCommandPath -Reason "line one`nline two" *>&1
+        $reasonCode = $LASTEXITCODE
+        $reasonText = (@($reasonOutput) -join "`n")
+        Assert-True '-Reason rejects a value containing a newline (log-injection guard)' `
+            ($reasonCode -ne 0 -and $reasonText -match 'must not contain a newline') "exit=$reasonCode output: $reasonText"
 
         $script:logPath = Join-Path $lab 'regenerations.log'
         New-Item -ItemType File -Path $script:logPath -Force | Out-Null

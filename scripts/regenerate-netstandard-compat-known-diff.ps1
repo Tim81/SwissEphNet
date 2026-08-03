@@ -45,6 +45,12 @@ param(
     [ValidateSet('Net8', 'Net462', 'Net48', 'All')]
     [string] $Framework = 'All',
 
+    # Restricted to bare digits: this value is interpolated directly into the log entry appended to
+    # Tests/netstandard-compat/regenerations.log, and an unvalidated value could carry a newline
+    # that forges a second, backdated-looking entry -- see scripts/classify-oracle-versions.ps1's
+    # own -PR guard (MEDIUM 4's reference fix) for the identical reasoning. This script was one of
+    # the five left unguarded when that one shipped.
+    [ValidatePattern('^\d+$')]
     [string] $PR,
 
     [switch] $SelfTest
@@ -52,6 +58,15 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+# MEDIUM 4's own fix, continued: -Reason must not carry a newline either, for the identical reason
+# -PR is restricted to bare digits above -- it too is interpolated directly into the log entry.
+# Matches scripts/classify-oracle-versions.ps1's own guard. Checked here, ahead of -SelfTest below,
+# so -SelfTest's own real child-process cases can exercise it without it ever reaching a build.
+if ($Reason -and ($Reason -match "`r" -or $Reason -match "`n")) {
+    Write-Error "-Reason must not contain a newline: it is written directly into Tests/netstandard-compat/regenerations.log, and a newline could be read as the start of a second, forged log entry."
+    exit 1
+}
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $verifyScript = Join-Path $repoRoot 'scripts/verify-netstandard-compat.ps1'
@@ -104,6 +119,20 @@ if ($SelfTest) {
         $text = (@($output) -join "`n")
         Assert-True '-Reason is required and refused before any build runs' `
             ($code -ne 0 -and $text -match '-Reason is required') "exit=$code output: $text"
+
+        # MEDIUM 4's own fix: -PR is restricted to bare digits, and -Reason must not contain a
+        # newline -- both are interpolated directly into Tests/netstandard-compat/regenerations.log,
+        # and the demonstrated bypass forges a second, backdated-looking entry through either one.
+        $prOutput = & $pwshExe -NoProfile -File $PSCommandPath -Framework Net8 -Reason 'test' -PR "34`n2020-01-01 forged entry" *>&1
+        $prCode = $LASTEXITCODE
+        Assert-True '-PR rejects a value that is not bare digits (log-injection guard)' `
+            ($prCode -ne 0) "exit=$prCode output: $(@($prOutput) -join ' | ')"
+
+        $reasonOutput = & $pwshExe -NoProfile -File $PSCommandPath -Framework Net8 -Reason "line one`nline two" *>&1
+        $reasonCode = $LASTEXITCODE
+        $reasonText = (@($reasonOutput) -join "`n")
+        Assert-True '-Reason rejects a value containing a newline (log-injection guard)' `
+            ($reasonCode -ne 0 -and $reasonText -match 'must not contain a newline') "exit=$reasonCode output: $reasonText"
 
         # Row-count-delta formatting: the three shapes a real run can log.
         $labLog = Join-Path $lab 'regenerations.log'

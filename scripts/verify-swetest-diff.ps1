@@ -125,6 +125,12 @@
 param(
     [switch] $Regenerate,
     [string] $Reason,
+    # Restricted to bare digits: this value is interpolated directly into the log entry appended to
+    # Tests/swetest/regenerations.log, and an unvalidated value could carry a newline that forges a
+    # second, backdated-looking entry -- see scripts/classify-oracle-versions.ps1's own -PR guard
+    # (MEDIUM 4's reference fix) for the identical reasoning. This script was one of the five left
+    # unguarded when that one shipped.
+    [ValidatePattern('^\d+$')]
     [string] $PR,
     [string] $GridPath,
     [string] $KnownDiffPath,
@@ -151,6 +157,14 @@ $netExePath = Join-Path $repoRoot 'Programs/SweTest/bin/Release/net10.0/SweTest.
 
 if ($Regenerate -and -not $Reason) {
     Write-Host 'FAIL: -Regenerate requires -Reason.' -ForegroundColor Red
+    exit 1
+}
+
+# MEDIUM 4's own fix: -Reason must not carry a newline either, for the identical reason -PR is
+# restricted to bare digits above -- it too is interpolated directly into the log entry written to
+# Tests/swetest/regenerations.log. Matches scripts/classify-oracle-versions.ps1's own guard.
+if ($Reason -and ($Reason -match "`r" -or $Reason -match "`n")) {
+    Write-Host 'FAIL: -Reason must not contain a newline: it is written directly into Tests/swetest/regenerations.log, and a newline could be read as the start of a second, forged log entry.' -ForegroundColor Red
     exit 1
 }
 
