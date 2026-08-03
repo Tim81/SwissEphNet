@@ -810,7 +810,7 @@ namespace SwissEphNet.CPort
                         serr = C.sprintf("%s invalid epoch", serri);
                         return SwissEph.ERR;
                     } else
-                        // swemplan.c:785 is `*tjd0 = atof(sp);`, which cannot throw.
+                        // swemplan.c:784 is `*tjd0 = atof(sp);`, which cannot throw.
                         tjd0 = C.atof(sp);
                     tt = tjd - tjd0;
                     //    }
@@ -833,7 +833,7 @@ namespace SwissEphNet.CPort
                         serr = C.sprintf("%s invalid equinox", serri);
                         return SwissEph.ERR;
                     } else
-                        // swemplan.c:809 is `*tequ = atof(sp);`, which cannot throw.
+                        // swemplan.c:808 is `*tequ = atof(sp);`, which cannot throw.
                         tequ = C.atof(sp);
                     //    }
                     /* mean anomaly t0 */

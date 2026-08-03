@@ -1436,18 +1436,18 @@ namespace SwissEphNet.CPort
             //char* sp;
             //for (sp = str; *sp != '\0' && *sp != ','; sp++)
             //    *sp = tolower(*sp);
-            // swehel.c:1443-1449 mutates the caller's buffer in place via the
+            // swehel.c:1449-1450 mutates the caller's buffer in place via the
             // ref parameter. This never wrote back to str (all 3 call sites pass
             // ref and rely on the mutation), and used Substring(0, p - 1),
             // dropping the character before the comma (same off-by-one as
             // Sweph.cs's fixstar_format_search_name, sweph.c:6165-6166) without
             // the p > 0 guard, so p == 0 threw ArgumentOutOfRangeException.
             if (str == null) return null;
-            // swehel.c:1437 (`*sp != ','`) is a byte-wise scan for the comma; IndexOf(char)
+            // swehel.c:1449 (`*sp != ','`) is a byte-wise scan for the comma; IndexOf(char)
             // has no netstandard2.0 StringComparison overload, so use C.strchr (already
             // ordinal, see its own comment in Tools/C.cs) for the same effect.
             int p = C.strchr(str, ',');
-            // swehel.c:1449 (`*sp = tolower(*sp)`) is an ASCII loop, not culture-sensitive; under
+            // swehel.c:1450 (`*sp = tolower(*sp)`) is an ASCII loop, not culture-sensitive; under
             // tr-TR, string.ToLower() maps 'I' to dotless 'ı' rather than 'i', so a capitalized
             // "JUPITER" never matches the lowercase prefixes DeterObject (SweHel.cs:331, which
             // already uses ToLowerInvariant with this same comment) or swe_vis_limit_mag's own

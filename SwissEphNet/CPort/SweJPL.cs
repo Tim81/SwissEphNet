@@ -315,7 +315,7 @@ namespace SwissEphNet.CPort
              * ipt[i+1]: number of coefficients (interpolation order - 1)
              * ipt[i+2]: number of intervals in segment */
             //fread((void *) &js.eh_ipt[0], sizeof(int32), 36, js.jplfptr);
-            // swejpl.c:256 is `nrd = fread(&js->eh_ipt[0], sizeof(int32), 36, js->jplfptr)`,
+            // swejpl.c:255 is `nrd = fread(&js->eh_ipt[0], sizeof(int32), 36, js->jplfptr)`,
             // so nrd is the number of ITEMS READ and the check below is a short-read guard.
             // Taking eh_ipt.Length instead makes nrd the ARRAY SIZE, which is 39 (line 102),
             // so `nrd != 36` was always true and every JPL open returned NOT_AVAILABLE.
@@ -800,7 +800,7 @@ namespace SwissEphNet.CPort
                  * ipt[i+1]: number of coefficients (interpolation order - 1)
                  * ipt[i+2]: number of intervals in segment */
                 //fread((void *) &ipt[0], sizeof(int32), 36, js.jplfptr);
-                // swejpl.c:786, same shape as the read above. ipt aliases js.eh_ipt (line 700),
+                // swejpl.c:709, same shape as the read above. ipt aliases js.eh_ipt (line 663),
                 // which is 39 long, so this had the identical always-fails defect.
                 nrd = js.jplfptr.ReadInt32s(ipt, 0, 36);
                 if (nrd != 36) return Sweph.NOT_AVAILABLE;

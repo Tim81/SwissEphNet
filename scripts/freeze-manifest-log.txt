@@ -539,3 +539,22 @@ b"} where the C gives {"a", ""}); that one is fixed
     Not a re-transliteration: only the explanatory comment above the three declarations moved, no
     declaration or statement changed. Programs/SweTest/Program.cs: 5025 -> 5046 lines, sha256
     86DBD9DB... -> 698EF483....
+24. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-03: Comment only,
+    no behaviour change. Twelve stale `<cfile>.c:NNNN` citations across four SwissEphNet/CPort
+    files, each verified against the pinned v2.10.3bfinal vendored C (external/swisseph) before
+    correcting: SweHel.cs's tolower_string_star cross-references (swehel.c:1443-1449 -> :1449-1450
+    for the function body itself, :1437 -> :1449 for the comma-scan comparison, :1449 -> :1450 for
+    the tolower loop); SwemPlan.cs's check_t_terms epoch/equinox atof(sp) calls (swemplan.c:785 ->
+    :784, :809 -> :808); Sweph.cs's load_dpsi_deps atoi/atof citations (sweph.c:1421-1423 ->
+    :1405-1407, :1433-1434 -> :1417-1418, :1445-1446/1449-1450 -> :1446-1447/1450-1451), its
+    swi_fixstar_load_record space-removal loop (:7386-7387 -> :7559-7560), and its
+    calc_center_body function citation (:2443-2453 -> :2445-2455); SweJPL.cs's two eh_ipt fread
+    guards (swejpl.c:256 -> :255, and :786 plus "(line 700)" -> :709 and "(line 663)").
+    Each was checked individually by opening the cited C at both the old and the corrected line
+    and confirming the corrected one is where the quoted/paraphrased statement actually sits, the
+    same standard entry 20 above used; not exhaustive -- this covers only the citations checked in
+    this pass. Two accompanying non-frozen citations of the same PATH_SEPARATOR macro
+    (SwissEph.sweodef.h.cs, SwissEph.swephexp.h.cs: sweodef.h:305/:311 -> :307/:313) were also
+    stale by the same two-line drift and are corrected in a separate, non-frozen-path commit.
+    SwissEphNet/CPort: 48551 -> 48551 lines (line count unchanged; only cited numbers inside
+    comments moved), sha256 7DDCD62B... -> A2DA184F....

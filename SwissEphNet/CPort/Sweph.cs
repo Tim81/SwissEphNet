@@ -1663,7 +1663,7 @@ namespace SwissEphNet.CPort
             while ((s = fp.ReadLine()) != null)
             {
                 cpos = s.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                // sweph.c:1421-1423 uses atoi(cpos[0])/atoi(cpos[3]), which return 0 for
+                // sweph.c:1405-1407 uses atoi(cpos[0])/atoi(cpos[3]), which return 0 for
                 // an unparseable field instead of throwing; the eop file's own header
                 // lines rely on atoi(cpos[0]) == 0 to fall through the `continue` above.
                 // swi_cutstr (swephlib.c:3707) always sets cpos[0] = s, even for a blank
@@ -1685,7 +1685,7 @@ namespace SwissEphNet.CPort
                 }
                 if (n == 0)
                     swed.eop_tjd_beg = mjd + TJDOFS;
-                // sweph.c:1433-1434 uses atof(cpos[8])/atof(cpos[9]), which cannot throw.
+                // sweph.c:1417-1418 uses atof(cpos[8])/atof(cpos[9]), which cannot throw.
                 swed.dpsi[n] = atof(cpos[8]);
                 swed.deps[n] = atof(cpos[9]);
                 /*    fprintf(stderr, "n=%d, tjd=%f, dpsi=%f, deps=%f\n", n, mjd + 2400000.5, swed.dpsi[n] * 1000, swed.deps[n] * 1000);exit(0);*/
@@ -1722,7 +1722,7 @@ namespace SwissEphNet.CPort
                     return;
                 }
                 /* dpsi, deps Bulletin B */
-                // sweph.c:1445-1446/1449-1450 are atof(s + 168) etc. into a 256-byte
+                // sweph.c:1446-1447/1450-1451 are atof(s + 168) etc. into a 256-byte
                 // buffer: reading past a short line's NUL terminator, still inside that
                 // buffer, is benign in C (atof("") == 0). s.Substring(N) throws
                 // ArgumentOutOfRangeException on any line shorter than N chars; Substr(N)
@@ -2941,7 +2941,7 @@ namespace SwissEphNet.CPort
             return SwissEph.SE_DE_NUMBER;
         }
 
-        // sweph.c:2443-2453
+        // sweph.c:2445-2455
         int calc_center_body(Int32 ipli, Int32 iflag, CPointer<double> xx, CPointer<double> xcom, ref string serr)
         {
             int i;
@@ -8882,7 +8882,7 @@ namespace SwissEphNet.CPort
                 // remove white spaces from star name
                 //while ((sp = strchr(fstar, ' ')) != -1)
                 //  swi_strcpy(sp, sp+1);
-                // sweph.c:7386-7387 removes ALL internal spaces via the loop above,
+                // sweph.c:7559-7560 removes ALL internal spaces via the loop above,
                 // not just leading/trailing ones; Trim(' ') only stripped the ends,
                 // leaving multi-word names ("Galactic Center") unfindable because
                 // the search key (line ~6748 above) strips all spaces.
