@@ -98,6 +98,16 @@ namespace SwissEphNet.Tests
                 Assert.Equal(SwissEph.ERR, res);
                 Assert.NotNull(serr);
                 Assert.Contains("damaged", serr, StringComparison.Ordinal);
+                // read_const's own "(0%s)" smsg codes (see CorruptFileTruncationTest.cs's "(0h)")
+                // are a completely different, unrelated format string from do_fread's -- "Ephemeris
+                // file %s is damaged (2)." / "(4).", Sweph.cs:5741/5754. This truncation lands
+                // inside the "quarter byte packing" do_fread call (Sweph.cs's get_new_segment,
+                // i == 5 branch): its size argument is 1 and its corrsize argument is 4, so
+                // size != corrsize always sends it through do_fread's "(4)" branch, never "(2)".
+                // "Contains(\"damaged\")" alone cannot tell this do_fread-level rejection apart from
+                // any of read_const's own thirteen distinct "(0<letter>)" codes -- pinning the exact
+                // sub-code is what actually proves this specific do_fread check fired.
+                Assert.Contains("is damaged (4).", serr, StringComparison.Ordinal);
             }
         }
 
@@ -107,7 +117,11 @@ namespace SwissEphNet.Tests
             // Sanity companion: proves the crafted fixture is otherwise well-formed (correct
             // length field, correct CRC, a real Chiron segment at the targeted date) and that the
             // failure above comes specifically from the truncation, not from some other mistake in
-            // BuildCraftedFixture's header patching.
+            // BuildCraftedFixture's header patching. Goes through BuildCraftedFixture itself
+            // (passing the untruncated length, so the length-field patch and CRC recompute are
+            // exercised but land back on the original byte values) rather than opening the
+            // pristine resource directly -- the latter would pass even if BuildCraftedFixture's
+            // header patching were wrong, since it would never run.
             using (var swe = new SwissEph())
             {
                 swe.FileProvider = new DelegateFileProvider(path =>
@@ -115,7 +129,7 @@ namespace SwissEphNet.Tests
                     string fn = ResourceFileHelpers.GetPortableFileName(path);
                     if (fn.Equals("seas_18.se1", StringComparison.OrdinalIgnoreCase))
                     {
-                        return ResourceFileHelpers.OpenResourceFile("seas_18.se1");
+                        return new MemoryStream(BuildCraftedFixture(truncatedLength: null), writable: false);
                     }
                     return null;
                 });
@@ -130,7 +144,15 @@ namespace SwissEphNet.Tests
             }
         }
 
-        private static byte[] BuildCraftedFixture()
+        /// <summary>
+        /// Patches seas_18.se1's declared length and header CRC to match
+        /// <paramref name="truncatedLength"/> (defaulting to the fixed short-read truncation point
+        /// this class targets), then truncates to that length. Passing the resource's own full
+        /// length (as <see cref="Test_UntruncatedFixture_StillSucceeds"/> does) still runs the
+        /// patch and CRC recompute, but reproduces the original bytes exactly, since nothing in the
+        /// patched header region actually changed.
+        /// </summary>
+        private static byte[] BuildCraftedFixture(int? truncatedLength = 5470)
         {
             byte[] full;
             using (var resource = ResourceFileHelpers.OpenResourceFile("seas_18.se1"))
@@ -140,7 +162,7 @@ namespace SwissEphNet.Tests
                 full = ms.ToArray();
             }
 
-            const int truncatedLength = 5470;
+            int length = truncatedLength ?? full.Length;
             const int lengthFieldOffset = 120;
             const int crcFieldOffset = 158;
             const int crcRegionLength = 158;
@@ -148,15 +170,15 @@ namespace SwissEphNet.Tests
             byte[] data = new byte[full.Length];
             Array.Copy(full, data, full.Length);
 
-            byte[] lengthBytes = BitConverter.GetBytes(truncatedLength);
+            byte[] lengthBytes = BitConverter.GetBytes(length);
             Array.Copy(lengthBytes, 0, data, lengthFieldOffset, 4);
 
             uint crc = SwiCrc32(data, crcRegionLength);
             byte[] crcBytes = BitConverter.GetBytes(crc);
             Array.Copy(crcBytes, 0, data, crcFieldOffset, 4);
 
-            byte[] truncated = new byte[truncatedLength];
-            Array.Copy(data, truncated, truncatedLength);
+            byte[] truncated = new byte[length];
+            Array.Copy(data, truncated, length);
             return truncated;
         }
 
