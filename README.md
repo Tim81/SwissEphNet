@@ -1,28 +1,190 @@
 # SwissEphNet
 
-This project is an Astrodienst Swiss Ephemeris (http://www.astro.com/swisseph/) .Net portage from
-C to C#, targeting netstandard2.0, .NET 8 and .NET 10 for cross platform usage. `SE_VERSION`
-reports `"2.10.03"`: the whole 2.10.03 delta has landed, file by file -- `swephlib.c`, the
-2.10.03 ayanamsa and `pla_diam` tables, the header and constants stage, the eight crossing
-functions, the ayanamsha machinery (`get_aya_correction`, `prec_offset`), `sweph.c`, `swecl.c`,
-`swehouse.c`, and `swetest.c` are all ported; see `docs/sweph-c-stages.md` for how `sweph.c`'s
-work divided across four slices. The port is not yet at full parity with 2.10.03's own reference
-values -- see "Correctness oracle" below and `docs/compliance-2.10.03.md` for how far along it is
-and what has and has not been measured.
+A C# port of the [Astrodienst Swiss Ephemeris](http://www.astro.com/swisseph/), the astronomical
+calculation library used to compute planetary positions, house cusps, eclipses and related
+quantities. It is a line-by-line translation of Astrodienst's C source rather than a
+reimplementation, so the function names, arguments and return values are the ones in Astrodienst's
+own [programming documentation](http://www.astro.com/swisseph/swephprg.htm).
 
-## About this repository
+`swe_version()` reports `2.10.03`. The whole 2.10.03 delta has landed: `swephlib.c`, the ayanamsa
+and `pla_diam` tables, the header and constants, the eight crossing functions, the ayanamsha
+machinery, `sweph.c`, `swecl.c`, `swehouse.c` and `swetest.c`. Parity with Astrodienst's own
+reference values is close but not complete; "How the numbers are verified" below says exactly how
+far, and `docs/compliance-2.10.03.md` gives the detail.
 
-This repository, https://github.com/Tim81/SwissEphNet, is a maintained fork of
-[ygrenier/SwissEphNet](https://github.com/ygrenier/SwissEphNet). The original C-to-C# port is
-Yan Grenier's work (2014-2019); this fork continues it. Since 2026 it has been maintained by
-Timothy van der Ham, who has modernized the build and target frameworks (netstandard2.0, net8.0,
-net10.0) and fixed a number of bugs in the port: the fixed-star search returning the wrong star,
-multi-word star names being unfindable, the heliacal Moon branch never being taken,
-`swe_set_astro_models` throwing, the `DIR_GLUE` path separator, culture-sensitive string
-comparison, and a netstandard2.0 infinite recursion. See `NOTICE` and the package release notes
-for details.
+Targets `netstandard2.0`, `net8.0` and `net10.0`. No dependencies.
 
-## License
+## Install
+
+```
+dotnet add package SwissEphSharp
+```
+
+The package ID is `SwissEphSharp`, not `SwissEphNet`. The namespace and every type name stay
+`SwissEphNet`, so `using SwissEphNet;` is still what you write. "Package name" below explains why
+the two differ.
+
+## Your first calculation
+
+This computes the Sun's position on 1 January 2020 and prints its ecliptic longitude. It needs no
+data files: `SEFLG_MOSEPH` selects the built-in analytic ephemeris, which is computed rather than
+read from disk. It is the less accurate of the two options, by a margin measured in the next
+section, and it is the one to start with because it works immediately.
+
+```csharp
+using System.Globalization;
+using SwissEphNet;
+
+using var swe = new SwissEph();
+
+// Julian day for 2020-01-01 00:00 UT, Gregorian calendar.
+double jd = swe.swe_julday(2020, 1, 1, 0.0, SwissEph.SE_GREG_CAL);
+
+var xx = new double[6];
+string serr = "";
+int ret = swe.swe_calc_ut(jd, SwissEph.SE_SUN, SwissEph.SEFLG_MOSEPH, xx, ref serr);
+
+if (ret < 0)
+    Console.WriteLine($"error: {serr}");
+else
+    Console.WriteLine("Sun longitude: "
+        + xx[0].ToString("F6", CultureInfo.InvariantCulture) + " degrees");
+```
+
+Output:
+
+```
+Sun longitude: 280.009518 degrees
+```
+
+The explicit `InvariantCulture` is there so the printed value has a decimal point on every
+machine. The library returns plain `double` values and never formats anything for you.
+
+`xx` comes back as longitude, latitude, distance, then the three matching speeds. `swe_calc_ut`
+takes Universal Time; `swe_calc` takes Ephemeris Time if you already have it. A negative return
+value means failure and `serr` says why. `SwissEph` is `IDisposable`, which is why the example
+uses `using`.
+
+For accuracy better than the analytic ephemeris gives, or for bodies it does not cover, you need
+Astrodienst's data files. That is the next section.
+
+## Loading ephemeris files
+
+Point `swe_set_ephe_path` at a directory holding Astrodienst's `.se1` files and drop
+`SEFLG_MOSEPH` from the flags:
+
+```csharp
+using var swe = new SwissEph();
+swe.swe_set_ephe_path("/path/to/ephe");
+
+var xx = new double[6];
+string serr = "";
+int ret = swe.swe_calc_ut(jd, SwissEph.SE_SUN, SwissEph.SEFLG_SWIEPH, xx, ref serr);
+```
+
+Files are read straight from the filesystem, the same way the C reference does. Astrodienst
+publishes them in the Swiss Ephemeris repository itself, at
+[`aloistr/swisseph/ephe`](https://github.com/aloistr/swisseph/tree/master/ephe), with a
+[Dropbox area](https://www.dropbox.com/scl/fo/y3naz62gy6f6qfrhquu7u/h?rlkey=ejltdhb262zglm7eo6yfj2940&dl=0)
+and a [mirror at `ephe.scryr.io`](https://ephe.scryr.io/ephe) carrying the same data plus the
+larger asteroid sets. `sepl_18.se1` (planets), `semo_18.se1` (Moon) and `seas_18.se1` (main
+asteroids) cover 1800 to 2399 and are enough for most work. Each file holds six centuries starting
+at the century in its name (`NCTIES` in `sweph.h`), so `sepl_12.se1` is the previous block, 1200 to
+1799. This repository vendors both blocks under `external/swisseph/ephe/` if you are building from
+source.
+
+Run that against the same date as the example above and the Sun comes out at `280.009507` rather
+than `280.009518`, with `ret` equal to `2` (`SEFLG_SWIEPH`) and `serr` empty. The gap is about
+1e-5 degrees, which is the accuracy you bought by adding the files.
+
+That difference is also how you check your path is right. When a requested file is missing the
+library falls back to the analytic ephemeris, notes it in `serr`, and returns a number that looks
+perfectly reasonable. So if the value you get back is exactly the `SEFLG_MOSEPH` one, the files are
+not being found, whatever the flags say.
+
+Comparing `ret` against the flag you asked for is the sturdier check, because it is a plain
+integer: ask for `SEFLG_SWIEPH` and get `SEFLG_MOSEPH` back and you have your answer. If you read
+`serr` instead, null-check it first. It comes back `null` from some successful calls and `""` from
+others, so `string.IsNullOrEmpty` is the test that works for both.
+
+A missing file is diagnosed per six-century block, so the boundaries are sharp. With only
+`sepl_12.se1` and `sepl_18.se1` present, 1200 through 2399 resolve through `SEFLG_SWIEPH`, while
+1199 asks for `sepl_06.se1` and 2400 asks for `sepl_24.se1`, and both quietly fall back.
+
+When the data is not a file on disk, an embedded resource being the usual case, implement
+`SwissEph.IEphemerisFileProvider`. It is nested inside `SwissEph` and has one method:
+
+```csharp
+class EmbeddedProvider : SwissEph.IEphemerisFileProvider
+{
+    public Stream Open(string path)   // return null for "not found"
+        => typeof(EmbeddedProvider).Assembly
+               .GetManifestResourceStream("MyApp.Ephe." + path);
+}
+```
+
+Set it per instance with `SwissEph.FileProvider`, or set `SwissEph.DefaultFileProvider` to give
+every subsequently constructed instance the same one. The library takes ownership of the stream and
+disposes it, and it seeks while parsing, so the stream must be readable and seekable.
+
+Returning `null` is part of the contract, but `Open`'s signature is not nullable-annotated, so a
+project with nullable reference types enabled will report `CS8603` on a body like the one above.
+That warning is expected; the null path is the supported way to say "not found".
+
+Data files are decoded as UTF-8. `SwissEph.DefaultEncoding` overrides that globally if you have a
+file in another encoding.
+
+## Which API to call: prefer the `2` variants
+
+Several functions have a newer sibling with a `2` in the name, and for new code that is generally
+what you want. All of them are ported here, old and new.
+
+For fixed stars this is Astrodienst's own published advice, in the
+[programming documentation](http://www.astro.com/swisseph/swephprg.htm): "For new projects, we
+recommend using the new functions `swe_fixstar2_ut()` and `swe_fixstar2()`. Performance will be a
+lot better if a great number of fixed star calculations are done." The same applies to
+`swe_fixstar2_mag` over `swe_fixstar_mag`, and the same document adds that if performance is a
+problem in an existing project, replacing the old calls with the new ones is the fix.
+
+One porting detail worth knowing if you compare the two families field by field: on non-`SEFLG_SPEED`
+rows, `swe_fixstar` and `swe_fixstar_ut` fill `xx[3..5]` where the C reference leaves them at zero,
+while `swe_fixstar2` and `swe_fixstar2_ut` match the C. See `docs/known-issues.md`, "The file-backed
+grid's divergence is Earth's position", for the measurement.
+
+For houses, `swe_houses_ex2` and `swe_houses_armc_ex2` are new in 2.10.03 and offer two things the
+older entry points cannot: per-cusp and per-`ascmc` speed output, and an explicit `serr`
+out-parameter rather than a bare return code. Astrodienst publishes no "prefer these"
+recommendation for them the way it does for the fixed-star pair, so treat them as added capability
+rather than a replacement: use them when you want speeds or a diagnostic string, and stay on
+`swe_houses`/`swe_houses_ex` otherwise. Note that neither speed output has oracle coverage in this
+repository yet, because `swe_houses_ex` forwards to `swe_houses_ex2` with both hardcoded `NULL`;
+see "What the oracle grids do not cover in the house code" in `docs/known-issues.md`.
+
+There is no `2` variant of `swe_calc`, which is why the example above uses `swe_calc_ut`.
+
+## Threads and async
+
+Create one `SwissEph` instance per thread. A single instance is not safe to share across threads:
+it holds the calculation state that the C library keeps in its own globals, and nothing
+synchronises it. Separate instances are independent and can run concurrently.
+
+There is no async API, and nothing here blocks on I/O long enough to want one. File reads happen
+inside `swe_calc` and friends, which are synchronous by nature; `IEphemerisFileProvider.Open`
+returns a `Stream` directly for the same reason. Calling from an async method is fine, and wrapping
+a long sweep in `Task.Run` is the usual way to keep it off a UI thread.
+
+## Examples in this repository
+
+Three runnable programs, all against the library as it is built here:
+
+- `Programs/SweMini` is the smallest useful example, a direct port of Astrodienst's `swemini.c`.
+- `Programs/SweTest` is the full command-line tool, a port of `swetest.c`, and the most complete
+  demonstration of the API.
+- `Programs/SweWin` is a Windows Forms front end (Windows only).
+
+`Tests/SwissEphNet.Tests` is also worth reading as a source of small, self-contained calls.
+
+# License
 
 Swiss Ephemeris, and therefore this library, is dual-licensed. You must choose one of:
 
@@ -49,42 +211,78 @@ where a relative link to a file in this repository does not resolve, and they na
 state: it carries no `NOTICE` and no `agpl-3.0.txt` at all, and its `LICENSE` is the
 1997-2008 pre-relicense text rather than the dual AGPL one this library is offered under.
 
-The library targets 3 frameworks: `netstandard2.0`, `net8.0` and `net10.0`, packaged under the
-`SwissEphSharp` NuGet ID (see the versioning note in `SwissEphNet.csproj` for why the ID differs
-from the upstream `SwissEphNet` package). Working from this repository rather than the published
-package also works: build from source or reference the project directly.
+## The fork, and who wrote what
 
-The programs SweMini and SweTest target `net10.0`.
+This repository, https://github.com/Tim81/SwissEphNet, is a maintained fork of
+[ygrenier/SwissEphNet](https://github.com/ygrenier/SwissEphNet). The original C-to-C# port is
+Yan Grenier's work (2014-2019); this fork continues it. Since 2026 it has been maintained by
+Timothy van der Ham, who has modernized the build and target frameworks (netstandard2.0, net8.0,
+net10.0) and fixed a number of bugs in the port: the fixed-star search returning the wrong star,
+multi-word star names being unfindable, the heliacal Moon branch never being taken,
+`swe_set_astro_models` throwing, the `DIR_GLUE` path separator, culture-sensitive string
+comparison, and a netstandard2.0 infinite recursion. See `NOTICE` and the package release notes
+for details.
 
-## Samples
+## Package name
 
-A new repos was created https://github.com/ygrenier/SwissEphNet.Samples containing
-lot of sample applications for using the library on different application types.
+This project carries three names, and meeting them separately can look like something is broken.
+It isn't:
 
-That repository predates this fork's replacement of `OnLoadFile` with `FileProvider` (see "Will
-your code still compile?" below). A sample that loads files through `OnLoadFile` is showing the
-removed API, not the current one.
+- The **repository** is `Tim81/SwissEphNet`, a fork of `ygrenier/SwissEphNet`, and keeps that
+  name.
+- The **NuGet package ID** is `SwissEphSharp`. The `SwissEphNet` ID on nuget.org already belongs
+  to the upstream author's own release, so this fork cannot publish under it.
+- The **assembly** is now `SwissEphSharp.dll`, matching the package ID, so this package and the
+  original `SwissEphNet` package can be referenced together without one silently displacing the
+  other; see the "V:2.10.3" section below for what that collision used to look like.
+- The **namespace** stays `SwissEphNet`. Every file under `SwissEphNet/CPort/` is a line-by-line
+  transliteration of the Swiss Ephemeris C source and declares that namespace; renaming it would
+  touch every one of those frozen files for a cosmetic reason. Keeping it also means the library
+  stays source-compatible with code written against the original namespace.
 
-## Works with async
+Working from this repository rather than the published package also works: build from source or
+reference `SwissEphNet/SwissEphNet.csproj` directly (see the versioning note in
+`SwissEphNet.csproj`). Migrating from the old package is mostly the one line it sounds like:
+replace the `PackageReference` for `SwissEphNet` with one for `SwissEphSharp`. `using SwissEphNet;` and every
+type name are unaffected, so source that only calls the public API needs no other change. Anything
+that calls `Assembly.Load("SwissEphNet")` by literal string, carries a binding redirect naming
+`SwissEphNet`, or otherwise hardcodes the DLL filename needs to be updated to `SwissEphSharp`
+too.
 
-For working with the async context read the [this paragraph](https://github.com/ygrenier/SwissEphNet/wiki/Loading-files#works-in-an-async-context)
-from the upstream wiki.
+## Version numbers
 
-That page predates the same change: it documents loading files through `OnLoadFile`, which this
-fork removed.
+The package version tracks upstream, with a fourth component for releases this fork makes on its
+own. `2.10.3` tracks Swiss Ephemeris C 2.10.03; a fork-only release while upstream stays put would
+be `2.10.3.1`, then `2.10.3.2`, and the fourth component resets whenever upstream moves.
+
+Two things about that are worth knowing rather than discovering. NuGet normalizes a trailing zero
+away, so `2.10.3.0` and `2.10.3` are the same package and writing the `.0` achieves nothing.
+And four components are not valid SemVer 2.0, which has exactly three; NuGet accepts them for
+backwards compatibility. That is a deliberate choice, because the two obvious alternatives are
+worse. Build metadata (`2.10.3+fork.1`) is ignored by NuGet when it compares versions, so a second
+package differing only there cannot be published at all. A prerelease suffix (`2.10.3-rev1`) sorts
+*before* `2.10.3`, which is backwards for a release that comes after it.
+
+The assembly's `InformationalVersion` is plain SemVer, and the SDK appends the commit SHA to it as
+build metadata. The upstream version and tag it used to spell out are now `AssemblyMetadata`
+entries, `UpstreamSwissEphemerisVersion` and `UpstreamSwissEphemerisTag`, which is where text that
+does not have to parse as a version belongs.
+
+This fork is not published or endorsed by Yan Grenier or Astrodienst. See "About this repository"
+above and `NOTICE` for the credit both are owed.
 
 # Upgrading from 2.8.0.2
 
 This section is for anyone with `SwissEphNet 2.8.0.2` in a project, deciding whether to move to
 `SwissEphSharp 2.10.3`. Five questions, in the order they matter: can you still use it under your
-licence, will your numbers change, will your code still compile, what do you gain, and can you
+license, will your numbers change, will your code still compile, what do you gain, and can you
 trust the answers you get.
 
-## Can you still use it under your licence?
+## Can you still use it under your license?
 
 Check this one first, because for some projects it is the answer and the rest does not matter.
 
-The licence changed, and not in a direction that suits everyone. 2.8.0.2 was GPL-2.0-or-later.
+The license changed, and not in a direction that suits everyone. 2.8.0.2 was GPL-2.0-or-later.
 This release is AGPL-3.0, or a Swiss Ephemeris Professional License bought from
 Astrodienst. The practical difference is the AGPL's network clause. Under GPL-2.0 you could run
 2.8.0.2 inside a web service and owed nobody source, because you were not distributing anything.
@@ -186,7 +384,7 @@ has no direct replacement; the rest map onto BCL methods (`string.Contains`, `Ty
 `GetTypeCode` carries a second, separate break beyond going internal: its return type changed.
 2.8.0.2 shipped `netstandard1.0` and `net40`. `netstandard1.0` has no `System.TypeCode` at all, so
 `TypeExtensions.GetTypeCode` was conditionally compiled against a public `SwissEphNet.TypeCode`
-enum declared in that same file as a polyfill, and that enum -- not `System.TypeCode` -- was
+enum declared in that same file as a polyfill, and that enum, not `System.TypeCode`, was
 `GetTypeCode`'s return type on the `netstandard1.0` asset. Both `netstandard1.0` and the polyfill
 enum are gone from this release, and nothing under `SwissEphNet` declares a `TypeCode` type any
 more. If your code named `SwissEphNet.TypeCode` explicitly (a field, a variable declaration, a
@@ -205,14 +403,14 @@ Framework: CS0121, the moment the package is referenced. Both were reproduced ag
 assets before the change.
 
 The other six went internal with it as a scoping decision, not because each was harmful. Narrower
-fixes existed -- making only that overload internal, or moving the class to a namespace that
+fixes existed: making only that overload internal, or moving the class to a namespace that
 `using SwissEphNet;` does not pull in. The broader change was taken because 2.10.3 is the first
 release published to nuget.org, so this is the moment the public surface is fixed, and a package's
 surface is easier to widen later than to narrow. If you were relying on one of the other six, that
 is a reasonable thing to raise: they can be made public again without disturbing the overload that
 caused the problem.
 
-`ArrayExtensions.GetPointer` stays public, deliberately -- it is how you build the
+`ArrayExtensions.GetPointer` stays public, deliberately, because it is how you build the
 `CPointer<double>` that `swe_houses_ex`, `swe_houses_ex2` and `swe_cotrans` take.
 
 Your target framework may no longer be supported at all. 2.8.0.2 shipped `net40` and
@@ -224,7 +422,7 @@ deprecation entry under "Breaking changes".
 
 One more thing worth flagging here even though it is not a source-level break like the five
 above: the NuGet package ID is `SwissEphSharp`, not `SwissEphNet`, while the namespace and every
-type name stay `SwissEphNet`. See "Package name" below for the full picture and what migrating
+type name stay `SwissEphNet`. See "Package name" above for the full picture and what migrating
 from the original `SwissEphNet` package involves.
 
 ## What you gain
@@ -295,17 +493,17 @@ requires.
 How this is checked, and what checking it does and does not prove. The port's output is compared
 field by field against Astrodienst's own C, built from the same source and run against the same
 ephemeris files. On Windows (MSVC), Linux (gcc) and macOS (clang, `-fno-builtin`), all
-25,569<!--doccount:grid-total-combined--> rows in that comparison (22,289<!--doccount:grid-analytic-total-->
-calls that need no ephemeris file plus 3,280<!--doccount:grid-files-total--> that read the shipped `.se1` files) come back
-bit-identical, not merely close (gated in CI on all three platforms -- see the table below for
+25,569 rows in that comparison (22,289
+calls that need no ephemeris file plus 3,280 that read the shipped `.se1` files) come back
+bit-identical, not merely close (gated in CI on all three platforms; see the table below for
 what has and has not been independently reproduced outside CI on this workstation); all three
-tracked difference lists (0<!--doccount:oracle-known-diff-files-->
+tracked difference lists (0
 recorded exceptions each) are empty. A `GET_CURRENT_FILE_DATA` row records only the basename of
-the file it opened, deliberately, not the full path -- see `docs/compliance-2.10.03.md`'s "The
+the file it opened, deliberately, not the full path; see `docs/compliance-2.10.03.md`'s "The
 last two 2.10.03-only entry points" section for why, and for the six `SERR` rows (five in the
 files grid, one in the JPL grid) that briefly
 existed before that scoping decision. macOS's own math builtins had to be told not to substitute
-for individual libm calls (`-fno-builtin`) before it matched -- clang's default behavior otherwise
+for individual libm calls (`-fno-builtin`) before it matched. Clang's default behavior otherwise
 fuses adjacent libm calls (e.g. `sin`/`cos` into `__sincos`) in a way that does not return
 bit-identically to calling them separately; unlike Windows and Linux, macOS cannot be
 measured outside its own CI runner, so this section does not claim a current macOS number. None of
@@ -319,8 +517,8 @@ divergence is each platform's own math library disagreeing with itself in the la
 same thing two independently built C programs would show; it is not evidence against the port.
 
 Separately, the port's output is checked against Astrodienst's own 2.10.03 test suite (`setest`),
-12,757 iterations across ten functional areas. 1,423<!--doccount:known-fail-total--> of those still fail: 664<!--doccount:known-fail-value-mismatch--> because the answer
-is outside the tolerance Astrodienst's own suite allows, and 759<!--doccount:known-fail-data-missing--> because a required data file (a
+12,757 iterations across ten functional areas. 1,423 of those still fail: 664 because the answer
+is outside the tolerance Astrodienst's own suite allows, and 759 because a required data file (a
 JPL ephemeris, a per-asteroid or `ephe/sat/` file, or an ephemeris era this repository does not
 ship, roughly years 1200 to 2399) is not present, not because the answer is wrong.
 `Tests/conformance/value-mismatch-triage.tsv` drove Astrodienst's own MSVC-built 2.10.03 C through
@@ -481,7 +679,7 @@ Source-level and reflection-based consumers can be affected:
   so source that only calls the public API needs no change beyond the `PackageReference`
   itself. This closes a collision: while the assembly was still named `SwissEphNet`,
   this package and the original `SwissEphNet` 2.8.0.2 both produced `bin/SwissEphNet.dll`.
-  Referencing both in one dependency graph built cleanly -- no `MSB3277`, no `NU1605` --
+  Referencing both in one dependency graph built cleanly (no `MSB3277`, no `NU1605`)
   and whichever copy's build step ran last silently overwrote the other in the output
   folder. A consumer with a transitive dependency on the original package, still calling
   the removed `OnLoadFile`/`LoadFileEventArgs` API, crashed at run time the moment the
@@ -493,7 +691,7 @@ Source-level and reflection-based consumers can be affected:
   by literal string, carries a binding redirect naming `SwissEphNet`, or otherwise
   hardcodes the DLL filename needs to be updated to `SwissEphSharp`; anything that only
   references the package and writes `using SwissEphNet;` does not.
-- **`SE_EPHE_PATH`, the environment variable, is honored again -- and takes priority over
+- **`SE_EPHE_PATH`, the environment variable, is honored again, and takes priority over
   `swe_set_ephe_path`.** `sweph.c:1327` checks it before anything else and only reaches
   the argument passed to `swe_set_ephe_path` in an `else if`; that block existed in this
   port but was commented out (`Sweph.cs:1561-1573`), so setting the variable had no
@@ -501,10 +699,10 @@ Source-level and reflection-based consumers can be affected:
   process environment, it wins over whatever path a caller passes to
   `swe_set_ephe_path`, matching the C exactly. This is a behavior change, not only a bug
   fix, and it can surprise a caller who has that variable set for an unrelated Swiss
-  Ephemeris install on the same machine -- their explicit `swe_set_ephe_path` call is now
+  Ephemeris install on the same machine, because their explicit `swe_set_ephe_path` call is now
   silently overridden by it.
 - **The default ephemeris path `swe_set_ephe_path` falls back to is now upstream's, not
-  the `"[ephe]"` placeholder -- but `SwissEph.SE_EPHE_PATH` itself is unchanged.** Before
+  the `"[ephe]"` placeholder, but `SwissEph.SE_EPHE_PATH` itself is unchanged.** Before
   this release, nothing in the library ever detected the `"[ephe]"` placeholder
   `SwissEph.SE_EPHE_PATH` held; it was meant to be recognized while `OnLoadFile`
   intercepted every file read, and with `OnLoadFile` gone and a null `FileProvider`
@@ -513,7 +711,7 @@ Source-level and reflection-based consumers can be affected:
   touch the public constant's value: `SwissEph.SE_EPHE_PATH` is `const`, which the C#
   compiler inlines into every caller at that caller's own compile time rather than
   looking it up at run time, so changing the literal would silently desync anything
-  already compiled against `"[ephe]"` from what this library now does -- binary-breaking
+  already compiled against `"[ephe]"` from what this library now does. Binary-breaking
   in a way a version bump does not fix. `SwissEph.SE_EPHE_PATH` therefore keeps its
   `"[ephe]"` value exactly as before; code that reads it directly still sees that
   placeholder. The real default is resolved internally instead, at every point
@@ -527,16 +725,16 @@ Source-level and reflection-based consumers can be affected:
   call it at all: a non-blank argument has always won. On Windows, the resolved value is
   `\sweph\ephe\/` rather than the C's own `\sweph\ephe\`: a redundant trailing `/` after
   the literal backslash, because this port's own `DIR_GLUE` is always `/`. Cosmetic --
-  Windows accepts both separators in a path -- not a functional difference.
+  Windows accepts both separators in a path, so this is not a functional difference.
 - **`IEphemerisFileProvider.Open(string path)` receives a different `path` as a result,
   for any caller that never calls `swe_set_ephe_path`.** It used to begin with the
   `"[ephe]"` sentinel (the bullet above); it now begins with upstream's real default for
-  the running OS. A provider that matched the old prefix by equality -- `path ==
-  "[ephe]/sefstars.txt"`, say -- now gets a `path` starting with `\sweph\ephe\` on
+  the running OS. A provider that matched the old prefix by equality (`path ==
+  "[ephe]/sefstars.txt"`, say) now gets a `path` starting with `\sweph\ephe\` on
   Windows instead, the equality check fails, `Open` returns `null`, and every ephemeris
   file this library asks for appears missing. That is exactly what broke eight of this
   project's own tests the moment the default changed, across `SwissEphTest.cs`,
-  `SwissEphTest.Date.cs`, `SwissEphTest.swe_fixstar.cs` and `Issue18Test.cs` -- the
+  `SwissEphTest.Date.cs`, `SwissEphTest.swe_fixstar.cs` and `Issue18Test.cs`. The
   strongest evidence that a real consumer's provider hits the same failure. Two fixes,
   either is sufficient: match on the trailing filename
   instead of the full path, or call `swe_set_ephe_path` explicitly so the prefix is one
@@ -561,7 +759,7 @@ Source-level and reflection-based consumers can be affected:
   and named a smaller worst-case relative error than a swept grid finds: running
   the same `netstandard2.0` asset's `swe_calc` over a committed 102-call grid (34 bodies --
   `SE_SUN`..`SE_EARTH` plus every fictitious-body constant `swephexp.h` defines,
-  `SE_CUPIDO`..`SE_WALDEMATH` -- crossed with 3 epochs, `SEFLG_MOSEPH|SEFLG_SPEED`), .NET
+  `SE_CUPIDO`..`SE_WALDEMATH`, crossed with 3 epochs, `SEFLG_MOSEPH|SEFLG_SPEED`), .NET
   Framework 4.8 and 4.6.2 both differ from .NET 10 on the identical 29 of those rows (byte-
   identical between the two Framework versions), not the earlier note's "21 of 111". The
   worst divergence by relative error is not `SE_TRUE_NODE`'s longitude speed either: it is
@@ -570,12 +768,12 @@ Source-level and reflection-based consumers can be affected:
   not support. That latitude speed is itself about -6.1e-06 degrees per day, so a 2.28e-3
   relative divergence is an absolute one of 1.4e-08 degrees per day: the relative error is
   large only because the quantity it divides by is nearly zero. Separating the two kinds of
-  field makes the picture plain. Across the whole grid the *positions* -- longitude, latitude
-  and distance, the values a chart actually renders -- agree to within 1.08e-10 relative, worst
+  field makes the picture plain. Across the whole grid the *positions* (longitude, latitude
+  and distance, the values a chart actually renders) agree to within 1.08e-10 relative, worst
   case: `NSC|13|2488069.5`'s longitude, an absolute divergence of 3.9e-10 degrees (1.4e-06
   arcseconds). That is a different row from the largest absolute position divergence in the
   grid, which is `NSC|13|2415020.5`'s longitude at 2.3e-09 degrees (8.4e-06 arcseconds, 1.7e-11
-  relative) -- two separate maxima, not one figure converted two ways. Every divergence beyond
+  relative), two separate maxima, not one figure converted two ways. Every divergence beyond
   the worst relative figure sits in a speed component, and the largest absolute speed divergence
   anywhere in the grid is 1.8e-08 (`SE_ADMETOS`'s distance speed, in AU per day).
   `SE_TRUE_NODE`'s own longitude speed
@@ -592,7 +790,7 @@ Source-level and reflection-based consumers can be affected:
   difference near a quarter-turn boundary, not only "near pi" narrowly, and not this port;
   what this measurement does not trace is the exact chain from a few-ULP `Math.Sin`/`Cos`
   divergence through `SE_ADMETOS`'s iterative Kepler solve (`swi_kepler`, called from
-  `swi_osc_el_plan`) to a 2.28e-3 relative divergence in its derived speed -- plausible as
+  `swi_osc_el_plan`) to a 2.28e-3 relative divergence in its derived speed, plausible as
   iterative amplification (a converging Newton's-method solve differentiated for speed can
   turn a few ULP into a much larger swing), but not instrumented step by step, since doing
   so would mean adding debug output to `SwissEphNet/CPort/`, which the transliteration
@@ -602,50 +800,15 @@ Source-level and reflection-based consumers can be affected:
   `swe_calc`, touches no file-loading path, and sets no culture; it is a regression pin for
   a `net48`-only string-extension recursion and nothing more.
 
-## V:2.6.0.21
+# How the numbers are verified
 
-Since .NETStandard are supported, this library is not compiled on PCL version. Only
-2 version are available: .NET 4.0 for old legacy application, .NETStandard 1.0
-for the new framework.
+Three instruments sit behind the numbers this library returns, and each proves something the other
+two cannot. The characterization baseline proves self-consistency, that a change altered nothing it
+should not have. The correctness oracle proves agreement with Astrodienst's own published reference
+values. The bit-exact oracle proves the port and a C build of the same version return identical
+bits. "Numerical compatibility" below summarises what that adds up to; the rest is detail.
 
-.NETStandard 1.0 is supported by VS 2015.3 and VS 2017, so PCL are not usefull.
-
-The new repos of https://github.com/ygrenier/SwissEphNet.Samples contains applications
-using only this version of the library.
-
-## V:2.5.1.16
-
-Since 2.5.1.16 some libraries don't supports the "Windows-1252" code page. In this case, the default encoding become "UTF-8".
-
-You can change the default encoding by assigning the static property ```SwissEphNet.SwissEph.DefaultEncoding```.
-
-# Thread Local Storage (TLS) support
-
-Since version 2.03.00 the Swiss Ephemeris library supports the 
-[Thread-Local Storage (TLS)](https://en.wikipedia.org/wiki/Thread-local_storage), which
-allows to run several calculations simultaneously with multiple threads.
-
-As SwissEphNet is build an object ```SwissEphNet.SwissEph```, it always supports multiple
-calculations. You just need create one ```SwissEphNet.SwissEph``` per thread. On other hand
-it's still not thread-safe, so don't access the same ```SwissEphNet.SwissEph``` instance
-from multiple threads.
-
-
-# Projects splitted (2014-06-06)
-
-From now the SweNet et SwephNet projects are moved to a new repos [SwephNet](https://github.com/ygrenier/SwephNet).
-
-SwephNet is the next version of SwissEph, with a better .Net implementation. The two projects will 
-continue to exist in parallel :
-- SwissEphNet : is the direct C to C# portage of the Swiss Ephemeris.
-- SwephNet : is the full .Net implementation of the Swiss Ephemeris.
-
-# Usage
-
-This fork is packaged under the `SwissEphSharp` NuGet ID (see the versioning note in
-`SwissEphNet.csproj`). An older release of the upstream project is available separately as a
-[NuGet package](https://www.nuget.org/packages/SwissEphNet), under the original `SwissEphNet` ID,
-but it predates this fork's retarget and bug fixes.
+This whole section is reference material. Nothing in it is needed to use the library.
 
 ## Numerical compatibility
 
@@ -658,7 +821,7 @@ platform:
 
 | Platform | C reference | Result |
 |---|---|---|
-| Windows x64 | MSVC 19.51, `/O2 /fp:precise /MD` | 25,569<!--doccount:grid-total-combined--> of 25,569 rows bit-identical (gated) |
+| Windows x64 | MSVC 19.51, `/O2 /fp:precise /MD` | 25,569 of 25,569 rows bit-identical (gated) |
 | Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | 25,569 of 25,569 rows bit-identical, gated at that total on every push and pull request; confirmed by PR #32's "Oracle build gates" CI run at commit `f92c8ee` (`https://github.com/Tim81/SwissEphNet/actions/runs/30805814137`, job "Gate: port matches the C reference on Linux x64 (glibc)", pass) -- this workstation has not independently re-run it outside CI -- see `docs/compliance-2.10.03.md`'s "The last two 2.10.03-only entry points" for what was checked and when. This citation is re-anchored as the branch moves forward and commits get rewritten out from under earlier citations; verify reachability with `git merge-base --is-ancestor f92c8ee HEAD` before trusting an older copy of this line |
 | macOS arm64 | clang, `-O2 -ffp-contract=off -fno-builtin` | 25,569 of 25,569 rows bit-identical, gated by `macos-exactness` on every push and pull request; confirmed at the current grid by the same CI run at commit `f92c8ee`, job "Gate: port matches the C reference on macOS arm64 (Apple libSystem)", pass -- macOS has no local reproduction path here, so this row is CI's own result, not a claim made outside it |
 
@@ -668,7 +831,7 @@ corroborates `net8.0` from a different instrument, but it is a weaker claim than
 self-consistency between two TFMs of this port rather than agreement with the C reference.
 
 "Gated" on the Windows row means `oracle-dump`, the `.github/workflows/oracle.yml` job that
-replays this exact 25,569<!--doccount:grid-total-combined-->-row grid, re-runs the comparison end to end on every push and pull
+replays this exact 25,569-row grid, re-runs the comparison end to end on every push and pull
 request and fails the workflow on any mismatch. Three more jobs also run on Windows in that file
 but check different things than this grid: `crt-parity` compares MSVC C against .NET on a fixed
 CRT value table, `c-reference-validate` compares the MSVC C build against pyswisseph 2.10.03, and
@@ -697,16 +860,16 @@ neither flag `macos-exactness` does: base x86-64 has no FMA3 encoding at all, so
 `-ffp-contract=off` has nothing to turn off (`linux-exactness` confirms this by disassembly, the
 same way `macos-exactness` does for arm64), and although gcc does substitute glibc's `sincos` for
 an adjacent `sin`/`cos` pair even without `-fno-builtin`, glibc's `sincos` returns bit-identically
-to calling the two functions separately, unlike Apple's -- measured by building both ways and
+to calling the two functions separately, unlike Apple's, measured by building both ways and
 replaying both grids through each, with no difference either way.
 
 Windows and Linux do not produce the same numbers as each other, and cannot be made to. `Math.Sin`
 and its siblings bind to whatever libm the platform provides, at run time, so this is the same
 divergence two identically-built C programs would show. Comparing the Windows-generated
-characterization baseline against Linux gave 3,547,367 numeric fields with 66,342 (1.87%)
-differing and 5,394 beyond the shipped tolerance, as measured at commit `5148573` -- `Tests/baseline/`
-has grown since, so this triple is superseded and a re-measure against the current matrix is
-outstanding (see `Tools/BaselineGen/README.md`'s "Platform lock" section). That is why the
+characterization baseline against Linux gives 3,547,935 numeric fields with 66,390 (1.8712%)
+differing and 5,394 beyond the shipped tolerance, measured against the current matrix
+(see `Tools/BaselineGen/README.md`'s "Platform lock" section for the environment and for what
+that run did not cover). That is why the
 baseline is locked to the platform that generated it and the cross-platform CI job reports drift
 without gating on it, and it is a statement about libm rather than about this port. The baseline
 has not been generated on macOS, so this same field-by-field comparison has not been run there.
@@ -730,100 +893,7 @@ the input; there is no single number, measured or otherwise, that bounds it acro
 The table above is the bit-exact oracle's own result; see "Bit-exact oracle" below for the tooling
 behind it and what it proves that the other two verification instruments in this README cannot.
 
-## Package name
-
-This project carries three names, and meeting them separately can look like something is broken.
-It isn't:
-
-- The **repository** is `Tim81/SwissEphNet`, a fork of `ygrenier/SwissEphNet`, and keeps that
-  name.
-- The **NuGet package ID** is `SwissEphSharp`. The `SwissEphNet` ID on nuget.org already belongs
-  to the upstream author's own release, so this fork cannot publish under it.
-- The **assembly** is now `SwissEphSharp.dll`, matching the package ID, so this package and the
-  original `SwissEphNet` package can be referenced together without one silently displacing the
-  other; see the "V:2.10.3" section above for what that collision used to look like.
-- The **namespace** stays `SwissEphNet`. Every file under `SwissEphNet/CPort/` is a line-by-line
-  transliteration of the Swiss Ephemeris C source and declares that namespace; renaming it would
-  touch every one of those frozen files for a cosmetic reason. Keeping it also means the library
-  stays source-compatible with code written against the original namespace.
-
-Working from this repository rather than the published package also works: build from source or
-reference `SwissEphNet/SwissEphNet.csproj` directly (see the versioning note in
-`SwissEphNet.csproj`). Migrating from the old package is mostly the one line it sounds like:
-replace the `PackageReference` for `SwissEphNet` with one for `SwissEphSharp`. `using SwissEphNet;` and every
-type name are unaffected, so source that only calls the public API needs no other change. Anything
-that calls `Assembly.Load("SwissEphNet")` by literal string, carries a binding redirect naming
-`SwissEphNet`, or otherwise hardcodes the DLL filename needs to be updated to `SwissEphSharp`
-too.
-
-## Version numbers
-
-The package version tracks upstream, with a fourth component for releases this fork makes on its
-own. `2.10.3` tracks Swiss Ephemeris C 2.10.03; a fork-only release while upstream stays put would
-be `2.10.3.1`, then `2.10.3.2`, and the fourth component resets whenever upstream moves.
-
-Two things about that are worth knowing rather than discovering. NuGet normalizes a trailing zero
-away, so `2.10.3.0` and `2.10.3` are the same package and writing the `.0` achieves nothing.
-And four components are not valid SemVer 2.0, which has exactly three; NuGet accepts them for
-backwards compatibility. That is a deliberate choice, because the two obvious alternatives are
-worse. Build metadata (`2.10.3+fork.1`) is ignored by NuGet when it compares versions, so a second
-package differing only there cannot be published at all. A prerelease suffix (`2.10.3-rev1`) sorts
-*before* `2.10.3`, which is backwards for a release that comes after it.
-
-The assembly's `InformationalVersion` is plain SemVer, and the SDK appends the commit SHA to it as
-build metadata. The upstream version and tag it used to spell out are now `AssemblyMetadata`
-entries, `UpstreamSwissEphemerisVersion` and `UpstreamSwissEphemerisTag`, which is where text that
-does not have to parse as a version belongs.
-
-This fork is not published or endorsed by Yan Grenier or Astrodienst. See "About this repository"
-above and `NOTICE` for the credit both are owed.
-
-## Create an instance
-
-SwissEphNet.SwissEph is ```IDisposable``` so you can use it with an ```using``` statement.
-
-```C#
-using (var sweph = new SwissEphNet.SwissEph()) {
-    // Use it
-}
-```
-
-## Loading files
-
-By default, SwissEphNet reads ephemeris files straight from the real filesystem: point
-`swe_set_ephe_path` at a directory the way the C reference does, and nothing else needs
-configuring.
-
-For a source that is not a real file on disk, e.g. an embedded resource, set
-`SwissEph.FileProvider` to an `IEphemerisFileProvider`:
-
-```C#
-using (var sweph = new SwissEphNet.SwissEph()) {
-    sweph.FileProvider = new MyEmbeddedResourceProvider();
-    // Use it
-}
-```
-
-`IEphemerisFileProvider` has a single method, `Stream Open(string path)`, returning
-`null` for "not found". `SwissEph.DefaultFileProvider` sets the provider every
-subsequently-constructed instance starts with, for a harness that creates many instances
-and needs every one of them configured the same way without setting `FileProvider`
-individually on each. See the "V:2.10.3" entry above for what this replaces
-(`OnLoadFile`) and why.
-
-# Continuous Integration
-
-This fork replaced the upstream project's AppVeyor CI with GitHub Actions; see
-`.github/workflows/`.
-
-# Contributing
-
-Before touching `SwissEphNet/CPort/`, `Programs/SweTest/Program.cs` or `Programs/SweMini/Program.cs`,
-read `CONTRIBUTING.md`. Those files are deliberate, line-by-line transliterations of the Swiss
-Ephemeris C source and must never be reformatted or restructured; that correspondence is what
-makes each upstream Swiss Ephemeris upgrade tractable.
-
-# Characterization baseline
+## Characterization baseline
 
 Before any change to the C-to-C# port, a frozen golden-master file records what the
 library currently outputs for a large matrix of calls. See `Tools/BaselineGen/README.md`
@@ -841,14 +911,14 @@ anything it wasn't supposed to. It cannot prove *correctness*, because it is
 generated from the port's own output. That is what the correctness oracle below
 is for.
 
-# Correctness oracle
+## Correctness oracle
 
 `Tests/SwissEphNet.Conformance.Tests` checks the port's output against
 Astrodienst's own reference values, not against the port's own prior output.
 The reference corpus is Swiss Ephemeris **2.10.03**'s `setest` test suite
 (12,757 iterations, ~334K asserted values across 10 functional areas). Even though the port has
 now landed the whole 2.10.03 delta file by file, it is not at full parity: `known-fail.tsv` still
-lists 1,423<!--doccount:known-fail-total--> failing iterations (11,334 passing, 88.8%). Each
+lists 1,423 failing iterations (11,334 passing, 88.8%). Each
 porting PR should remove entries from it; any entry that reappears is a regression.
 
 Read that 1,423 with the split under "Numerical compatibility" above, because it is not 1,423
@@ -856,7 +926,7 @@ things left to port: 759 of them are a data file this repository does not ship r
 answer, the other 664 sit outside the tolerance Astrodienst's own suite allows, and the four rows
 ever confirmed as port defects were fixed and pruned.
 
-- `external/swisseph` -- a git submodule, sparse-checked-out, pinned to tag
+- `external/swisseph`, a git submodule, sparse-checked-out, pinned to tag
   `v2.10.3bfinal`. It serves two purposes:
   1. **The reference corpus** for the conformance oracle: `setest/t.exp`
      (expected values) and `setest/t.fix` (tolerances), plus the core `.se1`
@@ -868,19 +938,19 @@ ever confirmed as port defects were fixed and pruned.
   Initialize it with the sparse-checkout recipe in `CONTRIBUTING.md` ("The upstream C is
   vendored at `external/swisseph`"), measured at ~19 MB. Sparse patterns have to be set up
   before the first checkout, so `git submodule update --init external/swisseph` on its own
-  does not produce a sparse checkout -- it lands at the same commit but pulls the full,
+  does not produce a sparse checkout: it lands at the same commit but pulls the full,
   unfiltered tree, measured at ~423.9 MB.
 
-- `Tests/conformance/known-fail.tsv` -- one row per iteration currently known
+- `Tests/conformance/known-fail.tsv`, one row per iteration currently known
   to fail, with a category (`NOT-IMPLEMENTED`, `VALUE-MISMATCH`,
   `DATA-MISSING`, `ERROR`, or `UNREPRODUCIBLE`) and a short reason. The
   conformance run **fails** unless the port's actual behavior matches this
   file exactly: any iteration failing that isn't on the list (a regression),
   any listed row recorded under a category the port no longer matches
-  (category drift -- still failing, but not the same failure), any listed row
+  (category drift, still failing but not the same failure), any listed row
   that now passes (progress left un-pruned), and any row for an iteration no
   longer in the corpus (stale) are all gate failures. There is no "reports
-  without failing" case -- the file and the port's behavior must agree, in
+  without failing" case. The file and the port's behavior must agree, in
   both directions, for the gate to pass.
 
   - `NOT-IMPLEMENTED` names the category for a 2.10-only API the port doesn't have; it is
@@ -890,22 +960,22 @@ ever confirmed as port defects were fixed and pruned.
     `DATA-MISSING`: a required data file (a JPL DE ephemeris, `ephe/sat/`)
     isn't shipped by this repo. `ERROR`: the dispatch threw. `VALUE-MISMATCH`:
     the port ran and produced an answer that doesn't match the reference
-    within `t.fix` tolerance -- this and `ERROR` are the actionable
+    within `t.fix` tolerance. This and `ERROR` are the actionable
     categories, the actual porting work queue. `UNREPRODUCIBLE`: a structural
     C-vs-C# representational gap makes the reference call impossible to
-    construct at all, as opposed to constructible but wrong -- distinct from
+    construct at all, as opposed to constructible but wrong, distinct from
     the other three, and excluded from the pass-rate denominator the same way
     they are (see `ConformanceReport.SuiteSummary.PassRate`'s doc comment).
     Currently 0 across the whole corpus (suite 6 testcase 6, the one place
     that used to carry all of it, became reproducible once the port's five
-    house entry points gained faithful `int hsys` overloads -- see
+    house entry points gained faithful `int hsys` overloads; see
     `Suite06Houses.Dispatch`'s remarks on testcase 6 for the mechanics).
 
   See "Reporting by testcase" in `CONTRIBUTING.md` for how to read a run
   (60 testcases, split into actionable vs. parked) instead of 12,757
   individual rows, and "The two gates disagree on purpose, not by accident"
   for why this gate failing constantly is expected and the characterization
-  baseline above failing at all is not -- they are not the same kind of
+  baseline above failing at all is not. They are not the same kind of
   red.
 
 - Two data sources this repo does not ship are skipped by default and
@@ -933,7 +1003,7 @@ ever confirmed as port defects were fixed and pruned.
   `known-fail.tsv` carries 48 `sat` rows today, and the 4-of-18 figure has not been re-run
   against that larger set. The JPL backend works; what it lacks is a way to keep proving it.
 
-  Verify with the SHA-256, not the MD5. Upstream publishes only an MD5 -- their
+  Verify with the SHA-256, not the MD5. Upstream publishes only an MD5, and their
   `readme.md` lists `fad0f432ae18c330f9e14915fbf8960a  de431.eph` among the md5-keys --
   and MD5 has had practical chosen-prefix collisions since 2019, so it establishes that
   a download was not corrupted in transit, not that nobody chose its contents. The
@@ -973,10 +1043,10 @@ ever confirmed as port defects were fixed and pruned.
   rows as verified-but-unwatched, not as covered.
 
 - **The JPL backend also has a bit-exact grid**, and it is the one that found the
-  bug. `Tools/OracleGrid/grid-jpl.tsv` is the third oracle grid: 2,407<!--doccount:grid-jpl-total--> rows, 1,200<!--doccount:grid-jpl-func-calc-->
-  through `swe_calc`, 1,200<!--doccount:grid-jpl-func-calc-ut--> through `swe_calc_ut`, sweeping bodies, epochs and
+  bug. `Tools/OracleGrid/grid-jpl.tsv` is the third oracle grid: 2,407 rows, 1,200
+  through `swe_calc`, 1,200 through `swe_calc_ut`, sweeping bodies, epochs and
   sidereal modes with `SEFLG_JPLEPH` set, and with `SEFLG_JPLHOR` and
-  `SEFLG_JPLHOR_APPROX` among the flag combinations, plus 7<!--doccount:grid-jpl-func-get-current-file-data-->
+  `SEFLG_JPLHOR_APPROX` among the flag combinations, plus 7
   `swe_get_current_file_data` rows. It is opt-in and CI never runs
   it:
 
@@ -1009,19 +1079,19 @@ ever confirmed as port defects were fixed and pruned.
   tail of that block, so the guard fired on a perfectly good file and every
   `SEFLG_JPLEPH` call fell back to Moshier without saying so. After the fix:
   **2,400 of 2,400 bit-identical, 0 differing, nothing waived.** That 2,400 was the grid's
-  size at the time this fix landed; `grid-jpl.tsv` has since grown to the 2,407<!--doccount:grid-jpl-total-->
+  size at the time this fix landed; `grid-jpl.tsv` has since grown to the 2,407
   rows described above, so "2,400 of 2,400" is this historical run's own total, not a claim
   about the current grid.
 
   It survived this long because it is data-dependent. DE431 has no high bytes in that
-  block, and DE431 was the only DE file this repository had ever opened -- including
+  block, and DE431 was the only DE file this repository had ever opened, including
   the 12,757-iteration run recorded above. Full numbers and environment are in
   `Tests/oracle/regenerations-jpl.log`; the defect is written up in
   `docs/known-issues.md`.
 
 - A separate workflow, not folded into `ci.yml`'s fast job:
   `.github/workflows/conformance.yml` runs on a schedule, on demand, and on every pull
-  request, with no `paths` filter -- an earlier version restricted the `pull_request`
+  request, with no `paths` filter. An earlier version restricted the `pull_request`
   trigger to `SwissEphNet/**` and the oracle's own paths, but that allowlist could never be
   complete (it missed `global.json`, `Directory.Build.props`, and a submodule gitlink bump
   to `external/swisseph` itself), so it was dropped to match `ci.yml` and `baseline.yml`,
@@ -1038,7 +1108,7 @@ ever confirmed as port defects were fixed and pruned.
   `scripts/regenerate-known-fail.ps1 -PruneOnly` to remove newly-passing rows
   (the common case after a porting PR; refuses to run if it would add or
   recategorize a row instead) or `-Reason "..." [-PR N]` for a full
-  regenerate that can also add rows -- see "Correctness oracle known-fail
+  regenerate that can also add rows; see "Correctness oracle known-fail
   list" in `CONTRIBUTING.md` for the invariant it enforces (rows may be
   removed freely; adding one needs a written reason and review).
 
@@ -1047,7 +1117,7 @@ license, which is already the dual AGPL-3.0 / Swiss Ephemeris Professional text 
 above and `LICENSE`). The submodule does not change that; both sides of the port have carried the
 same license since before 2.10.03 work started.
 
-# Bit-exact oracle
+## Bit-exact oracle
 
 The characterization baseline above proves self-consistency, and the correctness oracle proves
 agreement with Astrodienst's own published reference values within the tolerances Astrodienst
@@ -1055,12 +1125,12 @@ itself ships. Neither can prove the strongest claim this project makes: that for
 the port and Astrodienst's own C compute the identical bits. That is what this third instrument
 is for, and it is the source of the "Numerical compatibility" table above.
 
-- `Tools/OracleGrid` holds the two input grids: `grid-analytic.tsv` (22,289<!--doccount:grid-analytic-total--> rows, `SEFLG_MOSEPH
+- `Tools/OracleGrid` holds the two input grids: `grid-analytic.tsv` (22,289 rows, `SEFLG_MOSEPH
   swe_calc`/`swe_calc_ut`, `swe_houses`/`swe_houses_armc`/`swe_houses_ex`/`swe_houses_ex2`/`swe_houses_armc_ex2`,
   `swe_get_ayanamsa`/`_ex`/`_ex_ut`/`_ut`,
   `swe_sidtime`, `swe_azalt`, `swe_house_name` and `swe_nod_aps_ut`, swept across every predefined
   `sid_mode` plus `SE_SIDM_USER`, opening no ephemeris file) and
-  `grid-files.tsv` (3,280<!--doccount:grid-files-total--> rows, `SEFLG_SWIEPH swe_calc`/`swe_calc_ut`, the `swe_fixstar` family
+  `grid-files.tsv` (3,280 rows, `SEFLG_SWIEPH swe_calc`/`swe_calc_ut`, the `swe_fixstar` family
   (including `swe_fixstar2_mag`),
   `swe_get_planet_name`, `swe_houses_ex`/`swe_houses_ex2`/`swe_houses_armc_ex2`, `swe_nod_aps_ut`,
   `swe_calc_pctr` and `swe_get_current_file_data`, reading the
@@ -1070,11 +1140,11 @@ is for, and it is the source of the "Numerical compatibility" table above.
   port. Both write every hex-encoded field, the return code, and the `serr` text to a TSV.
 - `Tools/OracleVerify` compares the two dumps field by field. A row that is not an outright match
   has to be listed in `Tests/oracle/known-diff.tsv` or `known-diff-files.tsv`, under a category
-  that still fits and at a magnitude no worse than the last time that entry was regenerated -- both
+  that still fits and at a magnitude no worse than the last time that entry was regenerated. Both
   lists are currently empty.
 - `scripts/verify-oracle.ps1` is the gate: it also checks that the dumps on disk (gitignored,
   under `external/.c-reference/`, not committed) still reflect what they were generated from --
-  the two committed grids, the port's own source, and the C reference binaries -- and, when a
+  the two committed grids, the port's own source, and the C reference binaries, and, when a
   grid's known-diff list is empty, that the two dump files are byte-for-byte identical at the
   file level, not merely equal per `OracleVerify`'s own field comparator.
 
@@ -1083,39 +1153,35 @@ check them. See `docs/compliance-2.10.03.md` for the current numbers on both Win
 what this instrument does and does not cover, and the same record for the other two instruments
 above.
 
-# Firsts steps
+## Continuous Integration
 
-Our first step is to convert the C source code to C#, and provide some conversions from C like string format.
+This fork replaced the upstream project's AppVeyor CI with GitHub Actions; see
+`.github/workflows/`.
 
-## (x)printf 
+# Contributing
 
-We implements (x)printf base methods with the Richard Prinz project (http://www.codeproject.com/Articles/19274/A-printf-implementation-in-C) with somes updates.
-
-## (x)scanf
-
-We implements (x)scanf base methods with the Jonathan Wood project (http://www.blackbeltcoder.com/Articles/strings/a-sscanf-replacement-for-net) with some updates and unit tests.
-
-## C conversion
-
-All C files are included in the partial class 'SwissEph' each in a specific file.
-
-All exported constants are defined as public in the class.
-
-All exported methods are defined as public in the class.
-
-The other elements are declared as private.
-
-The compilation configuration use pre-processor constants. We remove lot of them in our case. The other are converted as constants, not pre-processor.
-
-# Seconds steps
-
-Now the portage is correct, so we create a new project (https://github.com/ygrenier/SwephNet) with
-a new interface more adapted to the .Net guidelines.
+Before touching `SwissEphNet/CPort/`, `Programs/SweTest/Program.cs` or `Programs/SweMini/Program.cs`,
+read `CONTRIBUTING.md`. Those files are deliberate, line-by-line transliterations of the Swiss
+Ephemeris C source and must never be reformatted or restructured; that correspondence is what
+makes each upstream Swiss Ephemeris upgrade tractable.
 
 # References
 
-The Swiss Ephemeris Programming Interface documentation : http://www.astro.com/swisseph/swephprg.htm.
+Astrodienst's own material, which documents the API this port exposes:
 
-Last code source of Swiss Ephemeris from ftp://ftp.astro.ch/pub/swisseph/.
+- [Swiss Ephemeris programming interface](http://www.astro.com/swisseph/swephprg.htm), the
+  reference for every `swe_*` function here.
+- [`aloistr/swisseph`](https://github.com/aloistr/swisseph), the C source this port tracks. Pinned
+  here at tag `v2.10.3bfinal` under `external/swisseph`.
+- [`aloistr/swisseph/ephe`](https://github.com/aloistr/swisseph/tree/master/ephe), the ephemeris
+  data files, mirrored at [`ephe.scryr.io/ephe`](https://ephe.scryr.io/ephe).
 
-The NASA JPL resouces : http://www.jpl.nasa.gov/, http://ssd.jpl.nasa.gov/.
+NASA JPL, for the DE files the `SEFLG_JPLEPH` backend reads:
+
+- [Jet Propulsion Laboratory](https://www.jpl.nasa.gov/) and its
+  [solar system dynamics group](https://ssd.jpl.nasa.gov/).
+- The DE files themselves, under
+  [`ssd.jpl.nasa.gov/ftp/eph/planets/Linux/`](https://ssd.jpl.nasa.gov/ftp/eph/planets/Linux/):
+  `de200/lnxm1600p2170.200`, `de406/lnxm3000p3000.406`, `de431/lnxm13000p17000.431` and
+  `de441/linux_m13000p17000.441`, also mirrored at
+  [`ephe.scryr.io/jpl`](https://ephe.scryr.io/jpl/).

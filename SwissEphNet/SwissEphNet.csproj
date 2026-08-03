@@ -77,12 +77,23 @@
     <RepositoryUrl>https://github.com/Tim81/SwissEphNet</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>Swiss Ephemeris</PackageTags>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!--
+      README.nuget.md, not the repository's README.md. Two reasons, both measured rather than
+      assumed. nuget.org renders package readmes through Markdig with .DisableHtml(), which
+      escapes raw HTML into visible text rather than stripping it, so README.md's doccount
+      citation markers (HTML comments) would appear as literal junk beside every number they
+      guard. And README.md is over a thousand lines, most of it porting and verification detail a
+      package consumer has no use for. Keeping them separate lets README.md carry its markers and
+      its depth while the package page stays short and renders clean.
+      scripts/verify-doc-no-removed-apis.ps1 scans both files, so neither can drift into teaching
+      an API this library no longer has.
+    -->
+    <PackageReadmeFile>README.nuget.md</PackageReadmeFile>
     <PackageReleaseNotes>2.10.3 (the first release of this fork published to nuget.org, under the
 SwissEphSharp package ID; entries from 2.8.0.2 down are the original project's, published under
 SwissEphNet):
-- LICENCE CHANGE, read this before upgrading. 2.8.0.2 was distributed under the GNU General
-  Public License version 2 or later. This release is under the Swiss Ephemeris dual licence:
+- LICENSE CHANGE, read this before upgrading. 2.8.0.2 was distributed under the GNU General
+  Public License version 2 or later. This release is under the Swiss Ephemeris dual license:
   the GNU Affero General Public License, or a Swiss Ephemeris Professional License bought from
   Astrodienst. The practical difference is the AGPL's network clause. Under GPL-2.0 you could
   run this library inside a web service and owe nobody source, because nothing was distributed.
@@ -238,7 +249,7 @@ SwissEphNet):
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
-    <None Include="..\README.md">
+    <None Include="..\README.nuget.md">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>

@@ -138,6 +138,14 @@ this 25,569 total gates, are both empty
 no recorded exception on either of those two grids, on any platform. (A third, `known-diff-jpl.tsv`,
 tracks the opt-in JPL grid -- see "all three known-diff lists" above -- and is also
 empty: 0<!--doccount:oracle-known-diff-jpl--> rows.)
+
+That third grid, `Tools/OracleGrid/grid-jpl.tsv`, is 2,407<!--doccount:grid-jpl-total--> rows:
+1,200<!--doccount:grid-jpl-func-calc--> through `swe_calc`,
+1,200<!--doccount:grid-jpl-func-calc-ut--> through `swe_calc_ut`, sweeping bodies, epochs and
+sidereal modes with `SEFLG_JPLEPH` set and with `SEFLG_JPLHOR`/`SEFLG_JPLHOR_APPROX` among the
+flag combinations, plus 7<!--doccount:grid-jpl-func-get-current-file-data-->
+`swe_get_current_file_data` rows. It is opt-in, because it needs a DE file this repository cannot
+ship, so CI never runs it; `README.md` gives the invocation.
 `known-diff-files.tsv` briefly carried 5
 `SERR` rows, all five `GET_CURRENT_FILE_DATA` -- see "The last two 2.10.03-only entry points"
 below for why they existed for one revision of this record and not the next.
