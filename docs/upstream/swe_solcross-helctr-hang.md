@@ -292,9 +292,26 @@ The hang was reproduced at four separate target longitudes and under both `SEFLG
 exercised under `SEFLG_HELCTR` individually, not just the two that fail. The patched build was
 checked against an independent geocentric calculation at five targets and against `swe_deltat`.
 
-One limit: we tested on Windows with MSVC 19.51.36248. The mechanism is plain IEEE-754 arithmetic
-and a loop with no bound, so we would expect the same from gcc and clang, but we have not run it
-there.
+It is not Windows-specific. We rebuilt the same tagged sources with gcc 13.4.0 on Linux (Ubuntu, in
+a container, `-O2`, no ephemeris path set) and every result matches the MSVC run:
+
+```
+calc SUN HELCTR       rc=1804  x = {0,0,0,0,0,0}  serr=""
+calc SUN HELCTR inf   rc=1804  x0=0  x3=0         serr=""
+calc SUN geo inf      rc=-1    serr="jd inf outside Moshier planet range 625000.50 .. 2818000.50"
+solcross HELCTR  x2=0    -> -nan
+solcross HELCTR  x2=90   -> did not return, killed at 20s
+solcross geo     x2=90   -> 2451716.575531276
+mooncross HELCTR x2=90   -> 2451534.836376984
+```
+
+The two calls that do return are bit-identical to the MSVC build, digit for digit, which is worth
+saying because it means the two toolchains agree on everything except that neither can escape the
+loop.
+
+The one limit left: we have not run this under clang. The mechanism is plain IEEE-754 arithmetic and
+a loop with no bound, and two independent compilers now agree, so we would expect clang to behave
+the same, but we have not measured it and are not claiming it.
 
 ---
 
