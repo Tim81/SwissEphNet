@@ -559,10 +559,14 @@ Source-level and reflection-based consumers can be affected:
   relative divergence is an absolute one of 1.4e-08 degrees per day: the relative error is
   large only because the quantity it divides by is nearly zero. Separating the two kinds of
   field makes the picture plain. Across the whole grid the *positions* -- longitude, latitude
-  and distance, the values a chart actually renders -- agree to within 1.08e-10 relative,
-  worst case, which is 2.3e-09 degrees, or 8.4e-06 arcseconds. Every divergence beyond that
-  sits in a speed component, and the largest absolute speed divergence anywhere in the grid is
-  1.8e-08 (`SE_ADMETOS`'s distance speed, in AU per day). `SE_TRUE_NODE`'s own longitude speed
+  and distance, the values a chart actually renders -- agree to within 1.08e-10 relative, worst
+  case: `NSC|13|2488069.5`'s longitude, an absolute divergence of 3.9e-10 degrees (1.4e-06
+  arcseconds). That is a different row from the largest absolute position divergence in the
+  grid, which is `NSC|13|2415020.5`'s longitude at 2.3e-09 degrees (8.4e-06 arcseconds, 1.7e-11
+  relative) -- two separate maxima, not one figure converted two ways. Every divergence beyond
+  the worst relative figure sits in a speed component, and the largest absolute speed divergence
+  anywhere in the grid is 1.8e-08 (`SE_ADMETOS`'s distance speed, in AU per day).
+  `SE_TRUE_NODE`'s own longitude speed
   still comes in close to the earlier figure (1.33e-7 relative, reproducible from this same
   grid), so that data point was not wrong; it was simply not the largest relative figure once
   fictitious bodies were swept too. `net8.0` and `net10.0` agree on all 102 calls, as the
