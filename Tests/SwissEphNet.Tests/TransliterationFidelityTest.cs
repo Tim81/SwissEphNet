@@ -226,6 +226,24 @@ namespace SwissEphNet.Tests
                 swe.swe_set_astro_models(samod, 0);
                 swe.swe_get_astro_models(null, out var actual, 0);
                 Assert.Equal(expected, actual);
+
+                // The comparison above is not enough on its own: an early "return;" for a
+                // null/empty samod (skipping set_astro_models entirely) leaves swed.astro_models
+                // at its constructor default of all zeros, and swe_get_astro_models resolves an
+                // all-zero array to the same defaults as AMODELS_SE_2_06 -- so the string above
+                // reads identically whether the "SE"/empty branch actually ran or was skipped.
+                // Read the internal array directly (the same reflection convention
+                // Test_swe_set_lapse_rate uses, since no public getter exists) to prove the branch
+                // itself executed and wrote the parsed model numbers, not just that the resolved
+                // description happens to match.
+                var swephProperty = typeof(SwissEph).GetProperty("Sweph", BindingFlags.NonPublic | BindingFlags.Instance);
+                var sweph = swephProperty.GetValue(swe);
+                var swedField = sweph.GetType().GetField("swed", BindingFlags.NonPublic | BindingFlags.Instance);
+                var swedObj = swedField.GetValue(sweph);
+                var astroModelsField = swedObj.GetType().GetField("astro_models", BindingFlags.Public | BindingFlags.Instance);
+                var astroModels = (int[])astroModelsField.GetValue(swedObj);
+
+                Assert.Equal(new[] { 5, 9, 9, 4, 3, 0, 0, 4 }, astroModels[..8]);
             }
         }
 
