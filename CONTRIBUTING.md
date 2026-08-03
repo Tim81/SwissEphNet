@@ -475,8 +475,16 @@ porting work queue) and **parked** (every non-passing iteration in that
 testcase is `NOT-IMPLEMENTED`, `DATA-MISSING`, or `UNREPRODUCIBLE` -- blocked
 on something other than the port's logic: a 2.10-only API (currently none;
 the category is empty), a data file this repo doesn't ship, or a structural
-gap). As of this writing that split is 31 actionable / 29 parked out of 60. A porting PR should
-be shrinking the actionable list's mismatch/error counts, or moving a testcase
-from actionable to fully passing -- not touching the parked list, which
-changes only when a 2.10 API gets implemented or a data-file constraint is
-lifted.
+gap). A testcase with zero failing iterations appears in neither list; it is
+not "parked", it is done. Of the 60, 39 have at least one row in
+`known-fail.tsv`; splitting those by `FormatByTestCase()`'s rule gives 31
+actionable and 8 genuinely parked, and the remaining 21 have no row in
+`known-fail.tsv` at all -- they pass completely. Conflating "parked" with
+"everything not actionable" overstates how much of the 60 is blocked on
+something other than the port's own logic: it is 8, not 29. A porting PR
+should be shrinking the actionable list's mismatch/error counts, or moving a
+testcase from actionable to fully passing -- not touching the parked list,
+which changes only when a 2.10 API gets implemented or a data-file constraint
+is lifted. (Re-measured from `Tests/conformance/known-fail.tsv` by grouping
+its `suite`/`testcase` columns and checking, per group, whether any row's
+`category` is `VALUE-MISMATCH` or `ERROR`.)
