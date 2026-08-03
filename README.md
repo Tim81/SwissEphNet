@@ -834,7 +834,7 @@ is for.
 `Tests/SwissEphNet.Conformance.Tests` checks the port's output against
 Astrodienst's own reference values, not against the port's own prior output.
 The reference corpus is Swiss Ephemeris **2.10.03**'s `setest` test suite
-(12,757 iterations, ~321K asserted values across 10 functional areas). Even though the port has
+(12,757 iterations, ~334K asserted values across 10 functional areas). Even though the port has
 now landed the whole 2.10.03 delta file by file, it is not at full parity: `known-fail.tsv` still
 lists 1,423<!--doccount:known-fail-total--> failing iterations (11,334 passing, 88.8%). Each
 porting PR should remove entries from it; any entry that reappears is a regression.
@@ -916,7 +916,10 @@ ever confirmed as port defects were fixed and pruned.
   ```
 
   **500 of the 538 JPL rows pass outright** once the data is present, along with 4 of
-  the 18 `sat` rows. The JPL backend works; what it lacks is a way to keep proving it.
+  the 18 `sat` rows, as measured on 2026-07-31, before 30 `SEFLG_CENTER_BODY` rows joined the
+  `sat` category on 2026-08-01 (`Tests/conformance/regenerations.log`, "Reclassify 56 rows");
+  `known-fail.tsv` carries 48 `sat` rows today, and the 4-of-18 figure has not been re-run
+  against that larger set. The JPL backend works; what it lacks is a way to keep proving it.
 
   Verify with the SHA-256, not the MD5. Upstream publishes only an MD5 -- their
   `readme.md` lists `fad0f432ae18c330f9e14915fbf8960a  de431.eph` among the md5-keys --
@@ -993,7 +996,10 @@ ever confirmed as port defects were fixed and pruned.
   *character* count they decoded to. DE406 carries 176 bytes above `0x7F` in the unused
   tail of that block, so the guard fired on a perfectly good file and every
   `SEFLG_JPLEPH` call fell back to Moshier without saying so. After the fix:
-  **2,400 of 2,400 bit-identical, 0 differing, nothing waived.**
+  **2,400 of 2,400 bit-identical, 0 differing, nothing waived.** That 2,400 was the grid's
+  size at the time this fix landed; `grid-jpl.tsv` has since grown to the 2,407<!--doccount:grid-jpl-total-->
+  rows described above, so "2,400 of 2,400" is this historical run's own total, not a claim
+  about the current grid.
 
   It survived this long because it is data-dependent. DE431 has no high bytes in that
   block, and DE431 was the only DE file this repository had ever opened -- including
@@ -1054,8 +1060,9 @@ is for, and it is the source of the "Numerical compatibility" table above.
   has to be listed in `Tests/oracle/known-diff.tsv` or `known-diff-files.tsv`, under a category
   that still fits and at a magnitude no worse than the last time that entry was regenerated -- both
   lists are currently empty.
-- `scripts/verify-oracle.ps1` is the gate: it also checks that the committed dumps still reflect
-  what is on disk (the two grids, the port's own source, and the C reference binaries), and, when a
+- `scripts/verify-oracle.ps1` is the gate: it also checks that the dumps on disk (gitignored,
+  under `external/.c-reference/`, not committed) still reflect what they were generated from --
+  the two committed grids, the port's own source, and the C reference binaries -- and, when a
   grid's known-diff list is empty, that the two dump files are byte-for-byte identical at the
   file level, not merely equal per `OracleVerify`'s own field comparator.
 
