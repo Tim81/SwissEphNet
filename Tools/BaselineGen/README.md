@@ -451,8 +451,9 @@ choice, not an oversight -- see the measurements below for why.
 
 A full Windows-vs-Linux comparison (same source, same commit, `.NET SDK 10.0.302`
 both sides, Linux via `mcr.microsoft.com/dotnet/sdk:10.0-noble` on Ubuntu 24.04.4,
-which is what `ubuntu-latest` currently resolves to) has been re-run against the
-current matrix:
+which is what `ubuntu-latest` currently resolves to) was run against the matrix as
+it stood at commit `5148573` (2026-07-31, "Re-measure the Windows-vs-Linux
+divergence against the current matrix"):
 
 - **3,547,367** numeric fields compared; **66,342** (1.87%) differ at all between
   platforms; **5,394** are still beyond the shipped tolerance after the
@@ -468,6 +469,15 @@ current matrix:
   tolerance doing what it was sized for against real libm divergence rather than
   synthetic boundary tests. `calc` (11.27% of fields, 3,442 beyond tolerance) and
   `nodaps` (14.96%) are the heaviest contributors.
+
+**This triple is itself superseded.** `Tests/baseline/` has changed since commit
+`5148573`: `row-counts.tsv` moved `astromodels` 300 -> 329 and `coord` 294 -> 394,
+and eight more area files (`baseline-ayanamsa.tsv`, `baseline-calc-defaulteph.tsv`,
+`baseline-datetime.tsv`, `baseline-eclipse.tsv`, `baseline-gauquelin.tsv`,
+`baseline-misc.tsv`, `baseline-orbit.tsv`, `baseline-pheno-ast.tsv`) carry value
+churn on top of that. The 3,547,367 / 66,342 / 5,394 figures above no longer
+describe the current matrix; a Windows-vs-Linux re-measure against the current
+baseline is outstanding. Do not quote this triple as current without re-running it.
 
 The earlier pass, against a smaller matrix (3,443,058 numeric fields), found 47,052
 differing and 3,346 beyond tolerance. The per-field findings below (the `'Y'` and

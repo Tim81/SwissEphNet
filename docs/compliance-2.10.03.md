@@ -436,7 +436,7 @@ checks current code against it (`scripts/verify-baseline.ps1`) runs on both `net
 That baseline is also, by design, not portable to another platform. Comparing the same source at
 the same commit, built and run on both Windows and a Linux container
 (`mcr.microsoft.com/dotnet/sdk:10.0-noble`, Ubuntu 24.04.4), each against its own compiled C
-reference:
+reference, as measured at commit `5148573`:
 
 - 3,547,367 numeric fields compared; 66,342 (1.87%) differ at all between platforms; 5,394 are
   still beyond the shipped tolerance (`max(1e-12 absolute, 1e-13 relative)`) after the
@@ -447,6 +447,12 @@ reference:
 - Five of the baseline's areas are bit-identical across platforms outright: `format`, `misc`,
   `pheno-ast`, `risetrans`, and `atmo`. None of the five involves a transcendental function on the
   divergent code path.
+
+`Tests/baseline/` has changed since commit `5148573` (`row-counts.tsv`: `astromodels` 300 -> 329,
+`coord` 294 -> 394, plus value churn in eight more area files), so this triple no longer describes
+the current matrix. A re-measure against the current baseline is outstanding; treat the numbers
+above as superseded rather than current. See `Tools/BaselineGen/README.md`'s "Platform lock"
+section, the source these figures are drawn from.
 
 Full area-by-area numbers, the tolerance-level cost table, and the reasoning behind locking the
 gate to Windows rather than loosening the shipped tolerance live in `Tools/BaselineGen/README.md`

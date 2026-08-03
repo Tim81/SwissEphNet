@@ -298,10 +298,13 @@ fuses adjacent libm calls (e.g. `sin`/`cos` into `__sincos`) in a way that does 
 bit-identically to calling them separately; unlike Windows and Linux, macOS cannot be
 measured outside its own CI runner, so this section does not claim a current macOS number. None of
 that proves agreement between platforms: comparing the port's own
-frozen output, generated on Windows and on Linux from the same commit, finds 66,342 of 3,547,367
-compared fields differing at all, 5,394 of them beyond the shipped tolerance. That divergence is
-each platform's own math library disagreeing with itself in the last few bits, the same thing two
-independently built C programs would show; it is not evidence against the port.
+frozen output, generated on Windows and on Linux from the same commit, found 66,342 of 3,547,367
+compared fields differing at all, 5,394 of them beyond the shipped tolerance, as measured at
+commit `5148573`. `Tests/baseline/` has grown since (more rows in several areas, plus value churn
+in others), so this triple no longer describes the current matrix and needs a re-measure; see
+`Tools/BaselineGen/README.md`'s "Platform lock" section, the source for this figure. That
+divergence is each platform's own math library disagreeing with itself in the last few bits, the
+same thing two independently built C programs would show; it is not evidence against the port.
 
 Separately, the port's output is checked against Astrodienst's own 2.10.03 test suite (`setest`),
 12,757 iterations across ten functional areas. 1,423<!--doccount:known-fail-total--> of those still fail: 664<!--doccount:known-fail-value-mismatch--> because the answer
@@ -684,11 +687,13 @@ replaying both grids through each, with no difference either way.
 Windows and Linux do not produce the same numbers as each other, and cannot be made to. `Math.Sin`
 and its siblings bind to whatever libm the platform provides, at run time, so this is the same
 divergence two identically-built C programs would show. Comparing the Windows-generated
-characterization baseline against Linux gives 3,547,367 numeric fields with 66,342 (1.87%)
-differing and 5,394 beyond the shipped tolerance. That is why the baseline is locked to the
-platform that generated it and the cross-platform CI job reports drift without gating on it, and
-it is a statement about libm rather than about this port. The baseline has not been generated on
-macOS, so this same field-by-field comparison has not been run there.
+characterization baseline against Linux gave 3,547,367 numeric fields with 66,342 (1.87%)
+differing and 5,394 beyond the shipped tolerance, as measured at commit `5148573` -- `Tests/baseline/`
+has grown since, so this triple is superseded and a re-measure against the current matrix is
+outstanding (see `Tools/BaselineGen/README.md`'s "Platform lock" section). That is why the
+baseline is locked to the platform that generated it and the cross-platform CI job reports drift
+without gating on it, and it is a statement about libm rather than about this port. The baseline
+has not been generated on macOS, so this same field-by-field comparison has not been run there.
 
 When the `netstandard2.0` build is executed on .NET Framework 4.8, floating-point differences can
 occur, because that runtime's implementations of transcendental functions (for example `Math.Sin`
