@@ -275,14 +275,14 @@ above and `NOTICE` for the credit both are owed.
 
 This section is for anyone with `SwissEphNet 2.8.0.2` in a project, deciding whether to move to
 `SwissEphSharp 2.10.3`. Five questions, in the order they matter: can you still use it under your
-licence, will your numbers change, will your code still compile, what do you gain, and can you
+license, will your numbers change, will your code still compile, what do you gain, and can you
 trust the answers you get.
 
-## Can you still use it under your licence?
+## Can you still use it under your license?
 
 Check this one first, because for some projects it is the answer and the rest does not matter.
 
-The licence changed, and not in a direction that suits everyone. 2.8.0.2 was GPL-2.0-or-later.
+The license changed, and not in a direction that suits everyone. 2.8.0.2 was GPL-2.0-or-later.
 This release is AGPL-3.0, or a Swiss Ephemeris Professional License bought from
 Astrodienst. The practical difference is the AGPL's network clause. Under GPL-2.0 you could run
 2.8.0.2 inside a web service and owed nobody source, because you were not distributing anything.

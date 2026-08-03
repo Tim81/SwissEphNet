@@ -9,7 +9,7 @@ names, arguments and return values are the ones in Astrodienst's own
 `swe_version()` reports `2.10.03`. Targets `netstandard2.0`, `net8.0` and `net10.0`. No
 dependencies.
 
-## Read the licence first
+## Read the license first
 
 Swiss Ephemeris, and therefore this library, is dual-licensed, and one of the two options has a
 condition that catches people out. You must choose one:
@@ -19,7 +19,7 @@ condition that catches people out. You must choose one:
   those users the complete corresponding source of your **whole service**, not just this library.
   Operating the service is the trigger; you do not have to distribute a binary to anyone. If that
   does not work for your project, AGPL is not your option.
-- **Swiss Ephemeris Professional License.** A commercial licence bought from
+- **Swiss Ephemeris Professional License.** A commercial license bought from
   [Astrodienst](http://www.astro.com/swisseph/), without the source-disclosure obligation.
 
 This is not a choice this package makes for you, and it follows Astrodienst's own relicensing of
@@ -130,7 +130,7 @@ synchronous, so wrap a long sweep in `Task.Run` to keep it off a UI thread.
 
 Four things to check, in the order that matters:
 
-1. **The licence changed.** 2.8.0.2 was GPL-2.0-or-later; this is AGPL-3.0 or the Professional
+1. **The license changed.** 2.8.0.2 was GPL-2.0-or-later; this is AGPL-3.0 or the Professional
    License. See above. If you run it server-side and cannot publish your source, this is a
    licensing decision before it is a technical one.
 2. **The package ID changed** from `SwissEphNet` to `SwissEphSharp`, and the assembly is now

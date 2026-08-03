@@ -92,8 +92,8 @@
     <PackageReleaseNotes>2.10.3 (the first release of this fork published to nuget.org, under the
 SwissEphSharp package ID; entries from 2.8.0.2 down are the original project's, published under
 SwissEphNet):
-- LICENCE CHANGE, read this before upgrading. 2.8.0.2 was distributed under the GNU General
-  Public License version 2 or later. This release is under the Swiss Ephemeris dual licence:
+- LICENSE CHANGE, read this before upgrading. 2.8.0.2 was distributed under the GNU General
+  Public License version 2 or later. This release is under the Swiss Ephemeris dual license:
   the GNU Affero General Public License, or a Swiss Ephemeris Professional License bought from
   Astrodienst. The practical difference is the AGPL's network clause. Under GPL-2.0 you could
   run this library inside a web service and owe nobody source, because nothing was distributed.
