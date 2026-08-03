@@ -816,8 +816,16 @@ namespace SweTest
         static bool with_chart_link = false;
         static int lcount = 0; // static local in call_lunar_eclipse (swetest.c:3247)
         static int scount = 0; // static local in call_solar_eclipse (swetest.c:3476)
-        static double[] x = new double[6], x2 = new double[6], xequ = new double[6], xcart = new double[6],
-            xcartq = new double[6], xobl = new double[6], xaz = new double[6], xt = new double[6], xsv = new double[6];
+        // x2, xcart and xcartq are sized 7, not 6: swetest.c:1853 and :1875 (the DIFF_MIDP-style
+        // "else" branches at :2277 and :2303 below) read/write index i left over from a preceding
+        // "for (i = 1; i < 6; i++)" loop, i.e. i == 6, one past a C `double xcart[6]`. Benign
+        // stack UB in C -- the write lands past the array's nominal end and every printed column
+        // reads a fixed index 0-5, so it never surfaces -- but IndexOutOfRangeException in C#.
+        // Sized to iofs+8 for the same reason at Sweph.cs's hcusp[37] fix and this file's own
+        // Gauquelin cusp[iofs+8] fix (freeze-manifest-log.txt entry 7): add scratch room the C's
+        // raw array already has, rather than a bounds check the C does not have.
+        static double[] x = new double[6], x2 = new double[7], xequ = new double[6], xcart = new double[7],
+            xcartq = new double[7], xobl = new double[6], xaz = new double[6], xt = new double[6], xsv = new double[6];
         static double hpos, hpos2, hposj, armc;
         static int hpos_meth = 0;
         static double[] geopos = new double[10];

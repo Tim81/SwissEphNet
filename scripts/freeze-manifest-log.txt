@@ -381,3 +381,24 @@ b"} where the C gives {"a", ""}); that one is fixed
    call count, false of the point being made, since the surviving call read the wrong string.
    Fidelity fix, not a re-transliteration: no other line in SwissEphNet/CPort moved.
    SwissEphNet/CPort: 48549 -> 48551 lines, sha256 EBBE1B4F... -> 81513380....
+17. PR #33 2026-08-03: One fidelity fix, two call sites. Programs/SweTest/Program.cs's
+   ecliptic- and equatorial-cartesian diff blocks (:2277, :2303) each have a DIFF_MIDP-style
+   "else" arm that is a single statement, not a loop: `xcart[i] = (xcart[i] + x2[i]) / 2;`
+   (swetest.c:1853) and `xcartq[i] = (xcart[i] + x2[i]) / 2;` (swetest.c:1875). Both read `i`
+   left over from whichever earlier "for (i = 1; i < 6; i++)" block ran last in the same
+   iteration -- always 6 when no other format letter's block ran first, since that loop always
+   completes. Indexing a C `double xcart[6]`/`x2[6]` at 6 is a benign one-past-the-end
+   read/write (adjacent static-storage memory, discarded because every print site reads a fixed
+   index 0-5); indexing the port's `double[6]` at 6 throws IndexOutOfRangeException, crashing
+   swetest on `-D<n>` combined with any of `-fX`/`-fU`/`-fx`/`-fu`. Sized x2, xcart and xcartq
+   to 7 (one scratch slot) instead of adding a bounds check the C does not have -- the same
+   precedent as this file's own Gauquelin cusp[iofs+8] fix (entry 7 above). The extra slot is
+   inert everywhere else: swe_calc/call_swe_fixstar/swe_calc_pctr write only indices 0-5 and
+   every printf site reads a fixed index 0-5, confirmed by grep before sizing. Not a
+   re-transliteration: only the three declarations at :819-820 moved, plus the explanatory
+   comment above them.
+   Proven to discriminate: `-b1.1.2000 -p0 -D1 -fX -n1 -emos -head` threw before this fix and
+   now prints "0.168361056 -0.968811721 0.000004028", matching
+   external/.c-reference/swetest.exe (v2.10.3bfinal) byte-for-byte; `-fU`/`-fx`/`-fu` no longer
+   throw either.
+   Programs/SweTest/Program.cs: 5005 -> 5013 lines, sha256 947D21A7... -> BB8473CD....
