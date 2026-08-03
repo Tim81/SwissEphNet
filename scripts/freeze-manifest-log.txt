@@ -367,7 +367,7 @@ b"} where the C gives {"a", ""}); that one is fixed
    port printed nothing at all for that line.
    Programs/SweTest/Program.cs: 4989 -> 5005 lines, 65 kr_braces (was 65), 68 trailing-ws (was
    68), sha256 873AADAC... -> 947D21A7....
-16. PR #33 2026-08-03: One fidelity fix. SwemPlan.cs's check_t_terms "a number" branch
+16. PR #32 2026-08-03: One fidelity fix. SwemPlan.cs's check_t_terms "a number" branch
    (numeric term of a t_terms polynomial string) truncated sp at the first character outside
    "0123456789." into a separate sval, then called C.atof(sval) for both the C's atof(sp) != 0
    test and its fac *= atof(sp) multiply. swemplan.c:958-959 is
@@ -381,7 +381,7 @@ b"} where the C gives {"a", ""}); that one is fixed
    call count, false of the point being made, since the surviving call read the wrong string.
    Fidelity fix, not a re-transliteration: no other line in SwissEphNet/CPort moved.
    SwissEphNet/CPort: 48549 -> 48551 lines, sha256 EBBE1B4F... -> 81513380....
-17. PR #33 2026-08-03: One fidelity fix, two call sites. Programs/SweTest/Program.cs's
+17. PR #32 2026-08-03: One fidelity fix, two call sites. Programs/SweTest/Program.cs's
    ecliptic- and equatorial-cartesian diff blocks (:2277, :2303) each have a DIFF_MIDP-style
    "else" arm that is a single statement, not a loop: `xcart[i] = (xcart[i] + x2[i]) / 2;`
    (swetest.c:1853) and `xcartq[i] = (xcart[i] + x2[i]) / 2;` (swetest.c:1875). Both read `i`
@@ -402,7 +402,7 @@ b"} where the C gives {"a", ""}); that one is fixed
    external/.c-reference/swetest.exe (v2.10.3bfinal) byte-for-byte; `-fU`/`-fx`/`-fu` no longer
    throw either.
    Programs/SweTest/Program.cs: 5005 -> 5013 lines, sha256 947D21A7... -> BB8473CD....
-18. PR #33 2026-08-03: One fidelity fix. swetest.c:2116 is
+18. PR #32 2026-08-03: One fidelity fix. swetest.c:2116 is
    `if (list_hor && strchr(fmt, 'P') == NULL)`: in -hor (horizontal list) mode, the header
    column gets a name prefix when 'P' is ABSENT from fmt. The port tested
    `fmt.IndexOf('P', ...) >= 0`, the opposite condition -- prefixing the header whenever 'P' IS
@@ -416,7 +416,7 @@ b"} where the C gives {"a", ""}); that one is fixed
    the header matches external/.c-reference/swetest.exe (v2.10.3bfinal) byte-for-byte
    ("name  long.  lat.  distAU  deg/day").
    Programs/SweTest/Program.cs: 5013 -> 5017 lines, sha256 BB8473CD... -> 383C4D93....
-19. PR #33 2026-08-03: One fidelity fix, two call sites, both in the print_line 'S'/'s' case.
+19. PR #32 2026-08-03: One fidelity fix, two call sites, both in the print_line 'S'/'s' case.
    swetest.c:2259 is `if (*(sp+1) == 'S' || *(sp+1) == 's' || strpbrk(fmt, "XUxu") != NULL)`.
    `*(sp+1)` safely reads the NUL terminator when sp+1 is past the string's end, so the third
    disjunct does not depend on the first two being in range. The port's
@@ -440,7 +440,7 @@ b"} where the C gives {"a", ""}); that one is fixed
    "0.168361056 -0.968811721 0.000004028 0.017235021 0.003004836 0.000000048", matching an MSVC
    build of the pinned v2.10.3bfinal swetest byte-for-byte.
    Programs/SweTest/Program.cs: 5017 -> 5025 lines, sha256 383C4D93... -> 56E3C767....
-20. PR #33 2026-08-03: Comment-only, no behaviour change. Re-anchored twelve stale
+20. PR #32 2026-08-03: Comment-only, no behaviour change. Re-anchored twelve stale
    `<cfile>.c:NNNN` citations across five SwissEphNet/CPort files after verifying each cited
    line against the pinned v2.10.3bfinal vendored C (external/swisseph), most of them off by
    the same kind of small drift the rest of this file's entries have been correcting one at a
@@ -464,7 +464,7 @@ b"} where the C gives {"a", ""}); that one is fixed
    correct and are left untouched.
    SwissEphNet/CPort: 48551 -> 48551 lines (line count unchanged; only cited numbers inside
    comments moved), sha256 81513380... -> 0E29C549....
-21. PR #33 2026-08-03: Comment-only, no behaviour change. Re-anchored twenty-four stale
+21. PR #32 2026-08-03: Comment-only, no behaviour change. Re-anchored twenty-four stale
    `swetest.c:NNNN` citations in Programs/SweTest/Program.cs against the pinned v2.10.3bfinal
    vendored C (external/swisseph), and rewrote the spmoon comment (:769) that had gone stale in
    a different way -- it claimed spmoon was "not declared in the pinned v2.10.3final tag", which
