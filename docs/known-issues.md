@@ -1522,15 +1522,28 @@ not exactly 0.0/360.0 reaches it. `Tools/OracleGrid/gen-grid-analytic.ps1`'s `$S
 excludes `SEFLG_HELCTR` for this reason, with the mechanism summarized in that script's own
 comment; this entry is the fuller record.
 
-**The port almost certainly shares this hazard, and that is untested.** `SwissEphNet/CPort/Sweph.cs`'s
+**The port shares the hazard. Confirmed, no longer inferred.** `SwissEphNet/CPort/Sweph.cs`'s
 `swe_solcross` (citing `sweph.c:8310-8343`) is a line-by-line transliteration: it hardcodes `int ipl
-= SwissEph.SE_SUN;` the same way, and its refinement loop divides by `x[3]` the same way. C#'s
-`double` follows IEEE 754 exactly as C's does, so `dist / x[3]` at `x[3] == 0` produces the same
-`+Infinity`, and nothing in `swe_calc`'s ported form is known to reject an infinite `jd_et` any
-more than the C does. No one has actually called `swe_solcross(x2cross, jd_et, SEFLG_HELCTR, ref
-serr)` on the port with a non-degenerate `x2cross` and confirmed a hang (or confirmed it does not
-hang, for whatever reason) -- this paragraph is a structural argument from the shared source, not a
-reproduced result. Confirming it either way on the C# side is future work.
+= SwissEph.SE_SUN;` at `Sweph.cs:9861` (and `swe_solcross_ut` at `:9898`) the same way, and its
+refinement loop divides by `x[3]` the same way. This entry previously argued from that shared
+source that the port must hang too, while noting no one had actually called it. It has now been
+called. Against the net10.0 build of `SwissEphSharp.dll`, with `swe_set_ephe_path` pointed at a
+sentinel directory that cannot resolve so `SEFLG_MOSEPH` needs no data files, `jd_et` at 2451545.0
+and `SEFLG_MOSEPH | SEFLG_HELCTR`:
+
+| `x2cross` | `swe_solcross` | `swe_solcross_ut` |
+|---|---|---|
+| 0 | returns `NaN` in about 1 second | returns `NaN` in about 1 second |
+| 90 | never returns (killed at 25s) | never returns (killed at 20s) |
+| 180 | never returns (killed at 20s) | not run |
+| 359.5 | never returns (killed at 20s) | not run |
+
+That reproduces the C's behaviour exactly, including the asymmetry: `x2cross` at exactly 0 exits on
+the loop's first pass with the `0/0` `NaN` rather than reaching the `+Infinity` division, and every
+other value tried spins. The structural argument was right, and it is now a measured result rather
+than a prediction. The runs were one-off probes against the shipped assembly, deliberately not
+added to any test project -- a test that hangs on failure is worse than no test, and pinning this
+behaviour would pin a defect this port hopes upstream will fix.
 
 **Do not fix the port.** `SwissEphNet/CPort/Sweph.cs` is a transliteration-frozen path
 (`CONTRIBUTING.md`), and even setting that aside, this is a design decision (how the port should
