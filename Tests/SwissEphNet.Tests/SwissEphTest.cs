@@ -257,6 +257,15 @@ namespace SwissEphNet.Tests
         // assignment, not a value pinned from a single run: any implementation that computed a
         // different Xm or Ym but forgot to keep dangret[2] in sync would fail this immediately,
         // as would one that stopped searching partway and never assigned dangret[0] into [2, 20].
+        //
+        // dret[0]/dret[1] below are characterization values, not independently derived: they were
+        // captured from this test's own inputs run through the current (believed-correct)
+        // HeliacalAngle bisection, not hand-computed from the Snellen/atmospheric-extinction
+        // formulas the way Test_swe_refrac's constants were. Their job is to pin the bisection's
+        // actual behavior so a mutation that discards it (e.g. hard-coding Xm/Ym, or replacing the
+        // search with any other fixed pair) is caught -- InRange(2, 20) alone accepts any constant
+        // in that domain, and the dret[2] identity above holds even for a hard-coded Xm/Ym pair
+        // that never ran the search at all.
         [Fact]
         public void Test_swe_heliacal_angle() {
             using (var target = new SwissEph()) {
@@ -272,14 +281,20 @@ namespace SwissEphNet.Tests
                 Assert.Equal(SwissEph.OK, rc);
                 Assert.InRange(dret[0], 2.0, 20.0);
                 Assert.Equal(dret[0] - dret[1], dret[2], 9);
+                // Characterization values -- see comment above.
+                Assert.Equal(2.65625, dret[0], 6);
+                Assert.Equal(8.623237609863281, dret[1], 6);
             }
         }
 
         // SweHel.cs's TopoArcVisionis ends with "if (Xm < AltO) Xm = AltO; dret = Xm;" -- dret
         // can never come back below the object's own altitude. That is a structural guarantee
-        // of the algorithm, not a magic number: any regression that let the bisection wander
-        // below AltO, or dropped the clamp, fails this without needing an independently
-        // computed reference value.
+        // of the algorithm, not a magic number, but it is not enough on its own: gutting the
+        // bisection to "Xm = AltO" (skip the search, always return the floor) also satisfies
+        // "dret >= altObj" for every input, since it returns exactly altObj. The pinned value
+        // below is a characterization value captured from this test's own inputs run through the
+        // current (believed-correct) TopoArcVisionis, not independently derived -- its job is to
+        // catch precisely that mutation, which the range check cannot.
         [Fact]
         public void Test_swe_topo_arcus_visionis() {
             using (var target = new SwissEph()) {
@@ -295,6 +310,10 @@ namespace SwissEphNet.Tests
 
                 Assert.Equal(SwissEph.OK, rc);
                 Assert.True(dret >= altObj, $"dret ({dret}) must never drop below the object's own altitude ({altObj})");
+                // Characterization value -- see comment above. Well clear of altObj (5.0), so a
+                // mutant that collapses the bisection to the floor is caught even at a loose
+                // tolerance.
+                Assert.Equal(9.374427795410156, dret, 6);
             }
         }
 
@@ -324,7 +343,16 @@ namespace SwissEphNet.Tests
                 double[] dret = new double[4];
                 double trualt = target.swe_refrac_extended(0.5, 1000.0, 1013.25, 15.0, 0.0065, SwissEph.SE_APP_TO_TRUE, dret);
 
-                Assert.Equal(dret[0], trualt, 9); // return value mirrors dret[0] (true altitude)
+                // dret[0] is a characterization value (captured from this test's own inputs run
+                // through the current, believed-correct implementation -- SE_APP_TO_TRUE takes
+                // SweCl.cs's non-iterative "trualt = inalt - calc_astronomical_refr(...)" branch,
+                // whose closed form is not hand-derived here either, unlike the comment above's
+                // dip formula), not the self-comparison "Assert.Equal(dret[0], trualt, 9)" this
+                // replaced: that compared the return value
+                // to itself (trualt *is* dret[0], SweCl.cs returns it directly), so it passed for
+                // any return value including a deleted iteration.
+                Assert.Equal(0.03236058205291237, trualt, 9);
+                Assert.Equal(trualt, dret[0], 12); // return value mirrors dret[0] (true altitude)
                 Assert.Equal(-0.8783545107438215, dret[3], 9); // dip
                 // Below the geometric horizon (dret[3], negative) and below dip, an apparent
                 // altitude has no valid true altitude: apparent and true both come back as the
@@ -363,13 +391,19 @@ namespace SwissEphNet.Tests
         // date -- SwephLib.cs's own swe_sidtime body is exactly this call. swe_sidtime is
         // already indirectly oracle-checked (Suite06Houses.cs's armc computation), so
         // reproducing its result through the documented public building blocks is a real check
-        // of swe_sidtime0 specifically, not a self-comparison: a wrong sidtime0 formula would
-        // diverge from the already-trusted swe_sidtime by much more than this tolerance.
+        // of swe_sidtime0 specifically, not a self-comparison -- but only once "sidtime" itself is
+        // pinned to something outside this test: swe_sidtime(tjd_ut) *is* implemented as
+        // "return swe_sidtime0(tjd_ut, ...)" (SwephLib.cs), so a mutation to swe_sidtime0's own
+        // return value moves both operands of the comparison below together and the comparison
+        // alone would never see it. The pinned value is a characterization value (captured from
+        // this test's own input run through the current, believed-correct implementation), not
+        // independently re-derived from the IAU sidereal-time formula.
         [Fact]
         public void Test_swe_sidtime0() {
             using (var target = new SwissEph()) {
                 double tjd_ut = SwissEph.J2000;
                 double sidtime = target.swe_sidtime(tjd_ut);
+                Assert.Equal(18.697138162535065, sidtime, 6);
 
                 string serr = null;
                 double[] xx = new double[6];
@@ -456,8 +490,24 @@ namespace SwissEphNet.Tests
         // xpn[2] and xpn[5] through unchanged (radial distance and radial speed are not affected
         // by a rotation about the origin) and must agree with plain swe_cotrans on the position
         // it computes from the same lon/lat/eps -- both checked directly against the code's own
-        // guarantees rather than a pinned velocity vector, since the velocity transform itself
-        // (swi_cartpol_sp) is not something this test hand-derives.
+        // guarantees rather than a pinned velocity vector.
+        //
+        // xpn[3]/xpn[4] (the rotated speed in longitude/latitude) are checked too, against values
+        // hand-derived independently from first principles (a rotating position vector's
+        // cartesian velocity, x = r cos(lat)cos(lon) etc., differentiated and re-projected onto
+        // the rotated frame's own lon/lat axes -- not read off the port's own output or reverse
+        // engineered from swi_cartpol_sp/swi_polcart_sp's code). At eps=90 deg the quarter turn
+        // sends this test's starting point (lon=0, lat=45 deg) to (lon=45 deg, lat=0): its new
+        // z-axis is the old frame's -y-axis, and dz/dt at lat=0 equals r*dlat/dt directly, so the
+        // new latitude speed is minus the old longitude speed's y-component, i.e.
+        // -sin(45deg)*xpo[3]; symmetrically the new longitude speed at lat=0 recovers the old
+        // z-axis component of velocity, which reduces to exactly xpo[4] here because sin(45deg) ==
+        // cos(45deg) cancels the two frames' trig factors. (These exact identities -- xpn[3] ==
+        // xpo[4], xpn[4] == -sin(45deg)*xpo[3] -- are specific to this 45-degree starting latitude
+        // and this 90-degree eps, not general facts about the transform.) Without this pair,
+        // deleting the two swi_coortrf calls on x[3..5] (the speed-vector rotation) left
+        // xpn[3]/xpn[4] equal to the *un-rotated* speed (0.1, 0.2 after DEGTORAD/RADTODEG
+        // round-trip), and nothing here caught it.
         [Fact]
         public void Test_swe_cotrans_sp() {
             using (var target = new SwissEph()) {
@@ -474,6 +524,8 @@ namespace SwissEphNet.Tests
                 Assert.Equal(xpnPosOnly[1], xpn[1], 9);
                 Assert.Equal(xpo[2], xpn[2], 12); // radial distance passes through unchanged
                 Assert.Equal(xpo[5], xpn[5], 12); // radial speed passes through unchanged
+                Assert.Equal(xpo[4], xpn[3], 9);
+                Assert.Equal(-Math.Sin(45.0 * SwissEph.DEGTORAD) * xpo[3], xpn[4], 9);
             }
         }
 
