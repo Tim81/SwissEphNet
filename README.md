@@ -674,6 +674,22 @@ Source-level and reflection-based consumers can be affected:
   also widens from `char` to `char[]` (still `{ ';' }`) to support this; see
   `docs/known-issues.md`'s OnLoadFile entry for the full detail and the DefaultFileProvider
   static escape hatch for harnesses that construct many instances.
+- **`DIR_GLUE` is `/` on every platform, so one diagnostic message differs by one character
+  on Windows.** `SwissEph.DIR_GLUE` (`SwissEph.sweodef.h.cs`) is `'/'` unconditionally, where
+  the C picks a separator per platform (`sweodef.h:304` gives `"/"`, `:319` gives `"\\"` under
+  MSDOS). Both values open the file -- Windows accepts either separator -- so no numeric result
+  is affected. What differs is text: the `"SwissEph file '%s' not found in PATH '%s'"` warning
+  (`sweph.c:2400`) embeds the joined path, so on Windows this port reports `'[ephe]/'` where a
+  Windows-built C reports `'[ephe]\'`. This is already visible in 11 rows of
+  `Tests/swetest/known-diff.tsv`. It matters to two kinds of caller: anything that
+  string-matches on that `serr` text, and any `IEphemerisFileProvider` that pattern-matches the
+  separator in a path handed to `Open`. Asteroid file names reach a provider as `"ast4/se04179.se1"`
+  rather than `"ast4\se04179.se1"`; split on both separators rather than on a literal backslash
+  (`Path.GetFileName` does not treat `\` as a separator off Windows). Keeping `/` everywhere is
+  deliberate -- it is what makes a generated asteroid path usable on Linux, macOS, Android, iOS
+  and WASM, where a backslash is an ordinary filename character -- and reverting it to a
+  per-platform value would itself break providers written against the current behaviour. See
+  `docs/known-issues.md`'s "Three file-layer divergences" entry.
 - **The assembly is now named `SwissEphSharp`, not `SwissEphNet`.** The package ID was
   already `SwissEphSharp`; now the DLL matches it, and the namespace stays `SwissEphNet`,
   so source that only calls the public API needs no change beyond the `PackageReference`
