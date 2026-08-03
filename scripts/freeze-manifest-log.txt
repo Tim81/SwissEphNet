@@ -416,3 +416,27 @@ b"} where the C gives {"a", ""}); that one is fixed
    the header matches external/.c-reference/swetest.exe (v2.10.3bfinal) byte-for-byte
    ("name  long.  lat.  distAU  deg/day").
    Programs/SweTest/Program.cs: 5013 -> 5017 lines, sha256 BB8473CD... -> 383C4D93....
+19. PR #33 2026-08-03: One fidelity fix, two call sites, both in the print_line 'S'/'s' case.
+   swetest.c:2259 is `if (*(sp+1) == 'S' || *(sp+1) == 's' || strpbrk(fmt, "XUxu") != NULL)`.
+   `*(sp+1)` safely reads the NUL terminator when sp+1 is past the string's end, so the third
+   disjunct does not depend on the first two being in range. The port's
+   `fmt.Length > spi + 1 &&` guard applied to the whole parenthesized OR instead, so a bare
+   trailing 'S'/'s' with no following character short-circuited the XUxu check too, silently
+   skipping the combined-speed-column block swetest.c always enters when fmt contains any of
+   X/U/x/u. Fixed by scoping the length guard to only the first two disjuncts, matching the
+   third's unconditional strpbrk check.
+   Second, swetest.c:2361, `if (*(sp+1) == 'S' || *(sp+1) == 's') sp++;`, immediately after the
+   loop the first fix now actually reaches: the same one-past-the-end read, this time
+   unconditional in the port (`fmt[spi + 1]` with no length guard at all). Latent until the
+   first fix, since previously this line was reachable only when the first guard's own
+   `fmt.Length > spi + 1` had already established spi + 1 in bounds; entering via the XUxu
+   disjunct with spi at fmt's last index reaches it with spi + 1 out of bounds. Fixed the same
+   way, adding the missing `fmt.Length > spi + 1 &&`.
+   Neither is a re-transliteration: only the two conditions and their explanatory comments
+   moved.
+   Proven to discriminate: `-b1.1.2000 -p0 -fXS -n1 -emos -head` threw IndexOutOfRangeException
+   before either fix (first at the entry guard, then again at the trailing check once the first
+   fix alone was tried in isolation); after both, it prints
+   "0.168361056 -0.968811721 0.000004028 0.017235021 0.003004836 0.000000048", matching an MSVC
+   build of the pinned v2.10.3bfinal swetest byte-for-byte.
+   Programs/SweTest/Program.cs: 5017 -> 5025 lines, sha256 383C4D93... -> 56E3C767....

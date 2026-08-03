@@ -2809,7 +2809,11 @@ namespace SweTest
                         break;
                     case 'S':
                     case 's':
-                        if (fmt.Length > spi + 1 && (fmt[spi + 1] == 'S' || fmt[spi + 1] == 's' || fmt.IndexOfAny("XUxu".ToCharArray()) >= 0))
+                        // swetest.c:2259 is `if (*(sp+1) == 'S' || *(sp+1) == 's' || strpbrk(fmt, "XUxu") != NULL)`.
+                        // *(sp+1) safely reads the NUL terminator when sp+1 is past the string's end, so the
+                        // C's third disjunct does not depend on the first two. The port's `fmt.Length > spi + 1 &&`
+                        // guard applied to the whole parenthesized OR instead, short-circuiting the XUxu check too.
+                        if ((fmt.Length > spi + 1 && (fmt[spi + 1] == 'S' || fmt[spi + 1] == 's')) || fmt.IndexOfAny("XUxu".ToCharArray()) >= 0)
                         {
                             for (sp2i = 0; sp2i < fmt.Length; sp2i++)
                             {
@@ -2917,7 +2921,11 @@ namespace SweTest
                                         break;
                                 }
                             }
-                            if (fmt[spi + 1] == 'S' || fmt[spi + 1] == 's')
+                            // swetest.c:2361 is `if (*(sp+1) == 'S' || *(sp+1) == 's') sp++;`. Same
+                            // bounds issue as the guard above (*(sp+1) safely reads the NUL
+                            // terminator past the string's end); reachable now that the guard above
+                            // can be entered via the XUxu disjunct with spi at fmt's last index.
+                            if (fmt.Length > spi + 1 && (fmt[spi + 1] == 'S' || fmt[spi + 1] == 's'))
                             {
                                 spi++;
                                 sp = fmt[spi];
