@@ -134,6 +134,34 @@ That warning is expected; the null path is the supported way to say "not found".
 Data files are decoded as UTF-8. `SwissEph.DefaultEncoding` overrides that globally if you have a
 file in another encoding.
 
+## Which API to call: prefer the `2` variants
+
+Several functions have a newer sibling with a `2` in the name, and for new code that is generally
+what you want. All of them are ported here, old and new.
+
+For fixed stars this is Astrodienst's own published advice, in the
+[programming documentation](http://www.astro.com/swisseph/swephprg.htm): "For new projects, we
+recommend using the new functions `swe_fixstar2_ut()` and `swe_fixstar2()`. Performance will be a
+lot better if a great number of fixed star calculations are done." The same applies to
+`swe_fixstar2_mag` over `swe_fixstar_mag`, and the same document adds that if performance is a
+problem in an existing project, replacing the old calls with the new ones is the fix.
+
+One porting detail worth knowing if you compare the two families field by field: on non-`SEFLG_SPEED`
+rows, `swe_fixstar` and `swe_fixstar_ut` fill `xx[3..5]` where the C reference leaves them at zero,
+while `swe_fixstar2` and `swe_fixstar2_ut` match the C. See `docs/known-issues.md`, "The file-backed
+grid's divergence is Earth's position", for the measurement.
+
+For houses, `swe_houses_ex2` and `swe_houses_armc_ex2` are new in 2.10.03 and offer two things the
+older entry points cannot: per-cusp and per-`ascmc` speed output, and an explicit `serr`
+out-parameter rather than a bare return code. Astrodienst publishes no "prefer these"
+recommendation for them the way it does for the fixed-star pair, so treat them as added capability
+rather than a replacement: use them when you want speeds or a diagnostic string, and stay on
+`swe_houses`/`swe_houses_ex` otherwise. Note that neither speed output has oracle coverage in this
+repository yet, because `swe_houses_ex` forwards to `swe_houses_ex2` with both hardcoded `NULL`;
+see "What the oracle grids do not cover in the house code" in `docs/known-issues.md`.
+
+There is no `2` variant of `swe_calc`, which is why the example above uses `swe_calc_ut`.
+
 ## Threads and async
 
 Create one `SwissEph` instance per thread. A single instance is not safe to share across threads:
