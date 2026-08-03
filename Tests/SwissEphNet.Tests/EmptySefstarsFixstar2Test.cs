@@ -30,10 +30,18 @@ namespace SwissEphNet.Tests
         {
             using (var swe = new SwissEph())
             {
+                // "ERR + this exact message" is also exactly what a *missing* sefstars.txt
+                // produces (the FileProvider returning null, never reaching load_all_fixed_stars'
+                // qsort(...,0,...) call at all -- see Issue41Test's "10000"/"aldeb" cases). A
+                // counter on the delegate proves the provider was actually asked for sefstars.txt
+                // and actually handed back the empty stream, so this test is pinned to the
+                // empty-file path this class documents, not the unrelated missing-file one.
+                int sefstarsRequests = 0;
                 swe.FileProvider = new DelegateFileProvider(path =>
                 {
                     if (ResourceFileHelpers.GetPortableFileName(path).Equals("sefstars.txt", StringComparison.OrdinalIgnoreCase))
                     {
+                        sefstarsRequests++;
                         return new MemoryStream(Array.Empty<byte>(), writable: false);
                     }
                     return null;
@@ -48,6 +56,7 @@ namespace SwissEphNet.Tests
 
                 Assert.Equal(SwissEph.ERR, res);
                 Assert.Equal("error, swe_fixstar(): could not find star name aldebaran", serr);
+                Assert.True(sefstarsRequests > 0, "sefstars.txt was never requested from the FileProvider -- the empty-file path was not exercised.");
             }
         }
 
@@ -58,10 +67,13 @@ namespace SwissEphNet.Tests
             // (sweph.c:7003, swe_fixstar2_mag) rather than swe_fixstar2 itself.
             using (var swe = new SwissEph())
             {
+                // See the sibling test above for why this counter matters.
+                int sefstarsRequests = 0;
                 swe.FileProvider = new DelegateFileProvider(path =>
                 {
                     if (ResourceFileHelpers.GetPortableFileName(path).Equals("sefstars.txt", StringComparison.OrdinalIgnoreCase))
                     {
+                        sefstarsRequests++;
                         return new MemoryStream(Array.Empty<byte>(), writable: false);
                     }
                     return null;
@@ -75,6 +87,7 @@ namespace SwissEphNet.Tests
 
                 Assert.Equal(SwissEph.ERR, res);
                 Assert.Equal("error, swe_fixstar(): could not find star name aldebaran", serr);
+                Assert.True(sefstarsRequests > 0, "sefstars.txt was never requested from the FileProvider -- the empty-file path was not exercised.");
             }
         }
     }
