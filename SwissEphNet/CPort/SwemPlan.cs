@@ -976,7 +976,7 @@ namespace SwissEphNet.CPort
                             fac *= tt[0];
                         else
                         {
-                            // swemplan.c:955 is `else if ((i = atoi(sp)) <= 4 && i >= 0)`.
+                            // swemplan.c:954 is `else if ((i = atoi(sp)) <= 4 && i >= 0)`.
                             // atoi(sp) takes the leading integer prefix of the whole
                             // remaining string; int.TryParse required the whole string
                             // to be numeric, so "2*T2 + 3*T3" (sp beyond the consumed

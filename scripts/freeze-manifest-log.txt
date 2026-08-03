@@ -440,3 +440,27 @@ b"} where the C gives {"a", ""}); that one is fixed
    "0.168361056 -0.968811721 0.000004028 0.017235021 0.003004836 0.000000048", matching an MSVC
    build of the pinned v2.10.3bfinal swetest byte-for-byte.
    Programs/SweTest/Program.cs: 5017 -> 5025 lines, sha256 383C4D93... -> 56E3C767....
+20. PR #33 2026-08-03: Comment-only, no behaviour change. Re-anchored twelve stale
+   `<cfile>.c:NNNN` citations across five SwissEphNet/CPort files after verifying each cited
+   line against the pinned v2.10.3bfinal vendored C (external/swisseph), most of them off by
+   the same kind of small drift the rest of this file's entries have been correcting one at a
+   time: SwemPlan.cs's atoi(sp) <= 4 term test (swemplan.c:955 -> :954); SweDate.cs's leap-second
+   atoi(s) (swedate.c:334 -> :332); SwephLib.cs's delta-t table year atoi(s) (swephlib.c:2957 ->
+   :3110), its upper-bound-only guard (:3111-3114 -> :3113-3115), and its dt[tab_index] atof(sp)
+   (:2966 -> :3119); SweHel.cs's DeterObject atoi(s) (swehel.c:328 -> :331) and its cross-reference
+   to Sweph.cs's fixstar_format_search_name off-by-one (sweph.c:5996-5997 -> :6165-6166, matching
+   the fix below); Sweph.cs's swi_fopen final `if (serr != NULL)` guard (sweph.c:2404 -> :2402,
+   the literal `if` sits one line above the `return NULL;` this had cited), read_const's
+   fdp->fversion atoi(sp) (:4400 -> :4549), fixstar_format_search_name's own off-by-one comment
+   (:5996-5997 -> :6165-6166, the same range SweHel.cs's cross-reference above now matches), the
+   asteroid-name atol(sastno) (:4573 -> :4722), and the planetary-moon file catalog iplf atoi(sp)
+   (:6920 -> :7090).
+   Verified individually against external/swisseph rather than by pattern: each citation's
+   surrounding comment quotes or paraphrases a specific C statement, and grep against the
+   vendored file confirms the corrected line number is where that exact statement now sits.
+   Not exhaustive -- this covers the citations checked in this pass, not a claim that every
+   remaining citation in the tree was re-verified; several other citations checked the same way
+   in this pass (e.g. SweCL.cs's swecl.c:1574/:1539/:1593, :2072/:2415/:2436) were already
+   correct and are left untouched.
+   SwissEphNet/CPort: 48551 -> 48551 lines (line count unchanged; only cited numbers inside
+   comments moved), sha256 81513380... -> 0E29C549....

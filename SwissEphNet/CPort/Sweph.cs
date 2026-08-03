@@ -2880,7 +2880,7 @@ namespace SwissEphNet.CPort
             s = C.sprintf("SwissEph file '%s' not found in PATH '%s'", fname, ephepath);
             if (s.Length > SwissEph.AS_MAXCH - 1)
                 s = s.Substring(0, SwissEph.AS_MAXCH - 1);		/* s must not be longer then AS_MAXCH */
-            // sweph.c:2404's `if (serr != NULL)` guard: same inverted-guard class as above,
+            // sweph.c:2402's `if (serr != NULL)` guard: same inverted-guard class as above,
             // dropped for the same reason.
             serr = s;
             return null;
@@ -5316,7 +5316,7 @@ namespace SwissEphNet.CPort
                 goto file_damage;
             }
             /* version unused so far */
-            // sweph.c:4400 is `fdp->fversion = atoi(sp);`, which cannot throw.
+            // sweph.c:4549 is `fdp->fversion = atoi(sp);`, which cannot throw.
             fdp.fversion = C.atoi(match.Groups[1].Value);
             /************************************* 
              * correct file name?                *
@@ -5515,7 +5515,7 @@ namespace SwissEphNet.CPort
                     j++;
                 sastno = sastnam.Substring(0, j);
                 //sastno[j] = '\0';
-                // sweph.c:4573 is `i = (int) atol(sastno);`. atol(sastno) takes
+                // sweph.c:4722 is `i = (int) atol(sastno);`. atol(sastno) takes
                 // the leading integer prefix of the field; long.TryParse required
                 // the whole field to parse, so a catalogue field like "1234A"
                 // gave 0 instead of the 1234 atol(sastno) returns.
@@ -7277,7 +7277,7 @@ namespace SwissEphNet.CPort
             // see its own comment in Tools/C.cs) for the same effect.
             int p = C.strchr(sstar, ',');
             if (p > 0)
-                // sweph.c:5996-5997: `for (sp = sstar; *sp != '\0' && *sp != ','; sp++)`
+                // sweph.c:6165-6166: `for (sp = sstar; *sp != '\0' && *sp != ','; sp++)`
                 // lowercases indices [0, p) -- everything strictly before the comma,
                 // i.e. p characters. Substring(0, p - 1) took only p-1, silently
                 // dropping the character immediately before the comma.
@@ -8387,7 +8387,7 @@ namespace SwissEphNet.CPort
                                     /* catalog number of body of current line */
                                     int spi = sp.IndexOfFirstNot('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
                                     if (spi < 0) continue;
-                                    // sweph.c:6920 is `iplf = atoi(sp);`; when the line
+                                    // sweph.c:7090 is `iplf = atoi(sp);`; when the line
                                     // does not start with a digit, spi is 0 and the
                                     // substring is empty, which int.Parse throws on where
                                     // atoi silently returns 0.

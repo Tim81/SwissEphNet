@@ -355,7 +355,7 @@ namespace SwissEphNet.CPort
                     // swedate.c:330 tests *sp == '#', a single-byte comparison; StartsWith
                     // without StringComparison is culture-sensitive, so make it ordinal.
                     if (String.IsNullOrEmpty(s) || s.StartsWith("#", StringComparison.Ordinal)) continue;
-                    // swedate.c:334 is `ndat = atoi(s);`, which cannot throw.
+                    // swedate.c:332 is `ndat = atoi(s);`, which cannot throw.
                     ndat = C.atoi(s);
                     if (ndat <= ndat_last)
                         continue;

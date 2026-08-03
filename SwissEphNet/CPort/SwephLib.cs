@@ -3214,7 +3214,7 @@ namespace SwissEphNet.CPort
                     //if (*sp == '#' || *sp == '\n')
                     if (String.IsNullOrEmpty(sp) || sp[0] == '#')
                         continue;
-                    // swephlib.c:2957 is `year = atoi(s);`, which returns 0 for an
+                    // swephlib.c:3110 is `year = atoi(s);`, which returns 0 for an
                     // unparseable line instead of throwing; int.Parse threw on any
                     // non-numeric header/comment line reaching this point. C.atoi
                     // takes the leading digits of the whole line, matching atoi(s);
@@ -3223,7 +3223,7 @@ namespace SwissEphNet.CPort
                     year = C.atoi(s);
                     tab_index = year - TABSTART;
                     /* table space is limited. no error msg, if exceeded */
-                    // swephlib.c:3111-3114 only guards the upper bound: `sp += 4` (pointer
+                    // swephlib.c:3113-3115 only guards the upper bound: `sp += 4` (pointer
                     // arithmetic on a fixed AS_MAXCH buffer) and `dt[tab_index]` with a negative
                     // index are both undefined behavior in the C rather than a checked case, so
                     // there is no lower-bound check to transliterate. A line whose leading digits
@@ -3241,7 +3241,7 @@ namespace SwissEphNet.CPort
                     //while (strchr(" \t", *sp) != NULL && *sp != '\0')
                     //    sp++;	/* was *sp++  fixed by Alois 2-jul-2003 */
                     /*dt[tab_index] = (short) (atof(sp) * 100 + 0.5);*/
-                    // swephlib.c:2966 is `dt[tab_index] = atof(sp);`, which cannot throw.
+                    // swephlib.c:3119 is `dt[tab_index] = atof(sp);`, which cannot throw.
                     dt[tab_index] = C.atof(sp);
                 }
                 fp.Dispose();

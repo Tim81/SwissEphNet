@@ -349,7 +349,7 @@ namespace SwissEphNet.CPort
                 return SwissEph.SE_NEPTUNE;
             if (s.StartsWith("moon", StringComparison.Ordinal))
                 return SwissEph.SE_MOON;
-            // swehel.c:328 is `if ((ipl = atoi(s)) > 0)`, which returns 0 for an object
+            // swehel.c:331 is `if ((ipl = atoi(s)) > 0)`, which returns 0 for an object
             // name that is not a recognized planet and not a bare catalog number
             // (e.g. "regulus"), instead of throwing.
             if ((ipl = C.atoi(s)) > 0) {
@@ -1440,7 +1440,7 @@ namespace SwissEphNet.CPort
             // ref parameter. This never wrote back to str (all 3 call sites pass
             // ref and rely on the mutation), and used Substring(0, p - 1),
             // dropping the character before the comma (same off-by-one as
-            // Sweph.cs's fixstar_format_search_name, sweph.c:5996-5997) without
+            // Sweph.cs's fixstar_format_search_name, sweph.c:6165-6166) without
             // the p > 0 guard, so p == 0 threw ArgumentOutOfRangeException.
             if (str == null) return null;
             // swehel.c:1437 (`*sp != ','`) is a byte-wise scan for the comma; IndexOf(char)
