@@ -939,7 +939,7 @@ elsewhere recorded as unfixed, under "Three file-layer divergences, recorded and
 third.
 
 **`PATH_SEPARATOR` widens from `char` to `char[]`** (`SwissEph.sweodef.h.cs`), matching the C's own
-cut-list shape (`sweodef.h:305`/`:311`: `";:"` on Unix, `";"` on MSDOS/Windows) so `swi_cutstr` can
+cut-list shape (`sweodef.h:307`/`:313`: `";:"` on Unix, `";"` on MSDOS/Windows) so `swi_cutstr` can
 be called at all. The value itself stays `{ ';' }` rather than adopting the Unix `";:"` list: unlike
 `DIR_GLUE` (which safely picked `'/'` as the one separator both Windows and everything else accept),
 a bare `':'` is not safe to add on this cross-platform port, because it collides with a Windows
@@ -1932,3 +1932,191 @@ inference from it was not, and it was written as a finding rather than as a hypo
 
 The lesson both share: a number that lines up is a lead to test, not a mechanism found, and the
 attribution of a difference needs its own evidence separate from the difference itself.
+
+## swetest -D<n>: xobl[0] aliasing, deliberately not reproduced
+
+`Programs/SweTest/Program.cs`'s `x2`, `xcart` and `xcartq` are sized `[7]`, one slot larger than
+the C's `double [6]`. That extra slot exists so a leftover loop index does not throw in C#; it
+does not, and is not meant to, reproduce what that leftover index does in the C.
+
+**The C.** `swetest.c:768` declares `x`, `x2`, `xequ`, `xcart`, `xcartq`, `xobl`, `xaz`, `xt`
+(then the scalars `hpos`, `hpos2`, `hposj`, `armc`), then `xsv`, all as file-scope `static`
+arrays/doubles in one declaration -- BSS, laid out contiguously in that order by the reference
+MSVC toolchain. `swetest.c:1850-1854` and `:1872-1876` are `DIFF_MIDP`-style `else` arms inside a
+`for (i = 1; i < 6; i++)` loop's enclosing block; when that block runs with no earlier
+format-letter block having reset `i`, `i` is left at `6` -- one past the end of a `[6]` array:
+
+```c
+/* :1836, ecliptic cartesian ("XU") */               /* :1858, equatorial cartesian ("xu") */
+if (strpbrk(fmt, "XU") != NULL) {                    if (strpbrk(fmt, "xu") != NULL) {
+  ...                                                   ...
+  if (diff_mode) {                                      if (diff_mode) {
+    ...                                                    ...
+    } else {                                              } else {
+      xcart[i] = (xcart[i] + x2[i]) / 2;   /* :1853 */       xcartq[i] = (xcart[i] + x2[i]) / 2; /* :1875 */
+    }                                                      }
+  }                                                      }
+}                                                      }
+```
+
+Given the declaration order, `xcart[6]` (`:1853`) aliases `xcartq[0]`, and `xcartq[6]` (`:1875`)
+aliases `xobl[0]`; the same statement's right-hand side, `xcart[6]` and `x2[6]`, aliases
+`xcartq[0]` and `xequ[0]`.
+
+**Only one of the two writes is invisible.** `:1853`'s write to `xcartq[0]` (via `xcart[6]`) is
+inert: if the lowercase `"xu"` block also runs, it recomputes `xcartq[0]` from scratch via
+`swe_calc`/`call_swe_fixstar` before anything reads it; if it does not run, `xcartq[0]` is never
+read at all -- the house-position block (`:1880-1901`) reads `xobl[0]` and a copy of `x[]`
+(`xsv`), never `xcartq`. `:1875`'s write to `xobl[0]` (via `xcartq[6]`) is not inert: `xobl[0]` is
+the `eps` argument `swe_house_pos` receives at `:1900`
+(`hposj = swe_house_pos(armc, geopos[1], xobl[0], ihsy, xsv, serr);`), reached whenever `fmt`
+contains a house-position letter (`strpbrk(fmt, "gGjzm")`, `:1880`). Corrupting the obliquity fed
+into that call changes its result.
+
+**Trigger.** `-D<n>` (any diff mode) AND `fmt` contains `x` or `u` (lowercase -- the equatorial
+cartesian block, `:1858`) AND `fmt` contains a house-position letter (`g`, `G`, `j`, `z`, `m`) AND
+`fmt` contains none of `I`, `i`, `H`, `h`, `K`, `k` (letters whose own blocks run first and leave
+`i` at something other than the loop's exit value before the house-position block runs, per the
+same leftover-index mechanism this document does not re-derive here).
+
+**Measured**, an MSVC build of the pinned `v2.10.3bfinal` `swetest.exe` vs. this port, both run
+with `-b1.1.2020 -p2 -house12,49,P -ut -D0 -emos -n1`:
+
+```
+-fPxG    C: Polar Asc. 143°13'52.4484    port: Polar Asc. 211°41'57.3754
+-fPXj    C and port match
+```
+
+`-fPXj` (uppercase `X`, no lowercase `x`/`u`) never reaches the `:1858` block at all, so `xobl[0]`
+is never corrupted and both sides agree; `-fPxG` (lowercase `x`) does, and they diverge by roughly
+68 degrees -- not floating-point noise, a different obliquity value entirely.
+
+**Deliberately not reproduced.** The fix that made `-D<n>` stop throwing
+(`x2`/`xcart`/`xcartq` sized `[7]`) gives the leftover-index access a defined slot instead of
+adding a bounds check the C does not have, matching this file's own precedent (the Gauquelin
+`cusp[iofs+8]` fix, `freeze-manifest-log.txt` entry 7, and `SwissEphNet/CPort/SweHouse.cs`'s
+`hcusp[37]` fix). It stops there. Reproducing the `xobl[0]` corruption above would require making
+`x2`, `xcart` and `xcartq` genuinely alias `xequ`, `xcartq` and `xobl` the way contiguous C BSS
+statics happen to under one specific toolchain's layout -- not a portable C guarantee, not
+something the C standard specifies, and not a property any future .NET runtime or JIT owes this
+code. Deliberately engineering that aliasing into a managed array layout, to reproduce a bug the
+C itself does not intend, is the wrong trade for a library that is supposed to be memory-safe by
+construction. So this is a known, permanent divergence: `-fPxG`-shaped invocations (and the wider
+trigger condition above) will keep returning the arithmetically correct Polar Asc. this port
+computes, not the C's corrupted one, and that is intentional.
+
+## %-Ns/%.Ns padded and truncated by characters, C by bytes: width fixed, precision left as-is
+
+`SwissEphNet/Tools/C.printf.cs`'s `%s` handling used `string.PadLeft`/`PadRight`, which measure a
+field width in UTF-16 code units. C's `printf` measures the same field width in bytes copied from
+the caller's `char *`. The two agree for pure-ASCII content -- the overwhelming majority of what
+this shim formats -- and disagree by one padding character per extra UTF-8 byte for anything else.
+
+**Reproducer.** `external/swisseph/ephe/seorbel.txt:83` names fictitious body 24 "Korè" -- 4
+characters, 5 UTF-8 bytes (`è` is U+00E8, 2 bytes in UTF-8). `Programs/SweTest/Program.cs:2616`
+formats it with `%-15.15s`. A C build pads to 15 *bytes*: 5 bytes of name plus 10 spaces. The
+port's pre-fix `PadRight(15, ' ')` padded to 15 *characters*: 4 characters of name plus 11 spaces
+-- one space too many. Confirmed with `-b1.1.2000 -pz -xz24 -fPLBRS -n1 -edir. -head` against an
+MSVC build of the pinned `v2.10.3bfinal` `swetest.exe`.
+
+**Fixed: the width (padding) side.** `case 's'` now computes the pad count as
+`fieldLength - Encoding.UTF8.GetByteCount(w)` instead of delegating to `PadLeft`/`PadRight`'s
+character-based length, so a name like "Korè" gets exactly as many padding spaces as a C build
+would emit. This is a no-op for every ASCII string already formatted correctly (byte count equals
+character count there), so it cannot regress any existing byte-exact `swetest` comparison.
+
+**Left as character-based, deliberately: the precision (truncation) side.** `%.Ns` in C truncates
+the raw `char *` at the Nth *byte*, which can land inside a multi-byte UTF-8 sequence and produce
+genuinely malformed output -- that is a real property of C's byte-oriented `printf`, not an
+oversight in it. Reproducing that precisely in C# would mean truncating the UTF-8-encoded byte
+sequence directly (not the decoded string) and accepting that the result may not round-trip back
+to a valid .NET string at all, which is a materially larger change than the width fix above for a
+case this port's own data files essentially never exercise: precision on `%s` in
+`Programs/SweTest/Program.cs` is used for short, effectively-ASCII fields (see the `%.8s` fix
+already on record in `freeze-manifest-log.txt`), and no known argument here is both non-ASCII and
+long enough to be truncated by a `%.Ns` precision. Left character-based rather than chasing a
+divergence with no known reproducer and a genuinely hazardous fix (malformed output on purpose).
+If a future data file's non-ASCII, over-precision-length string surfaces this, revisit with a real
+reproducer in hand rather than a hypothetical one.
+
+## C.atoi saturates on overflow now; C.atof's hex-float and inf/nan gaps are left open
+
+Measured against MSVC UCRT (`net10.0` and `net48`), `SwissEphNet/Tools/C.cs`'s `atof`/`atoi` had
+four remaining divergences from the C runtime they stand in for:
+
+| input | C | port (before) |
+|---|---|---|
+| `atof("0x10")` | `16` | `0` |
+| `atof("inf")` / `atof("nan")` | `inf` / `nan` | `0` |
+| `atoi("2147483648")` | `2147483647` (saturates) | `0` |
+| `atoi("-2147483649")` | `-2147483648` (saturates) | `0` |
+
+All four need a hostile or exotic data file to reach: nothing this port ships or is tested
+against writes a hex float, an `inf`/`nan` token, or an out-of-`Int32`-range integer into a text
+field `atof`/`atoi` parses.
+
+**Fixed: `atoi`'s overflow saturation.** `Int32.TryParse` returning `false` on overflow was being
+treated the same as "no digits at all" and silently returned `0` -- the worst of the three
+plausible answers (`0`, a wrapped/truncated value, or the C's actual saturated endpoint). C's
+`atoi` does not return 0 on overflow: it saturates to `int.MaxValue`/`int.MinValue`, the same
+clamp `strtol` performs internally. `atoi` already isolates a leading sign from the narrowed
+digit string before calling `TryParse` (see the surrounding comment), so distinguishing genuine
+overflow from "no digits" and picking the correctly-signed endpoint needed no new parsing, only a
+fallback on `TryParse` failure. Low risk and directly testable: every currently-passing input is
+unaffected (an in-range value still parses on the first `TryParse` call), and the only behavior
+change is replacing a silently-wrong `0` with the C's actual saturated value for inputs that were
+already wrong before this fix.
+
+**Left open: `atof`'s hex-float and `inf`/`nan` literals.** Not fixed, for reasons specific to
+each:
+
+- **Hex floats.** MSVC UCRT's `strtod` accepts a bare hex integer like `"0x10"` with no C99
+  binary-exponent (`p`) suffix, which is itself an MSVC-specific extension beyond strict C99 (the
+  standard grammar requires the `p`-exponent on a hexadecimal-floating-constant); whether glibc's
+  `strtod` parses `"0x10"` the same way was not checked here. Implementing this correctly means
+  detecting a `0x`/`0X` prefix, parsing hex significand digits with an optional `.`, and handling
+  an optional `p`-exponent when present -- a materially different code path from the
+  decimal-and-backoff loop `atof` already has, for a token type no ephemeris or configuration file
+  in this repository has ever been observed to contain -- the data-file encoding audit this fork
+  ran across `sefstars.txt`, `seasnam.txt`, `seorbel.txt` and the rest found only plain ASCII and
+  UTF-8 text. Adding it on spec, with no reproducer and an unverified
+  cross-platform C behavior to match, risks introducing exactly the kind of untested
+  platform-dependent divergence the characterization baseline's platform lock exists to catch,
+  for a code path nothing currently exercises.
+- **`inf`/`nan`.** C99 `strtod` recognizes `"INF"`/`"INFINITY"`/`"NAN"` (and `"NAN(...)"`)
+  case-insensitively; `atof`'s `fchars` set (`"0123456789.+-Ee"`) does not include any of `i`,
+  `n`, `f`, `a`, so a leading `"inf"`/`"nan"` token is stripped to nothing by the narrowing step
+  before the numeric parser ever runs, and `atof` returns `0`. Recognizing these tokens is more
+  contained than the hex-float case -- a prefix check ahead of the numeric path -- but still adds
+  a second parsing branch for input this port's data files do not produce; the same "no known
+  trigger, do not add untested surface" reasoning applies.
+
+Both are recorded here rather than silently left as "presumably fine": if a future data file or a
+2.10.03 upgrade introduces a text field that can plausibly carry either token shape, revisit with
+that reproducer in hand instead of the four synthetic ones in the table above.
+
+## SwissEph.DefaultFileProvider: field widened to a property (binary-breaking, source-compatible)
+
+`SwissEph.DefaultFileProvider` was a mutable public *field* (`public static IEphemerisFileProvider
+DefaultFileProvider = null;`): no room to add validation, logging, or synchronization later
+without another public-shape change, and every read/write compiled to a direct `ldsfld`/`stsfld`
+against that field. Changed to an auto-implemented property
+(`public static IEphemerisFileProvider DefaultFileProvider { get; set; } = null;`) with the same
+name, type, nullability and default value.
+
+**Source-compatible, binary-breaking.** Every existing call site --
+`SwissEph.DefaultFileProvider = provider;`, reading `SwissEph.DefaultFileProvider` -- compiles
+unchanged against the property; nothing in this repository needed an edit. A consumer's assembly
+compiled against the old field-based surface, without recompiling against this change, will fail
+to bind at load time: field access and property access are different IL shapes
+(`ldsfld`/`stsfld` vs. a `call`/`callvirt` to a generated accessor), so this is a binary break for
+anyone shipping a pre-built assembly against an older version of this library, even though no
+source change is required on their side. Recompiling against the new version is sufficient; no
+consumer code needs to change.
+
+**Still not thread-safe, and now says so.** The property adds no locking; a concurrent write on
+one thread and a `new SwissEph()` construction (which reads this into the new instance's own
+`FileProvider`) on another still race exactly as they did with the field, with no ordering
+guarantee on which value the new instance observes. The XML doc comment now states this
+explicitly, matching the pattern this document has used to record other unsynchronized static
+state, rather than leaving it implicit.
