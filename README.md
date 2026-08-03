@@ -183,6 +183,18 @@ SwissEphNet;` put their methods in scope on every `string` and every `Type` in y
 has no direct replacement; the rest map onto BCL methods (`string.Contains`, `Type.GetTypeCode(t)`,
 `t.Assembly`).
 
+`GetTypeCode` carries a second, separate break beyond going internal: its return type changed.
+2.8.0.2 shipped `netstandard1.0` and `net40`. `netstandard1.0` has no `System.TypeCode` at all, so
+`TypeExtensions.GetTypeCode` was conditionally compiled against a public `SwissEphNet.TypeCode`
+enum declared in that same file as a polyfill, and that enum -- not `System.TypeCode` -- was
+`GetTypeCode`'s return type on the `netstandard1.0` asset. Both `netstandard1.0` and the polyfill
+enum are gone from this release, and nothing under `SwissEphNet` declares a `TypeCode` type any
+more. If your code named `SwissEphNet.TypeCode` explicitly (a field, a variable declaration, a
+`using static`), that type no longer exists and there is no drop-in replacement of the same name:
+`Type.GetTypeCode(t)` returns `System.TypeCode`, a different type, though one with the same
+enumeration values (`Empty`, `Object`, `Boolean`, ... `String`), so a straight rename is enough for
+most callers.
+
 Only one of the seven actually misbehaved, and it is worth saying so plainly rather than implying
 the whole set was dangerous. `Contains(this string, char)` is the one overload the BCL lacks on
 netstandard2.0 and .NET Framework, so on those targets a consumer's own unrelated call bound to
@@ -210,7 +222,7 @@ Your target framework may no longer be supported at all. 2.8.0.2 shipped `net40`
 "Numerical compatibility" below. Note also that `netstandard2.0` is on its way out: see the
 deprecation entry under "Breaking changes".
 
-One more thing worth flagging here even though it is not a source-level break like the four
+One more thing worth flagging here even though it is not a source-level break like the five
 above: the NuGet package ID is `SwissEphSharp`, not `SwissEphNet`, while the namespace and every
 type name stay `SwissEphNet`. See "Package name" below for the full picture and what migrating
 from the original `SwissEphNet` package involves.
