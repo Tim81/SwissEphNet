@@ -23,9 +23,11 @@ public static class MagnitudeKey
     /// <summary>
     /// No comparable numeric field: every recorded mismatch is non-numeric (<see cref="FieldMismatch.Diff"/>
     /// is null -- CheckI/CheckEqualsI/CheckS), every numeric field's expected value is exactly
-    /// zero (excluded -- see <see cref="Compute"/>), or the row has no mismatches at all (any
-    /// category other than VALUE-MISMATCH). Written verbatim into known-fail.tsv's magnitude_key
-    /// column; never parsed as a number.
+    /// zero (relative error against it is +-Infinity/NaN, so it is excluded by the same
+    /// <c>!double.IsFinite(relativeError)</c> guard <see cref="Compute"/> uses for every other
+    /// non-finite result -- there is no separate "expected is zero" check), or the row has no
+    /// mismatches at all (any category other than VALUE-MISMATCH). Written verbatim into
+    /// known-fail.tsv's magnitude_key column; never parsed as a number.
     /// </summary>
     public const string NotApplicable = "n/a";
 
@@ -33,13 +35,16 @@ public static class MagnitudeKey
     /// floor(log10(relative error)) maximized over <paramref name="mismatches"/>, i.e. the worst
     /// (least negative / most positive) decade any single field missed by. A field is excluded
     /// from the max, not treated as zero, when: it has no numeric diff (<see cref="FieldMismatch.Diff"/>
-    /// is null); its expected value is exactly 0 (relative error is undefined there, and t.exp
-    /// carries genuinely run-dependent zeros -- e.g. a coordinate component that is exactly zero
-    /// only for specific input angles -- that would otherwise make an unrelated field's ordinary
-    /// noise register as "infinitely wrong"); or its relative error is not a finite positive
-    /// number (defensive: a mismatch is only ever recorded when the compared values already
-    /// differ, so this should not occur, but guards floor(log10(...)) against -Infinity/NaN
-    /// rather than propagating either into the known-fail.tsv column). Returns
+    /// is null); or its relative error is not a finite positive number. That single
+    /// <c>!double.IsFinite(relativeError)</c> guard also covers an expected value of exactly 0
+    /// (relative error is undefined there, and t.exp carries genuinely run-dependent zeros -- e.g.
+    /// a coordinate component that is exactly zero only for specific input angles -- that would
+    /// otherwise make an unrelated field's ordinary noise register as "infinitely wrong"): dividing
+    /// by zero always yields +Infinity or NaN, both already non-finite, so no separate
+    /// "expected == 0" check exists or is needed. What remains is defensive: a mismatch is only
+    /// ever recorded when the compared values already differ, so a non-finite or non-positive
+    /// relative error should not occur in practice, but this guards floor(log10(...)) against
+    /// -Infinity/NaN rather than propagating either into the known-fail.tsv column. Returns
     /// <see cref="NotApplicable"/> when no field survives that filter.
     /// </summary>
     public static string Compute(IReadOnlyList<FieldMismatch> mismatches)
@@ -54,11 +59,6 @@ public static class MagnitudeKey
             }
 
             if (!double.TryParse(mismatch.Expected, NumberStyles.Float, CultureInfo.InvariantCulture, out var expected))
-            {
-                continue;
-            }
-
-            if (expected == 0.0)
             {
                 continue;
             }

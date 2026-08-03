@@ -26,6 +26,12 @@ public class MagnitudeKeyTests
     {
         // Relative error against an expected value of exactly 0 is undefined, and t.exp carries
         // genuinely run-dependent zeros -- excluding it must not crash or produce -Infinity/NaN.
+        // MagnitudeKey.Compute has no dedicated "expected == 0" branch: dividing by zero always
+        // yields +Infinity or NaN, so this is caught by the same !double.IsFinite(relativeError)
+        // guard every other non-finite result goes through (see the class's own remarks). This
+        // test is honestly describing observed behavior, not exercising a distinct code path --
+        // deleting a hypothetical separate zero-check would not make this fail, because there is
+        // no such check to delete.
         var mismatches = new[] { new FieldMismatch("xx[2]", "0", "1e-10", -1e-10) };
 
         Assert.Equal(MagnitudeKey.NotApplicable, MagnitudeKey.Compute(mismatches));
@@ -59,9 +65,12 @@ public class MagnitudeKeyTests
     [Fact]
     public void Compute_ExcludesExpectedZeroButStillUsesOtherFields()
     {
+        // Same non-finite-relative-error exclusion as Compute_ExpectedZero_IsExcluded above,
+        // now on one field of a row that also has a comparable one -- the expected-zero field
+        // must not poison the max, nor be mistaken for the row's only field.
         var mismatches = new[]
         {
-            new FieldMismatch("xx[2]", "0", "1e-10", -1e-10), // excluded: expected is 0
+            new FieldMismatch("xx[2]", "0", "1e-10", -1e-10), // excluded: expected is 0 -> non-finite relative error
             new FieldMismatch("xx[0]", "100", "99.9999999", 1e-7), // relative 1e-9 -> decade -9
         };
 
