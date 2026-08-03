@@ -464,3 +464,28 @@ b"} where the C gives {"a", ""}); that one is fixed
    correct and are left untouched.
    SwissEphNet/CPort: 48551 -> 48551 lines (line count unchanged; only cited numbers inside
    comments moved), sha256 81513380... -> 0E29C549....
+21. PR #33 2026-08-03: Comment-only, no behaviour change. Re-anchored twenty-four stale
+   `swetest.c:NNNN` citations in Programs/SweTest/Program.cs against the pinned v2.10.3bfinal
+   vendored C (external/swisseph), and rewrote the spmoon comment (:769) that had gone stale in
+   a different way -- it claimed spmoon was "not declared in the pinned v2.10.3final tag", which
+   was true of the tag this port tracked before the 2.10.3bfinal bump but is no longer true of
+   the tag now pinned: swetest.c:723 declares it, with the same "9501" / "Jupiter Moon Io"
+   default this port already carried, so the comment now describes a faithful transliteration of
+   an upstream declaration rather than a port-only addition working around a missing one.
+   The twenty-four line-number corrections, each verified by grep against external/swisseph
+   rather than assumed from the surrounding drift: :2809->:2823 (LEN_SOUT's live reader);
+   :754/:1157/:1280 -> :755/:1158/:1281 (has_n's declare/set/dead-read trio); :3247->:3260 and
+   :3476->:3489 (lcount/scount statics); five toupper(ihsy)=='G' comparisons, :1879->:1893,
+   :1888/:1898->:1902/:1912, :1938->:1952, :1984->:1998; the Gauquelin cusp loop's :1958->:1972
+   and its cusp[37] declaration's :1933->:1947; two tolower(*sp) comparisons in do_calc_planet's
+   N/F cases, :2517->:2531 and :2542->:2556; this file's own dms(), :2686->:2700 (zodiac
+   sprintf), :2688->:2703 (leading-space sprintf), :2723-2725->:2738-2739 (sign splice); the
+   lunar-eclipse sout append, :3204->:3223; the two SE_ECL_ONE_TRY call sites, :3525->:3539 and
+   :3617->:3631; this file's own hms(), :3936->:3950 and :3937->:3951 (the two single-byte
+   writes SwissEph.Format.cs's HMS() already carries the analogous fix for); and
+   make_ephemeris_path's four MSDOS-branch citations, :3965->:3979, :3972->:3986, :3982->:3996,
+   :4013->:4023.
+   Not exhaustive -- this is the set checked in this pass, not a claim that every citation in
+   the file was re-verified.
+   Programs/SweTest/Program.cs: 5025 -> 5025 lines (line count unchanged; only cited numbers and
+   the spmoon comment's text moved), sha256 56E3C767... -> 86DBD9DB....

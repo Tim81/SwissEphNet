@@ -745,7 +745,7 @@ namespace SweTest
         const int SEARCH_RANGE_LUNAR_CYCLES = 20000;
 
         // swetest.c:712 sizes fixed char buffers (sout[LEN_SOUT], etc.) with this, and it is
-        // not merely a size: swetest.c:2809's insert_gap_string_for_tabs reads it live,
+        // not merely a size: swetest.c:2823's insert_gap_string_for_tabs reads it live,
         // bounding its tab-replacement loop (`while ((sp = strchr(sout, '\t')) != NULL &&
         // strlen(sout) + strlen(gap) < LEN_SOUT)`). This port's own
         // insert_gap_string_for_tabs (below) replaces that bounded loop with an
@@ -767,7 +767,7 @@ namespace SweTest
         static string star = "algol", star2 = String.Empty;
         static string sastno = "433";
         static string shyp = "1";
-        static string spmoon = "9501"; // not declared in the pinned v2.10.3final tag (swetest.c:1139); added to hold -xv, mirroring sastno/shyp -- "9501" (Jupiter's moon Io) matches upstream master's own later fix for this same defect (swetest.c on master, "static char spmoon[AS_MAXCH] = \"9501\";  // Jupiter Moon Io", between sastno and shyp) rather than being this repo's invention; matched to Tools/CReference/build-c.ps1's spmoon patch (build-c.ps1:293) so the C reference oracle and this port fail the same way instead of a blank default's atoi("") == 0 == SE_SUN silently printing the Sun under a planetary-moon heading; keep both defaults in sync if either changes
+        static string spmoon = "9501"; // swetest.c:723: `static char spmoon[AS_MAXCH] = "9501"; // Jupiter Moon Io`, holding -xv. Declared in the pinned v2.10.3bfinal tag (unlike v2.10.3final, which this comment used to describe: spmoon was undeclared there, added to this port to hold -xv, and matched to upstream master's own later fix for the same defect); v2.10.3bfinal already carries that fix, so this is now a faithful transliteration of an upstream declaration rather than a port-only addition. "9501" (Jupiter's moon Io) still matches Tools/CReference/build-c.ps1's spmoon default (build-c.ps1:293, now a no-op patch against an already-declared, already-matching default) so the C reference oracle and this port fail the same way instead of a blank default's atoi("") == 0 == SE_SUN silently printing the Sun under a planetary-moon heading; keep both defaults in sync if either changes
         //static char *dms(double x, int32 iflag);
         //static int make_ephemeris_path(char *argv0, char *ephepath);
         //static int letter_to_ipl(int letter);
@@ -798,7 +798,7 @@ namespace SweTest
         static bool gregflag_auto = true;
         static int diff_mode = 0;
         static bool use_dms = false;
-        // swetest.c:754/:1157 set this the same way, and its only read (swetest.c:1280) is
+        // swetest.c:755/:1158 set this the same way, and its only read (swetest.c:1281) is
         // commented out there too -- a dead variable in the upstream C, not a porting gap.
         // Left assigned, unread, to match.
         static bool has_n = false;
@@ -814,8 +814,8 @@ namespace SweTest
         static bool hel_using_AV = false;
         static bool with_header = true;
         static bool with_chart_link = false;
-        static int lcount = 0; // static local in call_lunar_eclipse (swetest.c:3247)
-        static int scount = 0; // static local in call_solar_eclipse (swetest.c:3476)
+        static int lcount = 0; // static local in call_lunar_eclipse (swetest.c:3260)
+        static int scount = 0; // static local in call_solar_eclipse (swetest.c:3489)
         // x2, xcart and xcartq are sized 7, not 6: swetest.c:1853 and :1875 (the DIFF_MIDP-style
         // "else" branches at :2277 and :2303 below) read/write index i left over from a preceding
         // "for (i = 1; i < 6; i++)" loop, i.e. i == 6, one past a C `double xcart[6]`. Benign
@@ -2324,7 +2324,7 @@ namespace SweTest
                                     star2 = star;
                                 else
                                     star2 = String.Empty;
-                                // swetest.c:1879 tests toupper(ihsy) == 'G', an ASCII-only
+                                // swetest.c:1893 tests toupper(ihsy) == 'G', an ASCII-only
                                 // comparison; char.ToUpper is culture-sensitive, so compare
                                 // both cases directly instead.
                                 if (hpos_meth >= 2 && (ihsy == 'G' || ihsy == 'g'))
@@ -2338,7 +2338,7 @@ namespace SweTest
                                         iflgret = sweph.swe_houses_ex(t, iflag, top_lat, top_long, ihsy, cusp, cusp + 13);
                                     hposj = sweph.swe_house_pos(armc, geopos[1], xobl[0], ihsy, xsv, ref serr);
                                 }
-                                // swetest.c:1888/:1898 test toupper(ihsy) == 'G', an ASCII-only
+                                // swetest.c:1902/:1912 test toupper(ihsy) == 'G', an ASCII-only
                                 // comparison; char.ToUpper is culture-sensitive, so compare
                                 // both cases directly instead.
                                 if (ihsy == 'G' || ihsy == 'g')
@@ -2398,17 +2398,17 @@ namespace SweTest
                             double[] ascmc = new double[10];
                             double[] ascmc_speed = new double[10];
                             int iofs;
-                            // swetest.c:1938 tests toupper(ihsy) == 'G', an ASCII-only
+                            // swetest.c:1952 tests toupper(ihsy) == 'G', an ASCII-only
                             // comparison; char.ToUpper is culture-sensitive, so compare both
                             // cases directly instead.
                             if (ihsy == 'G' || ihsy == 'g') // Gauquelin has 36 cusps
                                 nhouses = 36;
                             iofs = nhouses + 1;
-                            // swetest.c:1958's loop below reads cusp[ipl] unconditionally for
+                            // swetest.c:1972's loop below reads cusp[ipl] unconditionally for
                             // every ipl up to iofs+8, before the ipl >= iofs branch immediately
                             // overwrites x[0] from ascmc -- so the value read past cusp's
                             // nominal length is always discarded, never printed. cusp[37] (both
-                            // languages, swetest.c:1933) is large enough for the default
+                            // languages, swetest.c:1947) is large enough for the default
                             // 12-house case (iofs=13) but not Gauquelin (nhouses=36, iofs=37,
                             // so the loop reads up to cusp[44]): benign stack UB in C, an
                             // IndexOutOfRangeException here. Sized to iofs+8, the largest index
@@ -2469,7 +2469,7 @@ namespace SweTest
                                 if (fmt.IndexOfAny("gGj".ToCharArray()) >= 0)
                                 {
                                     hposj = sweph.swe_house_pos(armc, geopos[1], xobl[0], ihsy, x, ref serr);
-                                    // swetest.c:1984 tests toupper(ihsy) == 'G', an ASCII-only
+                                    // swetest.c:1998 tests toupper(ihsy) == 'G', an ASCII-only
                                     // comparison; char.ToUpper is culture-sensitive, so compare
                                     // both cases directly instead.
                                     if (ihsy == 'G' || ihsy == 'g')
@@ -3111,7 +3111,7 @@ namespace SweTest
                     case 'n':
                         {
                             double[] xasc = new double[6], xdsc = new double[6];
-                            // swetest.c:2517 tests *sp == tolower(*sp), an ASCII-only
+                            // swetest.c:2531 tests *sp == tolower(*sp), an ASCII-only
                             // comparison; char.ToLower is culture-sensitive. tolower only
                             // touches 'A'-'Z', so "already lowercase" is exactly "not an
                             // uppercase ASCII letter".
@@ -3143,7 +3143,7 @@ namespace SweTest
                         if (!is_house)
                         {
                             double[] xfoc = new double[6], xaph = new double[6], xper = new double[6];
-                            // swetest.c:2542 tests *sp == tolower(*sp), an ASCII-only
+                            // swetest.c:2556 tests *sp == tolower(*sp), an ASCII-only
                             // comparison; char.ToLower is culture-sensitive. tolower only
                             // touches 'A'-'Z', so "already lowercase" is exactly "not an
                             // uppercase ASCII letter".
@@ -3307,7 +3307,7 @@ namespace SweTest
                 if (izod == 12) izod = 0;
                 xv = (xv % 30.0);
                 kdeg = (Int32)xv;
-                // swetest.c:2686: sprintf(s, "%2d %s ", kdeg, zod_nam[izod]); -- no leading space.
+                // swetest.c:2700: sprintf(s, "%2d %s ", kdeg, zod_nam[izod]); -- no leading space.
                 // A prior fix here kept a leading space to dodge a sign-loss bug in the C (see the
                 // sign-insertion guard below, at return_dms), but that made every zodiac field diverge
                 // from the C, not just the case the C gets wrong. Matching the C's own format and
@@ -3319,7 +3319,7 @@ namespace SweTest
             }
             else
             {
-                // swetest.c:2688: sprintf(s, " %3d%s", kdeg, c). The leading space was missing here,
+                // swetest.c:2703: sprintf(s, " %3d%s", kdeg, c). The leading space was missing here,
                 // which made every degree-bearing field a column narrow and, once kdeg reached 100,
                 // put a digit at index 0 so the sign path below called Substring(0, -1) and threw.
                 // swetest -p0 -d1 -b1.1.2020 -fPL -n12 -emos crashed where the C prints -121 degrees.
@@ -3371,7 +3371,7 @@ namespace SweTest
             if (sgn < 0)
             {
                 spi = s.IndexOfAny("0123456789".ToCharArray());
-                // swetest.c:2723-2725 (return_dms): sp = strpbrk(s, "0123456789"); *(sp - 1) = '-';
+                // swetest.c:2738-2739 (return_dms): sp = strpbrk(s, "0123456789"); *(sp - 1) = '-';
                 // overwrites the character immediately before the first digit. Under BIT_ZODIAC,
                 // once kdeg reaches double digits "%2d" fills the field and the first digit lands
                 // at index 0, so the C writes *(sp - 1) one byte before its own buffer -- undefined
@@ -3932,7 +3932,7 @@ namespace SweTest
                     sout += C.sprintf("  %s ", hms_from_tjd(tret[6]));
                     if (have_gap_parameter) sout += "\t";
                     if (tret[2] != 0)
-                        // swetest.c:3204: sprintf(sout + strlen(sout), ...) appends;
+                        // swetest.c:3223: sprintf(sout + strlen(sout), ...) appends;
                         // the plain assignment here dropped the eclipse label, the
                         // date/magnitude/saros line and the penumbral time above it.
                         sout += C.sprintf("%s ", hms_from_tjd(tret[2]));
@@ -4316,7 +4316,7 @@ namespace SweTest
                         if (search_flag == 0)
                             search_flag = SwissEph.SE_ECL_ALLTYPES_SOLAR;
                     }
-                    // swetest.c:3525 is `direction_flag|SE_ECL_ONE_TRY`, unconditional -- AS_BOOL
+                    // swetest.c:3539 is `direction_flag|SE_ECL_ONE_TRY`, unconditional -- AS_BOOL
                     // is `int` in C, so the OR is ordinary integer bitwise-OR. direction_flag
                     // here is C# bool (Program.cs:829), which has no bitwise-OR with Int32; before
                     // SwissEph.swephexp.h.cs's swe_lun_occult_when_loc took a bool backward and
@@ -4431,7 +4431,7 @@ namespace SweTest
                 if (0 == (special_mode & SP_MODE_LOCAL))
                 {
                     /* * global search for occultations, test one lunar cycle only (SE_ECL_ONE_TRY) */
-                    // swetest.c:3617 is `direction_flag|SE_ECL_ONE_TRY`, unconditional -- see the
+                    // swetest.c:3631 is `direction_flag|SE_ECL_ONE_TRY`, unconditional -- see the
                     // matching comment at the local-search call site above.
                     if ((eclflag = sweph.swe_lun_occult_when_glob(t_ut, ipl, star, whicheph, search_flag, tret, (direction_flag ? 1 : 0) | SwissEph.SE_ECL_ONE_TRY, ref serr)) == SwissEph.ERR)
                     {
@@ -4798,7 +4798,7 @@ namespace SweTest
                 s = String.Concat(s.Substring(0, spi), ":", s.Substring(spi + 1));
                 var s2 = s.Substring(spi + SwissEph.ODEGREE_STRING.Length);
                 s = String.Concat(s.Substring(0, spi + 1), s2);
-                // swetest.c:3936: *(sp + 3) = ':'; writes a single byte into the static
+                // swetest.c:3950: *(sp + 3) = ':'; writes a single byte into the static
                 // AS_MAXCH buffer regardless of length. Substring(spi + 4) throws where
                 // C's single-byte write would not, on a BIT_ROUND_MIN result ending at
                 // spi + 2 (s.Length == spi + 3); the guard below is the sibling of the
@@ -4807,7 +4807,7 @@ namespace SweTest
                     s = String.Concat(s.Substring(0, spi + 3), ":", s.Substring(spi + 4));
                 else
                     s = String.Concat(s.Substring(0, spi + 3), ":");
-                // swetest.c:3937: *(sp + 8) = '\0'; truncates the buffer after the
+                // swetest.c:3951: *(sp + 8) = '\0'; truncates the buffer after the
                 // seconds field. The length guard is needed because the C writes into
                 // a static AS_MAXCH buffer regardless of length, while Substring would
                 // throw here if s were ever shorter than spi + 8.
@@ -4835,7 +4835,7 @@ namespace SweTest
             char dirglue = SwissEph.DIR_GLUE;
             int pathlen = 0;
             /* current working directory */
-            // swetest.c:3965: sprintf(path, ".%c", *PATH_SEPARATOR); -- *PATH_SEPARATOR
+            // swetest.c:3979: sprintf(path, ".%c", *PATH_SEPARATOR); -- *PATH_SEPARATOR
             // dereferences the cut-list string down to its first character. PATH_SEPARATOR
             // widened to char[] alongside swi_fopen's swi_cutstr restoration
             // (SwissEph.sweodef.h.cs); [0] is the equivalent dereference here.
@@ -4846,7 +4846,7 @@ namespace SweTest
             {
                 pathlen = spi;
                 path += argv0.Substring(0, pathlen);
-                // swetest.c:3972: sprintf(path + strlen(path), "%c", *PATH_SEPARATOR);
+                // swetest.c:3986: sprintf(path + strlen(path), "%c", *PATH_SEPARATOR);
                 path += C.sprintf("%c", SwissEph.PATH_SEPARATOR[0]);
             }
 #if MSDOS
@@ -4857,7 +4857,7 @@ namespace SweTest
                 int i, j, np;
                 s1 = SwissEph.SE_EPHE_PATH;
                 //s1 = ".;sweph";
-                // swetest.c:3982: np = cut_str_any(s1, PATH_SEPARATOR, cpos, 20); -- the full
+                // swetest.c:3996: np = cut_str_any(s1, PATH_SEPARATOR, cpos, 20); -- the full
                 // cut-list, not a dereferenced single char, matching Split's own multi-char
                 // separator array now that PATH_SEPARATOR is one.
                 cpos = s1.Split(SwissEph.PATH_SEPARATOR, StringSplitOptions.RemoveEmptyEntries);
@@ -4895,7 +4895,7 @@ namespace SweTest
                     for (j = 0; j < 3; j++)
                     {
                         if (sp[j] != null)
-                            // swetest.c:4013: sprintf(path + strlen(path), "%c:%s%c", *sp[j], s, *PATH_SEPARATOR);
+                            // swetest.c:4023: sprintf(path + strlen(path), "%c:%s%c", *sp[j], s, *PATH_SEPARATOR);
                             path += C.sprintf("%c:%s%c", sp[j][0], s, SwissEph.PATH_SEPARATOR[0]);
                     }
                 }
