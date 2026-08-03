@@ -6,15 +6,16 @@ namespace BaselineMatrix;
 /// <summary>
 /// swe_gauquelin_sector, reachable under SEFLG_MOSEPH with no ephemeris file for the
 /// classical bodies (Sun, Moon, Mercury..Pluto). imeth 0 ("with latitude") and imeth 1
-/// ("without latitude") both call swe_house_pos with hsys 'G' (36 Gauquelin sectors),
-/// which throws IndexOutOfRangeException for every classical-body input tried here --
-/// SweHouse.cs's cusp buffer for hsys 'G' is undersized, a real library bug already fixed
-/// on the unmerged fix/house-api-fidelity branch. That is expected and is itself the
-/// behavior being frozen: SafeRow serializes the exception like any other case, and this
-/// is not worked around or skipped here. imeth 2-5 (from rise/set, with and without
-/// refraction) go through swe_rise_trans instead and do not hit that bug; they are
-/// measurably slower than imeth 0/1 but still sub-millisecond on average (timed directly
-/// against this branch).
+/// ("without latitude") both call swe_house_pos with hsys 'G' (36 Gauquelin sectors).
+/// That used to throw IndexOutOfRangeException for every classical-body input tried
+/// here -- SweHouse.cs's cusp buffer for hsys 'G' was undersized (hcusp[36] instead of
+/// the upstream swehouse.c:2224 hcusp[37]) -- but the fix landed (see
+/// Tests/baseline/baseline-2.8.0.2.env.txt's local-regenerations log, entry 5): the
+/// committed baseline has computed Gauquelin house positions here, not EXCEPTION rows,
+/// and this doc comment previously still described the pre-fix behavior. imeth 2-5
+/// (from rise/set, with and without refraction) go through swe_rise_trans instead and
+/// never hit that bug either way; they are measurably slower than imeth 0/1 but still
+/// sub-millisecond on average (timed directly against this branch).
 ///
 /// SE_CHIRON and SE_CERES in Bodies do NOT hit the hsys 'G' bug at any imeth: swe_calc
 /// for a minor planet always requires a file (see PhenoAst.cs's doc comment for the
@@ -90,8 +91,9 @@ internal static class Gauquelin
 
     private static void AddStarnameRows(List<string> rows)
     {
-        // No sefstars.txt is loaded (no OnLoadFile handler anywhere in this matrix), so
-        // this exercises the star-not-found error path, not a real star position.
+        // No sefstars.txt is loaded (SwissEph.DefaultFileProvider is a no-op provider, set
+        // once by Tools/BaselineMatrix/Areas.cs, so no instance in this matrix can reach a
+        // real file), so this exercises the star-not-found error path, not a real star position.
         var observer = Observers[0];
         foreach (var imeth in Imeths)
         {

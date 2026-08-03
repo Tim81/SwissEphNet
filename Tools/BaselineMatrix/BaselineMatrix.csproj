@@ -13,6 +13,13 @@
     <BaseOutputPath>bin\$(UseReferencePackage)\</BaseOutputPath>
     <BaseIntermediateOutputPath>obj\$(UseReferencePackage)\</BaseIntermediateOutputPath>
     <!--
+      Areas.cs's NoEphemerisFilesProvider implements SwissEph.IEphemerisFileProvider, which
+      does not exist in the frozen SwissEphNet 2.8.0.2 package reference mode resolves below
+      (that interface was introduced after 2.8.0.2 shipped). USE_REFERENCE_PACKAGE lets
+      Areas.cs compile the provider out in reference mode instead of failing CS0426.
+    -->
+    <DefineConstants Condition="'$(UseReferencePackage)' == 'true'">$(DefineConstants);USE_REFERENCE_PACKAGE</DefineConstants>
+    <!--
       The default compile-item exclude only knows about THIS build's own
       BaseOutputPath/BaseIntermediateOutputPath, not the other mode's sibling
       folder (bin\true vs bin\false, obj\true vs obj\false). Without this, a
@@ -64,6 +71,15 @@
 
   <ItemGroup Condition="'$(UseReferencePackage)' != 'true'">
     <ProjectReference Include="..\..\SwissEphNet\SwissEphNet.csproj" />
+  </ItemGroup>
+
+  <!--
+    Lets Tools/BaselineVerify.Tests read Ayanamsa.SidModeSweepCount directly (see the doc
+    comment on that constant) instead of having to re-derive its value some other way. Same
+    pattern Tools/BaselineVerify/BaselineVerify.csproj already uses for the same test project.
+  -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="BaselineVerify.Tests" />
   </ItemGroup>
 
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />

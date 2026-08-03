@@ -41,19 +41,15 @@ namespace SwissEphNet.Tests
 
             using (var swe = new SwissEph())
             {
-                swe.OnLoadFile += (s, e) =>
+                swe.FileProvider = new DelegateFileProvider(path =>
                 {
-                    string f = e.FileName;
-                    string fn = ResourceFileHelpers.GetPortableFileName(f);
-                    if (File.Exists(f))
+                    string fn = ResourceFileHelpers.GetPortableFileName(path);
+                    if (File.Exists(path))
                     {
-                        e.File = new FileStream(f, FileMode.Open, FileAccess.Read);
+                        return new FileStream(path, FileMode.Open, FileAccess.Read);
                     }
-                    else
-                    {
-                        e.File = ResourceFileHelpers.OpenResourceFile(fn);
-                    }
-                };
+                    return ResourceFileHelpers.OpenResourceFile(fn);
+                });
 
                 double[] xx = new double[6];
 
@@ -103,19 +99,15 @@ namespace SwissEphNet.Tests
 
             using (var swe = new SwissEph())
             {
-                swe.OnLoadFile += (s, e) =>
+                swe.FileProvider = new DelegateFileProvider(path =>
                 {
-                    string f = e.FileName;
-                    string fn = ResourceFileHelpers.GetPortableFileName(f);
-                    if (File.Exists(f))
+                    string fn = ResourceFileHelpers.GetPortableFileName(path);
+                    if (File.Exists(path))
                     {
-                        e.File = new FileStream(f, FileMode.Open, FileAccess.Read);
+                        return new FileStream(path, FileMode.Open, FileAccess.Read);
                     }
-                    else
-                    {
-                        e.File = ResourceFileHelpers.OpenResourceFile(fn);
-                    }
-                };
+                    return ResourceFileHelpers.OpenResourceFile(fn);
+                });
 
                 double[] xx = new double[6];
 
@@ -168,19 +160,15 @@ namespace SwissEphNet.Tests
 
             using (var swe = new SwissEph())
             {
-                swe.OnLoadFile += (s, e) =>
+                swe.FileProvider = new DelegateFileProvider(path =>
                 {
-                    string f = e.FileName;
-                    string fn = ResourceFileHelpers.GetPortableFileName(f);
-                    if (File.Exists(f))
+                    string fn = ResourceFileHelpers.GetPortableFileName(path);
+                    if (File.Exists(path))
                     {
-                        e.File = new FileStream(f, FileMode.Open, FileAccess.Read);
+                        return new FileStream(path, FileMode.Open, FileAccess.Read);
                     }
-                    else
-                    {
-                        e.File = ResourceFileHelpers.OpenResourceFile(fn);
-                    }
-                };
+                    return ResourceFileHelpers.OpenResourceFile(fn);
+                });
 
                 double[] xx = new double[6];
                 double tjd = swe.swe_julday(year, month, day, time, SwissEph.SE_GREG_CAL);

@@ -16,6 +16,19 @@ trim_trailing_whitespace = true
 charset = utf-8
 indent_size = 2
 
+# Data corpora (Tests/baseline/*.tsv, Tests/oracle/*.tsv, scripts/*.tsv and friends). The [*]
+# defaults above (crlf, utf-8-bom) are wrong for these: Tests/baseline/*.tsv and
+# Tests/baseline/*.env.txt are already pinned to `eol=lf` in .gitattributes because
+# BaselineGen always writes LF and BaselineVerify compares generated output against these files
+# directly (some fields exact-string, not just numeric) -- an editor defaulting a new or edited
+# line to CRLF fights that pin on every save. A stray BOM is equally unwanted: these are tab-
+# separated data files read by plain line-splitting code (PowerShell's `-split "`t"`, Python's
+# csv/split), not files parsed by a BOM-aware reader, so a leading BOM would silently attach
+# itself to the first row's first column.
+[*.tsv]
+charset = utf-8
+end_of_line = lf
+
 [*.{sln,slnx,slnf}]
 indent_style = tab
 

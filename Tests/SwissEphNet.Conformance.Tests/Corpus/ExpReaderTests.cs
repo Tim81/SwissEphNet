@@ -209,8 +209,48 @@ public class ExpReaderTests
         Assert.Contains("jd", unconsumed);
         Assert.Contains("rc", unconsumed);
 
+        // A plain read (the shape a testcase input, e.g. "ipl" or "jd", is
+        // legitimately read with) satisfies UnconsumedKeys...
         fields.GetDouble("jd");
         fields.GetInt("rc");
         Assert.Empty(fields.UnconsumedKeys(["section-id"]));
+
+        // ...but does NOT count as a comparison. This is the distinction
+        // UnconsumedKeys alone cannot make: a Check* call replaced by a plain
+        // field read (see Dispatch.Suite03Misc's testcase 1 and
+        // Dispatch.ConformanceRunner's completeness guard) would satisfy
+        // UnconsumedKeys exactly the same way "jd"/"rc" do here, while
+        // asserting nothing. ComparedKeys is only ever populated by
+        // CheckContext's own comparison entry points (GetDoubleCompared/
+        // GetIntCompared/GetRawStringCompared), never by GetDouble/GetInt.
+        Assert.Empty(fields.ComparedKeys);
+    }
+
+    [Fact]
+    public void ComparedKeys_OnlyPopulatedByComparisonAccessors_NotByPlainReads()
+    {
+        using var reader = new StringReader("""
+            TESTSUITE
+              section-id: 1
+              TESTCASE
+                section-id: 1
+                ITERATION
+                  section-id: 1
+                  ipl: 0
+                  name: Sun
+            """);
+        var doc = ExpReader.Read(reader, "sample");
+        var fields = doc.TestSuites[0].TestCases[0].Iterations[0].Fields;
+
+        // "ipl" is read the way a genuine testcase input is: a plain read,
+        // never compared.
+        fields.GetInt("ipl");
+
+        // "name" is read the way CheckContext.CheckS reads an expected value:
+        // through the comparison-tracking accessor.
+        fields.GetRawStringCompared("name");
+
+        Assert.Empty(fields.UnconsumedKeys(["section-id"]));
+        Assert.Equal(["name"], fields.ComparedKeys);
     }
 }

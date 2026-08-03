@@ -45,6 +45,23 @@ public sealed class ConformanceDispatcher
                     $"{plField}={ipl.Value} is a planetary-moon body, which requires ephe/sat/ (227 MB), not shipped by default. " +
                     "Set SWISSEPH_CONFORMANCE_INCLUDE_MOONS=1 and provide ephe/sat/ to opt in.");
             }
+
+            if (ipl is not null && EphemerisFileResolver.NeedsAsteroidFileWeDoNotShip(ipl.Value))
+            {
+                return DispatchOutcome.DataMissing(
+                    $"{plField}={ipl.Value} is a numbered asteroid beyond the four with built-in orbital elements " +
+                    "(Ceres/Pallas/Juno/Vesta), which requires a per-asteroid file (e.g. se00433s.se1) this repo " +
+                    "does not ship at any tier.");
+            }
+        }
+
+        var iflagForCenterBody = f.TryGetInt("iflag");
+        if (iflagForCenterBody is not null && EphemerisFileResolver.NeedsCenterBodySatFileWeDoNotHave(iflagForCenterBody.Value))
+        {
+            return DispatchOutcome.DataMissing(
+                "iflag includes SEFLG_CENTER_BODY, which reads a per-planet ephe/sat/ record (e.g. sepm9599.se1) " +
+                "even for a major-planet ipl, not shipped by default. Set SWISSEPH_CONFORMANCE_INCLUDE_MOONS=1 " +
+                "and provide ephe/sat/ to opt in.");
         }
 
         return suite.Id switch
@@ -74,15 +91,6 @@ public sealed class ConformanceDispatcher
     {
         switch (suiteId, testCaseId)
         {
-            case (1, 5):
-                reason = "swe_calc_pctr is not implemented in SwissEphNet (port is at 2.08; added in 2.10).";
-                return true;
-            case (6, 8):
-                reason = "swe_houses_ex2 is not implemented in SwissEphNet (port is at 2.08; added in 2.10).";
-                return true;
-            case (6, 9):
-                reason = "swe_houses_armc_ex2 is not implemented in SwissEphNet (port is at 2.08; added in 2.10).";
-                return true;
             default:
                 reason = "";
                 return false;

@@ -57,7 +57,7 @@ internal static class Suite07Apsides
                 ctx.CheckI("rc", rc);
                 ctx.CheckS("serr", serr);
                 ctx.CheckDD("xxdret", xxdret[..17]);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 4:
@@ -73,7 +73,7 @@ internal static class Suite07Apsides
                 ctx.CheckD("dmax", dmax);
                 ctx.CheckD("dmin", dmin);
                 ctx.CheckD("dtrue", dtrue);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             default:
@@ -90,6 +90,6 @@ internal static class Suite07Apsides
         ctx.CheckDD("xxndsc", xxndsc);
         ctx.CheckDD("xxperi", xxperi);
         ctx.CheckDD("xxaphe", xxaphe);
-        return DispatchOutcome.FromMismatches(ctx.Mismatches);
+        return DispatchOutcome.FromMismatches(ctx);
     }
 }

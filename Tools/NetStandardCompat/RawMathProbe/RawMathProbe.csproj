@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    A standalone probe for the causal half of the netstandard2.0 numerical-compatibility claim
+    (README.md's "V:2.10.3" section): that a divergence between the netstandard2.0 asset run under
+    net48 and the same asset run under net10.0 traces to Math.Sin/Math.Tan being less accurate near
+    pi on the .NET Framework runtime, not to this port. This project has no ProjectReference to
+    SwissEphNet at all: it calls System.Math directly, so a divergence found here is proof about
+    the BCL alone, uncontaminated by anything this library does.
+
+    Ad hoc verification, not a gate: no known-diff list, no CI wiring. Its job is to answer "does
+    this claimed mechanism exist, and if so at what magnitude and where", once, for the README
+    correction scripts/verify-netstandard-compat.ps1's own gate cites, not to be re-run on every
+    push. If a future change to that README claim needs re-verifying, run it again by hand.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net10.0;net8.0;net462;net48</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>RawMathProbe</RootNamespace>
+    <AssemblyName>RawMathProbe</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0' or '$(TargetFramework)' == 'net8.0'">
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

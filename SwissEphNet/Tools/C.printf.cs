@@ -121,6 +121,7 @@ namespace SwissEphNet
         /// type.
         /// </summary>
         /// <param name="Value">The value.</param>
+        /// <param name="Round">true to round to the nearest integer instead of truncating.</param>
         /// <returns>A boxed numeric object whos type is an integer type.</returns>
         public static object ToInteger(object Value, bool Round) {
             switch (Value.GetType().GetTypeCode()) {
@@ -472,11 +473,23 @@ namespace SwissEphNet
                             // line 2343 can only produce 7 characters or fewer, so its %.8s always threw.
                             w = w.Substring(0, Math.Min(fieldPrecision, w.Length));
 
-                        if (fieldLength != int.MinValue)
-                            if (flagLeft2Right)
-                                w = w.PadRight(fieldLength, paddingCharacter);
-                            else
-                                w = w.PadLeft(fieldLength, paddingCharacter);
+                        if (fieldLength != int.MinValue) {
+                            // C measures %s field width in bytes (it pads/copies a `char *`), not
+                            // in .NET's UTF-16 code units. They agree for pure-ASCII content, which
+                            // is the overwhelming majority of strings formatted here, but diverge by
+                            // one padding character per extra UTF-8 byte for anything else -- e.g.
+                            // "Korè" is 4 chars / 5 UTF-8 bytes, so a C build of "%-15.15s" emits 10
+                            // trailing spaces where PadRight(15) on the .NET string would emit 11.
+                            // See docs/known-issues.md's "%-Ns/%.Ns pad and truncate by bytes in C,
+                            // by characters here" entry for the measured divergence, the reproducer,
+                            // and why only this padding side is fixed (not precision-truncation,
+                            // left character-based deliberately).
+                            int pad = fieldLength - Encoding.UTF8.GetByteCount(w);
+                            if (pad > 0)
+                                w = flagLeft2Right
+                                    ? w + new string(paddingCharacter, pad)
+                                    : new string(paddingCharacter, pad) + w;
+                        }
                         defaultParamIx++;
                         break;
                     #endregion
@@ -644,6 +657,19 @@ namespace SwissEphNet
 
             if (IsNumericType(Value)) {
                 w = String.Format(CultureInfo.InvariantCulture, numberFormat, Value);
+
+                if (NativeFormat == "e" || NativeFormat == "E") {
+                    // .NET's e/E format always pads the exponent to exactly 3 digits
+                    // (e.g. "1.234560e-005"); C's printf mandates a minimum of two and
+                    // never pads beyond what the magnitude needs ("1.234560e-05").
+                    // Trim the leading zero .NET always adds, but never below 2 digits.
+                    w = Regex.Replace(w, "([eE][+-])0*([0-9][0-9]+)", m => {
+                        var digits = m.Groups[2].Value.TrimStart('0');
+                        if (digits.Length < 2)
+                            digits = digits.PadLeft(2, '0');
+                        return m.Groups[1].Value + digits;
+                    });
+                }
 
                 if (Left2Right || Padding == ' ') {
                     if (IsPositive(Value, true))

@@ -35,16 +35,13 @@ namespace SwissEphNet
             // unavailable on .NET Core and later without registering
             // System.Text.Encoding.CodePages, which this library does not do,
             // so there is no reason to attempt it here at all. This
-            // constructor's own Encoding parameter is not something a real
-            // OnLoadFile consumer can reach, though: the event only exposes a
-            // Stream (LoadFileEventArgs.File), and SwissEph.LoadFile
-            // (SwissEph.cs) is the only caller of this constructor, always
-            // with encoding: e.Encoding ?? DefaultEncoding. Callers with
-            // genuinely non-UTF-8-encoded files should set
-            // LoadFileEventArgs.Encoding inside their OnLoadFile handler
-            // instead (checked per file, since it is reset for every
-            // LoadFileEventArgs), or set the static SwissEph.DefaultEncoding
-            // once for every file that does not override it.
+            // constructor's own Encoding parameter is not something a
+            // SwissEph.IEphemerisFileProvider consumer can reach, though:
+            // SwissEph.OpenBinary (SwissEph.cs) is the only caller of this
+            // constructor, always with encoding: DefaultEncoding. Callers with
+            // genuinely non-UTF-8-encoded files should set the static
+            // SwissEph.DefaultEncoding once for every file that does not
+            // override it.
             this.Encoding = encoding ?? Encoding.UTF8;
             this._Decoder = Encoding.GetDecoder();
         }
@@ -108,9 +105,20 @@ namespace SwissEphNet
         /// </summary>
         public int Read(byte[] buff, int offset, int count) {
             if (buff == null || EOF) return 0;
-            var res = _Stream.Read(buff, offset, count);
-            if (res != count) EOF = true;
-            return res;
+            // C's fread loops until it has read `count` items or the stream is genuinely
+            // exhausted. A single Stream.Read call may legitimately return fewer bytes than
+            // requested without being at EOF -- GZipStream, DeflateStream, NetworkStream and
+            // BufferedStream all do this -- and OnLoadFile is the only way this library ever
+            // gets a Stream, so a decompressing stream backing a large .se1 file is a natural
+            // thing for a caller to hand in. Loop rather than treating one short read as EOF.
+            var total = 0;
+            while (total < count) {
+                var res = _Stream.Read(buff, offset + total, count - total);
+                if (res <= 0) break;
+                total += res;
+            }
+            if (total != count) EOF = true;
+            return total;
         }
 
         /// <summary>
@@ -241,7 +249,12 @@ namespace SwissEphNet
                 return false;
             }
             s = new String(chars);
-            return chars.Length == size;
+            // ReadChars(size) now reads `size` bytes, not `size` decoded characters (see its
+            // own comment), so a multi-byte-encoded string can legitimately decode to fewer
+            // characters than `size` on a full, successful read. EOF -- set by the underlying
+            // Read(byte[], offset, count) exactly when fewer than `size` bytes were available
+            // -- is what actually distinguishes a full read from a short one now.
+            return !EOF;
         }
 
         /// <summary>
@@ -303,14 +316,17 @@ namespace SwissEphNet
         /// </summary>
         public Char[] ReadChars(int count) {
             if (EOF) return null;
-            var result = new List<Char>();
-            Char c = '\0';
-            for (int i = 0; i < count; i++) {
-                if (!Read(ref c)) break;
-                result.Add(c);
-            }
-            if (EOF && result.Count == 0) return null;
-            return result.ToArray(); ;
+            // The C source reads a fixed-width *byte* field here (e.g. swejpl.c's
+            // fread(js->ch_cnam, 6, 400, fp), sweph.c's fread(fdp->astnam, 30, 1, fp)):
+            // exactly `count` bytes off the stream, not `count` decoded characters. Looping
+            // the decoder-based Read(ref char) below consumed more than one byte per
+            // character for any multi-byte sequence, misaligning the stream position (and,
+            // for callers like Sweph.cs that track fpos for a CRC check, the byte count too)
+            // against the C. Read raw bytes first, the same way ReadSBytes does, then decode.
+            var buff = new byte[count];
+            var nb = Read(buff, 0, count);
+            if (nb == 0) return null;
+            return Encoding.GetChars(buff, 0, nb);
         }
 
         /// <summary>

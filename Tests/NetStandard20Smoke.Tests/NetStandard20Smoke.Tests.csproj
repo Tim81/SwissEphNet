@@ -16,27 +16,70 @@
 
     net48 is a deliberate choice of "host that cannot use the net8.0/net10.0
     asset": a .NET Framework consumer resolves a multi-targeted ProjectReference
-    down to the highest asset it can actually use, which for net48 is
-    netstandard2.0 (net8.0/net10.0 assets require a modern .NET runtime that net48
-    does not have). That forces exactly the asset this project exists to exercise,
-    with no special MSBuild wiring needed beyond picking net48 as the TFM.
+    down to the highest asset it can actually use, which for a .NET Framework
+    TFM is netstandard2.0 (net8.0/net10.0 assets require a modern .NET runtime
+    that .NET Framework does not have). That forces exactly the asset this
+    project exists to exercise, with no special MSBuild wiring needed beyond
+    picking a .NET Framework TFM.
+
+    net462 is the second TFM alongside net48, added for the same reason: it is
+    the lowest .NET Framework version that can practically consume the
+    netstandard2.0 asset (netstandard2.0 support starts here; earlier .NET
+    Framework versions either cannot reference it at all or need patches this
+    repo has no reason to assume a consumer applied). net48 alone leaves the
+    low end of that range unexercised: a regression that only shows up on
+    older .NET Framework runtimes would pass here unnoticed. Both TFMs resolve
+    the same netstandard2.0 asset from the ProjectReference below (confirmed
+    via project.assets.json: each target's SwissEphNet entry reports
+    ".NETStandard,Version=v2.0", not net8.0 or net10.0).
+
+    The v4.6.2 targeting pack is not installed on every machine that builds
+    this repo, so the ItemGroup below pulls it from
+    Microsoft.NETFramework.ReferenceAssemblies instead of assuming it is
+    present locally. It is a build-time-only reference, never a runtime
+    dependency of anything this repo ships (SwissEphNet.csproj itself has
+    none; see scripts/verify-no-dependencies.ps1).
 
     This project is intentionally NOT included in SwissEphNet.CrossPlatform.slnf,
-    the filter used for Linux/cross-platform builds, since net48 cannot build or
-    run outside Windows (same reason Programs/SweWin, a WinForms app, is excluded
-    from that filter). It is part of SwissEphNet.sln and runs on Windows only, via
-    `dotnet test Tests/NetStandard20Smoke.Tests -c Release`.
+    the filter used for Linux/cross-platform builds, since .NET Framework cannot
+    build or run outside Windows (same reason Programs/SweWin, a WinForms app, is
+    excluded from that filter). It is part of SwissEphNet.sln and runs on Windows
+    only, via `dotnet test Tests/NetStandard20Smoke.Tests -c Release`.
   -->
 
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
+    <TargetFrameworks>net462;net48</TargetFrameworks>
     <AssemblyName>NetStandard20Smoke.Tests</AssemblyName>
     <RootNamespace>SwissEphNet.NetStandard20Smoke.Tests</RootNamespace>
     <IsPackable>false</IsPackable>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <!--
+      See netstandard20smoke.runsettings for why this project needs a session timeout: the one
+      regression it exists to catch (StringExtensions.Contains(this string, char) recursing into
+      itself on netstandard2.0) is a StackOverflowException that hangs the run past 300 seconds
+      and orphans a testhost process rather than failing a single test quickly.
+    -->
+    <RunSettingsFilePath>$(MSBuildThisFileDirectory)netstandard20smoke.runsettings</RunSettingsFilePath>
   </PropertyGroup>
+
+  <!--
+    The public-API approval check, shared verbatim with Tests/SwissEphNet.Tests rather than
+    reimplemented: two copies of the surface renderer could drift, and a difference between
+    the netstandard2.0 list and the net8.0/net10.0 lists then would not tell you whether the
+    surface differs or only the code that printed it. Linked, not duplicated, so the three
+    approved files stay directly comparable with each other.
+
+    The approved list for netstandard2.0 lives here because this is the only project that
+    resolves that asset. Both of this project's target frameworks (net462 and net48) resolve
+    it, and both therefore share this one file: the moniker is read off the library assembly,
+    not off the test project's own TFM.
+  -->
+  <ItemGroup>
+    <Compile Include="..\SwissEphNet.Tests\PublicApiSurface.cs" Link="PublicApiSurface.cs" />
+    <EmbeddedResource Include="PublicApi\SwissEphSharp.netstandard2.0.approved.txt" LogicalName="SwissEphSharp.netstandard2.0.approved.txt" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\SwissEphNet\SwissEphNet.csproj" />
@@ -53,6 +96,15 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <PackageReference Include="xunit" />
+    <!--
+      Supplies the net462 reference assemblies without requiring that
+      targeting pack to be installed on the build machine (it is not, on
+      every machine this repo builds on). Test-only and build-time-only:
+      PrivateAssets="all" keeps it out of this project's own dependency
+      surface, and it never touches SwissEphNet.csproj, the project
+      scripts/verify-no-dependencies.ps1 actually gates.
+    -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

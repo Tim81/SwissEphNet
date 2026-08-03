@@ -26,6 +26,20 @@
     <EmbeddedResource Include="files\sefstars.txt" />
   </ItemGroup>
 
+  <!--
+    Approved public-API surface, one file per library asset. This project resolves the
+    net8.0 asset when it runs on net8.0 and the net10.0 asset when it runs on net10.0, so
+    both are pinned here; Tests/NetStandard20Smoke.Tests owns the netstandard2.0 list,
+    since it is the only project that resolves that asset. Embedded rather than copied to
+    the output directory so the comparison cannot depend on the runner's working directory,
+    and given an explicit LogicalName so the resource key is the plain file name instead of
+    a namespace-derived one that would change if RootNamespace ever did.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="PublicApi\SwissEphSharp.net8.0.approved.txt" LogicalName="SwissEphSharp.net8.0.approved.txt" />
+    <EmbeddedResource Include="PublicApi\SwissEphSharp.net10.0.approved.txt" LogicalName="SwissEphSharp.net10.0.approved.txt" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\SwissEphNet\SwissEphNet.csproj" />
   </ItemGroup>

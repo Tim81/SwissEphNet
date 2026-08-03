@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The .NET side of the bit-exact comparison harness's first stage (Tools/OracleGrid,
+    Tools/CReference/sedump.c). Referenced directly against the in-repo SwissEphNet project,
+    no PackageReference, on purpose: this drives the port's own current code, not a published
+    package, and there is no NuGet dependency this program itself needs beyond SwissEphNet.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>OracleDump</RootNamespace>
+    <AssemblyName>OracleDump</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\SwissEphNet\SwissEphNet.csproj" />
+  </ItemGroup>
+
+</Project>

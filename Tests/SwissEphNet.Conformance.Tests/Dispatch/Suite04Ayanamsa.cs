@@ -25,7 +25,7 @@ internal static class Suite04Ayanamsa
                 ctx.CheckDD("xx", xx);
                 ctx.CheckI("rc", rc);
                 ctx.CheckS("serr", serr);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 2:
@@ -45,7 +45,7 @@ internal static class Suite04Ayanamsa
                 ctx.CheckD("daya_ex", dayaEx);
                 ctx.CheckS("serr_ex", serrEx);
 
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 3:
@@ -55,7 +55,7 @@ internal static class Suite04Ayanamsa
                 ctx.CheckD("daya_ut", dayaUt);
                 var daya = swe.swe_get_ayanamsa(jd);
                 ctx.CheckD("daya", daya);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 4:
@@ -63,7 +63,7 @@ internal static class Suite04Ayanamsa
                 var jd = f.GetDouble("jd");
                 var daya = swe.swe_get_ayanamsa_ut(jd);
                 ctx.CheckD("daya", daya);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             default:

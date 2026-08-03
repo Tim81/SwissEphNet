@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  This project's whole reason to exist (see NetStandard20Smoke.Tests.csproj) is to run the one
+  code path that used to call itself unboundedly on netstandard2.0: StringExtensions.Contains(this
+  string, char), which historically recursed into its own extension method rather than binding to
+  a BCL instance method (docs/known-issues.md). That is a StackOverflowException, which is fatal
+  to the whole process and uncatchable, but a fix that regresses it back does not fail fast here.
+  Measured directly: the run does not crash promptly, it hangs. Left unbounded, `dotnet test`
+  waited past 300 seconds with no result line ever printed, and the vstest testhost.net48 process
+  it had spawned was left orphaned, holding file locks that then failed the next build with
+  MSB3027. Under CI that shows up as a job timeout with no useful output, not a red test.
+
+  TestSessionTimeout aborts the whole session, test host process included (so no orphan survives
+  it), once the session runs longer than this many milliseconds, and reports the abort as a
+  failure rather than hanging indefinitely. 60 seconds is generous headroom over the roughly
+  4 second clean run this project's tests normally take (confirmed locally), while still failing
+  an order of magnitude faster than the 300+ second hang this guards against, and well under
+  typical CI job timeouts.
+
+  Picked up automatically by `dotnet test Tests/NetStandard20Smoke.Tests` via this project's own
+  RunSettingsFilePath property, no extra command-line flag required, and nothing in scripts/
+  needs to know this file exists.
+-->
+<RunSettings>
+  <RunConfiguration>
+    <TestSessionTimeout>60000</TestSessionTimeout>
+  </RunConfiguration>
+</RunSettings>

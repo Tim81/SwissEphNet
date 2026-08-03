@@ -12,7 +12,7 @@ namespace SwissEphNet.Tests
         public static Stream OpenResourceFile(string name)
         {
             var asm = typeof(ResourceFileHelpers).GetAssembly();
-            String sr = $"SwissEphNet.Tests.files.{name}".Replace("/", ".").Replace("\\", ".");
+            String sr = $"SwissEphNet.Tests.files.{name}".Replace("/", ".", StringComparison.Ordinal).Replace("\\", ".", StringComparison.Ordinal);
             return asm.GetManifestResourceStream(sr);
         }
 
@@ -58,5 +58,23 @@ namespace SwissEphNet.Tests
             int i = path.LastIndexOfAny(new[] { '\\', '/' });
             return i >= 0 ? path.Substring(i + 1) : path;
         }
+    }
+
+    /// <summary>
+    /// Adapts a delegate to <see cref="SwissEph.IEphemerisFileProvider"/>, replacing the
+    /// per-test <c>OnLoadFile</c> lambda handlers this project used to attach. Tests that read
+    /// embedded ephemeris data (rather than a real directory <c>swe_set_ephe_path</c> could
+    /// name) still need a provider -- see docs/known-issues.md's OnLoadFile entry for why an
+    /// embedded resource is the one case a provider is still the right tool.
+    /// </summary>
+    public sealed class DelegateFileProvider : SwissEph.IEphemerisFileProvider
+    {
+        private readonly Func<string, Stream> _open;
+
+        public DelegateFileProvider(Func<string, Stream> open) {
+            _open = open;
+        }
+
+        public Stream Open(string path) => _open(path);
     }
 }

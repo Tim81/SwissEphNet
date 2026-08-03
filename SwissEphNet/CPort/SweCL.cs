@@ -584,6 +584,10 @@ namespace SwissEphNet.CPort
          * attr[5]	true altitude of sun above horizon at tjd
          * attr[6]	apparent altitude of sun above horizon at tjd
          * attr[7]	angular distance of moon from sun in degrees
+         * attr[8]	magnitude acc. to NASA;
+         *              = attr[0] for partial and attr[1] for annular and total eclipses
+         * attr[9]	saros series number
+         * attr[10]	saros series member number
          *         declare as attr[20] at least !
          */
         public Int32 swe_sol_eclipse_where(
@@ -791,7 +795,7 @@ namespace SwissEphNet.CPort
                 retc |= (SwissEph.SE_ECL_PARTIAL | SwissEph.SE_ECL_NONCENTRAL);
             } else {
                 serr = C.sprintf("no solar eclipse at tjd = %f", tjd);
-                for (i = 0; i < 10; i++)
+                for (i = 0; i < 2; i++)
                     geopos[i] = 0;
                 dcore[0] = 0;
                 retc = 0;
@@ -1084,7 +1088,8 @@ namespace SwissEphNet.CPort
             if (lsun > 0) {
                 attr[0] = lsunleft / rsun / 2;
             } else {
-                attr[0] = 100;
+                //attr[0] = 100;
+                attr[0] = 1;
             }
             /*if (retc == SE_ECL_ANNULAR || retc == SE_ECL_TOTAL)
                 attr[0] = attr[1];*/
@@ -1096,7 +1101,8 @@ namespace SwissEphNet.CPort
             lmoon = rmoon;
             lctr = dctr;
             if (retc == 0 || lsun == 0) {
-                attr[2] = 100;
+                //attr[2] = 100;
+                attr[2] = 1;
             } else if (retc == SwissEph.SE_ECL_TOTAL || retc == SwissEph.SE_ECL_ANNULAR) {
                 attr[2] = lmoon * lmoon / lsun / lsun;
             } else {
@@ -1409,7 +1415,7 @@ namespace SwissEphNet.CPort
                     else if (n == 2)
                         dc[i] = de / dcore[6] - dcore[2];
                 }
-                find_zero(dc[0], dc[1], dc[2], dta, out dt1, out dt2);
+                find_zero(dc[0], dc[1], dc[2], dta, ref dt1, ref dt2);
                 tret[i1] = tjd + dt1 + dta;
                 tret[i2] = tjd + dt2 + dta;
                 for (m = 0, dt = dtb; m < 3; m++, dt /= 3) {
@@ -1582,9 +1588,16 @@ namespace SwissEphNet.CPort
          *         declare as tret[10] at least!
          *
          */
+        // swecl.c:1574 declares `int32 backward`, a bitfield: swecl.c:1539/:1593 document and read
+        // SE_ECL_ONE_TRY out of it (`backward |= SE_ECL_ONE_TRY` to request it, `one_try = backward
+        // & SE_ECL_ONE_TRY` to test it). This took `bool b_backward` and narrowed it to 0/1 before
+        // the mask ever ran, so `backward & SE_ECL_ONE_TRY` (32768) was provably always 0 -- the
+        // caller had no way to set that bit. Taking Int32 directly, as the C does, makes the bit
+        // reach the mask; `backward` below is used exactly as the old `int backward = b_backward ?
+        // 1 : 0` local made it (see :1624's `backward &= 1`, :1656/:1766-1767's `backward != 0`).
         public Int32 swe_lun_occult_when_glob(
              double tjd_start, Int32 ipl, string starname, Int32 ifl, Int32 ifltype,
-             double[] tret, bool b_backward, ref string serr) {
+             double[] tret, Int32 backward, ref string serr) {
             int i, j, k, m, n, o, i1 = 0, i2 = 0;
             Int32 retflag = 0, retflag2 = 0;
             double de = 6378.140, a;
@@ -1602,7 +1615,6 @@ namespace SwissEphNet.CPort
             Int32 ifltype2;
             Int32 iflag, iflagcart;
             bool dont_times = false;
-            int backward = b_backward ? 1 : 0;
             Int32 one_try = backward & SwissEph.SE_ECL_ONE_TRY;
             if (ipl < 0) ipl = 0;
             /*if (backward & SEI_OCC_FAST)
@@ -1876,7 +1888,7 @@ namespace SwissEphNet.CPort
                     else if (n == 2)
                         dc[i] = de / dcore[6] - dcore[2];
                 }
-                find_zero(dc[0], dc[1], dc[2], dta, out dt1, out dt2);
+                find_zero(dc[0], dc[1], dc[2], dta, ref dt1, ref dt2);
                 tret[i1] = tjd + dt1 + dta;
                 tret[i2] = tjd + dt2 + dta;
                 for (m = 0, dt = dtb; m < 3; m++, dt /= 3) {
@@ -2016,7 +2028,7 @@ namespace SwissEphNet.CPort
          *              SE_ECL_VISIBLE, 
          *              SE_ECL_MAX_VISIBLE, 
          *              SE_ECL_1ST_VISIBLE, SE_ECL_2ND_VISIBLE
-         *              SE_ECL_3ST_VISIBLE, SE_ECL_4ND_VISIBLE
+         *              SE_ECL_3RD_VISIBLE, SE_ECL_4TH_VISIBLE
          *
          * tret[0]	time of maximum eclipse
          * tret[1]	time of first contact
@@ -2072,7 +2084,7 @@ namespace SwissEphNet.CPort
          *              SE_ECL_VISIBLE, 
          *              SE_ECL_MAX_VISIBLE, 
          *              SE_ECL_1ST_VISIBLE, SE_ECL_2ND_VISIBLE
-         *              SE_ECL_3ST_VISIBLE, SE_ECL_4ND_VISIBLE
+         *              SE_ECL_3RD_VISIBLE, SE_ECL_4TH_VISIBLE
          *              SE_ECL_OCC_BEG_DAYLIGHT, SE_ECL_OCC_END_DAYLIGHT
          * The latter two indicate that the beginning or end of the occultation takes
          * place during the day. If Venus is occulted, it may be observable with the
@@ -2092,8 +2104,14 @@ namespace SwissEphNet.CPort
          *
          * for all other parameters, see function swe_sol_eclipse_when_loc().
          */
+        // swecl.c:2072 declares `int32 backward`, the same SE_ECL_ONE_TRY bitfield
+        // swe_lun_occult_when_glob's own comment (above) documents; occult_when_loc below (its
+        // own `int backward` parameter, matching swecl.c:2415, already Int32) does the masking at
+        // swecl.c:2436. This narrowed the caller-facing backward to bool and collapsed it to 0/1
+        // right here (`backward ? 1 : 0`) before occult_when_loc ever saw it, so SE_ECL_ONE_TRY
+        // was unreachable from this entry point the same way it was from swe_lun_occult_when_glob.
         public Int32 swe_lun_occult_when_loc(double tjd_start, Int32 ipl, string starname, Int32 ifl,
-             double[] geopos, double[] tret, double[] attr, bool backward, ref string serr) {
+             double[] geopos, double[] tret, double[] attr, Int32 backward, ref string serr) {
             Int32 retflag = 0, retflag2 = 0;
             double[] geopos2 = new double[20], dcore = new double[10];
             /* function calls for Pluto with asteroid number 134340
@@ -2108,7 +2126,7 @@ namespace SwissEphNet.CPort
                 ipl = SwissEph.SE_PLUTO;
             ifl &= SEFLG_EPHMASK;
             SE.SwephLib.swi_set_tid_acc(tjd_start, ifl, 0, ref serr);
-            if ((retflag = occult_when_loc(tjd_start, ipl, starname, ifl, geopos, tret, attr, backward ? 1 : 0, ref serr)) <= 0)
+            if ((retflag = occult_when_loc(tjd_start, ipl, starname, ifl, geopos, tret, attr, backward, ref serr)) <= 0)
                 return retflag;
             /* 
              * diameter of core shadow
@@ -2125,7 +2143,7 @@ namespace SwissEphNet.CPort
             Int32 retflag = 0, retc;
             double t, tjd, dt, dtint, K, T, T2, T3, T4, F, M, Mm;
             double tjdr = 0, tjds = 0;
-            double E, Ff, A1, Om;
+            double E, Ff; // A1, Om;
             double[] xs = new double[6], xm = new double[6], ls = new double[6], lm = new double[6], x1 = new double[6], x2 = new double[6]; double dm, ds;
             double rmoon, rsun, rsplusrm, rsminusrm;
             double[] dc = new double[3]; double dctr, dctrmin;
@@ -2171,16 +2189,14 @@ namespace SwissEphNet.CPort
                                 + 0.1017438 * T2
                                 + 0.00001239 * T3
                                 + 0.000000058 * T4);
-            Om = SE.swe_degnorm(124.7746 - 1.56375580 * K
-                                + 0.0020691 * T2
-                                + 0.00000215 * T3);
+            // Om = SE.swe_degnorm(124.7746 - 1.56375580 * K + 0.0020691 * T2 + 0.00000215 * T3);
             E = 1 - 0.002516 * T - 0.0000074 * T2;
-            A1 = SE.swe_degnorm(299.77 + 0.107408 * K - 0.009173 * T2);
+            // A1 = SE.swe_degnorm(299.77 + 0.107408 * K - 0.009173 * T2);
             M *= SwissEph.DEGTORAD;
             Mm *= SwissEph.DEGTORAD;
             F *= SwissEph.DEGTORAD;
-            Om *= SwissEph.DEGTORAD;
-            A1 *= SwissEph.DEGTORAD;
+            // Om *= SwissEph.DEGTORAD;
+            // A1 *= SwissEph.DEGTORAD;
             tjd = tjd - 0.4075 * Math.Sin(Mm)
                       + 0.1721 * E * Math.Sin(M);
             SE.swe_set_topo(geopos[0], geopos[1], geopos[2]);
@@ -2275,7 +2291,7 @@ namespace SwissEphNet.CPort
                     dctr = Math.Acos(SE.SwephLib.swi_dot_prod_unit(x1, x2)) * SwissEph.RADTODEG;
                     dc[i] = Math.Abs(rsminusrm) - dctr;
                 }
-                find_zero(dc[0], dc[1], dc[2], twomin, out dt1, out dt2);
+                find_zero(dc[0], dc[1], dc[2], twomin, ref dt1, ref dt2);
                 tret[2] = tjd + dt1 + twomin;
                 tret[3] = tjd + dt2 + twomin;
                 for (m = 0, dt = tensec; m < 2; m++, dt /= 10) {
@@ -2330,7 +2346,7 @@ namespace SwissEphNet.CPort
                 dctr = Math.Acos(SE.SwephLib.swi_dot_prod_unit(x1, x2)) * SwissEph.RADTODEG;
                 dc[i] = rsplusrm - dctr;
             }
-            find_zero(dc[0], dc[1], dc[2], twohr, out dt1, out dt2);
+            find_zero(dc[0], dc[1], dc[2], twohr, ref dt1, ref dt2);
             tret[1] = tjd + dt1 + twohr;
             tret[4] = tjd + dt2 + twohr;
             for (m = 0, dt = tenmin; m < 3; m++, dt /= 10) {
@@ -2647,7 +2663,7 @@ namespace SwissEphNet.CPort
                     dctr = Math.Acos(SE.SwephLib.swi_dot_prod_unit(x1, x2)) * SwissEph.RADTODEG;
                     dc[i] = Math.Abs(rsminusrm) - dctr;
                 }
-                find_zero(dc[0], dc[1], dc[2], twomin, out dt1, out dt2);
+                find_zero(dc[0], dc[1], dc[2], twomin, ref dt1, ref dt2);
                 tret[2] = tjd + dt1 + twomin;
                 tret[3] = tjd + dt2 + twomin;
                 for (m = 0, dt = tensec; m < 2; m++, dt /= 10)
@@ -2712,7 +2728,7 @@ namespace SwissEphNet.CPort
                 dctr = Math.Acos(SE.SwephLib.swi_dot_prod_unit(x1, x2)) * SwissEph.RADTODEG;
                 dc[i] = rsplusrm - dctr;
             }
-            find_zero(dc[0], dc[1], dc[2], twohr, out dt1, out dt2);
+            find_zero(dc[0], dc[1], dc[2], twohr, ref dt1, ref dt2);
             tret[1] = tjd + dt1 + twohr;
             tret[4] = tjd + dt2 + twohr;
             for (m = 0, dt = tenmin; m < 3; m++, dt /= 10)
@@ -3077,24 +3093,23 @@ namespace SwissEphNet.CPort
          *                      *        SE_TRUE_TO_APP
          *
          * function returns:
-         * function returns:
          * double *dret;        * array of 4 doubles; declare 20 doubles !
          * - dret[0] true altitude, if possible; otherwise input value
          * - dret[1] apparent altitude, if possible; otherwise input value
          * - dret[2] refraction
          * - dret[3] dip of the horizon
-         * 
+         *
          * The body is above the horizon if the dret[0] != dret[1]
          *
          * case 1, conversion from true altitude to apparent altitude
-         * - apparent altitude, if body appears above is observable above ideal horizon
+         * - apparent altitude, if body is observable above ideal horizon
          * - true altitude (the input value), otherwise
          *   "ideal horizon" is the horizon as seen above an ideal sphere (as seen
          *   from a plane over the ocean with a clear sky)
          * case 2, conversion from apparent altitude to true altitude
          * - the true altitude resulting from the input apparent altitude, if this value
          *   is a plausible apparent altitude, i.e. if it is a position above the ideal
-         *   horizon
+         *   horizon, taking into account the dip of the horizon
          * - the input altitude otherwise
          *
          * The body is above the horizon if the dret[0] != dret[1]
@@ -3155,6 +3170,7 @@ namespace SwissEphNet.CPort
             } else {
                 refr = calc_astronomical_refr(inalt, atpress, attemp);
                 trualt = inalt - refr;
+                //printf("inalt=%f, dip=%f\n", inalt, dip);
                 if (dret != null) {
                     if (inalt > dip) {
                         dret[0] = trualt;
@@ -3168,7 +3184,11 @@ namespace SwissEphNet.CPort
                         dret[3] = dip;
                     }
                 }
-                if (trualt > dip)
+                // Apparent altitude cannot be below dip.
+                // True altitude is only returned if apparent altitude is hgher than dip.
+                // Othwise the apparent altitude is returned.
+                //if (trualt > dip)
+                if (inalt >= dip)  // bug fix dieter, 4 feb 20
                     return trualt;
                 else
                     return inalt;
@@ -3218,10 +3238,10 @@ namespace SwissEphNet.CPort
         double calc_dip(double geoalt, double atpress, double attemp, double lapse_rate) {
             /* below formula is based on A. Thom, Megalithic lunar observations, 1973 (page 32).
             * conversion to metric has been done by
-            * V. Reijs, 2000, http://www.iol.ie/~geniet/eng/refract.htm
+            * V. Reijs, 2000, http://www.archaeocosmology.org/eng/refract.htm#Sea
             */
             double krefr = (0.0342 + lapse_rate) / (0.154 * 0.0238);
-            double d = 1 - 1.8480 * krefr * atpress / (273.16 + attemp) / (273.16 + attemp);
+            double d = 1 - 1.8480 * krefr * atpress / (273.15 + attemp) / (273.15 + attemp);
             /* return -0.03203*sqrt(geoalt)*sqrt(d); */
             /* double a = acos(1/(1+geoalt/EARTH_RADIUS));*/
             return -180.0 / Math.PI * Math.Acos(1 / (1 + geoalt / Sweph.EARTH_RADIUS)) * Math.Sqrt(d);
@@ -3537,7 +3557,7 @@ namespace SwissEphNet.CPort
              * the function lun_eclipse_how().
              */
             dtstart = 0.1;
-            if (tjd < 2000000 || tjd > 2500000)
+            if (tjd < 2100000 || tjd > 2500000)	// was tjd < 2000000 until 26-aug-22
                 dtstart = 5;
             dtdiv = 4;
             for (j = 0, dt = dtstart;
@@ -3631,7 +3651,7 @@ namespace SwissEphNet.CPort
                     else if (n == 2)
                         dc[i] = dcore[1] / 2 - RMOON / dcore[3] - dcore[0];
                 }
-                find_zero(dc[0], dc[1], dc[2], dta, out dt1, out dt2);
+                find_zero(dc[0], dc[1], dc[2], dta, ref dt1, ref dt2);
                 dtb = (dt1 + dta) / 2;
                 tret[i1] = tjd + dt1 + dta;
                 tret[i2] = tjd + dt2 + dta;
@@ -3815,7 +3835,8 @@ namespace SwissEphNet.CPort
          */
         const double EULER = 2.718281828459;
         const int NMAG_ELEM = (SwissEph.SE_VESTA + 1);
-//#define MAG_HILTON_2005
+//#define MAG_MALLAMA_2018  1
+//#define MAG_MOON_VREIJS   1
         /* Magnitudes according to:
          * - "Explanatory Supplement to the Astronomical Almanac" 1986.
          * Magnitudes for Mercury and Venus:
@@ -3859,9 +3880,8 @@ namespace SwissEphNet.CPort
         public Int32 swe_pheno(double tjd, Int32 ipl, Int32 iflag, double[] attr, ref string serr) {
             int i;
             double[] xx = new double[6], xx2 = new double[6], xxs = new double[6], lbr = new double[6], lbr2 = new double[6]; double dt = 0, dd;
-            double i100;
             double fac;
-            double T, inx, om, sinB, u1, u2, du;
+            double T, inx, om, sinB;
             double ph1, ph2; double[] me = new double[2];
             Int32 iflagp, epheflag, retflag, epheflag2;
             string serr2 = string.Empty;
@@ -3964,64 +3984,138 @@ namespace SwissEphNet.CPort
                     fac *= fac;
                     attr[4] = mag_elem[ipl, 0] - 2.5 * Math.Log10(fac);
                 } else if (ipl == SwissEph.SE_MOON) {
-                    /* formula according to Allen, C.W., 1976, Astrophysical Quantities */
-                    /*attr[4] = -21.62 + 5 * log10(384410497.8 / EARTH_RADIUS) / log10(10) + 0.026 * Math.Abs(attr[0]) + 0.000000004 * pow(attr[0], 4);*/
-                    //attr[4] = -21.62 + 5 * Math.Log10(lbr[2] * Sweph.AUNIT / Sweph.EARTH_RADIUS) / Math.Log10(10) + 0.026 * Math.Abs(attr[0]) + 0.000000004 * Math.Pow(attr[0], 4);
-                    attr[4] = -21.62 + 5 * Math.Log10(lbr[2] * Sweph.AUNIT / Sweph.EARTH_RADIUS) + 0.026 * Math.Abs(attr[0]) + 0.000000004 * Math.Pow(attr[0], 4);
-                    //#if 0
-                    //      /* ratio apparent diameter : average diameter */
-                    //      fac = attr[3] / (asin(pla_diam[SE_MOON] / 2.0 / 384400000.0) * 2 * SwissEph.RADTODEG);
-                    //      /* distance sun - moon */
-                    //      for (i = 0; i < 3; i++)
-                    //        xxs[i] -= xx[i];
-                    //      dsm =Math.Sqrt(square_sum(xxs));
-                    //      /* account for phase and distance of moon: */
-                    //      fac *= fac * attr[1];
-                    //      /* account for distance of sun from moon: */
-                    //      fac *= dsm * dsm;
-                    //      attr[4] = mag_elem[ipl,0] - 2.5 * log10(fac);
-                    //#endif
-                    /*printf("1 = %f, 2 = %f\n", mag, mag2);*/
-                }
-                else if (ipl == SwissEph.SE_SATURN) {
-                    /* rings are considered according to Meeus, p. 301ff. (German version 329ff.) */
+//#if MAG_MOON_VREIJS
+                    // double a=Math.Abs(attr[0]);
+                    double a = attr[0];
+                    if (a <= 147.1385465) {
+                        /* formula according to Allen, C.W., 1976, Astrophysical Quantities */
+                        attr[4] = -21.62 + 0.026 * Math.Abs(a) + 0.000000004 * Math.Pow(a, 4);
+                        attr[4] += 5 * Math.Log10(lbr[2] * lbr2[2] * Sweph.AUNIT / Sweph.EARTH_RADIUS);
+                    } else {
+                        /* using the cube phase angle proposed by Samaha (Samaha, A.E.; Asaad,
+                           A. S. and Mikhail, J. S. (1969).
+                           Visibility of the New Moon, Bulletin of Observatory Helwan, 84), and VR
+                           adjusted the stitch phase (align Allen's and Samaha's magnitude)
+                           of 147.14degrees.
+                        */
+                        attr[4] = -4.5444 - (2.5 * Math.Log10(Math.Pow(180 - a, 3)));
+                        attr[4] += 5 * Math.Log10(lbr[2] * lbr2[2] * Sweph.AUNIT / Sweph.EARTH_RADIUS);
+                    }
+//#else
+                    ///* formula according to Allen, C.W., 1976, Astrophysical Quantities */
+                    //attr[4] = -21.62 + 5 * Math.Log10(lbr[2] * lbr2[2] * Sweph.AUNIT / Sweph.EARTH_RADIUS) + 0.026 * Math.Abs(attr[0]) + 0.000000004 * Math.Pow(attr[0], 4);
+//#endif
+//#if MAG_MALLAMA_2018
+                    // see: A. Mallama, J.Hilton,
+                    // "ComputingApparentPlanetaryMagnitudesforTheAstronomicalAlmanac" (2018)
+                    // https://arxiv.org/ftp/arxiv/papers/1808/1808.01973.pdf
+                } else if (ipl == SwissEph.SE_MERCURY) {
+                    double a = attr[0];
+                    double a2 = a * a; double a3 = a2 * a; double a4 = a3 * a; double a5 = a4 * a; double a6 = a5 * a;
+                    attr[4] = -0.613 + a * 6.3280E-02 - a2 * 1.6336E-03 + a3 * 3.3644E-05 - a4 * 3.4265E-07 + a5 * 1.6893E-09 - a6 * 3.0334E-12;
+                    attr[4] += 5 * Math.Log10(lbr2[2] * lbr[2]);
+                } else if (ipl == SwissEph.SE_VENUS) {
+                    double a = attr[0];
+                    double a2 = a * a; double a3 = a2 * a; double a4 = a3 * a;
+                    if (a <= 163.7)
+                        attr[4] = -4.384 - a * 1.044E-03 + a2 * 3.687E-04 - a3 * 2.814E-06 + a4 * 8.938E-09;
+                    else
+                        attr[4] = 236.05828 - a * 2.81914E+00 + a2 * 8.39034E-03;
+                    attr[4] += 5 * Math.Log10(lbr2[2] * lbr[2]);
+                    if (attr[0] > 179.0)
+                        serr2 = C.sprintf("magnitude value for Venus at phase angle i=%.1f is bad; formula is valid only for i < 179.0", attr[0]);
+                } else if (ipl == SwissEph.SE_MARS) {
+                    double a = attr[0];
+                    double a2 = a * a;
+                    /* With the following formulae, the terms +L(λe)+L(LS) have been omitted.
+                     * They are "the magnitude corrections for the longitude of the sub-Earth
+                     * meridian of the illuminated disk and the longitude of the vernal
+                     * equinox,respectively".
+                     * The apparent magnitude of Mars changes considerably within hours,
+                     * depending on the surface that is seen.
+                     * Note that the maximum phase angle of mars as seen from earth is
+                     * about 45°.
+                     * The deviation of this simplified solution from Horizons is
+                     * smaller than 0.1m.
+                     */
+                    if (a <= 50.0)
+                        attr[4] = -1.601 + a * 0.02267 - a2 * 0.0001302;
+                    else  // irrelevant to earth-centered observation
+                        attr[4] = -0.367 - a * 0.02573 + a2 * 0.0003445;
+                    attr[4] += 5 * Math.Log10(lbr2[2] * lbr[2]);
+                } else if (ipl == SwissEph.SE_JUPITER) {
+                    /* the phase angle of Jupiter never exceeds 12°. */
+                    double a = attr[0];
+                    double a2 = a * a;
+                    attr[4] = -9.395 - a * 3.7E-04 + a2 * 6.16E-04;
+                    attr[4] += 5 * Math.Log10(lbr2[2] * lbr[2]);
+                } else if (ipl == SwissEph.SE_SATURN) {
+                    double a = attr[0];
+                    double sinB2;
                     T = (tjd - dt - Sweph.J2000) / 36525.0;
                     inx = (28.075216 - 0.012998 * T + 0.000004 * T * T) * SwissEph.DEGTORAD;
                     om = (169.508470 + 1.394681 * T + 0.000412 * T * T) * SwissEph.DEGTORAD;
-                    sinB = Math.Abs(Math.Sin(inx) * Math.Cos(lbr[1] * SwissEph.DEGTORAD)
+                    // B is "mean tilt of the ring plane to the Earth and Sun (If the Earth
+                    // and Sun are on opposite sides of the ring plane B = 0)" according to Hilton:
+                    // https://syrte.obspm.fr/astro/journees2019/journees_pdf/SessionV_1/HiltonStewart_final.pdf
+                    // Mallama does not provide B. We derive it from
+                    // Meeus, p. 301ff. (German version 329ff.)
+                    // There are small differences from Horizons < 0.02m.
+                    sinB = (Math.Sin(inx) * Math.Cos(lbr[1] * SwissEph.DEGTORAD)
                                   * Math.Sin(lbr[0] * SwissEph.DEGTORAD - om)
                                   - Math.Cos(inx) * Math.Sin(lbr[1] * SwissEph.DEGTORAD));
-                    u1 = Math.Atan2(Math.Sin(inx) * Math.Tan(lbr2[1] * SwissEph.DEGTORAD)
-                                           + Math.Cos(inx) * Math.Sin(lbr2[0] * SwissEph.DEGTORAD - om),
-                                      Math.Cos(lbr2[0] * SwissEph.DEGTORAD - om)) * SwissEph.RADTODEG;
-                    u2 = Math.Atan2(Math.Sin(inx) * Math.Tan(lbr[1] * SwissEph.DEGTORAD)
-                                           + Math.Cos(inx) * Math.Sin(lbr[0] * SwissEph.DEGTORAD - om),
-                                      Math.Cos(lbr[0] * SwissEph.DEGTORAD - om)) * SwissEph.RADTODEG;
-                    du = SE.swe_degnorm(u1 - u2);
-                    if (du > 10)
-                        du = 360 - du;
-                    attr[4] = 5 * Math.Log10(lbr2[2] * lbr[2])
-                                + mag_elem[ipl, 1] * sinB
-                                + mag_elem[ipl, 2] * sinB * sinB
-                                + mag_elem[ipl, 3] * du
-                                + mag_elem[ipl, 0];
-//#ifdef MAG_HILTON_2005
-                } else if (ipl == SwissEph.SE_MERCURY) {
-                    /* valid range is actually 2.1° < i < 169.5° */
-                    i100 = attr[0] / 100.0;
-                    attr[4] = -0.60 + 4.98 * i100 - 4.88 * i100 * i100 + 3.02 * i100 * i100 * i100;
+                    sinB2 = (Math.Sin(inx) * Math.Cos(lbr2[1] * SwissEph.DEGTORAD)
+                                  * Math.Sin(lbr2[0] * SwissEph.DEGTORAD - om)
+                                  - Math.Cos(inx) * Math.Sin(lbr2[1] * SwissEph.DEGTORAD));
+                    sinB = Math.Abs(Math.Sin((Math.Asin(sinB) + Math.Asin(sinB2)) / 2.0));/**/
+                    attr[4] = -8.914 - 1.825 * sinB + 0.026 * a - 0.378 * sinB * Math.Pow(2.7182818, -2.25 * a);
                     attr[4] += 5 * Math.Log10(lbr2[2] * lbr[2]);
-                    if (attr[0] < 2.1 || attr[0] > 169.5)
-                        serr2 = C.sprintf("magnitude value for Mercury at phase angle i=%.1f is bad; formula is valid only for 2.1 < i < 169.5", attr[0]);
-                } else if (ipl == SwissEph.SE_VENUS) {
-                    i100 = attr[0] / 100.0;
-                    if (attr[0] < 163.6) /* actual valid range is 2.2° < i < 163.6° */
-                        attr[4] = -4.47 + 1.03 * i100 + 0.57 * i100 * i100 + 0.13 * i100 * i100 * i100;
-                    else /* actual valid range is 163.6° < i < 170.2° */
-                        attr[4] = 0.98 - 1.02 * i100;
+                } else if (ipl == SwissEph.SE_URANUS) {
+                    // This is a simplified solution ignoring the term depending on
+                    // sub-Earth latitude. The difference from Horizons is +-0.03m.
+                    double a = attr[0];
+                    double a2 = a * a;
+                    double fi_ = 0; // sub-Earth latitude in deg; ignored here
+                    attr[4] = -7.110 - 8.4E-04 * fi_ + a * 6.587E-3 + a2 * 1.045E-4;
                     attr[4] += 5 * Math.Log10(lbr2[2] * lbr[2]);
-                    if (attr[0] < 2.2 || attr[0] > 170.2)
-                        serr2 = C.sprintf("magnitude value for Venus at phase angle i=%.1f is bad; formula is valid only for 2.2 < i < 170.2", attr[0]);
+                    // instead of the term with fi_, we do subtract the 0.05m.
+                    // the remaining error is +-0.03m
+                    attr[4] -= 0.05;
+                } else if (ipl == SwissEph.SE_NEPTUNE) {
+                    if (tjd < 2444239.5) {
+                        attr[4] = -6.89;
+                    } else if (tjd <= 2451544.5) {
+                        attr[4] = -6.89 - 0.0055 * (tjd - 2444239.5) / 365.25;
+                        // Mallama has 0.0054, but that would make the curve discontinuos
+                        // Nevertheless, JPL Horizons has 0.0054 and the discontinuity
+                    } else {
+                        attr[4] = -7.00;
+                    }
+                    attr[4] += 5 * Math.Log10(lbr2[2] * lbr[2]);
+//#else
+                    //} else if (ipl == SE_SATURN) {
+                    //  double u1, u2, du;
+                    //  /* rings are considered according to Meeus, p. 301ff. (German version 329ff.) */
+                    //  T = (tjd - dt - J2000) / 36525.0;
+                    //  in = (28.075216 - 0.012998 * T + 0.000004 * T * T) * DEGTORAD;
+                    //  om = (169.508470 + 1.394681 * T + 0.000412 * T * T) * DEGTORAD;
+                    //  sinB = fabs(sin(in) * cos(lbr[1] * DEGTORAD)
+                    //                * sin(lbr[0] * DEGTORAD - om)
+                    //                - cos(in) * sin(lbr[1] * DEGTORAD));
+                    //  u1 = atan2(sin(in) * tan(lbr2[1] * DEGTORAD)
+                    //                         + cos(in) * sin(lbr2[0] * DEGTORAD - om),
+                    //                    cos(lbr2[0] * DEGTORAD - om)) * RADTODEG;
+                    //  u2 = atan2(sin(in) * tan(lbr[1] * DEGTORAD)
+                    //                         + cos(in) * sin(lbr[0] * DEGTORAD - om),
+                    //                    cos(lbr[0] * DEGTORAD - om)) * RADTODEG;
+                    //  du = swe_degnorm(u1 - u2);
+                    //  if (du > 10)
+                    //    du = 360 - du;
+                    //  attr[4] = 5 * log10(lbr2[2] * lbr[2])
+                    //              + mag_elem[ipl][1] * sinB
+                    //              + mag_elem[ipl][2] * sinB * sinB
+                    //              + mag_elem[ipl][3] * du
+                    //              + mag_elem[ipl][0];
 //#endif
                 } else if (ipl < SwissEph.SE_CHIRON) {
                     attr[4] = 5 * Math.Log10(lbr2[2] * lbr[2])
@@ -4031,11 +4125,11 @@ namespace SwissEphNet.CPort
                               + mag_elem[ipl, 0];
                 }
                 else if (ipl < NMAG_ELEM || ipl > SwissEph.SE_AST_OFFSET)
-                { /* asteroids */
+                { /* other planets, asteroids */
                     ph1 = Math.Pow(EULER, -3.33 * Math.Pow(Math.Tan(attr[0] * SwissEph.DEGTORAD / 2), 0.63));
                     ph2 = Math.Pow(EULER, -1.87 * Math.Pow(Math.Tan(attr[0] * SwissEph.DEGTORAD / 2), 1.22));
                     if (ipl < NMAG_ELEM)
-                    {    /* main asteroids */
+                    {    /* other planets, main asteroids */
                         me[0] = mag_elem[ipl, 0];
                         me[1] = mag_elem[ipl, 1];
                     }
@@ -4148,10 +4242,15 @@ namespace SwissEphNet.CPort
             return SwissEph.OK;
         }
 
+        // swecl.c:4148-4162: on a negative discriminant, the C returns ERR without writing
+        // *dxret/*dxret2 at all, leaving the caller's own prior value in place. `out` forces
+        // C# definite assignment, which the pre-zeroing below used to satisfy; that makes the
+        // failure path disagree with C whenever a caller's dt1/dt2 already held a value from an
+        // earlier iteration (swecl.c:2283/:2634's dt1, read again at :2309/:2662). `ref` matches
+        // the C's pass-through-on-failure behavior exactly.
         int find_zero(double y00, double y11, double y2, double dx,
-                                out double dxret, out double dxret2) {
+                                ref double dxret, ref double dxret2) {
             double a, b, c, x1, x2;
-            dxret = dxret2 = 0;
             c = y11;
             b = (y2 - y00) / 2.0;
             a = (y2 + y00) / 2.0 - c;
@@ -4208,7 +4307,6 @@ namespace SwissEphNet.CPort
             int i;
             double[] xx = new double[6], xaz = new double[6], xaz2 = new double[6];
             double dd, dt, refr;
-            double dtsum = 0;
             Int32 iflag = epheflag & (SwissEph.SEFLG_JPLEPH | SwissEph.SEFLG_SWIEPH | SwissEph.SEFLG_MOSEPH);
             Int32 iflagtopo = iflag | SwissEph.SEFLG_EQUATORIAL;
             double sda, armc, md, dmd, mdrise, rdi, tr, dalt;
@@ -4309,9 +4407,11 @@ namespace SwissEphNet.CPort
                 dd = (xaz2[1] - xaz[1]);
                 dalt = xaz[1] + rdi;
                 dt = dalt / dd / 1000.0;
-                if (dt > 0.1) dt = 0.1;
-                else if (dt < -0.1) dt = -0.1;
-                dtsum += dt;
+                if (dt > 0.1) {
+                    dt = 0.1;
+                } else if (dt < -0.1) {
+                    dt = -0.1;
+                }
                 if (false && Math.Abs(dt) > 5.0 / 86400.0 && nloop < 20)
                     nloop++;
                 tr -= dt;
@@ -4364,13 +4464,15 @@ namespace SwissEphNet.CPort
             ref string serr) {
             Int32 retval = 0;
             /* Simple fast algorithm for risings and settings of 
-             * - planets Sun, Moon, Mercury - Pluto + Lunar Nodes and Fixed stars
+             * - planets Sun, Moon, Mercury - Pluto + Lunar Nodes
              * Does not work well for geographic latitudes
              * > 65 N/S for the Sun
              * > 60 N/S for the Moon and the planets
              * Beyond these limits, some risings or settings may be missed.
              */
-            if (true && (rsmi & (SwissEph.SE_CALC_RISE | SwissEph.SE_CALC_SET)) != 0
+            bool do_fixstar = !String.IsNullOrEmpty(starname);
+            if (!do_fixstar
+              && (rsmi & (SwissEph.SE_CALC_RISE | SwissEph.SE_CALC_SET)) != 0
               && 0 == (rsmi & SwissEph.SE_BIT_FORCE_SLOW_METHOD)
               && 0 == (rsmi & (SwissEph.SE_BIT_CIVIL_TWILIGHT | SwissEph.SE_BIT_NAUTIC_TWILIGHT | SwissEph.SE_BIT_ASTRO_TWILIGHT))
               && (ipl >= SwissEph.SE_SUN && ipl <= SwissEph.SE_TRUE_NODE)
@@ -4411,6 +4513,11 @@ namespace SwissEphNet.CPort
             {
                 serr = C.sprintf("location for swe_rise_trans() must be between %.0f and %.0f m above sea", Sweph.SEI_ECL_GEOALT_MIN, Sweph.SEI_ECL_GEOALT_MAX);
                 return Sweph.ERR;
+            }
+            // if horhgt == -100, set horhgt = dip of horizon, i.e. refracted height
+            // of ocean if visible at horizon.
+            if (horhgt == -100) {
+                horhgt = 0.0001 + calc_dip(geopos[2], atpress, attemp, const_lapse_rate);
             }
             /*SE.SwephLib.swi_set_tid_acc(tjd_ut, epheflag, 0, ref serr);*/
             /* function calls for Pluto with asteroid number 134340
@@ -4528,9 +4635,10 @@ namespace SwissEphNet.CPort
                     for (; dt > 0.0001; dt /= 3) {
                         for (i = 0, tt = tcu - dt; i < 3; tt += dt, i++) {
                             te = tt + SE.swe_deltat_ex(tt, epheflag, ref serr);
-                            if (!do_fixstar)
+                            if (!do_fixstar) {
                                 if (SE.swe_calc(te, ipl, iflag, xc, ref serr) == SwissEph.ERR)
                                     return SwissEph.ERR;
+                            }
                             if ((rsmi & SwissEph.SE_BIT_GEOCTR_NO_ECL_LAT) != 0)
                                 xc[1] = 0;
                             ncalc++;
@@ -4671,8 +4779,8 @@ namespace SwissEphNet.CPort
                 }
                 if (t > tjd_ut) {
                     tret = t;
-                    //  fprintf(stderr, "nazalt=%d\n", nazalt);
-                    //  fprintf(stderr, "ncalc=%d\n", ncalc);
+                    //if (0)  fprintf(stderr, "nazalt=%d\n", nazalt);
+                    //if (0)  fprintf(stderr, "ncalc=%d\n", ncalc);
                     return SwissEph.OK;
                 }
             }
@@ -5580,6 +5688,17 @@ namespace SwissEphNet.CPort
                             return SwissEph.ERR;
                     } else {
                         /* traditional algorithm */
+                        // swecl.c:5587 opens this branch with swi_cartpol_sp(pldat.xreturn+6,
+                        // pldat.xreturn), identical in 2.08 at :5495. It was missing here, and had
+                        // never been present. pldat is a fresh local, so xreturn[0..5] was still
+                        // zero at this point: the ayanamsha was subtracted from 0, and
+                        // swi_polcart_sp then wrote a zero vector back over the correct ecliptic
+                        // cartesian coordinates. swe_nod_aps and swe_nod_aps_ut returned xnasc,
+                        // xndsc, xperi and xaphe as all-zero, with retc OK and no serr, for every
+                        // ayanamsha that is not SE_SIDBIT_ECL_T0 or SE_SIDBIT_SSY_PLANE -- which
+                        // is all the standard ones. The same C construct is transliterated with
+                        // the cartpol_sp at Sweph.cs:3320 and :3340.
+                        SE.SwephLib.swi_cartpol_sp(pldat.xreturn.GetPointer(6), pldat.xreturn);
                         if (SE.Sweph.swi_get_ayanamsa_ex(tjd_et, iflag, out daya, ref serr) == SwissEph.ERR)
                             return SwissEph.ERR;
                         pldat.xreturn[0] -= daya * SwissEph.DEGTORAD;
@@ -5793,7 +5912,7 @@ static const double Gmsm_factor_AA[] = {
             Int32 iflJ2000 = (iflag & SwissEph.SEFLG_EPHMASK) | SwissEph.SEFLG_J2000 | SwissEph.SEFLG_XYZ | SwissEph.SEFLG_TRUEPOS | SwissEph.SEFLG_NONUT | SwissEph.SEFLG_SPEED;
             Int32 iflJ2000p = (iflag & SwissEph.SEFLG_EPHMASK) | SwissEph.SEFLG_J2000 | SwissEph.SEFLG_TRUEPOS | SwissEph.SEFLG_NONUT | SwissEph.SEFLG_SPEED;
             double Gmsm = 0;
-            Int32 iflg0 = 0;
+            // Int32 iflg0 = 0;
             double fac, sgn, rxy, rxyz, c2, cosnode, sinnode;
             double incl, node, parg, peri, mlon;
             double csid, ctro, csyn, dmot, pa;
@@ -5807,8 +5926,7 @@ static const double Gmsm_factor_AA[] = {
                 serr = C.sprintf("error in swe_get_orbital_elements(): object %d not valid\n", ipl);
                 return SwissEph.ERR;
             }
-            if (ipl != SwissEph.SE_MOON)
-                iflg0 |= SwissEph.SEFLG_HELCTR;
+            // if (ipl != SwissEph.SE_MOON) iflg0 |= SwissEph.SEFLG_HELCTR;
             /* first, we need a heliocentric distance of the planet */
             if (SE.swe_calc(tjd_et, ipl, iflJ2000p, x, ref serr) == SwissEph.ERR)
                 return SwissEph.ERR;

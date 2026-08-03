@@ -199,7 +199,11 @@ foreach ($name in $names) {
             $actualNew = $newLines[($newStart - 1)..($newStart - 2 + $expectedNew.Count)]
         }
         for ($k = 0; $k -lt $expectedNew.Count; $k++) {
-            if (-not ($expectedNew[$k] -ceq $actualNew[$k])) {
+            # [string]::Equals(..., Ordinal), not -ceq: -ceq is case-sensitive but still
+            # culture-aware, so it folds zero-width and soft-hyphen characters as equal despite
+            # this check's whole point being a byte-exact excerpt. Ordinal is the only comparison
+            # that treats the line as the exact sequence of code points it is.
+            if (-not [string]::Equals($expectedNew[$k], $actualNew[$k], [StringComparison]::Ordinal)) {
                 $newMismatch++
                 $failures.Add("$name new-side line $($newStart + $k): rendered '$($expectedNew[$k])' vs file '$($actualNew[$k])'")
                 break
@@ -218,7 +222,8 @@ foreach ($name in $names) {
             $actualOld = $oldLines[($oldStart - 1)..($oldStart - 2 + $expectedOld.Count)]
         }
         for ($k = 0; $k -lt $expectedOld.Count; $k++) {
-            if (-not ($expectedOld[$k] -ceq $actualOld[$k])) {
+            # [string]::Equals(..., Ordinal) -- see the identical comment on the new-side loop above.
+            if (-not [string]::Equals($expectedOld[$k], $actualOld[$k], [StringComparison]::Ordinal)) {
                 $oldMismatch++
                 $failures.Add("$name old-side line $($oldStart + $k): rendered '$($expectedOld[$k])' vs file '$($actualOld[$k])'")
                 break

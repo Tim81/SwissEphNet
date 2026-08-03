@@ -4,7 +4,7 @@
 # reformatted, and that includes analyzer-driven code-style fixes, not only
 # whitespace. This mirrors SwissEphNet/CPort/.editorconfig for the same
 # reason: swetest.c changes by hundreds of lines between upstream Swiss
-# Ephemeris releases (+484/-244 in the 2.10.03 delta alone), and a porter
+# Ephemeris releases (+487/-247 in the 2.10.03 delta alone), and a porter
 # needs to be able to diff the new swetest.c against the old one and apply
 # the same diff, in the same shape, here.
 #

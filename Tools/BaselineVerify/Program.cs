@@ -275,13 +275,24 @@ static int RunDiffScopeMode(string oldDir, string newDir, string[] globs)
     var rowCountLines = new List<string>();
     var newRowPrefixesByArea = new List<(string Name, IReadOnlyList<string> Prefixes)>();
 
-    foreach (var (name, _) in Areas.All)
+    // Area names come from the baseline-*.tsv files actually present on disk, in either
+    // directory, not from Areas.All. An area removed from Areas.All (BaselineMatrix no
+    // longer generates it) still has a committed baseline-<name>.tsv sitting in oldDir --
+    // trusting Areas.All here would skip that file entirely, so its rows would never be
+    // classified as "removed" and the deletion would pass with SCOPE-OK's "no areas
+    // changed". Reading both directories' filenames catches that: a name present only in
+    // oldDir still gets diffed, with newRows empty, so ScopeDiff.ComputeArea reports every
+    // one of its case ids as removed and -ExpectedScope has to cover them explicitly.
+    var areaNames = new SortedSet<string>(StringComparer.Ordinal);
+    areaNames.UnionWith(AreaNamesFromBaselineFiles(oldDir));
+    areaNames.UnionWith(AreaNamesFromBaselineFiles(newDir));
+
+    foreach (var name in areaNames)
     {
         var oldPath = Path.Combine(oldDir, $"baseline-{name}.tsv");
         var newPath = Path.Combine(newDir, $"baseline-{name}.tsv");
         var oldRows = File.Exists(oldPath) ? File.ReadAllLines(oldPath) : [];
         var newRows = File.Exists(newPath) ? File.ReadAllLines(newPath) : [];
-        newRowPrefixesByArea.Add((name, PrefixMap.Discover(newRows)));
 
         var areaResult = ScopeDiff.ComputeArea(name, oldRows, newRows, compiled);
         offenders.AddRange(areaResult.Offenders);
@@ -301,14 +312,24 @@ static int RunDiffScopeMode(string oldDir, string newDir, string[] globs)
                 $"({areaResult.TouchedFraction:P1} of the area's {areaResult.UnionRowCount:N0} case ids)");
         }
 
+        // An area present only in oldDir (deleted outright, see the areaNames comment above)
+        // has no newPath at all: PREFIX/SHA256/ROWCOUNT all describe the rows just
+        // regenerated, and there are none to describe here. Emitting any of the three for
+        // such an area would be actively wrong, not just uninformative -- an empty "PREFIX
+        // <name>: " line, and worse, a "ROWCOUNT <name> 0" line that
+        // scripts/regenerate-baseline.ps1 would then write into row-counts.tsv for an area no
+        // longer in Areas.All, which the very next verify run rejects as an orphaned entry
+        // row-counts.tsv's own header says must never be hand-edited to remove.
         if (File.Exists(newPath))
         {
+            newRowPrefixesByArea.Add((name, PrefixMap.Discover(newRows)));
+
             using var stream = File.OpenRead(newPath);
             var sha = Convert.ToHexString(SHA256.HashData(stream));
             sha256Lines.Add($"{name}\t{sha}");
-        }
 
-        rowCountLines.Add($"{name}\t{areaResult.NewRowCount}");
+            rowCountLines.Add($"{name}\t{areaResult.NewRowCount}");
+        }
     }
 
     if (offenders.Count > 0)
@@ -354,6 +375,25 @@ static int RunDiffScopeMode(string oldDir, string newDir, string[] globs)
     }
 
     return 0;
+}
+
+// Every area name RunDiffScopeMode has a baseline-<name>.tsv for in the given directory,
+// derived from the filenames actually present rather than from Areas.All -- see the doc
+// comment where this is called. Returns nothing if the directory does not exist (the
+// caller already treats a missing side as "no rows" via File.Exists on each individual
+// path).
+static IEnumerable<string> AreaNamesFromBaselineFiles(string dir)
+{
+    if (!Directory.Exists(dir))
+    {
+        yield break;
+    }
+
+    foreach (var path in Directory.EnumerateFiles(dir, "baseline-*.tsv"))
+    {
+        var fileName = Path.GetFileName(path);
+        yield return fileName["baseline-".Length..^".tsv".Length];
+    }
 }
 
 // Diagnostic-only pass: same matrix, same rows, no waivers, no PASS/FAIL of any

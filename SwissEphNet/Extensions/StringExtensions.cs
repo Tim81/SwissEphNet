@@ -7,9 +7,26 @@ namespace SwissEphNet
 {
 
     /// <summary>
-    /// String extensions methods
+    /// String extensions methods.
     /// </summary>
-    public static class StringExtensions
+    /// <remarks>
+    /// Internal, not public: <c>Contains(this string, char)</c> is the only overload
+    /// the BCL is missing on netstandard2.0/net4x, and putting it in scope for every
+    /// consumer that writes <c>using SwissEphNet;</c> has two effects neither consumer
+    /// wants. First, it changes null-guard semantics per TFM: on net8.0/net10.0 the BCL's
+    /// own instance <c>Contains(char)</c> always wins (instance methods beat extension
+    /// methods), so <c>((string)null).Contains('x')</c> throws NullReferenceException;
+    /// on netstandard2.0/net4x, where no such instance method exists, this extension
+    /// wins instead and silently returns false for a null receiver -- same source, same
+    /// package, opposite behavior depending on which TFM resolved. Second, it is a hard
+    /// compile break for any consumer who already has their own <c>Contains(this string,
+    /// char)</c> helper (the ordinary way to get that method on .NET Framework): the
+    /// call becomes ambiguous (CS0121) the moment this package is referenced. Confirmed
+    /// both effects by building/running a consumer against both shipped assets before
+    /// making this internal. <see cref="System.Runtime.CompilerServices.InternalsVisibleToAttribute"/>
+    /// grants the test assemblies and SweTest access via SwissEphNet.csproj.
+    /// </remarks>
+    internal static class StringExtensions
     {
 
         /// <summary>
@@ -48,7 +65,10 @@ namespace SwissEphNet
         /// </summary>
         public static bool Contains(this String s, Char[] charSet)
         {
-            if (charSet == null || String.IsNullOrWhiteSpace(s)) return false;
+            // Must be IsNullOrEmpty, not IsNullOrWhiteSpace: a whitespace-only
+            // string is a valid haystack (e.g. " ".Contains(new[]{' '}) is true),
+            // and IsNullOrWhiteSpace was rejecting it before the search even ran.
+            if (charSet == null || String.IsNullOrEmpty(s)) return false;
             foreach (var c in charSet)
             {
                 // See the single-char Contains(Char) overload above: this
@@ -66,7 +86,11 @@ namespace SwissEphNet
         /// </summary>
         public static int IndexOfFirstNot(this String s, params char[] chars)
         {
-            if (String.IsNullOrEmpty(s) || chars == null || chars.Length == 0) return -1;
+            // Must not early-return on chars.Length == 0: an empty set excludes
+            // nothing, so the first character of a non-empty s already qualifies
+            // and the answer is 0, not -1. Only a null/empty s or a null chars
+            // array have no valid index to report.
+            if (String.IsNullOrEmpty(s) || chars == null) return -1;
             for (int i = 0; i < s.Length; i++)
             {
                 if (!chars.Contains(s[i])) return i;
@@ -87,10 +111,17 @@ namespace SwissEphNet
         /// Substring with check limits
         /// </summary>
         public static string Substr(this string s, int startIndex, int length)
-            => s == null ? null
-            : startIndex >= s.Length ? string.Empty
-            : s.Substring(Math.Max(0, startIndex), Math.Max(0, Math.Min(length, s.Length - startIndex)))
-            ;
+        {
+            if (s == null) return null;
+            // The length clamp must use the already-clamped start index, not the
+            // raw (possibly negative) startIndex: with the raw value, a call like
+            // Substr(-2, 5) computed s.Length - (-2), overshooting the string and
+            // throwing ArgumentOutOfRangeException from Substring despite this
+            // method's own "check limits" doc.
+            var start = Math.Max(0, startIndex);
+            if (start >= s.Length) return string.Empty;
+            return s.Substring(start, Math.Max(0, Math.Min(length, s.Length - start)));
+        }
     }
 
 }

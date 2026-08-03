@@ -42,8 +42,16 @@ public sealed record SuiteSummary(
     public double PassRate => Dispatched == 0 ? 1.0 : (double)Passed / Dispatched;
 }
 
-/// <summary>A known-fail entry whose recorded category no longer matches what the port actually does now.</summary>
-public sealed record CategoryDrift(IterationResult Result, FailureCategory RecordedCategory);
+/// <summary>
+/// A known-fail entry whose recorded category or magnitude_key no longer matches what the port
+/// actually does now. Two independent axes, either one enough to make a row drift:
+/// <see cref="RecordedCategory"/> vs the current run's <see cref="FailureCategoryNames.FromOutcomeKind"/>,
+/// and <see cref="RecordedMagnitudeKey"/> vs <see cref="KnownFail.MagnitudeKey.Compute"/> run
+/// against the current result's own mismatches. A row can carry the same category on both sides
+/// (still VALUE-MISMATCH) while its magnitude_key moved -- that is drift too, and is exactly what
+/// a bare category comparison cannot see (see <see cref="ConformanceReport.Drifted"/>'s remarks).
+/// </summary>
+public sealed record CategoryDrift(IterationResult Result, FailureCategory RecordedCategory, string RecordedMagnitudeKey, string CurrentMagnitudeKey);
 
 /// <summary>
 /// One (suite, testcase) group's outcome breakdown -- see "Reporting by testcase" in
@@ -89,21 +97,21 @@ public sealed class ConformanceReport
     public required IReadOnlyList<IterationResult> Regressions { get; init; }
 
     /// <summary>
-    /// The subset of <see cref="Regressions"/> that *is* on the known-fail
-    /// list, just recorded under a <see cref="FailureCategory"/> the current
-    /// run no longer matches -- e.g. a VALUE-MISMATCH that degraded into an
-    /// ERROR crash, or an ERROR that started reproducing as a VALUE-MISMATCH.
-    /// Key-membership alone would let these through as "still failing, still
-    /// on the list"; they are not the same failure.
+    /// The subset of <see cref="Regressions"/> that *is* on the known-fail list, just recorded
+    /// under a <see cref="FailureCategory"/> or a magnitude_key the current run no longer matches
+    /// -- e.g. a VALUE-MISMATCH that degraded into an ERROR crash, an ERROR that started
+    /// reproducing as a VALUE-MISMATCH, or a VALUE-MISMATCH whose worst field's relative error
+    /// moved to a different order of magnitude while the category itself stayed VALUE-MISMATCH.
+    /// Key-membership alone would let all three through as "still failing, still on the list";
+    /// none of them are the same failure as what was recorded.
     ///
-    /// This is drift between <see cref="OutcomeKind"/>s only. There is no
-    /// magnitude-based classification: a VALUE-MISMATCH stays a
-    /// VALUE-MISMATCH (and so is invisible to <see cref="Drifted"/>) no
-    /// matter how much the numeric diff grows from what known-fail.tsv's
-    /// "reason" column happened to record when the row was generated --
-    /// e.g. a 1e-9 mismatch widening to 1e-3 is not detected here. That
-    /// column is a snapshot for a human reading the file, not a value this
-    /// gate compares against on a later run.
+    /// known-fail.tsv's "reason" column is still free text, regenerated fresh every run and never
+    /// compared against on a later one -- a change in wording alone (without a category or
+    /// magnitude_key change) is not drift. magnitude_key is the one column that <i>is</i>
+    /// compared: <see cref="KnownFail.MagnitudeKey.Compute"/> run against the current result's own
+    /// mismatches, bucketed to a decade (floor(log10(relative error))) so ordinary ULP-level noise
+    /// between runs does not move it while a genuine order-of-magnitude regression -- a 1e-9
+    /// mismatch widening to 1e-3 -- does.
     /// </summary>
     public required IReadOnlyList<CategoryDrift> Drifted { get; init; }
 
@@ -147,10 +155,11 @@ public sealed class ConformanceReport
             }
 
             var currentCategory = FailureCategoryNames.FromOutcomeKind(result.Kind);
-            if (currentCategory != entry.Category)
+            var currentMagnitudeKey = MagnitudeKey.Compute(result.Mismatches);
+            if (currentCategory != entry.Category || currentMagnitudeKey != entry.MagnitudeKey)
             {
                 regressions.Add(result);
-                drifted.Add(new CategoryDrift(result, entry.Category));
+                drifted.Add(new CategoryDrift(result, entry.Category, entry.MagnitudeKey, currentMagnitudeKey));
             }
         }
 
@@ -228,7 +237,7 @@ public sealed class ConformanceReport
         }
 
         sb.AppendLine();
-        sb.AppendLine($"Regressions (failing now and either off the known-fail list or drifted to a different category): {Regressions.Count}");
+        sb.AppendLine($"Regressions (failing now and either off the known-fail list or drifted in category or magnitude): {Regressions.Count}");
         foreach (var r in Regressions.Take(50))
         {
             sb.AppendLine($"  {r.Key} [{r.Kind}] {r.Reason ?? string.Join("; ", r.Mismatches.Select(m => $"{m.Name}: expected {m.Expected}, got {m.Actual}"))}");
@@ -237,10 +246,17 @@ public sealed class ConformanceReport
         if (Drifted.Count > 0)
         {
             sb.AppendLine();
-            sb.AppendLine($"  Of which, category drift (still on the list, but recorded under a different category): {Drifted.Count}");
+            sb.AppendLine($"  Of which, category or magnitude drift (still on the list, but recorded differently): {Drifted.Count}");
             foreach (var d in Drifted.Take(50))
             {
-                sb.AppendLine($"    {d.Result.Key} recorded as {FailureCategoryNames.ToName(d.RecordedCategory)}, now {d.Result.Kind}");
+                var categoryChanged = FailureCategoryNames.FromOutcomeKind(d.Result.Kind) != d.RecordedCategory;
+                var categoryPart = categoryChanged
+                    ? $"{FailureCategoryNames.ToName(d.RecordedCategory)} -> {d.Result.Kind}"
+                    : FailureCategoryNames.ToName(d.RecordedCategory);
+                var magnitudePart = d.RecordedMagnitudeKey == d.CurrentMagnitudeKey
+                    ? $"magnitude_key {d.RecordedMagnitudeKey}"
+                    : $"magnitude_key {d.RecordedMagnitudeKey} -> {d.CurrentMagnitudeKey}";
+                sb.AppendLine($"    {d.Result.Key} recorded as {categoryPart}, {magnitudePart}");
             }
         }
 

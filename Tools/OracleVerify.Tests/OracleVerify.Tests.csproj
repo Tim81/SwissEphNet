@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Tools/BaselineVerify.Tests exists for BaselineVerify's own comparer, waiver and CLI logic;
+    Tools/OracleVerify (the bit-exact oracle harness's comparer half; see that project's own
+    Program.cs header) had no equivalent at all. The label-count hard-fail (RowComparer.Compare,
+    "expects N value field(s), row has M"), FieldLabels' unknown-func throw, and
+    KnownDiffList's header/duplicate/categorical-marker refusals were each held up by nothing but
+    manual review before this project existed.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>OracleVerify.Tests</RootNamespace>
+    <AssemblyName>OracleVerify.Tests</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OracleVerify\OracleVerify.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

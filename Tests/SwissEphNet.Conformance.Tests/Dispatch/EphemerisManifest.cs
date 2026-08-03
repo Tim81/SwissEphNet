@@ -37,6 +37,16 @@ public static class EphemerisManifest
             result.Add(trimmed);
         }
 
+        // Mirrors scripts/run-oracle-dump.ps1:361-363 and scripts/verify-swetest-diff.ps1's own
+        // Assert-EphemerisManifest, both of which Fail on $required.Count -eq 0. Without this, a
+        // manifest that parsed to zero required files (a bad rewrite, an accidentally emptied
+        // file, comment lines with no data rows left) makes Check's Missing/Extra both trivially
+        // satisfiable and AssertMatches() a silent no-op.
+        if (result.Count == 0)
+        {
+            throw new InvalidOperationException($"'{manifestPath}' parsed to zero required files.");
+        }
+
         return result;
     }
 
@@ -48,19 +58,36 @@ public static class EphemerisManifest
     /// </summary>
     public static EphemerisManifestResult Check(IReadOnlyList<string> required, string epheDir)
     {
+        // scripts/run-oracle-dump.ps1:363-365 and scripts/verify-swetest-diff.ps1's own
+        // Assert-EphemerisManifest both Fail outright on a missing directory, as a check
+        // independent of what $required contains. Folding a missing directory into
+        // "Missing = required" instead is not equivalent: paired with an empty (unguarded)
+        // required list it makes Missing.Count == 0 and Extra.Count == 0 both true, so
+        // AssertMatches() returns silently -- Load's non-emptiness check above closes that
+        // specific combination, but a missing directory is wrong regardless of what required
+        // contains, and deserves its own loud failure rather than being folded into that
+        // comparison's result at all.
         if (!Directory.Exists(epheDir))
         {
-            return new EphemerisManifestResult(EpheDir: epheDir, Missing: required, Extra: []);
+            throw new InvalidOperationException(
+                $"'{epheDir}' does not exist. Run the sparse-checkout recipe in CONTRIBUTING.md's " +
+                "\"The upstream C is vendored at external/swisseph\" section.");
         }
 
-        var present = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // Ordinal, not OrdinalIgnoreCase: the file system this runs on can be case-sensitive
+        // (Linux CI) even though the manifest and this code are usually exercised on Windows
+        // first. "SEPL_18.SE1" on disk matching a manifest entry "sepl_18.se1" via
+        // OrdinalIgnoreCase would pass locally on Windows and then report both a false "missing"
+        // and a false "extra" on Linux, which is exactly the platform-only failure this repo's
+        // dual-OS CI matrix exists to catch, not to reproduce here.
+        var present = new HashSet<string>(StringComparer.Ordinal);
         foreach (var entry in Directory.EnumerateFileSystemEntries(epheDir))
         {
             var name = Path.GetFileName(entry);
             present.Add(Directory.Exists(entry) ? name + "/" : name);
         }
 
-        var requiredSet = new HashSet<string>(required, StringComparer.OrdinalIgnoreCase);
+        var requiredSet = new HashSet<string>(required, StringComparer.Ordinal);
         var missing = required.Where(r => !present.Contains(r)).ToList();
         var extra = present.Where(p => !requiredSet.Contains(p)).OrderBy(p => p, StringComparer.Ordinal).ToList();
 

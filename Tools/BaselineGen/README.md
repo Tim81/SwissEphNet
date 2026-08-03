@@ -24,7 +24,15 @@ Four projects, one shared matrix:
   changes, missing rows, glob anchoring, rejection of catch-all waivers, the waived
   and matched-breadth fraction caps on both sides of 5%, both stale-waiver
   conditions, and all four assembly-identity-check outcomes. The gate's own logic
-  needs coverage independent of whatever the matrix happens to produce. Run with
+  needs coverage independent of whatever the matrix happens to produce. Every one
+  of those is a decision function, unit tested directly; `Program.cs` itself --
+  the composition of those functions into an exit code -- is untested by every one
+  of them, since none actually runs the process. `ProgramEndToEndTests` is the one
+  exception: it copies the committed baseline, corrupts one area's expected row
+  count in the copy, runs the real, compiled `BaselineVerify.dll` against it as a
+  subprocess, and asserts the process exits nonzero -- proof the wiring itself
+  (`Program.cs`'s own `&&`s and `overallExitCode = 1` assignments) is load-bearing,
+  not just the functions it calls. Run with
   `dotnet test Tools/BaselineVerify.Tests -c Release`; CI runs this before every
   verify.
 
@@ -275,7 +283,7 @@ rather than editing it directly:
 | misc | `PN`, `VER` |
 | nodaps | `NA`, `NAUT` |
 | orbit | `OE`, `OMM` |
-| pheno-ast | `PHA`, `PHATOPO`, `PHATOPO_SPEED`, `PHAUT`, `PHAUTTOPO`, `PHAUTTOPO_SPEED` |
+| pheno-ast | `PHACHIRON`, `PHAFILE` |
 | pheno | `PH`, `PHTOPO`, `PHTOPO_SPEED`, `PHUT`, `PHUTTOPO`, `PHUTTOPO_SPEED` |
 | risetrans | `RT`, `RTATM`, `RTBIT`, `RTH` |
 
@@ -442,18 +450,42 @@ to Windows.** It is not portable to Linux/macOS by construction, and that is a
 choice, not an oversight -- see the measurements below for why.
 
 A full Windows-vs-Linux comparison (same source, same commit, `.NET SDK 10.0.302`
-both sides, Linux via `mcr.microsoft.com/dotnet/sdk:10.0` on Ubuntu 24.04) found
-the numbers below, against the matrix as it stood at the time of that comparison
-(3,443,058 numeric fields). The matrix has since widened: the committed baseline
-now has 3,453,972 total fields, 3,426,469 of which parse as numbers -- about
-10,900 more numeric fields than this comparison covered. The percentages and the
-per-field findings below (the `'Y'` and `'i'` house-system bugs, the SPEED
-differentiation noise) are not invalidated by that -- they describe fields still
-present in the current matrix -- but the absolute counts are scoped to the
-smaller, earlier matrix and have not been re-measured against the current one.
-Re-running this comparison against the current matrix, on Linux, would be needed
-to get current absolute counts; see "Verifying current code against the
-baseline" above for how to run a report-only pass yourself.
+both sides, Linux via `mcr.microsoft.com/dotnet/sdk:10.0-noble` on Ubuntu 24.04.4,
+which is what `ubuntu-latest` currently resolves to) was run against the matrix as
+it stood at commit `5148573` (2026-07-31, "Re-measure the Windows-vs-Linux
+divergence against the current matrix"):
+
+- **3,547,367** numeric fields compared; **66,342** (1.87%) differ at all between
+  platforms; **5,394** are still beyond the shipped tolerance after the
+  angle-wraparound allowance.
+- **net8.0 and net10.0 produce identical numbers**, to the field: .NET 8.0.29 and
+  .NET 10.0.10 each report 3,547,367 / 66,342 / 5,394. The divergence is
+  ucrtbase-versus-glibc, not a difference between .NET versions, which is why the
+  bit-exactness claim is scoped by platform rather than by runtime version.
+- Five areas are bit-identical across platforms outright: `format`, `misc`,
+  `pheno-ast`, `risetrans` and `atmo`. They are formatting, date arithmetic and
+  table lookups, so no transcendental is involved.
+- `houses` differs in 2.71% of its fields and yet **zero** rows fail, which is the
+  tolerance doing what it was sized for against real libm divergence rather than
+  synthetic boundary tests. `calc` (11.27% of fields, 3,442 beyond tolerance) and
+  `nodaps` (14.96%) are the heaviest contributors.
+
+**This triple is itself superseded.** `Tests/baseline/` has changed since commit
+`5148573`: `row-counts.tsv` moved `astromodels` 300 -> 329 and `coord` 294 -> 394,
+and eight more area files (`baseline-ayanamsa.tsv`, `baseline-calc-defaulteph.tsv`,
+`baseline-datetime.tsv`, `baseline-eclipse.tsv`, `baseline-gauquelin.tsv`,
+`baseline-misc.tsv`, `baseline-orbit.tsv`, `baseline-pheno-ast.tsv`) carry value
+churn on top of that. The 3,547,367 / 66,342 / 5,394 figures above no longer
+describe the current matrix; a Windows-vs-Linux re-measure against the current
+baseline is outstanding. Do not quote this triple as current without re-running it.
+
+The earlier pass, against a smaller matrix (3,443,058 numeric fields), found 47,052
+differing and 3,346 beyond tolerance. The per-field findings below (the `'Y'` and
+`'i'` house-system bugs, the SPEED differentiation noise) come from that pass and
+still describe fields present in the current matrix; the sub-counts in the bullets
+that follow have not been re-derived against the current run, so read them as
+characterising the classes rather than as current totals. See "Verifying current
+code against the baseline" above for how to run a report-only pass yourself.
 
 - **3,443,058** numeric fields compared (at the time of this comparison); **47,052**
   (1.37%) differ at all between platforms.
@@ -570,7 +602,7 @@ each area covers. Areas and their files:
 | coord | `CoordHelpers.cs` | `swe_cotrans[_sp]`, `swe_azalt[_rev]` |
 | format | `FormatHelpers.cs` | `swe_split_deg`, `swe_cs2*str`, norm/midpoint helpers, and their radian/centisecond siblings (`swe_radnorm`, `swe_difrad2n`, `swe_difcsn`, `swe_difcs2n`, `swe_csroundsec`, `swe_d2l`, `swe_day_of_week`) |
 | misc | `Misc.cs` | `swe_get_planet_name`, `swe_version` |
-| pheno-ast | `PhenoAst.cs` | `swe_pheno[_ut]` for the six asteroids `pheno.cs`'s `Grids.CalcPlanets` sweep never reaches (Chiron, Pholus, Ceres, Pallas, Juno, Vesta) |
+| pheno-ast | `PhenoAst.cs` | `swe_pheno` (never `_ut`) for two bodies, Chiron and Pholus, that `pheno.cs`'s `Grids.CalcPlanets` sweep never reaches -- not all six originally swept; Ceres/Pallas/Juno/Vesta and every iflag/topocentric/ET-UT axis were collapsed out as duplicate rows, since the underlying `swe_calc` call always fails at file-open before any of them is ever consulted (see the file's doc comment). Every row's `retc` is `-1` with an all-zero `attr[]` payload, so the only thing a row actually pins is its `serr` string; this area cannot distinguish two library versions that fail at the same lookup but would disagree on a real `attr[]` value (e.g. the `pla_diam[]` change this area was originally meant to catch, which never executes here -- see the doc comment's "CORRECTION" paragraph) |
 | eclipse | `Eclipse.cs` | `swe_sol_eclipse_where/how/when_glob/when_loc`, `swe_lun_eclipse_how/when/when_loc`, `swe_lun_occult_where/when_glob/when_loc` |
 | risetrans | `RiseTrans.cs` | `swe_rise_trans`, `swe_rise_trans_true_hor` across `SE_CALC_RISE/SET/MTRANSIT/ITRANSIT` and the `SE_BIT_*` rise/set bit flags |
 | atmo | `Atmo.cs` | `swe_refrac`, `swe_refrac_extended` (both directions), `swe_set_lapse_rate` |

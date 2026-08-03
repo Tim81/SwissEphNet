@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    An AOT-publishable copy of Tools/OracleDump's own driver, for
+    .github/workflows/oracle.yml's macos-exactness and linux-exactness AOT steps. Not a
+    ProjectReference to Tools/OracleDump/OracleDump.csproj: that project ProjectReferences
+    SwissEphNet.csproj, which multi-targets netstandard2.0;net8.0;net10.0, and
+    `dotnet publish -p:PublishAot=true` on anything that ProjectReferences a multi-targeted
+    project fails with NETSDK1207. MSBuild's cross-targeting negotiation evaluates the
+    netstandard2.0 leg too, even though only net10.0 would ever resolve, exactly what
+    ../../SwissEphNet/Directory.Build.props (the "Deliberately NOT setting IsTrimmable/
+    IsAotCompatible" remark) already documents and reproduced independently of this project.
+    That failure does not affect a package consumer (NuGet resolves one TFM, no cross-project
+    negotiation), which is why the same AOT app builds fine against a published SwissEphSharp
+    package; it is specific to an in-repo ProjectReference against the multi-targeted project.
+
+    The workaround, proven on Windows and Linux before this project existed: build
+    SwissEphNet.csproj for net10.0 only first (`dotnet build -f net10.0`, a single-target
+    build with no cross-targeting to negotiate), then reference the resulting DLL here via
+    <Reference>/<HintPath> instead of <ProjectReference>, and compile
+    Tools/OracleDump/Program.cs directly into this project instead of referencing
+    OracleDump.csproj. ILC compiles from IL regardless of how the assembly was referenced, so
+    the AOT-published binary runs the identical driver logic OracleDump.exe runs under the
+    JIT: same Program.cs, same SwissEphSharp.dll, different host.
+
+    SwissEphSharpDll defaults to the net10.0 output of a same-tree build one directory below
+    this project's own two-levels-up sibling (Tools/OracleDumpAot -> Tools -> repo root ->
+    SwissEphNet/bin/...), matching Tools/OracleDump/OracleDump.csproj's own
+    "..\..\SwissEphNet\SwissEphNet.csproj" relative path; overridable with
+    -p:SwissEphSharpDll=<path> for a build that placed the DLL somewhere else.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>OracleDump</RootNamespace>
+    <AssemblyName>OracleDumpAot</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <PublishAot>true</PublishAot>
+    <SwissEphSharpDll Condition="'$(SwissEphSharpDll)' == ''">$(MSBuildThisFileDirectory)../../SwissEphNet/bin/Release/net10.0/SwissEphSharp.dll</SwissEphSharpDll>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\OracleDump\Program.cs" Link="Program.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="SwissEphSharp">
+      <HintPath>$(SwissEphSharpDll)</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

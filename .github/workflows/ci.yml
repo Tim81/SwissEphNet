@@ -64,8 +64,7 @@ jobs:
         with:
           # Both runtimes, not just 10.0.x: the test project targets
           # net8.0;net10.0, and the 10.0 SDK does not carry the 8.0 runtime on its
-          # own, so the net8.0 leg would fail to launch (the same failure mode as
-          # the netcoreapp2.1 leg this PR removes) without it installed explicitly.
+          # own, so the net8.0 leg fails to launch without it installed explicitly.
           dotnet-version: |
             8.0.x
             10.0.x
@@ -80,17 +79,50 @@ jobs:
         if: runner.os != 'Windows'
         run: dotnet build SwissEphNet.CrossPlatform.slnf -c ${{ matrix.configuration }}
 
+      # --blame-hang(-timeout/-dump-type): a hung test previously had no faster exit than this
+      # job's own 20-minute timeout-minutes killing the whole runner with no diagnostic beyond
+      # "cancelled" -- no indication of which test hung or what it was doing. VSTest's blame-hang
+      # collector kills and dumps the individual test host once a single test run exceeds the given
+      # timeout, so the job fails fast with an attached mini-dump naming the actual hung test,
+      # instead of silently consuming the full job budget.
       - name: Test
-        run: dotnet test Tests/SwissEphNet.Tests/SwissEphNet.Tests.csproj -c ${{ matrix.configuration }} --no-build --logger trx --results-directory TestResults
+        run: dotnet test Tests/SwissEphNet.Tests/SwissEphNet.Tests.csproj -c ${{ matrix.configuration }} --no-build --logger trx --results-directory TestResults --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type mini
 
-      # net48, so Windows only (same reasoning as the SweWin build step above).
-      # Exercises the netstandard2.0 asset, which nothing else here runs -- see the
-      # comment atop Tests/NetStandard20Smoke.Tests/NetStandard20Smoke.Tests.csproj.
+      # net462 and net48, so Windows only (same reasoning as the SweWin build step
+      # above). Exercises the netstandard2.0 asset, which nothing else here runs --
+      # see the comment atop Tests/NetStandard20Smoke.Tests/NetStandard20Smoke.Tests.csproj.
+      # dotnet test with no --framework runs both TFMs from this one invocation.
       # Already built by the full-solution build above (this project is part of
       # SwissEphNet.sln, not SwissEphNet.CrossPlatform.slnf), hence --no-build.
+      # --blame-hang: same reasoning as the "Test" step above -- this project exists specifically
+      # to catch the netstandard2.0 StackOverflowException class of defect (see the comment on
+      # this step's own trigger further up), and a hang here is exactly as diagnostically silent
+      # without a hang dump as any other unbounded-wait defect would be.
       - name: Test (netstandard2.0 smoke)
         if: runner.os == 'Windows'
-        run: dotnet test Tests/NetStandard20Smoke.Tests/NetStandard20Smoke.Tests.csproj -c ${{ matrix.configuration }} --no-build --logger trx --results-directory TestResults
+        run: dotnet test Tests/NetStandard20Smoke.Tests/NetStandard20Smoke.Tests.csproj -c ${{ matrix.configuration }} --no-build --logger trx --results-directory TestResults --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type mini
+
+      # Beside the netstandard2.0 smoke job above, on Windows only, for the same net462/net48
+      # reason -- but measures a different thing: the smoke job pins one known recursion bug, this
+      # gate measures whether the netstandard2.0 asset's swe_calc agrees bit-for-bit with net10.0
+      # across target frameworks, and fails if the recorded divergence set
+      # (Tests/netstandard-compat/known-diff-*.tsv) stops matching a fresh run. See
+      # scripts/verify-netstandard-compat.ps1's own header and README.md's "V:2.10.3" section for
+      # what it backs. Builds its own project directly (Tools/NetStandardCompat/
+      # NetStandardCompatDump is not part of SwissEphNet.sln, matching every other Tools/ console
+      # app under that tree), so it needs no prior build step from this job and runs once, gated to
+      # -c Release matching what the script itself always builds internally regardless of which
+      # matrix.configuration this job iteration is on -- running it a second time under Debug would
+      # duplicate identical work for no new coverage.
+      - name: Self-test the netstandard2.0 compatibility gate
+        if: runner.os == 'Windows' && matrix.configuration == 'Release'
+        shell: pwsh
+        run: pwsh scripts/verify-netstandard-compat.ps1 -SelfTest
+
+      - name: Verify netstandard2.0 swe_calc compatibility across target frameworks
+        if: runner.os == 'Windows' && matrix.configuration == 'Release'
+        shell: pwsh
+        run: pwsh scripts/verify-netstandard-compat.ps1
 
       - name: Publish test results
         uses: actions/upload-artifact@v4
@@ -111,10 +143,260 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # resolve-log-base.ps1 (and the git log range it produces) need history beyond the
+          # default shallow clone -- same reasoning as the other jobs in this workflow that
+          # resolve a log base.
+          fetch-depth: 0
+
+      # Self-test first: it plants each bypass this gate exists to catch and asserts the gate
+      # refuses, so a gate that has quietly stopped checking fails here instead of passing the
+      # real run below. Deliberately in the same job as the gate, so it runs on the same runner
+      # OS -- a path built with a Windows-only separator passes on windows-latest and fails on
+      # ubuntu-latest, and only a same-OS self-test catches that.
+      # Runs beside the freeze gate rather than in oracle.yml, deliberately: it costs no compiler
+      # and no ephemeris data, and the defect it guards is invisible until the expensive
+      # cross-platform replay at the very end of oracle.yml. sedump.c is compiled against 2.10.03
+      # in five places (once here counting scripts/run-oracle-dump.ps1, four times in
+      # .github/workflows/oracle.yml; a sixth site, Tools/CReference/build-c.ps1's 2.08 build, is
+      # compiled against 2.08 and is required to define none of these macros, so it does not
+      # belong in "compiled against 2.10.03"). SWISSEPH_HAS_HOUSES_EX2 was once added to the
+      # Windows build alone, and the
+      # four non-Windows lines silently took the 2.08 sentinel branch -- 4,500 analytic rows of
+      # sentinel output against a port computing real values, caught only by linux-exactness and
+      # macos-exactness failing their cmp step.
+      - name: Self-test the sedump macro-parity gate
+        shell: pwsh
+        run: pwsh scripts/verify-sedump-macro-parity.ps1 -SelfTest
+
+      - name: Verify every 2.10.03 sedump build defines the same guard macros
+        shell: pwsh
+        run: pwsh scripts/verify-sedump-macro-parity.ps1
+
+      - name: Self-test the freeze gate
+        shell: pwsh
+        run: pwsh scripts/verify-freeze.ps1 -SelfTest
 
       - name: Verify frozen paths were not reformatted
         shell: pwsh
         run: pwsh scripts/verify-freeze.ps1
+
+      # scripts/freeze-manifest.tsv is the golden artifact `verify-freeze.ps1 -Update` rewrites.
+      # Nothing before this step stopped a red freeze gate from being turned green by running
+      # -Update and committing the result with no record of why -- the exact same failure mode
+      # Tests/baseline/*.tsv has, closed there by verify-baseline-log.ps1 requiring a sidecar log
+      # entry. scripts/verify-freeze-log.ps1 and scripts/freeze-manifest-log.txt are the same
+      # mechanism for the freeze manifest.
+      - name: Fetch the integration refs the base resolver needs
+        shell: bash
+        run: |
+          git fetch --quiet origin \
+            "+refs/heads/release/2.10.03:refs/remotes/origin/release/2.10.03" \
+            "+refs/heads/main:refs/remotes/origin/main" || true
+
+      - name: Determine base ref for the manifest-log check
+        id: base-ref
+        shell: pwsh
+        run: |
+          # See verify-no-tooling-attribution's own "Determine base ref" step in this same file
+          # for why both of these are needed: the explicit pin (without it, a native command's
+          # ordinary non-zero exit inside -WidenPastCancellation would throw
+          # NativeCommandExitException the day the runner's ambient default flips), and the
+          # argument-list splat (a bare trailing token would bind to -IntegrationRef instead of
+          # toggling the switch, since resolve-log-base.ps1 runs as a separate child process here).
+          $PSNativeCommandUseErrorActionPreference = $false
+
+          $resolveArgs = @(
+            '-EventName', '${{ github.event_name }}',
+            '-BeforeSha', '${{ github.event.before }}',
+            '-PrBaseSha', '${{ github.event.pull_request.base.sha }}'
+          )
+          if ('${{ github.event_name }}' -eq 'push') { $resolveArgs += '-WidenPastCancellation' }
+          $base = pwsh scripts/resolve-log-base.ps1 @resolveArgs
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $base = $base.Trim()
+          "sha=$base" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Resolved manifest-log base: $base"
+
+      # scripts/regenerate-known-fail.ps1 is a regeneration tool rather than a gate, so it is not
+      # invoked anywhere in CI and its self-test had no gate to sit beside -- the same reasoning the
+      # oracle known-diff regeneration guard's own self-test step immediately below gives for why it
+      # runs here. What it protects is the same kind of refusal: -PruneOnly must not be tricked into
+      # writing a currently-failing row into known-fail.tsv, whether by an added/recategorized row or
+      # by a shrunken corpus sliding under the ratio floor -- and its -SelfTestApplyPrune case
+      # exercises the real write path (the `@()` wrap feeding $header, not just Get-SurvivingLines)
+      # in a real child process, the way scripts/verify-freeze.ps1's own Assert-Gate does, without
+      # building Tools/ConformanceKnownFailGen or dispatching the 12,757-iteration corpus.
+      - name: Self-test the known-fail regeneration guard
+        shell: pwsh
+        run: pwsh scripts/regenerate-known-fail.ps1 -SelfTest
+
+      # regenerate-oracle-known-diff.ps1 is a regeneration tool rather than a gate, so it is not
+      # invoked anywhere in CI and its self-test has no gate to sit beside. It runs here because
+      # what it protects is a refusal: -PruneOnly must refuse to write a currently-failing row
+      # into the allow-list, which is the one thing standing between a red oracle gate and a
+      # green one. It also pins the case_id table to ordinal keying -- a case-insensitive table
+      # merged 396 ids last-write-wins when this was last measured.
+      - name: Self-test the oracle known-diff regeneration guard
+        shell: pwsh
+        run: pwsh scripts/regenerate-oracle-known-diff.ps1 -SelfTest
+
+      # Same reasoning as the oracle known-diff regeneration guard's own self-test above: this
+      # script is a regeneration tool, not a gate, so it has no gate of its own to sit beside in
+      # CI, and it needs no Windows runner (unlike the gate it feeds, scripts/verify-netstandard-
+      # compat.ps1's own build-and-test job step): -SelfTest never builds or runs
+      # NetStandardCompatDump, it only asserts -Reason is required before this script would ever
+      # touch a known-diff-<fw>.tsv file.
+      - name: Self-test the netstandard2.0 compatibility known-diff regeneration guard
+        shell: pwsh
+        run: pwsh scripts/regenerate-netstandard-compat-known-diff.ps1 -SelfTest
+
+      # Same reasoning as the netstandard2.0 compatibility known-diff regeneration guard's own
+      # self-test immediately above: this script is a regeneration tool for
+      # Tools/NetStandardCompat/grid-netstandard.tsv (currently 102<!--doccount:grid-netstandard-total-->
+      # data rows -- checked by scripts/verify-doc-counts.ps1 against that file directly, the same
+      # way it pins grid-analytic-total/grid-files-total/grid-jpl-total/known-fail-total; this is
+      # the citation, since nothing in this grid's own row count is otherwise mentioned in any of
+      # the prose documents that script's allowlist covers), not a gate, so it has none of its own
+      # to sit beside in CI. -SelfTest never writes that grid or the shared regenerations.log; it
+      # only asserts -Reason is required and checks this script's own log-line formatting.
+      - name: Self-test the netstandard2.0 compatibility grid regeneration guard
+        shell: pwsh
+        run: pwsh Tools/NetStandardCompat/gen-grid-netstandard.ps1 -SelfTest
+
+      - name: Self-test the freeze-manifest log gate
+        shell: pwsh
+        run: pwsh scripts/verify-freeze-log.ps1 -SelfTest
+
+      - name: Verify freeze-manifest changes are logged
+        shell: pwsh
+        run: pwsh scripts/verify-freeze-log.ps1 -BaseRef '${{ steps.base-ref.outputs.sha }}'
+
+      # Tests/netstandard-compat/known-diff-<fw>.tsv (scripts/verify-netstandard-compat.ps1's own
+      # golden) had a sidecar log (regenerate-netstandard-compat-known-diff.ps1 already appended to
+      # it) but no gate checking a committed change to the golden actually went through that
+      # script -- the same gap every other gated golden in this repository has already been closed
+      # for (known-fail.tsv, the oracle known-diff/version-classification files, the freeze
+      # manifest, the baseline). Reuses the same base-ref this job already resolved above.
+      - name: Self-test the netstandard2.0 compatibility known-diff log gate
+        shell: pwsh
+        run: pwsh scripts/verify-netstandard-compat-log.ps1 -SelfTest
+
+      - name: Verify netstandard2.0 compatibility known-diff changes are logged
+        shell: pwsh
+        run: pwsh scripts/verify-netstandard-compat-log.ps1 -BaseRef '${{ steps.base-ref.outputs.sha }}'
+
+  # SwissEphNet.csproj has no PackageReference, and the packed nuspec has an empty
+  # dependency group per target framework and no framework references -- a deliberate
+  # property (the 2.8.1.0 release dropped System.Text.Encoding.CodePages rather than
+  # keep a dependency for Windows-1252 support), not an accident. This job packs the
+  # library the way it actually ships and fails if the nuspec ever names a dependency.
+  verify-no-dependencies:
+    name: No package dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          # Both runtimes: the library multi-targets netstandard2.0;net8.0;net10.0, and
+          # packing needs the net8.0 SDK/runtime present alongside net10.0.
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Verify the packed library has no dependencies
+        shell: pwsh
+        run: pwsh scripts/verify-no-dependencies.ps1
+
+  # Nothing before this job ever packed the actual release artifact anywhere but a contributor's
+  # own machine. verify-no-dependencies above already runs `dotnet pack`, but only to inspect the
+  # packed nuspec's dependency list -- it discards the .nupkg/.snupkg immediately afterward and
+  # asserts nothing about how they were built.
+  #
+  # That distinction matters because packing locally degrades the shipped symbols. Directory.
+  # Build.props sets ContinuousIntegrationBuild only when GITHUB_ACTIONS, TF_BUILD or CI is
+  # 'true', and that property controls what SourceLink embeds as the document root for every
+  # source file's path in the .pdb. Measured directly, before this job existed: a pack run from a
+  # workstation checkout embeds the checkout's own absolute path (e.g.
+  # `C:\Users\<name>\...\SwissEphNet\*`) as that root, baking a machine-specific path into a
+  # symbol package a consumer might download; the identical pack with CI=true (which
+  # GITHUB_ACTIONS=true, always set on an Actions runner, already satisfies) embeds the
+  # deterministic `/_/*` root instead. A `.nupkg`/`.snupkg` built on a workstation and pushed by
+  # hand would ship the machine-specific version silently -- this job exists so the artifact this
+  # repository actually publishes is always the CI-built one.
+  pack:
+    name: Pack the release artifact
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          # Both runtimes: the library multi-targets netstandard2.0;net8.0;net10.0, and packing
+          # needs the net8.0 SDK/runtime present alongside net10.0 -- same reasoning as
+          # verify-no-dependencies above.
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Pack SwissEphNet (Release)
+        shell: pwsh
+        run: dotnet pack SwissEphNet/SwissEphNet.csproj -c Release -o pack-output
+
+      # Confirms the property this job exists to guarantee, rather than assuming
+      # ContinuousIntegrationBuild took effect just because this step runs inside Actions: opens
+      # the packed .snupkg, reads the embedded .pdb's SourceLink blob directly (the same "documents"
+      # JSON map a debugger resolves a source file against), and fails if its root is anything
+      # other than the deterministic `/_/*` -- in particular, if it is a local, workstation-shaped
+      # absolute path, which is exactly what a non-CI pack was measured to embed.
+      - name: Assert the packed symbols carry a deterministic SourceLink root
+        shell: pwsh
+        run: |
+          $snupkg = Get-ChildItem -Path pack-output -Filter '*.snupkg' | Select-Object -First 1
+          if (-not $snupkg) {
+            Write-Error "No .snupkg found in pack-output/ -- dotnet pack did not produce a symbols package."
+            exit 1
+          }
+          $extractDir = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString('N'))
+          Expand-Archive -LiteralPath $snupkg.FullName -DestinationPath $extractDir
+          # Every .pdb, not just one via Select-Object -First 1 -- SwissEphNet.csproj multi-targets
+          # netstandard2.0;net8.0;net10.0 (see this job's own dotnet-version comment above), so a
+          # correctly packed .snupkg carries three .pdb files, one per TFM, and enumeration order
+          # from Get-ChildItem is not guaranteed -- the exact instability
+          # scripts/verify-freeze.ps1's own sort fix exists to kill elsewhere in this repository.
+          # -First 1 checked whichever pdb happened to enumerate first and said nothing about the
+          # other two: a SourceLink regression scoped to a single TFM (e.g. a build prop only
+          # net8.0's target evaluates) could pass this job indefinitely, depending on enumeration
+          # order, while shipping a broken symbol file for a different TFM.
+          $pdbs = @(Get-ChildItem -Path $extractDir -Filter '*.pdb' -Recurse | Sort-Object -Property Name)
+          $expectedPdbCount = 3
+          if ($pdbs.Count -ne $expectedPdbCount) {
+            Write-Error "$($snupkg.Name) contains $($pdbs.Count) .pdb file(s), expected $expectedPdbCount (one per TFM: netstandard2.0, net8.0, net10.0). Found: $(($pdbs | ForEach-Object { $_.Name }) -join ', ')"
+            exit 1
+          }
+          foreach ($pdb in $pdbs) {
+            # Portable PDB debug streams are not valid UTF-8 throughout (they interleave binary
+            # metadata with the UTF-8 SourceLink JSON blob), so ISO-8859-1 (a 1:1 byte-to-codepoint
+            # mapping) is used purely to search for an ASCII substring without a decode failure --
+            # not to actually interpret the file as ISO-8859-1 text.
+            $bytes = [System.IO.File]::ReadAllBytes($pdb.FullName)
+            $text = [System.Text.Encoding]::GetEncoding(28591).GetString($bytes)
+            if ($text -notmatch [regex]::Escape('"documents":{"/_/*"')) {
+              Write-Error "$($pdb.Name)'s embedded SourceLink map does not start with the deterministic '/_/*' document root. Either Directory.Build.props's GITHUB_ACTIONS/TF_BUILD/CI condition stopped matching this runner, or something built these symbols outside CI -- see this job's own comment for what a workstation pack was measured to embed instead."
+              exit 1
+            }
+            Write-Host "OK: $($pdb.Name) carries the deterministic '/_/*' SourceLink document root."
+          }
+          Write-Host "OK: all $($pdbs.Count) .pdb file(s) in $($snupkg.Name) carry the deterministic SourceLink root."
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package
+          path: |
+            pack-output/*.nupkg
+            pack-output/*.snupkg
 
   # Still no general `dotnet format --verify-no-changes` job: the pre-existing SweWin
   # WinForms code (never previously run through dotnet format) has formatting debt
@@ -124,3 +406,129 @@ jobs:
   # Whoever adds the general job must run it as
   # `dotnet format SwissEphNet.sln --verify-no-changes --exclude SwissEphNet/CPort/ --exclude Programs/SweTest/Program.cs --exclude Programs/SweMini/Program.cs`
   # -- see CONTRIBUTING.md for why all three exclusions are mandatory.
+
+  # Pure text parsing, no build, no submodule -- cheap enough to run on every push and pull
+  # request alongside the other ubuntu-latest checks above. Recomputes the load-bearing counts
+  # (known-fail.tsv's total and category split, both oracle grids' known-diff row counts and
+  # swetest's, and both oracle grids' totals with their per-func breakdown) directly from the
+  # files that define them, and fails when a doccount-marker-tagged figure (see
+  # scripts/verify-doc-counts.ps1's own header for the exact HTML-comment marker syntax) in
+  # README.md, CONTRIBUTING.md, docs/compliance-2.10.03.md, docs/known-issues.md or the
+  # oracle/conformance/baseline workflow files disagrees -- or when a defined count has no marker
+  # left to check at all, or a marker exists somewhere outside that document set. See
+  # scripts/verify-doc-counts.ps1's own header for the marker-vs-manifest design choice.
+  verify-doc-counts:
+    name: Documentation counts match the repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Self-test the documented-counts gate
+        shell: pwsh
+        run: pwsh scripts/verify-doc-counts.ps1 -SelfTest
+
+      - name: Verify documented counts against the repository
+        shell: pwsh
+        run: pwsh scripts/verify-doc-counts.ps1
+
+  # Also pure text parsing. README.md is the package's own PackageReadmeFile, so a code sample
+  # in it that calls a removed API ships to every consumer who reads the package page -- the
+  # concrete defect this catches (a "Loading files" tutorial still telling readers to subscribe
+  # to the `OnLoadFile` event one release after it was deleted). See
+  # scripts/verify-doc-no-removed-apis.ps1's own header for why the check fires on a fenced code
+  # sample rather than on any mention, and for why that is a deliberate false-negative bias.
+  verify-doc-no-removed-apis:
+    name: Documentation does not teach a removed API
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Self-test the removed-API documentation gate
+        shell: pwsh
+        run: pwsh scripts/verify-doc-no-removed-apis.ps1 -SelfTest
+
+      - name: Verify no current-usage documentation calls a removed API
+        shell: pwsh
+        run: pwsh scripts/verify-doc-no-removed-apis.ps1
+
+  # Two checks in one job: every tracked file (a fast, pure `git grep`), and every commit message
+  # in the range this push or pull request actually introduces. The commit-message half needs a
+  # base to diff from, so it reuses scripts/resolve-log-base.ps1 -- the same resolver
+  # baseline.yml's own log-check job depends on -- rather than a second, independently-maintained
+  # notion of "what changed in this push". No -SelfTest step here: baseline.yml's verify-baseline
+  # job already runs it on every push and pull_request (the same triggers this workflow listens
+  # on), so a second run here would exercise the identical resolver against the identical commit
+  # for no new coverage. See scripts/verify-no-tooling-attribution.ps1's own header for the
+  # pattern table and why each pattern is shaped the way it is.
+  #
+  # The base-ref step below passes -WidenPastCancellation for push events, widening the scanned
+  # range past what github.event.before alone gives: this workflow's own concurrency group is
+  # keyed on github.ref for a push with no open pull request, with cancel-in-progress true, so
+  # push N's run can be cancelled by push N+1 before it finishes. Push N+1's own before is push
+  # N's tip, so a before-based range only ever covers the commits the *surviving* run's push
+  # introduced -- push N's commits, scanned only by the run that got cancelled, are never covered
+  # by any run that actually completes. A pull_request run backs this up when a PR is open (it
+  # runs in a separate, PR-numbered concurrency group untouched by push cancellation, and diffs
+  # the whole PR range), but a direct push with no PR yet -- pushing straight to a long-lived
+  # branch mid-series, exactly how this repository's own commits land -- has no such backstop.
+  # -WidenPastCancellation is implemented, and self-tested (scripts/resolve-log-base.ps1
+  # -SelfTest, which baseline.yml's own log-check job runs on every push and pull_request), inside
+  # resolve-log-base.ps1 itself rather than as a second copy of this widening logic inline here --
+  # this resolver was inline bash before it existed at all and shipped two permissive defects in a
+  # row for exactly that reason (see the script's own header). baseline.yml's log-check job passes
+  # the same flag, so both consumers get identical, tested behavior from one place.
+  verify-no-tooling-attribution:
+    name: No tooling-authorship text in tracked files or new commits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Same reasoning as baseline.yml's own log-check job: resolve-log-base.ps1 (and the
+          # git log range it produces) need history beyond the default shallow clone.
+          fetch-depth: 0
+
+      - name: Fetch the integration refs the base resolver needs
+        shell: bash
+        run: |
+          git fetch --quiet origin \
+            "+refs/heads/release/2.10.03:refs/remotes/origin/release/2.10.03" \
+            "+refs/heads/main:refs/remotes/origin/main" || true
+
+      - name: Determine base ref for the commit-message scan
+        id: base-ref
+        shell: pwsh
+        run: |
+          # Never $true here regardless of the runner's ambient default: without pinning this,
+          # `git merge-base` and other native commands called elsewhere in this job's steps would
+          # throw NativeCommandExitException on an ordinary non-zero-but-expected exit -- an
+          # earlier attempt at this same widening logic caused exactly that regression once. Pinned
+          # explicitly rather than relied upon, the same as scripts/verify-no-tooling-attribution.ps1
+          # itself pins it (see that script's own line near the top).
+          $PSNativeCommandUseErrorActionPreference = $false
+
+          # Built as an argument list and splatted, not a trailing bare token appended to the
+          # named-parameter call: resolve-log-base.ps1 is invoked as a separate child process here
+          # (this is `pwsh <script>`, not a direct cmdlet call in this same session), so a stray
+          # empty-string argument would still occupy a positional slot on that process's own
+          # command line and silently bind to -IntegrationRef (the next declared parameter after
+          # -PrBaseSha), not to -WidenPastCancellation, which is a real risk here.
+          $resolveArgs = @(
+            '-EventName', '${{ github.event_name }}',
+            '-BeforeSha', '${{ github.event.before }}',
+            '-PrBaseSha', '${{ github.event.pull_request.base.sha }}'
+          )
+          if ('${{ github.event_name }}' -eq 'push') { $resolveArgs += '-WidenPastCancellation' }
+          $base = pwsh scripts/resolve-log-base.ps1 @resolveArgs
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $base = $base.Trim()
+
+          "sha=$base" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Resolved commit-message scan base: $base"
+
+      - name: Self-test the tooling-authorship gate
+        shell: pwsh
+        run: pwsh scripts/verify-no-tooling-attribution.ps1 -SelfTest
+
+      - name: Verify no tooling-authorship text
+        shell: pwsh
+        run: pwsh scripts/verify-no-tooling-attribution.ps1 -CommitRange '${{ steps.base-ref.outputs.sha }}..HEAD'

@@ -35,7 +35,7 @@ internal static class Suite09Rise
                 var ctx = new CheckContext(f, precision);
                 ctx.CheckI("rc", rc);
                 ctx.CheckD("tret", tret);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 2:
@@ -51,7 +51,7 @@ internal static class Suite09Rise
                 var ctx = new CheckContext(f, precision);
                 ctx.CheckI("rc", rc);
                 ctx.CheckD("tret", tret);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 3:
@@ -77,7 +77,7 @@ internal static class Suite09Rise
                 var ctx = new CheckContext(f, precision);
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxtret", xxtret[..3]);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 4:
@@ -97,7 +97,7 @@ internal static class Suite09Rise
                 var ctx = new CheckContext(f, precision);
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxtret", xxtret[..3]);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 5:
@@ -112,7 +112,7 @@ internal static class Suite09Rise
                 var ctx = new CheckContext(f, precision);
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxtret", xxtret[..3]);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             default:

@@ -93,6 +93,7 @@ namespace SwissEphNet
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Runtime.InteropServices;
     using System.Text;
 
     /// <summary>
@@ -425,6 +426,83 @@ namespace SwissEphNet
         /// </summary>
         public const String SE_EPHE_PATH = "[ephe]";
 
+        // SE_EPHE_PATH above is public API and a const, so its VALUE cannot change here:
+        // const fields are inlined into every caller at THAT caller's compile time, not
+        // looked up at run time, so changing the literal would silently desync anything
+        // already compiled against "[ephe]" from what this library actually does --
+        // binary-breaking in a way a version bump alone does not fix. The real default
+        // swe_set_ephe_path (and swi_init_swed_if_start) fall back to when no path is
+        // configured lives here instead, as a member the constant does not gate: the
+        // constant stays public API, the behaviour is not.
+        //
+        // swephexp.h:399-408 picks that default with a compile-time #if MSDOS, and MSDOS
+        // there is also defined true for any _WIN32/WIN32 build (sweodef.h:96-98), so
+        // upstream's real split is "Windows" vs. "everything else", not literally
+        // MS-DOS. This port ships one assembly for Windows, Linux and macOS rather than
+        // compiling per platform, so matching the C's #if by its letter is not available;
+        // resolving the same split at run time instead of compile time is a deliberate
+        // divergence from a literal transliteration, made because it matches the C's
+        // intent on every platform this port targets, rather than matching its letter on
+        // only one.
+        //
+        // Windows keeps upstream's own literal, backslash-terminated string. Combined
+        // with swe_set_ephe_path's own trailing-separator check (Sweph.cs, "sweph.c:1339
+        // compares..."), which tests only against DIR_GLUE and DIR_GLUE is '/' on every
+        // platform this port targets (see the DIR_GLUE comment above), a Windows caller
+        // who never configures a path gets "\sweph\ephe\/" -- a redundant trailing '/'
+        // after the literal backslash -- where the C itself produces exactly
+        // "\sweph\ephe\" (its own DIR_GLUE is '\\' on Windows, already matching the
+        // string's own trailing character, so its check never appends). Windows accepts
+        // both separators interchangeably in a path, so this is a cosmetic mismatch in
+        // the exact bytes of an error message, not a functional one; left as-is rather
+        // than special-casing the trailing-separator check for one platform's string,
+        // consistent with DIR_GLUE's own existing "one value for every platform" choice.
+        //
+        // The non-Windows string carries upstream's three components in upstream's order,
+        // joined with ':' exactly as swephexp.h:403 writes it -- not a typo and not a
+        // second guess at the C. This is deliberately the literal, not a port-specific
+        // rewrite: PATH_SEPARATOR (SwissEph.sweodef.h.cs) is per-platform, matching the
+        // C's own two cut-lists rather than using one value everywhere -- { ';', ':' } off
+        // Windows (sweodef.h:307, "semicolon or colon may be used" under #if UNIX_FS) and
+        // { ';' } on Windows (sweodef.h:313, the #else branch, where a bare ':' would split
+        // a drive letter). swi_fopen splits swed.ephepath on exactly that cut-list (Sweph.cs,
+        // sweph.c:2377), so this colon-joined literal correctly splits into its three
+        // components off Windows, including the "." component -- the current directory,
+        // which sweph.c:2381 maps to the empty prefix and which is the only one of the
+        // three that exists on a machine that is not Astrodienst's.
+        //
+        // This was briefly wrong. An earlier revision kept PATH_SEPARATOR at { ';' } on
+        // every platform and rewrote this default to a ';'-joined string to match, reasoning
+        // that a bare ':' was unsafe to add to a cross-platform cut-list. That reasoning was
+        // sound for Windows drive letters and wrong to apply off Windows, where the C accepts
+        // ':' natively and a caller-supplied ';'-joined path is not what any other Swiss
+        // Ephemeris binding expects. It also moved the port away from the C on exactly the
+        // platforms the exactness gates measure: 192 of 15,819 analytic rows differed from
+        // gcc's C reference, 196 from clang's. Restored per-platform (this default and
+        // PATH_SEPARATOR together, since the two have to agree) once that regression was
+        // found; see commit c334d15's own message for the fuller account.
+        // Split from the property so both branches are reachable from any platform. The
+        // property alone cannot be tested for this: the separator mistake it guards against
+        // is confined to the non-Windows literal, so a test reading DefaultEphePath on a
+        // Windows runner exercises the other branch and passes no matter what the non-Windows
+        // string says -- measured, by reintroducing the ':' form and watching the test stay
+        // green. Tests/SwissEphNet.Tests/DefaultEphePathSplitTest.cs calls this directly with
+        // both values instead.
+        internal static string DefaultEphePathFor(bool isWindows)
+        {
+            return isWindows
+                ? "\\sweph\\ephe\\"
+                : ".:/users/ephe2/:/users/ephe/";
+        }
+
+        internal static string DefaultEphePath
+        {
+            get
+            {
+                return DefaultEphePathFor(RuntimeInformation.IsOSPlatform(OSPlatform.Windows));
+            }
+        }
+
 
         /* defines for function swe_split_deg() (in swephlib.c) */
         public const int SE_SPLIT_DEG_ROUND_SEC = 1;
@@ -467,7 +545,12 @@ namespace SwissEphNet
         public const int SE_HELFLAG_AVKIND_MIN9 = (1 << 19);
         public const int SE_HELFLAG_AVKIND = (SE_HELFLAG_AVKIND_VR | SE_HELFLAG_AVKIND_PTO | SE_HELFLAG_AVKIND_MIN7 | SE_HELFLAG_AVKIND_MIN9);
         public const double TJD_INVALID = 99999999.0;
-        public const bool SIMULATE_VICTORVB = true;
+        // Not a C# language constant: swephexp.h:451 is `#define SIMULATE_VICTORVB 1`, so C's
+        // `#ifndef SIMULATE_VICTORVB` guards (SweHel.cs's negated sites) are always compiled out.
+        // A `const bool` here would make the negated `if (!SIMULATE_VICTORVB)` at those sites a
+        // compile-time-false condition and trip CS0162 ("unreachable code"), the same problem
+        // Sweph.cs:105's SID_TNODE_FROM_ECL_T0 avoids by not being a language constant either.
+        public static readonly bool SIMULATE_VICTORVB = true;
 
 #if FALSE  // unused and redundant
         public const int SE_HELIACAL_LONG_SEARCH = 128;
@@ -709,6 +792,11 @@ namespace SwissEphNet
             return Sweph.swe_calc_ut(tjd_ut, ipl, iflag, xx, ref serr);
         }
 
+        public Int32 swe_calc_pctr(double tjd, Int32 ipl, Int32 iplctr, Int32 iflag, double[] xxret, ref string serr)
+        {
+            return Sweph.swe_calc_pctr(tjd, ipl, iplctr, iflag, xxret, ref serr);
+        }
+
         // sweph.c:8310-8615
         public double swe_solcross(double x2cross, double jd_et, Int32 flag, ref string serr)
         {
@@ -814,6 +902,8 @@ namespace SwissEphNet
         public double swe_get_ayanamsa_ut(double tjd_ut) { return Sweph.swe_get_ayanamsa_ut(tjd_ut); }
 
         public string swe_get_ayanamsa_name(Int32 isidmode) { return Sweph.swe_get_ayanamsa_name(isidmode); }
+
+        public string swe_get_current_file_data(int ifno, ref double tfstart, ref double tfend, ref int denum) { return Sweph.swe_get_current_file_data(ifno, ref tfstart, ref tfend, ref denum); }
 
         /*ext_def(void) swe_set_timeout(int32 tsec);*/
 
@@ -924,6 +1014,28 @@ namespace SwissEphNet
         }
 
         /// <summary>
+        /// Computes house cusps with additional flags (sidereal modes, radians, ...), together
+        /// with the daily-motion speeds of the cusps and additional points. Compatibility
+        /// overload: widens to the <c>int</c> overload, which is the signature upstream
+        /// declares. A <c>char</c> above U+00FF resolves by its low byte.
+        /// </summary>
+        public int swe_houses_ex2(double tjd_ut, Int32 iflag, double geolat, double geolon, char hsys, CPointer<double> hcusps, CPointer<double> ascmc, CPointer<double> cuspSpeed, CPointer<double> ascmcSpeed, ref string serr)
+        {
+            return SweHouse.swe_houses_ex2(tjd_ut, iflag, geolat, geolon, hsys, hcusps, ascmc, cuspSpeed, ascmcSpeed, ref serr);
+        }
+
+        /// <summary>
+        /// Computes house cusps with additional flags (sidereal modes, radians, ...), together
+        /// with the daily-motion speeds of the cusps and additional points. Matches upstream
+        /// <c>swephexp.h:820</c>, which declares <c>int hsys</c>; prefer this overload in new
+        /// code.
+        /// </summary>
+        public int swe_houses_ex2(double tjd_ut, Int32 iflag, double geolat, double geolon, int hsys, CPointer<double> hcusps, CPointer<double> ascmc, CPointer<double> cuspSpeed, CPointer<double> ascmcSpeed, ref string serr)
+        {
+            return SweHouse.swe_houses_ex2(tjd_ut, iflag, geolat, geolon, hsys, hcusps, ascmc, cuspSpeed, ascmcSpeed, ref serr);
+        }
+
+        /// <summary>
         /// Computes house cusps directly from ARMC, geographic latitude and the obliquity of
         /// the ecliptic, requiring no ephemeris data. Compatibility overload: widens to the
         /// <c>int</c> overload. A <c>char</c> above U+00FF resolves by its low byte.
@@ -941,6 +1053,28 @@ namespace SwissEphNet
         public int swe_houses_armc(double armc, double geolat, double eps, int hsys, double[] cusps, double[] ascmc)
         {
             return SweHouse.swe_houses_armc(armc, geolat, eps, hsys, cusps, ascmc);
+        }
+
+        /// <summary>
+        /// Computes house cusps directly from ARMC, geographic latitude and the obliquity of
+        /// the ecliptic, requiring no ephemeris data, together with the daily-motion speeds of
+        /// the cusps and additional points. Compatibility overload: widens to the <c>int</c>
+        /// overload. A <c>char</c> above U+00FF resolves by its low byte.
+        /// </summary>
+        public int swe_houses_armc_ex2(double armc, double geolat, double eps, char hsys, CPointer<double> cusps, CPointer<double> ascmc, CPointer<double> cuspSpeed, CPointer<double> ascmcSpeed, ref string serr)
+        {
+            return SweHouse.swe_houses_armc_ex2(armc, geolat, eps, hsys, cusps, ascmc, cuspSpeed, ascmcSpeed, ref serr);
+        }
+
+        /// <summary>
+        /// Computes house cusps directly from ARMC, geographic latitude and the obliquity of
+        /// the ecliptic, requiring no ephemeris data, together with the daily-motion speeds of
+        /// the cusps and additional points. Matches upstream <c>swephexp.h:828</c>, which
+        /// declares <c>int hsys</c>; prefer this overload in new code.
+        /// </summary>
+        public int swe_houses_armc_ex2(double armc, double geolat, double eps, int hsys, CPointer<double> cusps, CPointer<double> ascmc, CPointer<double> cuspSpeed, CPointer<double> ascmcSpeed, ref string serr)
+        {
+            return SweHouse.swe_houses_armc_ex2(armc, geolat, eps, hsys, cusps, ascmc, cuspSpeed, ascmcSpeed, ref serr);
         }
 
         /// <summary>
@@ -1011,9 +1145,32 @@ namespace SwissEphNet
         /// <summary>
         /// finds time of next occultation globally
         /// </summary>
-        public Int32 swe_lun_occult_when_glob(double tjd_start, Int32 ipl, string starname, Int32 ifl, Int32 ifltype, double[] tret, bool backward, ref string serr)
+        /// <remarks>
+        /// swephexp.h declares this parameter <c>int32 backward</c>, a bitfield: bit 0 selects
+        /// search direction, and OR-ing in <see cref="SE_ECL_ONE_TRY"/> (swecl.c:1539, :1593)
+        /// limits the search to a single lunar cycle instead of continuing until an occultation
+        /// is found. A prior <c>bool backward</c> signature here could only ever pass 0 or 1, so
+        /// <c>backward &amp; SE_ECL_ONE_TRY</c> (32768) was provably always 0 and
+        /// SE_ECL_ONE_TRY was unreachable through this API. Call this overload to request it; the
+        /// <c>bool</c> overload below still exists for source compiled against the old signature,
+        /// but cannot pass it.
+        /// </remarks>
+        public Int32 swe_lun_occult_when_glob(double tjd_start, Int32 ipl, string starname, Int32 ifl, Int32 ifltype, double[] tret, Int32 backward, ref string serr)
         {
             return SweCL.swe_lun_occult_when_glob(tjd_start, ipl, starname, ifl, ifltype, tret, backward, ref serr);
+        }
+
+        /// <summary>
+        /// finds time of next occultation globally
+        /// </summary>
+        /// <remarks>
+        /// Source-compatibility overload for callers built against the pre-fix <c>bool
+        /// backward</c> signature. It can only pass 0 or 1 and so can never request
+        /// <see cref="SE_ECL_ONE_TRY"/> -- use the <c>Int32 backward</c> overload above for that.
+        /// </remarks>
+        public Int32 swe_lun_occult_when_glob(double tjd_start, Int32 ipl, string starname, Int32 ifl, Int32 ifltype, double[] tret, bool backward, ref string serr)
+        {
+            return swe_lun_occult_when_glob(tjd_start, ipl, starname, ifl, ifltype, tret, backward ? 1 : 0, ref serr);
         }
 
         /// <summary>
@@ -1024,10 +1181,31 @@ namespace SwissEphNet
             return SweCL.swe_sol_eclipse_when_loc(tjd_start, ifl, geopos, tret, attr, backward, ref serr);
         }
 
+        /// <summary>
+        /// finds time of next local occultation
+        /// </summary>
+        /// <remarks>
+        /// Same <see cref="SE_ECL_ONE_TRY"/> bitfield as <see cref="swe_lun_occult_when_glob(double, Int32, string, Int32, Int32, double[], Int32, ref string)"/>
+        /// (swephexp.h; occult_when_loc masks it at swecl.c:2436) -- see that overload's remarks.
+        /// </remarks>
+        public Int32 swe_lun_occult_when_loc(double tjd_start, Int32 ipl, String starname, Int32 ifl, double[] geopos, double[] tret,
+            double[] attr, Int32 backward, ref string serr)
+        {
+            return SweCL.swe_lun_occult_when_loc(tjd_start, ipl, starname, ifl, geopos, tret, attr, backward, ref serr);
+        }
+
+        /// <summary>
+        /// finds time of next local occultation
+        /// </summary>
+        /// <remarks>
+        /// Source-compatibility overload for callers built against the pre-fix <c>bool
+        /// backward</c> signature; cannot request <see cref="SE_ECL_ONE_TRY"/> -- use the
+        /// <c>Int32 backward</c> overload above for that.
+        /// </remarks>
         public Int32 swe_lun_occult_when_loc(double tjd_start, Int32 ipl, String starname, Int32 ifl, double[] geopos, double[] tret,
             double[] attr, bool backward, ref string serr)
         {
-            return SweCL.swe_lun_occult_when_loc(tjd_start, ipl, starname, ifl, geopos, tret, attr, backward, ref serr);
+            return swe_lun_occult_when_loc(tjd_start, ipl, starname, ifl, geopos, tret, attr, backward ? 1 : 0, ref serr);
         }
 
         /// <summary>

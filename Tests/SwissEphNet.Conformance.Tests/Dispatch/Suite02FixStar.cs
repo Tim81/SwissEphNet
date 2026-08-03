@@ -56,7 +56,7 @@ internal sealed class Suite02FixStar
                 ctx.CheckD("mag", mag);
                 ctx.CheckI("rc", rc);
                 ctx.CheckS("serr", serr);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 4:
@@ -118,6 +118,6 @@ internal sealed class Suite02FixStar
         ctx.CheckDD("xx", xx);
         ctx.CheckI("rc", rc);
         ctx.CheckS("serr", serr);
-        return DispatchOutcome.FromMismatches(ctx.Mismatches);
+        return DispatchOutcome.FromMismatches(ctx);
     }
 }

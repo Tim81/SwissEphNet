@@ -13,7 +13,7 @@ against the old one, then applies the same diff, in the same shape, to the
 matching C# file. If the C# no longer reads like the C it came from, that
 process stops working and every future upgrade gets harder, not easier. This
 is not a theoretical concern for the `Programs/` files either: `swetest.c`
-alone changes by +484/-244 lines in the 2.10.03 delta.
+alone changes by +487/-247 lines in the 2.10.03 delta.
 
 **Do not run `dotnet format`, an IDE "clean up code" command, a `var`-for-explicit-type
 rewrite, expression-bodied member conversion, or brace reflowing against
@@ -35,7 +35,7 @@ folder except a small set that has actually caught real transliteration bugs
 operations, CA2242 for NaN comparison, and CS0162/CS0164/CS0219 for
 unreachable/unused code that usually means a mis-landed `goto`) -- they are
 a deliberate carve-out, not a blanket noise suppression, and that carve-out
-is exactly why `Programs/SweTest/Program.cs` alone still emits over 200
+is exactly why `Programs/SweTest/Program.cs` alone still emits two
 warning sites (see "Net warning count" below): this document forbids fixing
 them, since fixing them means editing frozen, transliterated code. Do not
 try to clean those up. Separately, and regardless of any of the above,
@@ -69,7 +69,7 @@ and pull request. It records a SHA-256 over each frozen path's normalized conten
 
 The hash is the check; the counts say what kind of change happened. Earlier versions
 carried only the counts, and that was not enough: re-indenting a file moves none of
-them. Measured, doubling the indentation of `SweDate.cs` rewrites 568 of its 612 lines
+them. Measured, doubling the indentation of `SweDate.cs` rewrites 570 of its 615 lines
 and leaves the four counts byte-identical, so the gate passed on a file where every
 content line had changed. Indentation normalization is the bulk of what
 `dotnet format whitespace` does, which is the exact tool this check exists to catch.
@@ -124,18 +124,24 @@ A PR that changes a frozen file with no hunk citation should not be merged.
 ### The upstream C is vendored at `external/swisseph`
 
 `external/swisseph` is a git submodule of `https://github.com/aloistr/swisseph`,
-pinned to tag `v2.10.3final` -- the upstream C this port is being upgraded to.
+pinned to tag `v2.10.3bfinal` -- the upstream C this port is being upgraded to.
 It is sparse-checked-out to keep it small: only `*.c`, `*.h`, `Makefile`,
-`LICENSE` and `setest/` (the reference test corpus `Tests/SwissEphNet.Conformance.Tests`
-is built against) are pulled. `ephe/` (the ephemeris data files) is deliberately
-excluded -- it is 378 MB across 259 files and nothing in this repo needs it.
+`LICENSE`, `setest/` (the reference test corpus `Tests/SwissEphNet.Conformance.Tests`
+is built against) and eight specific `ephe/` files the conformance oracle needs to run
+are pulled. The rest of `ephe/` is deliberately excluded -- `ephe/`'s own full tree (not
+the submodule's) is 378 MB across 259 files on its own, most of which nothing in this
+repo needs.
 
 To initialize it, do the sparse setup before the first checkout, so the partial clone never
 fetches blobs for the excluded paths in the first place -- this is the primary recipe, not a
 disk-conscious alternative for CI only. Measured: `git submodule update --init` (below) lands at
 the same commit but pulls the entire `aloistr/swisseph` history and every path, `ephe/` included
--- 427 MB of working tree plus 918 MB of git objects in a from-scratch checkout, not the 15 MB /
-2.3 MB this sparse recipe gives:
+-- 423.9 MB of working tree across 448 files (the same figure the README's submodule-size note
+cites, both read from the tree's own content so the number holds regardless of platform
+line-ending settings) plus roughly 870 MB of git objects in a from-scratch checkout -- that
+second figure moves as upstream's own history grows, so treat it as an order of magnitude, not
+an exact count pinned to one moment. Either way, that is not the 19 MB / 85 files and roughly
+5.8 MB of git objects this sparse recipe gives:
 
 ```powershell
 git submodule init
@@ -146,7 +152,7 @@ git sparse-checkout set --no-cone /*.c /*.h /Makefile /LICENSE /setest/* /seleap
     /ephe/seas_12.se1 /ephe/semo_12.se1 /ephe/sepl_12.se1 `
     /ephe/seas_18.se1 /ephe/semo_18.se1 /ephe/sepl_18.se1 `
     /ephe/sefstars.txt /ephe/seorbel.txt
-git checkout v2.10.3final
+git checkout v2.10.3bfinal
 cd ../..
 git submodule absorbgitdirs external/swisseph
 ```
@@ -162,8 +168,9 @@ have to agree with it. If you change what the project declares as its data set, 
 manifest and then make these two follow, not the other way round.
 
 Extra files matter as much as missing ones because the known-fail list is generated against
-this set. A checkout carrying the full 158-file `ephe/` tree produces a list that passes
-locally and is wrong for everyone else; that happened once and is why the assertion exists.
+this set. A checkout carrying the full `ephe/` tree -- 158 files at the top level, 259
+including its subdirectories such as `sat/` -- produces a list that passes locally and is
+wrong for everyone else; that happened once and is why the assertion exists.
 
 Run that command from **PowerShell**, not Git Bash. MSYS rewrites arguments that look like
 absolute Unix paths, so `git sparse-checkout set ... /Makefile /LICENSE ...` under Git Bash
@@ -304,18 +311,22 @@ Measured with `dotnet build <target> -c Release --no-incremental` (an
 up-to-date build recompiles nothing and silently reports zero, so always
 force a clean rebuild when counting):
 
-- `SwissEphNet.sln`: 831 warnings, 546 distinct sites, 464 of them outside
-  `CPort/` (206 in `Programs/SweTest/Program.cs`, 185 in
-  `Tests/SwissEphNet.Tests`, 64 in `Programs/SweWin`, the remaining 9 split
-  between `Programs/SweMini/Program.cs` and `SwissEphNet/Tools/`).
-- `SwissEphNet.CrossPlatform.slnf` (excludes `SweWin`, which is Windows-only):
-  767 warnings.
+- `SwissEphNet.sln`: 16 warnings across 9 distinct sites. 6 of those sites are inside
+  `CPort/` (`Sweph.h.cs:818`, `Sweph.cs:7232`, `Sweph.cs:7481`, `Sweph.cs:7503`,
+  `Sweph.cs:8854`, `SwephLib.cs:4693`); the remaining 3 are outside it, all in the other two
+  frozen, transliterated files: `Programs/SweTest/Program.cs:758` and `:804`
+  (`CS0414`), and `Programs/SweMini/Program.cs:155` (`CS0162`). `Tests/SwissEphNet.Tests`
+  and `Programs/SweWin` currently contribute zero.
+- `SwissEphNet.CrossPlatform.slnf` (excludes `SweWin`, which is Windows-only): 16
+  warnings, the same 9 sites, because `SweWin` is one of the two projects (with
+  `Tests/SwissEphNet.Tests`) currently contributing nothing to the total.
 
-Most of the outside-`CPort/` total sits in the two other frozen,
-transliterated files (`SweTest/Program.cs`, `SweMini/Program.cs`), which this
-document forbids cleaning up for the same reason it forbids touching
-`CPort/`. A contributor should not treat this count as a backlog to clear;
-it is a snapshot, re-measure it rather than trusting a stale number here.
+These numbers are not gated by `scripts/verify-doc-counts.ps1`: that script's ground
+truth is the tracked TSVs it reads (`known-fail.tsv`, the oracle grids, the swetest
+known-diff lists), and a compiler warning count is not one of them, so there is no
+`<!--doccount:-->` marker on it. A contributor should not treat this count as a backlog
+to clear, and should not treat it as static either; it is a snapshot from a clean
+rebuild, re-measure it rather than trusting a stale number here.
 
 ## Characterization baseline
 
@@ -385,7 +396,45 @@ exist yet) always names the *parent* of that commit, not the change itself,
 and even a SHA captured correctly would stop existing once the PR merges. A
 PR number does not have either problem. If you do not know the PR number yet,
 leave it blank and fill in the logged line by hand once you do, before the PR
-merges.
+merges. This applies to every append-only log in the repository, not only
+this one. Nine tracked files carry the convention. An earlier version of
+this paragraph named five of them, which is how placeholders in the other
+two then-untracked ones (`regenerations-files.log`,
+`version-classification-regenerations.log`) went unnoticed; a later revision
+found those two and named seven, which is how a placeholder in the eighth
+(`regenerations-jpl.log`, added by a later entry point) went unnoticed in
+turn, and a ninth (`Tests/netstandard-compat/regenerations.log`, added
+alongside `scripts/verify-netstandard-compat-log.ps1`) joined afterward:
+
+- `Tests/conformance/regenerations.log` (this one)
+- `Tests/oracle/regenerations.log`
+- `Tests/oracle/regenerations-files.log`
+- `Tests/oracle/regenerations-jpl.log`
+- `Tests/oracle/version-classification-regenerations.log`
+- `Tests/swetest/regenerations.log`
+- `Tests/netstandard-compat/regenerations.log` (checked by
+  `scripts/verify-netstandard-compat-log.ps1`)
+- `scripts/freeze-manifest-log.txt` (the freeze manifest's sidecar, checked by
+  `scripts/verify-freeze-log.ps1`)
+- `Tests/baseline/baseline-2.8.0.2.env.txt` (the characterization baseline's
+  sidecar and its "Local regenerations" log, checked by
+  `scripts/verify-baseline-log.ps1`)
+
+Make filling in a placeholder "no PR yet" entry with the real PR number a
+checked step before merging, not a hoped-for follow-up. To see what is
+outstanding across all nine at once (naming the paths, rather than grepping
+`Tests` and `scripts` wholesale, because three of the scripts contain the
+placeholder text as the string they emit):
+
+```powershell
+git grep -c 'no PR yet' -- Tests/conformance/regenerations.log `
+    Tests/oracle/regenerations.log Tests/oracle/regenerations-files.log `
+    Tests/oracle/regenerations-jpl.log `
+    Tests/oracle/version-classification-regenerations.log `
+    Tests/swetest/regenerations.log Tests/netstandard-compat/regenerations.log `
+    scripts/freeze-manifest-log.txt `
+    Tests/baseline/baseline-2.8.0.2.env.txt
+```
 
 Never hand-edit `known-fail.tsv` and never add a row to make a failing
 `dotnet test Tests/SwissEphNet.Conformance.Tests` go green without first
@@ -405,13 +454,15 @@ correctness oracle look, from a CI notification, like the same kind of thing:
 both run the library against a reference and report PASS/FAIL. Their
 *expected* results are opposites. The baseline expects **zero** diffs --
 anything else means a change altered something it should not have. This
-oracle expects **most iterations to fail** -- the port is at 2.08, the corpus
-is Astrodienst's own 2.10.03 reference values, and a two-major-version gap
-does not close by wishing. A red oracle run is not evidence anything is
-broken; a green one (all 12,757 passing with an empty `known-fail.tsv`) would
-mean the port is at parity with 2.10.03, which is the multi-PR goal this whole
-mechanism exists to track progress toward, not today's state. See "Reporting
-by testcase" below for how to read a run without it looking alarming.
+oracle expects **some iterations to still fail** -- the 2.10.03 delta has
+landed file by file, but `known-fail.tsv` still lists 1,423<!--doccount:known-fail-total--> of 12,757
+iterations (88.8% passing), and closing the rest is incremental porting
+work, not something a single PR finishes. A red oracle run is not evidence
+anything is broken; a green one (all 12,757 passing with an empty
+`known-fail.tsv`) would mean the port is at full parity with 2.10.03, which
+is the multi-PR goal this whole mechanism exists to track progress toward,
+not today's state. See "Reporting by testcase" below for how to read a run
+without it looking alarming.
 
 ### Reporting by testcase
 
@@ -422,10 +473,18 @@ groups by the 60 (suite, testcase) pairs instead and splits them into two
 lists: **actionable** (at least one `VALUE-MISMATCH`/`ERROR` -- the actual
 porting work queue) and **parked** (every non-passing iteration in that
 testcase is `NOT-IMPLEMENTED`, `DATA-MISSING`, or `UNREPRODUCIBLE` -- blocked
-on something other than the port's logic: a 2.10-only API the port doesn't
-have yet, a data file this repo doesn't ship, or a structural gap). As of this
-writing that split is 33 actionable / 27 parked out of 60. A porting PR should
-be shrinking the actionable list's mismatch/error counts, or moving a testcase
-from actionable to fully passing -- not touching the parked list, which
-changes only when a 2.10 API gets implemented or a data-file constraint is
-lifted.
+on something other than the port's logic: a 2.10-only API (currently none;
+the category is empty), a data file this repo doesn't ship, or a structural
+gap). A testcase with zero failing iterations appears in neither list; it is
+not "parked", it is done. Of the 60, 39 have at least one row in
+`known-fail.tsv`; splitting those by `FormatByTestCase()`'s rule gives 31
+actionable and 8 genuinely parked, and the remaining 21 have no row in
+`known-fail.tsv` at all -- they pass completely. Conflating "parked" with
+"everything not actionable" overstates how much of the 60 is blocked on
+something other than the port's own logic: it is 8, not 29. A porting PR
+should be shrinking the actionable list's mismatch/error counts, or moving a
+testcase from actionable to fully passing -- not touching the parked list,
+which changes only when a 2.10 API gets implemented or a data-file constraint
+is lifted. (Re-measured from `Tests/conformance/known-fail.tsv` by grouping
+its `suite`/`testcase` columns and checking, per group, whether any row's
+`category` is `VALUE-MISMATCH` or `ERROR`.)

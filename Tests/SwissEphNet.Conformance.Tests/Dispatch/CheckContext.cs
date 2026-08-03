@@ -14,8 +14,24 @@ namespace SwissEphNet.Conformance.Tests.Dispatch;
 public sealed class CheckContext(ExpFields expected, Precision precision)
 {
     private readonly List<FieldMismatch> _mismatches = [];
+    private int _comparisonCount;
 
     public IReadOnlyList<FieldMismatch> Mismatches => _mismatches;
+
+    /// <summary>
+    /// Whether at least one Check* call actually ran a comparison -- against
+    /// t.exp (CheckD/CheckDD/CheckI/CheckS) or, for the handful of testcases
+    /// that assert a pure runtime self-consistency condition instead
+    /// (CHECK_EQUALS_I, not file-backed), against another computed value. Used
+    /// by the completeness guard in <c>ConformanceRunner.Run</c>: a testcase
+    /// that reaches a Passed/ValueMismatch outcome without this ever going
+    /// true compared nothing at all, which is not a real pass -- see
+    /// Suite01Calc testcase 4 (CheckEqualsI-only, legitimately) versus the
+    /// Suite03Misc regression this guards against (a CheckS call replaced by a
+    /// discarded plain field read, which left the outcome "Passed" with zero
+    /// comparisons performed).
+    /// </summary>
+    public bool AnyComparisonPerformed => _comparisonCount > 0;
 
     /// <summary>CHECK_D(name) -- always uses the testcase's overall precision.</summary>
     public void CheckD(string name, double actual) => CheckDInternal(name, actual, precision.All);
@@ -53,7 +69,8 @@ public sealed class CheckContext(ExpFields expected, Precision precision)
 
     public void CheckI(string name, int actual)
     {
-        var exp = expected.GetInt(name);
+        _comparisonCount++;
+        var exp = expected.GetIntCompared(name);
         if (actual != exp)
         {
             _mismatches.Add(new FieldMismatch(name, exp.ToString(CultureInfo.InvariantCulture), actual.ToString(CultureInfo.InvariantCulture), null));
@@ -63,6 +80,7 @@ public sealed class CheckContext(ExpFields expected, Precision precision)
     /// <summary>CHECK_EQUALS_I(actual, literal) -- a pure runtime self-consistency check, not file-backed.</summary>
     public void CheckEqualsI(string name, int actual, int expectedLiteral)
     {
+        _comparisonCount++;
         if (actual != expectedLiteral)
         {
             _mismatches.Add(new FieldMismatch(name, expectedLiteral.ToString(CultureInfo.InvariantCulture), actual.ToString(CultureInfo.InvariantCulture), null));
@@ -78,7 +96,8 @@ public sealed class CheckContext(ExpFields expected, Precision precision)
     /// </summary>
     public void CheckS(string name, string? actual)
     {
-        var exp = expected.GetRawString(name);
+        _comparisonCount++;
+        var exp = expected.GetRawStringCompared(name);
         var escapedActual = EscapeNewlines(actual ?? "");
         if (!string.Equals(exp, escapedActual, StringComparison.Ordinal))
         {
@@ -88,7 +107,8 @@ public sealed class CheckContext(ExpFields expected, Precision precision)
 
     private void CheckDInternal(string name, double actual, double allowedDiff)
     {
-        var exp = expected.GetDouble(name);
+        _comparisonCount++;
+        var exp = expected.GetDoubleCompared(name);
         if (double.IsNaN(actual) || double.IsNaN(exp) || Math.Abs(exp - actual) > allowedDiff)
         {
             _mismatches.Add(new FieldMismatch(

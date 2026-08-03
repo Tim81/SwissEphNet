@@ -173,11 +173,11 @@ namespace SwissEphNet.Tests
         public void TestExplicitEncodingOverridesUtf8Default() {
             // This exercises CFile's own Encoding constructor parameter
             // directly, which is a real feature of CFile itself, but not one
-            // an OnLoadFile consumer can reach: SwissEph.LoadFile is the only
-            // caller of this constructor from that path, and it always passes
-            // e.Encoding ?? DefaultEncoding (SwissEph.cs). A consumer with
-            // genuinely non-UTF-8-encoded files sets LoadFileEventArgs.Encoding
-            // inside the handler instead -- see
+            // an IEphemerisFileProvider consumer can reach: SwissEph.OpenBinary
+            // is the only caller of this constructor from that path, and it
+            // always passes DefaultEncoding (SwissEph.cs). A consumer with
+            // genuinely non-UTF-8-encoded files sets the static
+            // SwissEph.DefaultEncoding before the call instead -- see
             // TestOnLoadFileHandlerCanOverrideEncodingPerFile below for that
             // actually-reachable path. 0xE9 is Windows-1252 (and Latin-1) for
             // é; decoded as UTF-8 on its own it is an invalid lead byte and
@@ -276,36 +276,58 @@ namespace SwissEphNet.Tests
 
         [Fact]
         public void TestReadChars() {
+            // ReadChars(n) reads n raw *bytes* -- the C source's fread(buf, 1, n, fp)
+            // contract (e.g. swejpl.c's ch_cnam, sweph.c's astnam) -- and decodes
+            // whatever that byte span contains; it is not n decoded characters. "è"
+            // and "à" are each 2-byte UTF-8 sequences, so 5 bytes covers exactly
+            // "èaà" (2+1+2) here, and the next 5 cover "\nüî" (1+2+2).
             using (var cfile = new CFile(BuildStream("èaà\nüî"))) {
-                Assert.Equal(new char[] { 'è', 'a', 'à' }, cfile.ReadChars(3));
-                Assert.Equal(new char[] { '\n', 'ü', 'î' }, cfile.ReadChars(3));
-                Assert.Null(cfile.ReadChars(3));
+                Assert.Equal(new char[] { 'è', 'a', 'à' }, cfile.ReadChars(5));
+                Assert.Equal(new char[] { '\n', 'ü', 'î' }, cfile.ReadChars(5));
+                Assert.Null(cfile.ReadChars(5));
                 Assert.True(cfile.EOF);
             }
 
             using (var cfile = new CFile(BuildStream("èaà\nüî"), Encoding.UTF8)) {
-                Assert.Equal(new char[] { 'è', 'a', 'à' }, cfile.ReadChars(3));
-                Assert.Equal(new char[] { '\n', 'ü', 'î' }, cfile.ReadChars(3));
-                Assert.Null(cfile.ReadChars(3));
+                Assert.Equal(new char[] { 'è', 'a', 'à' }, cfile.ReadChars(5));
+                Assert.Equal(new char[] { '\n', 'ü', 'î' }, cfile.ReadChars(5));
+                Assert.Null(cfile.ReadChars(5));
                 Assert.True(cfile.EOF);
             }
 
+            // A byte count that splits a multi-byte sequence decodes to the Unicode
+            // replacement character (U+FFFD) for the incomplete tail, the same way
+            // Encoding.GetChars behaves for any other truncated sequence -- proof
+            // ReadChars is genuinely counting bytes, not silently re-aligning to a
+            // character boundary the way the old character-looped implementation did.
+            using (var cfile = new CFile(BuildStream("èaà\nüî"))) {
+                Assert.Equal(new char[] { 'è', 'a' }, cfile.ReadChars(3));
+                Assert.Equal(new char[] { 'à', '\n' }, cfile.ReadChars(3));
+                Assert.Equal(new char[] { 'ü', '\uFFFD' }, cfile.ReadChars(3));
+                Assert.Equal(new char[] { '\uFFFD' }, cfile.ReadChars(3));
+                Assert.True(cfile.EOF);
+                Assert.Null(cfile.ReadChars(3));
+            }
         }
 
         [Fact]
         public void TestReadString() {
+            // ReadString(ref s, size) reads `size` raw bytes via ReadChars (see that
+            // method's own comment); "è" and "à" are each 2-byte UTF-8 sequences, so
+            // 5 bytes covers exactly "èaà" (2+1+2) here, and the next 5 cover "\nüî"
+            // (1+2+2).
             String str = null;
             using (var cfile = new CFile(BuildStream("èaà\nüî"))) {
                 str = "$$$";
-                Assert.True(cfile.ReadString(ref str, 3));
+                Assert.True(cfile.ReadString(ref str, 5));
                 Assert.Equal("èaà", str);
 
                 str = "$$$";
-                Assert.True(cfile.ReadString(ref str, 3));
+                Assert.True(cfile.ReadString(ref str, 5));
                 Assert.Equal("\nüî", str);
 
                 str = "$$$";
-                Assert.False(cfile.ReadString(ref str, 3));
+                Assert.False(cfile.ReadString(ref str, 5));
                 Assert.Null(str);
 
                 Assert.True(cfile.EOF);
@@ -313,15 +335,15 @@ namespace SwissEphNet.Tests
 
             using (var cfile = new CFile(BuildStream("èaà\nüî"), Encoding.UTF8)) {
                 str = "$$$";
-                Assert.True(cfile.ReadString(ref str, 3));
+                Assert.True(cfile.ReadString(ref str, 5));
                 Assert.Equal("èaà", str);
 
                 str = "$$$";
-                Assert.True(cfile.ReadString(ref str, 3));
+                Assert.True(cfile.ReadString(ref str, 5));
                 Assert.Equal("\nüî", str);
 
                 str = "$$$";
-                Assert.False(cfile.ReadString(ref str, 3));
+                Assert.False(cfile.ReadString(ref str, 5));
                 Assert.Null(str);
 
                 Assert.True(cfile.EOF);

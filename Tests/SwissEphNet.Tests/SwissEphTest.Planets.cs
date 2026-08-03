@@ -69,7 +69,16 @@ namespace SwissEphNet.Tests
         [Fact]
         public void TestGetPlanetName_Asteroid() {
             using (var swe = new SwissEph()) {
-                Assert.Equal("10000", swe.swe_get_planet_name(SwissEph.SE_AST_OFFSET));
+                // sweph.c:7044-7065 splits the not-found message in two:
+                // "(asteroid)" when ipl > SE_AST_OFFSET, "(planetary moon)"
+                // otherwise. SE_AST_OFFSET itself takes the planetary-moon
+                // branch (ipl > SE_AST_OFFSET is false at the boundary), so
+                // the message keeps the full offset rather than subtracting
+                // it. The previous "10000" (no suffix at all) predates that
+                // split; the port now matches, and fixing it resolved the
+                // last differing row (NAME|10005) in the file-backed oracle
+                // grid.
+                Assert.Equal("10000: not found (planetary moon)", swe.swe_get_planet_name(SwissEph.SE_AST_OFFSET));
             }
         }
 

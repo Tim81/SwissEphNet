@@ -3214,16 +3214,35 @@ namespace SwissEphNet.CPort
                     //if (*sp == '#' || *sp == '\n')
                     if (String.IsNullOrEmpty(sp) || sp[0] == '#')
                         continue;
-                    year = int.Parse(s.Substring(0, 4), CultureInfo.InvariantCulture);
+                    // swephlib.c:3110 is `year = atoi(s);`, which returns 0 for an
+                    // unparseable line instead of throwing; int.Parse threw on any
+                    // non-numeric header/comment line reaching this point. C.atoi
+                    // takes the leading digits of the whole line, matching atoi(s);
+                    // a fixed Substring(0, 4) throws when the line is under 4 chars,
+                    // which atoi(s) does not.
+                    year = C.atoi(s);
                     tab_index = year - TABSTART;
                     /* table space is limited. no error msg, if exceeded */
-                    if (tab_index >= TABSIZ_SPACE)
+                    // swephlib.c:3113-3115 only guards the upper bound: `sp += 4` (pointer
+                    // arithmetic on a fixed AS_MAXCH buffer) and `dt[tab_index]` with a negative
+                    // index are both undefined behavior in the C rather than a checked case, so
+                    // there is no lower-bound check to transliterate. A line whose leading digits
+                    // parse to a year below TABSTART (1620) needs one here anyway: Substring(4)
+                    // throws on a line under 4 characters where the C would read past the buffer's
+                    // content into whatever else was there, and dt[tab_index] throws on a negative
+                    // index where the C would write before the array. Skipping both, the same way
+                    // the upper-bound check already skips an out-of-range year, keeps every in-range
+                    // line's behavior identical and turns the two undefined-in-C cases into the same
+                    // silent no-op the C's "no error msg, if exceeded" comment already describes for
+                    // the upper bound.
+                    if (tab_index >= TABSIZ_SPACE || tab_index < 0 || sp.Length < 4)
                         continue;
                     sp = sp.Substring(4).TrimStart(' ', '\t');
                     //while (strchr(" \t", *sp) != NULL && *sp != '\0')
                     //    sp++;	/* was *sp++  fixed by Alois 2-jul-2003 */
                     /*dt[tab_index] = (short) (atof(sp) * 100 + 0.5);*/
-                    dt[tab_index] = double.Parse(sp, CultureInfo.InvariantCulture);
+                    // swephlib.c:3119 is `dt[tab_index] = atof(sp);`, which cannot throw.
+                    dt[tab_index] = C.atof(sp);
                 }
                 fp.Dispose();
             }
@@ -3858,6 +3877,27 @@ namespace SwissEphNet.CPort
             //if (n < nmax) cpos[n] = NULL;
             //return (n);
 
+            // Three divergences from the C above, all in how the field count is kept.
+            //
+            // First, the C seeds n = 1 with cpos[0] = s before the loop, so a field always
+            // exists: cutting "" yields one empty field, not none. This returned an empty
+            // array for an empty input, and a caller reading cpos[0] the way the C's own
+            // callers do would read past the end.
+            //
+            // Second, "n < nmax" in the C is a test on a count that already includes cpos[0],
+            // so "result.Count < nmax" here lagged it by one and cut one field too many. With
+            // s = "a;b;c" and nmax = 2 the C returns 2, {"a", "b;c"}, leaving the last field
+            // un-cut exactly as this function's own doc comment promises; this returned 3,
+            // {"a", "b", "c"}.
+            //
+            // Third, the trailing field was added only when ps < pe, so a string ending in a
+            // separator lost the empty field after it: "a;" gave {"a"} where the C gives
+            // {"a", ""}.
+            //
+            // Both live callers pass nmax = 20 (swi_fopen's path split at Sweph.cs:2841 and
+            // fixstar_cut_string's comma split at Sweph.cs:7350), so the count test only bites
+            // at nineteen or more fields, but the other two bite on any empty or
+            // separator-terminated input.
             s = s ?? string.Empty;
             int ps = 0, pe = s.Length;
             List<string> result = new List<string>();
@@ -3865,21 +3905,43 @@ namespace SwissEphNet.CPort
             while (p < pe)
             {
                 char c = s[p];
-                if(cutlist.Contains(c) && result.Count < nmax)
+                // result.Count + 1 is the C's n: the field being accumulated is cpos[n - 1]
+                // and has not been added yet.
+                bool cut = cutlist.Contains(c) && result.Count + 1 < nmax;
+                if (cut)
                 {
                     result.Add(s.Substring(ps, p - ps));
-                    while (p < pe && cutlist.Contains(s[p])) p++;
-                    ps = p;
+                    // The C advances while the NEXT character is also a separator, leaving s
+                    // on the last one, then starts the next field at s + 1. That is what
+                    // collapses a run of separators into one cut.
+                    while (p + 1 < pe && cutlist.Contains(s[p + 1])) p++;
+                    ps = p + 1;
                 }
-                if (c == '\n' || c == '\r')
+                // The C tests *s after the branch above may have overwritten it with '\0', so
+                // a separator that was cut can never also be seen as a line ending here.
+                //
+                // This is NOT full parity with the C, and the difference is worth stating
+                // rather than implying it away. When a line terminator is itself in cutlist,
+                // the C tests *s at the position the run-skip advanced to, so a run of two or
+                // more separators ending in '\n' or '\r' does break there, and its break leaves
+                // the final field running to the real end of the string. This skips the test
+                // whenever a cut happened and keeps cutting instead:
+                //     cutlist ",\n"  s="a,\na\n"   C {"a", "a\n"}   here {"a", "a", ""}
+                //     cutlist ",\n"  s="a\n\n;,"   C {"a", ";,"}    here {"a", ";", ""}
+                // Neither caller puts a line terminator in the cut-list (Sweph.cs:2841 passes
+                // PATH_SEPARATOR, :7350 passes ','), so nothing reaches it. Matching the C here
+                // would mean letting the final field survive the break un-truncated, which is a
+                // structural change to a frozen function for a path with no caller, so the
+                // divergence is recorded instead of removed.
+                if (!cut && (c == '\n' || c == '\r'))
                 {
                     pe = p;
                     break;
                 }
                 p++;
             }
-            if (ps < pe)
-                result.Add(s.Substring(ps, pe - ps));
+            // Unconditional, matching the C's cpos[0] existing before the loop runs at all.
+            result.Add(s.Substring(ps, Math.Max(0, pe - ps)));
             cpos = result.ToArray();
             return cpos.Length;
         }	/* cutstr */
@@ -3893,15 +3955,6 @@ namespace SwissEphNet.CPort
             //return s;
             s = s.TrimEnd();
             return s;
-        }
-
-        public static int swi_strnlen(string str, int n)
-        {
-            //size_t swi_strnlen(const char *str, size_t n) {
-            //  const char * stop = (char *)memchr(str, '\0', n);
-            //  return stop ? stop - str : n;
-            //}
-            return str != null ? str.Length : n;
         }
 
         /*
@@ -4094,8 +4147,12 @@ namespace SwissEphNet.CPort
 
             if (h > 99) sb.Append((char)(h / 100 + '0'));
             if (h > 9) sb.Append((char)(h % 100 / 10 + '0'));
-            sb.Append(pchar)
-                .Append((char)(h % 10 + '0'))
+            // swephlib.c:3906-3911: a[2]=h%10, a[3]=pchar, a[4]=m/10, a[5]=m%10 -- pchar sits
+            // between the degrees' units digit and the minutes, not before it. This appended pchar
+            // one position too early, transposing it with the units digit for every caller
+            // (e.g. 1234567 with pchar 'p'/mchar 'm' printed "p325'46" instead of "3p25'46").
+            sb.Append((char)(h % 10 + '0'))
+                .Append(pchar)
                 .Append((char)(m / 10 + '0'))
                 .Append((char)(m % 10 + '0'))
                 ;
@@ -4671,7 +4728,12 @@ namespace SwissEphNet.CPort
             if (samod != null)
             {
                 //if (C.strchr(samod, '+') != null)
-                if (samod.Contains('+')) 
+                // swephlib.c:4415 uses strchr, a byte-wise search. string.Contains(char) (no
+                // StringComparison) is built on IndexOf(char), which is already ordinal by
+                // definition (see the comment on C.strchr in Tools/C.cs); the (char,
+                // StringComparison) overload that would make that explicit is not part of
+                // netstandard2.0, so this stays as-is.
+                if (samod.Contains('+'))
                     list_all_models = true;
                 swe_set_astro_models(samod, iflag);
             }

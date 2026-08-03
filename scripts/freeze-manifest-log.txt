@@ -1,0 +1,560 @@
+Sidecar log for scripts/freeze-manifest.tsv, checked by scripts/verify-freeze-log.ps1.
+
+scripts/verify-freeze.ps1 -Update rewrites scripts/freeze-manifest.tsv from whatever is
+currently on disk, with nothing else requiring that rewrite to be reviewed alongside a
+real reason. Tests/baseline/*.tsv has exactly this same failure mode and closes it with
+Tests/baseline/baseline-*.env.txt's own "## Local regenerations" log, checked by
+scripts/verify-baseline-log.ps1; this file and scripts/verify-freeze-log.ps1 are the
+identical mechanism for the freeze manifest. Never add an entry here to make a failing
+freeze gate pass without first understanding why it failed -- see CONTRIBUTING.md and
+scripts/verify-freeze.ps1's own header for what a legitimate change to a frozen file
+looks like (a fidelity fix citing the C, or a re-transliteration).
+
+## Manifest updates
+
+This append-only log records each deliberate, reviewed run of
+`scripts/verify-freeze.ps1 -Update`, most recent last. Cite the PR number, not a commit
+SHA still on an open branch (see Tests/baseline/baseline-*.env.txt's own log for why:
+squash-merged PRs mean a SHA cited while a branch is still open names a commit that will
+not exist on the integration branch once it lands).
+
+1. PR #32 2026-08-01: Restored
+   the SE_EPHE_PATH environment-variable priority in swe_set_ephe_path (sweph.c:1327-1337),
+   which existed in this port but was commented out (Sweph.cs:1561-1573 before this change),
+   so setting the variable had no effect. Fidelity fix, not a re-transliteration: no other
+   line in SwissEphNet/CPort moved. SwissEphNet/CPort: 48411 -> 48419 lines, 1259 -> 1258
+   trailing-whitespace lines (one commented C line's trailing space was trimmed while
+   restoring it), sha256 6A8B1530... -> 6944FDFD....
+2. PR #32 2026-08-01: Added the
+   JD-range guard sweph.c:994-1006 has on SE_INTP_PERG (interpolated lunar perigee), mirroring
+   the SE_INTP_APOG guard already at Sweph.cs:1161-1168 just above it in the same file. Fidelity
+   fix, not a re-transliteration: no other line in SwissEphNet/CPort moved. Flips suite 1
+   testcase 1 iterations 377, 379, 383 and 385 in Tests/conformance/known-fail.tsv from failing
+   to passing (via scripts/regenerate-known-fail.ps1 -PruneOnly, 1427 -> 1423 rows). SwissEphNet/
+   CPort: 48419 -> 48427 lines, sha256 6944FDFD... -> 97CEB47C....
+3. PR #32 2026-08-01: The four
+   SwissEphNet/CPort/Sweph.cs sites that fell back to the default ephemeris path (Sweph.cs:167,
+   1423, 1585, 1589) now read the new SwissEph.DefaultEphePath (SwissEph.swephexp.h.cs) instead
+   of the public SwissEph.SE_EPHE_PATH constant, which keeps its "[ephe]" value unchanged for
+   binary compatibility (const fields are inlined into callers at their own compile time).
+   DefaultEphePath resolves upstream's real default at run time: "\sweph\ephe\" on Windows,
+   ".:/users/ephe2/:/users/ephe/" elsewhere, matching swephexp.h:399-408's #if MSDOS branch,
+   which upstream also takes for ordinary Win32/Win64 builds (sweodef.h:96-98), not only
+   MS-DOS. Fidelity fix, not a re-transliteration: line count in SwissEphNet/CPort is unchanged
+   (only right-hand-side expressions moved), sha256 97CEB47C... -> 26C28B33.... Paired with a
+   deliberate, reviewed characterization-baseline regeneration (see
+   Tests/baseline/baseline-2.8.0.2.env.txt's own "## Local regenerations" log): the previous
+   "[ephe]" placeholder was frozen into hundreds of expected serr strings the baseline compares
+   verbatim, so restoring the real default necessarily moves that text.
+4. PR #32 2026-08-01: do_fread
+   (Sweph.cs) tested `fp.Read(trg, 0, totsize) == 0`, which rejects only a zero-byte read.
+   sweph.c:4915 and :4926 use `fread(targ, totsize, 1, fp) == 0`: fread's third argument is an
+   item count of 1 (item size totsize), so fread returns 0 items on any short read, not only a
+   zero-byte one. CFile.Read loops and returns the actual byte count, so a partial (non-zero,
+   short) read was silently accepted as success, leaving the rest of the target buffer at
+   whatever it already held. Both do_fread branches changed the same way, to `!= totsize`.
+   Fidelity fix, not a re-transliteration: no other line in SwissEphNet/CPort moved. Proven to
+   discriminate, not merely added: Tests/SwissEphNet.Tests/DoFreadShortReadTest.cs constructs a
+   truncated, header-patched copy of the seas_18.se1 fixture whose declared length and CRC-32
+   both still match the truncated bytes (so read_const's own, separate file-length guard does not
+   fire first), truncated exactly inside the last do_fread call the whole computation makes for
+   the queried date -- confirmed by reverting this fix and rerunning: swe_pheno(SE_CHIRON, ...)
+   returns success (4) with a wrong attr[3] instead of ERR. SwissEphNet/CPort: 48427 -> 48435
+   lines, sha256 26C28B33... -> 66866B61....
+5. PR #32 2026-08-01: Not a change to
+   any frozen file -- scripts/verify-freeze.ps1's own hashing was wrong. Get-FrozenFile's
+   directory branch called `[System.Array]::Sort($keys, $items, comparer)` with $keys typed
+   [string[]] and $items [object[]], which PowerShell resolves to the generic
+   Array.Sort<TKey,TValue> overload: it sorts $keys but silently leaves $items untouched, so the
+   function actually returned files in whatever order Get-ChildItem's OS directory enumeration
+   produced, not the ordinal order the surrounding comments claimed. The fingerprint hashed that
+   unstable enumeration order. Fixed by casting both arguments to [Array], which forces the
+   non-generic Array.Sort(Array, Array, IComparer) overload that does sort $items, and by keying
+   the sort on the repo-relative, separator-normalized path (the same string already hashed per
+   file) instead of the raw absolute FullName. Confirmed no frozen file's content moved: `git diff
+   --stat` over SwissEphNet/CPort, Programs/SweTest/Program.cs and Programs/SweMini/Program.cs is
+   empty at the commit that changed this script and regenerated the manifest. Every count except
+   the hash is unchanged (SwissEphNet/CPort stays 17 files, 48435 lines, 1205 kr_braces, 1258
+   trailing_ws); only the enumeration order, and therefore the sha256, moved: SwissEphNet/CPort
+   66866B61... -> 3E241AA5..., the two single-file frozen paths unchanged (a one-file directory
+   has nothing to reorder).
+6. PR #32 2026-08-01: read_const
+   (Sweph.cs) dereferenced fp.ReadLine()'s result with .Trim() unconditionally in the file-name
+   section, unlike every sibling ReadLine call in the same function (:5277, :5320, :5331), which
+   all null-check first, matching sweph.c:4553-4557's own `sp == NULL || ...` guard on the
+   equivalent fgets() call. A .se1 file truncated to exactly its first line put the second
+   ReadLine at true EOF, returning null, so the unguarded .Trim() threw NullReferenceException
+   instead of reaching the same file_damage path (`ret=-1`, serr "is damaged") every other
+   truncation length already reached -- escaping swe_calc, swe_calc_ut and swe_set_ephe_path
+   (which calls swe_calc internally). Fidelity fix, not a re-transliteration: no other line in
+   SwissEphNet/CPort moved. Proven to discriminate: Tests/SwissEphNet.Tests/
+   TruncatedFirstLineSe1Test.cs feeds swe_calc/swe_calc_ut/swe_set_ephe_path a 13-byte "SWISSEPH
+   3\r\n"-only sepl_18.se1 stream; reverting this fix and rerunning throws
+   NullReferenceException on all three instead of returning ret=-1 "damaged". SwissEphNet/CPort:
+   48435 -> 48448 lines, sha256 3E241AA5... -> 42A10A5B....
+7. PR #32 2026-08-01: Two
+   independent fidelity fixes to Programs/SweTest/Program.cs, landed together because both were
+   found by the same review pass. First, the -p<seq> option handler: swetest.c:1120-1131
+   declares spno as `char *`, sets it to the whole remainder of the argument (argv[i]+2), and
+   switches on *spno (its first character, '\0' for an empty remainder); the default branch
+   assigns that whole remainder to plsel. The port declared spno as a single char and read
+   argv[i][2] directly, which threw IndexOutOfRangeException on bare "-p" (no character at index
+   2) and, in the default branch, kept only that one character where the C keeps the whole
+   selector string (e.g. "-p0123456789Dmte" is documented to select ten bodies; the port
+   computed only the first). Now spno is a string (argv[i].Substring(2)), switched on its first
+   character or '\0' when empty, matching the C exactly. Second, the do_houses Gauquelin cusp
+   read: swetest.c:1958 reads cusp[ipl] unconditionally for every ipl up to iofs+8, before the
+   ipl >= iofs branch immediately overwrites it from ascmc -- benign stack UB in C when cusp is
+   only double[37] (swetest.c:1933) and iofs is 37 (Gauquelin, nhouses=36), since the read value
+   past cusp's nominal end is always discarded before use. The port's identical double[37] threw
+   IndexOutOfRangeException on every -house...,G invocation. Sized cusp to iofs+8 (computed
+   after nhouses/iofs are finalized, not before) rather than adding a bounds check the C does
+   not have -- the same precedent SwissEphNet/CPort/SweHouse.cs's hcusp[37] fix already set.
+   Neither is a re-transliteration: no other line in Programs/SweTest/Program.cs moved. Proven
+   to discriminate against external/.c-reference/swetest.exe (MSVC-built 2.10.03): "-p0123456789
+   -b1.1.2000 -eswe" now prints all 10 bodies, byte-identical to the C, where it printed only
+   the Sun before; bare "-p -b1.1.2000 -eswe" now prints nothing and exits 0 like the C instead
+   of throwing; "-house10,51.5,G -b1.1.2000 -p0 -fPl -eswe" now runs to completion, byte-
+   identical to the C (36 house cusps plus Ascendant/MC/ARMC/Vertex/co-Ascendant/Polar-Ascendant
+   lines), where it threw before. Tools/SwetestDiff/gen-args-grid.ps1 gained a fifth
+   HOUSES_CRASH case (Id 5, -house10,51.5,G) for the second fix; Tests/swetest/known-diff.tsv
+   dropped PLSEL_TRUNCATION|1..3 (now bit-identical) for the first, taking it from 15 to 12
+   rows -- see Tests/swetest/regenerations.log's own entry. Programs/SweTest/Program.cs: 4963 ->
+   4981 lines, 69 -> 68 trailing-whitespace lines (one commented C line's trailing space was
+   trimmed while adding the fix comment next to it), sha256 B3DC53A7... -> 667C09F3....
+8. PR #32 2026-08-01:
+   swe_lun_occult_when_glob and swe_lun_occult_when_loc (SwissEphNet/CPort/SweCL.cs) took `bool
+   backward` where swephexp.h declares `int32 backward` for both -- a bitfield: bit 0 selects
+   search direction and OR-ing in SE_ECL_ONE_TRY (32768) limits a global-occultation search to
+   one lunar cycle (swecl.c:1539, documented at :1535-1545), tested by `one_try = backward &
+   SE_ECL_ONE_TRY` at swecl.c:1593 and :2436. `(bool ? 1 : 0) & 32768` is provably always 0, so
+   SE_ECL_ONE_TRY could never reach either mask through the old signature -- confirmed the
+   reverted signature does not even compile against a call site passing it. Both parameters are
+   now Int32, matching the C exactly (swe_lun_occult_when_glob directly; swe_lun_occult_when_loc
+   via occult_when_loc, whose own `int backward` parameter already matched swecl.c:2415 -- only
+   the public wrapper narrowed). SwissEph.swephexp.h.cs (not frozen) gained matching Int32
+   primaries with bool source-compatibility overloads alongside, and
+   Programs/SweTest/Program.cs's own two call sites (swetest.c:3525, :3617, both OR the flag in
+   unconditionally) had their commented-out `|SE_ECL_ONE_TRY` uncommented and widened to int at
+   the call site, matching the C. Fidelity fixes, not re-transliterations: no other line in
+   SwissEphNet/CPort or Programs/SweTest/Program.cs moved. Proven against
+   external/.c-reference/build-2.10.03/libswe-2.10.03.lib directly (a small C driver calling
+   swe_lun_occult_when_glob(2451604.5, 0, "aldebaran", SEFLG_MOSEPH, 0, tret, backward, serr)):
+   backward=0 searches until found, ret=6, 5,447.72 days later; backward=32768 gives up after
+   one lunar cycle, ret=0, "no solar eclipse at tjd = 2451615.848510" -- the .NET port is bit-
+   identical to the C on both calls once its backward parameters actually carry Int32.
+   Tests/SwissEphNet.Tests/EclOneTryTest.cs pins both results and a third proving the bool
+   overload cannot request SE_ECL_ONE_TRY. SwissEphNet/CPort: 48448 -> 48460 lines, sha256
+   42A10A5B... -> D87C454F.... Programs/SweTest/Program.cs: 4981 -> 4989 lines, sha256
+   667C09F3... -> 873AADAC....
+9. PR #32 2026-08-01: Three
+   fidelity fixes landed together, found by the same review pass. First,
+   Programs/SweMini/Program.cs:104 used Regex.Match(@"(\d+)\.(\d+)\.(\d+)") where
+   swemini.c:42 is sscanf(sdate, "%d%*c%d%*c%d", &jday,&jmon,&jyear): three decimal fields
+   each separated by any single byte (%*c, assignment-suppressed), with each field left at
+   its prior value on its own scan failure (sscanf's normal partial-assignment behavior).
+   Driven against MSVC-built C (external/swisseph, cl.exe 14.51.36231) over 11 inputs, the
+   two diverged on six: "5/3/2024", "5-3-2024" and "5 3 2024" parsed in C and fell back to
+   the 1/1/2022 default in the port; bare "5" and "5.3" did partial assignment in C and none
+   in the port; "-5.3.2024" kept its sign in C and lost it in the port; "v1.2.3 rc" matched
+   mid-string in the port where C parsed nothing. Replaced with C.sscanf (Tools/C.scanf.cs),
+   which already implements assignment suppression and reproduced the C's rc/jday/jmon/jyear
+   on all 11 inputs bit-for-bit once substituted. Same file, :97: "\nDate (d.m.y) ? " carried
+   a trailing space swemini.c:37 does not have; removed. Second and third,
+   SwissEphNet/CPort/Sweph.cs's load_dpsi_deps, reached only via swe_set_jpl_file when the
+   opened JPL ephemeris reports jpldenum >= 403 (Sweph.cs:1782) -- unreachable by any fixture
+   in this repo, so driven by constructing a minimal synthetic DE-format binary header
+   (single body group, one data segment, numde=431) served through the FileProvider seam,
+   confirming both defects live before fixing them and confirming the fixes clear them
+   after. :1665 (now :1669) split a blank line with s.Split(' ', RemoveEmptyEntries) and
+   indexed cpos[0]; sweph.c:1404-1405's swi_cutstr (swephlib.c:3707) always sets
+   cpos[0] = s, so a blank line makes atoi(cpos[0]) == 0 and `continue`s, where
+   RemoveEmptyEntries instead produced a zero-length array and threw
+   IndexOutOfRangeException -- reproduced directly (a blank first line in the synthetic
+   eop_1962_today.txt fixture crashed swe_set_jpl_file before this fix, completed normally
+   after). :1699 and :1714-1720 read s.Substring(7/99/118/168/178), where sweph.c:1432 and
+   :1446-1451 read atoi(s+7)/atof(s+168) etc. into a 256-byte buffer -- a benign past-NUL
+   read in C on a short line, and an ArgumentOutOfRangeException in .NET; replaced with this
+   file's own Substr(N), which already returns "" past the string's end the same way atoi/
+   atof already treat "" as 0. Reproduced the same way: a short (16-byte) synthetic
+   eop_finals.txt prediction line crashed at Substring(168) before this fix, completed
+   normally after. Neither Sweph.cs fix is a re-transliteration: no other line in
+   SwissEphNet/CPort moved. SwissEphNet/CPort: 48460 -> 48476 lines, sha256 D87C454F... ->
+   0AEEA27E.... Programs/SweMini/Program.cs: 164 -> 165 lines, sha256 075ABEEC... ->
+   D1274D16....
+10. PR #32 2026-08-01: One
+   fidelity fix. Programs/SweMini/Program.cs:125 wrote its column header with
+   Console.WriteLine, where swemini.c:52 is printf("planet     	longitude	latitude	
+   distance	speed long.
+") like every other output in that loop, including the printf on
+   the line immediately above it. Console.WriteLine terminates with Environment.NewLine, so
+   on Windows that single line emitted CRLF while every printf around it emitted the bare LF
+   its format string carries -- one program, two line endings, from the one output call that
+   did not go through this file's own printf helper. Replaced with that helper, which is
+   Console.Write(C.sprintf(...)) and so passes the format string's 
+ through unchanged.
+   Not a re-transliteration: no other line moved, and the header text itself is byte-for-byte
+   what it was. SweMini's stdout is compared by no harness in this repo (the swetest diff
+   covers Programs/SweTest only), so this changes nothing any gate measures; it was found by
+   reading for output calls that bypass printf rather than by a failure.
+   Programs/SweMini/Program.cs: 165 -> 170 lines, sha256 D1274D16... -> F692F611....
+11. PR #32 2026-08-02: One fidelity fix. SwissEphNet/CPort/Sweph.cs:2642 compared with
+   s.StartsWith(subdirnam, Ordinal) where sweph.c:2219 is
+   "if (subdirlen > 0 && strncmp(s, subdirnam, (size_t) subdirlen) == 0)". The dropped
+   conjunct is not redundant in C#. strncmp with a length of 0 returns 0, so the C needs the
+   guard to stop an empty subdirnam matching everything, and "x".StartsWith("") is
+   unconditionally true, so the port took the branch, stripped subdirlen + 1 == 1 character
+   per pass, and walked s down to an ArgumentOutOfRangeException where the C returns
+   NOT_AVAILABLE. The sibling site at Sweph.cs:2605 already carried the guard and cites the
+   same C line one occurrence earlier (sweph.c:2196, byte-identical to :2219), so this was an
+   inconsistency inside one function rather than a considered divergence.
+   Latent at this tag and not driven by a test, which the added test says plainly rather than
+   implying coverage it does not have: subdirnam is empty only when the generated filename has
+   no directory component, and swi_gen_filename writes DIR_GLUE into both formats that reach
+   this retry ("ast%d%sse%05d.%s" and "sat%ssepm%d.%s"). Tests/SwissEphNet.Tests/
+   GenFilenameSubdirTest.cs pins that invariant instead, so a later generator change that made
+   this guard load-bearing fails loudly in the file that caused it. Proved non-vacuous by
+   flattening the asteroid format: 5 of its 7 cases fail, the 2 planetary-moon cases correctly
+   do not.
+   SwissEphNet/CPort: 48476 -> 48487 lines, sha256 0AEEA27E... -> 8B5C2BAE....
+12. PR #32 2026-08-02: One fidelity fix. SwephLib.cs's swi_cutstr did not implement the C
+   sitting commented out directly above it, in three ways, all in how the field count is kept.
+   The C seeds n = 1 with cpos[0] = s before its loop, so a field always exists and its
+   "n < nmax" test is on a count that already includes the first field.
+     ""       C 1 field {""},        port 0 fields {}
+     "a,"     C 2 fields {"a", ""},  port 1 field  {"a"}
+     "a;b;c" with nmax 2:  C 2 fields {"a", "b;c"}, port 3 fields {"a", "b", "c"}
+   The third contradicts this function's own doc comment, which promises the last field is
+   left un-cut once nmax is reached. Fixed by testing result.Count + 1 against nmax, adding
+   the trailing field unconditionally, and skipping separator runs the way the C does (advance
+   while the NEXT character is a separator, so the next field starts after the run).
+   Also matched the C's ordering around line endings: the C tests *s after the cut branch may
+   have overwritten it with a terminator, so a separator that was cut can never also be read
+   as a line ending. Only reachable if '
+' or '' were themselves in cutlist, which no
+   caller does, but the port tested the original character and would have diverged if one did.
+   Blast radius checked rather than assumed: both live callers pass nmax = 20, swi_fopen's
+   path split (Sweph.cs:2841) and fixstar_cut_string's comma split (Sweph.cs:7350), so the
+   count test only bites at nineteen or more fields while the empty and trailing-separator
+   cases bite on any such input. Fixed-star parsing is a path the characterization baseline
+   structurally cannot see, so the evidence that nothing moved is the oracle and the
+   conformance corpus, not the baseline: regenerating both oracle grids leaves the port's
+   dump files byte-identical (dump-net.tsv b36a007e..., dump-net-files.tsv f3fa03aa...), and
+   the conformance run reports no known-fail movement. Tests/SwissEphNet.Tests/CutStrTest.cs
+   adds 9 cases, every expectation derived from the C by hand rather than from prior output.
+   SwissEphNet/CPort: 48487 -> 48518 lines, sha256 8B5C2BAE... -> 91F5C3E6....
+13. PR #32 2026-08-02: Comment only, correcting a false claim entry 12 introduced. The line
+   ending guard in swi_cutstr carried a comment saying the port "would diverge if one ever
+   did" put '
+' or '' in cutlist, implying it does not diverge now. It does. Shown by
+   review, against a faithful simulation of the C over 131,064 exhaustive cases: the C tests
+   *s at the position its run-skip advanced to, so a run of two or more separators ending in a
+   line terminator DOES break there, and that break leaves the final field running to the real
+   end of the string. This port skips the test whenever a cut happened and keeps cutting.
+     cutlist ",
+"  s="a,
+a
+"   C {"a", "a
+"}   port {"a", "a", ""}
+     cutlist ",
+"  s="a
+
+;,"   C {"a", ";,"}    port {"a", ";", ""}
+   Unreachable: Sweph.cs:2841 passes PATH_SEPARATOR and :7350 passes ',', so no caller puts a
+   line terminator in the cut-list. Matching the C would mean letting the final field survive
+   the break un-truncated, a structural change to a frozen function for a path with no caller,
+   so the divergence is now recorded in place rather than removed or misdescribed. The same
+   review confirmed the rest of entry 12 exhaustively: 131,064 cases, 0 mismatches, and it
+   found a fourth divergence in the pre-entry-12 code that entry 12 did not mention (the inner
+   run-skip advanced p and then p++ advanced again, leaving one character unexamined, so
+   "a,
+b" with cutlist "," gave {"a", "
+b"} where the C gives {"a", ""}); that one is fixed
+   too.
+   No behaviour change in this entry. SwissEphNet/CPort: 48518 -> 48530 lines, sha256
+   91F5C3E6... -> 23B9CDB0....
+14. PR #32 2026-08-02: One fidelity fix, and the first port defect the JPL grid found.
+   SweJPL.cs read the 400 six-byte constant names with ReadChars and compared the result's
+   Length against 2400. swejpl.c:210-211 and :682-683 call fread with an element size of 1, so
+   its return is a count of BYTES and both guards are byte guards. ReadChars consumes exactly
+   2400 bytes (CFile.cs documents why it must) but returns the DECODED characters, and any
+   byte above 0x7F folds a multi-byte sequence into a single char, so the count falls short of
+   2400 for a well-formed file and open_jpl_file refuses it.
+   Data-dependent, which is why nothing caught it. DE406 carries 176 bytes above 0x7F in the
+   unused tail of its constant-name block, so 2400 bytes decode to 2380 characters and every
+   JPL call silently fell back to Moshier. DE431 carries none, decodes 2400 to 2400, and was
+   the only DE file this repository had ever opened -- including the 12,757-iteration
+   conformance run that passed 500 of 538 JPL rows against it.
+   Fixed by reading the bytes and counting the bytes at both sites, via CFile.Read(byte[], int,
+   int), which was already public. ch_cnam stays char[] at one char per byte, matching the C's
+   char buffer and the assumption of its only reader, the commented-out diagnostic printf near
+   the end of the file.
+   Measured against the MSVC-built C over Tools/OracleGrid/grid-jpl.tsv with NASA's DE406
+   (sha256 b23009e208d625c5e830c4cb67e6313d7f9eadeffe17292a7471f33250c9342d): before, 415 of
+   2,400 rows bit-identical and 1,985 differing, all traced to this one cause; after, 2,400 of
+   2,400 bit-identical, 0 differing. The analytic and files grids are untouched, dump-net.tsv
+   b36a007e... and dump-net-files.tsv f3fa03aa... byte-identical either side of the change.
+   SwissEphNet/CPort: 48530 -> 48549 lines, sha256 23B9CDB0... -> EBBE1B4F....
+15. PR #32 2026-08-02: Two fidelity fixes to
+   Programs/SweTest/Program.cs, both from swetest.c's v2.10.3final -> v2.10.3bfinal delta
+   (af9823fe..f4dcd18e, the same bump 629f205 re-pinned the hunk count for), and a correction
+   to that commit's own explanation of what moved.
+   First, the -lim per-body ephemeris-file lookup. swetest.c:1658-1671 changed the
+   show_file_limit block from `if (show_file_limit && ipl > SE_AST_OFFSET)` calling
+   `swe_get_current_file_data(3, ...)` unconditionally, to `if (show_file_limit)` with an
+   `ifno` computed per body (0 for Sun/Mercury..Chiron's planet file, 1 for the Moon, 2 for
+   Ceres..Vesta, 3 default for asteroids/fictitious bodies/planetary moons). The port only ever
+   ported the old gate (Program.cs:2049, `ipl > SwissEph.SE_AST_OFFSET`), so `-lim` printed the
+   "range ...: ... de=..." line for asteroids only and silently printed nothing for every
+   planet, the Moon, or a main-belt body -- confirmed against
+   external/.c-reference/swetest.exe: "-b1.1.2000 -p2 -lim -fPLBRS -eswe" prints the sepl_18.se1
+   range line on the C and nothing on the pre-fix port. Ported the ifno branch verbatim. The C
+   also switched swe_revjul's four out-parameters from the function-wide jyear/jmon/jday/jut to
+   locals (jy/jm/jd/jt) scoped to the new `if (fnam != NULL)` block; that is not cosmetic here.
+   Program.cs's jyear/jmon/jday/jut (declared :791-792) are class-level fields the same row's
+   later format letters read for the date column (e.g. :2625, :2709, :2739), so with the old
+   gate's narrow reach this collision was latent -- reusing the C's local variables, not the
+   shared fields, avoids the show_file_limit block overwriting the row's own date once -lim
+   actually fires on a non-asteroid body, which the old gate never allowed to happen.
+   Second, the error-message whitelist. swetest.c:1728 adds
+   `|| (ipl > SE_FICT_OFFSET_1 && ipl <= SE_FICT_MAX)` to the `if (iflgret < 0)` guard at
+   :1723-1731 that decides whether a repeated swe_calc error is printed at all, so a fictitious
+   body's error is no longer suppressed after the first occurrence. Ported the same disjunct
+   into Program.cs's copy of that block (SwissEph.SE_FICT_OFFSET_1, SwissEph.SE_FICT_MAX, both
+   already defined in SwissEph.swephexp.h.cs). This corrects 83616b2's commit message, which
+   places this change in "the ayanamsa-name check": the ayanamsha block is a separate `if
+   (psp == 'b')` site calling swe_get_ayanamsa_ex a few lines below, and does not touch ipl at
+   all. Confirmed directly against the C diff hunk (external/swisseph, `git diff af9823fe
+   f4dcd18e -- swetest.c`), which anchors the new disjunct inside the `if (iflgret < 0)` hunk,
+   not the ayanamsha one.
+   Two hunks from the same diff needed no port change, for reasons checked rather than assumed.
+   swetest.c:2799's `char sdateperi[20]` -> `[40]` widens a C stack buffer against overflow;
+   Program.cs's orbital_elements (:3409-3431) builds sdateperi as a C# string via C.sprintf with
+   no fixed-size buffer, so there is nothing for a widened array to protect. swetest.c:1281-1284
+   wraps the pre-existing gethostname()/as80 line_limit-doubling call in `#ifndef _WINDOWS`;
+   Program.cs has had both lines fully commented out (:1566-1568), on every platform, since
+   before this delta, so the C's Windows-only skip and the port's always-skip already agree on
+   Windows, and the port's pre-existing non-Windows simplification is unaffected by this hunk
+   either way. Neither is recorded as a divergence needing a future fix: the first because a
+   managed string has no analogous overflow, the second because it predates this delta and is
+   already the documented state in docs/known-issues.md's spmoon/gethostname section.
+   This also corrects 629f205's own explanation of the hunk count it re-pinned. That commit
+   attributes the filtered-hunk bump (swetest.c 99 -> 100) to "the spmoon declaration and the
+   #ifndef _WINDOWS guard around gethostname." Neither is the +1: comparing the hunk-header
+   sets of `diff -u external/pyswisseph-2.08/swetest.c <af9823fe checkout>` against the same
+   diff run against the f4dcd18e checkout (`grep '^@@'` over each, then diffed against each
+   other) shows every hunk boundary identical except one, a brand-new hunk at old-side line 2554
+   / new-side line 2796 -- squarely the orbital_elements/sdateperi region -- while spmoon's
+   one-line declaration (near the pre-existing sastno/shyp hunk, old/new ~642-663) and
+   gethostname's two-line guard (inside the pre-existing block at ~1281-1298) both land within
+   hunk boundaries that already existed relative to the 2.08 baseline, so neither moves the
+   count. The +1 hunk is sdateperi. Commit messages are immutable, so 629f205's text stands as
+   written; this entry is the correction on record, and docs/compliance-2.10.03.md and
+   .github/workflows/oracle.yml were not touched by that misattribution (neither cites hunk
+   provenance, only known-diff.tsv's row count) and needed no edit for it.
+   Tools/SwetestDiff/gen-args-grid.ps1 gained NEW_2_10_FLAGS|LIM_PLANET (-p2 -lim, ifno=0) so a
+   planet exercises the fixed branch; the pre-existing LIM row's -xs433 only ever exercised the
+   default ifno=3 (asteroid) branch, which both sides already agreed on and is exactly why this
+   defect shipped uncaught. args-grid.tsv: 253 -> 254 rows. Tests/swetest/known-diff.tsv: 12 ->
+   13 rows -- the new row differs from the C only in the pre-existing, documented DIR_GLUE `\`
+   vs `/` path-separator divergence (Sweph.cs pinned to '/', 11 other rows already carry the
+   same shape), not a new defect; see Tests/swetest/regenerations.log's own entry.
+   verify-swetest-diff.ps1: 241/253 byte-identical (12 known-diff) before this commit,
+   241/254 (13 known-diff) after, both green. Proven to discriminate: "-b1.1.2000 -p2 -lim
+   -fPLBRS -eswe -edir<dir>" against external/.c-reference/swetest.exe (v2.10.3bfinal) now
+   prints "range <dir>\sepl_18.se1: 2378496.5 = 1.01.1800 to 2597651.4 = 10.01.2400 de=441"
+   identically on both sides (module the pre-existing DIR_GLUE separator), where the pre-fix
+   port printed nothing at all for that line.
+   Programs/SweTest/Program.cs: 4989 -> 5005 lines, 65 kr_braces (was 65), 68 trailing-ws (was
+   68), sha256 873AADAC... -> 947D21A7....
+16. PR #32 2026-08-03: One fidelity fix. SwemPlan.cs's check_t_terms "a number" branch
+   (numeric term of a t_terms polynomial string) truncated sp at the first character outside
+   "0123456789." into a separate sval, then called C.atof(sval) for both the C's atof(sp) != 0
+   test and its fac *= atof(sp) multiply. swemplan.c:958-959 is
+   `if (atof(sp) != 0 || *sp == '0') fac *= atof(sp);` -- atof on the untruncated sp, not on a
+   pre-truncated copy. The truncation strips a leading sign before C.atof ever sees it (C.atof
+   itself already accepts one, Tools/C.cs:15, so C.atof(sp) is the faithful transliteration):
+   for sp == "-3", the truncated sval was empty, C.atof("") returned 0, and the term
+   contributed nothing where the C multiplies fac by -3. Fixed by calling C.atof(sp) directly
+   and removing the now-unnecessary cnt/sval truncation, and rewrote the adjacent comment,
+   which had claimed the port "already collapses them into one C.atof call" -- true of the
+   call count, false of the point being made, since the surviving call read the wrong string.
+   Fidelity fix, not a re-transliteration: no other line in SwissEphNet/CPort moved.
+   SwissEphNet/CPort: 48549 -> 48551 lines, sha256 EBBE1B4F... -> 81513380....
+17. PR #32 2026-08-03: One fidelity fix, two call sites. Programs/SweTest/Program.cs's
+   ecliptic- and equatorial-cartesian diff blocks (:2277, :2303) each have a DIFF_MIDP-style
+   "else" arm that is a single statement, not a loop: `xcart[i] = (xcart[i] + x2[i]) / 2;`
+   (swetest.c:1853) and `xcartq[i] = (xcart[i] + x2[i]) / 2;` (swetest.c:1875). Both read `i`
+   left over from whichever earlier "for (i = 1; i < 6; i++)" block ran last in the same
+   iteration -- always 6 when no other format letter's block ran first, since that loop always
+   completes. Indexing a C `double xcart[6]`/`x2[6]` at 6 is a benign one-past-the-end
+   read/write (adjacent static-storage memory, discarded because every print site reads a fixed
+   index 0-5); indexing the port's `double[6]` at 6 throws IndexOutOfRangeException, crashing
+   swetest on `-D<n>` combined with any of `-fX`/`-fU`/`-fx`/`-fu`. Sized x2, xcart and xcartq
+   to 7 (one scratch slot) instead of adding a bounds check the C does not have -- the same
+   precedent as this file's own Gauquelin cusp[iofs+8] fix (entry 7 above). The extra slot is
+   inert everywhere else: swe_calc/call_swe_fixstar/swe_calc_pctr write only indices 0-5 and
+   every printf site reads a fixed index 0-5, confirmed by grep before sizing. Not a
+   re-transliteration: only the three declarations at :819-820 moved, plus the explanatory
+   comment above them.
+   Proven to discriminate: `-b1.1.2000 -p0 -D1 -fX -n1 -emos -head` threw before this fix and
+   now prints "0.168361056 -0.968811721 0.000004028", matching
+   external/.c-reference/swetest.exe (v2.10.3bfinal) byte-for-byte; `-fU`/`-fx`/`-fu` no longer
+   throw either.
+   Programs/SweTest/Program.cs: 5005 -> 5013 lines, sha256 947D21A7... -> BB8473CD....
+18. PR #32 2026-08-03: One fidelity fix. swetest.c:2116 is
+   `if (list_hor && strchr(fmt, 'P') == NULL)`: in -hor (horizontal list) mode, the header
+   column gets a name prefix when 'P' is ABSENT from fmt. The port tested
+   `fmt.IndexOf('P', ...) >= 0`, the opposite condition -- prefixing the header whenever 'P' IS
+   present, instead of when it is not. The same inversion is documented a few lines below (in
+   the file, immediately above the port's own comment citing swetest.c:1931 (2.08)) for a
+   sibling gap-emission guard, which is presumably how this one was missed: the fixed sibling
+   sits right next to the still-broken one. Fixed by flipping to `< 0`. Fidelity fix, not a
+   re-transliteration: only the one condition and its explanatory comment moved.
+   Proven to discriminate: `-b1.1.2000 -p0e -fPLBRS -n1 -emos -head -hor` printed an extra "Sun"
+   token in the header row before this fix ("name  Sun  long. lat. distAU deg/day"); after,
+   the header matches external/.c-reference/swetest.exe (v2.10.3bfinal) byte-for-byte
+   ("name  long.  lat.  distAU  deg/day").
+   Programs/SweTest/Program.cs: 5013 -> 5017 lines, sha256 BB8473CD... -> 383C4D93....
+19. PR #32 2026-08-03: One fidelity fix, two call sites, both in the print_line 'S'/'s' case.
+   swetest.c:2259 is `if (*(sp+1) == 'S' || *(sp+1) == 's' || strpbrk(fmt, "XUxu") != NULL)`.
+   `*(sp+1)` safely reads the NUL terminator when sp+1 is past the string's end, so the third
+   disjunct does not depend on the first two being in range. The port's
+   `fmt.Length > spi + 1 &&` guard applied to the whole parenthesized OR instead, so a bare
+   trailing 'S'/'s' with no following character short-circuited the XUxu check too, silently
+   skipping the combined-speed-column block swetest.c always enters when fmt contains any of
+   X/U/x/u. Fixed by scoping the length guard to only the first two disjuncts, matching the
+   third's unconditional strpbrk check.
+   Second, swetest.c:2361, `if (*(sp+1) == 'S' || *(sp+1) == 's') sp++;`, immediately after the
+   loop the first fix now actually reaches: the same one-past-the-end read, this time
+   unconditional in the port (`fmt[spi + 1]` with no length guard at all). Latent until the
+   first fix, since previously this line was reachable only when the first guard's own
+   `fmt.Length > spi + 1` had already established spi + 1 in bounds; entering via the XUxu
+   disjunct with spi at fmt's last index reaches it with spi + 1 out of bounds. Fixed the same
+   way, adding the missing `fmt.Length > spi + 1 &&`.
+   Neither is a re-transliteration: only the two conditions and their explanatory comments
+   moved.
+   Proven to discriminate: `-b1.1.2000 -p0 -fXS -n1 -emos -head` threw IndexOutOfRangeException
+   before either fix (first at the entry guard, then again at the trailing check once the first
+   fix alone was tried in isolation); after both, it prints
+   "0.168361056 -0.968811721 0.000004028 0.017235021 0.003004836 0.000000048", matching an MSVC
+   build of the pinned v2.10.3bfinal swetest byte-for-byte.
+   Programs/SweTest/Program.cs: 5017 -> 5025 lines, sha256 383C4D93... -> 56E3C767....
+20. PR #32 2026-08-03: Comment-only, no behaviour change. Re-anchored twelve stale
+   `<cfile>.c:NNNN` citations across five SwissEphNet/CPort files after verifying each cited
+   line against the pinned v2.10.3bfinal vendored C (external/swisseph), most of them off by
+   the same kind of small drift the rest of this file's entries have been correcting one at a
+   time: SwemPlan.cs's atoi(sp) <= 4 term test (swemplan.c:955 -> :954); SweDate.cs's leap-second
+   atoi(s) (swedate.c:334 -> :332); SwephLib.cs's delta-t table year atoi(s) (swephlib.c:2957 ->
+   :3110), its upper-bound-only guard (:3111-3114 -> :3113-3115), and its dt[tab_index] atof(sp)
+   (:2966 -> :3119); SweHel.cs's DeterObject atoi(s) (swehel.c:328 -> :331) and its cross-reference
+   to Sweph.cs's fixstar_format_search_name off-by-one (sweph.c:5996-5997 -> :6165-6166, matching
+   the fix below); Sweph.cs's swi_fopen final `if (serr != NULL)` guard (sweph.c:2404 -> :2402,
+   the literal `if` sits one line above the `return NULL;` this had cited), read_const's
+   fdp->fversion atoi(sp) (:4400 -> :4549), fixstar_format_search_name's own off-by-one comment
+   (:5996-5997 -> :6165-6166, the same range SweHel.cs's cross-reference above now matches), the
+   asteroid-name atol(sastno) (:4573 -> :4722), and the planetary-moon file catalog iplf atoi(sp)
+   (:6920 -> :7090).
+   Verified individually against external/swisseph rather than by pattern: each citation's
+   surrounding comment quotes or paraphrases a specific C statement, and grep against the
+   vendored file confirms the corrected line number is where that exact statement now sits.
+   Not exhaustive -- this covers the citations checked in this pass, not a claim that every
+   remaining citation in the tree was re-verified; several other citations checked the same way
+   in this pass (e.g. SweCL.cs's swecl.c:1574/:1539/:1593, :2072/:2415/:2436) were already
+   correct and are left untouched.
+   SwissEphNet/CPort: 48551 -> 48551 lines (line count unchanged; only cited numbers inside
+   comments moved), sha256 81513380... -> 0E29C549....
+21. PR #32 2026-08-03: Comment-only, no behaviour change. Re-anchored twenty-four stale
+   `swetest.c:NNNN` citations in Programs/SweTest/Program.cs against the pinned v2.10.3bfinal
+   vendored C (external/swisseph), and rewrote the spmoon comment (:769) that had gone stale in
+   a different way -- it claimed spmoon was "not declared in the pinned v2.10.3final tag", which
+   was true of the tag this port tracked before the 2.10.3bfinal bump but is no longer true of
+   the tag now pinned: swetest.c:723 declares it, with the same "9501" / "Jupiter Moon Io"
+   default this port already carried, so the comment now describes a faithful transliteration of
+   an upstream declaration rather than a port-only addition working around a missing one.
+   The twenty-four line-number corrections, each verified by grep against external/swisseph
+   rather than assumed from the surrounding drift: :2809->:2823 (LEN_SOUT's live reader);
+   :754/:1157/:1280 -> :755/:1158/:1281 (has_n's declare/set/dead-read trio); :3247->:3260 and
+   :3476->:3489 (lcount/scount statics); five toupper(ihsy)=='G' comparisons, :1879->:1893,
+   :1888/:1898->:1902/:1912, :1938->:1952, :1984->:1998; the Gauquelin cusp loop's :1958->:1972
+   and its cusp[37] declaration's :1933->:1947; two tolower(*sp) comparisons in do_calc_planet's
+   N/F cases, :2517->:2531 and :2542->:2556; this file's own dms(), :2686->:2700 (zodiac
+   sprintf), :2688->:2703 (leading-space sprintf), :2723-2725->:2738-2739 (sign splice); the
+   lunar-eclipse sout append, :3204->:3223; the two SE_ECL_ONE_TRY call sites, :3525->:3539 and
+   :3617->:3631; this file's own hms(), :3936->:3950 and :3937->:3951 (the two single-byte
+   writes SwissEph.Format.cs's HMS() already carries the analogous fix for); and
+   make_ephemeris_path's four MSDOS-branch citations, :3965->:3979, :3972->:3986, :3982->:3996,
+   :4013->:4023.
+   Not exhaustive -- this is the set checked in this pass, not a claim that every citation in
+   the file was re-verified.
+   Programs/SweTest/Program.cs: 5025 -> 5025 lines (line count unchanged; only cited numbers and
+   the spmoon comment's text moved), sha256 56E3C767... -> 86DBD9DB....
+22. PR #32 2026-08-03: Manifest correction only. No frozen file changed.
+
+    The recorded SwissEphNet/CPort hash moved from 0E29C549... to 7DDCD62B...
+    with the file count, line count, K&R brace count and trailing-whitespace
+    count all unchanged at 17 / 48551 / 1205 / 1258, because the hash covers each
+    frozen file's path as well as its content and one path was recorded with the
+    wrong letter case.
+
+    git tracks the file as SwissEphNet/CPort/SweCL.cs. This Windows working tree
+    had it on disk as SweCl.cs, a case-only difference NTFS resolves silently and
+    git does not report as a modification. Entry 21's -Update read the on-disk
+    name, so the manifest recorded a hash no case-sensitive checkout can
+    reproduce: every Linux CI run computed 7DDCD62B and compared it against
+    0E29C549. Reproduced locally by cloning with core.autocrlf=false, which
+    checks out the index's own casing and produced the runner's hash exactly.
+
+    Fixed by renaming the working-tree file back to the index's casing (via a
+    temporary name, since a case-only rename is a no-op on this filesystem) and
+    re-running -Update. Verified three ways: this tree now computes 7DDCD62B, the
+    case-correct clone computes 7DDCD62B against the new manifest and passes, and
+    both agree with what CI reported.
+
+    Worth recording for whoever hits this next: the gate is right to hash paths --
+    its own self-test plants a capitalisation-only rename and requires refusal --
+    but that makes -Update only as trustworthy as the working tree's filename
+    casing, which on Windows can drift from the index without any signal.
+23. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-03: Comment only, no behaviour change. Entry 17's own comment describing why
+    x2/xcart/xcartq are sized [7] was itself wrong on two counts. It called the leftover-index
+    access at swetest.c:1853/:1875 uniformly "benign stack UB" and left the sizing rationale at
+    "add scratch room the C's raw array already has". Neither holds up: swetest.c:768 declares
+    x, x2, xequ, xcart, xcartq, xobl, xaz, xt (then the scalars), xsv as one file-scope static
+    declaration -- BSS, not stack, contiguous in that order under the reference MSVC toolchain --
+    and only one of the two leftover-index writes is actually inert. :1853's xcart[6] aliases
+    xcartq[0], which is either about to be recomputed by the lowercase "xu" block or never read
+    at all (the house-position block reads xobl[0] and a copy of x[], never xcartq): genuinely
+    invisible, matching the old comment. :1875's xcartq[6] aliases xobl[0] -- the obliquity
+    swe_house_pos reads at :1900 for any house-position format letter -- and is not invisible:
+    corrupting it changes swe_house_pos's result. Verified against an MSVC build of the pinned
+    v2.10.3bfinal swetest.exe: "-b1.1.2020 -p2 -house12,49,P -ut -D0 -emos -n1 -fPxG" diverges (C
+    "Polar Asc. 143°13'52.4484", port "Polar Asc. 211°41'57.3754"); the same run with "-fPXj"
+    (which never reaches the :1875 write) matches. Rewrote the comment to state which write
+    surfaces and which does not, cite the measured reproducer, and record that the port
+    deliberately does not reproduce the C's cross-array aliasing -- sizing the arrays to one
+    scratch slot keeps the leftover-index access from throwing without making it alias anything,
+    since a C# array is never adjacent, cross-aliased memory the way contiguous BSS statics
+    happen to be under one toolchain's layout. Full writeup: docs/known-issues.md's "swetest
+    -D<n>: xobl[0] aliasing, deliberately not reproduced".
+    Not a re-transliteration: only the explanatory comment above the three declarations moved, no
+    declaration or statement changed. Programs/SweTest/Program.cs: 5025 -> 5046 lines, sha256
+    86DBD9DB... -> 698EF483....
+24. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-03: Comment only,
+    no behaviour change. Twelve stale `<cfile>.c:NNNN` citations across four SwissEphNet/CPort
+    files, each verified against the pinned v2.10.3bfinal vendored C (external/swisseph) before
+    correcting: SweHel.cs's tolower_string_star cross-references (swehel.c:1443-1449 -> :1449-1450
+    for the function body itself, :1437 -> :1449 for the comma-scan comparison, :1449 -> :1450 for
+    the tolower loop); SwemPlan.cs's check_t_terms epoch/equinox atof(sp) calls (swemplan.c:785 ->
+    :784, :809 -> :808); Sweph.cs's load_dpsi_deps atoi/atof citations (sweph.c:1421-1423 ->
+    :1405-1407, :1433-1434 -> :1417-1418, :1445-1446/1449-1450 -> :1446-1447/1450-1451), its
+    swi_fixstar_load_record space-removal loop (:7386-7387 -> :7559-7560), and its
+    calc_center_body function citation (:2443-2453 -> :2445-2455); SweJPL.cs's two eh_ipt fread
+    guards (swejpl.c:256 -> :255, and :786 plus "(line 700)" -> :709 and "(line 663)").
+    Each was checked individually by opening the cited C at both the old and the corrected line
+    and confirming the corrected one is where the quoted/paraphrased statement actually sits, the
+    same standard entry 20 above used; not exhaustive -- this covers only the citations checked in
+    this pass. Two accompanying non-frozen citations of the same PATH_SEPARATOR macro
+    (SwissEph.sweodef.h.cs, SwissEph.swephexp.h.cs: sweodef.h:305/:311 -> :307/:313) were also
+    stale by the same two-line drift and are corrected in a separate, non-frozen-path commit.
+    SwissEphNet/CPort: 48551 -> 48551 lines (line count unchanged; only cited numbers inside
+    comments moved), sha256 7DDCD62B... -> A2DA184F....

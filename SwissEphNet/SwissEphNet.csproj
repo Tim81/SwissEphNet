@@ -2,23 +2,75 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
-    <AssemblyName>SwissEphNet</AssemblyName>
+    <AssemblyName>SwissEphSharp</AssemblyName>
     <RootNamespace>SwissEphNet</RootNamespace>
-    <PackageId>SwissEphNet</PackageId>
+    <PackageId>SwissEphSharp</PackageId>
     <!--
       Version scheme: upstream Swiss Ephemeris version + port revision, e.g.
-      2.8.x tracks Swiss Ephemeris C 2.08 with x as this port's own revision
-      counter. This is not published to nuget.org: 2.8.0.2 already is, and
-      the library no longer ships net40/netstandard1.0, so it would not be a
-      drop-in replacement for that package anyway. Distribution is
-      source-only (clone/build/reference) until the 2.10.03 port lands. Do
-      not bump this to a 2.10.x version before that port actually happens.
+      2.10.3 tracks Swiss Ephemeris C 2.10.03 (upstream tag v2.10.3bfinal),
+      the version the port itself now targets end to end: SE_VERSION,
+      sweph.c, swecl.c, swehouse.c and swetest.c have all landed. This is
+      the version intended for the first nuget.org release, under the
+      SwissEphSharp package ID. It cannot go out under SwissEphNet: 2.8.0.2
+      already holds that ID, and the library no longer ships
+      net40/netstandard1.0, so it would not be a drop-in replacement for
+      that package anyway. Until the release lands, build from source or
+      reference the project directly.
+
+      The "port revision" above is the fourth component, for a fork-only
+      release made while upstream stays put: 2.10.3, then 2.10.3.1, 2.10.3.2,
+      resetting whenever upstream moves. Two things to know before using it.
+      NuGet normalizes a trailing zero away, so 2.10.3.0 and 2.10.3 are the
+      same package and there is no point writing the .0. That was measured,
+      not assumed: packing 2.10.3.0 produces a .2.10.3.nupkg. And four components
+      are not valid SemVer 2.0, which has exactly three; NuGet accepts them
+      for backwards compatibility. That is a deliberate choice, because the
+      alternatives are worse. Build metadata (2.10.3+fork.1) is ignored by
+      NuGet when comparing versions, so a second package differing only there
+      cannot be published. A prerelease suffix (2.10.3-rev1) sorts BEFORE
+      2.10.3, which is backwards for a release that comes after it.
+
+      The fourth component is not free, and this is the cost to weigh before
+      spending it. Nothing here sets AssemblyVersion, so the SDK derives it
+      from Version: measured with
+      "dotnet msbuild SwissEphNet/SwissEphNet.csproj -t:GetAssemblyVersion
+      -getProperty:AssemblyVersion -p:TargetFramework=netstandard2.0",
+      Version 2.10.3 gives AssemblyVersion 2.10.3.0 and Version 2.10.3.1 gives
+      2.10.3.1. On .NET Framework, which is the host for the netstandard2.0
+      asset, an assembly reference binds on the full four-part version, so a
+      consumer compiled against 2.10.3.0 does not load 2.10.3.1 without a
+      binding redirect: a fork-only revision is a binding-identity break there,
+      not just a package-version bump. net8.0 and net10.0 roll forward on
+      assembly version and are unaffected. So a fork-only release either
+      accepts that break for .NET Framework consumers, or pins AssemblyVersion
+      to 2.10.3.0 here and lets only Version and FileVersion carry the fourth
+      component. Decide it deliberately at the point of making one; do not
+      discover it from a consumer's FileLoadException.
     -->
-    <Version>2.8.1.0</Version>
+    <Version>2.10.3</Version>
+    <!--
+      Plain SemVer, with no descriptive text. The SDK appends +<commit sha> to
+      whatever is here, so anything with spaces or parentheses in the core
+      version produces a string no SemVer parser accepts, and several tools
+      do parse AssemblyInformationalVersionAttribute. It is also what Windows
+      Explorer shows as "Product version". The upstream tracking detail this
+      used to carry now lives in the AssemblyMetadata items below, which is
+      where arbitrary text belongs.
+    -->
+    <InformationalVersion>2.10.3</InformationalVersion>
     <Authors>Yan Grenier, Timothy van der Ham</Authors>
-    <Company>Yan Grenier</Company>
-    <Product>SwissEphNet</Product>
-    <Description>Swiss Ephemeris .Net portage</Description>
+    <!--
+      Company is the publisher field, distinct from Authors above: NuGet shows it separately, and
+      it should name whoever is actually publishing this package, not the original author of the
+      code it is a fork of. This fork is published by Timothy van der Ham; Yan Grenier is credited
+      in Authors, Copyright and NOTICE, which is where authorship attribution belongs. Setting
+      Company to Yan Grenier here would sit awkwardly next to Description's own "Not published or
+      endorsed by Yan Grenier" line below.
+    -->
+    <Company>Timothy van der Ham</Company>
+    <Product>SwissEphSharp</Product>
+    <Title>SwissEphSharp</Title>
+    <Description>Swiss Ephemeris .Net portage. SwissEphSharp is the package ID this project is distributed under: a fork of Yan Grenier's SwissEphNet, tracking Swiss Ephemeris 2.10.03. The assembly is now named SwissEphSharp too, so it can coexist with the original SwissEphNet package; the namespace stays SwissEphNet, so source that only uses the public API needs no changes beyond the PackageReference itself. Callers of the removed OnLoadFile event still need to migrate to SwissEph.FileProvider. Not published or endorsed by Yan Grenier or Astrodienst.</Description>
     <Copyright>Copyright (C) 1997-2021 Astrodienst AG; (C) 2014-2019 Yan Grenier; (C) 2026 Timothy van der Ham</Copyright>
     <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/Tim81/SwissEphNet</PackageProjectUrl>
@@ -26,9 +78,69 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>Swiss Ephemeris</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>2.8.1.0 (not published to nuget.org; source-only distribution):
+    <PackageReleaseNotes>2.10.3 (the first release of this fork published to nuget.org, under the
+SwissEphSharp package ID; entries from 2.8.0.2 down are the original project's, published under
+SwissEphNet):
+- LICENCE CHANGE, read this before upgrading. 2.8.0.2 was distributed under the GNU General
+  Public License version 2 or later. This release is under the Swiss Ephemeris dual licence:
+  the GNU Affero General Public License, or a Swiss Ephemeris Professional License bought from
+  Astrodienst. The practical difference is the AGPL's network clause. Under GPL-2.0 you could
+  run this library inside a web service and owe nobody source, because nothing was distributed.
+  Under the AGPL, operating the service is itself the trigger, and users who reach it over a
+  network can require the complete corresponding source of your whole service, not just this
+  library. If that does not work for your project, the Professional License is the other arm.
+  This follows Astrodienst's own relicensing of Swiss Ephemeris and applies to the C library
+  just as much as to this port. LICENSE, agpl-3.0.txt and NOTICE ship at the package root.
+- SE_VERSION now reports "2.10.03", matching the C library this port tracks (upstream tag
+  v2.10.3bfinal). Every stage of the 2.10.03 delta has landed: the header/constants stage,
+  swephlib.c, the ayanamsha machinery, sweph.c, swecl.c, swehouse.c and swetest.c.
+- swe_houses, swe_houses_ex, swe_houses_armc, swe_house_pos and swe_house_name each gained an
+  int hsys overload alongside the existing char hsys overload, matching upstream swephexp.h.
+- New API surface: swe_houses_ex2, swe_houses_armc_ex2, swe_calc_pctr, swe_get_current_file_data.
+- swe_lun_occult_when_glob and swe_lun_occult_when_loc each gained an Int32 backward overload, so
+  SE_ECL_ONE_TRY can be OR-ed into that bitfield the way swephexp.h declares. The existing bool
+  overload is unchanged and still binds; it can only pass 0 or 1, so it can never request the
+  flag. Reflection that resolves either method by name alone now throws AmbiguousMatchException.
+- OnLoadFile is gone; ephemeris files are read from disk by default through the new
+  SwissEph.FileProvider (IEphemerisFileProvider).
+- The assembly is now named SwissEphSharp (was SwissEphNet), so this package can coexist in one
+  dependency graph with the original SwissEphNet 2.8.0.2 instead of silently colliding with it at
+  build time and crashing at runtime. The namespace stays SwissEphNet.
+- 2.10.3 is the only release that ships netstandard2.0, not the last of several. 2.8.0.2 shipped
+  net40 and netstandard1.0 and never carried netstandard2.0, and net8.0 or later will be required
+  from the next release on, so the window in which this library is reachable from .NET Framework
+  is this one version. Consumers on .NET Framework 4.6.1+ can take 2.10.3 and should pin to it
+  deliberately rather than expect it to persist. netstandard2.0 is a compatibility target,
+  not a correctness one: measured on .NET Framework 4.8 and 4.6.2 against .NET 10, the same
+  asset's swe_calc differs on 29 of 102 calls (34 bodies x 3 epochs; worst case SE_ADMETOS
+  latitude speed, 2.28e-3 relative -- an absolute divergence of 1.4e-08 deg/day against a base
+  value of about -6.1e-06), while net8.0 and net10.0 agree on all 102. The cause is .NET
+  Framework's less accurate Math.Sin/Math.Cos/Math.Tan near quarter-turn boundaries, not this
+  port; see the "V:2.10.3" section of README.md for the full measurement.
+- Numerous port bug fixes surfaced by the 2.10.03 work, several of them upstream C bugs Astrodienst
+  fixed between 2.08 and 2.10.03 that this port now also carries: swe_nod_aps/swe_nod_aps_ut
+  returning all-zero nodes and apsides, an obliquity read that affected every SEFLG_SWIEPH
+  position, eclipse magnitude and obscuration off by a factor of 100, and the swe_house_pos buffer
+  that was one element short for Gauquelin houses. See docs/compliance-2.10.03.md for the
+  verification numbers behind this release and docs/known-issues.md and the "V:2.10.3" section
+  of README.md for the full list.
+
+- You are also inheriting everything in the 2.8.1.0 entry below, even though no such package was
+  ever published. On nuget.org the step is 2.8.0.2 straight to this release, so those changes
+  arrive with it: DIR_GLUE went from '\' to '/' on every platform, which changes the asteroid
+  file names a file provider is asked for; DefaultEncoding became UTF-8 explicitly rather than
+  falling back to it when Windows-1252 could not be resolved; and C.strcmp, strncmp, strstr and
+  strchr became ordinal instead of culture-sensitive, which affects fixed-star name search and
+  sort under a non-invariant culture. Read that entry as part of this one.
+
+2.8.1.0 (not published to nuget.org; source-only distribution):
+- Package ID renamed from SwissEphNet to SwissEphSharp. SwissEphNet on nuget.org belongs to the
+  upstream author's own release and this fork cannot publish under it. At this release the
+  assembly name and namespace were unaffected: both stayed SwissEphNet, so the only change a
+  consumer needed to make was the PackageReference itself. The assembly was renamed too, later,
+  at 2.10.3 above -- see that entry and the "Package name" section of README.md.
 - Retarget the library to netstandard2.0;net8.0;net10.0, dropping net40 and netstandard1.0.
-- Relicense from GPL-2.0-or-later to the Swiss Ephemeris 2.10.3 dual license: AGPL-3.0-or-later
+- Relicense from GPL-2.0-or-later to the Swiss Ephemeris 2.10.3 dual license: AGPL-3.0
   or a Swiss Ephemeris Professional License from Astrodienst. See LICENSE and NOTICE.
 - Fix SwissEph.DIR_GLUE: was hardcoded to '\\' on every platform, now '/' per the upstream C
   source. Asteroid file names passed to OnLoadFile change accordingly, e.g. "ast4/se04179.se1"
@@ -77,7 +189,7 @@
       accepts OSI/FSF-approved SPDX identifiers in PackageLicenseExpression, and
       the Swiss Ephemeris Professional License arm of this dual license has no
       SPDX identifier, so the dual license cannot be expressed that way. Do not
-      "fix" this to PackageLicenseExpression=AGPL-3.0-or-later: that would drop
+      "fix" this to PackageLicenseExpression=AGPL-3.0: that would drop
       the Professional option from the package metadata and misrepresent the
       license under which this library is actually offered. See LICENSE and
       NOTICE for the real terms.
@@ -92,6 +204,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DefineConstants>TRACE;RELEASE;</DefineConstants>
   </PropertyGroup>
+
+  <!--
+    The upstream tracking detail that InformationalVersion used to carry.
+    AssemblyMetadata takes arbitrary text without having to parse as a version.
+  -->
+  <ItemGroup>
+    <AssemblyMetadata Include="UpstreamSwissEphemerisVersion" Value="2.10.03" />
+    <AssemblyMetadata Include="UpstreamSwissEphemerisTag" Value="v2.10.3bfinal" />
+  </ItemGroup>
+
+  <!--
+    StringExtensions and TypeExtensions are internal (see the remarks on each type):
+    these three assemblies call them directly rather than only through the CPort code
+    that already sits inside this assembly.
+  -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="SwissEphNet.Tests" />
+    <InternalsVisibleTo Include="NetStandard20Smoke.Tests" />
+    <InternalsVisibleTo Include="SweTest" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Include="..\LICENSE">

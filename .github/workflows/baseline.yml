@@ -60,13 +60,41 @@ jobs:
         id: base-ref
         shell: pwsh
         run: |
-          $base = pwsh scripts/resolve-log-base.ps1 `
-            -EventName '${{ github.event_name }}' `
-            -BeforeSha '${{ github.event.before }}' `
-            -PrBaseSha '${{ github.event.pull_request.base.sha }}'
+          # $PSNativeCommandUseErrorActionPreference = $false: without pinning this explicitly,
+          # this step's non-zero-but-expected native-command exits (inside
+          # resolve-log-base.ps1 -WidenPastCancellation, via `git merge-base`) would throw
+          # NativeCommandExitException the day the runner's ambient default ever flips, the same
+          # regression an earlier attempt at this widening caused once in ci.yml. Pinned the same
+          # way scripts/verify-no-tooling-attribution.ps1 pins it.
+          $PSNativeCommandUseErrorActionPreference = $false
+
+          # -WidenPastCancellation for push events: this job's own concurrency group (top of this
+          # file) is keyed on github.ref for a push with no open pull request, cancel-in-progress
+          # true, so push N's run can be cancelled by push N+1 before it finishes -- and push N+1's
+          # own github.event.before is push N's tip, so a before-based range alone never covers the
+          # commits *push N itself* introduced. A push changing a golden Tests/baseline/*.tsv file
+          # without a sidecar log entry, right before its own run gets cancelled, would otherwise
+          # never be checked by any run that actually completes -- ci.yml's
+          # verify-no-tooling-attribution job already carries this same widening (see its own
+          # comment) for exactly this reason; this job guards the golden baseline files themselves,
+          # so leaving it unwidened here left the more important of the two gates with the gap.
+          # Implemented, and self-tested, inside resolve-log-base.ps1 itself (see the "Verify the
+          # base resolver itself" step above, which exercises it) rather than duplicated here.
+          $resolveArgs = @(
+            '-EventName', '${{ github.event_name }}',
+            '-BeforeSha', '${{ github.event.before }}',
+            '-PrBaseSha', '${{ github.event.pull_request.base.sha }}'
+          )
+          if ('${{ github.event_name }}' -eq 'push') { $resolveArgs += '-WidenPastCancellation' }
+          $base = pwsh scripts/resolve-log-base.ps1 @resolveArgs
           if ($LASTEXITCODE -ne 0) { exit 1 }
+          $base = $base.Trim()
           "sha=$base" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           Write-Host "Resolved baseline-log base: $base"
+
+      - name: Self-test the baseline log gate
+        shell: pwsh
+        run: pwsh scripts/verify-baseline-log.ps1 -SelfTest
 
       - name: Verify baseline changes are logged
         shell: pwsh
@@ -81,29 +109,50 @@ jobs:
             8.0.x
             10.0.x
 
+      # --blame-hang(-timeout/-dump-type): a hung test previously had no faster exit than this
+      # job's own 30-minute timeout-minutes killing the whole runner with no diagnostic beyond
+      # "cancelled" -- see ci.yml's identical comment on its own "Test" step for the full
+      # reasoning; this gate's own unit test suite gets the same protection.
       - name: Run gate unit tests
         shell: pwsh
-        run: dotnet test Tools/BaselineVerify.Tests -c Release
+        run: dotnet test Tools/BaselineVerify.Tests -c Release --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type mini
+
+      # Compile-only, not a full regeneration: this job's own "Verify baseline" step
+      # below only ever builds Tools/BaselineMatrix in local mode (a ProjectReference
+      # to the in-repo library), so reference mode (the published SwissEphNet 2.8.0.2
+      # package, which scripts/regenerate-baseline.ps1's default path builds) went
+      # unbuilt anywhere in CI and a break there shipped silently until reproduced by
+      # hand. Building it here, both net8.0 and net10.0, catches that class of
+      # regression without paying for an actual regeneration run.
+      - name: Build reference mode (compile-only regression guard)
+        shell: pwsh
+        run: dotnet build Tools/BaselineMatrix -c Release -p:UseReferencePackage=true
 
       - name: Verify baseline
         shell: pwsh
         run: pwsh scripts/verify-baseline.ps1
 
-  # Informational only, never a gate. The baseline is Windows-generated and this
-  # gate is deliberately locked to Windows: a measured Windows-vs-Linux run found
-  # 47,052 of 3.4M numeric fields differing (92.66% ULP noise already covered by the
-  # tolerance, 5.60% angle-wraparound now handled directly, 1.74% genuine
-  # divergence including one real numerical-stability bug -- see
-  # Tools/BaselineGen/README.md and docs/known-issues.md). A single tolerance loose
-  # enough to pass on Linux would need to be loose enough to hide real regressions,
-  # so instead of widening it, this job just tracks the drift over time in
-  # --report-only mode, which never fails by design. continue-on-error is still set
-  # as a backstop in case the test suite itself breaks on Linux for an unrelated
-  # reason (a real thing worth seeing), not because the report step could fail.
+  # Informational only for the cross-platform report; not for the whole job. The baseline is
+  # Windows-generated and this gate is deliberately locked to Windows: a measured Windows-vs-Linux
+  # run found 47,052 of 3.4M numeric fields differing (92.66% ULP noise already covered by the
+  # tolerance, 5.60% angle-wraparound now handled directly, 1.74% genuine divergence including one
+  # real numerical-stability bug -- see Tools/BaselineGen/README.md and docs/known-issues.md). A
+  # single tolerance loose enough to pass on Linux would need to be loose enough to hide real
+  # regressions, so instead of widening it, the report step below just tracks the drift over time
+  # in --report-only mode, which never fails by design.
+  #
+  # continue-on-error used to sit here, at job level -- the exact placement oracle.yml's
+  # header-flags-check job calls "the historical bug" for the same reason that job exists at all:
+  # job level absorbs every step in the job, not just the one the exemption was written for. Under
+  # that placement, "Run gate unit tests" below (BaselineVerify's own unit test suite, which has
+  # nothing to do with cross-platform ULP drift) silently reported success even when it genuinely
+  # failed on Linux, which is exactly the kind of break this job exists to catch, not to hide. The
+  # flag now sits only on the report step immediately below it, as a backstop in case the test
+  # suite itself breaks on Linux for an unrelated reason (a real thing worth seeing) -- not because
+  # that step's own drift report could ever fail; --report-only already guarantees it does not.
   verify-baseline-linux:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -114,10 +163,12 @@ jobs:
             8.0.x
             10.0.x
 
+      # --blame-hang: same reasoning as verify-baseline's identical step above.
       - name: Run gate unit tests
         shell: pwsh
-        run: dotnet test Tools/BaselineVerify.Tests -c Release
+        run: dotnet test Tools/BaselineVerify.Tests -c Release --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type mini
 
       - name: Report cross-platform divergence (never fails)
         shell: pwsh
+        continue-on-error: true
         run: pwsh scripts/verify-baseline.ps1 -ReportOnly

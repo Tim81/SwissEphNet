@@ -133,7 +133,46 @@ namespace SwissEphNet
 
         public const double CS2DEG = (1.0 / 360000.0);	/* centisec to degree */
 
-        public static char PATH_SEPARATOR = ';';	/* semicolon as PATH separator */
+        /// <summary>used for string declarations, allowing 255 char+\0 (sweodef.h:261)</summary>
+        public const int AS_MAXCH = 256;
+
+        // The C source (sweodef.h:307/:313) defines PATH_SEPARATOR as a *cut-list* of
+        // candidate separator characters passed to swi_cutstr/cut_str_any, not a single
+        // delimiter: ";:" (semicolon or colon) under #if UNIX_FS, ";" alone in the #else
+        // branch that covers MSDOS/Windows. This port is not compiled per-platform, so the
+        // choice is made at run time instead, which reproduces both branches exactly.
+        //
+        // An earlier version of this used ";" on every platform, reasoning that a bare ':'
+        // was unsafe to add because it collides with a Windows drive letter ("C:\ephe;D:\ephe2"
+        // would split at the drive letter). That reasoning is sound and it is also only about
+        // Windows -- and on Windows the C does not offer ':' either. Deciding per platform
+        // keeps the drive letter safe where drive letters exist, and accepts the colon
+        // everywhere the C accepts it, so a Unix caller can pass the colon-separated path
+        // their platform and every other Swiss Ephemeris binding uses.
+        //
+        // It also removes the reason the non-Windows SE_EPHE_PATH default had to be rewritten:
+        // upstream's ".:/users/ephe2/:/users/ephe/" now splits into the three components it
+        // names, so that literal is carried verbatim again (see SwissEph.swephexp.h.cs).
+        //
+        // Mutable and public because the C's is a macro that callers are free to work around;
+        // the initializer is what the C compiles to on the host platform.
+        /// <summary>
+        /// The cut-list the C compiles to for a given platform. Split from the field below so
+        /// both branches are reachable from any runner: the separator and the SE_EPHE_PATH
+        /// default have to agree, and a test that reads only the host's values can check that
+        /// on one platform and silently pass on the other. See
+        /// <see cref="SwissEph.DefaultEphePathFor(bool)"/>, which is split for the same reason.
+        /// </summary>
+        internal static char[] PathSeparatorFor(bool isWindows)
+        {
+            return isWindows
+                ? new char[] { ';' }            /* sweodef.h:313, the #else branch */
+                : new char[] { ';', ':' };      /* sweodef.h:307, #if UNIX_FS */
+        }
+
+        public static char[] PATH_SEPARATOR = PathSeparatorFor(
+            System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(
+                System.Runtime.InteropServices.OSPlatform.Windows));
         // The C source defines DIR_GLUE per-platform (backslash on Windows,
         // forward slash elsewhere). This port is not compiled per-platform,
         // so a single value has to work everywhere: '/' is that value, since
@@ -143,7 +182,7 @@ namespace SwissEphNet
         // fixed: CPort/Sweph.cs:2634 was a mis-transliteration" for why this
         // required (and got) a CPort edit: swi_fopen's ephepath+filename join
         // had been hard-coded to '\\' instead of using DIR_GLUE, unlike the
-        // parallel site in swe_set_ephe_path (Sweph.cs:1514-1515), which
+        // parallel site in swe_set_ephe_path (Sweph.cs:1595-1596), which
         // already used DIR_GLUE correctly. That was a divergence from the C
         // source, not a deliberate platform choice, and fixing it makes the
         // port more faithful rather than less. swi_gen_filename

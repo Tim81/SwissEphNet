@@ -16,7 +16,7 @@ internal static class Suite05DateTime
             {
                 var jd = swe.swe_julday(f.GetInt("year"), f.GetInt("month"), f.GetInt("day"), f.GetDouble("hour"), f.GetInt("gregflag"));
                 ctx.CheckD("jd", jd);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 2:
@@ -28,7 +28,7 @@ internal static class Suite05DateTime
                 ctx.CheckI("month", month);
                 ctx.CheckI("day", day);
                 ctx.CheckD("ut", ut);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 3:
@@ -65,7 +65,7 @@ internal static class Suite05DateTime
                 }
 
                 ctx.CheckD("deltat", deltat);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 4:
@@ -74,7 +74,7 @@ internal static class Suite05DateTime
                 var rc = swe.swe_time_equ(f.GetDouble("jd"), out var e, ref serr);
                 ctx.CheckD("E", e);
                 ctx.CheckI("rc", rc);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 5:
@@ -86,7 +86,7 @@ internal static class Suite05DateTime
                 ctx.CheckI("rc", rc);
                 ctx.CheckS("serr", serr);
                 ctx.CheckD("tjd_lat", tjdLat);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 6:
@@ -98,7 +98,7 @@ internal static class Suite05DateTime
                 ctx.CheckI("rc", rc);
                 ctx.CheckS("serr", serr);
                 ctx.CheckD("tjd_lmt", tjdLmt);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             default:

@@ -50,7 +50,7 @@ internal sealed class Suite08Eclipses
                 var ctx = new CheckContext(f, precision);
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxtret", _xxtret);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 2:
@@ -62,7 +62,7 @@ internal sealed class Suite08Eclipses
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxgeopos", _xxgeopos[..2]);
                 ctx.CheckDD("xxattr", _xxattr[..8]);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 3:
@@ -75,7 +75,7 @@ internal sealed class Suite08Eclipses
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxtret", _xxtret[..7]);
                 ctx.CheckDD("xxattr", _xxattr[..11]);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 4:
@@ -87,7 +87,7 @@ internal sealed class Suite08Eclipses
                 var ctx = new CheckContext(f, precision);
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxattr", _xxattr[..11]);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 5:
@@ -100,7 +100,7 @@ internal sealed class Suite08Eclipses
                 var ctx = new CheckContext(f, precision);
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxtret", _xxtret);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 6:
@@ -113,7 +113,7 @@ internal sealed class Suite08Eclipses
                 var ctx = new CheckContext(f, precision);
                 ctx.CheckDD("xxgeopos", _xxgeopos[..2]);
                 ctx.CheckDD("xxattr", _xxattr[..8]);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 7:
@@ -128,7 +128,7 @@ internal sealed class Suite08Eclipses
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxtret", _xxtret[..7]);
                 ctx.CheckDD("xxattr", _xxattr[..11]);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 8:
@@ -139,7 +139,7 @@ internal sealed class Suite08Eclipses
                 var ctx = new CheckContext(f, precision);
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxtret", _xxtret);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 9:
@@ -158,7 +158,7 @@ internal sealed class Suite08Eclipses
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxtret", _xxtret);
                 ctx.CheckDD("xxattr", _xxattr[..11]);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             case 10:
@@ -170,7 +170,7 @@ internal sealed class Suite08Eclipses
                 var ctx = new CheckContext(f, precision);
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxattr", _xxattr[..11]);
-                return DispatchOutcome.FromMismatches(ctx.Mismatches);
+                return DispatchOutcome.FromMismatches(ctx);
             }
 
             default:

@@ -21,7 +21,8 @@ namespace BaselineMatrix;
 /// line runs. So this area, as originally intended -- making 2.10.03's pla_diam[] change
 /// (16 of 21 values change, Chiron and Pholus go from a literal 0.0 to a real diameter)
 /// visible -- cannot work, structurally, no matter how this harness is written: the
-/// change lives behind a code path this repo's no-OnLoadFile constraint can never reach.
+/// change lives behind a code path this matrix's no-real-files constraint (see
+/// Tools/BaselineMatrix/Areas.cs's NoEphemerisFilesProvider) can never reach.
 /// That is worth recording precisely because it looked like it should have been
 /// possible.
 ///

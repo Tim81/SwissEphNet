@@ -20,7 +20,14 @@ namespace SwissEphNet.Tests
                     xin3 = new double[6]
                     ; String serr = null;
 
-                swe.swe_calc(tjd, SwissEph.SE_SUN, 33024, xin1, ref serr);
+                // Before swe_set_topo, a topocentric request has no geographic position to work
+                // from: xin1 staying all-zero is just what an unwritten output buffer looks
+                // like, which a stubbed swe_calc that does nothing would also produce. rc and
+                // serr are what actually distinguish "correctly refused" from "silently did
+                // nothing" -- swe_calc must fail with ERR and this exact message, not return OK.
+                int rc1 = swe.swe_calc(tjd, SwissEph.SE_SUN, 33024, xin1, ref serr);
+                Assert.Equal(SwissEph.ERR, rc1);
+                Assert.Equal("geographic position has not been set", serr);
                 Assert.Equal(0, xin1[0], 12);
                 Assert.Equal(0, xin1[1], 12);
                 Assert.Equal(0, xin1[2], 12);

@@ -6,7 +6,7 @@
 
 .DESCRIPTION
     Compares external/pyswisseph-2.08/<file> (the 2.08 baseline; see
-    scripts/fetch-2.08-baseline.ps1) against external/swisseph/<file> (the v2.10.3final
+    scripts/fetch-2.08-baseline.ps1) against external/swisseph/<file> (the v2.10.3bfinal
     submodule). Those two fixed paths are the ONLY 2.08 and 2.10.3 inputs this script has --
     there is no parameter that accepts a different 2.08 source, and in particular no parameter
     or code path that can point at the aloistr/swisseph `v2.08.00a` git tag. That tag is an

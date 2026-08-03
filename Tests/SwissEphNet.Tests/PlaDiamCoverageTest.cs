@@ -6,6 +6,14 @@ using Xunit;
 namespace SwissEphNet.Tests
 {
     /// <summary>
+    /// Despite the class name, this is not full coverage of pla_diam[] -- that array is
+    /// read at eight sites total in SweCl.cs (lines 725, 1029, 1707, 2525, 3956, 3971,
+    /// 4276 and 4568). The tests below (TestPheno*) reach exactly one of those, line 3956
+    /// (swe_pheno's attr[3]); TestRiseTrans_SunDiscRadius_UsesPlaDiam near the bottom of
+    /// this file adds a second, line 4276's rise/transit disc-radius consumer. The rest
+    /// remain unreached by this class; the claim below is scoped to attr[] specifically,
+    /// not to pla_diam[] as a whole.
+    ///
     /// Pins swe_pheno/swe_pheno_ut's apparent-diameter output (attr[3]) for the six
     /// bodies whose pla_diam[] entry the port's upstream 2.10.03 delta will change
     /// (SwissEphNet/CPort/Sweph.h.cs, upstream sweph.h): Chiron, Pholus, Ceres,
@@ -15,8 +23,9 @@ namespace SwissEphNet.Tests
     /// the one field in attr[] that depends on pla_diam[] for these bodies. No
     /// other attr[] index reads pla_diam[] for a body outside SE_SUN/SE_MOON.
     ///
-    /// The characterization baseline (Tests/baseline/) never subscribes to
-    /// OnLoadFile, and swe_calc's dispatch for these six bodies (Sweph.cs, the
+    /// The characterization baseline (Tests/baseline/) always configures
+    /// SwissEph.DefaultFileProvider to a no-op provider (Tools/BaselineGen/Program.cs),
+    /// and swe_calc's dispatch for these six bodies (Sweph.cs, the
     /// "minor planets" branch) always requests the seas_18.se1 asteroid file
     /// regardless of the ephemeris flag passed in -- SEFLG_MOSEPH included -- so
     /// without a file these calls return ERR before swe_pheno ever reads
@@ -43,16 +52,17 @@ namespace SwissEphNet.Tests
     ///
     /// SEFLG_MOSEPH, not SEFLG_SWIEPH: main_planet (Sweph.cs) computes Earth and
     /// the Sun analytically under SEFLG_MOSEPH, so the only ephemeris file this
-    /// test's OnLoadFile handler ever has to serve is seas_18.se1 -- the exact
+    /// test's FileProvider ever has to serve is seas_18.se1 -- the exact
     /// blind spot described above, and nothing more.
     ///
     /// Precision: 11 decimal places on the asserted attr[3] values, the same
     /// order as the AbsoluteEpsilon (1e-12) Tools/BaselineVerify/Comparer.cs uses
     /// for the characterization gate. Loose enough to survive the platform-level
-    /// floating-point noise CLAUDE.md documents (Windows vs. Linux), tight enough
-    /// that the 2.10.03 diameter change -- Ceres 913000 -> 939400 m and similar
-    /// double-digit-percent moves for the other five bodies -- fails it by many
-    /// orders of magnitude, not by a rounding hair.
+    /// floating-point noise measured in docs/known-issues.md's "Cross-platform
+    /// divergence" section (Windows vs. Linux), tight enough that the 2.10.03
+    /// diameter change -- Ceres 913000 -> 939400 m and similar double-digit-percent
+    /// moves for the other five bodies -- fails it by many orders of magnitude, not
+    /// by a rounding hair.
     /// </summary>
     public class PlaDiamCoverageTest
     {
@@ -92,18 +102,15 @@ namespace SwissEphNet.Tests
 
         static void SubscribeSeasFixture(SwissEph swe)
         {
-            swe.OnLoadFile += (s, e) =>
+            swe.FileProvider = new DelegateFileProvider(path =>
             {
-                string fn = ResourceFileHelpers.GetPortableFileName(e.FileName);
-                if (File.Exists(e.FileName))
+                string fn = ResourceFileHelpers.GetPortableFileName(path);
+                if (File.Exists(path))
                 {
-                    e.File = new FileStream(e.FileName, FileMode.Open, FileAccess.Read);
+                    return new FileStream(path, FileMode.Open, FileAccess.Read);
                 }
-                else
-                {
-                    e.File = ResourceFileHelpers.OpenResourceFile(fn);
-                }
-            };
+                return ResourceFileHelpers.OpenResourceFile(fn);
+            });
         }
 
         [Theory]
@@ -145,6 +152,40 @@ namespace SwissEphNet.Tests
                 // Assert
                 Assert.False(res == SwissEph.ERR, $"{name}: {serr}");
                 Assert.Equal(expectedApparentDiameterDegrees, attr[3], 11);
+            }
+        }
+
+        // ---------------------------------------------------------------------------------
+        // Coverage gap this class's own docstring above used to overclaim past: it documents
+        // swe_pheno/swe_pheno_ut's attr[3] read of pla_diam[] (SweCl.cs, around line 3956),
+        // which is real, but pla_diam[] is read at eight sites total in SweCl.cs (725, 1029,
+        // 1707, 2525, 3956, 3971, 4276, 4568); this class only ever reached that one. The
+        // rise/transit disc-radius consumer at SweCl.cs get_sun_rad_plus_refr (around line
+        // 4276: rdi = asin(pla_diam[ipl] / 2.0 / AUNIT / dd) * RADTODEG) had no coverage
+        // anywhere in the suite: swe_rise_trans's "fast" path (rise_set_fast) reaches it for
+        // any body in [SE_SUN, SE_TRUE_NODE] whenever SE_BIT_DISC_CENTER is not requested, and
+        // SEFLG_MOSEPH needs no ephemeris file for the Sun. Inverting "/ 2.0" to "* 2.0" there
+        // roughly doubles the Sun's assumed apparent radius, shifting the moment its upper limb
+        // crosses the horizon -- confirmed to move tret well outside the pinned precision below.
+        // ---------------------------------------------------------------------------------
+        [Fact]
+        public void TestRiseTrans_SunDiscRadius_UsesPlaDiam()
+        {
+            using (var swe = new SwissEph())
+            {
+                double tjd = swe.swe_julday(2000, 6, 1, 0.0, SwissEph.SE_GREG_CAL);
+                double[] geopos = { 5.333889, 47.853333, 468 }; // lon, lat, alt (m); |lat| <= 60
+                double tret = 0;
+                string serr = null;
+
+                // rsmi = SE_CALC_RISE only: no SE_BIT_DISC_CENTER (which would skip the
+                // pla_diam read entirely, rdi = 0) and no SE_BIT_FIXED_DISC_SIZE (which would
+                // override dd to a hardcoded 1.0 for the Sun before pla_diam is applied).
+                int rc = swe.swe_rise_trans(tjd, SwissEph.SE_SUN, null, SwissEph.SEFLG_MOSEPH,
+                    SwissEph.SE_CALC_RISE, geopos, 0, 0, ref tret, ref serr);
+
+                Assert.Equal(SwissEph.OK, rc);
+                Assert.Equal(2451696.655453675, tret, 9);
             }
         }
     }
