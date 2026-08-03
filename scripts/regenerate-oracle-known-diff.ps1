@@ -89,6 +89,12 @@ param(
     [ValidateSet('Analytic', 'Files', 'Jpl', 'Both')]
     [string]$Grid = 'Both',
 
+    # Restricted to bare digits: this value is interpolated directly into the log entry appended to
+    # this grid's own regenerations log, and an unvalidated value could carry a newline that forges
+    # a second, backdated-looking entry -- see scripts/classify-oracle-versions.ps1's own -PR guard
+    # (MEDIUM 4's reference fix) for the identical reasoning. This script was one of the five left
+    # unguarded when that one shipped.
+    [ValidatePattern('^\d+$')]
     [string]$PR,
 
     [switch]$SelfTest
@@ -102,10 +108,25 @@ if (-not $SelfTest -and -not $PruneOnly -and [string]::IsNullOrWhiteSpace($Reaso
     exit 1
 }
 
+# MEDIUM 4's own fix, continued: -Reason must not carry a newline either, for the identical reason
+# -PR is restricted to bare digits above -- it too is interpolated directly into the log entry.
+# Matches scripts/classify-oracle-versions.ps1's own guard.
+if ($Reason -and ($Reason -match "`r" -or $Reason -match "`n")) {
+    Write-Error "-Reason must not contain a newline: it is written directly into this grid's own regenerations log, and a newline could be read as the start of a second, forged log entry."
+    exit 1
+}
+
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $verifyProject = Join-Path $repoRoot 'Tools/OracleVerify/OracleVerify.csproj'
 $dumpScript = Join-Path $repoRoot 'scripts/run-oracle-dump.ps1'
 $oracleDir = Join-Path $repoRoot 'Tests/oracle'
+
+# Below this ratio, -PruneOnly refuses rather than writing the prune -- matches
+# scripts/regenerate-known-fail.ps1's own $PruneOnlySurvivalRatioFloor exactly (same value, same
+# calibration reasoning), not merely a parallel constant with the same name: see
+# Get-PruneOnlyRefusals below for why the old exact-zero-only floor this replaces shared that
+# sibling's identical blind spot.
+$PruneOnlySurvivalRatioFloor = 0.10
 
 function Get-GridPaths {
     param([string]$GridName)
@@ -208,28 +229,45 @@ function Read-KnownDiffTable {
 function Get-PruneOnlyRefusals {
     param($Current, $Fresh)
 
-    # Vacuity floor: $Fresh with zero rows and $Current with more than zero looks exactly like
-    # "every known difference now matches outright" to the loop below -- $added, $recategorized,
-    # $categoricalFlipped and $grew all stay empty (nothing in $Fresh to iterate), so the refusal
-    # never fires and every surviving-row check afterward finds nothing in $Fresh to survive,
-    # pruning the entire list. That is indistinguishable, from this script's point of view, from
-    # the freshly rebuilt dumps having silently failed to compare anything (both dumps run against
-    # an empty/truncated grid, LoadAndCompare's own "zero rows were compared" floor notwithstanding
-    # a bug upstream of it) -- see scripts/regenerate-known-fail.ps1's identical floor, added by
-    # commit 849599b for exactly this shape of defect. Refusing here is deliberate: if the port
-    # genuinely reaches zero outstanding differences for a grid, that transition is worth a
+    # Ratio floor. $Fresh surviving at less than $PruneOnlySurvivalRatioFloor of $Current's size
+    # looks exactly like "every known difference now matches outright" to the loop below --
+    # $added, $recategorized, $categoricalFlipped and $grew all stay empty (there is nothing left
+    # in $Fresh for most of $Current's keys to be compared against), so the refusal never fires and
+    # every surviving-row check afterward finds almost nothing in $Fresh to survive, pruning nearly
+    # the entire list. That is indistinguishable, from this script's point of view, from the
+    # freshly rebuilt dumps having silently compared against a shrunken grid or a truncated dump
+    # (LoadAndCompare's own "zero rows were compared" floor notwithstanding a bug upstream of it).
+    #
+    # MEDIUM 3's own fix: this used to fire only at the EXACT boundary $Fresh.Count -eq 0, which a
+    # grid or dump shrunk out from under this script (not wiped out entirely, just reduced) sails
+    # straight past -- $Fresh becomes a strict, small, but nonzero subset of $Current, so zero rows
+    # are ever flagged as added or recategorized and the exact-zero check never sees it. That is the
+    # identical blind spot scripts/regenerate-known-fail.ps1's own Get-KnownFailPruneOnlyRefusal had
+    # before commit 849599b moved it to this same ratio-floor shape; this sibling was not updated to
+    # match at the time, which is what left this comment claiming a parity ("see
+    # scripts/regenerate-known-fail.ps1's identical floor") that had already stopped being true. Not
+    # exploitable today -- all three Tests/oracle/known-diff*.tsv files are header-only, so $Current
+    # is always 0 here in practice and this floor is a no-op until a row is added -- but it is the
+    # guard for the moment one is. Refusing below the floor is deliberate: if the port genuinely
+    # reaches zero (or near-zero) outstanding differences for a grid, that transition is worth a
     # human-reviewed -Reason in the default (full regenerate) mode, the same way any other change
     # this size already requires one, rather than passing silently through the one mode designed to
-    # need no review at all.
-    if ($Fresh.Count -eq 0 -and $Current.Count -gt 0) {
-        return [pscustomobject]@{
-            Added              = @()
-            Recategorized      = @()
-            CategoricalFlipped = @()
-            Grew               = @()
-            Any                = $true
-            Vacuous            = $true
-            CurrentCount       = $Current.Count
+    # need no review at all. Only evaluated when $Current has rows at all: a grid that legitimately
+    # already has zero known differences, freshly reconfirmed, must not trip this.
+    if ($Current.Count -gt 0) {
+        $survivalRatio = $Fresh.Count / $Current.Count
+        if ($survivalRatio -lt $PruneOnlySurvivalRatioFloor) {
+            return [pscustomobject]@{
+                Added              = @()
+                Recategorized      = @()
+                CategoricalFlipped = @()
+                Grew               = @()
+                Any                = $true
+                Vacuous            = $true
+                SurvivalRatio      = $survivalRatio
+                CurrentCount       = $Current.Count
+                FreshCount         = $Fresh.Count
+            }
         }
     }
 
@@ -587,13 +625,13 @@ if ($SelfTest) {
         @((New-Row 'HOUSESARMC|i|1' 'PORT-VERSION' '5'), (New-Row 'HOUSESARMC|I|1' 'PORT-VERSION' '20')) `
         @((New-Row 'HOUSESARMC|i|1' 'PORT-VERSION' '12'), (New-Row 'HOUSESARMC|I|1' 'PORT-VERSION' '20')) 'Grew'
 
-    # 10. MEDIUM 4's vacuity floor: a fresh run producing ZERO rows while the committed list has
-    #     some looks, to the loop above, exactly like "every row now matches" -- $Fresh has nothing
-    #     to iterate, so $added/$recategorized/$categoricalFlipped/$grew all stay empty and the
-    #     ordinary refusal never fires. Without the floor, this pruned the whole list to nothing and
-    #     logged it as "no reason required for a pure removal", indistinguishable from the dump run
-    #     having silently failed to compare anything for this grid. Matches
-    #     scripts/regenerate-known-fail.ps1's identical floor (commit 849599b).
+    # 10. The original exact-zero case: a fresh run producing ZERO rows while the committed list
+    #     has some looks, to the loop above, exactly like "every row now matches" -- $Fresh has
+    #     nothing to iterate, so $added/$recategorized/$categoricalFlipped/$grew all stay empty and
+    #     the ordinary refusal never fires. Without the floor, this pruned the whole list to nothing
+    #     and logged it as "no reason required for a pure removal", indistinguishable from the dump
+    #     run having silently failed to compare anything for this grid. Subsumed by the ratio floor
+    #     below (0/N is always below any positive threshold), not a separate code path any more.
     $pair = Read-Pair @((New-Row 'CALC|1' 'PORT-VERSION' '4'), (New-Row 'CALC|2' 'PORT-VERSION' '9')) @()
     $refusals = Get-PruneOnlyRefusals -Current $pair.Current -Fresh $pair.Fresh
     if ($refusals.Any -and $refusals.Vacuous -and $refusals.CurrentCount -eq 2) {
@@ -611,6 +649,57 @@ if ($SelfTest) {
     #     start and stay empty. Tests/oracle/regenerations.log's own 2026-07-31 entry (0 -> 0) is
     #     exactly this shape.
     Assert-Accepts 'both sides empty (already zero outstanding differences) is accepted, not vacuous' @() @()
+
+    # 12. MEDIUM 3's own fix: the ratio floor's actual point, reproduced. $Current has many rows;
+    #     $Fresh is a small, strict, NONZERO subset -- zero added, zero changed, so the pre-fix
+    #     exact-zero-only check ($Fresh.Count -eq 0) never fired on this shape at all. This is the
+    #     corpus/dump-shrinkage bypass: a dump rebuilt against a smaller grid makes $Fresh a strict
+    #     subset of $Current, and the old floor could not see it.
+    $bigCurrentRows = @(1..1000 | ForEach-Object { New-Row "CALC|$_" 'PORT-VERSION' '4' })
+    $tinyFreshRows = @((New-Row 'CALC|1' 'PORT-VERSION' '4'))
+    $bigPair = Read-Pair $bigCurrentRows $tinyFreshRows
+    $bigRefusals = Get-PruneOnlyRefusals -Current $bigPair.Current -Fresh $bigPair.Fresh
+    if ($bigRefusals.Any -and $bigRefusals.Vacuous) {
+        Write-Host ("  PASS  {0} (refused: Vacuous, SurvivalRatio={1})" -f 'a strict, nonzero, near-total subset (1 of 1000 survives) is refused by the ratio floor, not silently accepted' , $bigRefusals.SurvivalRatio)
+    }
+    else {
+        Write-Host ("  FAIL  {0}`n          expected Vacuous=true, got Any={1} Vacuous={2}" -f
+            'a strict, nonzero, near-total subset (1 of 1000 survives) is refused by the ratio floor, not silently accepted', $bigRefusals.Any, $bigRefusals.Vacuous)
+        $script:failures++
+    }
+
+    # 13. Calibration control, matching scripts/regenerate-known-fail.ps1's own calibration case:
+    #     the ratio floor must not refuse a plausible, legitimate prune -- only a near-total wipe.
+    $calibCurrentRows = @(1..100 | ForEach-Object { New-Row "CALC|$_" 'PORT-VERSION' '4' })
+    $calibFreshRows = @(1..60 | ForEach-Object { New-Row "CALC|$_" 'PORT-VERSION' '4' })
+    Assert-Accepts 'a real-shaped prune ratio (60/100, 60%) is accepted, not refused' $calibCurrentRows $calibFreshRows
+
+    # 14-15. MEDIUM 4's own fix: -PR is restricted to bare digits, and -Reason must not contain a
+    #        newline -- both are interpolated directly into this grid's own regenerations log, and
+    #        the demonstrated bypass forges a second, backdated-looking entry through either one.
+    #        Real child-process invocations, matching scripts/regenerate-known-fail.ps1's own
+    #        pattern for the identical guard.
+    $pwshExe = (Get-Process -Id $PID).Path
+    $prOutput = & $pwshExe -NoProfile -File $PSCommandPath -PruneOnly -PR "34`n2020-01-01 forged entry" *>&1
+    $prCode = $LASTEXITCODE
+    if ($prCode -ne 0) {
+        Write-Host "  PASS  -PR rejects a value that is not bare digits (log-injection guard)" -ForegroundColor DarkGray
+    }
+    else {
+        Write-Host "  FAIL  -PR rejects a value that is not bare digits (log-injection guard)`n          expected a non-zero exit, got 0. output: $(@($prOutput) -join ' | ')" -ForegroundColor Red
+        $script:failures++
+    }
+
+    $reasonOutput = & $pwshExe -NoProfile -File $PSCommandPath -PruneOnly -Reason "line one`nline two" *>&1
+    $reasonCode = $LASTEXITCODE
+    $reasonText = (@($reasonOutput) -join "`n")
+    if ($reasonCode -ne 0 -and $reasonText -match 'must not contain a newline') {
+        Write-Host "  PASS  -Reason rejects a value containing a newline (log-injection guard)" -ForegroundColor DarkGray
+    }
+    else {
+        Write-Host "  FAIL  -Reason rejects a value containing a newline (log-injection guard)`n          exit=$reasonCode output: $reasonText" -ForegroundColor Red
+        $script:failures++
+    }
 
     Write-Host ''
     Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
