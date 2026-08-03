@@ -9,19 +9,25 @@ namespace SwissEphNet.Tests
         [Fact]
         public void TestContainsChar() {
             String s = null;
-            Assert.False(s?.Contains('a') ?? false);
+            // Called as a static method, not member-access syntax: `s?.Contains(...)` short-circuits
+            // on a compile-time-null `s` without ever invoking anything, and instance member syntax
+            // on a non-null string would bind to System.String's own Contains(char, StringComparison)
+            // overload rather than this extension. The static call form is the only way to reach
+            // StringExtensions.Contains(this string, char) itself and exercise its
+            // String.IsNullOrEmpty(s) guard against a real null.
+            Assert.False(StringExtensions.Contains(s, 'a'));
 
-            Assert.False("".Contains('a'));
-            Assert.False("AbCd".Contains('a'));
-            Assert.True("AbCd".Contains('b'));
-            Assert.False("AbCd".Contains('c'));
-            Assert.True("AbCd".Contains('d'));
-            Assert.False("AbCd".Contains('e'));
-            Assert.True("AbCd".Contains('A'));
-            Assert.False("AbCd".Contains('B'));
-            Assert.True("AbCd".Contains('C'));
-            Assert.False("AbCd".Contains('D'));
-            Assert.False("AbCd".Contains('E'));
+            Assert.False("".Contains('a', StringComparison.Ordinal));
+            Assert.False("AbCd".Contains('a', StringComparison.Ordinal));
+            Assert.True("AbCd".Contains('b', StringComparison.Ordinal));
+            Assert.False("AbCd".Contains('c', StringComparison.Ordinal));
+            Assert.True("AbCd".Contains('d', StringComparison.Ordinal));
+            Assert.False("AbCd".Contains('e', StringComparison.Ordinal));
+            Assert.True("AbCd".Contains('A', StringComparison.Ordinal));
+            Assert.False("AbCd".Contains('B', StringComparison.Ordinal));
+            Assert.True("AbCd".Contains('C', StringComparison.Ordinal));
+            Assert.False("AbCd".Contains('D', StringComparison.Ordinal));
+            Assert.False("AbCd".Contains('E', StringComparison.Ordinal));
         }
 
         [Fact]
@@ -59,6 +65,14 @@ namespace SwissEphNet.Tests
             Assert.Equal(-1, "AcA".IndexOfFirstNot(charSet));
             Assert.Equal(0, "xyz".IndexOfFirstNot(charSet));
 
+            // An empty char set excludes nothing, so the first character of a non-empty string
+            // already qualifies and the answer is 0, not -1 (StringExtensions.cs's own comment on
+            // IndexOfFirstNot: "Must not early-return on chars.Length == 0"). None of the
+            // assertions above exercise this: every non-null, non-empty-string case here passes a
+            // non-empty charSet, and the only zero-argument call (line 56 above) is on a null s,
+            // where String.IsNullOrEmpty(s) short-circuits to -1 regardless of chars.
+            Assert.Equal(0, "xyz".IndexOfFirstNot());
+            Assert.Equal(0, "xyz".IndexOfFirstNot(Array.Empty<char>()));
         }
 
         [Fact]

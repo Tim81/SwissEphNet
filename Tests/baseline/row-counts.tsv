@@ -1,0 +1,29 @@
+# Committed expected row count (case id count) per area, checked by BaselineVerify
+# (Tools/BaselineVerify/RowCounts.cs, Tools/BaselineVerify/Program.cs) so a baseline file
+# silently reduced -- to zero, or just narrowed -- cannot pass as PASS while
+# FAIL/ONLY-LOCAL/ONLY-REFERENCE all read zero.
+#
+# Rewritten by scripts/regenerate-baseline.ps1 in the same pass as the TSVs it describes,
+# gated behind -ExpectedScope. Do not edit by hand; a hand edit with no matching
+# baseline-*.tsv change (or vice versa) is exactly the drift this file exists to catch.
+#
+# Format: <area>\t<count>
+astromodels	329
+atmo	1676
+ayanamsa	2464
+calc	12608
+calc-defaulteph	2720
+coord	394
+datetime	513
+eclipse	1034
+format	640
+gauquelin	588
+house-pos	31528
+houses	13440
+houses-armc	55512
+misc	34
+nodaps	360
+orbit	792
+pheno	1472
+pheno-ast	15
+risetrans	760

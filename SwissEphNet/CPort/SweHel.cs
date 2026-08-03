@@ -29,6 +29,7 @@
   Problem reports can be sent to victor.reijs@gmail.com or dieter@astro.ch
   
   Copyright (c) Victor Reijs, 2008
+  Copyright (C) 1997 - 2021 Astrodienst AG, Switzerland.  All rights reserved.
 
   License conditions
   ------------------
@@ -44,17 +45,17 @@
   system. The software developer, who uses any part of Swiss Ephemeris
   in his or her software, must choose between one of the two license models,
   which are
-  a) GNU public license version 2 or later
+  a) GNU Affero General Public License (AGPL)
   b) Swiss Ephemeris Professional License
 
   The choice must be made before the software developer distributes software
   containing parts of Swiss Ephemeris to others, and before any public
   service using the developed software is activated.
 
-  If the developer choses the GNU GPL software license, he or she must fulfill
+  If the developer choses the AGPL software license, he or she must fulfill
   the conditions of that license, which includes the obligation to place his
-  or her whole software project under the GNU GPL or a compatible license.
-  See http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+  or her whole software project under the AGPL or a compatible license.
+  See https://www.gnu.org/licenses/agpl-3.0.html
 
   If the developer choses the Swiss Ephemeris Professional license,
   he must follow the instructions as found in http://www.astro.com/swisseph/ 
@@ -66,11 +67,13 @@
   Among other things, the License requires that the copyright notices and
   this notice be preserved on all copies.
 
+  Authors of the Swiss Ephemeris: Dieter Koch and Alois Treindl
+
   The authors of Swiss Ephemeris have no control or influence over any of
   the derived works, i.e. over software or services created by other
   programmers which use Swiss Ephemeris functions.
 
-  The names of the authors or of the copyright holder must not
+  The names of the authors or of the copyright holder (Astrodienst) must not
   be used for promoting any software, product or service which uses or contains
   the Swiss Ephemeris. This copyright notice is the ONLY place where the
   names of the authors can legally appear, except in cases where they have
@@ -268,7 +271,8 @@ namespace SwissEphNet.CPort
             CIb = 0.7; /* color of background (from Ben Sugerman)*/
             CIi = 0.5; /* Color index for white (from Ben Sugerman), should be function of ObjectName*/
             ObjectSize = 0;
-            if (String.Compare(ObjectName, "moon") == 0) {
+            // Two-arg String.Compare is culture-sensitive; C uses strcmp.
+            if (String.CompareOrdinal(ObjectName, "moon") == 0) {
                 /*ObjectSize and CI needs to be determined (depending on JDNDaysUT)*/
                 ;
             }
@@ -323,26 +327,32 @@ namespace SwissEphNet.CPort
             //char s[AS_MAXCH];
             //char *sp;
             Int32 ipl;
-            var s = ObjectName.ToLower();
-            if (s.StartsWith("sun"))
+            // ASCII tolower loop in C, not culture-sensitive.
+            var s = ObjectName.ToLowerInvariant();
+            // swehel.c:313-329 tests each prefix with strncmp, a byte-wise comparison;
+            // StartsWith without StringComparison is culture-sensitive, so make it ordinal.
+            if (s.StartsWith("sun", StringComparison.Ordinal))
                 return SwissEph.SE_SUN;
-            if (s.StartsWith("venus"))
+            if (s.StartsWith("venus", StringComparison.Ordinal))
                 return SwissEph.SE_VENUS;
-            if (s.StartsWith("mars"))
+            if (s.StartsWith("mars", StringComparison.Ordinal))
                 return SwissEph.SE_MARS;
-            if (s.StartsWith("mercur"))
+            if (s.StartsWith("mercur", StringComparison.Ordinal))
                 return SwissEph.SE_MERCURY;
-            if (s.StartsWith("jupiter"))
+            if (s.StartsWith("jupiter", StringComparison.Ordinal))
                 return SwissEph.SE_JUPITER;
-            if (s.StartsWith("saturn"))
+            if (s.StartsWith("saturn", StringComparison.Ordinal))
                 return SwissEph.SE_SATURN;
-            if (s.StartsWith("uranus"))
+            if (s.StartsWith("uranus", StringComparison.Ordinal))
                 return SwissEph.SE_URANUS;
-            if (s.StartsWith("neptun"))
+            if (s.StartsWith("neptun", StringComparison.Ordinal))
                 return SwissEph.SE_NEPTUNE;
-            if (s.StartsWith("moon"))
+            if (s.StartsWith("moon", StringComparison.Ordinal))
                 return SwissEph.SE_MOON;
-            if ((ipl = int.Parse(s)) > 0) {
+            // swehel.c:331 is `if ((ipl = atoi(s)) > 0)`, which returns 0 for an object
+            // name that is not a recognized planet and not a bare catalog number
+            // (e.g. "regulus"), instead of throwing.
+            if ((ipl = C.atoi(s)) > 0) {
                 ipl += SwissEph.SE_AST_OFFSET;
                 return ipl;
             }
@@ -393,7 +403,10 @@ namespace SwissEphNet.CPort
         Int32 call_swe_fixstar_mag(string star, ref double mag, ref string serr) {
             Int32 retval;
             string star2;
-            if (String.Compare(star, call_swe_fixstar_mag_star_save) == 0) {
+            // Two-arg String.Compare is culture-sensitive; C uses strcmp. This is the
+            // swe_fixstar_mag cache key, so a linguistic collision here would return
+            // a cached magnitude for the wrong star.
+            if (String.CompareOrdinal(star, call_swe_fixstar_mag_star_save) == 0) {
                 mag = call_swe_fixstar_mag_dmag;
                 return SwissEph.OK;
             }
@@ -564,7 +577,9 @@ namespace SwissEphNet.CPort
             serr = null;
             if (JDNDaysUT == SunRA_tjdlast)
                 return SunRA_ralast;
-            if (SwissEph.SIMULATE_VICTORVB) {
+            // swehel.c:563 is `#ifndef SIMULATE_VICTORVB`, and swephexp.h:451 always defines the
+            // macro, so this block is always compiled out in C; negated to match (was un-negated).
+            if (!SwissEph.SIMULATE_VICTORVB) {
                 if (true) { /*helflag & SE_HELFLAG_HIGH_PRECISION) {*/
                     double tjd_tt;
                     double[] x = new double[6];
@@ -1311,7 +1326,10 @@ namespace SwissEphNet.CPort
                     datm[2] = 40;
                 /* note: datm[3] / VR defaults outside this function */
             } else {
-                if (SwissEph.SIMULATE_VICTORVB) {
+                // swehel.c:1339 is `#ifndef SIMULATE_VICTORVB`, and swephexp.h:451 always defines
+                // the macro, so this block is always compiled out in C; negated to match (was
+                // un-negated).
+                if (!SwissEph.SIMULATE_VICTORVB) {
                     if (datm[2] <= 0.00000001) datm[2] = 0.00000001;
                     if (datm[2] >= 99.99999999) datm[2] = 99.99999999;
                 }
@@ -1418,10 +1436,27 @@ namespace SwissEphNet.CPort
             //char* sp;
             //for (sp = str; *sp != '\0' && *sp != ','; sp++)
             //    *sp = tolower(*sp);
+            // swehel.c:1449-1450 mutates the caller's buffer in place via the
+            // ref parameter. This never wrote back to str (all 3 call sites pass
+            // ref and rely on the mutation), and used Substring(0, p - 1),
+            // dropping the character before the comma (same off-by-one as
+            // Sweph.cs's fixstar_format_search_name, sweph.c:6165-6166) without
+            // the p > 0 guard, so p == 0 threw ArgumentOutOfRangeException.
             if (str == null) return null;
-            int p = str.IndexOf(',');
-            if (p < 0) return str.ToLower();
-            return str.Substring(0, p - 1).ToLower() + str.Substring(p);
+            // swehel.c:1449 (`*sp != ','`) is a byte-wise scan for the comma; IndexOf(char)
+            // has no netstandard2.0 StringComparison overload, so use C.strchr (already
+            // ordinal, see its own comment in Tools/C.cs) for the same effect.
+            int p = C.strchr(str, ',');
+            // swehel.c:1450 (`*sp = tolower(*sp)`) is an ASCII loop, not culture-sensitive; under
+            // tr-TR, string.ToLower() maps 'I' to dotless 'ı' rather than 'i', so a capitalized
+            // "JUPITER" never matches the lowercase prefixes DeterObject (SweHel.cs:331, which
+            // already uses ToLowerInvariant with this same comment) or swe_vis_limit_mag's own
+            // "moon" check compare against.
+            if (p > 0)
+                str = str.Substring(0, p).ToLowerInvariant() + str.Substring(p);
+            else if (p < 0)
+                str = str.ToLowerInvariant();
+            return str;
         }
 
         /* Limiting magnitude in dark skies 
@@ -1468,7 +1503,9 @@ namespace SwissEphNet.CPort
                 if (ObjectLoc(tjdut, dgeo, datm, "sun", 1, helflag, ref AziS, ref serr) == SwissEph.ERR)
                     return SwissEph.ERR;
             }
-            if (ObjectName.StartsWith("moon") ||
+            // swehel.c:1501 uses strncmp(ObjectName, "moon", 4), a byte-wise comparison;
+            // StartsWith without StringComparison is culture-sensitive, so make it ordinal.
+            if (ObjectName.StartsWith("moon", StringComparison.Ordinal) ||
                 (helflag & SwissEph.SE_HELFLAG_VISLIM_DARK) != 0 ||
                 (helflag & SwissEph.SE_HELFLAG_VISLIM_NOMOON) != 0
                ) {
@@ -1728,7 +1765,9 @@ namespace SwissEphNet.CPort
                 return SwissEph.ERR;
             if (ObjectLoc(JDNDaysUT, dgeo, datm, ObjectName, 1, helflag, ref AziO, ref serr) == SwissEph.ERR)
                 return SwissEph.ERR;
-            if (ObjectName.StartsWith("moon")) {
+            // swehel.c:1769 uses strncmp(ObjectName, "moon", 4), a byte-wise comparison;
+            // StartsWith without StringComparison is culture-sensitive, so make it ordinal.
+            if (ObjectName.StartsWith("moon", StringComparison.Ordinal)) {
                 AltM = -90;
                 AziM = 0;
             } else {
@@ -1980,7 +2019,9 @@ namespace SwissEphNet.CPort
                     crosspoint = crossing(DeltaAltoud, DeltaAlt, MinTAVoud, MinTAVact);
                     Ta = TimePointer - TimeStep * (1 - crosspoint);
                 }
-            } while (Math.Abs(TimePointer - RiseSetS) <= MaxTryHours / 24.0 && Ta == 0 && !((TbVR != 0 && (TypeEvent == 3 || TypeEvent == 4) && !ObjectName.StartsWith("moon") && !ObjectName.StartsWith("venus") && !ObjectName.StartsWith("mercury"))));
+            // swehel.c:2017 uses strncmp(ObjectName, ..., n), a byte-wise comparison;
+            // StartsWith without StringComparison is culture-sensitive, so make it ordinal.
+            } while (Math.Abs(TimePointer - RiseSetS) <= MaxTryHours / 24.0 && Ta == 0 && !((TbVR != 0 && (TypeEvent == 3 || TypeEvent == 4) && !ObjectName.StartsWith("moon", StringComparison.Ordinal) && !ObjectName.StartsWith("venus", StringComparison.Ordinal) && !ObjectName.StartsWith("mercury", StringComparison.Ordinal))));
             if (RS == 2) {
                 TfirstVR = Tc;
                 TlastVR = Ta;
@@ -2964,7 +3005,8 @@ namespace SwissEphNet.CPort
             double d = 0, phot_scot_opic, phot_scot_opic_sv; double[] darr = new double[10];
             double d0 = 100.0 / 86400.0;
             tret = tjd;
-            if (String.Compare(ObjectName, "moon") == 0) {
+            // Two-arg String.Compare is culture-sensitive; C uses strcmp.
+            if (String.CompareOrdinal(ObjectName, "moon") == 0) {
                 d0 *= 10;
                 ncnt = 4;
             }

@@ -89,23 +89,26 @@ namespace SwissEphNet.Tests
             using (var swe = new SwissEph())
             {
                 var tjd_ut = swe.swe_julday(2017, 8, 26, 11.25, SwissEph.SE_GREG_CAL);
-                Assert.Equal(0.00079691, swe.swe_deltat(tjd_ut), 8);
+                // swephlib.c:3211-3222 (2.10.03): swi_get_tid_acc() no longer probes swe_calc()
+                // to force-load the Moon file when no ephemeris is loaded; with no file open it
+                // now falls through to the tid_acc default (DE431) instead of hardcoding DE404
+                // (Moshier), which moves this value slightly.
+                Assert.Equal(0.00079690270176499512, swe.swe_deltat(tjd_ut), 8);
             }
             using (var swe = new SwissEph())
             {
                 var tjd_ut = swe.swe_julday(2017, 8, 26, 11.25, SwissEph.SE_GREG_CAL);
                 bool isLoaded = false;
-                swe.OnLoadFile += (s, e) =>
+                swe.FileProvider = new DelegateFileProvider(path =>
                 {
-                    if (e.FileName == "[ephe]\\sedeltat.txt")
+                    if (ResourceFileHelpers.GetPortableFileName(path) == "sedeltat.txt")
                     {
-                        var asm = this.GetType().GetAssembly();
-                        String sr = e.FileName.Replace("[ephe]", @"SwissEphNet.Tests.files").Replace("/", ".").Replace("\\", ".");
-                        e.File = asm.GetManifestResourceStream(sr);
                         isLoaded = true;
+                        return ResourceFileHelpers.OpenResourceFile("sedeltat.txt");
                     }
-                };
-                Assert.Equal(0.00079691, swe.swe_deltat(tjd_ut), 8);
+                    return null;
+                });
+                Assert.Equal(0.00079690270176499512, swe.swe_deltat(tjd_ut), 8);
                 Assert.True(isLoaded);
             }
         }
@@ -319,17 +322,20 @@ namespace SwissEphNet.Tests
                 Assert.Null(serr);
 
                 // Date > today (after last leap date)
+                // swephlib.c:2487-2497 (2.10.03): the delta T table is extended with measured
+                // 2020-2023 values and revised 2024-2028 extrapolation, which shifts the
+                // extrapolated delta T (and therefore the ET/UT split) for dates beyond it.
                 year = 2030;
                 res = swe.swe_utc_to_jd(year, month, day, hour, min, sec, SwissEph.SE_GREG_CAL, dret, ref serr);
                 Assert.Equal(SwissEph.OK, res);
-                Assert.Equal(2462729.5216863, dret[0], 7);
-                Assert.Equal(2462729.5208333, dret[1], 7);
+                Assert.Equal(2462729.5216340744, dret[0], 7);
+                Assert.Equal(2462729.5208305302, dret[1], 7);
                 Assert.Null(serr);
 
                 res = swe.swe_utc_to_jd(year, month, day, hour, min, sec, SwissEph.SE_JUL_CAL, dret, ref serr);
                 Assert.Equal(SwissEph.OK, res);
-                Assert.Equal(2462742.5216864, dret[0], 7);
-                Assert.Equal(2462742.5208333, dret[1], 7);
+                Assert.Equal(2462742.5216340744, dret[0], 7);
+                Assert.Equal(2462742.5208304306, dret[1], 7);
                 Assert.Null(serr);
 
                 // Errors
@@ -407,13 +413,15 @@ namespace SwissEphNet.Tests
                 Assert.Equal(59.9987661838531, sec, 12);
 
                 // Date > today (after last leap date)
+                // swephlib.c:2487-2497 (2.10.03): revised delta T table (see
+                // Test_swe_utc_to_jd above) shifts the ET-UT split for dates beyond it.
                 swe.swe_jdet_to_utc(2462729.5218584, SwissEph.SE_GREG_CAL, ref year, ref month, ref day, ref hour, ref min, ref sec);
                 Assert.Equal(2030, year);
                 Assert.Equal(8, month);
                 Assert.Equal(16, day);
                 Assert.Equal(0, hour);
                 Assert.Equal(30, min);
-                Assert.Equal(14.865311980247, sec, 12);
+                Assert.Equal(19.38176304101944, sec, 12);
 
                 swe.swe_jdet_to_utc(2462742.52185908, SwissEph.SE_JUL_CAL, ref year, ref month, ref day, ref hour, ref min, ref sec);
                 Assert.Equal(2030, year);
@@ -421,7 +429,7 @@ namespace SwissEphNet.Tests
                 Assert.Equal(16, day);
                 Assert.Equal(0, hour);
                 Assert.Equal(30, min);
-                Assert.Equal(14.917051792145, sec, 12);
+                Assert.Equal(19.440503418445587, sec, 12);
 
             }
         }
@@ -533,37 +541,45 @@ namespace SwissEphNet.Tests
 ";
             serr = null;
             using (var swe = new SwissEph()) {
-                swe.OnLoadFile += (s, e) => {
-                    if (e.FileName == @"[ephe]\seleapsec.txt") {
-                        e.File = new System.IO.MemoryStream(Encoding.ASCII.GetBytes(content));
+                swe.FileProvider = new DelegateFileProvider(path => {
+                    if (ResourceFileHelpers.GetPortableFileName(path) == "seleapsec.txt") {
+                        return new System.IO.MemoryStream(Encoding.ASCII.GetBytes(content));
                     }
-                };
+                    return null;
+                });
 
                 res = swe.swe_utc_to_jd(year, month, day, hour, min, sec, SwissEph.SE_GREG_CAL, dret, ref serr);
                 Assert.Equal(SwissEph.OK, res);
                 Assert.Equal(2458849.50082389, dret[0], 8);
-                Assert.Equal(2458849.50002012, dret[1], 8);
+                // swephlib.c:3211-3222 (2.10.03): swi_get_tid_acc() default tid_acc changed
+                // (see LoadDeltaT above), shifting the ET-to-UT delta for any date computed
+                // without an ephemeris file loaded.
+                Assert.Equal(2458849.5000210973, dret[1], 8);
                 Assert.Null(serr);
             }
 
             // We adding a lot of lines in 'file' for code coverage purpose
             StringBuilder sb = new StringBuilder(content);
             for (int i = 0; i < 100; i++) {
-                sb.AppendFormat("{0}1231", 2038 + i).AppendLine();
+                sb.AppendFormat(System.Globalization.CultureInfo.InvariantCulture, "{0}1231", 2038 + i).AppendLine();
             }
             content = sb.ToString();
             serr = null;
             using (var swe = new SwissEph()) {
-                swe.OnLoadFile += (s, e) => {
-                    if (e.FileName == @"[ephe]\seleapsec.txt") {
-                        e.File = new System.IO.MemoryStream(Encoding.ASCII.GetBytes(content));
+                swe.FileProvider = new DelegateFileProvider(path => {
+                    if (ResourceFileHelpers.GetPortableFileName(path) == "seleapsec.txt") {
+                        return new System.IO.MemoryStream(Encoding.ASCII.GetBytes(content));
                     }
-                };
+                    return null;
+                });
 
                 res = swe.swe_utc_to_jd(year, month, day, hour, min, sec, SwissEph.SE_GREG_CAL, dret, ref serr);
                 Assert.Equal(SwissEph.OK, res);
                 Assert.Equal(2458849.50082389, dret[0], 8);
-                Assert.Equal(2458849.50002012, dret[1], 8);
+                // swephlib.c:3211-3222 (2.10.03): swi_get_tid_acc() default tid_acc changed
+                // (see LoadDeltaT above), shifting the ET-to-UT delta for any date computed
+                // without an ephemeris file loaded.
+                Assert.Equal(2458849.5000210973, dret[1], 8);
                 Assert.Null(serr);
             }
         }

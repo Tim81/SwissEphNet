@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Prints the .NET side of the CRT-parity comparison: for the same fixed value tables
+    Tools/CReference/crt-parity.c uses, the raw IEEE-754 bit pattern of the matching
+    Math.* call. scripts/verify-crt-parity.ps1 runs this alongside the compiled C and
+    diffs the two outputs line for line. See crt-parity.c's own header comment for what
+    this pair of programs proves and why.
+
+    No PackageReference and no ProjectReference on purpose: this only calls into
+    System.Math, so nothing beyond the BCL is needed, and pulling in SwissEphNet itself
+    would make a build-order or dependency problem in that project able to block this
+    gate, which has nothing to do with it.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>CrtParity</RootNamespace>
+    <AssemblyName>CrtParity</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+</Project>

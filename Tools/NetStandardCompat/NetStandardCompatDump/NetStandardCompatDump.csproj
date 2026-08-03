@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Replays Tools/NetStandardCompat/grid-netstandard.tsv through swe_calc and dumps the raw bit
+    pattern of every result, once per target framework below. scripts/verify-netstandard-compat.ps1
+    runs this same built output four times: net10.0 (the reference), net8.0, net462 and net48, and
+    compares the other three against the net10.0 dump.
+
+    net10.0/net8.0 resolve SwissEphNet's net10.0/net8.0 assets from the ProjectReference below, the
+    same as any other in-repo consumer. net462/net48 are what force the netstandard2.0 asset
+    instead, see the identical remarks on Tests/NetStandard20Smoke.Tests/
+    NetStandard20Smoke.Tests.csproj for why a .NET Framework TFM is what does that (a modern .NET
+    host always prefers net8.0/net10.0 over netstandard2.0 when both are available; a .NET
+    Framework host cannot use either, so it resolves down to netstandard2.0, the highest asset it
+    can use).
+
+    Like NetStandard20Smoke.Tests, this project is intentionally NOT part of
+    SwissEphNet.CrossPlatform.slnf and is not referenced by SwissEphNet.sln either (matching the
+    other Tools/ console apps under this tree, e.g. Tools/OracleDump, none of which sit in the
+    solution): it is built and run directly by scripts/verify-netstandard-compat.ps1, on Windows
+    only, since net462/net48 do not build or run outside Windows.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net10.0;net8.0;net462;net48</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>NetStandardCompatDump</RootNamespace>
+    <AssemblyName>NetStandardCompatDump</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+  </PropertyGroup>
+
+  <!--
+    InvariantGlobalization is a modern-.NET-only feature (no ICU-vs-NLS switch exists for .NET
+    Framework); conditioned to net8.0/net10.0 only, matching how Directory.Build.props' own
+    per-TFM properties elsewhere in this repo are scoped. Every double this program parses or
+    formats already goes through an explicit CultureInfo.InvariantCulture call regardless, so this
+    is belt and suspenders, not the only thing standing between this tool and a culture-dependent
+    parse, same reasoning as Tools/OracleDump/OracleDump.csproj carrying the identical property.
+  -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0' or '$(TargetFramework)' == 'net8.0'">
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\SwissEphNet\SwissEphNet.csproj" />
+  </ItemGroup>
+
+  <!--
+    Supplies the net462 reference assemblies without requiring that targeting pack to be installed
+    locally, identical reasoning and identical package to
+    Tests/NetStandard20Smoke.Tests/NetStandard20Smoke.Tests.csproj. Build-time-only
+    (PrivateAssets="all"), never a runtime dependency, and never touches SwissEphNet.csproj itself.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

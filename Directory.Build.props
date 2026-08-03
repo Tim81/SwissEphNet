@@ -1,0 +1,86 @@
+<Project>
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Deterministic>true</Deterministic>
+    <!--
+      ContinuousIntegrationBuild forces deterministic source paths into the PDB
+      (used by SourceLink). Only set it under CI: doing it locally too replaces
+      real file paths with unresolvable ones in a debugger.
+    -->
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true' or '$(TF_BUILD)' == 'true' or '$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!--
+      CS1591 (missing XML doc comment) is off repo-wide, not just under
+      SwissEphNet/CPort/: this whole library's public API (55+ KB of it, most
+      of it a mechanical C port) has no XML docs today, and that is a known,
+      accepted state, not something to warn about on every build. A per-directory
+      .editorconfig severity override is not used for this one, because .editorconfig
+      severity does not reliably suppress every compiler-level (CS-prefixed)
+      diagnostic the same way it does analyzer (CA/IDE) diagnostics, and NoWarn is
+      the long-standing, reliable way to turn this specific warning off. This must
+      stay a project-wide NoWarn, not a style choice a nested .editorconfig can
+      quietly re-enable.
+    -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!--
+      Explicitly OFF, not merely defaulted off. SwissEphNet/CPort is a 1:1
+      transliteration of the Swiss Ephemeris C source (see CONTRIBUTING.md);
+      turning on nullable reference types would produce tens of thousands of
+      warnings across 1.5 MB of ported C with no bug-finding value, and the
+      next person to "helpfully" flip it on needs to see it was a deliberate
+      choice, not an oversight.
+    -->
+    <Nullable>disable</Nullable>
+    <!-- Packing happens explicitly (dotnet pack), not as a side effect of building. -->
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <!--
+      The SDK only enables .NET analyzers (CA*) by default for TargetFramework >= net5.0,
+      so netstandard2.0 (the TFM the widest range of consumers actually resolve, and the
+      one NetStandard20Smoke.Tests exists specifically because nothing else exercises it)
+      never saw them without this. That is not a theoretical gap: the five culture-sensitive
+      rules the root .editorconfig deliberately enables (CA1304/1305/1307/1309/1310) are what
+      caught the real C.strcmp bug, and analyzer coverage that skips the least-tested shipped
+      asset defeats the point of having them. Forcing this on for every TFM does not affect
+      SwissEphNet/CPort/, Programs/SweTest/Program.cs or Programs/SweMini/Program.cs: their
+      own nested .editorconfig files already silence every analyzer diagnostic except the
+      handful deliberately left on (see CONTRIBUTING.md and those files' comments), so this
+      only surfaces warnings there, never fails a build, and the formatting freeze is
+      untouched either way.
+    -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+  </PropertyGroup>
+
+  <!--
+    Deliberately NOT setting IsTrimmable/IsAotCompatible here. An earlier version of
+    this file did (conditioned on TargetFramework in Directory.Build.targets, since a
+    single-TargetFramework project has not yet assigned $(TargetFramework) at the
+    point Directory.Build.props itself is imported), but that has two problems:
+
+    1. The condition matched net10.0-windows too (SweWin, a WinForms app, which is
+       not trim/AOT-safe), and there was no way for a project to opt back out:
+       Directory.Build.targets is imported after a project's own PropertyGroup, so an
+       explicit <IsTrimmable>false</IsTrimmable> in SweWin.csproj would have been
+       silently overwritten.
+
+    2. IsTrimmable=true is stamped into the shipped assembly as
+       AssemblyMetadata("IsTrimmable","True"), a public promise to the trimmer that
+       nothing in this repo validates. Attempting to validate it here (publishing a
+       small net10.0 console app that references SwissEphNet with PublishTrimmed=true
+       or PublishAot=true) fails immediately with NETSDK1124/NETSDK1207: MSBuild's
+       cross-project target-framework negotiation evaluates SwissEphNet's
+       netstandard2.0 leg too, even though the consuming app only ever resolves the
+       net10.0 asset, and netstandard2.0 supports neither trimming nor AOT. Making
+       that validation actually work is real, separate work (either restructuring how
+       multi-targeting interacts with publish, or scoping the check some other way),
+       not something to bolt on to a toolchain-retarget PR.
+
+    Shipping the promise without validating it is worse than not making the promise
+    yet. Revisit once there is an actual trim/AOT smoke check.
+  -->
+
+</Project>

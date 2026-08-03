@@ -1,0 +1,238 @@
+name: Conformance oracle
+
+# On every pull_request, unfiltered, as well as on a schedule and on demand --
+# no `paths:` gate. An earlier version of this workflow restricted the
+# pull_request trigger to SwissEphNet/**, the conformance test project and
+# Tests/conformance/**, but that allowlist could never be complete: it missed
+# global.json and Directory.Build.props (either can change what gets built or
+# how, with no path under those globs touched) and, worse, external/swisseph
+# itself -- a submodule gitlink bump (the whole point of which is "the
+# reference values this gate checks against just changed") would not have
+# matched any of those globs and would have silently skipped the one run that
+# most needed to happen. Neither ci.yml nor baseline.yml in this repo filters
+# by paths at all; this workflow now matches that rather than maintaining a
+# second, incomplete allowlist. Whether it belongs on the PR path at all came
+# down to cost, not scope: a full run dispatches all 12,757 iterations
+# in-process in ~2s (measured locally, Tools/ConformanceKnownFailGen, Release
+# build) and `dotnet test` end-to-end (both TFMs, including host startup) in
+# ~8s -- see README.md's "Correctness oracle" section for the measurement.
+# That is cheap enough that not running it at review time (the primary
+# evidence for whether a porting PR actually helped) would have been the
+# wrong tradeoff, not a necessary one. The submodule checkout below is the
+# only real cost, and is sparse + cached (on the pinned commit SHA, so a
+# gitlink bump both triggers the run and correctly misses the cache) for
+# exactly that reason.
+on:
+  # push is listed for the same reason ci.yml and baseline.yml list it: without it a direct push,
+  # to main included, runs no conformance check at all, and review found exactly that gap -- the
+  # freeze check, the unit tests and the baseline ran on a push while the correctness oracle did
+  # not. Branch protection narrows who can push, it does not make an absent workflow run.
+  push:
+    branches: ["**"]
+  pull_request:
+  schedule:
+    - cron: "17 4 * * 1" # Mondays, 04:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  conformance:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # The cache key below and the checkout step's $pinnedSha are both a
+      # hardcoded literal, deliberately (see that step's comment) -- which
+      # means nothing stops them from going stale relative to the gitlink
+      # this repo's tree actually records if external/swisseph is ever bumped
+      # without also updating these two occurrences. Assert that now, before
+      # either one is used: a mismatch here would otherwise silently build
+      # and test against a submodule commit that isn't the one the tree
+      # declares (a checkout of the *old* pin succeeds without error; it is
+      # just testing against the wrong reference values).
+      - name: Assert the pinned submodule SHA matches the gitlink
+        shell: pwsh
+        run: |
+          $pinnedSha = "f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0"
+          $line = git ls-tree HEAD external/swisseph
+          $actual = ($line -split '\s+')[2]
+          if ($actual -ne $pinnedSha) {
+            Write-Error "external/swisseph's gitlink is $actual but this workflow is hardcoded to $pinnedSha (cache key and checkout step). Update both occurrences in .github/workflows/conformance.yml to match the bump."
+            exit 1
+          }
+          Write-Host "OK: external/swisseph's gitlink ($actual) matches this workflow's pinned SHA."
+
+      # Reproduces the same sparse, partial checkout used locally (see
+      # README.md's "Correctness oracle" section) instead of a plain
+      # `git submodule update --init`, which would pull the full ~444 MB tree
+      # (sparse-checkout patterns live in the submodule's own
+      # .git/info/sparse-checkout, local configuration that a fresh clone does
+      # not inherit from .gitmodules). Cached on the pinned commit SHA
+      # (external/swisseph is pinned to tag v2.10.3bfinal and only moves in a
+      # deliberate submodule-bump commit), so every run except the first after
+      # a bump restores instantly instead of re-cloning.
+      - name: Cache external/swisseph submodule
+        id: submodule-cache
+        uses: actions/cache@v4
+        with:
+          path: external/swisseph
+          key: swisseph-submodule-f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
+
+      - name: Checkout external/swisseph submodule (sparse, ~25 MB)
+        if: steps.submodule-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          # Kept in sync with the cache key above and external/swisseph's
+          # actual gitlink (git ls-files --stage external/swisseph) -- this
+          # workflow does not parse it out dynamically, to keep the "what
+          # commit will this checkout" answer readable from this file alone.
+          $pinnedSha = "f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0"
+          git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
+          Push-Location external/swisseph
+          git config core.autocrlf false
+          git sparse-checkout init --no-cone
+          @(
+            '/*.c'
+            '/*.h'
+            '/Makefile'
+            '/LICENSE'
+            '/setest/*'
+            '/ephe/seas_12.se1'
+            '/ephe/semo_12.se1'
+            '/ephe/sepl_12.se1'
+            '/ephe/seas_18.se1'
+            '/ephe/semo_18.se1'
+            '/ephe/sepl_18.se1'
+            '/ephe/sefstars.txt'
+            '/ephe/seorbel.txt'
+            '/seleapsec.txt'
+          ) | Set-Content .git/info/sparse-checkout
+          git checkout $pinnedSha
+          Pop-Location
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      # --blame-hang(-timeout/-dump-type): a hung test previously had no faster exit than this
+      # job's own 30-minute timeout-minutes killing the whole runner with no diagnostic beyond
+      # "cancelled" -- see ci.yml's identical comment on its own "Test" step for the full
+      # reasoning. This is the largest test suite of the three gated here (t.exp's full corpus),
+      # so its timeout is longer than the smaller unit-test suites' 5min, while still leaving
+      # headroom under the job's own 30-minute ceiling for a real hang dump to be collected and
+      # uploaded rather than the whole runner being killed first.
+      # ConformanceKnownFailGen compiles nowhere else in CI. It is the generator behind
+      # Tests/conformance/known-fail.tsv, the porting work queue every conformance PR is
+      # measured against, so a compile break in it is only discovered by whoever next tries to
+      # regenerate that list -- which is exactly when they are least able to absorb it. Its
+      # only other mention in this file is a comment about its runtime, which is what made the
+      # gap easy to miss. Build only: running it would rewrite the committed allowlist, and
+      # regenerating that is a reviewed act (see scripts/regenerate-known-fail.ps1), never a
+      # side effect of a CI run.
+      - name: Build the known-fail generator
+        shell: pwsh
+        run: dotnet build Tools/ConformanceKnownFailGen/ConformanceKnownFailGen.csproj -c Release
+
+      - name: Run conformance oracle
+        shell: pwsh
+        run: >
+          dotnet test Tests/SwissEphNet.Conformance.Tests/SwissEphNet.Conformance.Tests.csproj
+          -c Release
+          --logger "console;verbosity=detailed"
+          --logger trx
+          --results-directory TestResults
+          --blame-hang
+          --blame-hang-timeout 15min
+          --blame-hang-dump-type mini
+
+      - name: Upload conformance report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: conformance-report
+          path: TestResults/*.trx
+          if-no-files-found: ignore
+
+  # Pure text parsing, no build, no submodule -- cheap enough to run on every push and pull
+  # request alongside the other ubuntu-latest checks in ci.yml (this job is modeled on that file's
+  # own verify-freeze job, same shape: fetch the integration refs, resolve a base with
+  # resolve-log-base.ps1, run the log check). Tests/conformance/known-fail.tsv is the port's own
+  # work queue, and until this job existed it had no CI-side guard at all: unlike
+  # Tests/baseline/*.tsv (scripts/verify-baseline-log.ps1) and scripts/freeze-manifest.tsv
+  # (scripts/verify-freeze-log.ps1), a hand edit to known-fail.tsv bypassed
+  # scripts/regenerate-known-fail.ps1's own -Reason requirement entirely, since nothing forced the
+  # file to be touched only through that script. This job closes that the same way the other two
+  # gates are closed: a change to known-fail.tsv without a matching new entry in
+  # Tests/conformance/regenerations.log fails the build.
+  verify-known-fail-log:
+    name: Correctness oracle known-fail list changes are logged
+    runs-on: ubuntu-latest
+    # push and pull_request only, unlike the conformance job above, which is the reason this
+    # workflow also carries `schedule` and `workflow_dispatch`. "Did this change record itself in
+    # the log" is a question about a range of new commits; a cron run introduces none, so there is
+    # nothing for it to answer. It does not merely have nothing to do on those events -- it goes
+    # red on them. github.event.before and github.event.pull_request.base.sha are both empty for
+    # schedule and workflow_dispatch, so resolve-log-base.ps1 falls through to its integration-ref
+    # fallback, and a scheduled run checks out the default branch, where
+    # merge-base(HEAD, <integration ref>) == HEAD. That is the case the resolver refuses outright
+    # ("Cannot determine a safe base ... Refusing to guess", resolve-log-base.ps1:176-192), so the
+    # base-ref step exits 1 and this job fails every Monday for a reason that has nothing to do
+    # with known-fail.tsv. Reproduced directly against origin/main in this clone. The three sibling
+    # base-ref jobs (ci.yml's verify-freeze and verify-no-tooling-attribution, baseline.yml's
+    # verify-baseline) are unaffected only because those two workflows carry no cron trigger at
+    # all -- this is not a rule they follow and this job broke, it is one only this workflow needed.
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # resolve-log-base.ps1 (and the git log range it produces) need history beyond the
+          # default shallow clone -- same reasoning as ci.yml's verify-freeze job.
+          fetch-depth: 0
+
+      - name: Fetch the integration refs the base resolver needs
+        shell: bash
+        run: |
+          git fetch --quiet origin \
+            "+refs/heads/release/2.10.03:refs/remotes/origin/release/2.10.03" \
+            "+refs/heads/main:refs/remotes/origin/main" || true
+
+      - name: Determine base ref for the known-fail-log check
+        id: base-ref
+        shell: pwsh
+        run: |
+          # See ci.yml's verify-freeze job (and verify-no-tooling-attribution in the same file) for
+          # why both of these are needed: the explicit pin (without it, a native command's ordinary
+          # non-zero exit inside -WidenPastCancellation would throw NativeCommandExitException the
+          # day the runner's ambient default flips), and the argument-list splat (a bare trailing
+          # token would bind to -IntegrationRef instead of toggling the switch, since
+          # resolve-log-base.ps1 runs as a separate child process here).
+          $PSNativeCommandUseErrorActionPreference = $false
+
+          $resolveArgs = @(
+            '-EventName', '${{ github.event_name }}',
+            '-BeforeSha', '${{ github.event.before }}',
+            '-PrBaseSha', '${{ github.event.pull_request.base.sha }}'
+          )
+          if ('${{ github.event_name }}' -eq 'push') { $resolveArgs += '-WidenPastCancellation' }
+          $base = pwsh scripts/resolve-log-base.ps1 @resolveArgs
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $base = $base.Trim()
+          "sha=$base" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Resolved known-fail-log base: $base"
+
+      - name: Self-test the known-fail log gate
+        shell: pwsh
+        run: pwsh scripts/verify-known-fail-log.ps1 -SelfTest
+
+      - name: Verify known-fail.tsv changes are logged
+        shell: pwsh
+        run: pwsh scripts/verify-known-fail-log.ps1 -BaseRef '${{ steps.base-ref.outputs.sha }}'

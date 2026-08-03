@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,34 +16,41 @@ namespace SwissEphNet.Tests
         [Fact]
         public void Test()
         {
+            // Like Issue27Test: the original report needed a real
+            // C:\Temp\ephe\jplfiles\de430.eph, a machine-local path no CI runner has, guarded by
+            // a File.Exists check -- and even when that guard passed, nothing was ever asserted.
+            // swe_set_jpl_file opens and parses whatever file it is given as soon as it is
+            // called (Sweph.cs's open_jpl_file), so the reported FormatException does not need
+            // real JPL binary content to reproduce: a missing file still reaches, and returns
+            // from, the same parsing path. Confirmed this runs (and previously would have
+            // thrown) without any ephemeris file present, so the regression is now covered on
+            // every CI run instead of never.
             string jplfolder = @"C:\Temp\ephe\jplfiles";
             string file = "de430.eph";
             string eop_today = "eop_1962_today.txt";
             string eop_finals = "eop_finals.txt";
 
-            // Skip test if the file not exists
-            if (!File.Exists(Path.Combine(jplfolder, file)))
-                return;
-
             using (var swe = new SwissEph())
             {
-                swe.OnLoadFile += (s, e) =>
+                swe.FileProvider = new DelegateFileProvider(path =>
                 {
-                    string f = e.FileName;
-                    string fn = Path.GetFileName(f);
-                    if (File.Exists(f))
+                    string fn = Path.GetFileName(path);
+                    if (File.Exists(path))
                     {
-                        e.File = new FileStream(f, FileMode.Open, FileAccess.Read);
+                        return new FileStream(path, FileMode.Open, FileAccess.Read);
                     }
                     else if (fn == eop_today || fn == eop_finals)
                     {
-                        e.File = ResourceFileHelpers.OpenResourceFile(fn);
+                        return ResourceFileHelpers.OpenResourceFile(fn);
                     }
-                };
+                    return null;
+                });
                 swe.swe_set_ephe_path(jplfolder);
 
-                // The issue raise a FormatException on this instruction
-                swe.swe_set_jpl_file(file);
+                // The issue raised a FormatException on this instruction.
+                var ex = Record.Exception(() => swe.swe_set_jpl_file(file));
+
+                Assert.Null(ex);
             }
         }
 

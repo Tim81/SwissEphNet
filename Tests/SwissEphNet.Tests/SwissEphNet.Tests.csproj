@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net46;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <AssemblyName>SwissEphNet.Tests</AssemblyName>
     <PackageId>SwissEphNet.Tests</PackageId>
-    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-    <RuntimeFrameworkVersion Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">2.1.14</RuntimeFrameworkVersion>
+    <IsPackable>false</IsPackable>
+    <!-- Properties/AssemblyInfo.cs supplies these three attributes manually. -->
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
@@ -21,8 +21,23 @@
     <EmbeddedResource Include="files\eop_1962_today.txt" />
     <EmbeddedResource Include="files\eop_finals.txt" />
     <EmbeddedResource Include="files\se00005s.se1" />
+    <EmbeddedResource Include="files\seas_18.se1" />
     <EmbeddedResource Include="files\sedeltat.txt" />
     <EmbeddedResource Include="files\sefstars.txt" />
+  </ItemGroup>
+
+  <!--
+    Approved public-API surface, one file per library asset. This project resolves the
+    net8.0 asset when it runs on net8.0 and the net10.0 asset when it runs on net10.0, so
+    both are pinned here; Tests/NetStandard20Smoke.Tests owns the netstandard2.0 list,
+    since it is the only project that resolves that asset. Embedded rather than copied to
+    the output directory so the comparison cannot depend on the runner's working directory,
+    and given an explicit LogicalName so the resource key is the plain file name instead of
+    a namespace-derived one that would change if RootNamespace ever did.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="PublicApi\SwissEphSharp.net8.0.approved.txt" LogicalName="SwissEphSharp.net8.0.approved.txt" />
+    <EmbeddedResource Include="PublicApi\SwissEphSharp.net10.0.approved.txt" LogicalName="SwissEphSharp.net10.0.approved.txt" />
   </ItemGroup>
 
   <ItemGroup>
@@ -30,22 +45,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <!--
+      This project stays on xunit v2 (not the v3 used by Tools/BaselineVerify.Tests),
+      so its runner needs the matching v2 major: override the v3 default that
+      Directory.Packages.props declares for everyone else.
+    -->
+    <PackageReference Include="xunit.runner.visualstudio" VersionOverride="2.8.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="xunit" Version="2.4.0" />
+    <PackageReference Include="xunit" />
   </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
-    <PackageReference Include="Microsoft.NETCore.Platforms" Version="1.1.1" />
-    <Reference Include="System" />
-    <Reference Include="Microsoft.CSharp" />
-  </ItemGroup>
-
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
-    <DefineConstants>$(DefineConstants);NET_STANDARD</DefineConstants>
-  </PropertyGroup>
 
 </Project>

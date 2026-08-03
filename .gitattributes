@@ -4,6 +4,38 @@
 * text=auto
 
 ###############################################################################
+# Characterization baseline: must check out with LF on every platform, since
+# BaselineGen always writes LF and BaselineVerify compares generated output
+# against these files directly (some fields exact-string, not just numeric).
+###############################################################################
+Tests/baseline/*.tsv text eol=lf
+Tests/baseline/*.env.txt text eol=lf
+
+###############################################################################
+# netstandard2.0 compatibility instrument: same reason as the baseline above,
+# and it fails harder. verify-netstandard-compat.ps1 SHA-256s the committed
+# dump-net10.0.tsv against a dump it generates on the spot, and
+# NetStandardCompatDump always writes LF (StreamWriter.NewLine = "\n"). Left on
+# text=auto these check out with CRLF wherever core.autocrlf is on -- which is
+# the default on the windows-latest runner, though not on every workstation --
+# so the two differ by line ending alone and the staleness check fails with
+# nothing actually stale. Pinning eol=lf makes the checked-out bytes the same
+# everywhere.
+###############################################################################
+Tools/NetStandardCompat/*.tsv text eol=lf
+Tests/netstandard-compat/*.tsv text eol=lf
+
+###############################################################################
+# License files: must check out byte-for-byte identical to the upstream Swiss
+# Ephemeris files they were copied from, on every platform. Astrodienst's own
+# license terms require the notices be preserved verbatim; a CRLF-converted
+# checkout on Windows would no longer match upstream byte for byte.
+###############################################################################
+LICENSE text eol=lf
+agpl-3.0.txt text eol=lf
+NOTICE text eol=lf
+
+###############################################################################
 # Set default behavior for command prompt diff.
 #
 # This is need for earlier builds of msysgit that does not have it on by

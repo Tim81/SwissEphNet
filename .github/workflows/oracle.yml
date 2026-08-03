@@ -1,0 +1,1331 @@
+name: Oracle build gates
+
+# Four scripts build Astrodienst's C with MSVC and compare it against something else: .NET
+# (scripts/verify-crt-parity.ps1), pyswisseph (scripts/validate-c-reference.ps1), this port
+# (scripts/run-oracle-dump.ps1 + scripts/verify-oracle.ps1), and Programs/SweTest's own text
+# output (scripts/verify-swetest-diff.ps1). None of them run anywhere in CI before this file --
+# Tools/CReference/build-c.ps1 and scripts/validate-c-reference.ps1 each say so in their own
+# .NOTES section, written when nothing here exercised them. This workflow is what makes that
+# statement go stale.
+#
+# macos-exactness has a Linux counterpart, linux-exactness, for the same reason baseline.yml
+# pairs a Windows gate with a Linux leg: this port and Astrodienst's C are each built once per
+# platform and compared against each other on that platform, so the claim "the port matches the
+# C reference" is checked somewhere other than Windows too. Between them, that makes six jobs
+# that build or compare against Astrodienst's C (the four MSVC-script jobs above, plus
+# macos-exactness and linux-exactness).
+#
+# Two further jobs build nothing and are not part of those six. header-flags-check is a
+# self-check on this file's own header comment below, not on Astrodienst's C. verify-gen-delta
+# compares the 2.08 baseline against the 2.10.3 submodule directly (scripts/gen-delta.ps1's own
+# renderer, verified byte-exact by scripts/verify-gen-delta.ps1) -- no MSVC, no C build, but the
+# same submodule and 2.08-baseline inputs the four MSVC-script jobs need, so it reuses their
+# cache keys rather than fetching either a third time.
+#
+# The submodule checkout below (sparse, cached on the pinned commit SHA) is copied from
+# .github/workflows/conformance.yml rather than rebuilt from scratch, cache key included, so a
+# job in either file restores the same cache entry and one clone serves both files.
+#
+# Two of those six jobs compare something built on the runner against something else also built
+# or installed on the runner (MSVC C against .NET; MSVC C against pyswisseph), so a disagreement
+# means the same thing on any machine that runs this file and gates the same way conformance.yml
+# and baseline.yml's Windows leg do.
+#
+# Three of the six (crt-parity, c-reference-validate, oracle-dump) gate end to end: every step,
+# comparison included, is a hard failure. oracle-dump used to have an exception -- its comparison
+# step against Tests/oracle/known-diff*.tsv carried continue-on-error, on the theory that a
+# different MSVC minor version on a future windows-latest image could move the C side's printed
+# digits without the port changing at all. Commit eec6e44 removed that flag: both known-diff
+# lists are header-only (every oracle row is required to be bit-identical), so there was no
+# recorded toolchain-sensitive value left to protect, and verify-oracle.ps1 does far more than
+# that one comparison -- it also exits 1 on a missing provenance sidecar, a missing dump, a failed
+# OracleVerify build, and OracleVerify's own row-count and case-id-set mismatches, all of which
+# the flag was silently absorbing too. That job also gates its later three-way-classification
+# step the same way, added afterwards for the same reason (see Tests/oracle/version-classification*.tsv).
+#
+# swetest-diff is one of three jobs that still exempt one step apiece. It compares the runner's
+# MSVC C against Tests/swetest/known-diff.tsv, which holds 15<!--doccount:swetest-known-diff--> real rows of printed output captured
+# from one specific compiler (external/.c-reference/toolchain.txt records which one) -- a future
+# windows-latest MSVC genuinely can move those without the port changing at all, so that
+# comparison step carries continue-on-error, matching baseline.yml's own verify-baseline-linux job:
+# report the drift, do not gate on it. Everything before it in that job still gates: the gitlink
+# assertion, the submodule checkout, the 2.08 sdist fetch, build-c.ps1's compile.
+#
+# macos-exactness and linux-exactness each carry a second comparison, an AOT-published build of the
+# same driver logic OracleDump.exe runs under the JIT (Tools/OracleDumpAot, added for this leg --
+# see that project's own header for why it cannot just ProjectReference SwissEphNet.csproj the way
+# OracleDump.csproj does). Both GATE. They landed with continue-on-error, on the reasoning that a
+# combination never executed in this CI before -- NativeAOT codegen x this platform's libm x this
+# exact runner image -- should not be able to fail the branch on its first run. Both then reported
+# AOT BIT-IDENTICAL against their own platform's C reference (22,289 analytic and 3,280 files rows,
+# 0 FMA instructions in either published binary), which is the promotion criterion those comments
+# set out, so the flags are gone and swetest-diff is once again the only step-level
+# continue-on-error in this file. macOS is the one that needed asking: arm64 carries fmadd in its
+# base instruction set, so unlike x86-64 there is no baseline to raise before a compiler can
+# contract a multiply-add, and nothing passes ILC an -fno-builtin equivalent.
+#
+# All three flags -- oracle-dump's now-removed one, swetest-diff's, and the two AOT-comparison
+# ones -- sat at job level before they sat on a single step, and at job level each was swallowing
+# steps that should have gated too, so a broken build reported success to the checks API. Each job
+# below says which kind it is and why.
+on:
+  # push is listed for the same reason ci.yml and baseline.yml list it: without it a direct push,
+  # to main included, ran none of these eight jobs, so the bit-exactness comparison this whole
+  # workflow exists for was absent from exactly the path that skips review. The submodule and
+  # 2.08 sdist caches plus the cancel-in-progress concurrency group below keep the repeat cost
+  # down; a re-run that hits both caches skips the two slowest steps entirely.
+  push:
+    branches: ["**"]
+  pull_request:
+  schedule:
+    - cron: "42 4 * * 1" # Mondays, 04:42 UTC -- offset from conformance.yml's 04:17 so the two do not start in the same minute
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Gate, and cheap: pure text parsing, no submodule, no MSVC, no dotnet -- runs on ubuntu-latest
+  # so it does not queue behind the Windows runners the other five jobs need (crt-parity,
+  # c-reference-validate, verify-gen-delta, oracle-dump, swetest-diff -- macos-exactness and
+  # linux-exactness use macos-latest and ubuntu-latest, not Windows). Exists because this
+  # file's own header comment (above) has drifted from which jobs actually carry
+  # continue-on-error three times now, each time a job's flag was added or removed without the
+  # prose being updated to match -- most recently when commit eec6e44 removed oracle-dump's flag.
+  #
+  # The check itself is scripts/verify-workflow-continue-on-error.ps1, not inline PowerShell in
+  # this file. It used to be inline here, hardcoded to read only this one file
+  # (`.github/workflows/oracle.yml`) despite its own comment claiming to treat "any job-level
+  # continue-on-error, on any job" as a failure -- a job-level flag planted in ci.yml,
+  # baseline.yml, conformance.yml, or any other file this scan never opened went completely
+  # unseen, and this job still printed PASS. The script scans every *.yml/*.yaml file under
+  # .github/ recursively (scripts/lib/WorkflowScan.ps1's Get-WorkflowScanFiles, shared with
+  # scripts/verify-sedump-macro-parity.ps1) and keys its expectation on "file:job", not a bare job
+  # name, so two jobs sharing a conventional name in two different files cannot be conflated. See
+  # that script's own header and Get-ExpectedStepLevelFlags for the current (file, job) pairs and
+  # why each one is there -- this comment does not restate the list, on purpose, so it cannot go
+  # stale relative to it the way this job's own prose once did (it kept naming
+  # macos-exactness/linux-exactness long after commit bc309e3 removed both jobs' flags).
+  header-flags-check:
+    name: "Gate: continue-on-error matches this script's own hardcoded expectation"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Self-test the continue-on-error placement gate
+        shell: pwsh
+        run: pwsh scripts/verify-workflow-continue-on-error.ps1 -SelfTest
+
+      - name: Assert continue-on-error's job/level set matches this repository's own hardcoded expectation
+        shell: pwsh
+        run: pwsh scripts/verify-workflow-continue-on-error.ps1
+
+  # Pure text parsing, no build, no submodule -- cheap enough to run on every push and pull
+  # request alongside header-flags-check above. Modeled directly on conformance.yml's own
+  # verify-known-fail-log job: Tests/oracle/known-diff*.tsv and version-classification*.tsv had no
+  # CI-side guard at all against a hand edit that bypassed scripts/regenerate-oracle-known-diff.ps1
+  # or scripts/classify-oracle-versions.ps1's own bookkeeping, the same gap that job closed for
+  # Tests/conformance/known-fail.tsv. scripts/verify-oracle-log.ps1 covers all four sidecars in one
+  # run rather than needing four near-identical jobs.
+  #
+  # push and pull_request only, matching conformance.yml's verify-known-fail-log job exactly --
+  # this workflow's own `schedule` trigger (see the `on:` block above) introduces no new commits
+  # for "did this change record itself in the log" to be a question about, and would fail every
+  # Monday for a reason that has nothing to do with the oracle sidecars -- see that job's own
+  # comment on resolve-log-base.ps1's refusal in exactly this situation.
+  verify-oracle-log:
+    name: "Gate: Tests/oracle/*.tsv changes are logged"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # resolve-log-base.ps1 (and the git log range it produces) need history beyond the
+          # default shallow clone -- same reasoning as ci.yml's verify-freeze job.
+          fetch-depth: 0
+
+      - name: Fetch the integration refs the base resolver needs
+        shell: bash
+        run: |
+          git fetch --quiet origin \
+            "+refs/heads/release/2.10.03:refs/remotes/origin/release/2.10.03" \
+            "+refs/heads/main:refs/remotes/origin/main" || true
+
+      - name: Determine base ref for the oracle-log check
+        id: base-ref
+        shell: pwsh
+        run: |
+          # See ci.yml's verify-freeze job (and verify-no-tooling-attribution in the same file) for
+          # why both of these are needed: the explicit pin (without it, a native command's ordinary
+          # non-zero exit inside -WidenPastCancellation would throw NativeCommandExitException the
+          # day the runner's ambient default flips), and the argument-list splat (a bare trailing
+          # token would bind to -IntegrationRef instead of toggling the switch, since
+          # resolve-log-base.ps1 runs as a separate child process here).
+          $PSNativeCommandUseErrorActionPreference = $false
+
+          $resolveArgs = @(
+            '-EventName', '${{ github.event_name }}',
+            '-BeforeSha', '${{ github.event.before }}',
+            '-PrBaseSha', '${{ github.event.pull_request.base.sha }}'
+          )
+          if ('${{ github.event_name }}' -eq 'push') { $resolveArgs += '-WidenPastCancellation' }
+          $base = pwsh scripts/resolve-log-base.ps1 @resolveArgs
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $base = $base.Trim()
+          "sha=$base" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Resolved oracle-log base: $base"
+
+      - name: Self-test the oracle log gate
+        shell: pwsh
+        run: pwsh scripts/verify-oracle-log.ps1 -SelfTest
+
+      - name: Verify Tests/oracle/*.tsv changes are logged
+        shell: pwsh
+        run: pwsh scripts/verify-oracle-log.ps1 -BaseRef '${{ steps.base-ref.outputs.sha }}'
+
+  # Gate. Pure text comparison of two already-committed files, no DE file and no build needed --
+  # see scripts/verify-grid-header-parity.ps1's own .DESCRIPTION. Nothing else in this workflow
+  # reads grid-jpl.tsv at all (the JPL leg is opt-in, see run-oracle-dump.ps1's own header), so
+  # this is the only check that would catch its column header drifting from grid-files.tsv's own
+  # -- exactly what happened once already, caught by hand.
+  grid-header-parity:
+    name: "Gate: grid-files.tsv and grid-jpl.tsv declare the same column header"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Self-test the grid header parity gate
+        shell: pwsh
+        run: pwsh scripts/verify-grid-header-parity.ps1 -SelfTest
+
+      - name: Verify grid-files.tsv and grid-jpl.tsv declare the same column header
+        shell: pwsh
+        run: pwsh scripts/verify-grid-header-parity.ps1
+
+  # Gate. Unit tests for Tools/OracleVerify's own comparer logic (RowComparer, FieldLabels,
+  # KnownDiffList, OracleVerifyReport, UlpMath, DumpRow) -- mirrors Tools/BaselineVerify.Tests,
+  # which exists for BaselineVerify's equivalent logic. Needs no submodule, no MSVC build and no C
+  # reference: these types only read/compare already-in-memory dump rows and TSV text, so this runs
+  # on ubuntu-latest with nothing but the .NET SDK, independent of every other job in this file.
+  oracle-verify-tests:
+    name: "Gate: Tools/OracleVerify unit tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: dotnet test Tools/OracleVerify.Tests
+        shell: pwsh
+        run: dotnet test Tools/OracleVerify.Tests -c Release --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type mini
+
+  # Gate. Compares MSVC C against .NET, both built on this runner in this run -- see
+  # scripts/verify-crt-parity.ps1's own .DESCRIPTION for what it checks; a FAIL here means the
+  # bit-exact oracle's own premise has broken, independent of anything sweph.c does. Needs no
+  # submodule checkout at all: Tools/CReference/crt-parity.c is a fixed, self-contained value
+  # table and opens no swisseph header.
+  crt-parity:
+    name: "Gate: MSVC C and .NET agree on CRT math (crt-parity)"
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Verify CRT parity
+        shell: pwsh
+        run: pwsh scripts/verify-crt-parity.ps1
+
+  # Gate. Compares Tools/CReference/build-c.ps1's MSVC build against pyswisseph 2.10.03, both
+  # resolved on this runner in this run -- see scripts/validate-c-reference.ps1's own
+  # .DESCRIPTION for what "independent" does and does not mean here (same upstream C, different
+  # build configuration). A FAIL means the local MSVC build is wrong, which every other job below
+  # depends on, so this is worth knowing before trusting any of them.
+  c-reference-validate:
+    name: "Gate: MSVC C reference build agrees with pyswisseph 2.10.03"
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same assertion as conformance.yml's own copy: the cache key and the checkout step below
+      # both carry the pinned SHA as a literal, so a submodule bump that forgets to update either
+      # occurrence would otherwise build against a commit the tree no longer declares. Keep this
+      # SHA, the cache key below, and conformance.yml's own copies of both in sync by hand.
+      - name: Assert the pinned submodule SHA matches the gitlink
+        shell: pwsh
+        run: |
+          $pinnedSha = "f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0"
+          $line = git ls-tree HEAD external/swisseph
+          $actual = ($line -split '\s+')[2]
+          if ($actual -ne $pinnedSha) {
+            Write-Error "external/swisseph's gitlink is $actual but this job is hardcoded to $pinnedSha. Update this occurrence and every other one listed in this file's own header comment."
+            exit 1
+          }
+          Write-Host "OK: external/swisseph's gitlink ($actual) matches this job's pinned SHA."
+
+      - name: Cache external/swisseph submodule
+        id: submodule-cache
+        uses: actions/cache@v4
+        with:
+          path: external/swisseph
+          key: swisseph-submodule-f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
+
+      - name: Checkout external/swisseph submodule (sparse, ~25 MB)
+        if: steps.submodule-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $pinnedSha = "f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0"
+          git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
+          Push-Location external/swisseph
+          git config core.autocrlf false
+          git sparse-checkout init --no-cone
+          @(
+            '/*.c'
+            '/*.h'
+            '/Makefile'
+            '/LICENSE'
+            '/setest/*'
+            '/ephe/seas_12.se1'
+            '/ephe/semo_12.se1'
+            '/ephe/sepl_12.se1'
+            '/ephe/seas_18.se1'
+            '/ephe/semo_18.se1'
+            '/ephe/sepl_18.se1'
+            '/ephe/sefstars.txt'
+            '/ephe/seorbel.txt'
+            '/seleapsec.txt'
+          ) | Set-Content .git/info/sparse-checkout
+          git checkout $pinnedSha
+          Pop-Location
+
+      # Tools/CReference/build-c.ps1 refuses to build the 2.08 library without this directory
+      # already stamped as verified -- see that script's Test-Pyswisseph208Verified. Cached on
+      # the script and manifest content: neither the sdist URL nor the pinned sha256 nor the
+      # manifest rows change without one of those two files changing too, so this key only misses
+      # when the 2.08 baseline itself would actually change.
+      - name: Cache external/pyswisseph-2.08 (2.08 C baseline)
+        id: pyswisseph208-cache
+        uses: actions/cache@v4
+        with:
+          path: external/pyswisseph-2.08
+          key: pyswisseph-208-${{ hashFiles('scripts/fetch-2.08-baseline.ps1', 'scripts/pyswisseph-2.08.manifest.tsv') }}
+
+      - name: Fetch 2.08 C baseline (pyswisseph sdist, hash-verified)
+        if: steps.pyswisseph208-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: pwsh scripts/fetch-2.08-baseline.ps1
+
+      # windows-latest carries Visual Studio 2022 with the C++ toolset preinstalled, which is
+      # what Tools/CReference/build-c.ps1's Get-VcVarsPath (vswhere-based) expects to find --
+      # this is the same discovery scripts/verify-crt-parity.ps1's own copy uses, and it has not
+      # previously run on an actual GitHub-hosted runner, only against a local Visual Studio
+      # install. A FAIL naming a missing vswhere.exe or C++ component here means that assumption
+      # did not hold; do not paper over it with a manual toolset install without first checking
+      # what actually broke.
+      - name: Build C reference (MSVC, 2.10.03 and 2.08)
+        shell: pwsh
+        run: pwsh Tools/CReference/build-c.ps1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      # Pinned to the exact version verified locally to report swe.version == '2.10.03' (the
+      # PyPI package version and the C library's own version string are numbered independently --
+      # scripts/validate-c-reference.ps1's own version check reads swe.version at runtime rather
+      # than trusting this pin). PyPI ships no Windows wheel for this package, so this compiles a
+      # small C extension against the C++ toolset the previous step already confirmed is present.
+      - name: Install pyswisseph 2.10.3.2
+        shell: pwsh
+        run: python -m pip install pyswisseph==2.10.3.2
+
+      - name: Validate C reference build against pyswisseph 2.10.03
+        shell: pwsh
+        run: pwsh scripts/validate-c-reference.ps1
+
+  # Gate. Wires scripts/verify-gen-delta.ps1 into this workflow for the first time -- until now it
+  # ran only when a contributor remembered to invoke it by hand, despite being the strongest check
+  # in this repo of the tool every commit of the 2.10.03 port is transcribed from
+  # (scripts/gen-delta.ps1). For every hunk gen-delta renders, it indexes into the real 2.08 and
+  # 2.10.3 files at the citation's own coordinates and compares case-sensitively (`-ceq`), plus an
+  # external per-file hunk-count pin (scripts/gen-delta-hunk-counts.tsv) so a whole dropped hunk
+  # cannot pass unnoticed, a body-length assertion independent of gen-delta's own `filtered=N`
+  # count (so the oracle cannot agree with the defect it is supposed to catch), and an orphan-pin
+  # sweep for a file that left one of the two trees. See that script's own header for the four
+  # review rounds and three perturbation tests this design closes.
+  #
+  # No MSVC needed -- gen-delta.ps1 and verify-gen-delta.ps1 are pure PowerShell text comparison,
+  # nothing here compiles C -- but the inputs are the same submodule and 2.08 baseline the
+  # Windows-only jobs above already fetch, so this job reuses their exact cache keys (submodule
+  # and pyswisseph-208) rather than cutting a third, redundant copy of either.
+  verify-gen-delta:
+    name: "Gate: gen-delta.ps1 renders byte-exact hunks (verify-gen-delta.ps1)"
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assert the pinned submodule SHA matches the gitlink
+        shell: pwsh
+        run: |
+          $pinnedSha = "f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0"
+          $line = git ls-tree HEAD external/swisseph
+          $actual = ($line -split '\s+')[2]
+          if ($actual -ne $pinnedSha) {
+            Write-Error "external/swisseph's gitlink is $actual but this job is hardcoded to $pinnedSha. Update this occurrence and every other one listed in this file's own header comment."
+            exit 1
+          }
+          Write-Host "OK: external/swisseph's gitlink ($actual) matches this job's pinned SHA."
+
+      - name: Cache external/swisseph submodule
+        id: submodule-cache
+        uses: actions/cache@v4
+        with:
+          path: external/swisseph
+          key: swisseph-submodule-f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
+
+      - name: Checkout external/swisseph submodule (sparse, ~25 MB)
+        if: steps.submodule-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $pinnedSha = "f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0"
+          git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
+          Push-Location external/swisseph
+          git config core.autocrlf false
+          git sparse-checkout init --no-cone
+          @(
+            '/*.c'
+            '/*.h'
+            '/Makefile'
+            '/LICENSE'
+            '/setest/*'
+            '/ephe/seas_12.se1'
+            '/ephe/semo_12.se1'
+            '/ephe/sepl_12.se1'
+            '/ephe/seas_18.se1'
+            '/ephe/semo_18.se1'
+            '/ephe/sepl_18.se1'
+            '/ephe/sefstars.txt'
+            '/ephe/seorbel.txt'
+            '/seleapsec.txt'
+          ) | Set-Content .git/info/sparse-checkout
+          git checkout $pinnedSha
+          Pop-Location
+
+      - name: Cache external/pyswisseph-2.08 (2.08 C baseline)
+        id: pyswisseph208-cache
+        uses: actions/cache@v4
+        with:
+          path: external/pyswisseph-2.08
+          key: pyswisseph-208-${{ hashFiles('scripts/fetch-2.08-baseline.ps1', 'scripts/pyswisseph-2.08.manifest.tsv') }}
+
+      - name: Fetch 2.08 C baseline (pyswisseph sdist, hash-verified)
+        if: steps.pyswisseph208-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: pwsh scripts/fetch-2.08-baseline.ps1
+
+      - name: Verify gen-delta renders byte-exact hunks
+        shell: pwsh
+        run: pwsh scripts/verify-gen-delta.ps1
+
+  # Gates end to end. run-oracle-dump.ps1 builds and runs both C drivers (2.10.03 and 2.08, the
+  # "both submodule trees" this job needs) and the .NET driver, and its own row-count guards are a
+  # hard failure -- a driver silently truncating its own output is a real defect regardless of
+  # which MSVC produced it. So are the gitlink assertion, the two fetch/build steps,
+  # verify-oracle.ps1 and the three-way-classification diff below it: none of them carry
+  # continue-on-error.
+  #
+  # It reached that state in two corrections. The flag first sat at job level, where it absorbed
+  # every step, so the gitlink assertion, build-c.ps1, fetch-2.08-baseline.ps1 and the row-count
+  # guards were all non-blocking and the job reported success to the checks API even when the
+  # build broke. Moving it to the comparison step alone fixed that but was still wrong twice over.
+  #
+  # First, the exemption's premise no longer holds. It was justified by Tests/oracle/known-diff*.tsv
+  # recording ULP distances captured from one specific compiler, which a future windows-latest MSVC
+  # could shift without any change to this port. Neither list records anything toolchain-sensitive
+  # any more: known-diff.tsv (analytic) is header-only, and every one of the
+  # 22,289<!--doccount:grid-analytic-total--> analytic rows is required to be bit-identical;
+  # known-diff-files.tsv (file-backed) is header-only too, same as known-diff.tsv: it briefly
+  # carried 5 recorded SERR entries, all a single deliberate, platform-portable path-separator
+  # choice (DIR_GLUE) rather than a compiler-version-sensitive ULP, and they are gone now, not
+  # waived -- the returned file path was scoped down to its basename (see
+  # docs/compliance-2.10.03.md's "The last two 2.10.03-only entry points") -- so every one of the
+  # 3,280<!--doccount:grid-files-total--> file-backed rows is required to be bit-identical, full
+  # stop, not "bit-identical or one of 5 recorded exceptions".
+  #
+  # Second, verify-oracle.ps1 does far more than that comparison. It exits 1 on a missing or
+  # malformed provenance sidecar, a missing dump, a failed Tools/OracleVerify build, and
+  # OracleVerify's own row-count and case-id-set mismatches, all indistinguishably from a genuine
+  # divergence. Flagging the step made the project's headline result -- every oracle row
+  # bit-identical against MSVC-built 2.10.03 C -- the one claim nothing in CI could turn red.
+  #
+  # If a toolchain bump ever does move the C side's last bits, the answer is a known-diff row with
+  # a named cause and a pinned maximum ULP, which is what that file is for. Not a blanket flag.
+  oracle-dump:
+    name: "Gate: port matches the 2.10.03 C reference bit for bit"
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assert the pinned submodule SHA matches the gitlink
+        shell: pwsh
+        run: |
+          $pinnedSha = "f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0"
+          $line = git ls-tree HEAD external/swisseph
+          $actual = ($line -split '\s+')[2]
+          if ($actual -ne $pinnedSha) {
+            Write-Error "external/swisseph's gitlink is $actual but this job is hardcoded to $pinnedSha. Update this occurrence and every other one listed in this file's own header comment."
+            exit 1
+          }
+          Write-Host "OK: external/swisseph's gitlink ($actual) matches this job's pinned SHA."
+
+      - name: Cache external/swisseph submodule
+        id: submodule-cache
+        uses: actions/cache@v4
+        with:
+          path: external/swisseph
+          key: swisseph-submodule-f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
+
+      - name: Checkout external/swisseph submodule (sparse, ~25 MB)
+        if: steps.submodule-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $pinnedSha = "f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0"
+          git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
+          Push-Location external/swisseph
+          git config core.autocrlf false
+          git sparse-checkout init --no-cone
+          @(
+            '/*.c'
+            '/*.h'
+            '/Makefile'
+            '/LICENSE'
+            '/setest/*'
+            '/ephe/seas_12.se1'
+            '/ephe/semo_12.se1'
+            '/ephe/sepl_12.se1'
+            '/ephe/seas_18.se1'
+            '/ephe/semo_18.se1'
+            '/ephe/sepl_18.se1'
+            '/ephe/sefstars.txt'
+            '/ephe/seorbel.txt'
+            '/seleapsec.txt'
+          ) | Set-Content .git/info/sparse-checkout
+          git checkout $pinnedSha
+          Pop-Location
+
+      - name: Cache external/pyswisseph-2.08 (2.08 C baseline)
+        id: pyswisseph208-cache
+        uses: actions/cache@v4
+        with:
+          path: external/pyswisseph-2.08
+          key: pyswisseph-208-${{ hashFiles('scripts/fetch-2.08-baseline.ps1', 'scripts/pyswisseph-2.08.manifest.tsv') }}
+
+      - name: Fetch 2.08 C baseline (pyswisseph sdist, hash-verified)
+        if: steps.pyswisseph208-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: pwsh scripts/fetch-2.08-baseline.ps1
+
+      - name: Build C reference (MSVC, 2.10.03 and 2.08)
+        shell: pwsh
+        run: pwsh Tools/CReference/build-c.ps1
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Run oracle dump (build C and .NET drivers, replay both grids)
+        shell: pwsh
+        run: pwsh scripts/run-oracle-dump.ps1
+
+      - name: Self-test the oracle provenance gate
+        shell: pwsh
+        run: pwsh scripts/verify-oracle.ps1 -SelfTest
+
+      - name: Compare port vs 2.10.03 C reference against known-diff.tsv
+        shell: pwsh
+        run: pwsh scripts/verify-oracle.ps1
+
+      # Gate. Tests/oracle/version-classification.tsv and -files.tsv (see
+      # Tools/OracleVerify/ThreeWayClassification.cs) classify every row above by which C
+      # version(s) the port matches -- a second, three-way view of the same six dumps
+      # run-oracle-dump.ps1 just produced, not a fresh comparison. Committed, but until this step
+      # existed nothing regenerated or checked it, so it could (and did) go stale: it drifted
+      # from present-tense claims made when the port still tracked 2.08 in most places to a state
+      # where verify-oracle.ps1 above reports every row bit-identical, while the checked-in
+      # classification still recorded hundreds of TRACKS-2.08/TRACKS-NEITHER rows. Calling
+      # OracleVerify's "classify" mode directly (rather than scripts/classify-oracle-versions.ps1,
+      # which reruns run-oracle-dump.ps1 from scratch and appends a dated log entry -- redundant
+      # work for a read-only CI check, and a log this job has no business writing to) regenerates
+      # both files from the dumps already on disk and diffs them against what is committed. A
+      # difference means someone changed the port (or the grids) without also running
+      # scripts/classify-oracle-versions.ps1 and committing the result, per that script's own
+      # header.
+      - name: Regenerate the three-way version classification and diff it against what is committed
+        shell: pwsh
+        run: |
+          $proj = "Tools/OracleVerify/OracleVerify.csproj"
+          $exitCode = 0
+
+          dotnet run --project $proj -c Release --no-build -- classify `
+            external/.c-reference/dump-c-2.10.03.tsv `
+            external/.c-reference/dump-c-2.08.tsv `
+            external/.c-reference/dump-net.tsv `
+            Tests/oracle/version-classification.tsv
+          if ($LASTEXITCODE -ne 0) { $exitCode = $LASTEXITCODE }
+
+          dotnet run --project $proj -c Release --no-build -- classify `
+            external/.c-reference/dump-c-2.10.03-files.tsv `
+            external/.c-reference/dump-c-2.08-files.tsv `
+            external/.c-reference/dump-net-files.tsv `
+            Tests/oracle/version-classification-files.tsv
+          if ($LASTEXITCODE -ne 0) { $exitCode = $LASTEXITCODE }
+
+          if ($exitCode -ne 0) {
+            Write-Host "FAIL: OracleVerify classify exited non-zero; see output above." -ForegroundColor Red
+            exit $exitCode
+          }
+
+          git diff --exit-code -- Tests/oracle/version-classification.tsv Tests/oracle/version-classification-files.tsv
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "FAIL: Tests/oracle/version-classification.tsv and/or -files.tsv no longer match what this run's dumps produce (diff above). Run pwsh scripts/classify-oracle-versions.ps1 locally, with -Reason, and commit the result." -ForegroundColor Red
+            exit 1
+          }
+          Write-Host "PASS: the committed three-way version classification matches this run's dumps." -ForegroundColor Green
+
+  # Partly gating, and unlike oracle-dump above the exemption here is still earned:
+  # Tests/swetest/known-diff.tsv holds 15<!--doccount:swetest-known-diff--> real rows of printed output captured from one specific
+  # MSVC, so a runner toolset bump genuinely can move them without this port changing. Everything
+  # before the comparison step -- the gitlink assertion, the submodule checkout, the 2.08 sdist
+  # fetch and build-c.ps1 -- is a hard failure. Not because those steps are toolchain-independent;
+  # build-c.ps1 is the MSVC build, and it already patches around one upstream compile defect
+  # (Tools/CReference/build-c.ps1:260-313 documents it, and the two now-fixed-upstream defects it
+  # used to patch), so a future toolset is exactly what can break it. Rather because a compile
+  # break is a real defect worth seeing, and
+  # c-reference-validate above already gates on that same step with no flag.
+  #
+  # Be clear about what the flag on the final step does and does not absorb, because
+  # verify-swetest-diff.ps1 throws, and so exits 1 indistinguishably, on more than a text
+  # mismatch: a failed Assert-EphemerisManifest, an unresolvable ephemeris directory, a failed
+  # Programs/SweTest build, a duplicate case_id or malformed row in the args grid, and its own
+  # Test-RequiredFileMissReported guard -- the one whose description says it aborts the run the
+  # moment either binary would be built silently wrong. None of those are toolchain-sensitive the
+  # way the text comparison is, so none of them belong under continue-on-error -- and until the
+  # script's -GuardOnly switch existed, all of them rode under the same one flagged step as the
+  # comparison anyway, because build, guard and comparison all lived inside a single invocation.
+  # This job now calls the script twice: once with -GuardOnly (below, no continue-on-error) that
+  # runs every guard check and the Programs/SweTest build and stops before dispatching a single
+  # grid case, and once normally (continue-on-error still set) for the actual comparison --
+  # duplicating the build (a redundant few seconds, not a second grid dispatch) is the price of
+  # keeping the toolchain-sensitive exemption from also covering everything upstream of it.
+  #
+  # Unlike oracle-dump, this script builds Programs/SweTest and compares in the same script, so a
+  # SweTest build break is also caught here now, not only by ci.yml's build-and-test job (which
+  # still builds Programs/SweTest as part of SwissEphNet.sln on every push and pull request, and
+  # still gates) -- this job's own guard step is a second, earlier catch of the same class of
+  # break, specific to the Release configuration this comparison actually runs.
+  swetest-diff:
+    name: "Gate: swetest reference builds (text comparison itself is toolchain-sensitive)"
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assert the pinned submodule SHA matches the gitlink
+        shell: pwsh
+        run: |
+          $pinnedSha = "f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0"
+          $line = git ls-tree HEAD external/swisseph
+          $actual = ($line -split '\s+')[2]
+          if ($actual -ne $pinnedSha) {
+            Write-Error "external/swisseph's gitlink is $actual but this job is hardcoded to $pinnedSha. Update this occurrence and every other one listed in this file's own header comment."
+            exit 1
+          }
+          Write-Host "OK: external/swisseph's gitlink ($actual) matches this job's pinned SHA."
+
+      - name: Cache external/swisseph submodule
+        id: submodule-cache
+        uses: actions/cache@v4
+        with:
+          path: external/swisseph
+          key: swisseph-submodule-f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
+
+      - name: Checkout external/swisseph submodule (sparse, ~25 MB)
+        if: steps.submodule-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $pinnedSha = "f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0"
+          git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
+          Push-Location external/swisseph
+          git config core.autocrlf false
+          git sparse-checkout init --no-cone
+          @(
+            '/*.c'
+            '/*.h'
+            '/Makefile'
+            '/LICENSE'
+            '/setest/*'
+            '/ephe/seas_12.se1'
+            '/ephe/semo_12.se1'
+            '/ephe/sepl_12.se1'
+            '/ephe/seas_18.se1'
+            '/ephe/semo_18.se1'
+            '/ephe/sepl_18.se1'
+            '/ephe/sefstars.txt'
+            '/ephe/seorbel.txt'
+            '/seleapsec.txt'
+          ) | Set-Content .git/info/sparse-checkout
+          git checkout $pinnedSha
+          Pop-Location
+
+      - name: Cache external/pyswisseph-2.08 (2.08 C baseline)
+        id: pyswisseph208-cache
+        uses: actions/cache@v4
+        with:
+          path: external/pyswisseph-2.08
+          key: pyswisseph-208-${{ hashFiles('scripts/fetch-2.08-baseline.ps1', 'scripts/pyswisseph-2.08.manifest.tsv') }}
+
+      - name: Fetch 2.08 C baseline (pyswisseph sdist, hash-verified)
+        if: steps.pyswisseph208-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: pwsh scripts/fetch-2.08-baseline.ps1
+
+      # build-c.ps1 always builds both libraries, so swetest.exe is not available without the
+      # 2.08 tree present too, even though this job's own comparison never touches it -- see
+      # Tools/CReference/build-c.ps1's own .DESCRIPTION.
+      - name: Build C reference (MSVC, 2.10.03 and 2.08)
+        shell: pwsh
+        run: pwsh Tools/CReference/build-c.ps1
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # Hard gate, not exempted: the job comment above already names what this absorbed before it
+      # had its own step -- Assert-EphemerisManifest, an unresolvable ephemeris directory, a failed
+      # Programs/SweTest build, a duplicate case_id or malformed grid row, and
+      # Test-RequiredFileMissReported's own guard -- none of which the comparison's
+      # continue-on-error below was ever meant to cover (see the job comment's own citation of
+      # this file's header, lines 477-481). -GuardOnly runs every one of those checks, the
+      # Programs/SweTest build, and dispatches exactly one grid case (the first -eswe row) to
+      # exercise Test-RequiredFileMissReported for real, then exits before dispatching the rest of
+      # the grid -- see -GuardOnly's own parameter help for why that one dispatch exists: without
+      # it, this guard's check lived only inside the full grid loop, unreachable from this step at
+      # all, so a break here fails this job for real now in a way it previously did not.
+      - name: Build Programs/SweTest and verify guard conditions
+        shell: pwsh
+        run: pwsh scripts/verify-swetest-diff.ps1 -GuardOnly
+
+      # The one step allowed to go red: see the job comment above. Everything before this point,
+      # including the guard step immediately above, is a real gate; this step re-runs the same
+      # build (a redundant few seconds, not a second grid dispatch -- see -GuardOnly's own
+      # parameter help) before dispatching the grid for the actual text comparison.
+      - name: Compare Programs/SweTest vs 2.10.03 C reference against known-diff.tsv
+        shell: pwsh
+        continue-on-error: true
+        run: pwsh scripts/verify-swetest-diff.ps1
+
+  # Gate, and one of two non-Windows jobs here (linux-exactness below is the other). It answers a
+  # question none of the Windows jobs can: does the port reproduce Astrodienst's C on a platform
+  # whose libm is neither ucrtbase nor glibc? macOS is the only runner that provides Apple's
+  # libSystem, and ci.yml's own comment records that its ubuntu-24.04-arm leg buys arm64 coverage
+  # while deliberately trading libSystem away as unmeasured. This measures it.
+  #
+  # The comparison is port-against-C on this same machine, not against the Windows baseline.
+  # Two platforms do not produce the same numbers and cannot be made to: Math.Sin binds to
+  # whatever libm the platform provides, at run time. What is portable is the claim that the
+  # port computes the identical bits the C does, from the identical inputs, wherever it runs.
+  # That is now gated on three platforms: Windows (MSVC, ucrtbase) by oracle-dump, Linux x64
+  # (gcc, glibc) by linux-exactness below, and macOS arm64 (clang, libSystem) here.
+  #
+  # -ffp-contract=off is not optional here, and this is the one place it bites. Base x86-64 has
+  # no FMA3, so the Linux x64 build cannot contract even at plain -O2 and needs no flag --
+  # linux-exactness below confirms this by disassembly rather than assuming it, the same way this
+  # job does for arm64. arm64 has fmadd in the base instruction set and clang contracts by default,
+  # which changes results:
+  # measured on aarch64/gcc 13.3.0, `a*b - p` where p is the rounded product of a and b gives
+  # 2.3978347948343523e-17 contracted and exactly 0 with contraction off. This port never
+  # contracts -- RyuJIT emits FMA only for an explicit Math.FusedMultiplyAdd, which the port
+  # never calls -- so a contracted C reference would differ from it for a reason that has
+  # nothing to do with the port. Assert-NoFma below is the same discipline
+  # Tools/CReference/build-c.ps1's Assert-NoFmaContraction applies to the MSVC build.
+  macos-exactness:
+    name: "Gate: port matches the C reference on macOS arm64 (Apple libSystem)"
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assert the pinned submodule SHA matches the gitlink
+        shell: bash
+        run: |
+          pinned=f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
+          actual=$(git ls-tree HEAD external/swisseph | awk '{print $3}')
+          if [ "$actual" != "$pinned" ]; then
+            echo "::error::external/swisseph gitlink is $actual, this job is pinned to $pinned"
+            exit 1
+          fi
+          echo "OK: gitlink $actual matches."
+
+      - name: Cache external/swisseph submodule
+        id: submodule-cache
+        uses: actions/cache@v4
+        with:
+          path: external/swisseph
+          key: swisseph-submodule-macos-f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
+
+      - name: Checkout external/swisseph submodule (sparse)
+        if: steps.submodule-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          pinned=f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
+          git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
+          cd external/swisseph
+          git config core.autocrlf false
+          git sparse-checkout init --no-cone
+          printf '%s\n' '/*.c' '/*.h' '/ephe/seas_12.se1' '/ephe/semo_12.se1' '/ephe/sepl_12.se1' \
+            '/ephe/seas_18.se1' '/ephe/semo_18.se1' '/ephe/sepl_18.se1' \
+            '/ephe/sefstars.txt' '/ephe/seorbel.txt' > .git/info/sparse-checkout
+          git checkout "$pinned"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # An explicit source list, not a glob: external/swisseph also ships obama.c, sweephe4.c
+      # and swephgen4.c, and at least one carries its own main(), so a glob build fails at link.
+      # These four -D flags match what scripts/run-oracle-dump.ps1 defines for the 2.10.03 build;
+      # the eight crossing functions, swe_houses_ex2/swe_houses_armc_ex2, swe_calc_pctr and
+      # swe_get_current_file_data do not exist in 2.08 and sedump.c guards on all four macros.
+      - name: Build the C reference with clang (no contraction, no builtin substitution)
+        shell: bash
+        run: |
+          clang --version | head -1
+          E=external/swisseph
+          clang -O2 -ffp-contract=off -fno-builtin -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -DSWISSEPH_HAS_CALC_PCTR=1 -DSWISSEPH_HAS_GET_CURRENT_FILE_DATA=1 -I "$E" -o sedump \
+            Tools/CReference/sedump.c \
+            "$E/sweph.c" "$E/swephlib.c" "$E/swemmoon.c" "$E/swemplan.c" "$E/swejpl.c" \
+            "$E/swedate.c" "$E/swehouse.c" "$E/swecl.c" "$E/swehel.c" -lm
+
+      - name: Assert no FMA contraction survived
+        shell: bash
+        run: |
+          n=$(otool -tv sedump | grep -cE '\bfmadd|\bfmsub|\bfnmadd|\bfnmsub' || true)
+          echo "fused multiply-add instructions in sedump: $n"
+          if [ "$n" != "0" ]; then
+            echo "::error::clang contracted despite -ffp-contract=off; the C reference would not be comparable to the port"
+            exit 1
+          fi
+
+      # A second reference with clang's math builtins left ON, kept as a diagnostic rather than
+      # a gate. The first run of this job established what it measures: clang substitutes its own
+      # builtins for libm calls -- fusing an adjacent sin(x) and cos(x) on one argument into a
+      # single __sincos(x), among others -- and Apple's __sincos does not return bit-identically
+      # to calling the two separately, which is what the port does one call at a time. With
+      # builtins on, 62 of 14,820 analytic rows and 10 of 2,244 file-backed rows differed from
+      # the port at that first run's row count; with -fno-builtin both grids were bit-identical.
+      # This build keeps that comparison running so a change in it is noticed -- the 62/10 figures
+      # are from the grid's size at that first run and have not been re-measured since (the grid
+      # has grown four times since then -- 8f601cf, 6d63999, 5ced3b8, 571092e; see
+      # docs/compliance-2.10.03.md's own "macOS is now measured"
+      # section for the current row counts and for why they are not re-quoted here). This step's
+      # own PASS/FAIL output on every run is the current measurement, not this comment.
+      - name: Build a diagnostic C reference with clang's builtins left on
+        shell: bash
+        run: |
+          E=external/swisseph
+          clang -O2 -ffp-contract=off -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -DSWISSEPH_HAS_CALC_PCTR=1 -DSWISSEPH_HAS_GET_CURRENT_FILE_DATA=1 -I "$E" -o sedump-nb \
+            Tools/CReference/sedump.c \
+            "$E/sweph.c" "$E/swephlib.c" "$E/swemmoon.c" "$E/swemplan.c" "$E/swejpl.c" \
+            "$E/swedate.c" "$E/swehouse.c" "$E/swecl.c" "$E/swehel.c" -lm
+
+      - name: Replay both grids through both C references
+        shell: bash
+        run: |
+          ./sedump    Tools/OracleGrid/grid-analytic.tsv c-analytic.tsv
+          ./sedump    Tools/OracleGrid/grid-files.tsv    c-files.tsv    external/swisseph/ephe
+          ./sedump-nb Tools/OracleGrid/grid-analytic.tsv nb-analytic.tsv
+          ./sedump-nb Tools/OracleGrid/grid-files.tsv    nb-files.tsv   external/swisseph/ephe
+
+      - name: Replay both grids through the port
+        shell: bash
+        run: |
+          dotnet build Tools/OracleDump -c Release -v q --nologo
+          DLL=$(find Tools/OracleDump/bin/Release -name OracleDump.dll | head -1)
+          dotnet "$DLL" Tools/OracleGrid/grid-analytic.tsv net-analytic.tsv
+          dotnet "$DLL" Tools/OracleGrid/grid-files.tsv net-files.tsv external/swisseph/ephe
+
+      # File-level equality, not the row comparator. UlpMath.Distance compares the two values' raw
+      # 64-bit patterns directly, not double.Equals, so a signed-zero or NaN-payload divergence is
+      # now a real, reported difference at the row level too -- what this step still covers, that
+      # the row comparator by design does not, is the decimal (non-hex) text column, row order,
+      # and incidental file bytes (blank lines, line endings) that OracleDump/sedump wrote but no
+      # per-field comparison ever inspects. scripts/verify-oracle.ps1 asserts the same file-level
+      # equality on Windows for the same reason.
+      - name: Compare, bit for bit, and quantify any difference
+        shell: bash
+        run: |
+          # set +e for the whole block. This step is built out of diff, cmp and grep, and every
+          # one of them exits non-zero for the ordinary case it is being asked about: diff exits
+          # 1 when files differ, cmp the same, grep -c 1 when it counts nothing. Under the
+          # default -e -o pipefail any of those aborts the step mid-report, which is how an
+          # earlier revision died after printing the per-func breakdown and never reached the
+          # -fno-builtin comparison or the files grid at all. rc is tracked by hand instead.
+          set +e
+          rc=0
+          # macOS ships BSD diff, which has none of GNU's --unchanged-line-format options, so
+          # everything below reads plain POSIX diff output.
+          for g in analytic files; do
+            # wc -l counts newlines, not lines. The grid/dump files here DO end with a trailing
+            # newline on the last row (measured: every one of them ends 0a), so wc -l's own output
+            # is the true row total -- no off-by-one adjustment needed or applied here (an earlier
+            # revision of this comment claimed the opposite and subtracted one, which made this
+            # step under-report the true count by one; $total below is wc -l's own output,
+            # unmodified). Row-count guard below: without it, two empty files compare
+            # bit-identical (cmp -s on two zero-byte files succeeds) and total comes out 0,
+            # which would report "BIT-IDENTICAL, 0 rows" and exit 0 -- a grid that silently
+            # shrank to nothing would still pass.
+            total=$(wc -l < "c-$g.tsv")
+            if [ "$total" -le 0 ]; then
+              echo "::error::$g: c-$g.tsv has $total data row(s) -- refusing to call an empty or near-empty grid bit-identical"
+              rc=1
+              continue
+            fi
+            if cmp -s "c-$g.tsv" "net-$g.tsv"; then
+              m=$(diff "nb-$g.tsv" "net-$g.tsv" | grep -c '^<' || true)
+              echo "$g: BIT-IDENTICAL, $total rows, sha256 $(shasum -a 256 "c-$g.tsv" | cut -c1-32)"
+              echo "  (with clang's math builtins left on, $m of $total rows would differ)"
+            else
+              n=$(diff "c-$g.tsv" "net-$g.tsv" | grep -c '^<' || true)
+              echo "::error::$g: $n of $total rows differ between the clang C reference and the port"
+              echo "  by func:"
+              diff "c-$g.tsv" "net-$g.tsv" | grep '^<' | sed 's/^< //'                 | cut -d'|' -f1 | sort | uniq -c | sort -rn | sed 's/^/    /'
+              m=$(diff "nb-$g.tsv" "net-$g.tsv" | grep -c '^<' || true)
+              echo "  (the builtins-on diagnostic build differs from the port on $m rows)"
+              echo "  first differing row, C then port:"
+              diff "c-$g.tsv" "net-$g.tsv" | head -4 | sed 's/^/    /'
+              rc=1
+            fi
+          done
+          exit $rc
+
+      # Everything above this point answers "does the port match Astrodienst's C on macOS arm64",
+      # measured under the JIT -- Tests/SweWin and every other consumer of this package that ships
+      # as ordinary IL runs that way. Timothy's own astrology application does not: it ships .NET
+      # 10 NativeAOT on macOS, and multi-targeting net8.0/net10.0 in the first place was done
+      # specifically to support that. Everything measured above this point is therefore one
+      # unverified inference away from the platform that actually matters -- AOT and the JIT do not
+      # have to produce identical codegen, and .github/workflows/oracle.yml's own comment on
+      # arm64's fmadd (a few lines above this one) is exactly the shape of surprise a different
+      # compiler backend can spring on identical source.
+      #
+      # Measured locally before this leg existed, on the two platforms that could be measured
+      # locally: on both Windows x64 and Linux x64 (container), an AOT-published build of this same
+      # driver logic reproduced the JIT build's own dump byte for byte, at ILC's default codegen
+      # baseline and at -p:IlcInstructionSet=x86-64-v3, and a disassembly of each AOT binary
+      # (dumpbin on Windows, objdump on Linux) found zero FMA instructions at either baseline. macOS
+      # arm64 could not be measured the same way -- there is no macOS runner to hand outside CI --
+      # so this leg is the first time any of it runs here, and it answers a question the x86-64
+      # measurements cannot: arm64's base ISA has fmadd built in (see this job's own comment on
+      # aarch64/gcc 13.3.0's contracted vs. uncontracted result), so an AOT backend contracting a
+      # multiply-add on this architecture, the way clang already does on the C side without
+      # -ffp-contract=off, is a live possibility here in a way it structurally is not on x86-64.
+      #
+      # Tools/OracleDumpAot compiles Tools/OracleDump/Program.cs directly (see that project's own
+      # header for why it cannot ProjectReference SwissEphNet.csproj or OracleDump.csproj the way
+      # the JIT steps above do), so this AOT binary runs the identical driver logic against the
+      # identical SwissEphSharp.dll IL as OracleDump.exe above -- built for net10.0 only, one step
+      # below, since Directory.Build.props's own "Deliberately NOT setting IsTrimmable/
+      # IsAotCompatible" remark and this job's own reproduction of NETSDK1207 agree that publishing
+      # AOT against the multi-target project directly does not work.
+      #
+      # The FMA check below gates: a contraction there has a known, well-understood cause (the same
+      # one this job already asserts against on the C side, a few steps up), not an unknown port
+      # defect, so there is nothing diagnostic about catching it. The value comparison after it does
+      # not gate yet -- continue-on-error sits on that one step only, matching swetest-diff's own
+      # placement discipline (see this file's header comment and header-flags-check's
+      # $expectedStepLevelFlags for why it lives there and nowhere else). This is a combination that
+      # has never executed in CI before this leg landed: NativeAOT codegen, this platform's
+      # libSystem, this exact macos-latest runner image, together. The JIT comparison a few steps up
+      # already has a CI track record; this one does not, and a red result here on first landing
+      # would say nothing yet about whether the cause is a real AOT-vs-JIT divergence or a plumbing
+      # mistake in a workflow step that has run zero times. Promote it to a hard failure (drop the
+      # continue-on-error and add this job's name to $expectedStepLevelFlags's removal instead of
+      # its addition) once it has passed clean on this runner image at least once -- at that point
+      # it carries the same kind of track record the JIT comparison already does, and the same
+      # reasoning that removed oracle-dump's own exemption (commit eec6e44, cited in the file
+      # header) applies here too: an exemption earns its keep only as long as there is a real,
+      # named, toolchain-sensitive reason for it, not indefinitely.
+      - name: Build SwissEphNet for net10.0 only (AOT needs a single-target assembly, not the multi-target project)
+        shell: bash
+        run: dotnet build SwissEphNet/SwissEphNet.csproj -c Release -f net10.0 --nologo -v q
+
+      - name: Publish the AOT oracle driver (osx-arm64, self-contained, NativeAOT)
+        shell: bash
+        run: dotnet publish Tools/OracleDumpAot -c Release -r osx-arm64 --self-contained true -p:PublishAot=true --nologo -v q
+
+      # Same discipline as "Assert no FMA contraction survived" above, applied to the AOT binary
+      # instead of the clang one -- ILC is a different compiler backend from both clang and RyuJIT,
+      # so its own codegen needs its own check rather than trusting the JIT-side measurement (this
+      # job's own "Assert no FMA contraction survived" step) to speak for it. This step gates: see
+      # the comment above this section for why an FMA contraction here is a known cause, not an
+      # unknown one.
+      - name: Assert no FMA instruction reached the AOT binary
+        shell: bash
+        run: |
+          BIN=Tools/OracleDumpAot/bin/Release/net10.0/osx-arm64/publish/OracleDumpAot
+          n=$(otool -tv "$BIN" | grep -cE '\bfmadd|\bfmsub|\bfnmadd|\bfnmsub' || true)
+          echo "fused multiply-add instructions in AOT binary: $n"
+          if [ "$n" != "0" ]; then
+            echo "::error::ILC emitted FMA on arm64 despite the port never calling Math.FusedMultiplyAdd; the AOT binary would not be comparable to the C reference the same way the JIT build above is"
+            exit 1
+          fi
+
+      - name: Replay both grids through the AOT binary
+        shell: bash
+        run: |
+          BIN=Tools/OracleDumpAot/bin/Release/net10.0/osx-arm64/publish/OracleDumpAot
+          "$BIN" Tools/OracleGrid/grid-analytic.tsv aot-analytic.tsv
+          "$BIN" Tools/OracleGrid/grid-files.tsv aot-files.tsv external/swisseph/ephe
+
+      # Against c-analytic.tsv/c-files.tsv, the same clang C reference (built with
+      # -ffp-contract=off -fno-builtin, further up this job) the JIT comparison above already
+      # compares against -- never against Windows-produced dump-net.tsv or dump-net-files.tsv. The
+      # baseline this whole workflow builds is platform-specific by construction (this job's own
+      # top-of-file comment: "does not produce the same numbers and cannot be made to"), so the only
+      # reference an AOT binary built and run on this machine can be measured against is a C
+      # reference also built and run on this same machine, in this same job.
+      #
+      # Gating. It landed diagnostic, on the reasoning that a combination never run in this CI
+      # before -- NativeAOT codegen, this platform's libm, this runner image -- should not be able
+      # to fail the branch on its first execution. It then passed clean on this runner image, so
+      # the promotion criterion that comment set out is met and continue-on-error is gone.
+      - name: Compare the AOT binary against the C reference, bit for bit
+        shell: bash
+        run: |
+          set +e
+          rc=0
+          for g in analytic files; do
+            total=$(wc -l < "aot-$g.tsv")
+            if [ "$total" -le 0 ]; then
+              echo "::error::$g: aot-$g.tsv has $total data row(s) -- refusing to call an empty or near-empty grid bit-identical"
+              rc=1
+              continue
+            fi
+            if cmp -s "c-$g.tsv" "aot-$g.tsv"; then
+              echo "$g: AOT BIT-IDENTICAL to the clang C reference, $total rows"
+            else
+              n=$(diff "c-$g.tsv" "aot-$g.tsv" | grep -c '^<' || true)
+              echo "::warning::$g: $n of $total rows differ between the clang C reference and the AOT-published port (the JIT comparison above this section already gates on this same C reference; this step is diagnostic on first landing -- see the job comment above it)"
+              echo "  by func:"
+              diff "c-$g.tsv" "aot-$g.tsv" | grep '^<' | sed 's/^< //' | cut -d'|' -f1 | sort | uniq -c | sort -rn | sed 's/^/    /'
+              echo "  first differing row, C then AOT:"
+              diff "c-$g.tsv" "aot-$g.tsv" | head -4 | sed 's/^/    /'
+              rc=1
+            fi
+          done
+          exit $rc
+
+  # Gate, and the other non-Windows job (macos-exactness above is the first). It answers the
+  # same question that job does, for glibc: does the port reproduce Astrodienst's C on the libm
+  # most Linux deployments of this port would actually run against? Until this job existed, the
+  # 17,064-of-17,064 Linux result README.md and docs/compliance-2.10.03.md quoted was measured
+  # once by hand, in a WSL2 Docker container, and nothing re-checked it -- both documents said so
+  # in as many words ("measured once, not gated"). This job is that check, run the same way on
+  # every push and pull request oracle-dump and macos-exactness already are.
+  #
+  # Modeled on macos-exactness's shape (same sparse submodule checkout, same explicit source
+  # list, same replay-then-compare structure), but its two open questions do not carry over
+  # unchanged, and this job answers each on its own evidence rather than assuming the macOS
+  # answer:
+  #
+  # FMA contraction: not a risk here, and confirmed rather than assumed. Base x86-64 (the ISA
+  # GitHub's ubuntu-latest runners provide, and the one gcc targets with no -march given) has no
+  # FMA3 encoding at all, unlike arm64 where fmadd is in the base instruction set -- see
+  # macos-exactness's own comment for the aarch64 measurement that flag protects against. Assert
+  # no FMA contraction below disassembles the gate build with objdump and finds zero
+  # vfmadd/vfmsub/vfnmadd/vfnmsub instructions at plain -O2, with no -ffp-contract=off in the
+  # command line at all -- there is no contraction for that flag to turn off.
+  #
+  # Builtin substitution: measured, and confirmed harmless here rather than assumed harmless.
+  # gcc does substitute glibc's sincos() for an adjacent sin()/cos() pair on the same argument
+  # even without -fno-builtin -- confirmed with nm: the gate build below links
+  # 'sincos@GLIBC_2.2.5' although sedump.c never calls sincos() itself. That is the same class of
+  # substitution -fno-builtin exists to suppress on macOS, where Apple's __sincos does not return
+  # bit-identically to calling sin() and cos() separately. glibc's sincos() does: replaying both
+  # grids through a plain -O2 build and through a second build adding -ffp-contract=off
+  # -fno-builtin produced byte-identical output against the port in both cases, 17,064 of 17,064
+  # rows either way. The gate below builds with plain -O2, matching the recipe README.md and
+  # docs/compliance-2.10.03.md already quote; the second build is kept as a diagnostic, the same
+  # way macos-exactness keeps its builtins-on build, in case a future glibc version starts
+  # disagreeing with the port the way Apple's libSystem already does.
+  linux-exactness:
+    name: "Gate: port matches the C reference on Linux x64 (glibc)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assert the pinned submodule SHA matches the gitlink
+        shell: bash
+        run: |
+          pinned=f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
+          actual=$(git ls-tree HEAD external/swisseph | awk '{print $3}')
+          if [ "$actual" != "$pinned" ]; then
+            echo "::error::external/swisseph gitlink is $actual, this job is pinned to $pinned"
+            exit 1
+          fi
+          echo "OK: gitlink $actual matches."
+
+      - name: Cache external/swisseph submodule
+        id: submodule-cache
+        uses: actions/cache@v4
+        with:
+          path: external/swisseph
+          key: swisseph-submodule-linux-f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
+
+      - name: Checkout external/swisseph submodule (sparse)
+        if: steps.submodule-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          pinned=f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
+          git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
+          cd external/swisseph
+          git config core.autocrlf false
+          git sparse-checkout init --no-cone
+          printf '%s\n' '/*.c' '/*.h' '/ephe/seas_12.se1' '/ephe/semo_12.se1' '/ephe/sepl_12.se1' \
+            '/ephe/seas_18.se1' '/ephe/semo_18.se1' '/ephe/sepl_18.se1' \
+            '/ephe/sefstars.txt' '/ephe/seorbel.txt' > .git/info/sparse-checkout
+          git checkout "$pinned"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # An explicit source list, not a glob -- same reason as macos-exactness's copy of this
+      # step: external/swisseph also ships obama.c, sweephe4.c and swephgen4.c, and at least one
+      # carries its own main(), so a glob build fails at link. These four -D flags match what
+      # scripts/run-oracle-dump.ps1 defines for the 2.10.03 build -- see that job's own comment
+      # above for which four functions each macro guards.
+      #
+      # No -ffp-contract=off, no -fno-builtin: see the job comment above for what was measured
+      # about each on this platform. gcc --version is printed for the same reason clang --version
+      # is in macos-exactness -- a future ubuntu-latest image can change the installed version
+      # without this file changing, and that is worth seeing in the log.
+      - name: Build the C reference with gcc (plain -O2; see job comment for why no extra flags)
+        shell: bash
+        run: |
+          gcc --version | head -1
+          E=external/swisseph
+          gcc -O2 -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -DSWISSEPH_HAS_CALC_PCTR=1 -DSWISSEPH_HAS_GET_CURRENT_FILE_DATA=1 -I "$E" -o sedump \
+            Tools/CReference/sedump.c \
+            "$E/sweph.c" "$E/swephlib.c" "$E/swemmoon.c" "$E/swemplan.c" "$E/swejpl.c" \
+            "$E/swedate.c" "$E/swehouse.c" "$E/swecl.c" "$E/swehel.c" -lm
+
+      - name: Assert no FMA instruction reached the binary
+        shell: bash
+        run: |
+          n=$(objdump -d sedump | grep -cE '\bvfmadd|\bvfmsub|\bvfnmadd|\bvfnmsub' || true)
+          echo "FMA instructions in sedump: $n"
+          if [ "$n" != "0" ]; then
+            echo "::error::gcc contracted a multiply-add despite base x86-64 having no FMA3 encoding; the C reference would not be comparable to the port"
+            exit 1
+          fi
+
+      # The job comment above states, as measured fact, that gcc substitutes glibc's sincos()
+      # for an adjacent sin()/cos() pair and that this is confirmed with nm -- this step is that
+      # confirmation, not a restatement of it. sedump.c never calls sincos() itself (grep -c
+      # below over the source, not the binary, makes that explicit), so a linked sincos symbol
+      # can only be the compiler's own substitution. -D reads the dynamic symbol table: this
+      # build is not statically linked, so the plain (non-dynamic) symbol table would not show a
+      # libc import at all.
+      - name: Assert glibc's sincos substitution is actually linked
+        shell: bash
+        run: |
+          if grep -qE '\bsincos\s*\(' Tools/CReference/sedump.c; then
+            echo "::error::Tools/CReference/sedump.c now calls sincos() directly -- the job comment's premise (a linked sincos symbol can only be gcc's own substitution) no longer holds; update that comment instead of this check"
+            exit 1
+          fi
+          sincos_symbol=$(nm -D sedump | grep -i sincos || true)
+          if [ -z "$sincos_symbol" ]; then
+            echo "::error::sedump does not link a sincos symbol -- this gcc/glibc no longer substitutes sincos() for an adjacent sin()/cos() pair, so the job comment's builtin-substitution paragraph is stale and its 'confirmed with nm' claim needs re-measuring, not just re-asserting"
+            exit 1
+          fi
+          echo "OK: $sincos_symbol"
+
+      # Diagnostic only, not gated -- see the job comment above. Adds the two flags
+      # macos-exactness needs (-ffp-contract=off -fno-builtin) to confirm neither changes the
+      # result on this glibc.
+      - name: Build a diagnostic C reference with -ffp-contract=off -fno-builtin
+        shell: bash
+        run: |
+          E=external/swisseph
+          gcc -O2 -ffp-contract=off -fno-builtin -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -DSWISSEPH_HAS_CALC_PCTR=1 -DSWISSEPH_HAS_GET_CURRENT_FILE_DATA=1 -I "$E" -o sedump-strict \
+            Tools/CReference/sedump.c \
+            "$E/sweph.c" "$E/swephlib.c" "$E/swemmoon.c" "$E/swemplan.c" "$E/swejpl.c" \
+            "$E/swedate.c" "$E/swehouse.c" "$E/swecl.c" "$E/swehel.c" -lm
+
+      - name: Replay both grids through both C references
+        shell: bash
+        run: |
+          ./sedump        Tools/OracleGrid/grid-analytic.tsv c-analytic.tsv
+          ./sedump        Tools/OracleGrid/grid-files.tsv    c-files.tsv    external/swisseph/ephe
+          ./sedump-strict Tools/OracleGrid/grid-analytic.tsv strict-analytic.tsv
+          ./sedump-strict Tools/OracleGrid/grid-files.tsv    strict-files.tsv external/swisseph/ephe
+
+      - name: Replay both grids through the port
+        shell: bash
+        run: |
+          dotnet build Tools/OracleDump -c Release -v q --nologo
+          DLL=$(find Tools/OracleDump/bin/Release -name OracleDump.dll | head -1)
+          dotnet "$DLL" Tools/OracleGrid/grid-analytic.tsv net-analytic.tsv
+          dotnet "$DLL" Tools/OracleGrid/grid-files.tsv net-files.tsv external/swisseph/ephe
+
+      # File-level equality, not the row comparator -- same reasoning as macos-exactness's own
+      # copy of this step: UlpMath.Distance compares raw 64-bit patterns, not double.Equals, so a
+      # signed-zero or NaN-payload divergence is a real row-level difference now too. What this
+      # step still covers, that the row comparator does not: the decimal (non-hex) text column,
+      # row order, and incidental file bytes (blank lines, line endings) no per-field comparison
+      # ever inspects.
+      - name: Compare, bit for bit, and quantify any difference
+        shell: bash
+        run: |
+          # set +e for the whole block, same reason as macos-exactness's copy: diff/cmp/grep all
+          # exit non-zero for the ordinary case being asked about, which would otherwise abort
+          # this step mid-report under the default -e -o pipefail. rc is tracked by hand instead.
+          set +e
+          rc=0
+          for g in analytic files; do
+            # wc -l counts newlines, not lines. The grid/dump files here DO end with a trailing
+            # newline on the last row (measured: every one of them ends 0a), so wc -l's own output
+            # is the true row total -- no off-by-one adjustment needed or applied here (an earlier
+            # revision of this comment, and the same claim in macos-exactness's copy, claimed the
+            # opposite and subtracted one, which made this step under-report the true count by
+            # one; $total below is wc -l's own output, unmodified). Row-count guard below: without
+            # it, two empty files compare
+            # bit-identical (cmp -s on two zero-byte files succeeds) and total comes out 0,
+            # which would report "BIT-IDENTICAL, 0 rows" and exit 0 -- a grid that silently
+            # shrank to nothing would still pass.
+            total=$(wc -l < "c-$g.tsv")
+            if [ "$total" -le 0 ]; then
+              echo "::error::$g: c-$g.tsv has $total data row(s) -- refusing to call an empty or near-empty grid bit-identical"
+              rc=1
+              continue
+            fi
+            if cmp -s "c-$g.tsv" "net-$g.tsv"; then
+              m=$(diff "strict-$g.tsv" "net-$g.tsv" | grep -c '^<' || true)
+              echo "$g: BIT-IDENTICAL, $total rows, sha256 $(sha256sum "c-$g.tsv" | cut -c1-32)"
+              echo "  (the -ffp-contract=off -fno-builtin diagnostic build differs from the port on $m rows)"
+              # Unlike macos-exactness (where Apple's __sincos is expected to disagree, 62 and 10
+              # rows respectively), the job comment above states glibc's sincos() returns
+              # bit-identically to separate sin()/cos() calls, measured as 0 rows either way --
+              # so this is a real assertion, not a restatement of what was just measured.
+              if [ "$m" != "0" ]; then
+                echo "::error::$g: the -ffp-contract=off -fno-builtin diagnostic build differs from the port on $m rows, expected 0 -- glibc's sincos() substitution (or FMA contraction) may have stopped matching the port; see the job comment's builtin-substitution paragraph"
+                rc=1
+              fi
+            else
+              n=$(diff "c-$g.tsv" "net-$g.tsv" | grep -c '^<' || true)
+              echo "::error::$g: $n of $total rows differ between the gcc C reference and the port"
+              echo "  by func:"
+              diff "c-$g.tsv" "net-$g.tsv" | grep '^<' | sed 's/^< //' | cut -d'|' -f1 | sort | uniq -c | sort -rn | sed 's/^/    /'
+              m=$(diff "strict-$g.tsv" "net-$g.tsv" | grep -c '^<' || true)
+              echo "  (the -ffp-contract=off -fno-builtin diagnostic build differs from the port on $m rows)"
+              echo "  first differing row, C then port:"
+              diff "c-$g.tsv" "net-$g.tsv" | head -4 | sed 's/^/    /'
+              rc=1
+            fi
+          done
+          exit $rc
+
+      # Same leg as macos-exactness's own AOT steps just above, same reasons for existing and for
+      # being diagnostic rather than gating on first landing -- see that job's comment (right after
+      # its own JIT "Compare, bit for bit" step) for the full reasoning, Tools/OracleDumpAot's own
+      # header for why it cannot ProjectReference either multi-targeted project, and this file's
+      # header comment for the project-wide account of every continue-on-error in this workflow.
+      # "Nearly free once macOS exists" (the reason this leg was added here at all) means the
+      # project and the workflow shape are already paid for, not that this platform's own result is
+      # already known: this exact combination -- NativeAOT codegen, glibc, this ubuntu-latest image
+      # -- has not run in this CI before either, so it gets the same treatment macos-exactness's own
+      # AOT leg does, even though the risk that motivated adding AOT coverage at all (arm64's fmadd
+      # being in the base ISA, and Apple's libSystem already disagreeing with separate sin()/cos()
+      # calls once builtins are left on) is specific to macOS and does not carry over here: base
+      # x86-64 has no FMA3 encoding for ILC to contract into any more than gcc did on the C side
+      # (this job's own "Assert no FMA instruction reached the binary" step, above), and this job's
+      # own builtin-substitution measurement already found glibc's sincos() bit-identical to the
+      # port. The FMA step below still gates, on the same "known cause, not an unknown one" grounds
+      # as macos-exactness's copy, and to keep verifying by disassembly rather than by inference from
+      # a risk analysis that happens to point elsewhere on this platform.
+      - name: Build SwissEphNet for net10.0 only (AOT needs a single-target assembly, not the multi-target project)
+        shell: bash
+        run: dotnet build SwissEphNet/SwissEphNet.csproj -c Release -f net10.0 --nologo -v q
+
+      - name: Publish the AOT oracle driver (linux-x64, self-contained, NativeAOT)
+        shell: bash
+        run: dotnet publish Tools/OracleDumpAot -c Release -r linux-x64 --self-contained true -p:PublishAot=true --nologo -v q
+
+      - name: Assert no FMA instruction reached the AOT binary
+        shell: bash
+        run: |
+          BIN=Tools/OracleDumpAot/bin/Release/net10.0/linux-x64/publish/OracleDumpAot
+          n=$(objdump -d "$BIN" | grep -cE '\bvfmadd|\bvfmsub|\bvfnmadd|\bvfnmsub' || true)
+          echo "FMA instructions in AOT binary: $n"
+          if [ "$n" != "0" ]; then
+            echo "::error::ILC contracted a multiply-add despite base x86-64 having no FMA3 encoding; the AOT binary would not be comparable to the C reference the same way the JIT build above is"
+            exit 1
+          fi
+
+      - name: Replay both grids through the AOT binary
+        shell: bash
+        run: |
+          BIN=Tools/OracleDumpAot/bin/Release/net10.0/linux-x64/publish/OracleDumpAot
+          "$BIN" Tools/OracleGrid/grid-analytic.tsv aot-analytic.tsv
+          "$BIN" Tools/OracleGrid/grid-files.tsv aot-files.tsv external/swisseph/ephe
+
+      # Against c-analytic.tsv/c-files.tsv, the same gcc C reference (plain -O2, further up this
+      # job) the JIT comparison above already compares against -- never against Windows-produced
+      # dump-net.tsv or dump-net-files.tsv, for the same platform-specificity reason macos-
+      # exactness's own copy of this comment gives.
+      #
+      # Gating, promoted on the criterion macos-exactness's own copy of this comment set out: pass
+      # clean on this runner image at least once, then drop continue-on-error and remove the job's
+      # name from header-flags-check's $expectedStepLevelFlags. Both were done together.
+      - name: Compare the AOT binary against the C reference, bit for bit
+        shell: bash
+        run: |
+          set +e
+          rc=0
+          for g in analytic files; do
+            total=$(wc -l < "aot-$g.tsv")
+            if [ "$total" -le 0 ]; then
+              echo "::error::$g: aot-$g.tsv has $total data row(s) -- refusing to call an empty or near-empty grid bit-identical"
+              rc=1
+              continue
+            fi
+            if cmp -s "c-$g.tsv" "aot-$g.tsv"; then
+              echo "$g: AOT BIT-IDENTICAL to the gcc C reference, $total rows"
+            else
+              n=$(diff "c-$g.tsv" "aot-$g.tsv" | grep -c '^<' || true)
+              echo "::warning::$g: $n of $total rows differ between the gcc C reference and the AOT-published port (the JIT comparison above this section already gates on this same C reference; this step is diagnostic on first landing -- see the job comment above it)"
+              echo "  by func:"
+              diff "c-$g.tsv" "aot-$g.tsv" | grep '^<' | sed 's/^< //' | cut -d'|' -f1 | sort | uniq -c | sort -rn | sed 's/^/    /'
+              echo "  first differing row, C then AOT:"
+              diff "c-$g.tsv" "aot-$g.tsv" | head -4 | sed 's/^/    /'
+              rc=1
+            fi
+          done
+          exit $rc

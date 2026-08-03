@@ -1,0 +1,71 @@
+# Programs/SweTest/Program.cs is a line-by-line transliteration of
+# swetest.c (Swiss Ephemeris) -- see the port header at the top of the file
+# and ../../CONTRIBUTING.md before changing anything here: it must never be
+# reformatted, and that includes analyzer-driven code-style fixes, not only
+# whitespace. This mirrors SwissEphNet/CPort/.editorconfig for the same
+# reason: swetest.c changes by hundreds of lines between upstream Swiss
+# Ephemeris releases (+487/-247 in the 2.10.03 delta alone), and a porter
+# needs to be able to diff the new swetest.c against the old one and apply
+# the same diff, in the same shape, here.
+#
+# Every analyzer diagnostic is silenced here except the small set below that
+# has actually caught real bugs in this class of file (see CPort's C.strcmp
+# culture-sensitivity bug, found by CA1304/CA1310) or that flags a
+# mis-transliterated `goto` (unreachable/unused-code warnings are a real
+# signal in ported C, where a `goto` that should have landed on a label
+# sometimes lands past it instead).
+#
+# dotnet_analyzer_diagnostic.severity is a bulk key that only covers Roslyn
+# analyzer diagnostics (CA*/IDE*); it does not touch compiler-native (CS*)
+# diagnostics at all, which is why those are listed individually below, both
+# the ones silenced (CS1587, CS8981 -- pure noise from this being
+# transliterated C, not a real signal) and the ones deliberately left on
+# (CS0162/CS0164/CS0219). CS1591 is off for the whole repo via
+# Directory.Build.props, not repeated here.
+
+[*.cs]
+# `dotnet_analyzer_diagnostic.severity = none` below silences analyzer DIAGNOSTICS, but
+# `dotnet format whitespace` (and `dotnet format style`) reformats code based on FORMATTING
+# OPTIONS, which severities do not touch at all -- an unexcluded `dotnet format whitespace`
+# run against this repo strips every trailing-whitespace line here (75 measured) and reflows
+# every K&R `) {` to Allman style, silently destroying the line-by-line correspondence with
+# swetest.c that this file exists to preserve. CONTRIBUTING.md's `--exclude` flag is the
+# primary defense, and it stays the only one. No formatting options are pinned here,
+# deliberately: .editorconfig has no value meaning "leave this alone", so every pin is an
+# assertion the formatter enforces in some direction, and each one tried here made an
+# unexcluded `dotnet format whitespace` run worse rather than better. Measured on this file:
+# +5/-3 with no pins, +6/-4 with trim_trailing_whitespace and insert_final_newline pinned,
+# and +509/-1009 with csharp_new_line_before_open_brace = none, because this file mixes
+# Allman and K&R exactly as swetest.c does and `none` reverses the reflow instead of
+# preventing it. See SwissEphNet/CPort/.editorconfig for the full measurement.
+#
+# scripts/verify-freeze.ps1 runs in CI and fails on any reformatting of the frozen paths,
+# which is what catches a forgotten --exclude. `dotnet_analyzer_diagnostic.severity = none`
+# below is a severity, not a formatting option, and does hold.
+
+dotnet_analyzer_diagnostic.severity = none
+
+# Culture-sensitive string/number operations -- these are what surfaced the
+# C.strcmp bug in SwissEphNet/Tools/C.cs (string.Compare without
+# StringComparison, culture-sensitive on some platforms/locales). Real
+# transliteration bugs hide behind these.
+dotnet_diagnostic.CA1304.severity = warning
+dotnet_diagnostic.CA1305.severity = warning
+dotnet_diagnostic.CA1307.severity = warning
+dotnet_diagnostic.CA1309.severity = warning
+dotnet_diagnostic.CA1310.severity = warning
+
+# NaN comparison via == / != instead of double.IsNaN -- always a bug.
+dotnet_diagnostic.CA2242.severity = warning
+
+# XML comments transliterated straight from C block comments often land on
+# the wrong declaration -- not something we can or should fix by touching
+# this file's text, so silence it.
+dotnet_diagnostic.CS1587.severity = none
+dotnet_diagnostic.CS8981.severity = none
+
+# Unreachable/unused code -- in a hand-transliterated port, this usually means
+# a goto or conditional landed on the wrong label.
+dotnet_diagnostic.CS0162.severity = warning
+dotnet_diagnostic.CS0164.severity = warning
+dotnet_diagnostic.CS0219.severity = warning

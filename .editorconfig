@@ -1,0 +1,64 @@
+# Repo-wide defaults. SwissEphNet/CPort/ has its own nested .editorconfig that
+# relaxes analyzer severities for the transliterated C source; see that file
+# and CONTRIBUTING.md before touching anything under CPort/.
+
+root = true
+
+[*]
+charset = utf-8-bom
+end_of_line = crlf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{md,yml,yaml,json}]
+charset = utf-8
+indent_size = 2
+
+# Data corpora (Tests/baseline/*.tsv, Tests/oracle/*.tsv, scripts/*.tsv and friends). The [*]
+# defaults above (crlf, utf-8-bom) are wrong for these: Tests/baseline/*.tsv and
+# Tests/baseline/*.env.txt are already pinned to `eol=lf` in .gitattributes because
+# BaselineGen always writes LF and BaselineVerify compares generated output against these files
+# directly (some fields exact-string, not just numeric) -- an editor defaulting a new or edited
+# line to CRLF fights that pin on every save. A stray BOM is equally unwanted: these are tab-
+# separated data files read by plain line-splitting code (PowerShell's `-split "`t"`, Python's
+# csv/split), not files parsed by a BOM-aware reader, so a leading BOM would silently attach
+# itself to the first row's first column.
+[*.tsv]
+charset = utf-8
+end_of_line = lf
+
+[*.{sln,slnx,slnf}]
+indent_style = tab
+
+[*.cs]
+csharp_using_directive_placement = outside_namespace:suggestion
+csharp_prefer_braces = true:suggestion
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = false:suggestion
+csharp_style_var_elsewhere = false:suggestion
+csharp_new_line_before_open_brace = all
+
+# Compiler/analyzer diagnostics.
+# CA2007 (ConfigureAwait) does not apply: this is a synchronous port with no
+# async code anywhere in the tree.
+dotnet_diagnostic.CA2007.severity = none
+
+# Culture-sensitive string/number operations. These belong at the repo root,
+# not only in SwissEphNet/CPort/.editorconfig: declaring them solely in that
+# nested file meant they fired *inside* CPort, where the formatting freeze
+# (see CONTRIBUTING.md) forbids fixing them, and stayed silent everywhere
+# else -- including SwissEphNet/Tools/C.cs, where this exact class of bug
+# (C.strcmp using string.Compare instead of an ordinal comparison) actually
+# lived and was fixable. CPort/.editorconfig's
+# dotnet_analyzer_diagnostic.severity = none still silences everything else
+# in that folder; its own nested copies of these five severities are
+# redundant with the root values below but are left in place so CPort's file
+# continues to document, on its own, exactly which rules it deliberately
+# keeps enabled and why.
+dotnet_diagnostic.CA1304.severity = warning
+dotnet_diagnostic.CA1305.severity = warning
+dotnet_diagnostic.CA1307.severity = warning
+dotnet_diagnostic.CA1309.severity = warning
+dotnet_diagnostic.CA1310.severity = warning

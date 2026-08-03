@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Reads the two TSVs Tools/OracleDump and Tools/CReference/sedump.c wrote
+    (external/.c-reference/dump-c-2.10.03.tsv, dump-net.tsv) and compares them row by row against
+    Tests/oracle/known-diff.tsv. No ProjectReference to SwissEphNet: this tool never runs the
+    port itself, it only diffs two already-generated dumps, so net10.0 alone is enough, unlike
+    BaselineVerify's net8.0;net10.0 split, which exists to exercise a shipped-TFM parity question
+    this tool has no equivalent of.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>OracleVerify</RootNamespace>
+    <AssemblyName>OracleVerify</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="OracleVerify.Tests" />
+  </ItemGroup>
+
+</Project>

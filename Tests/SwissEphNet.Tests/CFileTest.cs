@@ -28,11 +28,12 @@ namespace SwissEphNet.Tests
             using (var stream = new System.IO.MemoryStream())
             using (var cfile = new CFile(stream))
             {
-#if !NET_STANDARD
-                Assert.Equal("Windows-1252", cfile.Encoding.WebName);
-#else
+                // Every TFM this project targets is a modern .NET runtime, none of
+                // which has Windows-1252 available without registering
+                // System.Text.Encoding.CodePages (which SwissEphNet does not do --
+                // see docs/known-issues.md and CFile's constructor), so CFile always
+                // falls back to UTF-8 here.
                 Assert.Equal("utf-8", cfile.Encoding.WebName);
-#endif
                 Assert.Equal(0, cfile.Length);
                 Assert.Equal(0, cfile.Position);
                 Assert.False(cfile.EOF);
@@ -147,27 +148,55 @@ namespace SwissEphNet.Tests
         }
 
         [Fact]
+        public void TestDefaultEncodingRoundTripsRealEphemerisUtf8Bytes() {
+            // UTF-8 is CFile's deliberate default (see CFile's constructor),
+            // not an accidental fallback: every large Swiss Ephemeris data
+            // file is pure ASCII (where UTF-8 and Windows-1252 agree), and the
+            // 2.10.03 release's non-ASCII files (seorbel.txt, astlistn.md) are
+            // themselves valid UTF-8. This pins down the specific byte
+            // sequence seorbel.txt actually uses to spell "Koré" --
+            // { 0x4B, 0x6F, 0x72, 0xC3, 0xA9 }, i.e. plain ASCII "Kor" followed
+            // by the two-byte UTF-8 encoding of U+00E9 (é) -- so a
+            // Windows-1252 misdecode of this exact real-world input (which
+            // would read the same two bytes as U+00C3 U+00A9, "Ã©") gets
+            // caught if anything ever changes CFile's default away from UTF-8
+            // again.
+            byte[] utf8Bytes = { 0x4B, 0x6F, 0x72, 0xC3, 0xA9 }; // "Koré"
+            using (var cfile = new CFile(BuildStream(utf8Bytes))) {
+                Assert.Equal("utf-8", cfile.Encoding.WebName);
+                Assert.Equal("Koré", cfile.ReadLine());
+                Assert.True(cfile.EOF);
+            }
+        }
+
+        [Fact]
+        public void TestExplicitEncodingOverridesUtf8Default() {
+            // This exercises CFile's own Encoding constructor parameter
+            // directly, which is a real feature of CFile itself, but not one
+            // an IEphemerisFileProvider consumer can reach: SwissEph.OpenBinary
+            // is the only caller of this constructor from that path, and it
+            // always passes DefaultEncoding (SwissEph.cs). A consumer with
+            // genuinely non-UTF-8-encoded files sets the static
+            // SwissEph.DefaultEncoding before the call instead -- see
+            // TestOnLoadFileHandlerCanOverrideEncodingPerFile below for that
+            // actually-reachable path. 0xE9 is Windows-1252 (and Latin-1) for
+            // é; decoded as UTF-8 on its own it is an invalid lead byte and
+            // would produce U+FFFD instead.
+            byte[] windows1252Bytes = { 0x4B, 0x6F, 0x72, 0xE9 }; // "Kor" + é
+            using (var cfile = new CFile(BuildStream(windows1252Bytes), Encoding.GetEncoding("ISO-8859-1"))) {
+                Assert.Equal("Koré", cfile.ReadLine());
+                Assert.True(cfile.EOF);
+            }
+        }
+
+        [Fact]
         public void TestReadLineEncoded() {
             using (var cfile = new CFile(BuildStream("èaà\nüî"))) {
-#if !NET_STANDARD
-                Assert.Equal("Ã¨aÃ ", cfile.ReadLine());
-                Assert.Equal("Ã¼Ã®", cfile.ReadLine());
-#else
-                Assert.Equal("èaà", cfile.ReadLine());
-                Assert.Equal("üî", cfile.ReadLine());
-#endif
-                Assert.Null(cfile.ReadLine());
-                Assert.True(cfile.EOF);
-            }
-
-#if !NET_STANDARD
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.GetEncoding("windows-1252")))) {
                 Assert.Equal("èaà", cfile.ReadLine());
                 Assert.Equal("üî", cfile.ReadLine());
                 Assert.Null(cfile.ReadLine());
                 Assert.True(cfile.EOF);
             }
-#endif
 
             using (var cfile = new CFile(BuildStream("èaà\nüî"), Encoding.UTF8)) {
                 Assert.Equal("èaà", cfile.ReadLine());
@@ -175,22 +204,6 @@ namespace SwissEphNet.Tests
                 Assert.Null(cfile.ReadLine());
                 Assert.True(cfile.EOF);
             }
-
-#if !NET_STANDARD
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.GetEncoding("windows-1252")), Encoding.GetEncoding("windows-1252"))) {
-                Assert.Equal("èaà", cfile.ReadLine());
-                Assert.Equal("üî", cfile.ReadLine());
-                Assert.Null(cfile.ReadLine());
-                Assert.True(cfile.EOF);
-            }
-
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.UTF8), Encoding.GetEncoding("windows-1252"))) {
-                Assert.Equal("Ã¨aÃ ", cfile.ReadLine());
-                Assert.Equal("Ã¼Ã®", cfile.ReadLine());
-                Assert.Null(cfile.ReadLine());
-                Assert.True(cfile.EOF);
-            }
-#endif
 
         }
 
@@ -212,19 +225,6 @@ namespace SwissEphNet.Tests
                 Assert.True(cfile.EOF);
             }
 
-#if !NET_STANDARD
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.GetEncoding("windows-1252")))) {
-                Assert.Equal(232, cfile.Read());
-                Assert.Equal(97, cfile.Read());
-                Assert.Equal(224, cfile.Read());
-                Assert.Equal(10, cfile.Read());
-                Assert.Equal(252, cfile.Read());
-                Assert.Equal(238, cfile.Read());
-                Assert.Equal(-1, cfile.Read());
-                Assert.True(cfile.EOF);
-            }
-#endif
-
             using (var cfile = new CFile(BuildStream("èaà\nüî"), Encoding.UTF8)) {
                 Assert.Equal(195, cfile.Read());
                 Assert.Equal(168, cfile.Read());
@@ -240,63 +240,11 @@ namespace SwissEphNet.Tests
                 Assert.True(cfile.EOF);
             }
 
-#if !NET_STANDARD
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.GetEncoding("windows-1252")), Encoding.GetEncoding("windows-1252"))) {
-                Assert.Equal(232, cfile.Read());
-                Assert.Equal(97, cfile.Read());
-                Assert.Equal(224, cfile.Read());
-                Assert.Equal(10, cfile.Read());
-                Assert.Equal(252, cfile.Read());
-                Assert.Equal(238, cfile.Read());
-                Assert.Equal(-1, cfile.Read());
-                Assert.True(cfile.EOF);
-            }
-
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.UTF8), Encoding.GetEncoding("windows-1252"))) {
-                Assert.Equal(195, cfile.Read());
-                Assert.Equal(168, cfile.Read());
-                Assert.Equal(97, cfile.Read());
-                Assert.Equal(195, cfile.Read());
-                Assert.Equal(160, cfile.Read());
-                Assert.Equal(10, cfile.Read());
-                Assert.Equal(195, cfile.Read());
-                Assert.Equal(188, cfile.Read());
-                Assert.Equal(195, cfile.Read());
-                Assert.Equal(174, cfile.Read());
-                Assert.Equal(-1, cfile.Read());
-                Assert.True(cfile.EOF);
-            }
-#endif
         }
 
         [Fact]
         public void TestReadChar() {
             using (var cfile = new CFile(BuildStream("èaà\nüî"))) {
-#if !NET_STANDARD
-                Assert.Equal(195, cfile.ReadChar());
-                Assert.Equal(168, cfile.ReadChar());
-                Assert.Equal(97, cfile.ReadChar());
-                Assert.Equal(195, cfile.ReadChar());
-                Assert.Equal(160, cfile.ReadChar());
-                Assert.Equal(10, cfile.ReadChar());
-                Assert.Equal(195, cfile.ReadChar());
-                Assert.Equal(188, cfile.ReadChar());
-                Assert.Equal(195, cfile.ReadChar());
-                Assert.Equal(174, cfile.ReadChar());
-#else
-                Assert.Equal(232, cfile.ReadChar());
-                Assert.Equal(97, cfile.ReadChar());
-                Assert.Equal(224, cfile.ReadChar());
-                Assert.Equal(10, cfile.ReadChar());
-                Assert.Equal(252, cfile.ReadChar());
-                Assert.Equal(238, cfile.ReadChar());
-#endif
-                Assert.Equal(0, cfile.ReadChar());
-                Assert.True(cfile.EOF);
-            }
-
-#if !NET_STANDARD
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.GetEncoding("windows-1252")))) {
                 Assert.Equal(232, cfile.ReadChar());
                 Assert.Equal(97, cfile.ReadChar());
                 Assert.Equal(224, cfile.ReadChar());
@@ -306,7 +254,6 @@ namespace SwissEphNet.Tests
                 Assert.Equal(0, cfile.ReadChar());
                 Assert.True(cfile.EOF);
             }
-#endif
 
             using (var cfile = new CFile(BuildStream("èaà\nüî"), Encoding.UTF8)) {
                 Assert.Equal('è', cfile.ReadChar());
@@ -319,34 +266,6 @@ namespace SwissEphNet.Tests
                 Assert.True(cfile.EOF);
             }
 
-#if !NET_STANDARD
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.GetEncoding("windows-1252")), Encoding.GetEncoding("windows-1252"))) {
-                Assert.Equal(232, cfile.ReadChar());
-                Assert.Equal(97, cfile.ReadChar());
-                Assert.Equal(224, cfile.ReadChar());
-                Assert.Equal(10, cfile.ReadChar());
-                Assert.Equal(252, cfile.ReadChar());
-                Assert.Equal(238, cfile.ReadChar());
-                Assert.Equal(0, cfile.ReadChar());
-                Assert.True(cfile.EOF);
-            }
-
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.UTF8), Encoding.GetEncoding("windows-1252"))) {
-                Assert.Equal(195, cfile.ReadChar());
-                Assert.Equal(168, cfile.ReadChar());
-                Assert.Equal(97, cfile.ReadChar());
-                Assert.Equal(195, cfile.ReadChar());
-                Assert.Equal(160, cfile.ReadChar());
-                Assert.Equal(10, cfile.ReadChar());
-                Assert.Equal(195, cfile.ReadChar());
-                Assert.Equal(188, cfile.ReadChar());
-                Assert.Equal(195, cfile.ReadChar());
-                Assert.Equal(174, cfile.ReadChar());
-                Assert.Equal(0, cfile.ReadChar());
-                Assert.True(cfile.EOF);
-            }
-#endif
-
             using (var cfile = new CFile(BuildStream(new byte[] { 195 }), Encoding.UTF8)) {
                 Assert.Equal(65533, cfile.ReadChar());
                 Assert.Equal(0, cfile.ReadChar());
@@ -357,168 +276,78 @@ namespace SwissEphNet.Tests
 
         [Fact]
         public void TestReadChars() {
+            // ReadChars(n) reads n raw *bytes* -- the C source's fread(buf, 1, n, fp)
+            // contract (e.g. swejpl.c's ch_cnam, sweph.c's astnam) -- and decodes
+            // whatever that byte span contains; it is not n decoded characters. "è"
+            // and "à" are each 2-byte UTF-8 sequences, so 5 bytes covers exactly
+            // "èaà" (2+1+2) here, and the next 5 cover "\nüî" (1+2+2).
             using (var cfile = new CFile(BuildStream("èaà\nüî"))) {
-#if !NET_STANDARD
-                Assert.Equal(new char[] { 'Ã', '¨', 'a' }, cfile.ReadChars(3));
-                Assert.Equal(new char[] { 'Ã', ' ', '\n' }, cfile.ReadChars(3));
-                Assert.Equal(new char[] { 'Ã', '¼', 'Ã', }, cfile.ReadChars(3));
-                Assert.Equal(new char[] { '®' }, cfile.ReadChars(3));
-#else
-                Assert.Equal(new char[] { 'è', 'a', 'à' }, cfile.ReadChars(3));
-                Assert.Equal(new char[] { '\n', 'ü', 'î' }, cfile.ReadChars(3));
-#endif
-                Assert.Null(cfile.ReadChars(3));
+                Assert.Equal(new char[] { 'è', 'a', 'à' }, cfile.ReadChars(5));
+                Assert.Equal(new char[] { '\n', 'ü', 'î' }, cfile.ReadChars(5));
+                Assert.Null(cfile.ReadChars(5));
                 Assert.True(cfile.EOF);
             }
-
-#if !NET_STANDARD
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.GetEncoding("windows-1252")))) {
-                Assert.Equal(new char[] { 'è', 'a', 'à' }, cfile.ReadChars(3));
-                Assert.Equal(new char[] { '\n', 'ü', 'î' }, cfile.ReadChars(3));
-                Assert.Null(cfile.ReadChars(3));
-                Assert.True(cfile.EOF);
-            }
-#endif
 
             using (var cfile = new CFile(BuildStream("èaà\nüî"), Encoding.UTF8)) {
-                Assert.Equal(new char[] { 'è', 'a', 'à' }, cfile.ReadChars(3));
-                Assert.Equal(new char[] { '\n', 'ü', 'î' }, cfile.ReadChars(3));
-                Assert.Null(cfile.ReadChars(3));
+                Assert.Equal(new char[] { 'è', 'a', 'à' }, cfile.ReadChars(5));
+                Assert.Equal(new char[] { '\n', 'ü', 'î' }, cfile.ReadChars(5));
+                Assert.Null(cfile.ReadChars(5));
                 Assert.True(cfile.EOF);
             }
 
-#if !NET_STANDARD
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.GetEncoding("windows-1252")), Encoding.GetEncoding("windows-1252"))) {
-                Assert.Equal(new char[] { 'è', 'a', 'à' }, cfile.ReadChars(3));
-                Assert.Equal(new char[] { '\n', 'ü', 'î' }, cfile.ReadChars(3));
-                Assert.Null(cfile.ReadChars(3));
+            // A byte count that splits a multi-byte sequence decodes to the Unicode
+            // replacement character (U+FFFD) for the incomplete tail, the same way
+            // Encoding.GetChars behaves for any other truncated sequence -- proof
+            // ReadChars is genuinely counting bytes, not silently re-aligning to a
+            // character boundary the way the old character-looped implementation did.
+            using (var cfile = new CFile(BuildStream("èaà\nüî"))) {
+                Assert.Equal(new char[] { 'è', 'a' }, cfile.ReadChars(3));
+                Assert.Equal(new char[] { 'à', '\n' }, cfile.ReadChars(3));
+                Assert.Equal(new char[] { 'ü', '\uFFFD' }, cfile.ReadChars(3));
+                Assert.Equal(new char[] { '\uFFFD' }, cfile.ReadChars(3));
                 Assert.True(cfile.EOF);
-            }
-
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.UTF8), Encoding.GetEncoding("windows-1252"))) {
-                Assert.Equal(new char[] { 'Ã', '¨', 'a' }, cfile.ReadChars(3));
-                Assert.Equal(new char[] { 'Ã', ' ', '\n' }, cfile.ReadChars(3));
-                Assert.Equal(new char[] { 'Ã', '¼', 'Ã', }, cfile.ReadChars(3));
-                Assert.Equal(new char[] { '®' }, cfile.ReadChars(3));
                 Assert.Null(cfile.ReadChars(3));
-                Assert.True(cfile.EOF);
             }
-#endif
-
         }
 
         [Fact]
         public void TestReadString() {
+            // ReadString(ref s, size) reads `size` raw bytes via ReadChars (see that
+            // method's own comment); "è" and "à" are each 2-byte UTF-8 sequences, so
+            // 5 bytes covers exactly "èaà" (2+1+2) here, and the next 5 cover "\nüî"
+            // (1+2+2).
             String str = null;
             using (var cfile = new CFile(BuildStream("èaà\nüî"))) {
-#if !NET_STANDARD
                 str = "$$$";
-                Assert.True(cfile.ReadString(ref str, 3));
-                Assert.Equal("Ã¨a", str);
-
-                str = "$$$";
-                Assert.True(cfile.ReadString(ref str, 3));
-                Assert.Equal("Ã \n", str);
-
-                str = "$$$";
-                Assert.True(cfile.ReadString(ref str, 3));
-                Assert.Equal("Ã¼Ã", str);
-
-                str = "$$$";
-                Assert.False(cfile.ReadString(ref str, 3));
-                Assert.Equal("®", str);
-#else
-                str = "$$$";
-                Assert.True(cfile.ReadString(ref str, 3));
+                Assert.True(cfile.ReadString(ref str, 5));
                 Assert.Equal("èaà", str);
 
                 str = "$$$";
-                Assert.True(cfile.ReadString(ref str, 3));
+                Assert.True(cfile.ReadString(ref str, 5));
                 Assert.Equal("\nüî", str);
-#endif
 
                 str = "$$$";
-                Assert.False(cfile.ReadString(ref str, 3));
+                Assert.False(cfile.ReadString(ref str, 5));
                 Assert.Null(str);
 
                 Assert.True(cfile.EOF);
             }
-
-#if !NET_STANDARD
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.GetEncoding("windows-1252")))) {
-                str = "$$$";
-                Assert.True(cfile.ReadString(ref str, 3));
-                Assert.Equal("èaà", str);
-
-                str = "$$$";
-                Assert.True(cfile.ReadString(ref str, 3));
-                Assert.Equal("\nüî", str);
-
-                str = "$$$";
-                Assert.False(cfile.ReadString(ref str, 3));
-                Assert.Null(str);
-
-                Assert.True(cfile.EOF);
-            }
-#endif
 
             using (var cfile = new CFile(BuildStream("èaà\nüî"), Encoding.UTF8)) {
                 str = "$$$";
-                Assert.True(cfile.ReadString(ref str, 3));
+                Assert.True(cfile.ReadString(ref str, 5));
                 Assert.Equal("èaà", str);
 
                 str = "$$$";
-                Assert.True(cfile.ReadString(ref str, 3));
+                Assert.True(cfile.ReadString(ref str, 5));
                 Assert.Equal("\nüî", str);
 
                 str = "$$$";
-                Assert.False(cfile.ReadString(ref str, 3));
+                Assert.False(cfile.ReadString(ref str, 5));
                 Assert.Null(str);
 
                 Assert.True(cfile.EOF);
             }
-
-#if !NET_STANDARD
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.GetEncoding("windows-1252")), Encoding.GetEncoding("windows-1252"))) {
-                str = "$$$";
-                Assert.True(cfile.ReadString(ref str, 3));
-                Assert.Equal("èaà", str);
-
-                str = "$$$";
-                Assert.True(cfile.ReadString(ref str, 3));
-                Assert.Equal("\nüî", str);
-
-                str = "$$$";
-                Assert.False(cfile.ReadString(ref str, 3));
-                Assert.Null(str);
-
-                Assert.True(cfile.EOF);
-            }
-
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.UTF8), Encoding.GetEncoding("windows-1252"))) {
-                str = "$$$";
-                Assert.True(cfile.ReadString(ref str, 3));
-                Assert.Equal("Ã¨a", str);
-
-                str = "$$$";
-                Assert.True(cfile.ReadString(ref str, 3));
-                Assert.Equal("Ã \n", str);
-
-                str = "$$$";
-                Assert.True(cfile.ReadString(ref str, 3));
-                Assert.Equal("Ã¼Ã", str);
-
-                str = "$$$";
-                Assert.False(cfile.ReadString(ref str, 3));
-                Assert.Equal("®", str);
-
-                str = "$$$";
-                Assert.False(cfile.ReadString(ref str, 3));
-                Assert.Null(str);
-
-                Assert.True(cfile.EOF);
-            }
-#endif
 
         }
 
@@ -558,17 +387,6 @@ namespace SwissEphNet.Tests
                 Assert.True(cfile.EOF);
             }
 
-#if !NET_STANDARD
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.GetEncoding("windows-1252")))) {
-                Assert.Equal(3, cfile.Read(buff, 0, 3));
-                Assert.Equal(new byte[] { 232, 97, 224 }, buff);
-                Assert.Equal(3, cfile.Read(buff, 0, 3));
-                Assert.Equal(new byte[] { 10, 252, 238 }, buff);
-                Assert.Equal(0, cfile.Read(buff, 0, 3));
-                Assert.True(cfile.EOF);
-            }
-#endif
-
             using (var cfile = new CFile(BuildStream("èaà\nüî"), Encoding.UTF8)) {
                 Assert.Equal(3, cfile.Read(buff, 0, 3));
                 Assert.Equal(new byte[] { 195, 168, 97 }, buff);
@@ -581,30 +399,6 @@ namespace SwissEphNet.Tests
                 Assert.Equal(0, cfile.Read(buff, 0, 3));
                 Assert.True(cfile.EOF);
             }
-
-#if !NET_STANDARD
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.GetEncoding("windows-1252")), Encoding.GetEncoding("windows-1252"))) {
-                Assert.Equal(3, cfile.Read(buff, 0, 3));
-                Assert.Equal(new byte[] { 232, 97, 224 }, buff);
-                Assert.Equal(3, cfile.Read(buff, 0, 3));
-                Assert.Equal(new byte[] { 10, 252, 238 }, buff);
-                Assert.Equal(0, cfile.Read(buff, 0, 3));
-                Assert.True(cfile.EOF);
-            }
-
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.UTF8), Encoding.GetEncoding("windows-1252"))) {
-                Assert.Equal(3, cfile.Read(buff, 0, 3));
-                Assert.Equal(new byte[] { 195, 168, 97 }, buff);
-                Assert.Equal(3, cfile.Read(buff, 0, 3));
-                Assert.Equal(new byte[] { 195, 160, 10 }, buff);
-                Assert.Equal(3, cfile.Read(buff, 0, 3));
-                Assert.Equal(new byte[] { 195, 188, 195 }, buff);
-                Assert.Equal(1, cfile.Read(buff, 0, 3));
-                Assert.Equal(new byte[] { 174, 188, 195 }, buff);
-                Assert.Equal(0, cfile.Read(buff, 0, 3));
-                Assert.True(cfile.EOF);
-            }
-#endif
 
         }
 
@@ -626,19 +420,6 @@ namespace SwissEphNet.Tests
                 Assert.True(cfile.EOF);
             }
 
-#if !NET_STANDARD
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.GetEncoding("windows-1252")))) {
-                Assert.Equal(-24, cfile.ReadSByte());
-                Assert.Equal(97, cfile.ReadSByte());
-                Assert.Equal(-32, cfile.ReadSByte());
-                Assert.Equal(10, cfile.ReadSByte());
-                Assert.Equal(-4, cfile.ReadSByte());
-                Assert.Equal(-18, cfile.ReadSByte());
-                Assert.Equal(0, cfile.ReadSByte());
-                Assert.True(cfile.EOF);
-            }
-#endif
-
             using (var cfile = new CFile(BuildStream("èaà\nüî"), Encoding.UTF8)) {
                 Assert.Equal(-61, cfile.ReadSByte());
                 Assert.Equal(-88, cfile.ReadSByte());
@@ -653,35 +434,6 @@ namespace SwissEphNet.Tests
                 Assert.Equal(0, cfile.ReadSByte());
                 Assert.True(cfile.EOF);
             }
-
-#if !NET_STANDARD
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.GetEncoding("windows-1252")), Encoding.GetEncoding("windows-1252"))) {
-                Assert.Equal(-24, cfile.ReadSByte());
-                Assert.Equal(97, cfile.ReadSByte());
-                Assert.Equal(-32, cfile.ReadSByte());
-                Assert.Equal(10, cfile.ReadSByte());
-                Assert.Equal(-4, cfile.ReadSByte());
-                Assert.Equal(-18, cfile.ReadSByte());
-                Assert.Equal(0, cfile.ReadSByte());
-                Assert.True(cfile.EOF);
-            }
-
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.UTF8), Encoding.GetEncoding("windows-1252"))) {
-                Assert.Equal(-61, cfile.ReadSByte());
-                Assert.Equal(-88, cfile.ReadSByte());
-                Assert.Equal(97, cfile.ReadSByte());
-                Assert.Equal(-61, cfile.ReadSByte());
-                Assert.Equal(-96, cfile.ReadSByte());
-                Assert.Equal(10, cfile.ReadSByte());
-                Assert.Equal(-61, cfile.ReadSByte());
-                Assert.Equal(-68, cfile.ReadSByte());
-                Assert.Equal(-61, cfile.ReadSByte());
-                Assert.Equal(-82, cfile.ReadSByte());
-                Assert.Equal(0, cfile.ReadSByte());
-                Assert.Equal(0, cfile.ReadSByte());
-                Assert.True(cfile.EOF);
-            }
-#endif
 
             using (var cfile = new CFile(BuildStream(new byte[] { 0, 0x01, 0x10, 0x80, 0xF0, 0xFF }))) {
                 Assert.Equal(0, cfile.ReadSByte());
@@ -708,15 +460,6 @@ namespace SwissEphNet.Tests
                 Assert.True(cfile.EOF);
             }
 
-#if !NET_STANDARD
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.GetEncoding("windows-1252")))) {
-                Assert.Equal(new sbyte[] { -24, 97, -32 }, cfile.ReadSBytes(3));
-                Assert.Equal(new sbyte[] { 10, -4, -18 }, cfile.ReadSBytes(3));
-                Assert.Null(cfile.ReadSBytes(3));
-                Assert.True(cfile.EOF);
-            }
-#endif
-
             using (var cfile = new CFile(BuildStream("èaà\nüî"), Encoding.UTF8)) {
                 Assert.Equal(new sbyte[] { -61, -88, 97 }, cfile.ReadSBytes(3));
                 Assert.Equal(new sbyte[] { -61, -96, 10 }, cfile.ReadSBytes(3));
@@ -725,24 +468,6 @@ namespace SwissEphNet.Tests
                 Assert.Null(cfile.ReadSBytes(3));
                 Assert.True(cfile.EOF);
             }
-
-#if !NET_STANDARD
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.GetEncoding("windows-1252")), Encoding.GetEncoding("windows-1252"))) {
-                Assert.Equal(new sbyte[] { -24, 97, -32 }, cfile.ReadSBytes(3));
-                Assert.Equal(new sbyte[] { 10, -4, -18 }, cfile.ReadSBytes(3));
-                Assert.Null(cfile.ReadSBytes(3));
-                Assert.True(cfile.EOF);
-            }
-
-            using (var cfile = new CFile(BuildStream("èaà\nüî", Encoding.UTF8), Encoding.GetEncoding("windows-1252"))) {
-                Assert.Equal(new sbyte[] { -61, -88, 97 }, cfile.ReadSBytes(3));
-                Assert.Equal(new sbyte[] { -61, -96, 10 }, cfile.ReadSBytes(3));
-                Assert.Equal(new sbyte[] { -61, -68, -61 }, cfile.ReadSBytes(3));
-                Assert.Equal(new sbyte[] { -82 }, cfile.ReadSBytes(3));
-                Assert.Null(cfile.ReadSBytes(3));
-                Assert.True(cfile.EOF);
-            }
-#endif
 
         }
 
@@ -801,14 +526,14 @@ namespace SwissEphNet.Tests
         [Fact]
         public void TestReadDouble() {
             using (var cfile = new CFile(BuildStream(new byte[] { 0x12, 0x34, 0x56, 0x78, 0x12, 0x34, 0x56, 0x78, 0xFE, 0xDC, 0xBA, 0x98, 0xFE, 0xDC, 0xBA, 0x98 }))) {
-                Assert.Equal("4.69197536052338E+271", cfile.ReadDouble().ToString(CultureInfo.InvariantCulture));
+                Assert.Equal("4.6919753605233776E+271", cfile.ReadDouble().ToString(CultureInfo.InvariantCulture));
                 Assert.Equal(-1.50730608775746E-189, cfile.ReadDouble(), 15);
                 Assert.Equal(0, cfile.ReadDouble());
                 Assert.True(cfile.EOF);
             }
 
             using (var cfile = new CFile(BuildStream(new byte[] { 0x12, 0x34, 0x56, 0x78, 0x12, 0x34, 0x56, 0x78, 0xFE, 0xDC, 0xBA, 0x98, 0xFE, 0xDC, 0xBA}))) {
-                Assert.Equal("4.69197536052338E+271", cfile.ReadDouble().ToString(CultureInfo.InvariantCulture));
+                Assert.Equal("4.6919753605233776E+271", cfile.ReadDouble().ToString(CultureInfo.InvariantCulture));
                 Assert.Equal(0, cfile.ReadDouble());
                 Assert.Equal(0, cfile.ReadDouble());
                 Assert.True(cfile.EOF);
@@ -816,7 +541,7 @@ namespace SwissEphNet.Tests
 
             using (var cfile = new CFile(BuildStream(new byte[] {97,  0x12, 0x34, 0x56, 0x78, 0x12, 0x34, 0x56, 0x78, 0xFE, 0xDC, 0xBA, 0x98, 0xFE, 0xDC, 0xBA, 0x98 }))) {
                 Assert.Equal('a', cfile.ReadChar());
-                Assert.Equal("4.69197536052338E+271", cfile.ReadDouble().ToString(CultureInfo.InvariantCulture));
+                Assert.Equal("4.6919753605233776E+271", cfile.ReadDouble().ToString(CultureInfo.InvariantCulture));
                 Assert.Equal(-1.50730608775746E-189, cfile.ReadDouble(), 15);
                 Assert.Equal(0, cfile.ReadInt32());
                 Assert.True(cfile.EOF);
@@ -858,7 +583,7 @@ namespace SwissEphNet.Tests
             using (var cfile = new CFile(BuildStream(new byte[] { 0x12, 0x34, 0x56, 0x78, 0x12, 0x34, 0x56, 0x78, 0xFE, 0xDC, 0xBA, 0x98, 0xFE, 0xDC, 0xBA, 0x98 }))) {
                 var vals = cfile.ReadDoubles(4);
                 Assert.Equal(2, vals.Length);
-                Assert.Equal("4.69197536052338E+271", vals[0].ToString(CultureInfo.InvariantCulture));
+                Assert.Equal("4.6919753605233776E+271", vals[0].ToString(CultureInfo.InvariantCulture));
                 Assert.Equal(-1.50730608775746E-189, vals[1], 15);
                 Assert.Null(cfile.ReadDoubles(4));
                 Assert.True(cfile.EOF);
@@ -867,7 +592,7 @@ namespace SwissEphNet.Tests
             using (var cfile = new CFile(BuildStream(new byte[] { 0x12, 0x34, 0x56, 0x78, 0x12, 0x34, 0x56, 0x78, 0xFE, 0xDC, 0xBA, 0x98, 0xFE, 0xDC, 0xBA }))) {
                 var vals = cfile.ReadDoubles(4);
                 Assert.Single(vals);
-                Assert.Equal("4.69197536052338E+271", vals[0].ToString(CultureInfo.InvariantCulture));
+                Assert.Equal("4.6919753605233776E+271", vals[0].ToString(CultureInfo.InvariantCulture));
                 Assert.Null(cfile.ReadDoubles(4));
                 Assert.True(cfile.EOF);
             }
@@ -876,7 +601,7 @@ namespace SwissEphNet.Tests
                 Assert.Equal('a', cfile.ReadChar());
                 var vals = cfile.ReadDoubles(4);
                 Assert.Equal(2, vals.Length);
-                Assert.Equal("4.69197536052338E+271", vals[0].ToString(CultureInfo.InvariantCulture));
+                Assert.Equal("4.6919753605233776E+271", vals[0].ToString(CultureInfo.InvariantCulture));
                 Assert.Equal(-1.50730608775746E-189, vals[1], 15);
                 Assert.Null(cfile.ReadDoubles(4));
                 Assert.True(cfile.EOF);
@@ -896,6 +621,35 @@ namespace SwissEphNet.Tests
                 Assert.Equal(-1, cfile.Seek(4, SeekOrigin.Current));
             }
 
+        }
+
+        // C99 7.19.9.2: "A successful call to the fseek function clears the end-of-file
+        // indicator". EOF used to be sticky here, so a seek back to the start returned
+        // nothing and C.rewind became a no-op on any stream already read to the end.
+        [Fact]
+        public void TestSeekClearsEndOfFile() {
+            using (var stream = BuildStream("alpha\nbeta\ngamma\n"))
+            using (var cfile = new CFile(stream)) {
+                while (cfile.ReadLine() != null) { }
+                Assert.True(cfile.EOF);
+
+                Assert.Equal(0, cfile.Seek(0, SeekOrigin.Begin));
+
+                Assert.False(cfile.EOF);
+                Assert.Equal("alpha", cfile.ReadLine());
+            }
+        }
+
+        [Fact]
+        public void TestRewindAfterReadingToEndRereadsFromStart() {
+            using (var stream = BuildStream("first\nsecond\n"))
+            using (var cfile = new CFile(stream)) {
+                while (cfile.ReadLine() != null) { }
+
+                C.rewind(cfile);
+
+                Assert.Equal("first", cfile.ReadLine());
+            }
         }
 
     }

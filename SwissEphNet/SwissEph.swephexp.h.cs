@@ -34,7 +34,7 @@
   Authors: Dieter Koch and Alois Treindl, Astrodienst Zurich
 
 ************************************************************/
-/* Copyright (C) 1997 - 2008 Astrodienst AG, Switzerland.  All rights reserved.
+/* Copyright (C) 1997 - 2021 Astrodienst AG, Switzerland.  All rights reserved.
 
   License conditions
   ------------------
@@ -50,17 +50,17 @@
   system. The software developer, who uses any part of Swiss Ephemeris
   in his or her software, must choose between one of the two license models,
   which are
-  a) GNU public license version 2 or later
+  a) GNU Affero General Public License (AGPL)
   b) Swiss Ephemeris Professional License
 
   The choice must be made before the software developer distributes software
   containing parts of Swiss Ephemeris to others, and before any public
   service using the developed software is activated.
 
-  If the developer choses the GNU GPL software license, he or she must fulfill
+  If the developer choses the AGPL software license, he or she must fulfill
   the conditions of that license, which includes the obligation to place his
-  or her whole software project under the GNU GPL or a compatible license.
-  See http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+  or her whole software project under the AGPL or a compatible license.
+  See https://www.gnu.org/licenses/agpl-3.0.html
 
   If the developer choses the Swiss Ephemeris Professional license,
   he must follow the instructions as found in http://www.astro.com/swisseph/ 
@@ -93,6 +93,7 @@ namespace SwissEphNet
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Runtime.InteropServices;
     using System.Text;
 
     /// <summary>
@@ -144,6 +145,7 @@ namespace SwissEphNet
 
         public const int SE_NPLANETS = 23;
 
+        public const int SE_PLMOON_OFFSET = 9000;
         public const int SE_AST_OFFSET = 10000;
         public const int SE_VARUNA = (SE_AST_OFFSET + 20000);
 
@@ -228,12 +230,17 @@ namespace SwissEphNet
         public const int SEFLG_TOPOCTR = (32 * 1024);    /* topocentric position */
         public const int SEFLG_ORBEL_AA = SEFLG_TOPOCTR; /* used for Astronomical Almanac mode in 
                                               * calculation of Kepler elipses */
+        public const int SEFLG_TROPICAL = (0);          /* tropical position (default) */
         public const int SEFLG_SIDEREAL = (64 * 1024);    /* sidereal position */
         public const int SEFLG_ICRS = (128 * 1024);   /* ICRS (DE406 reference frame) */
         public const int SEFLG_DPSIDEPS_1980 = (256 * 1024); /* reproduce JPL Horizons 
                                                                 1962 - today to 0.002 arcsec. */
         public const int SEFLG_JPLHOR = SEFLG_DPSIDEPS_1980;
         public const int SEFLG_JPLHOR_APPROX = (512 * 1024);   /* approximate JPL Horizons 1962 - today */
+        public const int SEFLG_CENTER_BODY = (1024 * 1024);  /* calculate position of center of body (COB)
+                                                        of planet, not barycenter of its system */
+        public const int SEFLG_TEST_PLMOON = (2 * 1024 * 1024 | SEFLG_J2000 | SEFLG_ICRS | SEFLG_HELCTR | SEFLG_TRUEPOS);  /* test raw data in files sepm9* */
+
 
         public const int SE_SIDBITS = 256;
         /* for projection onto ecliptic of t0 */
@@ -242,6 +249,14 @@ namespace SwissEphNet
         public const int SE_SIDBIT_SSY_PLANE = 512;
         /* with user-defined ayanamsha, t0 is UT */
         public const int SE_SIDBIT_USER_UT = 1024;
+        /* ayanamsha measured on ecliptic of date;
+         * see commentaries in sweph.c:swi_get_ayanamsa_ex(). */
+        public const int SE_SIDBIT_ECL_DATE = 2048;
+        /* test feature: don't apply constant offset to ayanamsha 
+         * see commentary above sweph.c:get_aya_correction() */
+        public const int SE_SIDBIT_NO_PREC_OFFSET = 4096;
+        /* test feature: calculate ayanamsha using its original precession model */
+        public const int SE_SIDBIT_PREC_ORIG = 8192;
 
         /* sidereal modes (ayanamsas) */
         public const int SE_SIDM_FAGAN_BRADLEY = 0;
@@ -287,10 +302,14 @@ namespace SwissEphNet
         public const int SE_SIDM_GALCENT_COCHRANE = 40;
         public const int SE_SIDM_GALEQU_FIORENZA = 41;
         public const int SE_SIDM_VALENS_MOON = 42;
+        public const int SE_SIDM_LAHIRI_1940 = 43;
+        public const int SE_SIDM_LAHIRI_VP285 = 44;
+        public const int SE_SIDM_KRISHNAMURTI_VP291 = 45;
+        public const int SE_SIDM_LAHIRI_ICRC = 46;
         ////#define SE_SIDM_MANJULA         43
         public const int SE_SIDM_USER = 255; /* user-defined ayanamsha, t0 is TT */
 
-        public const int SE_NSIDM_PREDEF = 43;
+        public const int SE_NSIDM_PREDEF = 47;
 
         /* used for swe_nod_aps(): */
         public const int SE_NODBIT_MEAN = 1;   /* mean nodes/apsides */
@@ -315,6 +334,8 @@ namespace SwissEphNet
         public const int SE_ECL_ANNULAR = 8;
         public const int SE_ECL_PARTIAL = 16;
         public const int SE_ECL_ANNULAR_TOTAL = 32;
+        public const int SE_ECL_HYBRID = 32;  // = annular-total
+
         public const int SE_ECL_PENUMBRAL = 64;
         public const int SE_ECL_ALLTYPES_SOLAR = (SE_ECL_CENTRAL | SE_ECL_NONCENTRAL | SE_ECL_TOTAL | SE_ECL_ANNULAR | SE_ECL_PARTIAL | SE_ECL_ANNULAR_TOTAL);
         public const int SE_ECL_ALLTYPES_LUNAR = (SE_ECL_TOTAL | SE_ECL_PARTIAL | SE_ECL_PENUMBRAL);
@@ -405,6 +426,83 @@ namespace SwissEphNet
         /// </summary>
         public const String SE_EPHE_PATH = "[ephe]";
 
+        // SE_EPHE_PATH above is public API and a const, so its VALUE cannot change here:
+        // const fields are inlined into every caller at THAT caller's compile time, not
+        // looked up at run time, so changing the literal would silently desync anything
+        // already compiled against "[ephe]" from what this library actually does --
+        // binary-breaking in a way a version bump alone does not fix. The real default
+        // swe_set_ephe_path (and swi_init_swed_if_start) fall back to when no path is
+        // configured lives here instead, as a member the constant does not gate: the
+        // constant stays public API, the behaviour is not.
+        //
+        // swephexp.h:399-408 picks that default with a compile-time #if MSDOS, and MSDOS
+        // there is also defined true for any _WIN32/WIN32 build (sweodef.h:96-98), so
+        // upstream's real split is "Windows" vs. "everything else", not literally
+        // MS-DOS. This port ships one assembly for Windows, Linux and macOS rather than
+        // compiling per platform, so matching the C's #if by its letter is not available;
+        // resolving the same split at run time instead of compile time is a deliberate
+        // divergence from a literal transliteration, made because it matches the C's
+        // intent on every platform this port targets, rather than matching its letter on
+        // only one.
+        //
+        // Windows keeps upstream's own literal, backslash-terminated string. Combined
+        // with swe_set_ephe_path's own trailing-separator check (Sweph.cs, "sweph.c:1339
+        // compares..."), which tests only against DIR_GLUE and DIR_GLUE is '/' on every
+        // platform this port targets (see the DIR_GLUE comment above), a Windows caller
+        // who never configures a path gets "\sweph\ephe\/" -- a redundant trailing '/'
+        // after the literal backslash -- where the C itself produces exactly
+        // "\sweph\ephe\" (its own DIR_GLUE is '\\' on Windows, already matching the
+        // string's own trailing character, so its check never appends). Windows accepts
+        // both separators interchangeably in a path, so this is a cosmetic mismatch in
+        // the exact bytes of an error message, not a functional one; left as-is rather
+        // than special-casing the trailing-separator check for one platform's string,
+        // consistent with DIR_GLUE's own existing "one value for every platform" choice.
+        //
+        // The non-Windows string carries upstream's three components in upstream's order,
+        // joined with ':' exactly as swephexp.h:403 writes it -- not a typo and not a
+        // second guess at the C. This is deliberately the literal, not a port-specific
+        // rewrite: PATH_SEPARATOR (SwissEph.sweodef.h.cs) is per-platform, matching the
+        // C's own two cut-lists rather than using one value everywhere -- { ';', ':' } off
+        // Windows (sweodef.h:307, "semicolon or colon may be used" under #if UNIX_FS) and
+        // { ';' } on Windows (sweodef.h:313, the #else branch, where a bare ':' would split
+        // a drive letter). swi_fopen splits swed.ephepath on exactly that cut-list (Sweph.cs,
+        // sweph.c:2377), so this colon-joined literal correctly splits into its three
+        // components off Windows, including the "." component -- the current directory,
+        // which sweph.c:2381 maps to the empty prefix and which is the only one of the
+        // three that exists on a machine that is not Astrodienst's.
+        //
+        // This was briefly wrong. An earlier revision kept PATH_SEPARATOR at { ';' } on
+        // every platform and rewrote this default to a ';'-joined string to match, reasoning
+        // that a bare ':' was unsafe to add to a cross-platform cut-list. That reasoning was
+        // sound for Windows drive letters and wrong to apply off Windows, where the C accepts
+        // ':' natively and a caller-supplied ';'-joined path is not what any other Swiss
+        // Ephemeris binding expects. It also moved the port away from the C on exactly the
+        // platforms the exactness gates measure: 192 of 15,819 analytic rows differed from
+        // gcc's C reference, 196 from clang's. Restored per-platform (this default and
+        // PATH_SEPARATOR together, since the two have to agree) once that regression was
+        // found; see commit c334d15's own message for the fuller account.
+        // Split from the property so both branches are reachable from any platform. The
+        // property alone cannot be tested for this: the separator mistake it guards against
+        // is confined to the non-Windows literal, so a test reading DefaultEphePath on a
+        // Windows runner exercises the other branch and passes no matter what the non-Windows
+        // string says -- measured, by reintroducing the ':' form and watching the test stay
+        // green. Tests/SwissEphNet.Tests/DefaultEphePathSplitTest.cs calls this directly with
+        // both values instead.
+        internal static string DefaultEphePathFor(bool isWindows)
+        {
+            return isWindows
+                ? "\\sweph\\ephe\\"
+                : ".:/users/ephe2/:/users/ephe/";
+        }
+
+        internal static string DefaultEphePath
+        {
+            get
+            {
+                return DefaultEphePathFor(RuntimeInformation.IsOSPlatform(OSPlatform.Windows));
+            }
+        }
+
 
         /* defines for function swe_split_deg() (in swephlib.c) */
         public const int SE_SPLIT_DEG_ROUND_SEC = 1;
@@ -447,7 +545,12 @@ namespace SwissEphNet
         public const int SE_HELFLAG_AVKIND_MIN9 = (1 << 19);
         public const int SE_HELFLAG_AVKIND = (SE_HELFLAG_AVKIND_VR | SE_HELFLAG_AVKIND_PTO | SE_HELFLAG_AVKIND_MIN7 | SE_HELFLAG_AVKIND_MIN9);
         public const double TJD_INVALID = 99999999.0;
-        public const bool SIMULATE_VICTORVB = true;
+        // Not a C# language constant: swephexp.h:451 is `#define SIMULATE_VICTORVB 1`, so C's
+        // `#ifndef SIMULATE_VICTORVB` guards (SweHel.cs's negated sites) are always compiled out.
+        // A `const bool` here would make the negated `if (!SIMULATE_VICTORVB)` at those sites a
+        // compile-time-false condition and trip CS0162 ("unreachable code"), the same problem
+        // Sweph.cs:105's SID_TNODE_FROM_ECL_T0 avoids by not being a language constant either.
+        public static readonly bool SIMULATE_VICTORVB = true;
 
 #if FALSE  // unused and redundant
         public const int SE_HELIACAL_LONG_SEARCH = 128;
@@ -482,7 +585,8 @@ namespace SwissEphNet
         public const double SE_TIDAL_DE421 = (-25.85);   /* JPL Interoffice Memorandum 14-mar-2008 on DE421 Lunar Orbit */
         public const double SE_TIDAL_DE422 = (-25.85);   /* JPL Interoffice Memorandum 14-mar-2008 on DE421 (sic!) Lunar Orbit */
         public const double SE_TIDAL_DE430 = (-25.82);   /* JPL Interoffice Memorandum 9-jul-2013 on DE430 Lunar Orbit */
-        public const double SE_TIDAL_DE431 = (-25.80);   /* IPN Progress Report 42-196 â€¢ February 15, 2014, p. 15; was (-25.82) in V. 2.00.00 */
+        public const double SE_TIDAL_DE431 = (-25.80);   /* IPN Progress Report 42-196 • February 15, 2014, p. 15; was (-25.82) in V. 2.00.00 */
+        public const double SE_TIDAL_DE441 = (-25.936);   /* unpublished value, from email by Jon Giorgini to DK on 11 Apr 2021 */
         public const double SE_TIDAL_26 = (-26.0);
         public const double SE_TIDAL_STEPHENSON_2016 = (-25.85);
         public const double SE_TIDAL_DEFAULT = SE_TIDAL_DE431;
@@ -505,7 +609,7 @@ namespace SwissEphNet
         public const int NSE_MODELS = 8;
 
         /* precession models */
-        public const int SEMOD_NPREC = 10;
+        public const int SEMOD_NPREC = 11;
         public const int SEMOD_PREC_IAU_1976 = 1;
         public const int SEMOD_PREC_LASKAR_1986 = 2;
         public const int SEMOD_PREC_WILL_EPS_LASK = 3;
@@ -516,20 +620,22 @@ namespace SwissEphNet
         public const int SEMOD_PREC_IAU_2006 = 8;
         public const int SEMOD_PREC_VONDRAK_2011 = 9;
         public const int SEMOD_PREC_OWEN_1990 = 10;
+        public const int SEMOD_PREC_NEWCOMB = 11;
         public const int SEMOD_PREC_DEFAULT = SEMOD_PREC_VONDRAK_2011;
-        /* SE versions before 1.70 used IAU 1976 precession for 
-         * a limited time range of 2 centuries in combination with 
+        /* SE versions before 1.70 used IAU 1976 precession for
+         * a limited time range of 2 centuries in combination with
          * the long-term precession Simon 1994.
          */
         public const int SEMOD_PREC_DEFAULT_SHORT = SEMOD_PREC_VONDRAK_2011;
 
         /* nutation models */
-        public const int SEMOD_NNUT = 4;
+        public const int SEMOD_NNUT = 5;
         public const int SEMOD_NUT_IAU_1980 = 1;
-        public const int SEMOD_NUT_IAU_CORR_1987 = 2; /* Herring's (1987) corrections to IAU 1980 
+        public const int SEMOD_NUT_IAU_CORR_1987 = 2; /* Herring's (1987) corrections to IAU 1980
                             * nutation series. AA (1996) neglects them.*/
         public const int SEMOD_NUT_IAU_2000A = 3; /* very time consuming ! */
         public const int SEMOD_NUT_IAU_2000B = 4; /* fast, but precision of milli-arcsec */
+        public const int SEMOD_NUT_WOOLARD = 5;
         public const int SEMOD_NUT_DEFAULT = SEMOD_NUT_IAU_2000B;  /* fast, but precision of milli-arcsec */
 
         /* methods for sidereal time */
@@ -670,7 +776,7 @@ namespace SwissEphNet
         public string swe_dotnet_version()
         {
             var vrs = new System.Reflection.AssemblyName(typeof(SwissEph).GetAssembly().FullName).Version;
-            return String.Format("{0}.{1:D2}.{2:D2}-net-{3:D4}", vrs.Major, vrs.Minor, vrs.Build, vrs.Revision);
+            return String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0}.{1:D2}.{2:D2}-net-{3:D4}", vrs.Major, vrs.Minor, vrs.Build, vrs.Revision);
         }
 
         /// <summary>
@@ -684,6 +790,45 @@ namespace SwissEphNet
         public Int32 swe_calc_ut(double tjd_ut, Int32 ipl, Int32 iflag, double[] xx, ref string serr)
         {
             return Sweph.swe_calc_ut(tjd_ut, ipl, iflag, xx, ref serr);
+        }
+
+        public Int32 swe_calc_pctr(double tjd, Int32 ipl, Int32 iplctr, Int32 iflag, double[] xxret, ref string serr)
+        {
+            return Sweph.swe_calc_pctr(tjd, ipl, iplctr, iflag, xxret, ref serr);
+        }
+
+        // sweph.c:8310-8615
+        public double swe_solcross(double x2cross, double jd_et, Int32 flag, ref string serr)
+        {
+            return Sweph.swe_solcross(x2cross, jd_et, flag, ref serr);
+        }
+        public double swe_solcross_ut(double x2cross, double jd_ut, Int32 flag, ref string serr)
+        {
+            return Sweph.swe_solcross_ut(x2cross, jd_ut, flag, ref serr);
+        }
+        public double swe_mooncross(double x2cross, double jd_et, Int32 flag, ref string serr)
+        {
+            return Sweph.swe_mooncross(x2cross, jd_et, flag, ref serr);
+        }
+        public double swe_mooncross_ut(double x2cross, double jd_ut, Int32 flag, ref string serr)
+        {
+            return Sweph.swe_mooncross_ut(x2cross, jd_ut, flag, ref serr);
+        }
+        public double swe_mooncross_node(double jd_et, Int32 flag, ref double xlon, ref double xlat, ref string serr)
+        {
+            return Sweph.swe_mooncross_node(jd_et, flag, ref xlon, ref xlat, ref serr);
+        }
+        public double swe_mooncross_node_ut(double jd_ut, Int32 flag, ref double xlon, ref double xlat, ref string serr)
+        {
+            return Sweph.swe_mooncross_node_ut(jd_ut, flag, ref xlon, ref xlat, ref serr);
+        }
+        public Int32 swe_helio_cross(Int32 ipl, double x2cross, double jd_et, Int32 iflag, Int32 dir, ref double jd_cross, ref string serr)
+        {
+            return Sweph.swe_helio_cross(ipl, x2cross, jd_et, iflag, dir, ref jd_cross, ref serr);
+        }
+        public Int32 swe_helio_cross_ut(Int32 ipl, double x2cross, double jd_ut, Int32 iflag, Int32 dir, ref double jd_cross, ref string serr)
+        {
+            return Sweph.swe_helio_cross_ut(ipl, x2cross, jd_ut, iflag, dir, ref jd_cross, ref serr);
         }
 
         /// <summary>
@@ -758,6 +903,8 @@ namespace SwissEphNet
 
         public string swe_get_ayanamsa_name(Int32 isidmode) { return Sweph.swe_get_ayanamsa_name(isidmode); }
 
+        public string swe_get_current_file_data(int ifno, ref double tfstart, ref double tfend, ref int denum) { return Sweph.swe_get_current_file_data(ifno, ref tfstart, ref tfend, ref denum); }
+
         /*ext_def(void) swe_set_timeout(int32 tsec);*/
 
         /**************************** 
@@ -825,27 +972,143 @@ namespace SwissEphNet
          * exports from swehouse.c 
          ****************************/
 
+        /// <summary>
+        /// Computes house cusps and the related points (Ascendant, MC, ...) for a date and
+        /// geographic position. Compatibility overload: widens to the <c>int</c> overload,
+        /// which is the signature upstream declares. A <c>char</c> above U+00FF resolves by
+        /// its low byte, matching an 8-bit C <c>char</c>.
+        /// </summary>
         public int swe_houses(double tjd_ut, double geolat, double geolon, char hsys, double[] cusps, double[] ascmc)
         {
             return SweHouse.swe_houses(tjd_ut, geolat, geolon, hsys, cusps, ascmc);
         }
 
+        /// <summary>
+        /// Computes house cusps and the related points (Ascendant, MC, ...) for a date and
+        /// geographic position. Matches upstream <c>swephexp.h:812</c>, which declares
+        /// <c>int hsys</c>; prefer this overload in new code.
+        /// </summary>
+        public int swe_houses(double tjd_ut, double geolat, double geolon, int hsys, double[] cusps, double[] ascmc)
+        {
+            return SweHouse.swe_houses(tjd_ut, geolat, geolon, hsys, cusps, ascmc);
+        }
+
+        /// <summary>
+        /// Computes house cusps with additional flags (sidereal modes, radians, ...).
+        /// Compatibility overload: widens to the <c>int</c> overload, which is the signature
+        /// upstream declares. A <c>char</c> above U+00FF resolves by its low byte.
+        /// </summary>
         public int swe_houses_ex(double tjd_ut, Int32 iflag, double geolat, double geolon, char hsys, CPointer<double> hcusps, CPointer<double> ascmc)
         {
             return SweHouse.swe_houses_ex(tjd_ut, iflag, geolat, geolon, hsys, hcusps, ascmc);
         }
 
+        /// <summary>
+        /// Computes house cusps with additional flags (sidereal modes, radians, ...).
+        /// Matches upstream <c>swephexp.h:816</c>, which declares <c>int hsys</c>; prefer
+        /// this overload in new code.
+        /// </summary>
+        public int swe_houses_ex(double tjd_ut, Int32 iflag, double geolat, double geolon, int hsys, CPointer<double> hcusps, CPointer<double> ascmc)
+        {
+            return SweHouse.swe_houses_ex(tjd_ut, iflag, geolat, geolon, hsys, hcusps, ascmc);
+        }
+
+        /// <summary>
+        /// Computes house cusps with additional flags (sidereal modes, radians, ...), together
+        /// with the daily-motion speeds of the cusps and additional points. Compatibility
+        /// overload: widens to the <c>int</c> overload, which is the signature upstream
+        /// declares. A <c>char</c> above U+00FF resolves by its low byte.
+        /// </summary>
+        public int swe_houses_ex2(double tjd_ut, Int32 iflag, double geolat, double geolon, char hsys, CPointer<double> hcusps, CPointer<double> ascmc, CPointer<double> cuspSpeed, CPointer<double> ascmcSpeed, ref string serr)
+        {
+            return SweHouse.swe_houses_ex2(tjd_ut, iflag, geolat, geolon, hsys, hcusps, ascmc, cuspSpeed, ascmcSpeed, ref serr);
+        }
+
+        /// <summary>
+        /// Computes house cusps with additional flags (sidereal modes, radians, ...), together
+        /// with the daily-motion speeds of the cusps and additional points. Matches upstream
+        /// <c>swephexp.h:820</c>, which declares <c>int hsys</c>; prefer this overload in new
+        /// code.
+        /// </summary>
+        public int swe_houses_ex2(double tjd_ut, Int32 iflag, double geolat, double geolon, int hsys, CPointer<double> hcusps, CPointer<double> ascmc, CPointer<double> cuspSpeed, CPointer<double> ascmcSpeed, ref string serr)
+        {
+            return SweHouse.swe_houses_ex2(tjd_ut, iflag, geolat, geolon, hsys, hcusps, ascmc, cuspSpeed, ascmcSpeed, ref serr);
+        }
+
+        /// <summary>
+        /// Computes house cusps directly from ARMC, geographic latitude and the obliquity of
+        /// the ecliptic, requiring no ephemeris data. Compatibility overload: widens to the
+        /// <c>int</c> overload. A <c>char</c> above U+00FF resolves by its low byte.
+        /// </summary>
         public int swe_houses_armc(double armc, double geolat, double eps, char hsys, double[] cusps, double[] ascmc)
         {
             return SweHouse.swe_houses_armc(armc, geolat, eps, hsys, cusps, ascmc);
         }
 
+        /// <summary>
+        /// Computes house cusps directly from ARMC, geographic latitude and the obliquity of
+        /// the ecliptic, requiring no ephemeris data. Matches upstream <c>swephexp.h:824</c>,
+        /// which declares <c>int hsys</c>; prefer this overload in new code.
+        /// </summary>
+        public int swe_houses_armc(double armc, double geolat, double eps, int hsys, double[] cusps, double[] ascmc)
+        {
+            return SweHouse.swe_houses_armc(armc, geolat, eps, hsys, cusps, ascmc);
+        }
+
+        /// <summary>
+        /// Computes house cusps directly from ARMC, geographic latitude and the obliquity of
+        /// the ecliptic, requiring no ephemeris data, together with the daily-motion speeds of
+        /// the cusps and additional points. Compatibility overload: widens to the <c>int</c>
+        /// overload. A <c>char</c> above U+00FF resolves by its low byte.
+        /// </summary>
+        public int swe_houses_armc_ex2(double armc, double geolat, double eps, char hsys, CPointer<double> cusps, CPointer<double> ascmc, CPointer<double> cuspSpeed, CPointer<double> ascmcSpeed, ref string serr)
+        {
+            return SweHouse.swe_houses_armc_ex2(armc, geolat, eps, hsys, cusps, ascmc, cuspSpeed, ascmcSpeed, ref serr);
+        }
+
+        /// <summary>
+        /// Computes house cusps directly from ARMC, geographic latitude and the obliquity of
+        /// the ecliptic, requiring no ephemeris data, together with the daily-motion speeds of
+        /// the cusps and additional points. Matches upstream <c>swephexp.h:828</c>, which
+        /// declares <c>int hsys</c>; prefer this overload in new code.
+        /// </summary>
+        public int swe_houses_armc_ex2(double armc, double geolat, double eps, int hsys, CPointer<double> cusps, CPointer<double> ascmc, CPointer<double> cuspSpeed, CPointer<double> ascmcSpeed, ref string serr)
+        {
+            return SweHouse.swe_houses_armc_ex2(armc, geolat, eps, hsys, cusps, ascmc, cuspSpeed, ascmcSpeed, ref serr);
+        }
+
+        /// <summary>
+        /// Returns the house position of a given body position. Compatibility overload:
+        /// widens to the <c>int</c> overload, which is the signature upstream declares.
+        /// </summary>
         public double swe_house_pos(double armc, double geolat, double eps, char hsys, double[] xpin, ref string serr)
         {
             return SweHouse.swe_house_pos(armc, geolat, eps, hsys, xpin, ref serr);
         }
 
+        /// <summary>
+        /// Returns the house position of a given body position. Matches upstream
+        /// <c>swephexp.h:832</c>, which declares <c>int hsys</c>; prefer this overload in new
+        /// code. An <c>hsys</c> that matches no house-system letter falls through to the
+        /// simplified interpolation algorithm, as in C.
+        /// </summary>
+        public double swe_house_pos(double armc, double geolat, double eps, int hsys, double[] xpin, ref string serr)
+        {
+            return SweHouse.swe_house_pos(armc, geolat, eps, hsys, xpin, ref serr);
+        }
+
+        /// <summary>
+        /// Returns the name of a house system. Compatibility overload: widens to the
+        /// <c>int</c> overload. Both compare the raw value, so neither narrows.
+        /// </summary>
         public string swe_house_name(char hsys) { return SweHouse.swe_house_name(hsys); }
+
+        /// <summary>
+        /// Returns the name of a house system, or <c>"Placidus"</c> for any value that
+        /// matches no house-system letter. Matches upstream <c>swephexp.h:835</c>, which
+        /// declares <c>int hsys</c>; prefer this overload in new code.
+        /// </summary>
+        public string swe_house_name(int hsys) { return SweHouse.swe_house_name(hsys); }
 
         /**************************** 
          * exports from swecl.c 
@@ -882,9 +1145,32 @@ namespace SwissEphNet
         /// <summary>
         /// finds time of next occultation globally
         /// </summary>
-        public Int32 swe_lun_occult_when_glob(double tjd_start, Int32 ipl, string starname, Int32 ifl, Int32 ifltype, double[] tret, bool backward, ref string serr)
+        /// <remarks>
+        /// swephexp.h declares this parameter <c>int32 backward</c>, a bitfield: bit 0 selects
+        /// search direction, and OR-ing in <see cref="SE_ECL_ONE_TRY"/> (swecl.c:1539, :1593)
+        /// limits the search to a single lunar cycle instead of continuing until an occultation
+        /// is found. A prior <c>bool backward</c> signature here could only ever pass 0 or 1, so
+        /// <c>backward &amp; SE_ECL_ONE_TRY</c> (32768) was provably always 0 and
+        /// SE_ECL_ONE_TRY was unreachable through this API. Call this overload to request it; the
+        /// <c>bool</c> overload below still exists for source compiled against the old signature,
+        /// but cannot pass it.
+        /// </remarks>
+        public Int32 swe_lun_occult_when_glob(double tjd_start, Int32 ipl, string starname, Int32 ifl, Int32 ifltype, double[] tret, Int32 backward, ref string serr)
         {
             return SweCL.swe_lun_occult_when_glob(tjd_start, ipl, starname, ifl, ifltype, tret, backward, ref serr);
+        }
+
+        /// <summary>
+        /// finds time of next occultation globally
+        /// </summary>
+        /// <remarks>
+        /// Source-compatibility overload for callers built against the pre-fix <c>bool
+        /// backward</c> signature. It can only pass 0 or 1 and so can never request
+        /// <see cref="SE_ECL_ONE_TRY"/> -- use the <c>Int32 backward</c> overload above for that.
+        /// </remarks>
+        public Int32 swe_lun_occult_when_glob(double tjd_start, Int32 ipl, string starname, Int32 ifl, Int32 ifltype, double[] tret, bool backward, ref string serr)
+        {
+            return swe_lun_occult_when_glob(tjd_start, ipl, starname, ifl, ifltype, tret, backward ? 1 : 0, ref serr);
         }
 
         /// <summary>
@@ -895,10 +1181,31 @@ namespace SwissEphNet
             return SweCL.swe_sol_eclipse_when_loc(tjd_start, ifl, geopos, tret, attr, backward, ref serr);
         }
 
+        /// <summary>
+        /// finds time of next local occultation
+        /// </summary>
+        /// <remarks>
+        /// Same <see cref="SE_ECL_ONE_TRY"/> bitfield as <see cref="swe_lun_occult_when_glob(double, Int32, string, Int32, Int32, double[], Int32, ref string)"/>
+        /// (swephexp.h; occult_when_loc masks it at swecl.c:2436) -- see that overload's remarks.
+        /// </remarks>
+        public Int32 swe_lun_occult_when_loc(double tjd_start, Int32 ipl, String starname, Int32 ifl, double[] geopos, double[] tret,
+            double[] attr, Int32 backward, ref string serr)
+        {
+            return SweCL.swe_lun_occult_when_loc(tjd_start, ipl, starname, ifl, geopos, tret, attr, backward, ref serr);
+        }
+
+        /// <summary>
+        /// finds time of next local occultation
+        /// </summary>
+        /// <remarks>
+        /// Source-compatibility overload for callers built against the pre-fix <c>bool
+        /// backward</c> signature; cannot request <see cref="SE_ECL_ONE_TRY"/> -- use the
+        /// <c>Int32 backward</c> overload above for that.
+        /// </remarks>
         public Int32 swe_lun_occult_when_loc(double tjd_start, Int32 ipl, String starname, Int32 ifl, double[] geopos, double[] tret,
             double[] attr, bool backward, ref string serr)
         {
-            return SweCL.swe_lun_occult_when_loc(tjd_start, ipl, starname, ifl, geopos, tret, attr, backward, ref serr);
+            return swe_lun_occult_when_loc(tjd_start, ipl, starname, ifl, geopos, tret, attr, backward ? 1 : 0, ref serr);
         }
 
         /// <summary>

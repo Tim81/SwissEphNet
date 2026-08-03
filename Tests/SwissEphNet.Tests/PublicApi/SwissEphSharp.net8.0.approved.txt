@@ -1,0 +1,577 @@
+﻿TYPE  public static class SwissEphNet.ArrayExtensions
+METHOD public static extension SwissEphNet.CPointer<T> SwissEphNet.ArrayExtensions.GetPointer<T>(T[] array, System.Int32 index = 0)
+TYPE  public static class SwissEphNet.C
+METHOD public static SwissEphNet.CPointer<TVal> SwissEphNet.C.bsearch<TKey, TVal>(TKey key, SwissEphNet.CPointer<TVal> array, System.Int32 n, System.Func<TKey, TVal, System.Int32> compare)
+METHOD public static System.Boolean SwissEphNet.C.IsNumericType(System.Object o)
+METHOD public static System.Boolean SwissEphNet.C.IsPositive(System.Object Value, System.Boolean ZeroIsPositive)
+METHOD public static System.Double SwissEphNet.C.atof(System.String s)
+METHOD public static System.Double SwissEphNet.C.fmod(System.Double numer, System.Double denom)
+METHOD public static System.Int32 SwissEphNet.C.atoi(System.String s)
+METHOD public static System.Int32 SwissEphNet.C.sscanf<T1, T2, T3, T4, T5, T6>(System.String input, System.String format, ref T1 r1, ref T2 r2, ref T3 r3, ref T4 r4, ref T5 r5, ref T6 r6)
+METHOD public static System.Int32 SwissEphNet.C.sscanf<T1, T2, T3, T4, T5>(System.String input, System.String format, ref T1 r1, ref T2 r2, ref T3 r3, ref T4 r4, ref T5 r5)
+METHOD public static System.Int32 SwissEphNet.C.sscanf<T1, T2, T3, T4>(System.String input, System.String format, ref T1 r1, ref T2 r2, ref T3 r3, ref T4 r4)
+METHOD public static System.Int32 SwissEphNet.C.sscanf<T1, T2, T3>(System.String input, System.String format, ref T1 r1, ref T2 r2, ref T3 r3)
+METHOD public static System.Int32 SwissEphNet.C.sscanf<T1, T2>(System.String input, System.String format, ref T1 r1, ref T2 r2)
+METHOD public static System.Int32 SwissEphNet.C.sscanf<T>(System.String input, System.String format, ref T r)
+METHOD public static System.Int32 SwissEphNet.C.strchr(System.String s, System.Char c)
+METHOD public static System.Int32 SwissEphNet.C.strcmp(System.String a, System.String b)
+METHOD public static System.Int32 SwissEphNet.C.strlen(System.String s)
+METHOD public static System.Int32 SwissEphNet.C.strncmp(System.String a, System.String b, System.Int32 n)
+METHOD public static System.Int32 SwissEphNet.C.strstr(System.String a, System.String b)
+METHOD public static System.Int64 SwissEphNet.C.UnboxToLong(System.Object Value, System.Boolean Round)
+METHOD public static System.Object SwissEphNet.C.ToInteger(System.Object Value, System.Boolean Round)
+METHOD public static System.Object SwissEphNet.C.ToUnsigned(System.Object Value)
+METHOD public static System.String SwissEphNet.C.ReplaceMetaChars(System.String input)
+METHOD public static System.String SwissEphNet.C.sprintf(System.String Format, params System.Object[] Parameters)
+METHOD public static System.String SwissEphNet.C.strcpy(out System.String a, System.String b)
+METHOD public static System.Void SwissEphNet.C.fclose(SwissEphNet.CFile file)
+METHOD public static System.Void SwissEphNet.C.fprintf(System.IO.TextWriter Destination, System.String Format, params System.Object[] Parameters)
+METHOD public static System.Void SwissEphNet.C.qsort<T>(SwissEphNet.CPointer<T> array, System.Int32 n, System.Comparison<T> compare)
+METHOD public static System.Void SwissEphNet.C.rewind(SwissEphNet.CFile file)
+METHOD public static System.Void SwissEphNet.C.strcat(ref System.String a, System.String b)
+METHOD public static System.Void SwissEphNet.C.strncat(ref System.String a, System.String b, System.Int32 n)
+METHOD public static System.Void SwissEphNet.C.strncpy(out System.String a, System.String b, System.Int32 n)
+TYPE  public class SwissEphNet.CFile : System.IDisposable
+CTOR  public SwissEphNet.CFile.CFile(System.IO.Stream stream, System.Text.Encoding encoding = null)
+PROP  public System.Boolean SwissEphNet.CFile.EOF { get; }
+PROP  public System.Int64 SwissEphNet.CFile.Length { get; }
+PROP  public System.Int64 SwissEphNet.CFile.Position { get; }
+PROP  public System.Text.Encoding SwissEphNet.CFile.Encoding { get; }
+METHOD protected virtual System.Void SwissEphNet.CFile.Dispose(System.Boolean disposing)
+METHOD public System.Boolean SwissEphNet.CFile.Read(ref System.Byte result)
+METHOD public System.Boolean SwissEphNet.CFile.Read(ref System.Char result)
+METHOD public System.Boolean SwissEphNet.CFile.Read(ref System.Double result)
+METHOD public System.Boolean SwissEphNet.CFile.Read(ref System.Int32 result)
+METHOD public System.Boolean SwissEphNet.CFile.Read(ref System.SByte result)
+METHOD public System.Boolean SwissEphNet.CFile.Read(ref System.UInt32 result)
+METHOD public System.Boolean SwissEphNet.CFile.ReadString(ref System.String s, System.Int32 size)
+METHOD public System.Byte SwissEphNet.CFile.ReadByte()
+METHOD public System.Char SwissEphNet.CFile.ReadChar()
+METHOD public System.Char[] SwissEphNet.CFile.ReadChars(System.Int32 count)
+METHOD public System.Double SwissEphNet.CFile.ReadDouble()
+METHOD public System.Double[] SwissEphNet.CFile.ReadDoubles(System.Int32 count)
+METHOD public System.Int32 SwissEphNet.CFile.Read()
+METHOD public System.Int32 SwissEphNet.CFile.Read(System.Byte[] buff, System.Int32 offset, System.Int32 count)
+METHOD public System.Int32 SwissEphNet.CFile.ReadDoubles(System.Double[] buff, System.Int32 offset, System.Int32 count)
+METHOD public System.Int32 SwissEphNet.CFile.ReadInt32()
+METHOD public System.Int32 SwissEphNet.CFile.ReadInt32s(System.Int32[] buff, System.Int32 offset, System.Int32 count)
+METHOD public System.Int32[] SwissEphNet.CFile.ReadInt32s(System.Int32 count)
+METHOD public System.Int64 SwissEphNet.CFile.Seek(System.Int64 offset, System.IO.SeekOrigin origin)
+METHOD public System.SByte SwissEphNet.CFile.ReadSByte()
+METHOD public System.SByte[] SwissEphNet.CFile.ReadSBytes(System.Int32 count)
+METHOD public System.String SwissEphNet.CFile.ReadLine()
+METHOD public System.UInt32 SwissEphNet.CFile.ReadUInt32()
+METHOD public System.Void SwissEphNet.CFile.Dispose()
+TYPE  public struct SwissEphNet.CPointer<T>
+CTOR  public SwissEphNet.CPointer<T>.CPointer(T[] baseArray)
+CTOR  public SwissEphNet.CPointer<T>.CPointer(T[] baseArray, System.Int32 baseIndex)
+PROP  public System.Boolean SwissEphNet.CPointer<T>.IsNull { get; }
+PROP  public System.Int32 SwissEphNet.CPointer<T>.Length { get; }
+PROP  public T SwissEphNet.CPointer<T>.Item[System.Int32 idx] { get; set; }
+METHOD public T[] SwissEphNet.CPointer<T>.ToArray()
+METHOD public static SwissEphNet.CPointer<T> SwissEphNet.CPointer<T>.op_Addition(SwissEphNet.CPointer<T> array, System.Int32 offset)
+METHOD public static SwissEphNet.CPointer<T> SwissEphNet.CPointer<T>.op_Decrement(SwissEphNet.CPointer<T> array)
+METHOD public static SwissEphNet.CPointer<T> SwissEphNet.CPointer<T>.op_Implicit(T[] array)
+METHOD public static SwissEphNet.CPointer<T> SwissEphNet.CPointer<T>.op_Increment(SwissEphNet.CPointer<T> array)
+METHOD public static SwissEphNet.CPointer<T> SwissEphNet.CPointer<T>.op_Subtraction(SwissEphNet.CPointer<T> array, System.Int32 offset)
+METHOD public static System.Boolean SwissEphNet.CPointer<T>.op_Equality(SwissEphNet.CPointer<T> access, T[] array)
+METHOD public static System.Boolean SwissEphNet.CPointer<T>.op_Equality(SwissEphNet.CPointer<T> p1, SwissEphNet.CPointer<T> p2)
+METHOD public static System.Boolean SwissEphNet.CPointer<T>.op_Equality(T[] array, SwissEphNet.CPointer<T> access)
+METHOD public static System.Boolean SwissEphNet.CPointer<T>.op_Inequality(SwissEphNet.CPointer<T> access, T[] array)
+METHOD public static System.Boolean SwissEphNet.CPointer<T>.op_Inequality(SwissEphNet.CPointer<T> p1, SwissEphNet.CPointer<T> p2)
+METHOD public static System.Boolean SwissEphNet.CPointer<T>.op_Inequality(T[] array, SwissEphNet.CPointer<T> access)
+METHOD public static T SwissEphNet.CPointer<T>.op_Implicit(SwissEphNet.CPointer<T> array)
+METHOD public static T[] SwissEphNet.CPointer<T>.op_Explicit(SwissEphNet.CPointer<T> array)
+METHOD public virtual System.Boolean SwissEphNet.CPointer<T>.Equals(System.Object obj)
+METHOD public virtual System.Int32 SwissEphNet.CPointer<T>.GetHashCode()
+TYPE  public class SwissEphNet.SwissEph : System.IDisposable
+FIELD public const System.Double SwissEphNet.SwissEph.CS2DEG = 2.7777777777777779E-06
+FIELD public const System.Double SwissEphNet.SwissEph.CSTORAD = 4.8481368110953601E-08
+FIELD public const System.Double SwissEphNet.SwissEph.DEGTORAD = 0.017453292519943295
+FIELD public const System.Double SwissEphNet.SwissEph.J2000 = 2451545
+FIELD public const System.Double SwissEphNet.SwissEph.M_PI = 3.1415926535897931
+FIELD public const System.Double SwissEphNet.SwissEph.RADTOCS = 20626480.624709636
+FIELD public const System.Double SwissEphNet.SwissEph.RADTODEG = 57.295779513082323
+FIELD public const System.Double SwissEphNet.SwissEph.SE_AUNIT_TO_KM = 149597870.69999999
+FIELD public const System.Double SwissEphNet.SwissEph.SE_AUNIT_TO_LIGHTYEAR = 1.5812507409819728E-05
+FIELD public const System.Double SwissEphNet.SwissEph.SE_AUNIT_TO_PARSEC = 4.8481368110952743E-06
+FIELD public const System.Double SwissEphNet.SwissEph.SE_DELTAT_AUTOMATIC = -1E-10
+FIELD public const System.Double SwissEphNet.SwissEph.SE_TIDAL_26 = -26
+FIELD public const System.Double SwissEphNet.SwissEph.SE_TIDAL_AUTOMATIC = 999999
+FIELD public const System.Double SwissEphNet.SwissEph.SE_TIDAL_DE200 = -23.894600000000001
+FIELD public const System.Double SwissEphNet.SwissEph.SE_TIDAL_DE403 = -25.579999999999998
+FIELD public const System.Double SwissEphNet.SwissEph.SE_TIDAL_DE404 = -25.579999999999998
+FIELD public const System.Double SwissEphNet.SwissEph.SE_TIDAL_DE405 = -25.826000000000001
+FIELD public const System.Double SwissEphNet.SwissEph.SE_TIDAL_DE406 = -25.826000000000001
+FIELD public const System.Double SwissEphNet.SwissEph.SE_TIDAL_DE421 = -25.850000000000001
+FIELD public const System.Double SwissEphNet.SwissEph.SE_TIDAL_DE422 = -25.850000000000001
+FIELD public const System.Double SwissEphNet.SwissEph.SE_TIDAL_DE430 = -25.82
+FIELD public const System.Double SwissEphNet.SwissEph.SE_TIDAL_DE431 = -25.800000000000001
+FIELD public const System.Double SwissEphNet.SwissEph.SE_TIDAL_DE441 = -25.936
+FIELD public const System.Double SwissEphNet.SwissEph.SE_TIDAL_DEFAULT = -25.800000000000001
+FIELD public const System.Double SwissEphNet.SwissEph.SE_TIDAL_JPLEPH = -25.800000000000001
+FIELD public const System.Double SwissEphNet.SwissEph.SE_TIDAL_MOSEPH = -25.579999999999998
+FIELD public const System.Double SwissEphNet.SwissEph.SE_TIDAL_STEPHENSON_2016 = -25.850000000000001
+FIELD public const System.Double SwissEphNet.SwissEph.SE_TIDAL_SWIEPH = -25.800000000000001
+FIELD public const System.Double SwissEphNet.SwissEph.TJD_INVALID = 99999999
+FIELD public const System.Int32 SwissEphNet.SwissEph.AS_MAXCH = 256
+FIELD public const System.Int32 SwissEphNet.SwissEph.BIT_LZEROES = 8
+FIELD public const System.Int32 SwissEphNet.SwissEph.BIT_ROUND_MIN = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.BIT_ROUND_SEC = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.BIT_ZODIAC = 4
+FIELD public const System.Int32 SwissEphNet.SwissEph.DEG = 360000
+FIELD public const System.Int32 SwissEphNet.SwissEph.DEG120 = 43200000
+FIELD public const System.Int32 SwissEphNet.SwissEph.DEG15 = 5400000
+FIELD public const System.Int32 SwissEphNet.SwissEph.DEG150 = 54000000
+FIELD public const System.Int32 SwissEphNet.SwissEph.DEG180 = 64800000
+FIELD public const System.Int32 SwissEphNet.SwissEph.DEG24 = 8640000
+FIELD public const System.Int32 SwissEphNet.SwissEph.DEG270 = 97200000
+FIELD public const System.Int32 SwissEphNet.SwissEph.DEG30 = 10800000
+FIELD public const System.Int32 SwissEphNet.SwissEph.DEG360 = 129600000
+FIELD public const System.Int32 SwissEphNet.SwissEph.DEG60 = 21600000
+FIELD public const System.Int32 SwissEphNet.SwissEph.DEG7_30 = 2700000
+FIELD public const System.Int32 SwissEphNet.SwissEph.DEG90 = 32400000
+FIELD public const System.Int32 SwissEphNet.SwissEph.ERR = -1
+FIELD public const System.Int32 SwissEphNet.SwissEph.NSE_MODELS = 8
+FIELD public const System.Int32 SwissEphNet.SwissEph.OK = 0
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_ASTROMETRIC = 1536
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_BARYCTR = 16384
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_CENTER_BODY = 1048576
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_COORDSYS = 14336
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_DEFAULTEPH = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_DPSIDEPS_1980 = 262144
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_EPHMASK = 7
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_EQUATORIAL = 2048
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_HELCTR = 8
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_ICRS = 131072
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_J2000 = 32
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_JPLEPH = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_JPLHOR = 262144
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_JPLHOR_APPROX = 524288
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_MOSEPH = 4
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_NOABERR = 1024
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_NOGDEFL = 512
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_NONUT = 64
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_ORBEL_AA = 32768
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_RADIANS = 8192
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_SIDEREAL = 65536
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_SPEED = 256
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_SPEED3 = 128
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_SWIEPH = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_TEST_PLMOON = 2228280
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_TOPOCTR = 32768
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_TROPICAL = 0
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_TRUEPOS = 16
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_XYZ = 4096
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_BIAS_DEFAULT = 3
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_BIAS_IAU2000 = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_BIAS_IAU2006 = 3
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_BIAS_NONE = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_DELTAT_DEFAULT = 5
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_DELTAT_ESPENAK_MEEUS_2006 = 4
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_DELTAT_STEPHENSON_1997 = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_DELTAT_STEPHENSON_ETC_2016 = 5
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_DELTAT_STEPHENSON_MORRISON_1984 = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_DELTAT_STEPHENSON_MORRISON_2004 = 3
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_JPLHORA_1 = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_JPLHORA_2 = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_JPLHORA_3 = 3
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_JPLHORA_DEFAULT = 3
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_JPLHOR_DEFAULT = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_JPLHOR_LONG_AGREEMENT = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_NBIAS = 3
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_NDELTAT = 5
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_NJPLHOR = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_NJPLHORA = 3
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_NNUT = 5
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_NPREC = 11
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_NSIDT = 4
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_NUT_DEFAULT = 4
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_NUT_IAU_1980 = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_NUT_IAU_2000A = 3
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_NUT_IAU_2000B = 4
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_NUT_IAU_CORR_1987 = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_NUT_WOOLARD = 5
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_PREC_BRETAGNON_2003 = 7
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_PREC_DEFAULT = 9
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_PREC_DEFAULT_SHORT = 9
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_PREC_IAU_1976 = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_PREC_IAU_2000 = 6
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_PREC_IAU_2006 = 8
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_PREC_LASKAR_1986 = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_PREC_NEWCOMB = 11
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_PREC_OWEN_1990 = 10
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_PREC_SIMON_1994 = 5
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_PREC_VONDRAK_2011 = 9
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_PREC_WILLIAMS_1994 = 4
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_PREC_WILL_EPS_LASK = 3
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_SIDT_DEFAULT = 4
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_SIDT_IAU_1976 = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_SIDT_IAU_2006 = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_SIDT_IERS_CONV_2010 = 3
+FIELD public const System.Int32 SwissEphNet.SwissEph.SEMOD_SIDT_LONGTERM = 4
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ACRONYCHAL_RISING = 5
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ACRONYCHAL_SETTING = 6
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ADMETOS = 45
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_APOLLON = 44
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_APP_TO_TRUE = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ARMC = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ASC = 0
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_AST_OFFSET = 10000
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_BIT_ASTRO_TWILIGHT = 4096
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_BIT_CIVIL_TWILIGHT = 1024
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_BIT_DISC_BOTTOM = 8192
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_BIT_DISC_CENTER = 256
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_BIT_FIXED_DISC_SIZE = 16384
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_BIT_FORCE_SLOW_METHOD = 32768
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_BIT_GEOCTR_NO_ECL_LAT = 128
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_BIT_HINDU_RISING = 896
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_BIT_NAUTIC_TWILIGHT = 2048
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_BIT_NO_REFRACTION = 512
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_CALC_ITRANSIT = 8
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_CALC_MTRANSIT = 4
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_CALC_RISE = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_CALC_SET = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_CERES = 17
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_CHIRON = 15
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_COASC1 = 5
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_COASC2 = 6
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_COMET_OFFSET = 1000
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_COSMICAL_SETTING = 6
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_CUPIDO = 40
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_DE_NUMBER = 431
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_EARTH = 14
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL2HOR = 0
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_1ST_VISIBLE = 512
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_2ND_VISIBLE = 1024
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_3RD_VISIBLE = 2048
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_4TH_VISIBLE = 4096
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_ALLTYPES_LUNAR = 84
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_ALLTYPES_SOLAR = 63
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_ANNULAR = 8
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_ANNULAR_TOTAL = 32
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_CENTRAL = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_HYBRID = 32
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_MAX_VISIBLE = 256
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_NONCENTRAL = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_NUT = -1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_OCC_BEG_DAYLIGHT = 8192
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_OCC_END_DAYLIGHT = 16384
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_ONE_TRY = 32768
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_PARTBEG_VISIBLE = 512
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_PARTEND_VISIBLE = 4096
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_PARTIAL = 16
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_PENUMBBEG_VISIBLE = 8192
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_PENUMBEND_VISIBLE = 16384
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_PENUMBRAL = 64
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_TOTAL = 4
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_TOTBEG_VISIBLE = 1024
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_TOTEND_VISIBLE = 2048
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ECL_VISIBLE = 128
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_EQU2HOR = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_EQUASC = 4
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_EVENING_FIRST = 3
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_EVENING_LAST = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_FICT_MAX = 999
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_FICT_OFFSET = 40
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_FICT_OFFSET_1 = 39
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_FIXSTAR = -10
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_GREG_CAL = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HADES = 41
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HARRINGTON = 50
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HELFLAG_AV = 65536
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HELFLAG_AVKIND = 983040
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HELFLAG_AVKIND_MIN7 = 262144
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HELFLAG_AVKIND_MIN9 = 524288
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HELFLAG_AVKIND_PTO = 131072
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HELFLAG_AVKIND_VR = 65536
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HELFLAG_HIGH_PRECISION = 256
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HELFLAG_LONG_SEARCH = 128
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HELFLAG_NO_DETAILS = 1024
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HELFLAG_OPTICAL_PARAMS = 512
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HELFLAG_SEARCH_1_PERIOD = 2048
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HELFLAG_VISLIM_DARK = 4096
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HELFLAG_VISLIM_NOMOON = 8192
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HELFLAG_VISLIM_PHOTOPIC = 16384
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HELFLAG_VISLIM_SCOTOPIC = 32768
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HELIACAL_RISING = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HELIACAL_SETTING = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HOR2ECL = 0
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_HOR2EQU = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_INTP_APOG = 21
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_INTP_PERG = 22
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ISIS = 48
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_JUL_CAL = 0
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_JUNO = 19
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_JUPITER = 5
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_KRONOS = 43
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_MARS = 4
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_MAX_STNAME = 256
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_MC = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_MEAN_APOG = 12
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_MEAN_NODE = 10
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_MERCURY = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_MIXEDOPIC_FLAG = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_MODEL_BIAS = 4
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_MODEL_DELTAT = 0
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_MODEL_JPLHORA_MODE = 6
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_MODEL_JPLHOR_MODE = 5
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_MODEL_NUT = 3
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_MODEL_PREC_LONGTERM = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_MODEL_PREC_SHORTTERM = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_MODEL_SIDT = 7
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_MOON = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_MORNING_FIRST = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_MORNING_LAST = 4
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_NALL_NAT_POINTS = 38
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_NASCMC = 8
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_NEPTUNE = 8
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_NEPTUNE_ADAMS = 52
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_NEPTUNE_LEVERRIER = 51
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_NFICT_ELEM = 15
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_NIBIRU = 49
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_NODBIT_FOPOINT = 256
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_NODBIT_MEAN = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_NODBIT_OSCU = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_NODBIT_OSCU_BAR = 4
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_NPLANETS = 23
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_NSIDM_PREDEF = 47
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_OSCU_APOG = 13
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_PALLAS = 18
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_PHOLUS = 16
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_PHOTOPIC_FLAG = 0
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_PLMOON_OFFSET = 9000
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_PLUTO = 9
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_PLUTO_LOWELL = 53
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_PLUTO_PICKERING = 54
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_POLASC = 7
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_POSEIDON = 47
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_PROSERPINA = 57
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SATURN = 6
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SCOTOPIC_FLAG = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDBITS = 256
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDBIT_ECL_DATE = 2048
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDBIT_ECL_T0 = 256
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDBIT_NO_PREC_OFFSET = 4096
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDBIT_PREC_ORIG = 8192
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDBIT_SSY_PLANE = 512
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDBIT_USER_UT = 1024
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_ALDEBARAN_15TAU = 14
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_ARYABHATA = 23
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_ARYABHATA_522 = 37
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_ARYABHATA_MSUN = 24
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_B1950 = 20
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_BABYL_BRITTON = 38
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_BABYL_ETPSC = 13
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_BABYL_HUBER = 12
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_BABYL_KUGLER1 = 9
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_BABYL_KUGLER2 = 10
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_BABYL_KUGLER3 = 11
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_DELUCE = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_DJWHAL_KHUL = 6
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_FAGAN_BRADLEY = 0
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_GALALIGN_MARDYKS = 34
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_GALCENT_0SAG = 17
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_GALCENT_COCHRANE = 40
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_GALCENT_MULA_WILHELM = 36
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_GALCENT_RGILBRAND = 30
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_GALEQU_FIORENZA = 41
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_GALEQU_IAU1958 = 31
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_GALEQU_MULA = 33
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_GALEQU_TRUE = 32
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_HIPPARCHOS = 15
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_J1900 = 19
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_J2000 = 18
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_JN_BHASIN = 8
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_KRISHNAMURTI = 5
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_KRISHNAMURTI_VP291 = 45
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_LAHIRI = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_LAHIRI_1940 = 43
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_LAHIRI_ICRC = 46
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_LAHIRI_VP285 = 44
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_RAMAN = 3
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_SASSANIAN = 16
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_SS_CITRA = 26
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_SS_REVATI = 25
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_SURYASIDDHANTA = 21
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_SURYASIDDHANTA_MSUN = 22
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_TRUE_CITRA = 27
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_TRUE_MULA = 35
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_TRUE_PUSHYA = 29
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_TRUE_REVATI = 28
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_TRUE_SHEORAN = 39
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_USER = 255
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_USHASHASHI = 4
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_VALENS_MOON = 42
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SIDM_YUKTESHWAR = 7
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SPLIT_DEG_KEEP_DEG = 32
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SPLIT_DEG_KEEP_SIGN = 16
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SPLIT_DEG_NAKSHATRA = 1024
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SPLIT_DEG_ROUND_DEG = 4
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SPLIT_DEG_ROUND_MIN = 2
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SPLIT_DEG_ROUND_SEC = 1
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SPLIT_DEG_ZODIACAL = 8
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_SUN = 0
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_TRUE_NODE = 11
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_TRUE_TO_APP = 0
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_URANUS = 7
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_VARUNA = 30000
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_VENUS = 3
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_VERTEX = 3
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_VESTA = 20
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_VULCAN = 55
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_VULKANUS = 46
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_WALDEMATH = 58
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_WHITE_MOON = 56
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE_ZEUS = 42
+FIELD public const System.String SwissEphNet.SwissEph.ODEGREE_STRING = "°"
+FIELD public const System.String SwissEphNet.SwissEph.SE_ASTNAMFILE = "seasnam.txt"
+FIELD public const System.String SwissEphNet.SwissEph.SE_EPHE_PATH = "[ephe]"
+FIELD public const System.String SwissEphNet.SwissEph.SE_FICTFILE = "seorbel.txt"
+FIELD public const System.String SwissEphNet.SwissEph.SE_FNAME_DE200 = "de200.eph"
+FIELD public const System.String SwissEphNet.SwissEph.SE_FNAME_DE403 = "de403.eph"
+FIELD public const System.String SwissEphNet.SwissEph.SE_FNAME_DE404 = "de404.eph"
+FIELD public const System.String SwissEphNet.SwissEph.SE_FNAME_DE405 = "de405.eph"
+FIELD public const System.String SwissEphNet.SwissEph.SE_FNAME_DE406 = "de406.eph"
+FIELD public const System.String SwissEphNet.SwissEph.SE_FNAME_DE431 = "de431.eph"
+FIELD public const System.String SwissEphNet.SwissEph.SE_FNAME_DFT = "de431.eph"
+FIELD public const System.String SwissEphNet.SwissEph.SE_FNAME_DFT2 = "de406.eph"
+FIELD public const System.String SwissEphNet.SwissEph.SE_STARFILE = "sefstars.txt"
+FIELD public const System.String SwissEphNet.SwissEph.SE_STARFILE_OLD = "fixstars.cat"
+FIELD public static System.Char SwissEphNet.SwissEph.DIR_GLUE
+FIELD public static System.Char[] SwissEphNet.SwissEph.PATH_SEPARATOR
+FIELD public static System.Text.Encoding SwissEphNet.SwissEph.DefaultEncoding
+FIELD public static readonly System.Boolean SwissEphNet.SwissEph.SIMULATE_VICTORVB
+CTOR  public SwissEphNet.SwissEph.SwissEph()
+PROP  public SwissEphNet.SwissEph.IEphemerisFileProvider SwissEphNet.SwissEph.FileProvider { get; set; }
+PROP  public static SwissEphNet.SwissEph.IEphemerisFileProvider SwissEphNet.SwissEph.DefaultFileProvider { get; set; }
+EVENT public System.EventHandler<SwissEphNet.TraceEventArgs> SwissEphNet.SwissEph.OnTrace
+METHOD protected internal SwissEphNet.CFile SwissEphNet.SwissEph.OpenBinary(System.String path)
+METHOD protected virtual System.Void SwissEphNet.SwissEph.Dispose(System.Boolean disposing)
+METHOD public System.Double SwissEphNet.SwissEph.swe_deg_midp(System.Double x1, System.Double x0)
+METHOD public System.Double SwissEphNet.SwissEph.swe_degnorm(System.Double x)
+METHOD public System.Double SwissEphNet.SwissEph.swe_deltat(System.Double tjd)
+METHOD public System.Double SwissEphNet.SwissEph.swe_deltat_ex(System.Double tjd, System.Int32 iflag, ref System.String serr)
+METHOD public System.Double SwissEphNet.SwissEph.swe_difdeg2n(System.Double p1, System.Double p2)
+METHOD public System.Double SwissEphNet.SwissEph.swe_difdegn(System.Double p1, System.Double p2)
+METHOD public System.Double SwissEphNet.SwissEph.swe_difrad2n(System.Double p1, System.Double p2)
+METHOD public System.Double SwissEphNet.SwissEph.swe_get_ayanamsa(System.Double tjd_et)
+METHOD public System.Double SwissEphNet.SwissEph.swe_get_ayanamsa_ut(System.Double tjd_ut)
+METHOD public System.Double SwissEphNet.SwissEph.swe_get_tid_acc()
+METHOD public System.Double SwissEphNet.SwissEph.swe_house_pos(System.Double armc, System.Double geolat, System.Double eps, System.Char hsys, System.Double[] xpin, ref System.String serr)
+METHOD public System.Double SwissEphNet.SwissEph.swe_house_pos(System.Double armc, System.Double geolat, System.Double eps, System.Int32 hsys, System.Double[] xpin, ref System.String serr)
+METHOD public System.Double SwissEphNet.SwissEph.swe_julday(System.Int32 year, System.Int32 mon, System.Int32 mday, System.Double hour, System.Int32 gregflag)
+METHOD public System.Double SwissEphNet.SwissEph.swe_mooncross(System.Double x2cross, System.Double jd_et, System.Int32 flag, ref System.String serr)
+METHOD public System.Double SwissEphNet.SwissEph.swe_mooncross_node(System.Double jd_et, System.Int32 flag, ref System.Double xlon, ref System.Double xlat, ref System.String serr)
+METHOD public System.Double SwissEphNet.SwissEph.swe_mooncross_node_ut(System.Double jd_ut, System.Int32 flag, ref System.Double xlon, ref System.Double xlat, ref System.String serr)
+METHOD public System.Double SwissEphNet.SwissEph.swe_mooncross_ut(System.Double x2cross, System.Double jd_ut, System.Int32 flag, ref System.String serr)
+METHOD public System.Double SwissEphNet.SwissEph.swe_rad_midp(System.Double x1, System.Double x0)
+METHOD public System.Double SwissEphNet.SwissEph.swe_radnorm(System.Double x)
+METHOD public System.Double SwissEphNet.SwissEph.swe_refrac(System.Double inalt, System.Double atpress, System.Double attemp, System.Int32 calc_flag)
+METHOD public System.Double SwissEphNet.SwissEph.swe_refrac_extended(System.Double inalt, System.Double geoalt, System.Double atpress, System.Double attemp, System.Double lapse_rate, System.Int32 calc_flag, System.Double[] dret)
+METHOD public System.Double SwissEphNet.SwissEph.swe_sidtime(System.Double tjd_ut)
+METHOD public System.Double SwissEphNet.SwissEph.swe_sidtime0(System.Double tjd_ut, System.Double ecl, System.Double nut)
+METHOD public System.Double SwissEphNet.SwissEph.swe_solcross(System.Double x2cross, System.Double jd_et, System.Int32 flag, ref System.String serr)
+METHOD public System.Double SwissEphNet.SwissEph.swe_solcross_ut(System.Double x2cross, System.Double jd_ut, System.Int32 flag, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_calc(System.Double tjd, System.Int32 ipl, System.Int32 iflag, System.Double[] xx, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_calc_pctr(System.Double tjd, System.Int32 ipl, System.Int32 iplctr, System.Int32 iflag, System.Double[] xxret, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_calc_ut(System.Double tjd_ut, System.Int32 ipl, System.Int32 iflag, System.Double[] xx, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_csnorm(System.Int32 p)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_csroundsec(System.Int32 x)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_date_conversion(System.Int32 y, System.Int32 m, System.Int32 d, System.Double utime, System.Char c, ref System.Double tjd)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_day_of_week(System.Double jd)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_difcs2n(System.Int32 p1, System.Int32 p2)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_difcsn(System.Int32 p1, System.Int32 p2)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_fixstar(ref System.String star, System.Double tjd, System.Int32 iflag, System.Double[] xx, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_fixstar2(ref System.String star, System.Double tjd, System.Int32 iflag, System.Double[] xx, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_fixstar2_mag(ref System.String star, ref System.Double mag, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_fixstar2_ut(ref System.String star, System.Double tjd_ut, System.Int32 iflag, System.Double[] xx, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_fixstar_mag(ref System.String star, ref System.Double mag, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_fixstar_ut(ref System.String star, System.Double tjd_ut, System.Int32 iflag, System.Double[] xx, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_gauquelin_sector(System.Double t_ut, System.Int32 ipl, System.String starname, System.Int32 iflag, System.Int32 imeth, System.Double[] geopos, System.Double atpress, System.Double attemp, ref System.Double dgsect, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_get_ayanamsa_ex(System.Double tjd_et, System.Int32 iflag, out System.Double daya, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_get_ayanamsa_ex_ut(System.Double tjd_ut, System.Int32 iflag, out System.Double daya, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_get_orbital_elements(System.Double tjd_et, System.Int32 ipl, System.Int32 iflag, System.Double[] dret, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_heliacal_angle(System.Double tjdut, System.Double[] dgeo, System.Double[] datm, System.Double[] dobs, System.Int32 helflag, System.Double mag, System.Double azi_obj, System.Double azi_sun, System.Double azi_moon, System.Double alt_moon, System.Double[] dret, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_heliacal_pheno_ut(System.Double tjd_ut, System.Double[] geopos, System.Double[] datm, System.Double[] dobs, System.String ObjectName, System.Int32 TypeEvent, System.Int32 helflag, System.Double[] darr, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_heliacal_ut(System.Double tjdstart_ut, System.Double[] geopos, System.Double[] datm, System.Double[] dobs, System.String ObjectName, System.Int32 TypeEvent, System.Int32 iflag, System.Double[] dret, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_helio_cross(System.Int32 ipl, System.Double x2cross, System.Double jd_et, System.Int32 iflag, System.Int32 dir, ref System.Double jd_cross, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_helio_cross_ut(System.Int32 ipl, System.Double x2cross, System.Double jd_ut, System.Int32 iflag, System.Int32 dir, ref System.Double jd_cross, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_houses(System.Double tjd_ut, System.Double geolat, System.Double geolon, System.Char hsys, System.Double[] cusps, System.Double[] ascmc)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_houses(System.Double tjd_ut, System.Double geolat, System.Double geolon, System.Int32 hsys, System.Double[] cusps, System.Double[] ascmc)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_houses_armc(System.Double armc, System.Double geolat, System.Double eps, System.Char hsys, System.Double[] cusps, System.Double[] ascmc)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_houses_armc(System.Double armc, System.Double geolat, System.Double eps, System.Int32 hsys, System.Double[] cusps, System.Double[] ascmc)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_houses_armc_ex2(System.Double armc, System.Double geolat, System.Double eps, System.Char hsys, SwissEphNet.CPointer<System.Double> cusps, SwissEphNet.CPointer<System.Double> ascmc, SwissEphNet.CPointer<System.Double> cuspSpeed, SwissEphNet.CPointer<System.Double> ascmcSpeed, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_houses_armc_ex2(System.Double armc, System.Double geolat, System.Double eps, System.Int32 hsys, SwissEphNet.CPointer<System.Double> cusps, SwissEphNet.CPointer<System.Double> ascmc, SwissEphNet.CPointer<System.Double> cuspSpeed, SwissEphNet.CPointer<System.Double> ascmcSpeed, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_houses_ex(System.Double tjd_ut, System.Int32 iflag, System.Double geolat, System.Double geolon, System.Char hsys, SwissEphNet.CPointer<System.Double> hcusps, SwissEphNet.CPointer<System.Double> ascmc)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_houses_ex(System.Double tjd_ut, System.Int32 iflag, System.Double geolat, System.Double geolon, System.Int32 hsys, SwissEphNet.CPointer<System.Double> hcusps, SwissEphNet.CPointer<System.Double> ascmc)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_houses_ex2(System.Double tjd_ut, System.Int32 iflag, System.Double geolat, System.Double geolon, System.Char hsys, SwissEphNet.CPointer<System.Double> hcusps, SwissEphNet.CPointer<System.Double> ascmc, SwissEphNet.CPointer<System.Double> cuspSpeed, SwissEphNet.CPointer<System.Double> ascmcSpeed, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_houses_ex2(System.Double tjd_ut, System.Int32 iflag, System.Double geolat, System.Double geolon, System.Int32 hsys, SwissEphNet.CPointer<System.Double> hcusps, SwissEphNet.CPointer<System.Double> ascmc, SwissEphNet.CPointer<System.Double> cuspSpeed, SwissEphNet.CPointer<System.Double> ascmcSpeed, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_lat_to_lmt(System.Double tjd_lat, System.Double geolon, out System.Double tjd_lmt, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_lmt_to_lat(System.Double tjd_lmt, System.Double geolon, out System.Double tjd_lat, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_lun_eclipse_how(System.Double tjd_ut, System.Int32 ifl, System.Double[] geopos, System.Double[] attr, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_lun_eclipse_when(System.Double tjd_start, System.Int32 ifl, System.Int32 ifltype, System.Double[] tret, System.Boolean backward, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_lun_eclipse_when_loc(System.Double tjd_start, System.Int32 ifl, System.Double[] geopos, System.Double[] tret, System.Double[] attr, System.Boolean backward, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_lun_occult_when_glob(System.Double tjd_start, System.Int32 ipl, System.String starname, System.Int32 ifl, System.Int32 ifltype, System.Double[] tret, System.Boolean backward, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_lun_occult_when_glob(System.Double tjd_start, System.Int32 ipl, System.String starname, System.Int32 ifl, System.Int32 ifltype, System.Double[] tret, System.Int32 backward, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_lun_occult_when_loc(System.Double tjd_start, System.Int32 ipl, System.String starname, System.Int32 ifl, System.Double[] geopos, System.Double[] tret, System.Double[] attr, System.Boolean backward, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_lun_occult_when_loc(System.Double tjd_start, System.Int32 ipl, System.String starname, System.Int32 ifl, System.Double[] geopos, System.Double[] tret, System.Double[] attr, System.Int32 backward, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_lun_occult_where(System.Double tjd, System.Int32 ipl, System.String starname, System.Int32 ifl, System.Double[] geopos, System.Double[] attr, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_nod_aps(System.Double tjd_et, System.Int32 ipl, System.Int32 iflag, System.Int32 method, System.Double[] xnasc, System.Double[] xndsc, System.Double[] xperi, System.Double[] xaphe, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_nod_aps_ut(System.Double tjd_ut, System.Int32 ipl, System.Int32 iflag, System.Int32 method, System.Double[] xnasc, System.Double[] xndsc, System.Double[] xperi, System.Double[] xaphe, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_orbit_max_min_true_distance(System.Double tjd_et, System.Int32 ipl, System.Int32 iflag, ref System.Double dmax, ref System.Double dmin, ref System.Double dtrue, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_pheno(System.Double tjd, System.Int32 ipl, System.Int32 iflag, System.Double[] attr, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_pheno_ut(System.Double tjd_ut, System.Int32 ipl, System.Int32 iflag, System.Double[] attr, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_rise_trans(System.Double tjd_ut, System.Int32 ipl, System.String starname, System.Int32 epheflag, System.Int32 rsmi, System.Double[] geopos, System.Double atpress, System.Double attemp, ref System.Double tret, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_rise_trans_true_hor(System.Double tjd_ut, System.Int32 ipl, System.String starname, System.Int32 epheflag, System.Int32 rsmi, System.Double[] geopos, System.Double atpress, System.Double attemp, System.Double horhgt, ref System.Double tret, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_sol_eclipse_how(System.Double tjd, System.Int32 ifl, System.Double[] geopos, System.Double[] attr, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_sol_eclipse_when_glob(System.Double tjd_start, System.Int32 ifl, System.Int32 ifltype, System.Double[] tret, System.Boolean backward, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_sol_eclipse_when_loc(System.Double tjd_start, System.Int32 ifl, System.Double[] geopos, System.Double[] tret, System.Double[] attr, System.Boolean backward, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_sol_eclipse_where(System.Double tjd, System.Int32 ifl, System.Double[] geopos, System.Double[] attr, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_time_equ(System.Double tjd, out System.Double e, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_topo_arcus_visionis(System.Double tjdut, System.Double[] dgeo, System.Double[] datm, System.Double[] dobs, System.Int32 helflag, System.Double mag, System.Double azi_obj, System.Double alt_obj, System.Double azi_sun, System.Double azi_moon, System.Double alt_moon, ref System.Double dret, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_utc_to_jd(System.Int32 iyear, System.Int32 imonth, System.Int32 iday, System.Int32 ihour, System.Int32 imin, System.Double dsec, System.Int32 gregflag, System.Double[] dret, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_vis_limit_mag(System.Double tjdut, System.Double[] geopos, System.Double[] datm, System.Double[] dobs, System.String ObjectName, System.Int32 helflag, System.Double[] dret, ref System.String serr)
+METHOD public System.String SwissEphNet.SwissEph.DMS(System.Double value, System.Int32 iFlag, System.Boolean outputExtraPrecision = false)
+METHOD public System.String SwissEphNet.SwissEph.HMS(System.Double value, System.Int32 iFlag, System.Boolean outputExtraPrecision = false)
+METHOD public System.String SwissEphNet.SwissEph.swe_cs2degstr(System.Int32 t)
+METHOD public System.String SwissEphNet.SwissEph.swe_cs2lonlatstr(System.Int32 t, System.Char pchar, System.Char mchar)
+METHOD public System.String SwissEphNet.SwissEph.swe_cs2timestr(System.Int32 t, System.Char sep, System.Boolean suppressZero)
+METHOD public System.String SwissEphNet.SwissEph.swe_dotnet_version()
+METHOD public System.String SwissEphNet.SwissEph.swe_get_ayanamsa_name(System.Int32 isidmode)
+METHOD public System.String SwissEphNet.SwissEph.swe_get_current_file_data(System.Int32 ifno, ref System.Double tfstart, ref System.Double tfend, ref System.Int32 denum)
+METHOD public System.String SwissEphNet.SwissEph.swe_get_library_path()
+METHOD public System.String SwissEphNet.SwissEph.swe_get_planet_name(System.Int32 ipl)
+METHOD public System.String SwissEphNet.SwissEph.swe_house_name(System.Char hsys)
+METHOD public System.String SwissEphNet.SwissEph.swe_house_name(System.Int32 hsys)
+METHOD public System.String SwissEphNet.SwissEph.swe_version()
+METHOD public System.Void SwissEphNet.SwissEph.Dispose()
+METHOD public System.Void SwissEphNet.SwissEph.Trace(System.String format, params System.Object[] args)
+METHOD public System.Void SwissEphNet.SwissEph.swe_azalt(System.Double tjd_ut, System.Int32 calc_flag, System.Double[] geopos, System.Double atpress, System.Double attemp, System.Double[] xin, System.Double[] xaz)
+METHOD public System.Void SwissEphNet.SwissEph.swe_azalt_rev(System.Double tjd_ut, System.Int32 calc_flag, System.Double[] geopos, System.Double[] xin, System.Double[] xout)
+METHOD public System.Void SwissEphNet.SwissEph.swe_close()
+METHOD public System.Void SwissEphNet.SwissEph.swe_cotrans(SwissEphNet.CPointer<System.Double> xpo, SwissEphNet.CPointer<System.Double> xpn, System.Double eps)
+METHOD public System.Void SwissEphNet.SwissEph.swe_cotrans_sp(SwissEphNet.CPointer<System.Double> xpo, SwissEphNet.CPointer<System.Double> xpn, System.Double eps)
+METHOD public System.Void SwissEphNet.SwissEph.swe_get_astro_models(System.String samod, out System.String sdet, System.Int32 iflag)
+METHOD public System.Void SwissEphNet.SwissEph.swe_jdet_to_utc(System.Double tjd_et, System.Int32 gregflag, ref System.Int32 iyear, ref System.Int32 imonth, ref System.Int32 iday, ref System.Int32 ihour, ref System.Int32 imin, ref System.Double dsec)
+METHOD public System.Void SwissEphNet.SwissEph.swe_jdut1_to_utc(System.Double tjd_ut, System.Int32 gregflag, ref System.Int32 iyear, ref System.Int32 imonth, ref System.Int32 iday, ref System.Int32 ihour, ref System.Int32 imin, ref System.Double dsec)
+METHOD public System.Void SwissEphNet.SwissEph.swe_revjul(System.Double jd, System.Int32 gregflag, ref System.Int32 year, ref System.Int32 mon, ref System.Int32 mday, ref System.Double hour)
+METHOD public System.Void SwissEphNet.SwissEph.swe_set_astro_models(System.String samod, System.Int32 iflag)
+METHOD public System.Void SwissEphNet.SwissEph.swe_set_delta_t_userdef(System.Double dt)
+METHOD public System.Void SwissEphNet.SwissEph.swe_set_ephe_path(System.String path)
+METHOD public System.Void SwissEphNet.SwissEph.swe_set_interpolate_nut(System.Boolean do_interpolate)
+METHOD public System.Void SwissEphNet.SwissEph.swe_set_jpl_file(System.String fname)
+METHOD public System.Void SwissEphNet.SwissEph.swe_set_lapse_rate(System.Double lapse_rate)
+METHOD public System.Void SwissEphNet.SwissEph.swe_set_sid_mode(System.Int32 sid_mode, System.Double t0, System.Double ayan_t0)
+METHOD public System.Void SwissEphNet.SwissEph.swe_set_tid_acc(System.Double tidacc)
+METHOD public System.Void SwissEphNet.SwissEph.swe_set_topo(System.Double geolon, System.Double geolat, System.Double height)
+METHOD public System.Void SwissEphNet.SwissEph.swe_split_deg(System.Double ddeg, System.Int32 roundflag, out System.Int32 ideg, out System.Int32 imin, out System.Int32 isec, out System.Double dsecfr, out System.Int32 isgn)
+METHOD public System.Void SwissEphNet.SwissEph.swe_utc_time_zone(System.Int32 iyear, System.Int32 imonth, System.Int32 iday, System.Int32 ihour, System.Int32 imin, System.Double dsec, System.Double d_timezone, ref System.Int32 iyear_out, ref System.Int32 imonth_out, ref System.Int32 iday_out, ref System.Int32 ihour_out, ref System.Int32 imin_out, ref System.Double dsec_out)
+METHOD public static System.Double SwissEphNet.SwissEph.GetHourValue(System.Int32 hour, System.Int32 minute, System.Int32 second)
+METHOD public static System.Int32 SwissEphNet.SwissEph.swe_d2l(System.Double x)
+METHOD public static System.String SwissEphNet.SwissEph.FormatToDegreeMinuteSecond(System.Double value, System.String format = null)
+TYPE  public interface SwissEphNet.SwissEph.IEphemerisFileProvider
+METHOD public abstract System.IO.Stream SwissEphNet.SwissEph.IEphemerisFileProvider.Open(System.String path)
+TYPE  public class SwissEphNet.TraceEventArgs : System.EventArgs
+CTOR  public SwissEphNet.TraceEventArgs.TraceEventArgs(System.String message)
+PROP  public System.String SwissEphNet.TraceEventArgs.Message { get; }

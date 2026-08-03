@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    net8.0;net10.0, not just net10.0: this project's own asset is what runs
+    the comparison, and building/running it against both TFMs is how the gate
+    exercises both of SwissEphNet's shipped modern-.NET assets instead of only
+    net10.0. See the "Why net8.0 and net10.0" note in
+    Tools/BaselineGen/README.md and scripts/verify-baseline.ps1, which runs
+    and reports each TFM separately.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>BaselineVerify</RootNamespace>
+    <AssemblyName>BaselineVerify</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!--
+    Verification means "does the current in-repo code match the frozen reference",
+    so this must always build BaselineMatrix in local mode. GlobalPropertiesToRemove
+    strips UseReferencePackage from what gets passed down to BaselineMatrix, so even
+    a stray -p:UseReferencePackage=true on this project's own command line cannot
+    leak into the referenced build. That alone is not enough to trust on its own,
+    since a global property could in principle still reach BaselineMatrix through
+    some other build path, which is why the RejectReferenceMode target below is the
+    real guard: it fails this project's own build outright if UseReferencePackage is
+    true, so there is no way to produce a "verify" run that quietly compares the
+    reference package against a baseline generated from that same package.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\BaselineMatrix\BaselineMatrix.csproj" GlobalPropertiesToRemove="UseReferencePackage" />
+  </ItemGroup>
+
+  <Target Name="RejectReferenceMode" BeforeTargets="Restore;Build">
+    <Error
+      Condition="'$(UseReferencePackage)' == 'true'"
+      Text="BaselineVerify must never build with UseReferencePackage=true. It exists to compare current in-repo code against the frozen reference; if it built against the reference package, it would compare that package against a baseline generated from itself and pass no matter what changed. Remove -p:UseReferencePackage=true from the command line." />
+  </Target>
+
+  <!--
+    Lives at Tests/baseline/waivers.tsv, not alongside this project, so a change to it is swept
+    up by scripts/verify-baseline-log.ps1's Tests/baseline/*.tsv filter: the same append-only
+    "## Local regenerations" log guard that already covers every golden baseline-*.tsv file (see
+    that file's own header comment for why). Linked into the output directory under its bare
+    name so Program.cs's runtime lookup (Path.Combine(AppContext.BaseDirectory, "waivers.tsv"))
+    does not need to know the source lives one level up and one directory over.
+  -->
+  <ItemGroup>
+    <None Include="..\..\Tests\baseline\waivers.tsv" Link="waivers.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="BaselineVerify.Tests" />
+  </ItemGroup>
+
+</Project>

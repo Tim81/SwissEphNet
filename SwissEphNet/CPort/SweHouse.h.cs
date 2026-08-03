@@ -20,7 +20,7 @@ house and (simple) aspect calculation
 
 *******************************************************/
 
-/* Copyright (C) 1997 - 2008 Astrodienst AG, Switzerland.  All rights reserved.
+/* Copyright (C) 1997 - 2021 Astrodienst AG, Switzerland.  All rights reserved.
 
   License conditions
   ------------------
@@ -36,17 +36,17 @@ house and (simple) aspect calculation
   system. The software developer, who uses any part of Swiss Ephemeris
   in his or her software, must choose between one of the two license models,
   which are
-  a) GNU public license version 2 or later
+  a) GNU Affero General Public License (AGPL)
   b) Swiss Ephemeris Professional License
 
   The choice must be made before the software developer distributes software
   containing parts of Swiss Ephemeris to others, and before any public
   service using the developed software is activated.
 
-  If the developer choses the GNU GPL software license, he or she must fulfill
+  If the developer choses the AGPL software license, he or she must fulfill
   the conditions of that license, which includes the obligation to place his
-  or her whole software project under the GNU GPL or a compatible license.
-  See http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+  or her whole software project under the AGPL or a compatible license.
+  See https://www.gnu.org/licenses/agpl-3.0.html
 
   If the developer choses the Swiss Ephemeris Professional license,
   he must follow the instructions as found in http://www.astro.com/swisseph/ 
@@ -86,17 +86,30 @@ namespace SwissEphNet.CPort
         {
             public houses() {
                 cusp = new double[37];
+                cusp_speed = new double[37];
                 serr = string.Empty;
             }
             public double[] cusp;
+            public double[] cusp_speed;
             public double ac;
+            public double ac_speed;	// speed of ac
             public double mc;
+            public double mc_speed;	// speed of mc
+            public double armc_speed;	// speed of armc
             public double vertex;
+            public double vertex_speed;	// speed of vertex
             public double equasc;
+            public double equasc_speed;	// speed
             public double coasc1;
+            public double coasc1_speed;	// speed
             public double coasc2;
+            public double coasc2_speed;	// speed
             public double polasc;
+            public double polasc_speed;	// speed
             public double sundec;   // declination of Sun for Sunshine houses
+            public bool do_speed;
+            public bool do_hspeed;
+            public bool do_interpol;
             public string serr;
         }
 

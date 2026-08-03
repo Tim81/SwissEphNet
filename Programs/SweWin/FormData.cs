@@ -13,15 +13,13 @@ namespace SweWin
 {
     public partial class FormData : Form
     {
-        const int BUFLEN  =8000;
         const string MY_ODEGREE_STRING ="°";
-        const string progname = "Swisseph Test Program";
 
         static string[] etut = new string[] { "UT", "ET" };
         static string[] lat_n_s = new string[] { "N", "S" };
         static string[] lon_e_w = new string[] { "E", "W" };
         const int NEPHE = 3;
-        static string[] ephe = new string[] { "Swiss Ephemeris", "JPL Ephemeris DE406", "Moshier Ephemeris" };
+        static string[] ephe = new string[] { "Swiss Ephemeris", "JPL Ephemeris DE431", "Moshier Ephemeris" };
         const int NPLANSEL = 3;
         static string[] plansel = new string[] { "main planets", "with asteroids", "with hyp. bodies" };
         const int NCENTERS = 6;
@@ -37,39 +35,13 @@ namespace SweWin
         const int BIT_ZODIAC = 4;
         const string PLSEL_D = "0123456789mtABC";
         const string PLSEL_P = "0123456789mtABCDEFGHI";
-        const string PLSEL_H = "JKLMNOPQRSTUVWX";
         const string PLSEL_A = "0123456789mtABCDEFGHIJKLMNOPQRSTUVWX";
 
         //extern char FAR *pgmptr;
         static string[] zod_nam = new string[]{"ar", "ta", "ge", "cn", "le", "vi", "li", "sc", "sa", "cp", "aq", "pi"};
 
-        class cpd
+        class Cpd
         {
-            public cpd Clone() {
-                return new cpd() {
-                    etut = this.etut,
-                    lon_e_w = this.lon_e_w,
-                    lat_n_s = this.lat_n_s,
-                    ephe = this.ephe,
-                    plansel = this.plansel,
-                    ctr = this.ctr,
-                    hsysname = this.hsysname,
-                    sast = this.sast,
-                    mday = this.mday,
-                    mon = this.mon,
-                    hour = this.hour,
-                    min = this.min,
-                    sec = this.sec,
-                    year = this.year,
-                    lon_deg = this.lon_deg,
-                    lon_min = this.lon_min,
-                    lon_sec = this.lon_sec,
-                    lat_deg = this.lat_deg,
-                    lat_min = this.lat_min,
-                    lat_sec = this.lat_sec,
-                    alt = this.alt
-                };
-            }
             public string etut = null;
             public string lon_e_w = null;
             public string lat_n_s = null;
@@ -84,7 +56,7 @@ namespace SweWin
             public uint lat_deg = 0, lat_min = 0, lat_sec = 0;
             public int alt = 0;
         }
-        static cpd pd = new cpd(), old_pd;
+        static Cpd pd = new Cpd();
 
         SwissEph sweph;
 
@@ -92,37 +64,12 @@ namespace SweWin
             InitializeComponent();
             this.Disposed += FormData_Disposed;
             sweph = new SwissEph();
-            sweph.OnLoadFile += sweph_OnLoadFile;
+            // sweph.OnLoadFile used to be wired to sweph_OnLoadFile/SearchFile below,
+            // duplicating the path search the library now performs itself
+            // (SwissEph.OpenBinary): pointing swe_set_ephe_path at the same two folders
+            // SearchFile used to search is sufficient on its own.
+            sweph.swe_set_ephe_path(System.IO.Path.Combine(Application.StartupPath, "Datas") + SwissEph.PATH_SEPARATOR[0] + @"C:\sweph\ephe");
             init_data();
-            string argv0 = Environment.GetCommandLineArgs()[0];
-            if (make_ephemeris_path(SwissEph.SEFLG_SWIEPH | SwissEph.SEFLG_SPEED, ref argv0) == SwissEph.ERR) {
-                MessageBox.Show("error in make_ephemeris_path()", progname);
-                Environment.Exit(1);
-            }
-        }
-
-        Stream SearchFile(String fileName) {
-            fileName = fileName.Trim('/', '\\');
-            var folders = new string[] { 
-                System.IO.Path.Combine(Application.StartupPath, "Datas"),
-                @"C:\sweph\ephe"
-            };
-            foreach (var folder in folders) {
-                var f = Path.Combine(folder, fileName);
-                if (File.Exists(f))
-                    return new System.IO.FileStream(f, System.IO.FileMode.Open, System.IO.FileAccess.Read);
-            }
-            return null;
-        }
-
-        void sweph_OnLoadFile(object sender, LoadFileEventArgs e) {
-            if (e.FileName.StartsWith("[ephe]")) {
-                e.File = SearchFile(e.FileName.Replace("[ephe]", string.Empty));
-            } else {
-                var f = e.FileName;
-                if (System.IO.File.Exists(f))
-                    e.File = new System.IO.FileStream(f, System.IO.FileMode.Open, System.IO.FileAccess.Read);
-            }
         }
 
         void FormData_Disposed(object sender, EventArgs e) {
@@ -161,70 +108,73 @@ namespace SweWin
 
         private void FormData_Load(object sender, EventArgs e) {
             int i, j;
-            old_pd = pd.Clone();
             COMBO_N_S.Items.Clear();
             for (i = j = 0; i < 2; i++) {
-                if (String.Compare(lat_n_s[i], pd.lat_n_s) == 0) j = i;
+                if (String.CompareOrdinal(lat_n_s[i], pd.lat_n_s) == 0) j = i;
                 COMBO_N_S.Items.Add(lat_n_s[i]);
             }
             COMBO_N_S.SelectedIndex = j;
 
             COMBO_E_W.Items.Clear();
             for (i = j = 0; i < 2; i++) {
-                if (String.Compare(lon_e_w[i], pd.lon_e_w) == 0) j = i;
+                if (String.CompareOrdinal(lon_e_w[i], pd.lon_e_w) == 0) j = i;
                 COMBO_E_W.Items.Add(lon_e_w[i]);
             }
             COMBO_E_W.SelectedIndex = j;
 
             COMBO_ET_UT.Items.Clear();
             for (i = j = 0; i < 2; i++) {
-                if (String.Compare(etut[i], pd.etut) == 0) j = i;
+                if (String.CompareOrdinal(etut[i], pd.etut) == 0) j = i;
                 COMBO_ET_UT.Items.Add(etut[i]);
             }
             COMBO_ET_UT.SelectedIndex = j;
 
             COMBO_EPHE.Items.Clear();
             for (i = j = 0; i < NEPHE; i++) {
-                if (String.Compare(ephe[i], pd.ephe) == 0) j = i;
+                if (String.CompareOrdinal(ephe[i], pd.ephe) == 0) j = i;
                 COMBO_EPHE.Items.Add(ephe[i]);
             }
             COMBO_EPHE.SelectedIndex = j;
 
             COMBO_PLANSEL.Items.Clear();
             for (i = j = 0; i < NPLANSEL; i++) {
-                if (String.Compare(plansel[i], pd.plansel) == 0) j = i;
+                if (String.CompareOrdinal(plansel[i], pd.plansel) == 0) j = i;
                 COMBO_PLANSEL.Items.Add(plansel[i]);
             }
             COMBO_PLANSEL.SelectedIndex = j;
 
             COMBO_CENTER.Items.Clear();
             for (i = j = 0; i < NCENTERS; i++) {
-                if (String.Compare(ctr[i], pd.ctr) == 0) j = i;
+                if (String.CompareOrdinal(ctr[i], pd.ctr) == 0) j = i;
                 COMBO_CENTER.Items.Add(ctr[i]);
             }
             COMBO_CENTER.SelectedIndex = j;
 
             COMBO_HSYS.Items.Clear();
             for (i = j = 0; i < NHSYS; i++) {
-                if (String.Compare(hsysname[i], pd.hsysname) == 0) j = i;
+                if (String.CompareOrdinal(hsysname[i], pd.hsysname) == 0) j = i;
                 COMBO_HSYS.Items.Add(hsysname[i]);
             }
             COMBO_HSYS.SelectedIndex = j;
 
             /* set date */
-            EDIT_DAY.Text = pd.mday.ToString();
-            EDIT_MONTH.Text = pd.mon.ToString();
-            EDIT_YEAR.Text = pd.year.ToString();
-            EDIT_HOUR.Text = pd.hour.ToString();
-            EDIT_MINUTE.Text = pd.min.ToString();
-            EDIT_SECOND.Text = pd.sec.ToString();
-            EDIT_LONG.Text = pd.lon_deg.ToString();
-            EDIT_LONGM.Text = pd.lon_min.ToString();
-            EDIT_LONGS.Text = pd.lon_sec.ToString();
-            EDIT_LAT.Text = pd.lat_deg.ToString();
-            EDIT_LATM.Text = pd.lat_min.ToString();
-            EDIT_LATS.Text = pd.lat_sec.ToString();
-            EDIT_ALT.Text = pd.alt.ToString();
+            // These are text boxes displayed to the user, not a C transliteration or a
+            // data interchange format, so locale-aware formatting is the correct choice
+            // here; CultureInfo.CurrentCulture makes that choice explicit instead of
+            // relying on ToString()'s implicit default.
+            EDIT_DAY.Text = pd.mday.ToString(System.Globalization.CultureInfo.CurrentCulture);
+            EDIT_MONTH.Text = pd.mon.ToString(System.Globalization.CultureInfo.CurrentCulture);
+            EDIT_YEAR.Text = pd.year.ToString(System.Globalization.CultureInfo.CurrentCulture);
+            EDIT_HOUR.Text = pd.hour.ToString(System.Globalization.CultureInfo.CurrentCulture);
+            EDIT_MINUTE.Text = pd.min.ToString(System.Globalization.CultureInfo.CurrentCulture);
+            EDIT_SECOND.Text = pd.sec.ToString(System.Globalization.CultureInfo.CurrentCulture);
+            EDIT_LONG.Text = pd.lon_deg.ToString(System.Globalization.CultureInfo.CurrentCulture);
+            EDIT_LONGM.Text = pd.lon_min.ToString(System.Globalization.CultureInfo.CurrentCulture);
+            EDIT_LONGS.Text = pd.lon_sec.ToString(System.Globalization.CultureInfo.CurrentCulture);
+            EDIT_LAT.Text = pd.lat_deg.ToString(System.Globalization.CultureInfo.CurrentCulture);
+            EDIT_LATM.Text = pd.lat_min.ToString(System.Globalization.CultureInfo.CurrentCulture);
+            EDIT_LATS.Text = pd.lat_sec.ToString(System.Globalization.CultureInfo.CurrentCulture);
+            EDIT_ALT.Text = pd.alt.ToString(System.Globalization.CultureInfo.CurrentCulture);
             EDIT_ASTNO.Text = pd.sast;
         }
 
@@ -521,35 +471,35 @@ namespace SweWin
             char hsys = pd.hsysname[0];
             //  *serr = *serr_save = *serr_warn = '\0';
             //ephepath = ".;sweph";
-            if (String.Compare(pd.ephe, ephe[1]) == 0) {
+            if (String.CompareOrdinal(pd.ephe, ephe[1]) == 0) {
                 whicheph = SwissEph.SEFLG_JPLEPH;
-                fname = SwissEph.SE_FNAME_DE406;
-            } else if (String.Compare(pd.ephe, ephe[0]) == 0)
+                fname = SwissEph.SE_FNAME_DFT;
+            } else if (String.CompareOrdinal(pd.ephe, ephe[0]) == 0)
                 whicheph = SwissEph.SEFLG_SWIEPH;
             else
                 whicheph = SwissEph.SEFLG_MOSEPH;
-            if (String.Compare(pd.etut, "UT") == 0)
+            if (String.CompareOrdinal(pd.etut, "UT") == 0)
                 universal_time = true;
-            if (String.Compare(pd.plansel, plansel[0]) == 0) {
+            if (String.CompareOrdinal(pd.plansel, plansel[0]) == 0) {
                 plsel = PLSEL_D;
-            } else if (String.Compare(pd.plansel, plansel[1]) == 0) {
+            } else if (String.CompareOrdinal(pd.plansel, plansel[1]) == 0) {
                 plsel = PLSEL_P;
-            } else if (String.Compare(pd.plansel, plansel[2]) == 0) {
+            } else if (String.CompareOrdinal(pd.plansel, plansel[2]) == 0) {
                 plsel = PLSEL_A;
             }
-            if (String.Compare(pd.ctr, ctr[0]) == 0)
+            if (String.CompareOrdinal(pd.ctr, ctr[0]) == 0)
                 calc_house_pos = true;
-            else if (String.Compare(pd.ctr, ctr[1]) == 0) {
+            else if (String.CompareOrdinal(pd.ctr, ctr[1]) == 0) {
                 iflag |= SwissEph.SEFLG_TOPOCTR;
                 calc_house_pos = true;
-            } else if (String.Compare(pd.ctr, ctr[2]) == 0) {
+            } else if (String.CompareOrdinal(pd.ctr, ctr[2]) == 0) {
                 iflag |= SwissEph.SEFLG_HELCTR;
-            } else if (String.Compare(pd.ctr, ctr[3]) == 0) {
+            } else if (String.CompareOrdinal(pd.ctr, ctr[3]) == 0) {
                 iflag |= SwissEph.SEFLG_BARYCTR;
-            } else if (String.Compare(pd.ctr, ctr[4]) == 0) {
+            } else if (String.CompareOrdinal(pd.ctr, ctr[4]) == 0) {
                 iflag |= SwissEph.SEFLG_SIDEREAL;
                 sweph.swe_set_sid_mode(SwissEph.SE_SIDM_FAGAN_BRADLEY, 0, 0);
-            } else if (String.Compare(pd.ctr, ctr[5]) == 0) {
+            } else if (String.CompareOrdinal(pd.ctr, ctr[5]) == 0) {
                 iflag |= SwissEph.SEFLG_SIDEREAL;
                 sweph.swe_set_sid_mode(SwissEph.SE_SIDM_LAHIRI, 0, 0);
                 //#if 0
@@ -558,10 +508,10 @@ namespace SweWin
                 //#endif
             }
             lon = pd.lon_deg + pd.lon_min / 60.0 + pd.lon_sec / 3600.0;
-            if (pd.lon_e_w.StartsWith("W"))
+            if (pd.lon_e_w.StartsWith("W", StringComparison.Ordinal))
                 lon = -lon;
             lat = pd.lat_deg + pd.lat_min / 60.0 + pd.lat_sec / 3600.0;
-            if (pd.lat_n_s.StartsWith("S"))
+            if (pd.lat_n_s.StartsWith("S", StringComparison.Ordinal))
                 lat = -lat;
             do_print(buf, C.sprintf("Planet Positions from %s \n\n", pd.ephe));
             if ((whicheph & SwissEph.SEFLG_JPLEPH) != 0)
@@ -633,11 +583,11 @@ namespace SweWin
             armc = sidt * 15;
             /* additional asteroids */
             //splan = plsel;
-            if (String.Compare(plsel, PLSEL_P) == 0) {
+            if (String.CompareOrdinal(plsel, PLSEL_P) == 0) {
                 var cpos = pd.sast.Split(",;. \t".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
                 j = cpos.Length;
                 for (i = 0, nast = 0; i < j; i++) {
-                    if ((astno[nast] = int.Parse(cpos[i])) > 0) {
+                    if ((astno[nast] = int.Parse(cpos[i], System.Globalization.CultureInfo.InvariantCulture)) > 0) {
                         nast++;
                         plsel += "+";
                     }
@@ -676,13 +626,22 @@ namespace SweWin
                 }
                 if (iflgret >= 0) {
                     if (calc_house_pos) {
-                        hpos = sweph.swe_house_pos(armc, lat, eps_true, hsys, x, ref serr);
-                        if (hpos == 0)
+                        /* Own buffer. swe_house_pos() clears serr when it succeeds, which
+                         * would discard whatever swe_calc() had left there -- in the default
+                         * geocentric configuration that is the "using Moshier eph." notice,
+                         * the one thing the serr_warn print at the end of this report exists
+                         * to show. Only adopt the buffer on failure, where it holds the
+                         * house-position error the branch below prints. */
+                        string serr_hpos = String.Empty;
+                        hpos = sweph.swe_house_pos(armc, lat, eps_true, hsys, x, ref serr_hpos);
+                        if (hpos == 0) {
                             iflgret = SwissEph.ERR;
+                            serr = serr_hpos;
+                        }
                     }
                 }
                 if (iflgret < 0) {
-                    if (!String.IsNullOrEmpty(serr) && String.Compare(serr, serr_save) != 0) {
+                    if (!String.IsNullOrEmpty(serr) && String.CompareOrdinal(serr, serr_save) != 0) {
                         serr_save = serr;
                         do_print(buf, "error: ");
                         do_print(buf, serr);
@@ -1014,18 +973,12 @@ namespace SweWin
             return (s);
         }
 
-        static void do_print(ref string target, string info) {
-            if (String.IsNullOrWhiteSpace(target))
-                target = " ";
-            target += info.Replace("\n", "\r\n");
-        }
-
         static void do_print(StringBuilder target, string info, params object[] args) {
             if (target.Length == 0)
                 target.Append(" ");
             if (args != null)
                 info = C.sprintf(info, args);
-            target.Append(info.Replace("\n", "\r\n"));
+            target.Append(info.Replace("\n", "\r\n", StringComparison.Ordinal));
         }
 
         static int letter_to_ipl(char letter) {
@@ -1059,85 +1012,7 @@ namespace SweWin
                 return SwissEph.ERR;
         }
 
-        /* make_ephemeris_path().
-         * ephemeris path includes
-         *   current working directory
-         *   + program directory
-         *   + default path from swephexp.h on current drive
-         *   +                              on program drive
-         *   +                              on drive C:
-         */
-        int make_ephemeris_path(long iflag, ref string argv0) {
-            //char path[AS_MAXCH], s[AS_MAXCH];
-            string path, s;
-            //string sp;
-            int spi;
-            var dirglue = SwissEph.DIR_GLUE;
-            int pathlen;
-            /* moshier needs no ephemeris path */
-            if ((iflag & SwissEph.SEFLG_MOSEPH) != 0)
-                return SwissEph.OK;
-            /* current working directory */
-            path = C.sprintf(".%c", SwissEph.PATH_SEPARATOR);
-            /* program directory */
-            spi = argv0.LastIndexOf(dirglue);
-            if (spi >= 0) {
-                pathlen = spi;
-                path = argv0.Substring(0, pathlen) + SwissEph.PATH_SEPARATOR;
-            }
-
-            //#if MSDOS
-            //{
-            string[] cpos;
-            //char s[2 * AS_MAXCH], *s1 = s + AS_MAXCH;
-            string s1;
-            string[] sp = new string[3];
-            int i, j, np;
-            s1 = ".;sweph";
-            cpos = s1.Split(new char[] { SwissEph.PATH_SEPARATOR }, StringSplitOptions.RemoveEmptyEntries);
-            np = cpos.Length;
-            /* 
-             * default path from swephexp.h
-             * - current drive
-             * - program drive
-             * - drive C
-             */
-            s = null;
-            /* current working drive */
-            sp[0] = Environment.CurrentDirectory;
-            if (sp[0] == null) {
-                /*do_printf("error in getcwd()\n");*/
-                return SwissEph.ERR;
-            }
-            if (sp[0][0] == 'C')
-                sp[0] = null;
-            /* program drive */
-            if (argv0[0] != 'C' && (sp[0] == null || sp[0][0] != argv0[0]))
-                sp[1] = argv0;
-            else
-                sp[1] = null;
-            /* drive C */
-            sp[2] = "C";
-            for (i = 0; i < np; i++) {
-                s = cpos[i];
-                if (!String.IsNullOrWhiteSpace(s) && s[0] == '.')	/* current directory */
-                    continue;
-                if (s != null && s.Length > 1 && s[1] == ':')  /* drive already there */
-                    continue;
-                for (j = 0; j < 3; j++) {
-                    if (sp[j] != null)
-                        path += C.sprintf("%c:%s%c", sp[j][0], s, ';');
-                }
-            }
-            //}
-            //#else
-            //    if (strlen(path) + pathlen < AS_MAXCH-1)
-            //      strcat(path, SE_EPHE_PATH);
-            //#endif
-            return SwissEph.OK;
-        }
-
-///**************************************************************
+//**************************************************************
 //cut the string s at any char in cutlist; put pointers to partial strings
 //into cpos[0..n-1], return number of partial strings;
 //if less than nmax fields are found, the first empty pointer is

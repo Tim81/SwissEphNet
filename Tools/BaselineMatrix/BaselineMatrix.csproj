@@ -1,0 +1,87 @@
+<Project>
+
+  <!--
+    UseReferencePackage must be resolved, and BaseOutputPath/BaseIntermediateOutputPath
+    must be set, before Sdk.props runs, which is why this project uses explicit Sdk
+    imports instead of the single-line <Project Sdk="..."> shorthand. Without that,
+    switching UseReferencePackage between builds without an intervening clean can leave
+    a stale obj/project.assets.json from the other mode in place, and the build either
+    fails with CS0246 or, worse, silently reuses the wrong reference.
+  -->
+  <PropertyGroup>
+    <UseReferencePackage Condition="'$(UseReferencePackage)' == ''">false</UseReferencePackage>
+    <BaseOutputPath>bin\$(UseReferencePackage)\</BaseOutputPath>
+    <BaseIntermediateOutputPath>obj\$(UseReferencePackage)\</BaseIntermediateOutputPath>
+    <!--
+      Areas.cs's NoEphemerisFilesProvider implements SwissEph.IEphemerisFileProvider, which
+      does not exist in the frozen SwissEphNet 2.8.0.2 package reference mode resolves below
+      (that interface was introduced after 2.8.0.2 shipped). USE_REFERENCE_PACKAGE lets
+      Areas.cs compile the provider out in reference mode instead of failing CS0426.
+    -->
+    <DefineConstants Condition="'$(UseReferencePackage)' == 'true'">$(DefineConstants);USE_REFERENCE_PACKAGE</DefineConstants>
+    <!--
+      The default compile-item exclude only knows about THIS build's own
+      BaseOutputPath/BaseIntermediateOutputPath, not the other mode's sibling
+      folder (bin\true vs bin\false, obj\true vs obj\false). Without this, a
+      "true" build picks up generated AssemblyInfo.cs files left behind under
+      obj\false\ by an earlier "false" build and fails with CS0579 duplicate
+      attributes. Exclude both mode roots outright.
+    -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;obj\**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+
+  <!--
+    net8.0;net10.0, not just net10.0: SwissEphNet ships three assets
+    (netstandard2.0, net8.0, net10.0) and they are not guaranteed to behave
+    identically; see the "Why net8.0 and net10.0" note in
+    Tools/BaselineGen/README.md. A gate that only ever built this project as
+    net10.0 would only ever exercise one of the three shipped assets.
+  -->
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>BaselineMatrix</RootNamespace>
+    <AssemblyName>BaselineMatrix</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!--
+    reference mode: SwissEphNet resolved from the published NuGet package 2.8.0.2
+    local mode (default): SwissEphNet resolved via ProjectReference to the in-repo library
+
+    dotnet build -p:UseReferencePackage=true   -> reference mode
+    dotnet build                               -> local mode
+
+    BaselineGen builds this project in both modes to produce the golden files.
+    BaselineVerify only ever builds it in local mode (the property is never passed),
+    since verification is specifically "does current code match the frozen reference".
+  -->
+  <ItemGroup Condition="'$(UseReferencePackage)' == 'true'">
+    <!--
+      VersionOverride, not a central PackageVersion entry: this is the frozen
+      reference release the baseline was generated against, not a real dependency
+      of the repo, so it should not appear in Directory.Packages.props as if it were.
+    -->
+    <PackageReference Include="SwissEphNet" VersionOverride="2.8.0.2" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseReferencePackage)' != 'true'">
+    <ProjectReference Include="..\..\SwissEphNet\SwissEphNet.csproj" />
+  </ItemGroup>
+
+  <!--
+    Lets Tools/BaselineVerify.Tests read Ayanamsa.SidModeSweepCount directly (see the doc
+    comment on that constant) instead of having to re-derive its value some other way. Same
+    pattern Tools/BaselineVerify/BaselineVerify.csproj already uses for the same test project.
+  -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="BaselineVerify.Tests" />
+  </ItemGroup>
+
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+
+</Project>

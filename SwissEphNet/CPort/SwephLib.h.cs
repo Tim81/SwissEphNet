@@ -19,7 +19,7 @@
   Authors: Dieter Koch and Alois Treindl, Astrodienst Zurich
 
 ************************************************************/
-/* Copyright (C) 1997 - 2008 Astrodienst AG, Switzerland.  All rights reserved.
+/* Copyright (C) 1997 - 2021 Astrodienst AG, Switzerland.  All rights reserved.
 
   License conditions
   ------------------
@@ -35,17 +35,17 @@
   system. The software developer, who uses any part of Swiss Ephemeris
   in his or her software, must choose between one of the two license models,
   which are
-  a) GNU public license version 2 or later
+  a) GNU Affero General Public License (AGPL)
   b) Swiss Ephemeris Professional License
 
   The choice must be made before the software developer distributes software
   containing parts of Swiss Ephemeris to others, and before any public
   service using the developed software is activated.
 
-  If the developer choses the GNU GPL software license, he or she must fulfill
+  If the developer choses the AGPL software license, he or she must fulfill
   the conditions of that license, which includes the obligation to place his
-  or her whole software project under the GNU GPL or a compatible license.
-  See http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+  or her whole software project under the AGPL or a compatible license.
+  See https://www.gnu.org/licenses/agpl-3.0.html
 
   If the developer choses the Swiss Ephemeris Professional license,
   he must follow the instructions as found in http://www.astro.com/swisseph/ 
@@ -140,7 +140,7 @@ namespace SwissEphNet.CPort
         //extern int swi_precess(double *R, double J, int32 iflag, int direction );
         //extern void swi_precess_speed(double *xx, double t, int32 iflag, int direction);
 
-        //extern int32 swi_guess_ephe_flag();
+        //extern int32 swi_guess_ephe_flag(void);
 
         ///* from sweph.c, light deflection, aberration, etc. */
         //extern void swi_deflect_light(double *xx, double dt, int32 iflag);
@@ -150,7 +150,7 @@ namespace SwissEphNet.CPort
         //extern int swi_trop_ra2sid_lon_sosy(double* xin, double* xout, int32 iflag);
         //extern int swi_get_observer(double tjd, int32 iflag, 
         //    AS_BOOL do_save, double *xobs, char *serr);
-        //extern void swi_force_app_pos_etc();
+        //extern void swi_force_app_pos_etc(void);
 
         ///* obliquity of ecliptic */
         //extern void swi_check_ecliptic(double tjd, int32 iflag);
@@ -184,8 +184,6 @@ namespace SwissEphNet.CPort
 
         ///* cyclic redundancy checksum (CRC), 32 bit */
         //extern uint32 swi_crc32(unsigned char *buf, int len);
-
-        //extern size_t swi_strnlen(const char* str, size_t n);
 
         //extern int swi_cutstr(char *s, char *cutlist, char *cpos[], int nmax);
         //extern char *swi_right_trim(char *s);

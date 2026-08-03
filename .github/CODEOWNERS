@@ -1,0 +1,26 @@
+# These paths are load-bearing: the transliteration freeze, the two verification gates, and the
+# automation that runs them. Marking them here is a visible signal that a change here needs more
+# care than a typical file, not an enforcement mechanism -- @Tim81 authors the PRs in this repo,
+# so GitHub will not auto-assign a reviewer from this file the way it would on a team with other
+# contributors. Treat it as documentation of what matters, not a review gate.
+
+# The transliteration freeze -- see CONTRIBUTING.md.
+/SwissEphNet/CPort/            @Tim81
+/Programs/SweTest/Program.cs   @Tim81
+/Programs/SweMini/Program.cs   @Tim81
+
+# The characterization baseline gate.
+/Tests/baseline/                @Tim81
+/Tools/BaselineVerify/          @Tim81
+/Tools/BaselineMatrix/          @Tim81
+
+# The scripts that run both gates, and the CI wiring around them.
+/scripts/                       @Tim81
+/.github/workflows/             @Tim81
+
+# See CONTRIBUTING.md, "Correctness oracle known-fail list", for why this path
+# is protected: Tests/conformance/known-fail.tsv is a gate (rows may be
+# removed freely as progress; adding a row needs a written reason via
+# scripts/regenerate-known-fail.ps1 -Reason, and a reviewer). CODEOWNERS makes
+# that reviewer step unavoidable rather than a convention someone can skip.
+/Tests/conformance/ @Tim81

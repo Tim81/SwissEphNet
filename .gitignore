@@ -177,3 +177,55 @@ FakesAssemblies/
 /README.min.html
 /release-bin
 /binaries
+
+# Byte-compiled Python (scripts/extract-c-tables.py, scripts/validate-pyswisseph.py,
+# scripts/validate-seeded-areas.py). Was previously unlisted, so scripts/__pycache__/ dirtied
+# `git status` after any of those scripts ran locally.
+__pycache__/
+*.pyc
+
+# scripts/fetch-2.08-baseline.ps1 output. Downloaded and verified against
+# scripts/pyswisseph-2.08.manifest.tsv on demand; never committed.
+/external/pyswisseph-2.08/
+/external/.pyswisseph-2.08-download/
+
+# Tools/CReference/build-c.ps1 output: MSVC-compiled libswe 2.08 and 2.10.03 plus
+# swetest.exe, the oracle's reference side. Build products of vendored source, not
+# source, and they depend on the local toolchain -- toolchain.txt records which one.
+/external/.c-reference/
+
+# Committed, append-only provenance log for scripts/regenerate-known-fail.ps1
+# (see CONTRIBUTING.md, "Correctness oracle known-fail list") -- would
+# otherwise be excluded by the blanket "*.log" rule above.
+!/Tests/conformance/regenerations.log
+
+# Same for the bit-exact comparison harness's three known-diff lists. A full
+# regenerate can add or worsen rows and so requires a written reason; the reason
+# only means anything if the log recording it is in the repo. Excluded by the
+# blanket "*.log" rule otherwise, which silently cost the first commit of
+# Tests/oracle/known-diff.tsv its provenance log.
+!/Tests/oracle/regenerations.log
+!/Tests/oracle/regenerations-files.log
+# The JPL grid's log carries more than a row-count delta: the DE file it was measured against
+# lives outside the repo (190 MB - 2.6 GB, never committable), so its size and SHA-256 exist
+# nowhere else, and losing this file to the blanket rule would make the measurement
+# unreproducible rather than merely unexplained.
+!/Tests/oracle/regenerations-jpl.log
+
+# Same for the three-way (port vs 2.08 C vs 2.10.03 C) version-classification regeneration log --
+# see scripts/classify-oracle-versions.ps1. Excluded by the blanket "*.log" rule otherwise.
+!/Tests/oracle/version-classification-regenerations.log
+
+# Provenance log for scripts/verify-swetest-diff.ps1 -Regenerate (the swetest text-diff harness'
+# known-diff list). Same reasoning as the two negations above: a regenerate can add or worsen
+# rows, so the reason for doing so has to survive in the repo, not just in a PR description.
+# Excluded by the blanket "*.log" rule otherwise.
+!/Tests/swetest/regenerations.log
+
+# Provenance log for scripts/regenerate-netstandard-compat-known-diff.ps1 (the netstandard2.0-vs-
+# net10.0 swe_calc divergence known-diff-<fw>.tsv files, scripts/verify-netstandard-compat.ps1's
+# own golden). Same reasoning as the negations above: a full regenerate can add or worsen rows, so
+# the reason has to survive in the repo. Excluded by the blanket "*.log" rule otherwise -- which is
+# exactly what left this file sitting on disk, gitignored and never committed, until
+# scripts/verify-netstandard-compat-log.ps1 was added to gate it.
+!/Tests/netstandard-compat/regenerations.log

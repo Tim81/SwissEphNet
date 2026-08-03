@@ -22,13 +22,13 @@
   swe_julday()
 
 ************************************************************/
-/* Copyright (C) 1997 - 2008 Astrodienst AG, Switzerland.  All rights reserved.
-  
+/* Copyright (C) 1997 - 2021 Astrodienst AG, Switzerland.  All rights reserved.
+
   License conditions
   ------------------
 
   This file is part of Swiss Ephemeris.
-  
+
   Swiss Ephemeris is distributed with NO WARRANTY OF ANY KIND.  No author
   or distributor accepts any responsibility for the consequences of using it,
   or for whether it serves any particular purpose or works at all, unless he
@@ -38,17 +38,17 @@
   system. The software developer, who uses any part of Swiss Ephemeris
   in his or her software, must choose between one of the two license models,
   which are
-  a) GNU public license version 2 or later
+  a) GNU Affero General Public License (AGPL)
   b) Swiss Ephemeris Professional License
-  
+
   The choice must be made before the software developer distributes software
   containing parts of Swiss Ephemeris to others, and before any public
   service using the developed software is activated.
 
-  If the developer choses the GNU GPL software license, he or she must fulfill
+  If the developer choses the AGPL software license, he or she must fulfill
   the conditions of that license, which includes the obligation to place his
-  or her whole software project under the GNU GPL or a compatible license.
-  See http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+  or her whole software project under the AGPL or a compatible license.
+  See https://www.gnu.org/licenses/agpl-3.0.html
 
   If the developer choses the Swiss Ephemeris Professional license,
   he must follow the instructions as found in http://www.astro.com/swisseph/ 
@@ -352,8 +352,11 @@ namespace SwissEphNet.CPort
                     return NLEAP_SECONDS;
                 while ((s = fp.ReadLine()) != null) {
                     s = s.TrimStart(' ', '\t');
-                    if (String.IsNullOrEmpty(s) || s.StartsWith("#")) continue;
-                    ndat = int.Parse(s);
+                    // swedate.c:330 tests *sp == '#', a single-byte comparison; StartsWith
+                    // without StringComparison is culture-sensitive, so make it ordinal.
+                    if (String.IsNullOrEmpty(s) || s.StartsWith("#", StringComparison.Ordinal)) continue;
+                    // swedate.c:332 is `ndat = atoi(s);`, which cannot throw.
+                    ndat = C.atoi(s);
                     if (ndat <= ndat_last)
                         continue;
                     /* table space is limited. no error msg, if exceeded */

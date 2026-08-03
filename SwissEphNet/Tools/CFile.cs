@@ -21,17 +21,28 @@ namespace SwissEphNet
         public CFile(Stream stream, Encoding encoding = null) {
             this._Stream = stream;
             EOF = _Stream == null;
-            try
-            {
-#if NET_STANDARD
-            //Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-#endif
-                this.Encoding = encoding ?? Encoding.GetEncoding("Windows-1252");
-            }
-            catch
-            {
-                this.Encoding = encoding ?? Encoding.UTF8;
-            }
+            // UTF-8 is the correct default, not a fallback. Every large
+            // Swiss Ephemeris data file (sefstars.txt, seasnam.txt,
+            // sedeltat.txt, the eop_*.txt files, plmolist.txt) is pure ASCII,
+            // where UTF-8 and Windows-1252 are byte-identical and the choice
+            // between them is irrelevant. The files that do carry non-ASCII
+            // text (seorbel.txt, astlistn.md, both from the 2.10.03 release)
+            // are valid UTF-8 -- e.g. seorbel.txt spells "Koré" as the UTF-8
+            // sequence { 0x4B, 0x6F, 0x72, 0xC3, 0xA9, ... }, not as the
+            // single Windows-1252 byte 0xE9. Decoding that as Windows-1252
+            // would render it "KorÃ©", a regression against the very release
+            // this port targets. Encoding.GetEncoding("Windows-1252") is also
+            // unavailable on .NET Core and later without registering
+            // System.Text.Encoding.CodePages, which this library does not do,
+            // so there is no reason to attempt it here at all. This
+            // constructor's own Encoding parameter is not something a
+            // SwissEph.IEphemerisFileProvider consumer can reach, though:
+            // SwissEph.OpenBinary (SwissEph.cs) is the only caller of this
+            // constructor, always with encoding: DefaultEncoding. Callers with
+            // genuinely non-UTF-8-encoded files should set the static
+            // SwissEph.DefaultEncoding once for every file that does not
+            // override it.
+            this.Encoding = encoding ?? Encoding.UTF8;
             this._Decoder = Encoding.GetDecoder();
         }
 
@@ -58,9 +69,22 @@ namespace SwissEphNet
         /// <summary>
         /// Seek the file
         /// </summary>
+        /// <remarks>
+        /// Clears EOF, as C's fseek and rewind both do ("A successful call to the fseek
+        /// function clears the end-of-file indicator", C99 7.19.9.2). Without that, EOF was
+        /// sticky: Read sets it on the first byte past the end and ReadLine short-circuits to
+        /// null while it is set, so a seek back to the start returned nothing.
+        ///
+        /// That made C.rewind a no-op on any stream already read to the end, and
+        /// load_all_fixed_stars always reads sefstars.txt to the end -- so one swe_fixstar2
+        /// call permanently disabled swe_fixstar on the same SwissEph instance. Sidereal modes
+        /// that resolve a star, SE_SIDM_TRUE_CITRA among them, then got ERR and an ayanamsa of
+        /// zero, which silently yields tropical positions rather than an error.
+        /// </remarks>
         public long Seek(long offset, SeekOrigin origin) {
             if (_Stream == null) return -1;
             _Stream.Seek(offset, origin);
+            EOF = false;
             return 0;
         }
 
@@ -81,9 +105,20 @@ namespace SwissEphNet
         /// </summary>
         public int Read(byte[] buff, int offset, int count) {
             if (buff == null || EOF) return 0;
-            var res = _Stream.Read(buff, offset, count);
-            if (res != count) EOF = true;
-            return res;
+            // C's fread loops until it has read `count` items or the stream is genuinely
+            // exhausted. A single Stream.Read call may legitimately return fewer bytes than
+            // requested without being at EOF -- GZipStream, DeflateStream, NetworkStream and
+            // BufferedStream all do this -- and OnLoadFile is the only way this library ever
+            // gets a Stream, so a decompressing stream backing a large .se1 file is a natural
+            // thing for a caller to hand in. Loop rather than treating one short read as EOF.
+            var total = 0;
+            while (total < count) {
+                var res = _Stream.Read(buff, offset + total, count - total);
+                if (res <= 0) break;
+                total += res;
+            }
+            if (total != count) EOF = true;
+            return total;
         }
 
         /// <summary>
@@ -214,7 +249,12 @@ namespace SwissEphNet
                 return false;
             }
             s = new String(chars);
-            return chars.Length == size;
+            // ReadChars(size) now reads `size` bytes, not `size` decoded characters (see its
+            // own comment), so a multi-byte-encoded string can legitimately decode to fewer
+            // characters than `size` on a full, successful read. EOF -- set by the underlying
+            // Read(byte[], offset, count) exactly when fewer than `size` bytes were available
+            // -- is what actually distinguishes a full read from a short one now.
+            return !EOF;
         }
 
         /// <summary>
@@ -276,14 +316,17 @@ namespace SwissEphNet
         /// </summary>
         public Char[] ReadChars(int count) {
             if (EOF) return null;
-            var result = new List<Char>();
-            Char c = '\0';
-            for (int i = 0; i < count; i++) {
-                if (!Read(ref c)) break;
-                result.Add(c);
-            }
-            if (EOF && result.Count == 0) return null;
-            return result.ToArray(); ;
+            // The C source reads a fixed-width *byte* field here (e.g. swejpl.c's
+            // fread(js->ch_cnam, 6, 400, fp), sweph.c's fread(fdp->astnam, 30, 1, fp)):
+            // exactly `count` bytes off the stream, not `count` decoded characters. Looping
+            // the decoder-based Read(ref char) below consumed more than one byte per
+            // character for any multi-byte sequence, misaligning the stream position (and,
+            // for callers like Sweph.cs that track fpos for a CRC check, the byte count too)
+            // against the C. Read raw bytes first, the same way ReadSBytes does, then decode.
+            var buff = new byte[count];
+            var nb = Read(buff, 0, count);
+            if (nb == 0) return null;
+            return Encoding.GetChars(buff, 0, nb);
         }
 
         /// <summary>

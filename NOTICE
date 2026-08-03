@@ -1,0 +1,40 @@
+SwissEphNet - Notice of attribution and licensing
+==================================================
+
+Swiss Ephemeris is Copyright (C) 1997-2021 Astrodienst AG, Switzerland.
+Authors: Dieter Koch and Alois Treindl. See the file LICENSE for the full
+copyright and license conditions that apply to the underlying Swiss
+Ephemeris code, and agpl-3.0.txt for the text of the AGPL.
+
+SwissEphNet is a C-to-C# port of the Swiss Ephemeris Free Edition,
+originally created by Yan Grenier (https://github.com/ygrenier/SwissEphNet),
+2014-2019.
+
+This repository (https://github.com/Tim81/SwissEphNet) is a maintained fork
+of Yan Grenier's SwissEphNet, continuing that work. Since 2026 it has been
+maintained by Timothy van der Ham, who modernized the build and target
+frameworks and fixed a number of bugs in the port, including the fixed-star
+search returning the wrong star, multi-word star names being unfindable,
+the heliacal Moon branch never being taken, swe_set_astro_models throwing,
+the DIR_GLUE path separator, culture-sensitive string comparison, and a
+netstandard2.0 infinite recursion. See the changelog / release notes for
+details.
+
+Licensing
+---------
+
+Swiss Ephemeris, and therefore this port, is available under a dual license:
+
+  a) the GNU Affero General Public License (AGPL-3.0), or
+  b) a Swiss Ephemeris Professional License purchased from Astrodienst.
+
+You must choose one of these before distributing software built on this
+library, or before operating a public service built on it. See LICENSE for
+the full conditions.
+
+Per Astrodienst's license conditions, the names of the Swiss Ephemeris
+authors (Dieter Koch, Alois Treindl) or of Astrodienst may not be used to
+promote any software, product or service that uses or contains Swiss
+Ephemeris. This NOTICE credits the porters (Yan Grenier, Timothy van der
+Ham) for their own work on the port; it is not, and must not be read as,
+an endorsement by Astrodienst.

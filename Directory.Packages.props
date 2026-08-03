@@ -1,0 +1,32 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Test infrastructure shared by all three test projects (Tests/SwissEphNet.Tests,
+         Tests/NetStandard20Smoke.Tests, Tools/BaselineVerify.Tests). -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+
+    <!--
+      Tools/BaselineVerify.Tests is xunit v3 (a self-executing console app); default
+      versions here are for that project. Tests/SwissEphNet.Tests stays on xunit v2
+      (see its csproj) and overrides xunit.runner.visualstudio with VersionOverride,
+      since the v2 and v3 runners are not interchangeable.
+    -->
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+
+    <!--
+      Tests/NetStandard20Smoke.Tests only: supplies the net462 reference assemblies for
+      machines that do not have that targeting pack installed locally. Build-time-only,
+      PrivateAssets="all" in the csproj, never a dependency of the shipped SwissEphNet
+      library.
+    -->
+    <PackageVersion Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" />
+  </ItemGroup>
+
+</Project>
