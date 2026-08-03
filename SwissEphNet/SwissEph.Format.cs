@@ -68,7 +68,7 @@ namespace SwissEphNet
             string s1 = string.Empty;
             string s = string.Empty;
             int sgn;
-            // swetest.c:2657. This port's DMS has no BIT_ALLOW_361 bit, so it always
+            // swetest.c:2671. This port's DMS has no BIT_ALLOW_361 bit, so it always
             // clamps, matching every swetest.c caller that does not set that bit. Besides
             // matching the C, this also keeps izod (below) out of range and keeps `value`
             // itself from reaching a magnitude where the sign-insertion code further down
@@ -82,7 +82,7 @@ namespace SwissEphNet
                 sgn = -1;
             } else
                 sgn = 1;
-            // swetest.c:2668-2680: if/else-if/else, not two independent ifs -- ROUND_SEC only
+            // swetest.c:2682-2694: if/else-if/else, not two independent ifs -- ROUND_SEC only
             // applies when ROUND_MIN is not set, and the rounding nudge below only applies
             // when neither is set (it used to not exist here at all; its absence meant a
             // value that should have carried into the next field over, e.g. 0.99999999999
@@ -100,13 +100,13 @@ namespace SwissEphNet
             }
             if ((iFlag & BIT_ZODIAC) != 0) {
                 izod = (int)(value / 30);
-                // swetest.c:2683. Reachable once the >= 360 clamp above is bypassed by a
+                // swetest.c:2697. Reachable once the >= 360 clamp above is bypassed by a
                 // caller-supplied value of exactly 360 minus a rounding nudge that carries
                 // it back up to 30 * 12; without this, ZodiacShortNames[izod] below throws.
                 if (izod == 12) izod = 0;
                 value = (value % 30.0);
                 kdeg = (Int32)value;
-                // swetest.c:2686: no leading spaces here (the C's sprintf format is
+                // swetest.c:2700: no leading spaces here (the C's sprintf format is
                 // "%2d %s ", not "  %2d %s ").
                 s = C.sprintf("%2d %s ", kdeg, ZodiacShortNames[izod]);
             } else {
@@ -136,7 +136,7 @@ namespace SwissEphNet
             if ((iFlag & BIT_ROUND_SEC) != 0)
                 goto return_dms;
             value -= ksec;
-            // swetest.c:2714-2719. No "+ 0.5" in the C on either branch -- rounding is
+            // swetest.c:2728-2733. No "+ 0.5" in the C on either branch -- rounding is
             // already handled by the nudge added to `value` above, before the degree/
             // minute/second split; adding it again here could not carry into a higher
             // field anyway (k is truncated straight into a fixed-width %0Nd). The extra-
@@ -153,7 +153,7 @@ namespace SwissEphNet
             int spi;
             if (sgn < 0) {
                 spi = s.IndexOfAny("0123456789".ToCharArray());
-                // swetest.c:2723-2725: sp = strpbrk(s, "0123456789"); *(sp - 1) = '-';
+                // swetest.c:2738-2739: sp = strpbrk(s, "0123456789"); *(sp - 1) = '-';
                 // overwrites the character immediately before the first digit. Under
                 // BIT_ZODIAC, once kdeg reaches double digits "%2d" fills the field and the
                 // first digit lands at index 0, so the C writes one byte before its own
@@ -178,27 +178,27 @@ namespace SwissEphNet
         /// </summary>
         /// <remarks>
         /// Not a ported libswe function either -- see <see cref="DMS"/>'s remarks. Modeled on
-        /// swetest.c:3925-3939, the same source Programs/SweTest/Program.cs's hms() already
+        /// swetest.c:3939-3953, the same source Programs/SweTest/Program.cs's hms() already
         /// transliterates faithfully (including the guard on its second splice, cited there).
         /// </remarks>
         public String HMS(double value, int iFlag, bool outputExtraPrecision = false) {
-            // swetest.c:3929: round to 0.1 sec before formatting. This was missing entirely;
+            // swetest.c:3943: round to 0.1 sec before formatting. This was missing entirely;
             // without it HMS truncated the tenths-of-a-second digit instead of rounding it.
             value += 0.5 / 36000.0;
             var s = DMS(value, iFlag, outputExtraPrecision);
-            // swetest.c:3926: `char *c = ODEGREE_STRING;` is fixed here regardless of iflag --
+            // swetest.c:3942: `char *c = ODEGREE_STRING;` is fixed here regardless of iflag --
             // even when DMS used "h" instead (SEFLG_EQUATORIAL), hms() still searches for the
             // degree marker, not "h", so that combination falls through unconverted below,
             // matching the C exactly.
             var spi = s.IndexOf(SwissEph.ODEGREE_STRING, StringComparison.Ordinal);
             if (spi >= 0) {
-                // swetest.c:3932-3935: *sp = ':'; strcpy(s2, sp + strlen(ODEGREE_STRING));
+                // swetest.c:3947-3949: *sp = ':'; strcpy(s2, sp + strlen(ODEGREE_STRING));
                 // strcpy(sp + 1, s2); -- collapses the (possibly multi-byte) degree marker
                 // down to a single ':'.
                 s = String.Concat(s.Substring(0, spi), ":", s.Substring(spi + 1));
                 var s2 = s.Substring(spi + SwissEph.ODEGREE_STRING.Length);
                 s = String.Concat(s.Substring(0, spi + 1), s2);
-                // swetest.c:3936: *(sp + 3) = ':'; writes a single byte into the static
+                // swetest.c:3950: *(sp + 3) = ':'; writes a single byte into the static
                 // AS_MAXCH buffer regardless of length. Substring(spi + 4) throws where C's
                 // single-byte write would not, on a BIT_ROUND_MIN result ending at spi + 2
                 // (s.Length == spi + 3); guarded the same way as the SweTest port.
@@ -206,7 +206,7 @@ namespace SwissEphNet
                     s = String.Concat(s.Substring(0, spi + 3), ":", s.Substring(spi + 4));
                 else
                     s = String.Concat(s.Substring(0, spi + 3), ":");
-                // swetest.c:3937: *(sp + 8) = '\0'; truncates the buffer after the seconds
+                // swetest.c:3951: *(sp + 8) = '\0'; truncates the buffer after the seconds
                 // field. The length guard is needed because the C writes into a static
                 // AS_MAXCH buffer regardless of length, while Substring would throw here if
                 // s were ever shorter than spi + 8.

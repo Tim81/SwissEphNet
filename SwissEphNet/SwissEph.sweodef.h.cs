@@ -133,7 +133,7 @@ namespace SwissEphNet
 
         public const double CS2DEG = (1.0 / 360000.0);	/* centisec to degree */
 
-        /// <summary>used for string declarations, allowing 255 char+\0 (sweodef.h:259)</summary>
+        /// <summary>used for string declarations, allowing 255 char+\0 (sweodef.h:261)</summary>
         public const int AS_MAXCH = 256;
 
         // The C source (sweodef.h:305/:311) defines PATH_SEPARATOR as a *cut-list* of

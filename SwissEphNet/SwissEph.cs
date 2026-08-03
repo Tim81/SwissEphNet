@@ -199,7 +199,7 @@ namespace SwissEphNet
         /// Opens a file for reading, honouring <see cref="FileProvider"/> if one is set, or the
         /// real filesystem otherwise. This is the sole "fopen()" substitution point in
         /// <c>swi_fopen</c>'s transliteration (<c>CPort/Sweph.cs</c>, matching
-        /// <c>sweph.c:2370-2405</c>) -- everything else in that function's path-search loop
+        /// <c>sweph.c:2363-2405</c>) -- everything else in that function's path-search loop
         /// (splitting <c>ephepath</c>, the "." current-directory case, joining with
         /// <see cref="DIR_GLUE"/>, the <see cref="AS_MAXCH"/> bounds check) is transliterated
         /// faithfully, line by line, ahead of this call.
