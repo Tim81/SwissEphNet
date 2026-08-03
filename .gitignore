@@ -221,3 +221,11 @@ __pycache__/
 # rows, so the reason for doing so has to survive in the repo, not just in a PR description.
 # Excluded by the blanket "*.log" rule otherwise.
 !/Tests/swetest/regenerations.log
+
+# Provenance log for scripts/regenerate-netstandard-compat-known-diff.ps1 (the netstandard2.0-vs-
+# net10.0 swe_calc divergence known-diff-<fw>.tsv files, scripts/verify-netstandard-compat.ps1's
+# own golden). Same reasoning as the negations above: a full regenerate can add or worsen rows, so
+# the reason has to survive in the repo. Excluded by the blanket "*.log" rule otherwise -- which is
+# exactly what left this file sitting on disk, gitignored and never committed, until
+# scripts/verify-netstandard-compat-log.ps1 was added to gate it.
+!/Tests/netstandard-compat/regenerations.log
