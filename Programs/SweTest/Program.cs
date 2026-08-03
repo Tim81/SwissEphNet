@@ -2615,7 +2615,11 @@ namespace SweTest
             {
                 pnam = C.sprintf("%-15.15s", spnam);
             }
-            if (list_hor && fmt.IndexOf('P', StringComparison.Ordinal) >= 0)
+            // swetest.c:2116 is `if (list_hor && strchr(fmt, 'P') == NULL)`: the header column
+            // gets a name prefix when 'P' is ABSENT from fmt. "< 0" tests that; ">= 0" tested the
+            // opposite condition -- the same inversion just documented a few lines below for the
+            // sibling gap-emission guard (swetest.c:1931 (2.08)), missed here in plain sight.
+            if (list_hor && fmt.IndexOf('P', StringComparison.Ordinal) < 0)
             {
                 slon = C.sprintf("%.8s %s", pnam, "long.");
             }

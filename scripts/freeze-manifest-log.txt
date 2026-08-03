@@ -402,3 +402,17 @@ b"} where the C gives {"a", ""}); that one is fixed
    external/.c-reference/swetest.exe (v2.10.3bfinal) byte-for-byte; `-fU`/`-fx`/`-fu` no longer
    throw either.
    Programs/SweTest/Program.cs: 5005 -> 5013 lines, sha256 947D21A7... -> BB8473CD....
+18. PR #33 2026-08-03: One fidelity fix. swetest.c:2116 is
+   `if (list_hor && strchr(fmt, 'P') == NULL)`: in -hor (horizontal list) mode, the header
+   column gets a name prefix when 'P' is ABSENT from fmt. The port tested
+   `fmt.IndexOf('P', ...) >= 0`, the opposite condition -- prefixing the header whenever 'P' IS
+   present, instead of when it is not. The same inversion is documented a few lines below (in
+   the file, immediately above the port's own comment citing swetest.c:1931 (2.08)) for a
+   sibling gap-emission guard, which is presumably how this one was missed: the fixed sibling
+   sits right next to the still-broken one. Fixed by flipping to `< 0`. Fidelity fix, not a
+   re-transliteration: only the one condition and its explanatory comment moved.
+   Proven to discriminate: `-b1.1.2000 -p0e -fPLBRS -n1 -emos -head -hor` printed an extra "Sun"
+   token in the header row before this fix ("name  Sun  long. lat. distAU deg/day"); after,
+   the header matches external/.c-reference/swetest.exe (v2.10.3bfinal) byte-for-byte
+   ("name  long.  lat.  distAU  deg/day").
+   Programs/SweTest/Program.cs: 5013 -> 5017 lines, sha256 BB8473CD... -> 383C4D93....
