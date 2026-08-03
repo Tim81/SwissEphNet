@@ -230,13 +230,32 @@ function Invoke-AttributionScan {
             # tracked-file text mentioning "CLAUDE.md" and this gate reported PASS having matched
             # nothing.
             @{ Regex = '(?i)\bClaude\b'; Label = "product name 'Claude'" }
-            @{ Regex = '\bAnthropic\b'; Label = "company name 'Anthropic'" }
-            @{ Regex = '\bChatGPT\b'; Label = "product name 'ChatGPT'" }
+            # (?i) on the three vendor/product names below. Case-sensitivity here bought nothing
+            # -- no legitimate text in this repository contains any of them in any casing -- and it
+            # let the lower-cased domain forms through: '\bAnthropic\b' did not match
+            # "noreply@anthropic.com" and '\bChatGPT\b' did not match "chatgpt.com". The word
+            # boundaries still hold on the domain forms ('@' and '.' are both boundaries), so
+            # widening the case is enough; a separate domain pattern would be redundant.
+            @{ Regex = '(?i)\bAnthropic\b'; Label = "company name 'Anthropic'" }
+            @{ Regex = '(?i)\bChatGPT\b'; Label = "product name 'ChatGPT'" }
             @{ Regex = '(?i)\bcopilot\b'; Label = "'copilot'" }
             @{ Regex = '(?i)\bchatbot\b'; Label = "'chatbot'" }
             @{ Regex = '(?i)\bassistant\b'; Label = "'assistant'" }
-            @{ Regex = 'Co-Authored-By'; Label = "'Co-Authored-By' trailer" }
-            @{ Regex = 'Claude-Session'; Label = "'Claude-Session' trailer" }
+            # (?i) because "Co-authored-by" is the spelling git itself writes: `git commit
+            # --trailer`, `git commit -s`-adjacent tooling and GitHub's web UI all emit that form,
+            # and it is the one in GitHub's own documentation. The case-sensitive pattern caught
+            # only the camel-cased variant, so the single most likely way for this trailer to
+            # appear was the one spelling that passed. Demonstrated against this gate: a commit
+            # whose body was "Co-authored-by: S <noreply@anthropic.com>" returned exit 0.
+            @{ Regex = '(?i)Co-Authored-By'; Label = "'Co-Authored-By' trailer" }
+            @{ Regex = '(?i)Claude-Session'; Label = "'Claude-Session' trailer" }
+            # Deliberately NOT (?i), unlike every pattern above. This one targets the capital-G
+            # "Generated with <tool>" footer, and lower-case "generated with" is ordinary English
+            # this repository already uses honestly: EphemerisFileResolver.cs:89 says t.exp "was
+            # generated with setest", and several commit messages say a file was "regenerated with
+            # -ExpectedScope". Measured before widening the others: 5 commit messages and 1 tracked
+            # file contain the lower-case form, every one of them legitimate. Adding (?i) here
+            # would fail the gate on honest prose, which is how a gate gets switched off.
             @{ Regex = '\bGenerated with\b'; Label = "'Generated with' footer phrase" }
         )
 
@@ -766,6 +785,24 @@ $base = Get-LabHead $lab
 Set-LabFile $lab 'docs/notes.md' @('# Notes', '', 'A note.')
 Add-LabCommit -LabRoot $lab -Message "Add a note`n`nAn ordinary body paragraph.`n`nCo-Authored-By: someone <someone@example.org>" -Paths @('docs/notes.md')
 Assert-Gate 'a violation in a commit body, several lines below a clean subject' 'fails' $lab -CommitRange "$base..HEAD" -Matching "matches 'Co-Authored-By' trailer"
+
+# 14b. The same trailer in the casing git itself writes. `git commit --trailer`, GitHub's web UI and
+#      GitHub's own documentation all spell it "Co-authored-by", and the pattern was case-sensitive
+#      on the camel-cased form only -- so the single most likely spelling was the one that passed.
+#      Measured before the fix: this exact lab returned exit 0.
+$lab = New-AttributionLab 'message-body-lowercase-trailer'
+$base = Get-LabHead $lab
+Set-LabFile $lab 'docs/notes2.md' @('# Notes', '', 'A note.')
+Add-LabCommit -LabRoot $lab -Message "Add another note`n`nAn ordinary body paragraph.`n`nCo-authored-by: someone <someone@example.org>" -Paths @('docs/notes2.md')
+Assert-Gate "the trailer in git's own lowercase spelling, in a commit message" 'fails' $lab -CommitRange "$base..HEAD" -Matching "matches 'Co-Authored-By' trailer"
+
+# 14c. The vendor names in their lower-cased domain forms. '\bAnthropic\b' did not match
+#      "noreply@anthropic.com" and '\bChatGPT\b' did not match "chatgpt.com", so an address or a URL
+#      carried either straight through the tracked-file scan.
+$lab = New-AttributionLab 'lowercase-vendor-domains'
+Set-LabFile $lab 'docs/contact.md' @('# Contact', '', 'Reach us at noreply@anthropic.com or via chatgpt.com.')
+Add-LabCommit -LabRoot $lab -Message 'Add contact details' -Paths @('docs/contact.md')
+Assert-Gate 'the vendor names in lower-cased domain form, in a tracked file' 'fails' $lab -Matching "company name 'Anthropic'"
 
 # 15. A merge commit in the range. `git log <range>` walks both parents, so the offending commit on
 #     the side branch is visited on its own -- but a range whose only new commit is the merge, with
