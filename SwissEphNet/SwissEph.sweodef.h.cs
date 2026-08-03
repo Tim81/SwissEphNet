@@ -136,7 +136,7 @@ namespace SwissEphNet
         /// <summary>used for string declarations, allowing 255 char+\0 (sweodef.h:261)</summary>
         public const int AS_MAXCH = 256;
 
-        // The C source (sweodef.h:305/:311) defines PATH_SEPARATOR as a *cut-list* of
+        // The C source (sweodef.h:307/:313) defines PATH_SEPARATOR as a *cut-list* of
         // candidate separator characters passed to swi_cutstr/cut_str_any, not a single
         // delimiter: ";:" (semicolon or colon) under #if UNIX_FS, ";" alone in the #else
         // branch that covers MSDOS/Windows. This port is not compiled per-platform, so the
@@ -166,8 +166,8 @@ namespace SwissEphNet
         internal static char[] PathSeparatorFor(bool isWindows)
         {
             return isWindows
-                ? new char[] { ';' }            /* sweodef.h:311, the #else branch */
-                : new char[] { ';', ':' };      /* sweodef.h:305, #if UNIX_FS */
+                ? new char[] { ';' }            /* sweodef.h:313, the #else branch */
+                : new char[] { ';', ':' };      /* sweodef.h:307, #if UNIX_FS */
         }
 
         public static char[] PATH_SEPARATOR = PathSeparatorFor(

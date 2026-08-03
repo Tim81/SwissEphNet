@@ -463,8 +463,8 @@ namespace SwissEphNet
         // second guess at the C. This is deliberately the literal, not a port-specific
         // rewrite: PATH_SEPARATOR (SwissEph.sweodef.h.cs) is per-platform, matching the
         // C's own two cut-lists rather than using one value everywhere -- { ';', ':' } off
-        // Windows (sweodef.h:305, "semicolon or colon may be used" under #if UNIX_FS) and
-        // { ';' } on Windows (sweodef.h:311, the #else branch, where a bare ':' would split
+        // Windows (sweodef.h:307, "semicolon or colon may be used" under #if UNIX_FS) and
+        // { ';' } on Windows (sweodef.h:313, the #else branch, where a bare ':' would split
         // a drive letter). swi_fopen splits swed.ephepath on exactly that cut-list (Sweph.cs,
         // sweph.c:2377), so this colon-joined literal correctly splits into its three
         // components off Windows, including the "." component -- the current directory,
