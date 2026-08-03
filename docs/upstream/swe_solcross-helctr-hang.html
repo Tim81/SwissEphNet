@@ -116,9 +116,9 @@ swe_calc(INFINITY, SE_SUN, SEFLG_MOSEPH|SEFLG_SPEED, x, serr);
 
 <p>Target longitude 0 escapes only because <code>dist</code> is then 0, so the division is <code>0.0 / 0.0</code> rather than <code>90.0 / 0.0</code>. That yields <code>NaN</code> instead of infinity, and <code>fabs(0.0) &lt; CROSS_PRECISION</code> is true, so the loop breaks on its first pass and hands back the <code>NaN</code> it has accumulated in <code>jd</code>.</p>
 
-<h2>What the Moon functions actually do, which corrects an earlier draft of this note</h2>
+<h2>What the Moon functions do under the same flag</h2>
 
-<p>An earlier version of this report said <code>swe_mooncross</code> and <code>swe_mooncross_ut</code> &quot;return the documented error&quot; under <code>SEFLG_HELCTR</code>. That was wrong, and we are glad we checked before sending it. They return values, with <code>serr</code> empty:</p>
+<p>It would be reasonable to guess that the other crossing functions fail in some milder way under <code>SEFLG_HELCTR</code>, and they do not. <code>swe_mooncross</code> and <code>swe_mooncross_ut</code> return ordinary values, with <code>serr</code> empty:</p>
 
 <pre>
 swe_mooncross(  0.0, 2451545.0, SEFLG_MOSEPH|SEFLG_HELCTR)  -&gt;  2451445.042408307
@@ -127,7 +127,7 @@ swe_mooncross(180.0, 2451545.0, SEFLG_MOSEPH|SEFLG_HELCTR)  -&gt;  2451623.81341
 swe_mooncross(270.0, 2451545.0, SEFLG_MOSEPH|SEFLG_HELCTR)  -&gt;  2451716.465567217
 </pre>
 
-<p>These look correct. The heliocentric Moon sits close to the heliocentric Earth, so its crossing of 180 should land near the geocentric Sun&#x27;s crossing of 0, and it does: 2451623.813410182 against 2451623.816894977, a difference of about five minutes, which is the Moon&#x27;s own offset from the Earth. Nothing is wrong with these functions. They do not hang for the reason the earlier draft gave, which was right as far as it went: the heliocentric Moon is not the coordinate origin, so its speed is non-zero and the division is well defined.</p>
+<p>These look correct. The heliocentric Moon sits close to the heliocentric Earth, so its crossing of 180 should land near the geocentric Sun&#x27;s crossing of 0, and it does: 2451623.813410182 against 2451623.816894977, a difference of about five minutes, which is the Moon&#x27;s own offset from the Earth. Nothing is wrong with these functions, and the reason they are fine is the same reason <code>swe_solcross</code> is not: the heliocentric Moon is not the coordinate origin, so its speed is non-zero and the division is well defined.</p>
 
 <p>Worth noting for the first two rows only: they are less than <code>jd_et</code>, which by the documented convention a caller reads as an error, even though they are real crossings. That is the ordinary consequence of asking for a crossing the body most recently made rather than the next one, and we are not reporting it as a defect.</p>
 
@@ -145,13 +145,29 @@ swe_mooncross(270.0, 2451545.0, SEFLG_MOSEPH|SEFLG_HELCTR)  -&gt;  2451716.46556
 
 <p>There are two defensible fixes and we are not going to insist on either, because which one is right depends on what you intended the flag to mean here.</p>
 
-<p><b>Option A, honour the comment.</b> Substitute the body the documentation already names. Two lines, one in each function, attached as <code>swe_solcross-helctr.patch</code>:</p>
+<p><b>Option A, honour the comment.</b> Substitute the body the documentation already names. It is one line in each function. The whole patch, verified to apply cleanly to <code>v2.10.3bfinal</code> with <code>git apply --check</code>:</p>
 
 <pre>
+--- a/sweph.c
++++ b/sweph.c
+@@ -8322,7 +8322,7 @@
+ {
    double x[6], xlp, dist;
    double jd;
 -  int ipl = SE_SUN;
 +  int ipl = (flag &amp; SEFLG_HELCTR) ? SE_EARTH : SE_SUN;
+   /*
+    * compute the SUN at start date, and then estimate the crossing date
+    */
+@@ -8356,7 +8356,7 @@
+ {
+   double x[6], xlp, dist;
+   double jd;
+-  int ipl = SE_SUN;
++  int ipl = (flag &amp; SEFLG_HELCTR) ? SE_EARTH : SE_SUN;
+   /*
+    * compute the SUN at start date, and then estimate the crossing date
+    */
 </pre>
 
 <p><b>Option B, refuse the flag,</b> the way <code>swe_helio_cross</code> already refuses <code>SE_SUN</code>, with a message in <code>serr</code> and the documented error return. This is a smaller change and it makes the two functions consistent with each other. It does mean the comment at <code>:8313</code> and <code>:8347</code> should lose the &quot;, EARTH&quot; clause, since the behaviour it promises would then not exist anywhere.</p>
@@ -181,7 +197,7 @@ swe_mooncross(270.0, 2451545.0, SEFLG_MOSEPH|SEFLG_HELCTR)  -&gt;  2451716.46556
 
 <h2>Scope of what we tested</h2>
 
-<p>Everything above is measured, not inferred, and every number in it was produced by a run we made rather than carried over from an earlier draft.</p>
+<p>Everything above is measured, not inferred. Every number in it came from a run we made.</p>
 
 <p>Two independent routes agree. The first is our own MSVC build of the tagged sources linked into a test program. The second is pyswisseph 2.10.03, which wraps this C unmodified, and which we ran rather than merely citing: it gives 2451716.575531276 for the geocentric call, <code>nan</code> for <code>SEFLG_HELCTR</code> at target 0, all zeros for <code>swe_calc</code> on the heliocentric Sun, and it hangs at target 90, matching our build on all four.</p>
 

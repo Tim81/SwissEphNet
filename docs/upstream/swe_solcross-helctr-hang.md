@@ -160,11 +160,11 @@ Target longitude 0 escapes only because `dist` is then 0, so the division is `0.
 `90.0 / 0.0`. That yields `NaN` instead of infinity, and `fabs(0.0) < CROSS_PRECISION` is true, so
 the loop breaks on its first pass and hands back the `NaN` it has accumulated in `jd`.
 
-## What the Moon functions actually do, which corrects an earlier draft of this note
+## What the Moon functions do under the same flag
 
-An earlier version of this report said `swe_mooncross` and `swe_mooncross_ut` "return the documented
-error" under `SEFLG_HELCTR`. That was wrong, and we are glad we checked before sending it. They
-return values, with `serr` empty:
+It would be reasonable to guess that the other crossing functions fail in some milder way under
+`SEFLG_HELCTR`, and they do not. `swe_mooncross` and `swe_mooncross_ut` return ordinary values, with
+`serr` empty:
 
 ```
 swe_mooncross(  0.0, 2451545.0, SEFLG_MOSEPH|SEFLG_HELCTR)  ->  2451445.042408307
@@ -176,9 +176,9 @@ swe_mooncross(270.0, 2451545.0, SEFLG_MOSEPH|SEFLG_HELCTR)  ->  2451716.46556721
 These look correct. The heliocentric Moon sits close to the heliocentric Earth, so its crossing of
 180 should land near the geocentric Sun's crossing of 0, and it does: 2451623.813410182 against
 2451623.816894977, a difference of about five minutes, which is the Moon's own offset from the
-Earth. Nothing is wrong with these functions. They do not hang for the reason the earlier draft
-gave, which was right as far as it went: the heliocentric Moon is not the coordinate origin, so its
-speed is non-zero and the division is well defined.
+Earth. Nothing is wrong with these functions, and the reason they are fine is the same reason
+`swe_solcross` is not: the heliocentric Moon is not the coordinate origin, so its speed is non-zero
+and the division is well defined.
 
 Worth noting for the first two rows only: they are less than `jd_et`, which by the documented
 convention a caller reads as an error, even though they are real crossings. That is the ordinary
@@ -210,14 +210,31 @@ error, so it is at least detectable. Again: undocumented flag, so your call whet
 There are two defensible fixes and we are not going to insist on either, because which one is right
 depends on what you intended the flag to mean here.
 
-**Option A, honour the comment.** Substitute the body the documentation already names. Two lines,
-one in each function, attached as `swe_solcross-helctr.patch`:
+**Option A, honour the comment.** Substitute the body the documentation already names. It is one
+line in each function. The whole patch, verified to apply cleanly to `v2.10.3bfinal` with
+`git apply --check`:
 
 ```diff
+--- a/sweph.c
++++ b/sweph.c
+@@ -8322,7 +8322,7 @@
+ {
    double x[6], xlp, dist;
    double jd;
 -  int ipl = SE_SUN;
 +  int ipl = (flag & SEFLG_HELCTR) ? SE_EARTH : SE_SUN;
+   /*
+    * compute the SUN at start date, and then estimate the crossing date
+    */
+@@ -8356,7 +8356,7 @@
+ {
+   double x[6], xlp, dist;
+   double jd;
+-  int ipl = SE_SUN;
++  int ipl = (flag & SEFLG_HELCTR) ? SE_EARTH : SE_SUN;
+   /*
+    * compute the SUN at start date, and then estimate the crossing date
+    */
 ```
 
 **Option B, refuse the flag,** the way `swe_helio_cross` already refuses `SE_SUN`, with a message in
@@ -262,8 +279,7 @@ at that date is also 64.08 seconds, so the UT variant is offset by exactly delta
 
 ## Scope of what we tested
 
-Everything above is measured, not inferred, and every number in it was produced by a run we made
-rather than carried over from an earlier draft.
+Everything above is measured, not inferred. Every number in it came from a run we made.
 
 Two independent routes agree. The first is our own MSVC build of the tagged sources linked into a
 test program. The second is pyswisseph 2.10.03, which wraps this C unmodified, and which we ran
