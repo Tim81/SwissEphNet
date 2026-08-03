@@ -238,6 +238,15 @@ jobs:
         shell: pwsh
         run: pwsh scripts/regenerate-netstandard-compat-known-diff.ps1 -SelfTest
 
+      # Same reasoning as the netstandard2.0 compatibility known-diff regeneration guard's own
+      # self-test immediately above: this script is a regeneration tool for
+      # Tools/NetStandardCompat/grid-netstandard.tsv, not a gate, so it has none of its own to sit
+      # beside in CI. -SelfTest never writes that grid or the shared regenerations.log; it only
+      # asserts -Reason is required and checks this script's own log-line formatting.
+      - name: Self-test the netstandard2.0 compatibility grid regeneration guard
+        shell: pwsh
+        run: pwsh Tools/NetStandardCompat/gen-grid-netstandard.ps1 -SelfTest
+
       - name: Self-test the freeze-manifest log gate
         shell: pwsh
         run: pwsh scripts/verify-freeze-log.ps1 -SelfTest
@@ -245,6 +254,20 @@ jobs:
       - name: Verify freeze-manifest changes are logged
         shell: pwsh
         run: pwsh scripts/verify-freeze-log.ps1 -BaseRef '${{ steps.base-ref.outputs.sha }}'
+
+      # Tests/netstandard-compat/known-diff-<fw>.tsv (scripts/verify-netstandard-compat.ps1's own
+      # golden) had a sidecar log (regenerate-netstandard-compat-known-diff.ps1 already appended to
+      # it) but no gate checking a committed change to the golden actually went through that
+      # script -- the same gap every other gated golden in this repository has already been closed
+      # for (known-fail.tsv, the oracle known-diff/version-classification files, the freeze
+      # manifest, the baseline). Reuses the same base-ref this job already resolved above.
+      - name: Self-test the netstandard2.0 compatibility known-diff log gate
+        shell: pwsh
+        run: pwsh scripts/verify-netstandard-compat-log.ps1 -SelfTest
+
+      - name: Verify netstandard2.0 compatibility known-diff changes are logged
+        shell: pwsh
+        run: pwsh scripts/verify-netstandard-compat-log.ps1 -BaseRef '${{ steps.base-ref.outputs.sha }}'
 
   # SwissEphNet.csproj has no PackageReference, and the packed nuspec has an empty
   # dependency group per target framework and no framework references -- a deliberate
