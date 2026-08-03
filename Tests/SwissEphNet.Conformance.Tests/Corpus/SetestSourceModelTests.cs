@@ -168,6 +168,77 @@ public class SetestSourceModelTests
         }
     }
 
+    [Fact]
+    public void SuiteWithNoCheckedNameAtAllIsFatalEvenWhenAggregateFloorsPass()
+    {
+        // Reproduces the gap a reviewer demonstrated by mutation: making CollectCheckedNames
+        // return an empty set for one suiteId (here, suite 1) does not move distinctChecked or
+        // nonEmpty at all, because that suite's real names ("rc", "serr", "xx") are also asserted
+        // by other suites in this synthetic set -- so the aggregate floors alone cannot see suite
+        // 1 go dark. Every other floor is sized to pass: 30 GET_* input names, 46 distinct CHECK_*
+        // names (>= the 40 floor), 55 mapped testcases across 10 suites (the exact minimums), 5
+        // shared checkers, all four CHECK_D/I/S/DD families present, and every testcase in suites
+        // 2-10 carries a non-empty set -- only suite 1's five testcases are empty.
+        var inputNames = new HashSet<string>(StringComparer.Ordinal);
+        for (var i = 0; i < 30; i++)
+        {
+            inputNames.Add($"input{i}");
+        }
+
+        var checkedNames = new Dictionary<(int Suite, int TestCase), HashSet<string>>();
+        // Suite 1: five testcases, every one mapped but empty -- exactly what the described
+        // mutation (CollectCheckedNames returning {} for suiteId == 1) produces.
+        for (var tc = 1; tc <= 5; tc++)
+        {
+            checkedNames[(1, tc)] = new HashSet<string>(StringComparer.Ordinal);
+        }
+
+        // Suites 2-10: 50 more testcases (55 total, clearing the "testcases mapped" and "suite
+        // count" floors), each asserting names shared with what suite 1 would otherwise have
+        // asserted ("rc", "serr", "xx") plus enough distinct names to clear the 40-name floor.
+        var distinctNames = new List<string> { "rc", "serr", "xx" };
+        for (var i = 0; i < 43; i++)
+        {
+            distinctNames.Add($"checked{i}");
+        }
+
+        var familyCounts = new Dictionary<string, int>(StringComparer.Ordinal)
+        {
+            ["D"] = 1,
+            ["I"] = 1,
+            ["S"] = 1,
+            ["DD"] = 1,
+        };
+
+        var nameIndex = 0;
+        for (var suite = 2; suite <= 10; suite++)
+        {
+            for (var tc = 1; tc <= 6; tc++)
+            {
+                var names = new HashSet<string>(StringComparer.Ordinal) { "rc", "serr", "xx" };
+                names.Add(distinctNames[3 + (nameIndex % (distinctNames.Count - 3))]);
+                nameIndex++;
+                checkedNames[(suite, tc)] = names;
+            }
+        }
+
+        // 5 (suite 1) + 9*6 (suites 2-10) = 59 mapped testcases, well above the floor of 55.
+        Assert.True(checkedNames.Count >= 55);
+        Assert.Equal(
+            46,
+            checkedNames.Values.SelectMany(v => v).Distinct(StringComparer.Ordinal).Count());
+
+        var model = SetestSourceModel.BuildForTesting(
+            inputNames,
+            checkedNames,
+            sharedCheckerNames: new[] { "a", "b", "c", "d", "e" },
+            checkFamilyCounts: familyCounts);
+
+        var ex = Assert.Throws<InvalidOperationException>(() => model.AssertNonTrivialForTesting());
+        Assert.Contains("TESTSUITE(s) 1", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("no testcase with any CHECK_* name", ex.Message, StringComparison.Ordinal);
+    }
+
     private static SetestSourceModel LoadSynthetic(string suiteSource)
     {
         var dir = NewTempDir();

@@ -122,6 +122,23 @@ public sealed class SetestSourceModel
         SourceDirectory = sourceDirectory;
     }
 
+    /// <summary>
+    /// Builds a model directly from already-parsed name sets, bypassing file parsing entirely.
+    /// Exists only so <see cref="AssertNonTrivial"/>'s floors -- in particular the per-suite one --
+    /// can be exercised against a synthetic name set sized to clear every other floor, without
+    /// needing a synthetic setest/*.c source large enough to do the same. The real corpus always
+    /// goes through <see cref="Load(string)"/>.
+    /// </summary>
+    internal static SetestSourceModel BuildForTesting(
+        HashSet<string> inputNames,
+        Dictionary<(int Suite, int TestCase), HashSet<string>> checkedNames,
+        IReadOnlyCollection<string> sharedCheckerNames,
+        Dictionary<string, int> checkFamilyCounts) =>
+        new(inputNames, checkedNames, sharedCheckerNames, "<synthetic, built for testing>", checkFamilyCounts);
+
+    /// <summary>Test-only entry point for the private <see cref="AssertNonTrivial"/> floors.</summary>
+    internal void AssertNonTrivialForTesting() => AssertNonTrivial();
+
     /// <summary>The setest directory the model was parsed from.</summary>
     public string SourceDirectory { get; }
 
@@ -356,6 +373,33 @@ public sealed class SetestSourceModel
         if (nonEmpty < 55)
         {
             problems.Add($"only {nonEmpty} of {_checkedNames.Count} mapped testcases have any CHECK_* name at all (floor 55)");
+        }
+
+        // Per-suite, because the aggregate "nonEmpty" floor above cannot see one whole suite
+        // go dark: a suite's real CHECK_* names can happen to be exactly the same strings
+        // ("rc", "serr", "xx") that other suites also assert, so blinding CollectCheckedNames for
+        // one suiteId can leave distinctChecked and nonEmpty both unmoved while every testcase in
+        // that suite maps to an empty set. Measured against v2.10.3final (unchanged at
+        // v2.10.3bfinal): every one of the 10 suites has at least one testcase with a non-empty
+        // CHECK_* set, so the floor here is presence (>=1), not a count that would need revising
+        // on an upstream bump.
+        var suitesWithACheckedName = _checkedNames
+            .Where(kv => kv.Value.Count > 0)
+            .Select(kv => kv.Key.Suite)
+            .Distinct()
+            .ToList();
+        var suitesWithoutACheckedName = _checkedNames.Keys
+            .Select(k => k.Suite)
+            .Distinct()
+            .Except(suitesWithACheckedName)
+            .OrderBy(s => s)
+            .ToList();
+        if (suitesWithoutACheckedName.Count > 0)
+        {
+            problems.Add(
+                $"TESTSUITE(s) {string.Join(", ", suitesWithoutACheckedName)} have no testcase with any CHECK_* " +
+                "name at all -- every other floor here can pass with a whole suite's assertions silently dropped, " +
+                "since another suite's testcases can happen to assert the same literal names.");
         }
 
         if (problems.Count > 0)
