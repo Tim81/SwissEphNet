@@ -177,10 +177,12 @@ namespace SwissEphNet.Tests
                 "instance's own state at construction time, not this instance's own state -- " +
                 "disposing one instance leaves every other instance's already-copied encoding, " +
                 "and this field itself, untouched.",
-            ["Field:DefaultFileProvider"] =
-                "public static, non-const; same reasoning as DefaultEncoding above -- read once " +
-                "into FileProvider at construction time, so it carries no per-instance state of " +
-                "its own for Dispose() to invalidate.",
+            ["Property:DefaultFileProvider"] =
+                "public static property, non-const; same reasoning as DefaultEncoding above -- " +
+                "read once into FileProvider at construction time, so it carries no per-instance " +
+                "state of its own for Dispose() to invalidate. Widened from a field to a property " +
+                "in the same commit that introduced this key's current name (SwissEph.cs); the " +
+                "static-accessor branch below exempts it the same way it exempted the field.",
             ["Field:PATH_SEPARATOR"] =
                 "public static, non-const; a process-wide path-separator array used while " +
                 "searching the ephemeris path, not any one instance's state.",
@@ -346,10 +348,15 @@ namespace SwissEphNet.Tests
 
                 var key = MethodKey(method);
                 seenSignatures.Add(key);
-                if (AllowList.ContainsKey(key)) continue;
+                var isAllowListed = AllowList.ContainsKey(key);
 
                 if (method.IsStatic)
                 {
+                    // A static member has no "this" for Dispose() to invalidate at all, so there
+                    // is no disposed-instance call to make here one way or the other -- the
+                    // AllowList entry documents that absence, not a claim this sweep can verify
+                    // by invoking anything.
+                    if (isAllowListed) continue;
                     var kind = method.IsSpecialName ? "operator" : "static method";
                     failures.Add(string.Format(
                         CultureInfo.InvariantCulture,
@@ -364,6 +371,31 @@ namespace SwissEphNet.Tests
                 swe.Dispose();
                 var args = method.GetParameters().Select(p => DefaultArgument(p.ParameterType)).ToArray();
                 var thrown = InvokeAndCaptureException(() => method.Invoke(swe, args));
+
+                if (isAllowListed)
+                {
+                    // An AllowList entry for an instance method exists because the method is
+                    // documented not to throw ObjectDisposedException after Dispose() (idempotent
+                    // Dispose() itself, or argument-dependent guard coverage like DMS/HMS). If it
+                    // throws one anyway, the reason text no longer describes reality -- e.g. a
+                    // ThrowIfDisposed() call added unconditionally to a method whose exemption
+                    // says its guard is argument-dependent. Skipping the invoke entirely (the
+                    // previous behaviour) could never catch that: this branch is what makes the
+                    // exemption a checked claim instead of a permanent, unverified pass.
+                    if (thrown is ObjectDisposedException)
+                    {
+                        failures.Add(string.Format(
+                            CultureInfo.InvariantCulture,
+                            "method {0}({1}) is AllowList-exempt as not throwing " +
+                            "ObjectDisposedException after Dispose(), but it did -- the AllowList " +
+                            "reason no longer holds; update or remove the entry, or restore the " +
+                            "behaviour it documents",
+                            method.Name,
+                            string.Join(", ", method.GetParameters().Select(p => p.ParameterType.Name))));
+                    }
+                    continue;
+                }
+
                 if (!(thrown is ObjectDisposedException))
                 {
                     failures.Add(string.Format(
@@ -396,11 +428,14 @@ namespace SwissEphNet.Tests
                     continue;
                 }
 
-                if (AllowList.ContainsKey(key)) continue;
+                var isAllowListed = AllowList.ContainsKey(key);
 
                 var accessor = property.GetMethod ?? property.SetMethod;
                 if (accessor != null && accessor.IsStatic)
                 {
+                    // Same reasoning as the static-method branch above: no instance exists for
+                    // Dispose() to invalidate, so there is nothing to invoke either way.
+                    if (isAllowListed) continue;
                     failures.Add(string.Format(
                         CultureInfo.InvariantCulture,
                         "static property {0} is not on AllowList -- a static member has no " +
@@ -415,7 +450,22 @@ namespace SwissEphNet.Tests
                     var swe = new SwissEph();
                     swe.Dispose();
                     var thrown = InvokeAndCaptureException(() => property.GetValue(swe));
-                    if (!(thrown is ObjectDisposedException))
+                    if (isAllowListed)
+                    {
+                        // See the AllowList-exempt method branch above for why this checks the
+                        // opposite direction instead of skipping the invoke entirely.
+                        if (thrown is ObjectDisposedException)
+                        {
+                            failures.Add(string.Format(
+                                CultureInfo.InvariantCulture,
+                                "property {0} getter is AllowList-exempt as not throwing " +
+                                "ObjectDisposedException after Dispose(), but it did -- the " +
+                                "AllowList reason no longer holds; update or remove the entry, " +
+                                "or restore the behaviour it documents",
+                                property.Name));
+                        }
+                    }
+                    else if (!(thrown is ObjectDisposedException))
                     {
                         failures.Add(string.Format(
                             CultureInfo.InvariantCulture,
@@ -430,7 +480,20 @@ namespace SwissEphNet.Tests
                     swe.Dispose();
                     var value = DefaultArgument(property.PropertyType);
                     var thrown = InvokeAndCaptureException(() => property.SetValue(swe, value));
-                    if (!(thrown is ObjectDisposedException))
+                    if (isAllowListed)
+                    {
+                        if (thrown is ObjectDisposedException)
+                        {
+                            failures.Add(string.Format(
+                                CultureInfo.InvariantCulture,
+                                "property {0} setter is AllowList-exempt as not throwing " +
+                                "ObjectDisposedException after Dispose(), but it did -- the " +
+                                "AllowList reason no longer holds; update or remove the entry, " +
+                                "or restore the behaviour it documents",
+                                property.Name));
+                        }
+                    }
+                    else if (!(thrown is ObjectDisposedException))
                     {
                         failures.Add(string.Format(
                             CultureInfo.InvariantCulture,
@@ -444,11 +507,12 @@ namespace SwissEphNet.Tests
             {
                 var key = EventKey(evt);
                 seenSignatures.Add(key);
-                if (AllowList.ContainsKey(key)) continue;
+                var isAllowListed = AllowList.ContainsKey(key);
 
                 var accessor = evt.AddMethod ?? evt.RemoveMethod;
                 if (accessor != null && accessor.IsStatic)
                 {
+                    if (isAllowListed) continue;
                     failures.Add(string.Format(
                         CultureInfo.InvariantCulture,
                         "static event {0} is not on AllowList -- a static member has no " +
@@ -461,7 +525,20 @@ namespace SwissEphNet.Tests
                 var sweAdd = new SwissEph();
                 sweAdd.Dispose();
                 var addThrown = InvokeAndCaptureException(() => evt.AddMethod.Invoke(sweAdd, new object[] { null }));
-                if (!(addThrown is ObjectDisposedException))
+                if (isAllowListed)
+                {
+                    if (addThrown is ObjectDisposedException)
+                    {
+                        failures.Add(string.Format(
+                            CultureInfo.InvariantCulture,
+                            "event {0} add accessor is AllowList-exempt as not throwing " +
+                            "ObjectDisposedException after Dispose(), but it did -- the AllowList " +
+                            "reason no longer holds; update or remove the entry, or restore the " +
+                            "behaviour it documents",
+                            evt.Name));
+                    }
+                }
+                else if (!(addThrown is ObjectDisposedException))
                 {
                     failures.Add(string.Format(
                         CultureInfo.InvariantCulture,
@@ -472,7 +549,20 @@ namespace SwissEphNet.Tests
                 var sweRemove = new SwissEph();
                 sweRemove.Dispose();
                 var removeThrown = InvokeAndCaptureException(() => evt.RemoveMethod.Invoke(sweRemove, new object[] { null }));
-                if (!(removeThrown is ObjectDisposedException))
+                if (isAllowListed)
+                {
+                    if (removeThrown is ObjectDisposedException)
+                    {
+                        failures.Add(string.Format(
+                            CultureInfo.InvariantCulture,
+                            "event {0} remove accessor is AllowList-exempt as not throwing " +
+                            "ObjectDisposedException after Dispose(), but it did -- the AllowList " +
+                            "reason no longer holds; update or remove the entry, or restore the " +
+                            "behaviour it documents",
+                            evt.Name));
+                    }
+                }
+                else if (!(removeThrown is ObjectDisposedException))
                 {
                     failures.Add(string.Format(
                         CultureInfo.InvariantCulture,
@@ -491,9 +581,16 @@ namespace SwissEphNet.Tests
             foreach (var field in type.GetFields(declaredAll).Where(IsFieldInScope))
             {
                 var key = FieldKey(field);
-                seenSignatures.Add(key);
 
+                // IsLiteral (const) fields are bulk-exempt by declaration kind, not by a named
+                // AllowList entry -- see the class remarks. seenSignatures must therefore only
+                // gain this key for non-const fields: adding it before this check would mean an
+                // AllowList entry that happened to name a const field could never be flagged
+                // stale by the sweep at the bottom of this method, because seenSignatures would
+                // already contain the key regardless of whether anything real backed it.
                 if (field.IsLiteral) continue;
+
+                seenSignatures.Add(key);
 
                 if (AllowList.ContainsKey(key)) continue;
 
@@ -524,13 +621,26 @@ namespace SwissEphNet.Tests
                     var interfaceMethod = map.InterfaceMethods[i];
                     var key = InterfaceMethodKey(iface, interfaceMethod);
                     seenSignatures.Add(key);
-                    if (AllowList.ContainsKey(key)) continue;
+                    var isAllowListed = AllowList.ContainsKey(key);
 
                     var swe = new SwissEph();
                     swe.Dispose();
                     var args = interfaceMethod.GetParameters().Select(p => DefaultArgument(p.ParameterType)).ToArray();
                     var thrown = InvokeAndCaptureException(() => interfaceMethod.Invoke(swe, args));
-                    if (!(thrown is ObjectDisposedException))
+                    if (isAllowListed)
+                    {
+                        if (thrown is ObjectDisposedException)
+                        {
+                            failures.Add(string.Format(
+                                CultureInfo.InvariantCulture,
+                                "explicit interface implementation {0}.{1} is AllowList-exempt as " +
+                                "not throwing ObjectDisposedException after Dispose(), but it did " +
+                                "-- the AllowList reason no longer holds; update or remove the " +
+                                "entry, or restore the behaviour it documents",
+                                iface.FullName, interfaceMethod.Name));
+                        }
+                    }
+                    else if (!(thrown is ObjectDisposedException))
                     {
                         failures.Add(string.Format(
                             CultureInfo.InvariantCulture,
