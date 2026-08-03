@@ -34,9 +34,10 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+      # No submodule fetch: nothing in this job reads external/swisseph.
+      # Tests/SwissEphNet.Tests uses embedded fixtures for exactly that reason
+      # (see PlaDiamCoverageTest.cs), and the library itself vendors no C.
       - uses: actions/checkout@v7
-        with:
-          submodules: recursive
 
       - uses: actions/setup-dotnet@v6
         with:
@@ -76,7 +77,7 @@ jobs:
         run: dotnet build SwissEphNet/SwissEphNet.csproj -c Release
 
       - name: Test
-        run: dotnet test Tests/SwissEphNet.Tests -c Release
+        run: dotnet test Tests/SwissEphNet.Tests -c Release -p:TestTfmsInParallel=false
 
       - name: Pack
         run: dotnet pack SwissEphNet/SwissEphNet.csproj -c Release --no-build -o "${{ runner.temp }}/packages"
