@@ -370,7 +370,14 @@ if ($SelfTest) {
     }
 
     function Assert-GateAccepts {
-        param([string] $Case, [pscustomobject] $Lab, [string] $Matching)
+        # $Matching defaults to 'gained \d+ entr', matching every sibling log gate
+        # (verify-freeze-log.ps1:255, verify-known-fail-log.ps1:247, verify-baseline-log.ps1:298):
+        # exit 0 alone cannot distinguish "the gate looked and approved" from "the gate found
+        # nothing to look at" ("[Label] no changes ... Nothing to check." also exits 0). Without a
+        # default here, the three call sites below that passed no pattern accepted either outcome
+        # silently -- a planted early-return that approves without reading a single entry would
+        # have passed this self-test as shipped.
+        param([string] $Case, [pscustomobject] $Lab, [string] $Matching = 'gained \d+ entr')
         $r = Invoke-Gate $Lab
         $problem = $null
         if ($r.Code -ne 0) { $problem = "expected exit 0, got $($r.Code)" }
