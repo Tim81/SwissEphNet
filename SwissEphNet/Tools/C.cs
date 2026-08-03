@@ -105,6 +105,17 @@ namespace SwissEphNet
             // narrowing is the only thing preventing it, and that is one edit away from changing.
             if (int.TryParse(sign + digits, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out result))
                 return result;
+            // digits is already narrowed to pure ASCII decimal digits with the sign re-attached
+            // separately, so TryParse can only fail here for two reasons: no digits at all (e.g.
+            // "" or "-" alone), which C's atoi also reads as 0, or genuine Int32 overflow. C's
+            // atoi does not return 0 on overflow the way a naive port of int.TryParse's failure
+            // path would: measured against MSVC UCRT, atoi("2147483648") saturates to 2147483647
+            // (int.MaxValue) and atoi("-2147483649") saturates to -2147483648 (int.MinValue), the
+            // same clamping strtol performs internally regardless of how many digits follow.
+            // Reproduce the clamp only when there was a real digit to overflow; an empty digit
+            // string is the other failure case and must still return 0.
+            if (digits.Length > 0)
+                return sign == "-" ? int.MinValue : int.MaxValue;
             return 0;
         }
 
