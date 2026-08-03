@@ -15,8 +15,12 @@ mean:
 
 - **closed** -- fixed, with the fix verified on the current tree
 - **open** -- still reproduces, or still a gap; the status line says what would close it
-- **open, deferred** -- real, and parked behind a decision recorded in the entry
-- **won't fix** -- a deliberate, permanent divergence, with the reasoning in the entry
+- **open, narrowed** -- part of the entry has been answered by later measurement and part has
+  not; the status line says which is which, and the body carries the measurement
+- **open upstream** -- real, reproduces, and the fix belongs in Astrodienst's source, not here
+- **won't fix** -- a deliberate, permanent divergence, with the reasoning in the entry. Includes
+  upstream behaviour this port reproduces faithfully: "the C does this too" is a reason not to
+  change it, not a reason to call it fixed
 - **record** -- never a work item: a correction, a lesson, or expected behaviour
 
 The bodies below are append-only in spirit. Where an entry's opening paragraph has been
@@ -30,8 +34,8 @@ Read the status line first and the body for how it got there.
 |---|---|
 | `swe_houses_armc`, hsys `'Y'` (APC houses) | open |
 | `swe_houses_armc` reports success while emitting NaN cusps | closed |
-| `swe_houses_armc`, hsys `'i'` (Makransky): cusp = 360.0 | open |
-| `swe_calc(SE_ECL_NUT)` returns all-zero output | open |
+| `swe_houses_armc`, hsys `'i'` (Makransky): cusp = 360.0 | won't fix |
+| `swe_calc(SE_ECL_NUT)` returns all-zero output | won't fix |
 | `swe_houses` and `swe_houses_ex(iflag=0)` disagree | closed |
 | calc/pheno SPEED fields: differentiation noise | record |
 | DIR_GLUE mis-transliteration | closed |
@@ -56,11 +60,12 @@ Read the status line first and the body for how it got there.
 | OnLoadFile superseded by IEphemerisFileProvider | closed |
 | Pointer arithmetic as concatenation in SweTest | closed |
 | The file-backed grid's divergence is Earth's position | closed |
-| What the oracle grids do not cover in the house code | open |
+| What the oracle grids do not cover in the house code | open, narrowed |
+| The pyswisseph replay's `swe_house_name` limitation | record |
 | Three wrong numbers in the local-regenerations log | record |
-| What local-mode regenerations have no check on | open |
+| What local-mode regenerations have no check on | open, narrowed |
 | `eclipse_how`'s 100-to-1 change | record |
-| Three file-layer divergences | open, deferred |
+| Three file-layer divergences | closed / won't fix |
 | swetest.c `spmoon` / `gethostname` / `do_printf` | open upstream |
 | `swe_set_jpl_file`'s AS_MAXCH clamps | won't fix |
 | swetest.c's zodiac field | closed |
@@ -211,9 +216,9 @@ not in the grid at all.
 
 ## swe_houses_armc, hsys 'i' (Makransky Sunshine houses): cusp = 360.0, missing normalization
 
-**Status: open.** Still reproduces: `H|i|0|0|120` cusp[12] is `360` in the committed
-baseline. Closing it means a `swe_degnorm` on the Makransky path, which moves 280 fields
-and needs a deviation note.
+**Status: won't fix.** The value still reproduces, but it is not a port defect: upstream C
+emits the same unnormalized `360.0`. Adding a `swe_degnorm` here would be a deliberate
+deviation from Astrodienst, not a fidelity fix. See the correction at the end of this entry.
 
 280 fields, all at `eps=0, geolat=0`, e.g. `H|i|0|0|30` gives cusp[3] = `360`;
 `H|i|0|0|120` gives cusp[12] = `360`. A house cusp is defined to be normalized into
@@ -235,10 +240,34 @@ gets fixed and these 280 fields change from `360.0` to `0.0`, that is exactly th
 kind of change the gate needs to report as a genuine difference, not silently wrap
 away.
 
+**Checked against the C, and the paragraph above is wrong where it counts.** "The Makransky
+branch in `SweHouse.cs` is missing a `swe_degnorm` call somewhere on this path" describes a
+port defect. There is none: `CPort/SweHouse.cs:3340-3344` and `external/swisseph/swehouse.c:3040-3044`
+are the same lines. Both apply `swe_degnorm` only on the `lat < 0` sub-branch, and both then
+write `cusp[ih] = cu` unnormalized, so `cu = 360 - r` with `r == 0` stores an exact `360.0`
+in either language.
+
+The comparison with `'I'` that the paragraph leans on is also misleading. `'I'` (Treindl) has
+no extra `swe_degnorm` either -- it stays inside `[0, 360)` only incidentally, because it
+computes its cusps through `Asc1` (`SweHouse.cs:3443-3444`, `swehouse.c:3132-3133`), and
+`Asc1` normalizes its own input at `swehouse.c:2062` and returns a quadrant-resolved value.
+The Makransky path never calls `Asc1`; it builds `cu` directly from `atand` results. That
+difference exists in the C, not in the port.
+
+So this is an upstream defect faithfully transliterated, and the status is `won't fix` rather
+than `open`: adding a `swe_degnorm` here would move 280 fields *away* from bit-exact agreement
+with Astrodienst and would need a deviation note recording a deliberate divergence, not a
+fidelity fix. **Do not "fix" it** without deciding, explicitly, to diverge from upstream.
+
+The `Comparer.EffectiveAbsoluteDiff` note above stays correct and is now load-bearing for a
+different reason: it must keep refusing to wrap an exact `360.0`, so that if upstream ever
+normalizes this path and the port follows, the gate reports the change rather than absorbing it.
+
 ## swe_calc(SE_ECL_NUT) returns success with all-zero output for several iflag combinations
 
-**Status: open.** Still reproduces: the `SE_ECL_NUT` branch in `CPort/Sweph.cs`'s
-`swecalc` writes only `x[0..3]` and zero-fills the rest.
+**Status: won't fix.** The behaviour still reproduces, and it is what upstream C does:
+`sweph.c` writes only `x[0..3]` in both 2.08 and 2.10.3b. See the correction at the end of
+this entry, which also detaches 30 rows this entry had wrongly attributed to it.
 
 `swe_calc`/`swe_calc_ut` with `ipl = SE_ECL_NUT` (the pseudo-body used to get
 obliquity and nutation via `xx[0]`/`xx[1]`) returns success (`retc` echoing the
@@ -261,6 +290,34 @@ for the `SE_ECL_NUT` pseudo-body under J2000/no-nutation/sidereal flag combinati
 recorded there as real 2.10.03 C returning non-zero values where the port still
 returns zero. Not fixed here; recorded as confirmed rather than left as "worth
 checking."
+
+**Checked against the C on both sides, and the port is faithful.** The paragraph above says
+the port "writes only the first four `x[]` slots before returning" as though that were the
+divergence. It is the C's own shape. `external/swisseph/sweph.c:656-664` and
+`external/pyswisseph-2.08/sweph.c:633-641` are character-for-character identical to each
+other and to `CPort/Sweph.cs:776-789`: all three assign `x[0..3]`, scale them by `RADTODEG`,
+and `return(iflag)`. This path did not change between 2.08 and 2.10.3b, so there is no
+version delta to port here either.
+
+The zeros come from `end_swe_calc`, and that is identical too (`sweph.c:507-522` against
+`Sweph.cs:610-631`): it reads `sd->xsaves+12` for `SEFLG_EQUATORIAL` and steps a further
+`+6` for `SEFLG_XYZ`, offsets that `swecalc` never wrote for this pseudo-body. On a fresh
+save area those slots are zero in C exactly as they are here. The C is equally capable of
+returning success with zeros; nothing about the port makes it worse.
+
+So the status is `won't fix`. Filling those slots would be a deliberate divergence from
+Astrodienst, not a fidelity fix. The user-facing complaint in the opening paragraph -- silent
+zeros with a success code and empty `serr` -- is a fair criticism of the upstream API, and is
+the right thing to report upstream rather than to patch here.
+
+**The 30 `CDEF|-1|*` / `CUDEF|-1|*` rows do not belong to this entry.** The paragraph above
+cites `Tests/baseline/baseline-2.8.0.2.env.txt`'s pyswisseph replay notes as independent
+corroboration. They are not corroboration of *this* mechanism: those rows are J2000,
+no-nutation and sidereal flag combinations, and none of them sets `SEFLG_EQUATORIAL` or
+`SEFLG_XYZ`, which are the only two flags the branch shape above can strand. Whatever makes
+real 2.10.03 C return non-zero where the port returns zero on those 30 rows is a different,
+currently unattributed mechanism. It is recorded here as open and unexplained rather than
+left attached to a `won't fix`, because conflating the two would retire a live question.
 
 ## swe_houses and swe_houses_ex(iflag=0) disagree with each other
 
@@ -1348,9 +1405,10 @@ the four fixed-star entry points, as recorded above.
 
 ## What the oracle grids do not cover in the house code
 
-**Status: open.** A coverage gap, not a defect. House system `'J'`'s cusp computation
-still has no external validation, and the speed derivatives are covered for only two house
-systems.
+**Status: open, narrowed.** A coverage gap, not a defect. House system `'J'`'s cusp
+computation and `swe_house_pos` **now do have external validation** -- against Astrodienst's
+own libswe rather than the analytic grid, see the correction at the end of this entry. What
+remains genuinely uncovered is the speed derivatives, verified for only two house systems.
 
 The bit-exact comparison reports 17,789 of 17,789 analytic-grid rows matching MSVC-built
 2.10.03 C. That is a real result and it is narrower than it sounds, so this records what it
@@ -1419,6 +1477,66 @@ rows between them (1,944 `houses-armc` + 480 `houses` + 829 `house-pos` at devia
 it, not deduplicated, since the same row can be touched by both). Every one of those rows is
 frozen output checked only by re-reading the C, per the paragraph above.
 
+**`'J'` is no longer unvalidated, and the route was not the one this entry proposed.** The
+paragraph above offers two ways to close the gap: add `'J'` to the analytic grid, which needs
+the C reference to compute it, or accept transliteration review as the standard of proof. There
+was a third. `scripts/validate-seeded-areas.py` replays a baseline area against pyswisseph, which
+bundles Astrodienst's own 2.10.03 libswe, and a `houses-armc` replayer has now been added to it
+(`replay_houses_armc`, registered in `AREA_REPLAYERS`). That reaches `'J'`'s cusp geometry
+directly, with no MSVC C build involved:
+
+```
+python scripts/validate-seeded-areas.py --area houses-armc
+=== houses-armc ===
+Rows: 55512  Replayable: 48240 (86.9%)  Skipped: 7272
+Agree: 48240 (100.00%)  Disagree: 0 (0.00%)
+```
+
+All 1,944 `H|J|*` rows are inside that 48,240 and all of them agree, so `'J'`'s cusps are now
+externally validated and correct, not merely reviewed. The same applies to the 918 `HP|J` rows
+this entry calls oracle-less: `--area house-pos` replays 31,528 rows with 31,526 agreeing, every
+`HP|J` row among them (the 2 exceptions are `HN|0` and `HN|Z`, a binding artefact -- see "The
+pyswisseph replay's swe_house_name limitation" below).
+
+So `swe_house_pos`, and house systems `'Z'` and `'0'`, come off the "not covered at all" list
+too; they are covered by the replay, just not by the analytic grid. The distinction worth keeping
+is what kind of oracle each is. The analytic grid is bit-exact against a locally built MSVC C;
+the replay is a 1e-6 numeric comparison against a prebuilt libswe. The replay is the weaker
+statement and the wider net, and for `'J'` it is the difference between no external evidence and
+48,240 rows of it.
+
+What the replay does **not** reach, so this entry stays open: the speed derivatives. pyswisseph's
+`houses_armc` returns cusps and `ascmc` only, so `AscDash`, the nine speed fields, and
+`swe_houses_ex2`/`swe_houses_armc_ex2`'s `cusp_speed`/`ascmc_speed` are still verified for
+Placidus and Koch alone, through conformance suite 6 testcases 8 and 9, exactly as described
+above. The `do_interpol` path reached by `L Q S X M F B Y I` still has no coverage in any oracle.
+That is now the whole of this entry's remaining scope.
+
+## The pyswisseph replay's swe_house_name limitation: 2 expected disagreements
+
+**Status: record.** Expected replay noise, not a defect. The port matches the C; the Python
+binding is the outlier.
+
+`python scripts/validate-seeded-areas.py --area house-pos` reports 2 disagreements out of 31,528
+rows, and both are `swe_house_name`:
+
+```
+HN|0: exp='Placidus' got=''
+HN|Z: exp='Placidus' got=''
+```
+
+The port is right. `swehouse.c`'s `swe_house_name` ends its 25-case switch with
+`default: return "Placidus";`, so `'0'` and `'Z'` -- neither of which is a case label -- resolve
+to `"Placidus"` in the C, which is exactly what the port returns and what the baseline froze.
+pyswisseph returns an empty string for both instead, confirmed directly: `swe.house_name(b'Z')`
+and `swe.house_name(b'0')` give `''` while `b'P'`, `b'J'`, `b'i'` and `b'Y'` give `'Placidus'`,
+`'Savard-A'`, `'Sunshine/alt.'` and `'APC houses'`. The binding is not reproducing the C's
+default branch.
+
+Recorded so the next person to run the replay reads 2 disagreements as the known binding gap
+rather than as a regression, and so nobody "fixes" the port to return an empty string and
+thereby diverges from `swehouse.c`.
+
 ## Three numbers in baseline-2.8.0.2.env.txt's local-regenerations log are wrong
 
 **Status: record.** Corrections to an append-only log, recorded here for the same reason
@@ -1450,9 +1568,10 @@ inside `[-1, 1]`. The other two mechanisms account for all of deviation 16's act
 
 ## What the local-mode baseline regenerations have no independent check on
 
-**Status: open.** A verification gap, not a defect. `swe_refrac_extended` and `calc_dip`
-remain the largest behaviour change in the 2.10.03 work with nothing in this repository
-able to contradict them.
+**Status: open, narrowed.** A verification gap, not a defect. `swe_refrac_extended` and
+`calc_dip` are **no longer unverified**: the pyswisseph replay does reach them, and all 1,676
+`atmo` rows agree -- see the correction at the end of this entry. What remains genuinely
+uncheckable in this repository is `swe_rise_trans`'s `!do_fixstar` gate.
 
 The two verification gates section of this project's contributing notes explains that a
 `local-<sha>`-provenance baseline row proves "unchanged since the day it was written," not
@@ -1505,6 +1624,34 @@ roughly a fifth (from ~5.8e-5 to ~1.16e-5 days). None of this is proof the Malla
 for this particular date range -- but it is real, independent corroboration from Astrodienst's own
 reference values, not merely "the baseline moved."
 
+**Measured, and the `swe_refrac_extended` bullet is answered.** "Nothing in this repository able
+to contradict them" was true of `setest/t.exp`, which is what that bullet actually checked, and
+false of the repository as a whole. `scripts/validate-seeded-areas.py` already carried a
+`replay_atmo` that calls pyswisseph's `refrac_extended` on every `REFX` and `LAPSEDIRECT` row --
+so the contradiction mechanism existed and had not been run:
+
+```
+python scripts/validate-seeded-areas.py --area atmo
+=== atmo ===
+Rows: 1676  Replayable: 1676 (100.0%)  Skipped: 0
+Agree: 1676 (100.00%)  Disagree: 0 (0.00%)
+```
+
+1,676 of 1,676 agree with pyswisseph 2.10.03 at a 1e-6 tolerance, zero disagreements, zero
+skips. That covers the 393 `REFX` rows deviation 19 moved. Both halves of the deviation are
+therefore corroborated against Astrodienst's own compiled library: the `if (inalt >= dip)`
+predicate flip and the `273.16` to `273.15` constant. "The largest wholly unverified behavior
+change in the 2.10.03 work so far" is no longer an accurate description of it.
+
+The distinction the original bullet was reaching for still stands and is worth keeping: no
+*conformance* testcase exercises these functions, so `t.exp` cannot catch a regression in them.
+The replay is not part of any gate either -- it is a script somebody has to run. What changed is
+that the evidence now exists and has been taken, not that it is now automatic.
+
+`swe_rise_trans`'s `!do_fixstar` gate is genuinely not reachable this way and keeps this entry
+open: the replay compares baseline rows, and the baseline has no row that both names a star and
+produces a computed result, so there is nothing for a replay to compare against either.
+
 ## eclipse_how's 100-to-1 change: the counter-example worth reading carefully
 
 **Status: record.** A lesson about reading row counts as evidence, kept because the
@@ -1545,11 +1692,14 @@ say something about correctness. The next time a deviation entry reports "N rows
 change like this, check what those rows' `serr`/`retc` actually say before treating the count as
 evidence of anything beyond "the constant is now embedded in the output."
 
-## Three file-layer divergences: two closed, one remains
+## Three file-layer divergences: two closed, one deliberate and now documented
 
-**Status: open, deferred.** `PATH_SEPARATOR` and the `AS_MAXCH` check are closed.
-`DIR_GLUE`'s Windows-only diagnostic text is still open by choice, and is still missing
-from `README.md`'s `## V:2.10.3` list where that deferred work belongs.
+**Status: closed / won't fix.** `PATH_SEPARATOR` and the `AS_MAXCH` check are closed, fixed
+with the `swi_fopen` transliteration. `DIR_GLUE` is `won't fix`: keeping `/` on every platform
+is a deliberate, permanent divergence from the C's per-platform literal, not deferred work.
+The one action it still owed -- documenting the Windows-only diagnostic-text difference for
+consumers -- has landed in `README.md`'s `# Breaking changes` / `## V:2.10.3` list, in the
+bullet directly after `OnLoadFile`'s, so nothing here is outstanding.
 
 Found while porting `swetest.c`/`swemini.c` to 2.10.03. All three predate that work: they sit in
 `sweph.c`'s file layer, carried in the port since 2.08, and 2.10.03 leaves these sites unchanged.

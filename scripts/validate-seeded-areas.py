@@ -481,6 +481,54 @@ def replay_house_pos(rows, swe, tol):
             yield RowResult(case_id, "DISAGREE", detail=f"exp={exp_pos} (no exception in baseline) but pyswisseph raised {type(ex).__name__}: {ex}")
 
 
+def replay_houses_armc(rows, swe, tol):
+    """swe_houses_armc. Field layout is Tools/BaselineMatrix/Houses.cs's Fields():
+    fields[0] = retc, fields[1..37] = cusp[0..36], fields[38..47] = ascmc[0..9].
+
+    pyswisseph returns (cusps, ascmc) with no retc, so the return code itself is
+    not comparable -- but its Error/no-Error split is, and that is what the retc
+    handling below checks. It returns cusp[1..] only (12 entries, or 36 for hsys
+    'G'), and ascmc[0..7] only, so cusp[0] (unused) and ascmc[8..9] (the
+    saved_sundec sentinel among them) have no counterpart to compare against.
+    """
+    for parts, fields in rows:
+        prefix = parts[0]
+        case_id = "|".join(parts)
+
+        if prefix != "H":
+            # HSUN pre-sets ascmc[9] (the saved_sundec sentinel) before the call and
+            # HSTATE calls twice on one instance to probe saved_sundec's carry-over.
+            # pyswisseph's houses_armc takes no ascmc input and returns no ascmc[9],
+            # so neither shape can be constructed through this binding at all.
+            yield RowResult(case_id, "SKIP", reason=f"prefix {prefix} needs ascmc[9] input/output pyswisseph does not expose")
+            continue
+
+        hsys, eps_s, geolat_s, armc_s = parts[1:5]
+        eps, geolat, armc = (to_float(x) for x in (eps_s, geolat_s, armc_s))
+        exp_retc = int(fields[0])
+
+        try:
+            cusps, ascmc = swe.houses_armc(armc, geolat, eps, hsys.encode("latin-1"))
+        except Exception as ex:  # noqa: BLE001
+            if exp_retc != 0:
+                # 2.10.03 caps the Placidus/Gauquelin pole-height iterations
+                # (swehouse.c:940's niter_max) and falls back to Porphyry, returning
+                # ERR alongside real cusps. pyswisseph turns that ERR into an
+                # exception and drops the cusps, so there is nothing left to compare.
+                yield RowResult(case_id, "SKIP", reason="baseline retc is ERR; pyswisseph raises and discards the Porphyry-fallback cusps")
+            else:
+                yield RowResult(case_id, "DISAGREE", detail=f"baseline retc={exp_retc} but pyswisseph raised: {type(ex).__name__}: {ex}")
+            continue
+
+        if exp_retc != 0:
+            yield RowResult(case_id, "DISAGREE", detail=f"baseline retc={exp_retc} (ERR) but pyswisseph returned successfully")
+            continue
+
+        exp = [to_float(f) for f in fields[2:2 + len(cusps)]] + [to_float(f) for f in fields[38:46]]
+        got = list(cusps) + list(ascmc[0:8])
+        yield _numlist(case_id, exp, got, tol, note="cusp[0] and ascmc[8..9] not exposed by pyswisseph")
+
+
 def _pheno_like(prefix_ok, case_id, ipl, jd, fields, swe, tol):
     exp_retc = int(fields[0])
     exp_attr = [to_float(f) for f in fields[1:7]]
@@ -816,6 +864,7 @@ AREA_REPLAYERS = {
     "ayanamsa": replay_ayanamsa,
     "datetime": replay_datetime,
     "house-pos": replay_house_pos,
+    "houses-armc": replay_houses_armc,
     "pheno-ast": replay_pheno_ast,
     "eclipse": replay_eclipse,
     "risetrans": replay_risetrans,
@@ -888,7 +937,7 @@ AREA_SUBPROCESS_TIMEOUT_SECONDS = 180
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--area", action="append", dest="areas", help="Restrict to this area (repeatable). Default: all ten replayable areas, each in its own subprocess -- see AREA_SUBPROCESS_TIMEOUT_SECONDS's comment for why.")
+    parser.add_argument("--area", action="append", dest="areas", help="Restrict to this area (repeatable). Default: all eleven replayable areas, each in its own subprocess -- see AREA_SUBPROCESS_TIMEOUT_SECONDS's comment for why.")
     parser.add_argument("--tolerance", type=float, default=1e-6, help="Absolute tolerance for numeric comparisons (default 1e-6).")
     parser.add_argument("--baseline-dir", default=None, help="Directory containing baseline-*.tsv (default: Tests/baseline next to this script's repo root).")
     parser.add_argument("--max-detail", type=int, default=15, help="Max disagreement rows to print per area (default 15).")
