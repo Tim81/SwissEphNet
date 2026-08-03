@@ -56,11 +56,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           # Both runtimes, not just 10.0.x: the test project targets
           # net8.0;net10.0, and the 10.0 SDK does not carry the 8.0 runtime on its
@@ -86,7 +86,7 @@ jobs:
       # timeout, so the job fails fast with an attached mini-dump naming the actual hung test,
       # instead of silently consuming the full job budget.
       - name: Test
-        run: dotnet test Tests/SwissEphNet.Tests/SwissEphNet.Tests.csproj -c ${{ matrix.configuration }} --no-build --logger trx --results-directory TestResults --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type mini
+        run: dotnet test Tests/SwissEphNet.Tests/SwissEphNet.Tests.csproj -c ${{ matrix.configuration }} -p:TestTfmsInParallel=false --no-build --logger trx --results-directory TestResults --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type mini
 
       # net462 and net48, so Windows only (same reasoning as the SweWin build step
       # above). Exercises the netstandard2.0 asset, which nothing else here runs --
@@ -100,7 +100,7 @@ jobs:
       # without a hang dump as any other unbounded-wait defect would be.
       - name: Test (netstandard2.0 smoke)
         if: runner.os == 'Windows'
-        run: dotnet test Tests/NetStandard20Smoke.Tests/NetStandard20Smoke.Tests.csproj -c ${{ matrix.configuration }} --no-build --logger trx --results-directory TestResults --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type mini
+        run: dotnet test Tests/NetStandard20Smoke.Tests/NetStandard20Smoke.Tests.csproj -c ${{ matrix.configuration }} -p:TestTfmsInParallel=false --no-build --logger trx --results-directory TestResults --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type mini
 
       # Beside the netstandard2.0 smoke job above, on Windows only, for the same net462/net48
       # reason -- but measures a different thing: the smoke job pins one known recursion bug, this
@@ -125,7 +125,7 @@ jobs:
         run: pwsh scripts/verify-netstandard-compat.ps1
 
       - name: Publish test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: test-results-${{ matrix.os }}-${{ matrix.configuration }}
@@ -142,7 +142,7 @@ jobs:
     name: Transliteration freeze
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # resolve-log-base.ps1 (and the git log range it produces) need history beyond the
           # default shallow clone -- same reasoning as the other jobs in this workflow that
@@ -295,9 +295,9 @@ jobs:
     name: No package dependencies
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           # Both runtimes: the library multi-targets netstandard2.0;net8.0;net10.0, and
           # packing needs the net8.0 SDK/runtime present alongside net10.0.
@@ -329,9 +329,9 @@ jobs:
     name: Pack the release artifact
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           # Both runtimes: the library multi-targets netstandard2.0;net8.0;net10.0, and packing
           # needs the net8.0 SDK/runtime present alongside net10.0 -- same reasoning as
@@ -391,7 +391,7 @@ jobs:
           Write-Host "OK: all $($pdbs.Count) .pdb file(s) in $($snupkg.Name) carry the deterministic SourceLink root."
 
       - name: Upload release artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: nuget-package
           path: |
@@ -421,7 +421,7 @@ jobs:
     name: Documentation counts match the repository
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Self-test the documented-counts gate
         shell: pwsh
@@ -441,7 +441,7 @@ jobs:
     name: Documentation does not teach a removed API
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Self-test the removed-API documentation gate
         shell: pwsh
@@ -481,7 +481,7 @@ jobs:
     name: No tooling-authorship text in tracked files or new commits
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Same reasoning as baseline.yml's own log-check job: resolve-log-base.ps1 (and the
           # git log range it produces) need history beyond the default shallow clone.
