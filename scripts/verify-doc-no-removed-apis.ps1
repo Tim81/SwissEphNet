@@ -151,7 +151,12 @@ function Invoke-RemovedApiScan {
     # Kept separately from $currentUsageDocs (below) so the vacuity-floor error message at the bottom
     # of this script can name what it looked for even when every one of those paths turned out not to
     # exist -- the filtered list itself would just be empty at that point.
-    $docCandidateNames = @('README.md')
+    # README.nuget.md is the file SwissEphNet.csproj's PackageReadmeFile actually ships, so it is
+    # the one a consumer reads first and the one that must never teach a removed API. README.md
+    # stays on the list because it is the repository's own current-usage document. Both, not
+    # either: the two exist separately because nuget.org cannot render README.md's doccount
+    # markers (see the csproj comment), and a split like that is exactly how one copy drifts.
+    $docCandidateNames = @('README.md', 'README.nuget.md')
     $currentUsageDocs = $docCandidateNames | ForEach-Object { Join-Path $RepoRoot $_ } |
         Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }
 

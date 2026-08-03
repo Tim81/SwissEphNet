@@ -115,7 +115,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Self-test the continue-on-error placement gate
         shell: pwsh
@@ -143,7 +143,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # resolve-log-base.ps1 (and the git log range it produces) need history beyond the
           # default shallow clone -- same reasoning as ci.yml's verify-freeze job.
@@ -198,7 +198,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Self-test the grid header parity gate
         shell: pwsh
@@ -218,9 +218,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -238,9 +238,9 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -258,7 +258,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Same assertion as conformance.yml's own copy: the cache key and the checkout step below
       # both carry the pinned SHA as a literal, so a submodule bump that forgets to update either
@@ -278,7 +278,7 @@ jobs:
 
       - name: Cache external/swisseph submodule
         id: submodule-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: external/swisseph
           key: swisseph-submodule-f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
@@ -318,7 +318,7 @@ jobs:
       # when the 2.08 baseline itself would actually change.
       - name: Cache external/pyswisseph-2.08 (2.08 C baseline)
         id: pyswisseph208-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: external/pyswisseph-2.08
           key: pyswisseph-208-${{ hashFiles('scripts/fetch-2.08-baseline.ps1', 'scripts/pyswisseph-2.08.manifest.tsv') }}
@@ -339,7 +339,7 @@ jobs:
         shell: pwsh
         run: pwsh Tools/CReference/build-c.ps1
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.x"
 
@@ -376,7 +376,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: pwsh
@@ -392,7 +392,7 @@ jobs:
 
       - name: Cache external/swisseph submodule
         id: submodule-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: external/swisseph
           key: swisseph-submodule-f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
@@ -427,7 +427,7 @@ jobs:
 
       - name: Cache external/pyswisseph-2.08 (2.08 C baseline)
         id: pyswisseph208-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: external/pyswisseph-2.08
           key: pyswisseph-208-${{ hashFiles('scripts/fetch-2.08-baseline.ps1', 'scripts/pyswisseph-2.08.manifest.tsv') }}
@@ -479,7 +479,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: pwsh
@@ -495,7 +495,7 @@ jobs:
 
       - name: Cache external/swisseph submodule
         id: submodule-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: external/swisseph
           key: swisseph-submodule-f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
@@ -530,7 +530,7 @@ jobs:
 
       - name: Cache external/pyswisseph-2.08 (2.08 C baseline)
         id: pyswisseph208-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: external/pyswisseph-2.08
           key: pyswisseph-208-${{ hashFiles('scripts/fetch-2.08-baseline.ps1', 'scripts/pyswisseph-2.08.manifest.tsv') }}
@@ -544,7 +544,7 @@ jobs:
         shell: pwsh
         run: pwsh Tools/CReference/build-c.ps1
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -643,7 +643,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: pwsh
@@ -659,7 +659,7 @@ jobs:
 
       - name: Cache external/swisseph submodule
         id: submodule-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: external/swisseph
           key: swisseph-submodule-f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
@@ -694,7 +694,7 @@ jobs:
 
       - name: Cache external/pyswisseph-2.08 (2.08 C baseline)
         id: pyswisseph208-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: external/pyswisseph-2.08
           key: pyswisseph-208-${{ hashFiles('scripts/fetch-2.08-baseline.ps1', 'scripts/pyswisseph-2.08.manifest.tsv') }}
@@ -711,7 +711,7 @@ jobs:
         shell: pwsh
         run: pwsh Tools/CReference/build-c.ps1
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -768,7 +768,7 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: bash
@@ -783,7 +783,7 @@ jobs:
 
       - name: Cache external/swisseph submodule
         id: submodule-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: external/swisseph
           key: swisseph-submodule-macos-f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
@@ -802,7 +802,7 @@ jobs:
             '/ephe/sefstars.txt' '/ephe/seorbel.txt' > .git/info/sparse-checkout
           git checkout "$pinned"
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -1078,7 +1078,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: bash
@@ -1093,7 +1093,7 @@ jobs:
 
       - name: Cache external/swisseph submodule
         id: submodule-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: external/swisseph
           key: swisseph-submodule-linux-f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
@@ -1112,7 +1112,7 @@ jobs:
             '/ephe/sefstars.txt' '/ephe/seorbel.txt' > .git/info/sparse-checkout
           git checkout "$pinned"
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
