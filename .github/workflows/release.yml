@@ -1,0 +1,143 @@
+name: Release
+
+# Publishes SwissEphSharp to nuget.org and cuts a GitHub Release, on a `v*` tag.
+#
+# Trusted Publishing (OIDC), not a stored API key: `NuGet/login@v1` exchanges the
+# workflow's OIDC token for a short-lived key, so nothing long-lived sits in this
+# repository's secrets. Two things have to exist before a tag can publish, and
+# neither can be created from here:
+#
+#   1. A trusted-publishing policy on nuget.org for the `SwissEphSharp` package ID,
+#      bound to this repository and to this workflow file. Create it under your
+#      nuget.org account, Trusted Publishing. The package ID does not have to exist
+#      yet; registering the policy first is what reserves it to this repository.
+#   2. A `NUGET_USER` repository secret holding the nuget.org username that owns
+#      that policy.
+#
+# Until both exist the "NuGet login" step fails and nothing is pushed, which is the
+# intended failure mode: no half-published release.
+#
+# Deliberately not a solution-wide pack, unlike some sibling repositories. Only
+# SwissEphNet/SwissEphNet.csproj is packable here. `dotnet pack SwissEphNet.sln`
+# would drag in Programs/SweWin (net10.0-windows, which cannot build on this
+# runner) plus every Tools/ and Tests/ project.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write   # create the GitHub Release
+  id-token: write   # mint the OIDC token for NuGet Trusted Publishing
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      # No submodule fetch: nothing in this job reads external/swisseph.
+      # Tests/SwissEphNet.Tests uses embedded fixtures for exactly that reason
+      # (see PlaDiamCoverageTest.cs), and the library itself vendors no C.
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      # The csproj is the source of truth for the version, not the tag: it carries
+      # the reasoning for the four-component scheme, and the assembly binds on what
+      # it says. So the tag is checked against it rather than overriding it with
+      # -p:Version. A mismatch means someone tagged without bumping the project (or
+      # bumped without retagging), and that is worth failing on rather than
+      # silently publishing a version nobody declared.
+      - name: Check the tag against the project version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag_version="${GITHUB_REF_NAME#v}"
+          if [[ -z "$tag_version" ]]; then
+            echo "::error::Tag '${GITHUB_REF_NAME}' yields an empty version; expected 'vX.Y.Z'."
+            exit 1
+          fi
+          proj_version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' SwissEphNet/SwissEphNet.csproj | head -1)
+          if [[ -z "$proj_version" ]]; then
+            echo "::error::No <Version> found in SwissEphNet/SwissEphNet.csproj."
+            exit 1
+          fi
+          if [[ "$tag_version" != "$proj_version" ]]; then
+            echo "::error::Tag says $tag_version, SwissEphNet.csproj says $proj_version. Bump one to match the other."
+            exit 1
+          fi
+          echo "version=$proj_version" >> "$GITHUB_OUTPUT"
+          echo "Publishing version $proj_version"
+
+      - name: Build
+        run: dotnet build SwissEphNet/SwissEphNet.csproj -c Release
+
+      - name: Test
+        run: dotnet test Tests/SwissEphNet.Tests -c Release -p:TestTfmsInParallel=false
+
+      - name: Pack
+        run: dotnet pack SwissEphNet/SwissEphNet.csproj -c Release --no-build -o "${{ runner.temp }}/packages"
+
+      # The package's own contents are asserted, because getting this wrong is
+      # silent and permanent: nuget.org does not allow deleting a published
+      # version, only unlisting it. PackageReadmeFile pointing at the wrong file
+      # is exactly the kind of mistake that ships and cannot be taken back.
+      - name: Verify what is actually in the package
+        shell: bash
+        run: |
+          set -euo pipefail
+          nupkg=$(ls "${{ runner.temp }}"/packages/*.nupkg)
+          echo "Inspecting $nupkg"
+          contents=$(unzip -Z1 "$nupkg")
+          echo "$contents"
+          for required in README.nuget.md LICENSE NOTICE agpl-3.0.txt; do
+            if ! grep -qx "$required" <<< "$contents"; then
+              echo "::error::$required is missing from the package."
+              exit 1
+            fi
+          done
+          if grep -qx "README.md" <<< "$contents"; then
+            echo "::error::README.md is in the package. The shipped readme is README.nuget.md; README.md carries doccount markers that nuget.org renders as visible text."
+            exit 1
+          fi
+          for tfm in netstandard2.0 net8.0 net10.0; do
+            if ! grep -q "^lib/$tfm/SwissEphSharp.dll$" <<< "$contents"; then
+              echo "::error::lib/$tfm/SwissEphSharp.dll is missing from the package."
+              exit 1
+            fi
+          done
+          echo "Package contents OK."
+
+      - name: NuGet login (OIDC to a short-lived API key)
+        uses: NuGet/login@v1
+        id: nuget-login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Push to NuGet.org
+        run: >
+          dotnet nuget push "${{ runner.temp }}/packages/*.nupkg"
+          --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - name: Create GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.version }}"
+          prerelease_flag=""
+          if [[ "$version" == *-* ]]; then
+            prerelease_flag="--prerelease"
+          fi
+          gh release create "$GITHUB_REF_NAME" \
+            "${{ runner.temp }}"/packages/*.nupkg \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            $prerelease_flag

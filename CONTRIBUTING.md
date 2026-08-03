@@ -192,8 +192,8 @@ the checkout finishes: without the sparse patterns above, `ephe/` (and every oth
 path) stays checked out on disk permanently, for as long as the submodule is initialized this
 way. Only use it if disk footprint genuinely does not matter for your checkout.
 
-CI jobs that do not read `external/swisseph` should not pay for it: `actions/checkout@v4`
-does not fetch submodules by default, and none of the jobs in `.github/workflows/ci.yml`
+CI jobs that do not read `external/swisseph` should not pay for it: `actions/checkout`
+does not fetch submodules by default at any version, and none of the jobs in `.github/workflows/ci.yml`
 or `.github/workflows/baseline.yml` need to -- they build, test and freeze-check the
 .NET solution, none of which reads the vendored C. Only add `submodules: true` (or
 `recursive`) to a checkout step if a future job actually invokes `scripts/gen-delta.ps1`

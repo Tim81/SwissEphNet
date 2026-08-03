@@ -449,19 +449,14 @@ assembly-identity check does not detect a suspicious match.
 to Windows.** It is not portable to Linux/macOS by construction, and that is a
 choice, not an oversight -- see the measurements below for why.
 
-A full Windows-vs-Linux comparison (same source, same commit, `.NET SDK 10.0.302`
-both sides, Linux via `mcr.microsoft.com/dotnet/sdk:10.0-noble` on Ubuntu 24.04.4,
-which is what `ubuntu-latest` currently resolves to) was run against the matrix as
-it stood at commit `5148573` (2026-07-31, "Re-measure the Windows-vs-Linux
-divergence against the current matrix"):
+A full Windows-vs-Linux comparison was re-run against the **current** matrix, at
+commit `d0587ec`, from a pristine clone so no Windows build output could reach the
+Linux side. Windows is the committed baseline; Linux is .NET 10.0.10 on Ubuntu
+24.04.4, via `mcr.microsoft.com/dotnet/sdk:10.0` at digest `sha256:ed034a8b`:
 
-- **3,547,367** numeric fields compared; **66,342** (1.87%) differ at all between
+- **3,547,935** numeric fields compared; **66,390** (1.8712%) differ at all between
   platforms; **5,394** are still beyond the shipped tolerance after the
   angle-wraparound allowance.
-- **net8.0 and net10.0 produce identical numbers**, to the field: .NET 8.0.29 and
-  .NET 10.0.10 each report 3,547,367 / 66,342 / 5,394. The divergence is
-  ucrtbase-versus-glibc, not a difference between .NET versions, which is why the
-  bit-exactness claim is scoped by platform rather than by runtime version.
 - Five areas are bit-identical across platforms outright: `format`, `misc`,
   `pheno-ast`, `risetrans` and `atmo`. They are formatting, date arithmetic and
   table lookups, so no transcendental is involved.
@@ -469,18 +464,22 @@ divergence against the current matrix"):
   tolerance doing what it was sized for against real libm divergence rather than
   synthetic boundary tests. `calc` (11.27% of fields, 3,442 beyond tolerance) and
   `nodaps` (14.96%) are the heaviest contributors.
+- Every one of `houses-armc`'s 210 beyond-tolerance fields belongs to one of two
+  house systems: 209 to `'I'` and 1 to `'Y'`. Nothing else in that 2.66-million-field
+  area exceeds tolerance. See `docs/known-issues.md` for both.
 
-**This triple is itself superseded.** `Tests/baseline/` has changed since commit
-`5148573`: `row-counts.tsv` moved `astromodels` 300 -> 329 and `coord` 294 -> 394,
-and eight more area files (`baseline-ayanamsa.tsv`, `baseline-calc-defaulteph.tsv`,
-`baseline-datetime.tsv`, `baseline-eclipse.tsv`, `baseline-gauquelin.tsv`,
-`baseline-misc.tsv`, `baseline-orbit.tsv`, `baseline-pheno-ast.tsv`) carry value
-churn on top of that. The 3,547,367 / 66,342 / 5,394 figures above no longer
-describe the current matrix; a Windows-vs-Linux re-measure against the current
-baseline is outstanding. Do not quote this triple as current without re-running it.
+**What this run did not cover: net8.0.** Only net10.0 was measured. The
+`mcr.microsoft.com/dotnet/sdk:10.0` image ships `Microsoft.NETCore.App 10.0.10` and
+nothing else, so `-f net8.0` cannot run in it; the CI job installs both runtimes and
+is where that leg gets exercised. The earlier measurement found net8.0 and net10.0
+field-identical, which is what makes the divergence a ucrtbase-versus-glibc property
+rather than a runtime-version one, but that specific claim has not been re-confirmed
+at the current matrix size.
 
-The earlier pass, against a smaller matrix (3,443,058 numeric fields), found 47,052
-differing and 3,346 beyond tolerance. The per-field findings below (the `'Y'` and
+Two earlier triples are superseded and should not be quoted: 3,547,367 / 66,342 /
+5,394, measured at commit `5148573` before `Tests/baseline/` grew again, and
+3,443,058 / 47,052 / 3,346 from the pass before that, against a smaller matrix
+still. The per-field findings below (the `'Y'` and
 `'i'` house-system bugs, the SPEED differentiation noise) come from that pass and
 still describe fields present in the current matrix; the sub-counts in the bullets
 that follow have not been re-derived against the current run, so read them as

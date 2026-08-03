@@ -46,7 +46,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The cache key below and the checkout step's $pinnedSha are both a
       # hardcoded literal, deliberately (see that step's comment) -- which
@@ -80,7 +80,7 @@ jobs:
       # a bump restores instantly instead of re-cloning.
       - name: Cache external/swisseph submodule
         id: submodule-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: external/swisseph
           key: swisseph-submodule-f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
@@ -117,7 +117,7 @@ jobs:
           git checkout $pinnedSha
           Pop-Location
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: |
             8.0.x
@@ -145,7 +145,7 @@ jobs:
       - name: Run conformance oracle
         shell: pwsh
         run: >
-          dotnet test Tests/SwissEphNet.Conformance.Tests/SwissEphNet.Conformance.Tests.csproj
+          dotnet test Tests/SwissEphNet.Conformance.Tests/SwissEphNet.Conformance.Tests.csproj -p:TestTfmsInParallel=false
           -c Release
           --logger "console;verbosity=detailed"
           --logger trx
@@ -155,7 +155,7 @@ jobs:
           --blame-hang-dump-type mini
 
       - name: Upload conformance report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: conformance-report
@@ -192,7 +192,7 @@ jobs:
     # all -- this is not a rule they follow and this job broke, it is one only this workflow needed.
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # resolve-log-base.ps1 (and the git log range it produces) need history beyond the
           # default shallow clone -- same reasoning as ci.yml's verify-freeze job.

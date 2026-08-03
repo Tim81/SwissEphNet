@@ -27,7 +27,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Full history, not the default shallow clone: verify-baseline-log.ps1 (below)
           # diffs HEAD against the PR base / previous push commit to decide whether
@@ -100,7 +100,7 @@ jobs:
         shell: pwsh
         run: pwsh scripts/verify-baseline-log.ps1 -BaseRef '${{ steps.base-ref.outputs.sha }}'
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           # Both runtimes: scripts/verify-baseline.ps1 runs BaselineVerify against
           # both net8.0 and net10.0 (see Tools/BaselineGen/README.md, "Why net8.0
@@ -115,7 +115,7 @@ jobs:
       # reasoning; this gate's own unit test suite gets the same protection.
       - name: Run gate unit tests
         shell: pwsh
-        run: dotnet test Tools/BaselineVerify.Tests -c Release --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type mini
+        run: dotnet test Tools/BaselineVerify.Tests -c Release -p:TestTfmsInParallel=false --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type mini
 
       # Compile-only, not a full regeneration: this job's own "Verify baseline" step
       # below only ever builds Tools/BaselineMatrix in local mode (a ProjectReference
@@ -154,9 +154,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           # Both runtimes; see the note on the same step in verify-baseline above.
           dotnet-version: |
@@ -166,7 +166,7 @@ jobs:
       # --blame-hang: same reasoning as verify-baseline's identical step above.
       - name: Run gate unit tests
         shell: pwsh
-        run: dotnet test Tools/BaselineVerify.Tests -c Release --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type mini
+        run: dotnet test Tools/BaselineVerify.Tests -c Release -p:TestTfmsInParallel=false --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type mini
 
       - name: Report cross-platform divergence (never fails)
         shell: pwsh
