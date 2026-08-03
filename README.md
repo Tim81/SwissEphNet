@@ -542,18 +542,28 @@ Source-level and reflection-based consumers can be affected:
   and later only. This is now a committed, gated instrument
   (`scripts/verify-netstandard-compat.ps1`, `Tools/NetStandardCompat/`,
   `Tests/netstandard-compat/known-diff-*.tsv`) rather than an ad hoc, unreproducible
-  measurement, and it replaces an earlier note's numbers, which understated the gap: running
+  measurement, and it replaces an earlier note's numbers, which counted fewer differing calls
+  and named a smaller worst-case relative error than a swept grid finds: running
   the same `netstandard2.0` asset's `swe_calc` over a committed 102-call grid (34 bodies --
   `SE_SUN`..`SE_EARTH` plus every fictitious-body constant `swephexp.h` defines,
   `SE_CUPIDO`..`SE_WALDEMATH` -- crossed with 3 epochs, `SEFLG_MOSEPH|SEFLG_SPEED`), .NET
   Framework 4.8 and 4.6.2 both differ from .NET 10 on the identical 29 of those rows (byte-
   identical between the two Framework versions), not the earlier note's "21 of 111". The
-  worst divergence is not `SE_TRUE_NODE`'s longitude speed either: it is `SE_ADMETOS` (a
-  fictitious body)'s latitude speed, 2.28e-3 relative, four orders of magnitude past what
-  was previously cited as the worst case. `SE_TRUE_NODE`'s own longitude speed still comes in
-  close to the earlier figure (1.33e-7 relative, reproducible from this same grid), so that
-  data point was not wrong, it just was not the worst case once fictitious bodies were swept
-  too. `net8.0` and `net10.0` still agree on all 102 calls, as the earlier note claimed. The
+  worst divergence by relative error is not `SE_TRUE_NODE`'s longitude speed either: it is
+  `SE_ADMETOS` (a fictitious body)'s latitude speed, 2.28e-3 relative. Read that figure with
+  its magnitude attached, though, because on its own it invites a conclusion the numbers do
+  not support. That latitude speed is itself about -6.1e-06 degrees per day, so a 2.28e-3
+  relative divergence is an absolute one of 1.4e-08 degrees per day: the relative error is
+  large only because the quantity it divides by is nearly zero. Separating the two kinds of
+  field makes the picture plain. Across the whole grid the *positions* -- longitude, latitude
+  and distance, the values a chart actually renders -- agree to within 1.08e-10 relative,
+  worst case, which is 2.3e-09 degrees, or 8.4e-06 arcseconds. Every divergence beyond that
+  sits in a speed component, and the largest absolute speed divergence anywhere in the grid is
+  1.8e-08 (`SE_ADMETOS`'s distance speed, in AU per day). `SE_TRUE_NODE`'s own longitude speed
+  still comes in close to the earlier figure (1.33e-7 relative, reproducible from this same
+  grid), so that data point was not wrong; it was simply not the largest relative figure once
+  fictitious bodies were swept too. `net8.0` and `net10.0` agree on all 102 calls, as the
+  earlier note claimed. The
   causal claim held up under direct testing: `Tools/NetStandardCompat/RawMathProbe` compares
   raw `Math.Sin`/`Math.Cos`/`Math.Tan`/`Math.Atan2` between net48 and net10.0 over 14,006
   swept arguments with no `SwissEphNet` code involved at all, and net48's results differ from
