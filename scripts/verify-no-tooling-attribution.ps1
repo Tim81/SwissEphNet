@@ -90,8 +90,10 @@
     Recorded rather than fixed: it needs decoding diff hunks rather than files, and every such
     file is caught by check 1 for as long as it exists in the tree.
 
-    docs/upstream/ is untracked, so `git grep` (which searches the index, not the working tree)
-    never sees it regardless of any explicit exclusion.
+    docs/upstream/ is tracked (8 files, correspondence with Astrodienst about defects found while
+    porting to 2.10.03), not untracked, and this scan carries no exclusion for it -- `git grep`
+    (which searches the index) reads it exactly like any other tracked file below, so it already
+    gets the same coverage as everything else this check scans.
 
     False positives are the one thing that gets a check like this disabled, so every pattern above
     was checked against this repository's current tree before being added, and the phrasing was
