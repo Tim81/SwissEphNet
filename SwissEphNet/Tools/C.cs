@@ -26,6 +26,15 @@ namespace SwissEphNet
         /// result was 0 where C gives 2.10. That reached swe_set_astro_models, whose version
         /// branch (swephlib.c:4207) selects a different model bundle and a different tidal
         /// acceleration for 0 than for 2.10.
+        ///
+        /// The style must be Float, not Any. Any adds AllowTrailingSign, AllowParentheses,
+        /// AllowThousands and AllowCurrencySymbol, none of which strtod accepts, and the first
+        /// of those silently flips a sign. On "47.787931-1670.056*T" -- the shape swemplan.c's
+        /// check_t_terms hands to atof for Vulcan's node in seorbel.txt -- fchars keeps
+        /// "47.787931-1670.056", the full string fails to parse, and the back-off loop reaches
+        /// "47.787931-", which NumberStyles.Any reads as a trailing minus and returns
+        /// -47.787931. C's strtod stops at the '-' and returns +47.787931. Float allows a
+        /// leading sign only, which is what strtod does.
         /// </remarks>
         public static double atof(string s) {
             s = (s ?? string.Empty).Trim();
@@ -36,7 +45,7 @@ namespace SwissEphNet
             for (int len = s.Length; len > 0; len--) {
                 string candidate = s.Substring(0, len);
                 double result;
-                if (double.TryParse(candidate, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out result))
+                if (double.TryParse(candidate, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out result))
                     return result;
                 // strtod returns HUGE_VAL (infinity) on overflow, never a
                 // smaller finite number. double.TryParse agrees on net8.0/
@@ -89,7 +98,12 @@ namespace SwissEphNet
             if (i >= 0)
                 digits = digits.Substring(0, i);
             int result = 0;
-            if (int.TryParse(sign + digits, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out result))
+            // Integer, not Any, for the same reason atof above uses Float: Any would accept a
+            // trailing sign, thousands separators and parentheses, none of which strtol takes.
+            // Unlike atof this is not a live defect -- digits is already narrowed to ichars and
+            // the sign is re-attached explicitly, so nothing Any allows can reach here -- but the
+            // narrowing is the only thing preventing it, and that is one edit away from changing.
+            if (int.TryParse(sign + digits, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out result))
                 return result;
             return 0;
         }
