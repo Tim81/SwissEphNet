@@ -145,8 +145,15 @@ namespace SwissEphNet
         /// <see cref="FileProvider"/> individually would be exactly the kind of silent trap this
         /// property is meant to close off: set it once, before constructing anything, and every
         /// instance created afterwards inherits it.
+        ///
+        /// Not thread-safe: this is a plain, unsynchronized static property, so setting it
+        /// concurrently with constructing a new <see cref="SwissEph"/> instance on another thread
+        /// races -- the new instance's constructor may read either the old or the new value,
+        /// with no ordering guarantee. Set it once, before any construction starts, the way the
+        /// harnesses above already do; do not mutate it while instances are being created
+        /// concurrently.
         /// </remarks>
-        public static IEphemerisFileProvider DefaultFileProvider = null;
+        public static IEphemerisFileProvider DefaultFileProvider { get; set; } = null;
 
         /// <summary>
         /// Resolves ephemeris file content that does not come from the real filesystem, e.g. an
