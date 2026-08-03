@@ -514,7 +514,23 @@ function Get-FirstDiffSummary {
             $c = $trimmed[0]
             $n = $trimmed[1]
             $countNote = if ($CLines.Count -ne $NetLines.Count) { " ($($CLines.Count) C line(s) vs $($NetLines.Count) .NET line(s))" } else { '' }
-            return "line $($i + 1)$($countNote): c=`"$c`" net=`"$n`""
+            # The port's own output, digested, appended to the human-readable summary. The summary
+            # names only the FIRST differing line, and Get-ReasonDigest reduces it to that line's
+            # number, so without this a regression anywhere after the first differing line keeps the
+            # digest identical and the row keeps passing. That is not hypothetical: 13 of the 15
+            # listed rows are pinned at line 1 by a path-separator difference that will never be
+            # fixed, so for those rows every line from 2 onward was outside the gate -- including
+            # the entire computed ephemeris row on the three NEW_2_10_FLAGS|LIM_* cases, which is
+            # the only thing those rows exist to check.
+            #
+            # Digest the .NET side, not the C side and not the pair. These exemptions exist because
+            # the C reference binary's output legitimately shifts with the MSVC toolchain, which is
+            # exactly what a listed row is meant to tolerate; hashing the C side or the pair would
+            # turn every compiler bump into a false failure and get the list regenerated to silence
+            # it. The port's output is toolchain-independent here, so any change to it is a port
+            # change, which is the thing this gate is for.
+            $netDigest = Get-OutputDigest -Lines $NetLines
+            return "line $($i + 1)$($countNote): c=`"$c`" net=`"$n`" [net-output $netDigest]"
         }
     }
     return 'outputs differ but no differing line was found -- this is a bug in this script, not a real result'
@@ -540,11 +556,33 @@ function Get-FirstDiffSummary {
 # digests to the reason text itself unchanged, since there is no line-number structure to extract
 # and those categories are few enough in practice that literal comparison is not overly strict for
 # them.
+function Get-OutputDigest {
+    # First 12 hex characters of the SHA-256 over the joined lines. Short enough to sit in a reason
+    # string a human reads, long enough that a collision is not a practical concern for a set this
+    # size (15 rows).
+    param([string[]] $Lines)
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes(($Lines -join "`n"))
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        return (($sha.ComputeHash($bytes) | ForEach-Object { $_.ToString('x2') }) -join '').Substring(0, 12)
+    }
+    finally { $sha.Dispose() }
+}
+
 function Get-ReasonDigest {
     param([string] $Reason)
+    # The digest deliberately drops the quoted line CONTENT -- that is where the machine-specific
+    # ephemeris path and the MSVC-version-dependent text live, and a listed row must survive both.
+    # It keeps the first differing line's number AND the .NET output digest, so a row stays matched
+    # only while the port produces the same bytes it produced when the row was recorded.
     $lineMatch = [regex]::Match($Reason, '^line (\d+)')
+    $netMatch = [regex]::Match($Reason, '\[net-output ([0-9a-f]{12})\]')
     if ($lineMatch.Success) {
-        return "line=$($lineMatch.Groups[1].Value)"
+        $digest = "line=$($lineMatch.Groups[1].Value)"
+        if ($netMatch.Success) {
+            $digest += ";net-output=$($netMatch.Groups[1].Value)"
+        }
+        return $digest
     }
     return $Reason
 }
