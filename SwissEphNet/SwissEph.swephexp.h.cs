@@ -459,29 +459,28 @@ namespace SwissEphNet
         // consistent with DIR_GLUE's own existing "one value for every platform" choice.
         //
         // The non-Windows string carries upstream's three components in upstream's order,
-        // but joined with ';' where swephexp.h:403 writes ':'. That is not a typo and not
-        // a second guess at the C: it is forced by this port's own PATH_SEPARATOR, which
-        // is deliberately { ';' } on every platform (SwissEph.sweodef.h.cs, and
-        // docs/known-issues.md's "Three file-layer divergences") because a bare ':' cannot
-        // be added to a cross-platform cut-list without splitting a Windows drive letter.
-        // swi_fopen splits swed.ephepath on exactly that cut-list (Sweph.cs, sweph.c:2377),
-        // so upstream's colon-joined literal arrives as ONE component here, not three:
-        // ".:/users/ephe2/:/users/ephe/" is then used verbatim as a directory prefix and
-        // matches nothing, and in particular the "." component -- the current directory,
+        // joined with ':' exactly as swephexp.h:403 writes it -- not a typo and not a
+        // second guess at the C. This is deliberately the literal, not a port-specific
+        // rewrite: PATH_SEPARATOR (SwissEph.sweodef.h.cs) is per-platform, matching the
+        // C's own two cut-lists rather than using one value everywhere -- { ';', ':' } off
+        // Windows (sweodef.h:305, "semicolon or colon may be used" under #if UNIX_FS) and
+        // { ';' } on Windows (sweodef.h:311, the #else branch, where a bare ':' would split
+        // a drive letter). swi_fopen splits swed.ephepath on exactly that cut-list (Sweph.cs,
+        // sweph.c:2377), so this colon-joined literal correctly splits into its three
+        // components off Windows, including the "." component -- the current directory,
         // which sweph.c:2381 maps to the empty prefix and which is the only one of the
-        // three that exists on a machine that is not Astrodienst's -- is lost. Measured
-        // with Programs/SweTest against this repository's own ephe/ directory, same path,
-        // separator the only difference: ';' reads the .se1 file and prints Sun
-        // 279.8584613 for 1.1.2000, ':' prints "using Moshier eph." and 279.8584626. So
-        // the colon form makes a caller who never calls swe_set_ephe_path silently
-        // compute from Moshier on Linux and macOS, where the C reads the file. Neither
-        // gate can see this: the characterization baseline is Moshier-only and never
-        // subscribes to file loading, and the conformance/oracle runs are Windows, whose
-        // literal has no separator in it at all. Joining with the separator this port
-        // actually splits on keeps the C's three components and the C's behaviour; the
-        // alternative -- widening PATH_SEPARATOR to ";:" off Windows -- would reverse a
-        // decision already taken and recorded, for a caller-supplied path rather than for
-        // this default.
+        // three that exists on a machine that is not Astrodienst's.
+        //
+        // This was briefly wrong. An earlier revision kept PATH_SEPARATOR at { ';' } on
+        // every platform and rewrote this default to a ';'-joined string to match, reasoning
+        // that a bare ':' was unsafe to add to a cross-platform cut-list. That reasoning was
+        // sound for Windows drive letters and wrong to apply off Windows, where the C accepts
+        // ':' natively and a caller-supplied ';'-joined path is not what any other Swiss
+        // Ephemeris binding expects. It also moved the port away from the C on exactly the
+        // platforms the exactness gates measure: 192 of 15,819 analytic rows differed from
+        // gcc's C reference, 196 from clang's. Restored per-platform (this default and
+        // PATH_SEPARATOR together, since the two have to agree) once that regression was
+        // found; see commit c334d15's own message for the fuller account.
         // Split from the property so both branches are reachable from any platform. The
         // property alone cannot be tested for this: the separator mistake it guards against
         // is confined to the non-Windows literal, so a test reading DefaultEphePath on a
