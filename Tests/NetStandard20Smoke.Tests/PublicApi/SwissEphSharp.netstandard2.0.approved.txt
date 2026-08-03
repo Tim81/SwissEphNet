@@ -438,13 +438,13 @@ FIELD public const System.String SwissEphNet.SwissEph.SE_FNAME_DFT = "de431.eph"
 FIELD public const System.String SwissEphNet.SwissEph.SE_FNAME_DFT2 = "de406.eph"
 FIELD public const System.String SwissEphNet.SwissEph.SE_STARFILE = "sefstars.txt"
 FIELD public const System.String SwissEphNet.SwissEph.SE_STARFILE_OLD = "fixstars.cat"
-FIELD public static SwissEphNet.SwissEph.IEphemerisFileProvider SwissEphNet.SwissEph.DefaultFileProvider
 FIELD public static System.Char SwissEphNet.SwissEph.DIR_GLUE
 FIELD public static System.Char[] SwissEphNet.SwissEph.PATH_SEPARATOR
 FIELD public static System.Text.Encoding SwissEphNet.SwissEph.DefaultEncoding
 FIELD public static readonly System.Boolean SwissEphNet.SwissEph.SIMULATE_VICTORVB
 CTOR  public SwissEphNet.SwissEph.SwissEph()
 PROP  public SwissEphNet.SwissEph.IEphemerisFileProvider SwissEphNet.SwissEph.FileProvider { get; set; }
+PROP  public static SwissEphNet.SwissEph.IEphemerisFileProvider SwissEphNet.SwissEph.DefaultFileProvider { get; set; }
 EVENT public System.EventHandler<SwissEphNet.TraceEventArgs> SwissEphNet.SwissEph.OnTrace
 METHOD protected internal SwissEphNet.CFile SwissEphNet.SwissEph.OpenBinary(System.String path)
 METHOD protected virtual System.Void SwissEphNet.SwissEph.Dispose(System.Boolean disposing)
