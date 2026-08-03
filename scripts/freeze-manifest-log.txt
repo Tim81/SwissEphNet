@@ -515,3 +515,27 @@ b"} where the C gives {"a", ""}); that one is fixed
     its own self-test plants a capitalisation-only rename and requires refusal --
     but that makes -Update only as trustworthy as the working tree's filename
     casing, which on Windows can drift from the index without any signal.
+23. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-08-03: Comment only, no behaviour change. Entry 17's own comment describing why
+    x2/xcart/xcartq are sized [7] was itself wrong on two counts. It called the leftover-index
+    access at swetest.c:1853/:1875 uniformly "benign stack UB" and left the sizing rationale at
+    "add scratch room the C's raw array already has". Neither holds up: swetest.c:768 declares
+    x, x2, xequ, xcart, xcartq, xobl, xaz, xt (then the scalars), xsv as one file-scope static
+    declaration -- BSS, not stack, contiguous in that order under the reference MSVC toolchain --
+    and only one of the two leftover-index writes is actually inert. :1853's xcart[6] aliases
+    xcartq[0], which is either about to be recomputed by the lowercase "xu" block or never read
+    at all (the house-position block reads xobl[0] and a copy of x[], never xcartq): genuinely
+    invisible, matching the old comment. :1875's xcartq[6] aliases xobl[0] -- the obliquity
+    swe_house_pos reads at :1900 for any house-position format letter -- and is not invisible:
+    corrupting it changes swe_house_pos's result. Verified against an MSVC build of the pinned
+    v2.10.3bfinal swetest.exe: "-b1.1.2020 -p2 -house12,49,P -ut -D0 -emos -n1 -fPxG" diverges (C
+    "Polar Asc. 143°13'52.4484", port "Polar Asc. 211°41'57.3754"); the same run with "-fPXj"
+    (which never reaches the :1875 write) matches. Rewrote the comment to state which write
+    surfaces and which does not, cite the measured reproducer, and record that the port
+    deliberately does not reproduce the C's cross-array aliasing -- sizing the arrays to one
+    scratch slot keeps the leftover-index access from throwing without making it alias anything,
+    since a C# array is never adjacent, cross-aliased memory the way contiguous BSS statics
+    happen to be under one toolchain's layout. Full writeup: docs/known-issues.md's "swetest
+    -D<n>: xobl[0] aliasing, deliberately not reproduced".
+    Not a re-transliteration: only the explanatory comment above the three declarations moved, no
+    declaration or statement changed. Programs/SweTest/Program.cs: 5025 -> 5046 lines, sha256
+    86DBD9DB... -> 698EF483....

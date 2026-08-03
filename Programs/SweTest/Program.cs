@@ -816,14 +816,35 @@ namespace SweTest
         static bool with_chart_link = false;
         static int lcount = 0; // static local in call_lunar_eclipse (swetest.c:3260)
         static int scount = 0; // static local in call_solar_eclipse (swetest.c:3489)
-        // x2, xcart and xcartq are sized 7, not 6: swetest.c:1853 and :1875 (the DIFF_MIDP-style
-        // "else" branches at :2277 and :2303 below) read/write index i left over from a preceding
-        // "for (i = 1; i < 6; i++)" loop, i.e. i == 6, one past a C `double xcart[6]`. Benign
-        // stack UB in C -- the write lands past the array's nominal end and every printed column
-        // reads a fixed index 0-5, so it never surfaces -- but IndexOutOfRangeException in C#.
-        // Sized to iofs+8 for the same reason at Sweph.cs's hcusp[37] fix and this file's own
-        // Gauquelin cusp[iofs+8] fix (freeze-manifest-log.txt entry 7): add scratch room the C's
-        // raw array already has, rather than a bounds check the C does not have.
+        // x2, xcart and xcartq are sized 7, not 6: swetest.c:1853 and :1875 read/write index i
+        // left over from a preceding "for (i = 1; i < 6; i++)" loop, i.e. i == 6, one past a C
+        // `double xcart[6]`. In C these are file-scope statics (swetest.c:768: "static double
+        // x[6], x2[6], xequ[6], xcart[6], xcartq[6], xobl[6], xaz[6], xt[6], hpos, hpos2, hposj,
+        // armc, xsv[6];"), laid out contiguously in BSS by the reference MSVC toolchain -- not
+        // stack, and not uniformly benign:
+        //   - :1853's "xcart[i] = (xcart[i] + x2[i]) / 2;" writes xcart[6], aliasing the next
+        //     declared array's first element, xcartq[0]. Invisible: xcartq[0] is either about to
+        //     be overwritten by swe_calc/call_swe_fixstar in the separate "xu" block below (:1858
+        //     onward, if that block also runs) or, if it does not, never read at all -- the
+        //     house-position block (:1900) reads xobl[0] and a copy of x[], never xcartq.
+        //   - :1875's "xcartq[i] = (xcart[i] + x2[i]) / 2;" is NOT benign: its write target,
+        //     xcartq[6], aliases xobl[0] -- the obliquity swe_house_pos reads at :1900 for any
+        //     house-position format letter ("gGjzm"). Its own right-hand side, at the same
+        //     leftover i == 6, reads xcart[6] and x2[6], aliasing xcartq[0] and xequ[0]. So this
+        //     one statement corrupts a value a later call actually consumes.
+        // Verified against an MSVC build of the pinned v2.10.3bfinal swetest:
+        // "-b1.1.2020 -p2 -house12,49,P -ut -D0 -emos -n1 -fPxG" diverges (C "Polar Asc.
+        // 143°13'52.4484", port "211°41'57.3754" before this fix); the same run with "-fPXj"
+        // (which never reaches the aliased xobl[0] write) matches. See "swetest -D<n>: xobl[0]
+        // aliasing" in docs/known-issues.md for the full trigger conditions and reproducer.
+        //
+        // The port deliberately does NOT reproduce this overrun -- emulating a C buffer overrun
+        // in a shipped library, on a layout the C standard does not guarantee in the first place,
+        // is the wrong trade. Sized to one scratch slot instead (same precedent as this file's
+        // own Gauquelin cusp[iofs+8] fix and Sweph.cs's hcusp[37] fix): the extra slot keeps the
+        // leftover-index read/write from throwing, but in C# it is genuinely separate memory, not
+        // an alias of xequ/xcartq/xobl[0], so the corruption above cannot occur here -- see
+        // docs/known-issues.md for why that is the correct choice, not merely the cautious one.
         static double[] x = new double[6], x2 = new double[7], xequ = new double[6], xcart = new double[7],
             xcartq = new double[7], xobl = new double[6], xaz = new double[6], xt = new double[6], xsv = new double[6];
         static double hpos, hpos2, hposj, armc;
