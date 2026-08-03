@@ -1,0 +1,20 @@
+--- a/sweph.c
++++ b/sweph.c
+@@ -8322,7 +8322,7 @@
+ {
+   double x[6], xlp, dist;
+   double jd;
+-  int ipl = SE_SUN;
++  int ipl = (flag & SEFLG_HELCTR) ? SE_EARTH : SE_SUN;
+   /*
+    * compute the SUN at start date, and then estimate the crossing date
+    */
+@@ -8356,7 +8356,7 @@
+ {
+   double x[6], xlp, dist;
+   double jd;
+-  int ipl = SE_SUN;
++  int ipl = (flag & SEFLG_HELCTR) ? SE_EARTH : SE_SUN;
+   /*
+    * compute the SUN at start date, and then estimate the crossing date
+    */

@@ -1,0 +1,194 @@
+<h1><code>swe_solcross</code> and <code>swe_solcross_ut</code> never return when <code>SEFLG_HELCTR</code> is set</h1>
+
+<p>The refinement loop divides by a speed that is always zero under this flag, so the search step becomes infinite and the loop condition can never be met. There is no iteration cap and the loop&#x27;s own error escape does not fire, so the call never returns and the thread spins at 100% CPU.</p>
+
+<p>Measured at <code>v2.10.3bfinal</code>, the current release. <code>git ls-remote</code> puts both <code>refs/tags/v2.10.3bfinal</code> and <code>refs/heads/master</code> at <code>f4dcd18e</code>, so there is no fix on <code>master</code> either, and <code>sweph.c</code> is byte-identical between <code>v2.10.3final</code> (<code>af9823fe</code>) and <code>v2.10.3bfinal</code>. Anyone taking the patch release still gets this. <code>swe_solcross</code> is at <code>sweph.c:8321</code>, <code>swe_solcross_ut</code> at <code>:8355</code>.</p>
+
+<p>This comes from the SwissEphNet fork, a C# port of the library. We found it while building an oracle grid that crosses every crossing function with every flag its own documentation lists.</p>
+
+<h2>Is this a combination a caller would actually pass?</h2>
+
+<p>We want to put this first, because the last time we reported something we had not asked that question carefully enough, and you were right to send it back. That was <code>dms()</code> with <code>-d</code> and <code>-fZ</code>, where your answer was that a zodiacal position format is not a way to express an angular difference, so the combination was an application error by the format&#x27;s own definition. We checked and withdrew it.</p>
+
+<p>This one is different, and here is the evidence rather than our opinion.</p>
+
+<p><b>Your own comment on the function documents the flag and names the body it should use.</b> The block immediately above <code>swe_solcross</code>, at <code>sweph.c:8313</code>, reads:</p>
+
+<pre>
+ * flag covers the following bits as used by swe_calc():
+   SEFLG_HELCTR 		0 = geocentric, SUN, 1 = heliocentric, EARTH
+</pre>
+
+<p>That is not a generic note about what <code>swe_calc</code> accepts. <code>swe_calc</code> does not switch bodies for anyone; the &quot;SUN / EARTH&quot; pairing is specific to this function and describes what this function is meant to do with the bit. The same block appears above <code>swe_solcross_ut</code> at <code>:8347</code>. So the flag is documented as supported here, and the intended behaviour is on record. Under <code>SEFLG_HELCTR</code> the function should compute the Earth&#x27;s crossing, which is the meaningful heliocentric counterpart of the Sun&#x27;s geocentric crossing, and which a heliocentric chart application would want in order to find Earth ingresses. The body never switches <code>ipl</code> to <code>SE_EARTH</code>.</p>
+
+<p><b>Every sibling crossing function handles the flag sanely.</b> We checked all of them rather than assuming:</p>
+
+<p>All eight were run individually at <code>jd_et</code> 2451545.0 with <code>SEFLG_MOSEPH|SEFLG_HELCTR</code>; none of these are inferred from a sibling.</p>
+
+<table border="1" cellpadding="6" cellspacing="0">
+<tr><th>Function</th><th>With <code>SEFLG_HELCTR</code></th><th>Result at target 90</th></tr>
+<tr><td><code>swe_solcross</code></td><td>never returns</td><td>killed at 25s</td></tr>
+<tr><td><code>swe_solcross_ut</code></td><td>never returns</td><td>killed at 25s</td></tr>
+<tr><td><code>swe_mooncross</code></td><td>returns a real crossing</td><td>2451534.836376984</td></tr>
+<tr><td><code>swe_mooncross_ut</code></td><td>returns a real crossing</td><td>2451534.835638321</td></tr>
+<tr><td><code>swe_mooncross_node</code></td><td>returns a real node crossing</td><td>2451551.747581190, latitude -1.7e-08</td></tr>
+<tr><td><code>swe_mooncross_node_ut</code></td><td>returns a real node crossing</td><td>2451551.746842388, latitude -1.7e-08</td></tr>
+<tr><td><code>swe_helio_cross</code></td><td>rejects <code>SE_SUN</code>, with a message</td><td>-1, &quot;not possible for object 0 = Sun&quot;</td></tr>
+<tr><td><code>swe_helio_cross_ut</code></td><td>rejects <code>SE_SUN</code>, with a message</td><td>-1, &quot;not possible for object 0 = Sun&quot;</td></tr>
+</table>
+
+<p>The two Moon pairs differ from each other by about 64 seconds, which is delta T at that date, so the UT variants are behaving exactly as they should.</p>
+
+<p><b>And you already guard this exact condition elsewhere.</b> <code>swe_helio_cross</code> is heliocentric by construction, so a caller passing <code>SE_SUN</code> would ask for the origin in the same way. It refuses, at <code>sweph.c:8538</code>:</p>
+
+<pre>
+if (ipl == SE_SUN
+  || ipl == SE_MOON
+  || (ipl &gt;= SE_MEAN_NODE &amp;&amp; ipl &lt;= SE_OSCU_APOG)
+  || (ipl &gt;= SE_INTP_APOG &amp;&amp; ipl &lt; SE_NPLANETS)
+) {
+  char snam[AS_MAXCH];
+  swe_get_planet_name(ipl, snam);
+  if (serr != NULL) sprintf(serr, &quot;swe_helio_cross: not possible for object %d = %s&quot;, ipl, snam);
+  return ERR;
+}
+</pre>
+
+<p>Confirmed by running it: <code>swe_helio_cross(SE_SUN, 90.0, 2451545.0, SEFLG_MOSEPH, 1, &amp;jd, serr)</code> returns <code>-1</code> with <code>serr</code> set to <code>swe_helio_cross: not possible for object 0 = Sun</code>. So the &quot;this body is the origin under this flag&quot; case is one you have already recognised and handled deliberately in one function. <code>swe_solcross</code> is the one place it is neither implemented nor rejected.</p>
+
+<p>So we do not think this is the same shape as the <code>-fZ</code> report. But the decision is yours, and if you conclude a caller has no business passing <code>SEFLG_HELCTR</code> to a Sun-crossing function, then one finding still stands on its own: <b>an unbounded <code>for(;;)</code> in a library should not be reachable from a flag bit.</b> That part does not depend on which way you rule.</p>
+
+<h2>Reproducing</h2>
+
+<pre>
+import swisseph as swe          # pyswisseph 2.10.03 wraps this C unmodified
+swe.set_ephe_path(None)
+swe.solcross(90.0, 2451545.0, swe.FLG_MOSEPH)                    # 2451716.575531276
+swe.solcross( 0.0, 2451545.0, swe.FLG_MOSEPH | swe.FLG_HELCTR)   # nan
+swe.solcross(90.0, 2451545.0, swe.FLG_MOSEPH | swe.FLG_HELCTR)   # never returns
+</pre>
+
+<p>Run the third under a timeout. Julian day 2451545.0 is J2000.</p>
+
+<p>Target longitude 0 is the only input that terminates, and it does so by accident. It returns <code>nan</code> with <code>serr</code> empty. Since the documented error convention is a return less than <code>jd_et</code>, and <code>nan &lt; jd_et</code> is false, a caller checking for the error cannot detect that one either.</p>
+
+<p><b>The hang is not specific to the Moshier backend.</b> We first reproduced it with <code>SEFLG_MOSEPH</code> because it needs no data files, then repeated it with <code>SEFLG_SWIEPH</code> against the shipped <code>.se1</code> files. It hangs identically. <code>swe_calc(2451545.0, SE_SUN, SEFLG_SWIEPH|SEFLG_HELCTR|SEFLG_SPEED)</code> returns longitude 0 and longitude speed 0, the same as the Moshier path, because the answer comes from the coordinate definition rather than from an ephemeris.</p>
+
+<h2>Mechanism</h2>
+
+<p><code>swe_solcross</code> hardcodes the body at <code>sweph.c:8325</code>:</p>
+
+<pre>
+int ipl = SE_SUN;
+</pre>
+
+<p>and never changes it. With <code>SEFLG_HELCTR</code> the caller is therefore asking for the heliocentric position of the Sun, which is the origin of that coordinate system:</p>
+
+<pre>
+swe_calc(2451545.0, SE_SUN, SEFLG_MOSEPH|SEFLG_HELCTR|SEFLG_SPEED, x, serr);
+/* retc = 1804, x = {0, 0, 0, 0, 0, 0}, serr empty */
+</pre>
+
+<p>So <code>x[0]</code>, the longitude, is 0 and <code>x[3]</code>, the longitude speed, is 0 at every date. The refinement loop at <code>sweph.c:8335-8341</code> then reads:</p>
+
+<pre>
+for(;;) {
+  if (swe_calc(jd, ipl, flag, x, serr) &lt; 0)
+    return jd_et - 1;
+  dist = swe_difdeg2n(x2cross, x[0]);
+  jd += dist / x[3];                        /* x[3] is always 0 here */
+  if (fabs(dist) &lt; CROSS_PRECISION) break;
+}
+</pre>
+
+<p>Two things go wrong together. <code>dist</code> is computed from <code>x[0]</code>, which is 0 no matter what <code>jd</code> is, so <code>dist</code> equals <code>x2cross</code> on every iteration and never converges. And <code>jd += dist / 0</code> makes <code>jd</code> infinite on the first pass.</p>
+
+<p>The loop&#x27;s own error escape should catch that, and does not, because <code>swe_calc</code> at an infinite date returns success under this flag combination:</p>
+
+<pre>
+swe_calc(INFINITY, SE_SUN, SEFLG_MOSEPH|SEFLG_HELCTR|SEFLG_SPEED, x, serr);
+  /* retc = 1804, x[0] = 0, x[3] = 0, serr empty */
+swe_calc(INFINITY, SE_SUN, SEFLG_MOSEPH|SEFLG_SPEED, x, serr);
+  /* retc = -1, serr = &quot;jd inf outside Moshier planet range 625000.50 .. 2818000.50&quot; */
+</pre>
+
+<p>The heliocentric Sun is answered from the coordinate definition without consulting an ephemeris, so the date range check never runs and no date is ever invalid. The geocentric path rejects the same input properly. So <code>if (swe_calc(...) &lt; 0)</code> never fires, the loop has no iteration counter, and it runs until the process is killed. The hang is in <code>swe_solcross</code>&#x27;s own loop, not inside <code>swe_calc</code>.</p>
+
+<p>Target longitude 0 escapes only because <code>dist</code> is then 0, so the division is <code>0.0 / 0.0</code> rather than <code>90.0 / 0.0</code>. That yields <code>NaN</code> instead of infinity, and <code>fabs(0.0) &lt; CROSS_PRECISION</code> is true, so the loop breaks on its first pass and hands back the <code>NaN</code> it has accumulated in <code>jd</code>.</p>
+
+<h2>What the Moon functions actually do, which corrects an earlier draft of this note</h2>
+
+<p>An earlier version of this report said <code>swe_mooncross</code> and <code>swe_mooncross_ut</code> &quot;return the documented error&quot; under <code>SEFLG_HELCTR</code>. That was wrong, and we are glad we checked before sending it. They return values, with <code>serr</code> empty:</p>
+
+<pre>
+swe_mooncross(  0.0, 2451545.0, SEFLG_MOSEPH|SEFLG_HELCTR)  -&gt;  2451445.042408307
+swe_mooncross( 90.0, 2451545.0, SEFLG_MOSEPH|SEFLG_HELCTR)  -&gt;  2451534.836376984
+swe_mooncross(180.0, 2451545.0, SEFLG_MOSEPH|SEFLG_HELCTR)  -&gt;  2451623.813410182
+swe_mooncross(270.0, 2451545.0, SEFLG_MOSEPH|SEFLG_HELCTR)  -&gt;  2451716.465567217
+</pre>
+
+<p>These look correct. The heliocentric Moon sits close to the heliocentric Earth, so its crossing of 180 should land near the geocentric Sun&#x27;s crossing of 0, and it does: 2451623.813410182 against 2451623.816894977, a difference of about five minutes, which is the Moon&#x27;s own offset from the Earth. Nothing is wrong with these functions. They do not hang for the reason the earlier draft gave, which was right as far as it went: the heliocentric Moon is not the coordinate origin, so its speed is non-zero and the division is well defined.</p>
+
+<p>Worth noting for the first two rows only: they are less than <code>jd_et</code>, which by the documented convention a caller reads as an error, even though they are real crossings. That is the ordinary consequence of asking for a crossing the body most recently made rather than the next one, and we are not reporting it as a defect.</p>
+
+<p><code>swe_mooncross_node</code> under the same flag returns 2451551.747581190 with a latitude of -1.7e-08, which is a real node crossing. It does not hang either.</p>
+
+<h2>An observation on <code>SEFLG_BARYCTR</code> that we are not pressing</h2>
+
+<p><code>SEFLG_BARYCTR</code> is not in this function&#x27;s documented flag list, so this is outside the contract and we mention it only so it is on the record.</p>
+
+<p>With <code>SEFLG_MOSEPH</code> it is refused cleanly: <code>swe_calc</code> returns -1 with &quot;barycentric Moshier positions are not supported.&quot;, and <code>swe_solcross</code> passes that straight out as <code>jd_et - 1</code>. Correct behaviour.</p>
+
+<p>With <code>SEFLG_SWIEPH</code> it is supported, and the barycentric Sun has a real non-zero speed (0.066 degrees per day at J2000), so there is no division by zero and no hang. But <code>swe_solcross</code> seeds its search with the mean <i>solar</i> speed, <code>xlp = 360.0 / 365.24</code>, about 0.986 degrees per day, which is fifteen times too fast for the body it is actually tracking. The result overshoots: <code>swe_solcross(90.0, 2451545.0, SEFLG_SWIEPH|SEFLG_BARYCTR)</code> returns 2449568.014466507, roughly two years <i>before</i> <code>jd_et</code>, with <code>serr</code> empty, contradicting the function&#x27;s own &quot;returns juldate of the next crossing, with jd &gt; jd_et&quot;. A caller following the documented convention would read it as an error, so it is at least detectable. Again: undocumented flag, so your call whether it matters.</p>
+
+<h2>Suggested fix</h2>
+
+<p>There are two defensible fixes and we are not going to insist on either, because which one is right depends on what you intended the flag to mean here.</p>
+
+<p><b>Option A, honour the comment.</b> Substitute the body the documentation already names. Two lines, one in each function, attached as <code>swe_solcross-helctr.patch</code>:</p>
+
+<pre>
+   double x[6], xlp, dist;
+   double jd;
+-  int ipl = SE_SUN;
++  int ipl = (flag &amp; SEFLG_HELCTR) ? SE_EARTH : SE_SUN;
+</pre>
+
+<p><b>Option B, refuse the flag,</b> the way <code>swe_helio_cross</code> already refuses <code>SE_SUN</code>, with a message in <code>serr</code> and the documented error return. This is a smaller change and it makes the two functions consistent with each other. It does mean the comment at <code>:8313</code> and <code>:8347</code> should lose the &quot;, EARTH&quot; clause, since the behaviour it promises would then not exist anywhere.</p>
+
+<p>Option A restores the loop&#x27;s error escape as a side effect, which is worth knowing: with <code>SE_EARTH</code> the ephemeris range check applies normally, so even an unforeseen route to an out-of-range <code>jd</code> would leave through the documented error return rather than spin.</p>
+
+<p><b>Either way, we would suggest an iteration cap on the loop.</b> The <code>for(;;)</code> has no bound, and one flag bit should not be able to make a library spin forever even once this particular route is closed. Returning <code>jd_et - 1</code> after some generous number of passes would match the error convention the function already documents, and would give <code>serr</code> somewhere to explain itself.</p>
+
+<h2>What Option A does when you build it</h2>
+
+<p>We built it rather than only proposing it. MSVC 19.51.36248 x64, <code>/O2 /fp:precise /MD</code>, the tagged sources with only the two lines above changed.</p>
+
+<p>Every target returns, and the values are right. The check is that the Earth&#x27;s heliocentric longitude is the Sun&#x27;s geocentric longitude plus 180 degrees, so a heliocentric crossing of <code>t</code> must fall at the same instant as a geocentric crossing of <code>t + 180</code>. The last column is that independent calculation, run through the unmodified geocentric path:</p>
+
+<table border="1" cellpadding="6" cellspacing="0">
+<tr><th>target</th><th>geocentric Sun</th><th>heliocentric Earth</th><th>geo(t+180) cross-check</th><th>difference</th></tr>
+<tr><td>0.0</td><td>2451623.816894977</td><td>2451810.228230200</td><td>2451810.228230188</td><td>1.2e-08</td></tr>
+<tr><td>0.5</td><td>2451624.320476105</td><td>2451810.738953894</td><td>2451810.738953881</td><td>1.3e-08</td></tr>
+<tr><td>90.0</td><td>2451716.575531276</td><td>2451900.068406662</td><td>2451900.068406653</td><td>9.0e-09</td></tr>
+<tr><td>180.0</td><td>2451810.228230188</td><td>2451623.816894982</td><td>2451623.816894977</td><td>5.0e-09</td></tr>
+<tr><td>359.5</td><td>2451623.313456060</td><td>2451809.717340656</td><td>2451809.717340643</td><td>1.3e-08</td></tr>
+</table>
+
+<p>The residuals are around 1e-8 days, roughly a millisecond, which is well inside <code>CROSS_PRECISION</code>: one milliarcsecond at the Earth&#x27;s roughly one degree per day works out to about 2.8e-7 days. The two paths agree as closely as the convergence criterion allows.</p>
+
+<p><code>swe_solcross_ut</code> checks out separately. With the same fix it returns 2451900.067664941 for target 90, against 2451900.068406662 from <code>swe_solcross</code>. The difference is 64.08 seconds, and <code>swe_deltat</code> at that date is also 64.08 seconds, so the UT variant is offset by exactly delta T as it should be.</p>
+
+<h2>Scope of what we tested</h2>
+
+<p>Everything above is measured, not inferred, and every number in it was produced by a run we made rather than carried over from an earlier draft.</p>
+
+<p>Two independent routes agree. The first is our own MSVC build of the tagged sources linked into a test program. The second is pyswisseph 2.10.03, which wraps this C unmodified, and which we ran rather than merely citing: it gives 2451716.575531276 for the geocentric call, <code>nan</code> for <code>SEFLG_HELCTR</code> at target 0, all zeros for <code>swe_calc</code> on the heliocentric Sun, and it hangs at target 90, matching our build on all four.</p>
+
+<p>The hang was reproduced at four separate target longitudes and under both <code>SEFLG_MOSEPH</code> and <code>SEFLG_SWIEPH</code>, so it does not depend on the ephemeris backend. All eight crossing functions were exercised under <code>SEFLG_HELCTR</code> individually, not just the two that fail. The patched build was checked against an independent geocentric calculation at five targets and against <code>swe_deltat</code>.</p>
+
+<p>One limit: we tested on Windows with MSVC 19.51.36248. The mechanism is plain IEEE-754 arithmetic and a loop with no bound, so we would expect the same from gcc and clang, but we have not run it there.</p>
+
+<hr>
+
+<p>Reported from the SwissEphNet fork (<code>https://github.com/Tim81/SwissEphNet</code>), a C# port of the Swiss Ephemeris tracking <code>v2.10.3bfinal</code>. Original port by Yan Grenier; fork work by Timothy van der Ham.</p>
