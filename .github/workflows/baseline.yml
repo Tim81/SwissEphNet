@@ -172,3 +172,35 @@ jobs:
         shell: pwsh
         continue-on-error: true
         run: pwsh scripts/verify-baseline.ps1 -ReportOnly
+
+  # macOS counterpart to verify-baseline-linux above: informational only, for the same reason --
+  # the baseline is Windows-generated and this gate stays locked to Windows (see that job's own
+  # comment). Before this job, macOS was the only one of the three CI-supported platforms with no
+  # baseline-drift measurement at all (docs/compliance-2.10.03.md, "What this record does not
+  # cover"). Same script, same -ReportOnly flag, same continue-on-error placement (on the report
+  # step alone, not job-level -- see verify-baseline-linux's own comment for why job-level was
+  # wrong): this job answers the same question verify-baseline-linux does, just against libSystem
+  # (Apple's libm) instead of glibc. GitHub's macos-latest runner image ships pwsh preinstalled,
+  # the same as ubuntu-latest and windows-latest, so no additional setup step is needed for it.
+  verify-baseline-macos:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          # Both runtimes; see the note on the same step in verify-baseline above.
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      # --blame-hang: same reasoning as verify-baseline's identical step above.
+      - name: Run gate unit tests
+        shell: pwsh
+        run: dotnet test Tools/BaselineVerify.Tests -c Release -p:TestTfmsInParallel=false --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type mini
+
+      - name: Report cross-platform divergence (never fails)
+        shell: pwsh
+        continue-on-error: true
+        run: pwsh scripts/verify-baseline.ps1 -ReportOnly

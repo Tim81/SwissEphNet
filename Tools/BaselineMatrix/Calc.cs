@@ -32,6 +32,11 @@ internal static class Calc
         ("_SPEED", SwissEph.SEFLG_SPEED),
     ];
 
+    // A small set of center bodies, not the full CalcPlanets list crossed against itself --
+    // swe_calc_pctr exists to characterize the planetocentric-recentering mechanism itself
+    // (already exercised, single-body, by AddRows above), not to re-sweep every pair.
+    private static readonly int[] PctrCenters = [SwissEph.SE_SUN, SwissEph.SE_EARTH, SwissEph.SE_MOON];
+
     public static void AddRows(List<string> rows)
     {
         foreach (var ipl in Grids.CalcPlanets)
@@ -57,6 +62,18 @@ internal static class Calc
                     }
                 }
             }
+
+            foreach (var iplctr in PctrCenters)
+            {
+                foreach (var jd in Grids.JdSpread(5))
+                {
+                    foreach (var (flagName, flag) in Grids.CalcIflagCombos)
+                    {
+                        var iflag = SwissEph.SEFLG_MOSEPH | flag;
+                        rows.Add(BuildPctrRow(ipl, iplctr, jd, flagName, iflag));
+                    }
+                }
+            }
         }
     }
 
@@ -71,6 +88,33 @@ internal static class Calc
             var retc = useUt
                 ? swe.swe_calc_ut(jd, ipl, iflag, xx, ref serr)
                 : swe.swe_calc(jd, ipl, iflag, xx, ref serr);
+
+            return
+            [
+                I(retc),
+                D(xx[0]), D(xx[1]), D(xx[2]), D(xx[3]), D(xx[4]), D(xx[5]),
+                S(serr),
+            ];
+        });
+    }
+
+    /// <summary>
+    /// swe_calc_pctr: planetocentric position of ipl as seen from iplctr instead of the
+    /// geocenter. Previously uncovered anywhere in this matrix (docs/known-issues.md, "31 of
+    /// 107 public swe_* entry points have no matrix coverage") -- same sweep shape as
+    /// swe_calc's own BuildRow above, minus SEFLG_TOPOCTR (which is not meaningful here: the
+    /// observer is iplctr, not swe_set_topo's ground station), with iplctr==ipl included
+    /// deliberately to exercise the degenerate self-centered case.
+    /// </summary>
+    private static string BuildPctrRow(int ipl, int iplctr, double jd, string flagName, int iflag)
+    {
+        var caseId = $"PCTR|{I(ipl)}|{I(iplctr)}|{D(jd)}|{flagName}";
+        return SafeRow(caseId, () =>
+        {
+            using var swe = new SwissEph();
+            var xx = new double[6];
+            string? serr = null;
+            var retc = swe.swe_calc_pctr(jd, ipl, iplctr, iflag, xx, ref serr);
 
             return
             [

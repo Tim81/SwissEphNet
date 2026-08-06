@@ -409,12 +409,13 @@ static int RunReportMode(string baselineDir)
     Console.WriteLine("Mode: REPORT ONLY -- always exits 0. This tracks cross-platform/cross-runtime drift; it is not a gate.");
     Console.WriteLine();
 
-    var header = $"{"AREA",-14} {"FIELDS",8} {"DIFFER",8} {"BEYOND",7} {"DIFFER%",8} {"EXACT-RN",9} {"TOL-RN",7} {"FAIL-RN",8} {"MED-REL",10} {"P90-REL",10} {"P99-REL",10} {"MAX-REL",10}";
+    var header = $"{"AREA",-14} {"FIELDS",8} {"NUMERIC",8} {"DIFFER",8} {"BEYOND",7} {"DIFFER%",8} {"EXACT-RN",9} {"TOL-RN",7} {"FAIL-RN",8} {"MED-REL",10} {"P90-REL",10} {"P99-REL",10} {"MAX-REL",10}";
     Console.WriteLine(header);
-    Console.WriteLine("(FIELDS/DIFFER/BEYOND are per numeric field; -RN columns are per row, from the same row-level comparison the gate uses)");
+    Console.WriteLine("(FIELDS is every field compared, including non-numeric ones like serr strings and planet names; NUMERIC/DIFFER/BEYOND are per numeric field; -RN columns are per row, from the same row-level comparison the gate uses)");
     Console.WriteLine(new string('-', header.Length));
 
     var totalFieldsCompared = 0;
+    var totalNumericFieldsCompared = 0;
     var totalFieldsDiffering = 0;
     var totalFieldsBeyondTolerance = 0;
     var allDiffs = new List<double>();
@@ -437,13 +438,19 @@ static int RunReportMode(string baselineDir)
             var divergence = DivergenceReport.Collect(localRows, referenceRows, name);
 
             totalFieldsCompared += divergence.FieldsCompared;
+            totalNumericFieldsCompared += divergence.NumericFieldsCompared;
             totalFieldsDiffering += divergence.FieldsDiffering;
             totalFieldsBeyondTolerance += divergence.FieldsBeyondTolerance;
             allDiffs.AddRange(divergence.SortedRelativeDiffs);
 
+            // Denominator is FieldsCompared (all fields), not NumericFieldsCompared, to stay
+            // consistent with the DIFFER% figure Tools/BaselineGen/README.md's "Platform lock"
+            // section already cites (e.g. 66,390 / 3,547,935 = 1.8712%) -- see the
+            // NumericFieldsCompared doc comment on DivergenceStats for why that denominator is
+            // not being changed.
             var differPct = divergence.FieldsCompared > 0 ? divergence.FieldsDiffering / (double)divergence.FieldsCompared : 0;
             Console.WriteLine(
-                $"{name,-14} {divergence.FieldsCompared,8} {divergence.FieldsDiffering,8} {divergence.FieldsBeyondTolerance,7} {differPct,8:P2} " +
+                $"{name,-14} {divergence.FieldsCompared,8} {divergence.NumericFieldsCompared,8} {divergence.FieldsDiffering,8} {divergence.FieldsBeyondTolerance,7} {differPct,8:P2} " +
                 $"{result.Exact,9} {result.ToleranceOk,7} {result.Fail,8} " +
                 $"{divergence.Median,10:E2} {divergence.P90,10:E2} {divergence.P99,10:E2} {divergence.Max,10:E2}");
         }
@@ -457,7 +464,8 @@ static int RunReportMode(string baselineDir)
     Console.WriteLine();
     var overallPct = totalFieldsCompared > 0 ? totalFieldsDiffering / (double)totalFieldsCompared : 0;
     Console.WriteLine(
-        $"Overall: {totalFieldsCompared} numeric fields compared, {totalFieldsDiffering} differing ({overallPct:P4}), " +
+        $"Overall: {totalFieldsCompared} fields compared ({totalNumericFieldsCompared} of them numeric), " +
+        $"{totalFieldsDiffering} differing ({overallPct:P4}), " +
         $"{totalFieldsBeyondTolerance} still beyond tolerance after the angle-wraparound allowance.");
     if (allDiffs.Count > 0)
     {

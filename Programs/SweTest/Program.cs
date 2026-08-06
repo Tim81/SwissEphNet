@@ -747,14 +747,9 @@ namespace SweTest
         // swetest.c:712 sizes fixed char buffers (sout[LEN_SOUT], etc.) with this, and it is
         // not merely a size: swetest.c:2823's insert_gap_string_for_tabs reads it live,
         // bounding its tab-replacement loop (`while ((sp = strchr(sout, '\t')) != NULL &&
-        // strlen(sout) + strlen(gap) < LEN_SOUT)`). This port's own
-        // insert_gap_string_for_tabs (below) replaces that bounded loop with an
-        // unconditional string.Replace (see the commented-out C original near line 3416),
-        // dropping the 1000-byte bound rather than reproducing it -- a real, pre-existing
-        // divergence from the C, not a faithful match. See docs/known-issues.md,
-        // "insert_gap_string_for_tabs drops swetest.c's LEN_SOUT bound". LEN_SOUT itself
-        // stays genuinely unread in this file; only the claim that its being unread matches
-        // the C was wrong.
+        // strlen(sout) + strlen(gap) < LEN_SOUT)`). This port's own insert_gap_string_for_tabs
+        // (below) reproduces that same bound. See docs/known-issues.md, "insert_gap_string_for_tabs
+        // drops swetest.c's LEN_SOUT bound" (closed).
         static int LEN_SOUT = 1000; // length of output string variable
         static double SIND(double x) { return Math.Sin(x * SwissEph.DEGTORAD); }
         static double COSD(double x) { return Math.Cos(x * SwissEph.DEGTORAD); }
@@ -3495,12 +3490,18 @@ namespace SweTest
                 return;
             if (gap.StartsWith("\t", StringComparison.Ordinal))
                 return;
-            //while ((sp = strchr(sout, '\t')) != NULL && strlen(sout) + strlen(gap) < LEN_SOUT) {
-            //    strcpy(s, sp + 1);
-            //    strcpy(sp, gap);
-            //    strcat(sp, s);
-            //}
-            sout = sout?.Replace("\t", gap, StringComparison.Ordinal);
+            if (sout == null)
+                return;
+            // swetest.c:2815-2828's bounded loop stops substituting once sout would grow past
+            // LEN_SOUT (1000) bytes; an unconditional string.Replace here has no such bound
+            // (docs/known-issues.md, "insert_gap_string_for_tabs drops swetest.c's LEN_SOUT
+            // bound"). IndexOf(char) is already ordinal, so no StringComparison overload is
+            // needed here (see the identical reasoning on SwephLib.cs's Contains('+') site).
+            int sp;
+            while ((sp = sout.IndexOf('\t')) >= 0 && sout.Length + gap.Length < LEN_SOUT)
+            {
+                sout = sout.Substring(0, sp) + gap + sout.Substring(sp + 1);
+            }
         }
 
         static int print_rise_set_line(double trise, double tset, double[] geopos, ref string serr)

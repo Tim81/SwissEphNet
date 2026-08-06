@@ -35,7 +35,7 @@ public static class Areas
 {
     public static readonly (string Name, Action<List<string>> Populate)[] All =
     [
-        ("houses-armc", rows => { Houses.AddRows(rows); Houses.AddSunshineStateRows(rows); Houses.AddStatefulPairRows(rows); }),
+        ("houses-armc", rows => { Houses.AddRows(rows); Houses.AddSunshineStateRows(rows); Houses.AddStatefulPairRows(rows); Houses.AddArmcEx2Rows(rows); }),
         ("houses", HousesEx.AddRows),
         ("house-pos", rows => { HousePos.AddRows(rows); HouseName.AddRows(rows); }),
         ("calc", Calc.AddRows),

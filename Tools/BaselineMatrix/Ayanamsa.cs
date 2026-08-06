@@ -86,6 +86,52 @@ internal static class Ayanamsa
 
         AddUserModeRows(rows);
         AddSidBitRows(rows);
+        AddAyanamsaNameRows(rows);
+    }
+
+    /// <summary>
+    /// swe_get_ayanamsa_name: a pure lookup table keyed by sid_mode, no calculation and no
+    /// ephemeris/file dependency at all -- previously uncovered anywhere in this matrix
+    /// (docs/known-issues.md, "31 of 107 public swe_* entry points have no matrix
+    /// coverage"). Sweeps every predefined mode (0..SidModeSweepCount-1, same bound the
+    /// AY/AYUT/AYEX/AYEXUT sweep above uses, for the same reason -- see that constant's own
+    /// doc comment), plus a couple of out-of-range and SIDBIT-combined values to exercise
+    /// the function's own `isidmode %= SE_SIDBITS` wraparound and its null return for
+    /// isidmode &gt;= SE_NSIDM_PREDEF (Sweph.cs's swe_get_ayanamsa_name).
+    /// </summary>
+    private static void AddAyanamsaNameRows(List<string> rows)
+    {
+        for (var sidMode = 0; sidMode < SidModeSweepCount; sidMode++)
+        {
+            rows.Add(BuildAyanamsaNameRow(sidMode));
+        }
+
+        // Out of the predefined range: SidModeSweepCount itself (just past the last valid
+        // id) and SE_SIDM_USER (255) fall through to the null-return branch.
+        rows.Add(BuildAyanamsaNameRow(SidModeSweepCount));
+        rows.Add(BuildAyanamsaNameRow(SwissEph.SE_SIDM_USER));
+
+        // SE_SIDBITS wraparound: a predefined mode with SIDBIT_ECL_T0/SSY_PLANE OR'd in must
+        // resolve to the same name as the bare mode, since swe_get_ayanamsa_name's own first
+        // line is `isidmode %= SE_SIDBITS` before anything else looks at it.
+        foreach (var sidMode in SidBitModes)
+        {
+            foreach (var (bitName, bit) in SidBits)
+            {
+                rows.Add(BuildAyanamsaNameRow(sidMode | bit, $"|{bitName}"));
+            }
+        }
+    }
+
+    private static string BuildAyanamsaNameRow(int sidMode, string suffix = "")
+    {
+        var caseId = $"AYNAME|{I(sidMode)}{suffix}";
+        return SafeRow(caseId, () =>
+        {
+            using var swe = new SwissEph();
+            var name = swe.swe_get_ayanamsa_name(sidMode);
+            return [S(name)];
+        });
     }
 
     private static string BuildRow(string prefix, int sidMode, double jd, bool useUt)

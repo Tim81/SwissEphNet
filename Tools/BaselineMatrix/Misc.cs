@@ -3,7 +3,7 @@ using static BaselineMatrix.Format;
 
 namespace BaselineMatrix;
 
-/// <summary>swe_get_planet_name and swe_version.</summary>
+/// <summary>swe_get_planet_name, swe_version, swe_get_current_file_data.</summary>
 internal static class Misc
 {
     // SE_SUN .. SE_INTP_PERG (0..22, SE_NPLANETS values), plus a spread of the
@@ -33,5 +33,25 @@ internal static class Misc
             using var swe = new SwissEph();
             return [S(swe.swe_version())];
         }));
+
+        // swe_get_current_file_data: previously uncovered anywhere in this matrix
+        // (docs/known-issues.md, "31 of 107 public swe_* entry points have no matrix
+        // coverage"). Under this harness's NoEphemerisFilesProvider (Areas.cs) no file is
+        // ever actually open, so ifno 0..4 all resolve through the same "no file open"
+        // branch (Sweph.cs's swe_get_current_file_data: swed.fidat[ifno].fnam is always
+        // empty) -- a one-row-per-ifno addition, but the "no file open" response itself is
+        // behavior worth freezing, and ifno -1/5 exercise the out-of-range guard.
+        foreach (var ifno in new[] { -1, 0, 1, 2, 3, 4, 5 })
+        {
+            var caseId = $"CFD|{I(ifno)}";
+            rows.Add(SafeRow(caseId, () =>
+            {
+                using var swe = new SwissEph();
+                double tfstart = 0, tfend = 0;
+                int denum = 0;
+                var fname = swe.swe_get_current_file_data(ifno, ref tfstart, ref tfend, ref denum);
+                return [S(fname), D(tfstart), D(tfend), I(denum)];
+            }));
+        }
     }
 }

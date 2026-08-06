@@ -162,6 +162,104 @@ jobs:
           path: TestResults/*.trx
           if-no-files-found: ignore
 
+  # macOS counterpart to conformance above: same suite, same submodule pin, same dotnet test
+  # invocation -- the conformance suite has no MSVC/Windows-specific dependency at all, it is a
+  # plain `dotnet test` against t.exp's corpus, so this job is a straight copy of the one above
+  # with runs-on changed and one addition: continue-on-error on the test step alone (see this
+  # file's own "verify-known-fail-log" job comment style, and oracle.yml's macos-exactness job
+  # header, for why job-level would be wrong -- it would also swallow the submodule-checkout and
+  # known-fail-generator-build steps, which have nothing to do with cross-platform drift).
+  # macOS was previously unmeasured on this instrument entirely (docs/compliance-2.10.03.md,
+  # "What this record does not cover"). continue-on-error stays here, unlike oracle.yml's
+  # macos-exactness job (which shed its own initial flag after one clean run, per that job's own
+  # header comment), until this leg has actually run clean in CI at least once -- promoting it to
+  # a full gate before that would risk failing every future PR on an untested combination the
+  # first time cross-platform transcendental-function noise (documented throughout
+  # docs/known-issues.md for other areas) pushes a single iteration past the suite's tolerance.
+  conformance-macos:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Assert the pinned submodule SHA matches the gitlink
+        shell: pwsh
+        run: |
+          $pinnedSha = "f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0"
+          $line = git ls-tree HEAD external/swisseph
+          $actual = ($line -split '\s+')[2]
+          if ($actual -ne $pinnedSha) {
+            Write-Error "external/swisseph's gitlink is $actual but this workflow is hardcoded to $pinnedSha (cache key and checkout step). Update both occurrences in .github/workflows/conformance.yml to match the bump."
+            exit 1
+          }
+          Write-Host "OK: external/swisseph's gitlink ($actual) matches this workflow's pinned SHA."
+
+      - name: Cache external/swisseph submodule
+        id: submodule-cache
+        uses: actions/cache@v6
+        with:
+          path: external/swisseph
+          key: swisseph-submodule-macos-f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0
+
+      - name: Checkout external/swisseph submodule (sparse, ~25 MB)
+        if: steps.submodule-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $pinnedSha = "f4dcd18e8005dde95fd8a8d2312ed12f9accd1b0"
+          git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
+          Push-Location external/swisseph
+          git config core.autocrlf false
+          git sparse-checkout init --no-cone
+          @(
+            '/*.c'
+            '/*.h'
+            '/Makefile'
+            '/LICENSE'
+            '/setest/*'
+            '/ephe/seas_12.se1'
+            '/ephe/semo_12.se1'
+            '/ephe/sepl_12.se1'
+            '/ephe/seas_18.se1'
+            '/ephe/semo_18.se1'
+            '/ephe/sepl_18.se1'
+            '/ephe/sefstars.txt'
+            '/ephe/seorbel.txt'
+            '/seleapsec.txt'
+          ) | Set-Content .git/info/sparse-checkout
+          git checkout $pinnedSha
+          Pop-Location
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Build the known-fail generator
+        shell: pwsh
+        run: dotnet build Tools/ConformanceKnownFailGen/ConformanceKnownFailGen.csproj -c Release
+
+      - name: Run conformance oracle (never fails the job; see this job's own header comment)
+        shell: pwsh
+        continue-on-error: true
+        run: >
+          dotnet test Tests/SwissEphNet.Conformance.Tests/SwissEphNet.Conformance.Tests.csproj -p:TestTfmsInParallel=false
+          -c Release
+          --logger "console;verbosity=detailed"
+          --logger trx
+          --results-directory TestResults
+          --blame-hang
+          --blame-hang-timeout 15min
+          --blame-hang-dump-type mini
+
+      - name: Upload conformance report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: conformance-report-macos
+          path: TestResults/*.trx
+          if-no-files-found: ignore
+
   # Pure text parsing, no build, no submodule -- cheap enough to run on every push and pull
   # request alongside the other ubuntu-latest checks in ci.yml (this job is modeled on that file's
   # own verify-freeze job, same shape: fetch the integration refs, resolve a base with

@@ -91,6 +91,8 @@ internal static class DateTime_
         AddUtcToJd(rows);
         AddJdut1ToUtc(rows);
         AddUtcTimeZone(rows);
+        AddLatToLmt(rows);
+        AddLmtToLat(rows);
     }
 
     private static void AddJulday(List<string> rows)
@@ -341,6 +343,50 @@ internal static class DateTime_
                     double so = 0;
                     swe.swe_utc_time_zone(y, m, d, h, mi, s, tz, ref yo, ref mo, ref dOut, ref ho, ref mio, ref so);
                     return [I(yo), I(mo), I(dOut), I(ho), I(mio), D(so)];
+                }));
+            }
+        }
+    }
+
+    private static readonly double[] LmtGeoLons = [0.0, -118.24, 139.69, 37.62, 180.0, -180.0];
+
+    /// <summary>
+    /// swe_lat_to_lmt/swe_lmt_to_lat: local apparent time to/from local mean time, siblings of
+    /// swe_utc_time_zone above (pure time-zone arithmetic, no ephemeris dependency).
+    /// Previously uncovered anywhere in this matrix (docs/known-issues.md, "31 of 107 public
+    /// swe_* entry points have no matrix coverage").
+    /// </summary>
+    private static void AddLatToLmt(List<string> rows)
+    {
+        foreach (var jd in Jds)
+        {
+            foreach (var geolon in LmtGeoLons)
+            {
+                var caseId = $"LAT2LMT|{D(jd)}|{D(geolon)}";
+                rows.Add(SafeRow(caseId, () =>
+                {
+                    using var swe = new SwissEph();
+                    string? serr = null;
+                    var retc = swe.swe_lat_to_lmt(jd, geolon, out var tjdLmt, ref serr);
+                    return [I(retc), D(tjdLmt), S(serr)];
+                }));
+            }
+        }
+    }
+
+    private static void AddLmtToLat(List<string> rows)
+    {
+        foreach (var jd in Jds)
+        {
+            foreach (var geolon in LmtGeoLons)
+            {
+                var caseId = $"LMT2LAT|{D(jd)}|{D(geolon)}";
+                rows.Add(SafeRow(caseId, () =>
+                {
+                    using var swe = new SwissEph();
+                    string? serr = null;
+                    var retc = swe.swe_lmt_to_lat(jd, geolon, out var tjdLat, ref serr);
+                    return [I(retc), D(tjdLat), S(serr)];
                 }));
             }
         }

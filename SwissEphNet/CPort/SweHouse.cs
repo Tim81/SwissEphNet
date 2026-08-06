@@ -307,7 +307,20 @@ namespace SwissEphNet.CPort
             else
                 ito = 12;
             if ((iflag & SwissEph.SEFLG_SIDEREAL) != 0 && !swed.ayana_is_set)
+            {
                 SE.swe_set_sid_mode(SwissEph.SE_SIDM_FAGAN_BRADLEY, 0, 0);
+                // swehouse.c:221 holds sip as `struct sid_data *`, so this fallback's write to
+                // swed.sidd is visible through it. sid_data is a struct here, so `sip` above is
+                // a copy taken before the call and would still hold the pre-fallback state --
+                // the same pattern already fixed for a demonstrated bug in Sweph.cs's
+                // swi_get_ayanamsa_ex (see docs/known-issues.md, "sid_data is a struct...").
+                // Re-read to give `sip` the pointer's semantics. sip.sid_mode is the only field
+                // this function reads afterward (below); currently that read is provably
+                // invariant either way, since SE_SIDM_FAGAN_BRADLEY is 0 and mode 0 sets no
+                // SIDBIT here or in swe_set_sid_mode -- kept as a defensive fidelity fix, not
+                // because a live divergence was found (see the doc entry for the full account).
+                sip = swed.sidd;
+            }
             eps_mean = SE.SwephLib.swi_epsiln(tjde, 0) * SwissEph.RADTODEG;
             SE.SwephLib.swi_nutation(tjde, 0, nutlo);
             for (i = 0; i < 2; i++)
