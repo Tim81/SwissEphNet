@@ -3495,10 +3495,15 @@ namespace SweTest
             // swetest.c:2815-2828's bounded loop stops substituting once sout would grow past
             // LEN_SOUT (1000) bytes; an unconditional string.Replace here has no such bound
             // (docs/known-issues.md, "insert_gap_string_for_tabs drops swetest.c's LEN_SOUT
-            // bound"). IndexOf(char) is already ordinal, so no StringComparison overload is
-            // needed here (see the identical reasoning on SwephLib.cs's Contains('+') site).
+            // bound"). C's strlen counts UTF-8 bytes, not UTF-16 code units, so the bound check
+            // below counts bytes (System.Text.Encoding.UTF8.GetByteCount) rather than
+            // sout.Length/gap.Length -- for an ASCII gap the two coincide, but a multi-byte
+            // gap or sout would otherwise let the port substitute past the C's own bound.
+            // IndexOf(char) is already ordinal, so no StringComparison overload is needed here
+            // (see the identical reasoning on SwephLib.cs's Contains('+') site).
             int sp;
-            while ((sp = sout.IndexOf('\t')) >= 0 && sout.Length + gap.Length < LEN_SOUT)
+            while ((sp = sout.IndexOf('\t')) >= 0
+                && System.Text.Encoding.UTF8.GetByteCount(sout) + System.Text.Encoding.UTF8.GetByteCount(gap) < LEN_SOUT)
             {
                 sout = sout.Substring(0, sp) + gap + sout.Substring(sp + 1);
             }

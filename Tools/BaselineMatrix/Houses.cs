@@ -124,6 +124,10 @@ internal static class Houses
     /// </summary>
     public static void AddArmcEx2Rows(List<string> rows)
     {
+#if !USE_REFERENCE_PACKAGE
+        // swe_houses_armc_ex2 does not exist in the reference package (SwissEphNet 2.8.0.2,
+        // pre-2.10.03) at all -- reference mode's own "compile-only regression guard" build
+        // has no such method to call, so this sweep is local-mode only.
         foreach (var hsys in Grids.HouseSystems)
         {
             foreach (var eps in Grids.Eps)
@@ -137,8 +141,10 @@ internal static class Houses
                 }
             }
         }
+#endif
     }
 
+#if !USE_REFERENCE_PACKAGE
     private static string BuildArmcEx2Row(char hsys, double eps, double geolat, double armc)
     {
         var caseId = $"HAEX2|{hsys}|{D(eps)}|{D(geolat)}|{D(armc)}";
@@ -154,6 +160,7 @@ internal static class Houses
             return FieldsWithSpeed(retc, cusp, ascmc, cuspSpeed, ascmcSpeed);
         });
     }
+#endif
 
     private static string[] FieldsWithSpeed(int retc, double[] cusp, double[] ascmc, double[] cuspSpeed, double[] ascmcSpeed)
     {

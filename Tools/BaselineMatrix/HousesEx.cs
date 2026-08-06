@@ -65,7 +65,12 @@ internal static class HousesEx
                         foreach (var variant in Variants)
                         {
                             rows.Add(BuildHousesExRow(jd, geolat, geolon, hsys, variant));
+#if !USE_REFERENCE_PACKAGE
+                            // swe_houses_ex2 does not exist in the reference package
+                            // (SwissEphNet 2.8.0.2, pre-2.10.03) at all -- reference mode's
+                            // "compile-only regression guard" build has no such method to call.
                             rows.Add(BuildHousesEx2Row(jd, geolat, geolon, hsys, variant));
+#endif
                         }
                     }
                 }
@@ -128,6 +133,7 @@ internal static class HousesEx
     /// Passing non-null cusp_speed/ascmc_speed arrays turns on speed computation the same way
     /// AddArmcEx2Rows in Houses.cs does for swe_houses_armc_ex2.
     /// </summary>
+#if !USE_REFERENCE_PACKAGE
     private static string BuildHousesEx2Row(double jd, double geolat, double geolon, char hsys, Variant variant)
     {
         var caseId = $"HX2|{D(jd)}|{D(geolat)}|{D(geolon)}|{hsys}|{variant.Name}";
@@ -148,6 +154,7 @@ internal static class HousesEx
             return FieldsWithSpeed(retc, cusp, ascmc, cuspSpeed, ascmcSpeed);
         });
     }
+#endif
 
     private static string[] FieldsWithSpeed(int retc, double[] cusp, double[] ascmc, double[] cuspSpeed, double[] ascmcSpeed)
     {

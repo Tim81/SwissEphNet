@@ -63,6 +63,11 @@ internal static class Calc
                 }
             }
 
+#if !USE_REFERENCE_PACKAGE
+            // swe_calc_pctr does not exist in the reference package (SwissEphNet 2.8.0.2,
+            // pre-2.10.03) at all -- reference mode's own "compile-only regression guard"
+            // build has no such method to call, so this sweep is local-mode only, the same
+            // way Areas.cs already excludes OnLoadFile-dependent setup under this flag.
             foreach (var iplctr in PctrCenters)
             {
                 foreach (var jd in Grids.JdSpread(5))
@@ -74,6 +79,7 @@ internal static class Calc
                     }
                 }
             }
+#endif
         }
     }
 
@@ -106,6 +112,7 @@ internal static class Calc
     /// observer is iplctr, not swe_set_topo's ground station), with iplctr==ipl included
     /// deliberately to exercise the degenerate self-centered case.
     /// </summary>
+#if !USE_REFERENCE_PACKAGE
     private static string BuildPctrRow(int ipl, int iplctr, double jd, string flagName, int iflag)
     {
         var caseId = $"PCTR|{I(ipl)}|{I(iplctr)}|{D(jd)}|{flagName}";
@@ -124,6 +131,7 @@ internal static class Calc
             ];
         });
     }
+#endif
 
     private static string BuildTopoRow(string prefix, int ipl, double jd, (double Lon, double Lat, double Height) observer, int extraFlag, bool useUt)
     {

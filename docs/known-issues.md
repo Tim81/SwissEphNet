@@ -2170,15 +2170,24 @@ while((sp = strchr(sout, '\t')) != NULL && strlen(sout) + strlen(gap) < LEN_SOUT
 ```
 
 -- with a C# loop that repeatedly replaces the first remaining tab with `gap`, stopping once
-`sout.Length + gap.Length` would reach `LEN_SOUT` (1000), the same bound the C checks live via
+the result would reach `LEN_SOUT` (1000) bytes, the same bound the C checks live via
 `strlen(sout) + strlen(gap) < LEN_SOUT`. Previously the method used an unconditional
 `sout?.Replace("\t", gap, StringComparison.Ordinal)`, which had no such limit and kept
 substituting regardless of the result's length -- this was the real, pre-existing divergence
 this entry originally recorded, and the fix is a straightforward transliteration of the C loop
 using `string.IndexOf('\t')`/`Substring` in place of `strchr`/`strcpy`/`strcat`, citing
-swetest.c:2801-2814 under the transliteration freeze's one permitted exception
+swetest.c:2815-2828 under the transliteration freeze's one permitted exception
 (`CONTRIBUTING.md`). `LEN_SOUT` (`Program.cs:753`) is now genuinely read by this method, matching
 the C.
+
+**Bound now counts bytes, not UTF-16 code units, found during PR review.** The first version of
+this fix compared `sout.Length + gap.Length` against `LEN_SOUT` -- correct for ASCII, but C's
+`strlen` counts bytes, and .NET's `string.Length` counts UTF-16 code units, so a multi-byte
+`gap` or `sout` would let the port substitute further than the C's own bound permits. The
+comparison now uses `System.Text.Encoding.UTF8.GetByteCount` on both sides instead, matching
+`strlen`'s behavior on a UTF-8-encoded C string (this repository's established default encoding
+for text -- see this file's own note on the `sefstars.txt`/`seasnam.txt`/`seorbel.txt`
+data-file encoding audit, above).
 
 This was previously misdocumented rather than left unrecorded: a comment beside `LEN_SOUT`'s own
 declaration (`Program.cs:747-751`, before this fix) claimed the port's dynamic strings made the

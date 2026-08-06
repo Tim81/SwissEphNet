@@ -9,41 +9,33 @@ using Xunit;
 namespace SwissEphNet.Tests
 {
     /// <summary>
-    /// Value-diffs the nutation coefficient tables in SweNut200a.h.cs against the
-    /// pinned external/swisseph/swenut2000a.h they were transliterated from. Before
+    /// Value-diffs the nutation coefficient tables in SweNut200a.h.cs against
+    /// external/swisseph/swenut2000a.h, the C header they were transliterated from. Before
     /// this test, the tables were only ever length-checked (NLS=678, NLS_2000B=77,
     /// NPL=687 match); no commit or script compared the actual coefficient values.
     /// See docs/compliance-2.10.03.md, "What this record does not cover".
+    ///
+    /// Fixture: Tests/SwissEphNet.Tests/files/swenut2000a.h, a byte-identical copy of
+    /// external/swisseph/swenut2000a.h at the pinned submodule commit, embedded as a
+    /// resource the same way seas_18.se1 already is for PlaDiamCoverageTest. A fixture
+    /// copy, not a submodule read, for the same reason PlaDiamCoverageTest's own doc
+    /// comment gives: .github/workflows/ci.yml's build-and-test job (which builds and
+    /// runs this project) and .github/workflows/release.yml both checkout without
+    /// fetching submodules -- only conformance.yml/oracle.yml/baseline.yml do that, for
+    /// the projects that actually need external/swisseph directly. A test here that read
+    /// the submodule would fail for every contributor who has not run the submodule-init
+    /// recipe in CONTRIBUTING.md, and did fail in CI for exactly that reason.
     /// </summary>
     public class NutationTableFidelityTest
     {
-        private static readonly string SubmoduleRoot = ResolveSubmoduleRoot();
-        private static readonly string HeaderPath = Path.Combine(SubmoduleRoot, "swenut2000a.h");
+        private static readonly string HeaderText = ReadHeaderFixture();
 
-        private static string ResolveSubmoduleRoot()
+        private static string ReadHeaderFixture()
         {
-            var overridePath = Environment.GetEnvironmentVariable("SWISSEPH_CONFORMANCE_SUBMODULE");
-            if (!string.IsNullOrEmpty(overridePath))
-            {
-                return overridePath;
-            }
-
-            var marker = Path.Combine("external", "swisseph", "swenut2000a.h");
-            var dir = new DirectoryInfo(AppContext.BaseDirectory);
-            while (dir is not null)
-            {
-                var candidate = Path.Combine(dir.FullName, marker);
-                if (File.Exists(candidate))
-                {
-                    return Path.GetDirectoryName(candidate);
-                }
-                dir = dir.Parent;
-            }
-
-            throw new InvalidOperationException(
-                "Could not locate external/swisseph/swenut2000a.h in any parent directory of " +
-                AppContext.BaseDirectory + ". Run 'git submodule update --init external/swisseph', " +
-                "or set SWISSEPH_CONFORMANCE_SUBMODULE to the submodule's root directory.");
+            using var stream = ResourceFileHelpers.OpenResourceFile("swenut2000a.h");
+            Assert.NotNull(stream);
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
         }
 
         /// <summary>Extracts the comma-separated integer literals of `static const &lt;type&gt; name[] = { ... };` from the C header.</summary>
@@ -53,7 +45,7 @@ namespace SwissEphNet.Tests
                 headerText,
                 @"static\s+const\s+\w+\s+" + Regex.Escape(arrayName) + @"\s*\[\s*\]\s*=\s*\{(.*?)\};",
                 RegexOptions.Singleline);
-            Assert.True(match.Success, $"could not find array '{arrayName}' in {HeaderPath}");
+            Assert.True(match.Success, $"could not find array '{arrayName}' in the embedded swenut2000a.h fixture");
 
             var body = match.Groups[1].Value;
             var tokens = body.Split(new[] { ',', '\r', '\n', ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
@@ -94,8 +86,7 @@ namespace SwissEphNet.Tests
         [MemberData(nameof(Arrays))]
         public void TestNutationArray_MatchesCHeaderValueForValue(string arrayName)
         {
-            var headerText = File.ReadAllText(HeaderPath);
-            var expected = ParseCArray(headerText, arrayName);
+            var expected = ParseCArray(HeaderText, arrayName);
             var actual = GetPortArray(arrayName);
 
             Assert.Equal(expected.Length, actual.Length);
