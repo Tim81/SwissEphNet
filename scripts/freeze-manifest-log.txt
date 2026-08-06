@@ -558,3 +558,31 @@ b"} where the C gives {"a", ""}); that one is fixed
     stale by the same two-line drift and are corrected in a separate, non-frozen-path commit.
     SwissEphNet/CPort: 48551 -> 48551 lines (line count unchanged; only cited numbers inside
     comments moved), sha256 7DDCD62B... -> A2DA184F....
+25. PR #38 2026-08-06: Two fidelity fixes, in different frozen files, landed together.
+    First, SwissEphNet/CPort/SweHouse.cs's swe_houses_ex2: swehouse.c:221 holds
+    `struct sid_data *sip = &swed.sidd;`, aliasing swed.sidd, so the SE_SIDM_FAGAN_BRADLEY
+    fallback a few lines later (swehouse.c:229-230, reached when SEFLG_SIDEREAL is set with
+    no prior swe_set_sid_mode call) is visible through it. sid_data is a struct here, so
+    `sip` took a snapshot before the fallback and did not see its write-back -- the same
+    class of bug already fixed in Sweph.cs's swi_get_ayanamsa_ex. Fixed by re-reading
+    `sip = swed.sidd;` immediately after the fallback call, matching that precedent. Checked
+    carefully rather than assumed discriminating: for every currently reachable input this is
+    a no-op, since SE_SIDM_FAGAN_BRADLEY is 0 and mode 0 sets no SIDBIT either side of the
+    fallback -- kept as a fidelity fix matching the C's pointer semantics, not claimed as a
+    demonstrated behavior change. Full writeup: docs/known-issues.md, "sid_data is a struct,
+    so `sip = swed.sidd` copies where the C aliases".
+    Second, Programs/SweTest/Program.cs's insert_gap_string_for_tabs (two fixes to the same
+    function, found by the same review pass). It used an unconditional
+    `sout?.Replace("\t", gap, StringComparison.Ordinal)` where swetest.c:2815-2828 bounds its
+    tab-replacement loop to LEN_SOUT (1000) bytes (`while ((sp = strchr(sout, '\t')) != NULL
+    && strlen(sout) + strlen(gap) < LEN_SOUT)`); reproduced the C's bounded loop with
+    `string.IndexOf('\t')`/`Substring` in place of `strchr`/`strcpy`/`strcat`. The bound
+    comparison initially used `sout.Length + gap.Length`, correct for ASCII but not
+    equivalent to the C's byte-counting `strlen` for a multi-byte `gap` or `sout` (caught in
+    PR #38's own review); now uses `System.Text.Encoding.UTF8.GetByteCount` on both sides
+    instead. Full writeup: docs/known-issues.md, "insert_gap_string_for_tabs drops
+    swetest.c's LEN_SOUT bound".
+    Neither fix is a re-transliteration: no other line moved in either file.
+    SwissEphNet/CPort: 48551 -> 48564 lines, sha256 A2DA184F... -> C8666981....
+    Programs/SweTest/Program.cs: 5046 -> 5052 lines, 65 -> 64 kr_braces, sha256
+    698EF483... -> 7E4312E1....
