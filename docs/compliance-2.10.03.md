@@ -435,8 +435,8 @@ this record adds carry no `SEFLG_NONUT` row of their own. Recomputed directly fr
 24,561 are among the bit-identical rows above (the five `GET_CURRENT_FILE_DATA` rows that briefly
 recorded `SERR`-only differences in `Tests/oracle/known-diff-files.tsv` are gone now, not waived --
 see "The last two 2.10.03-only entry points" above) -- see "What this record
-does not cover" for what that does and
-does not establish about the nutation coefficient tables themselves.
+does not cover" for how this corroboration is now joined by a direct, value-for-value audit of
+the nutation coefficient tables themselves.
 
 ## 2. Characterization baseline
 
@@ -641,67 +641,114 @@ this is the only one of the four instruments' gates still allowed to go red.
 
 ## What this record does not cover
 
-**macOS is now measured on the bit-exact oracle** (`macos-exactness` in `.github/workflows/oracle.yml`;
-see "1. Bit-exact oracle" above), **but still unmeasured on the other three instruments, and two
-of those are Linux-unmeasured too.** The correctness oracle (`conformance.yml`) and the SweTest
-text-output comparison (`swetest-diff` in `oracle.yml`) each run on `windows-latest` only, with no
-Linux or macOS leg at all. The characterization baseline is the one exception: it gates on Windows
-and additionally runs a report-only job on Linux (`verify-baseline-linux` in `baseline.yml`), which
-is where section 2's Linux divergence numbers above come from -- but it, too, has no macOS leg.
+**macOS is measured on the bit-exact oracle and, now, two of the other three instruments; the
+SweTest text-output comparison remains the one gap.** `macos-exactness` in
+`.github/workflows/oracle.yml` covers the bit-exact oracle (see "1. Bit-exact oracle" above). The
+characterization baseline gates on Windows and additionally runs report-only jobs on both Linux
+(`verify-baseline-linux`) and macOS (`verify-baseline-macos`, both in `baseline.yml`) -- Linux's
+numbers are section 2's source above; macOS has not been measured long enough yet to have its own
+citable figures here. The correctness oracle now has a macOS leg too (`conformance-macos` in
+`conformance.yml`), a straight copy of the Windows `conformance` job (the suite is a plain
+`dotnet test`, no MSVC dependency) with `continue-on-error` on the test step alone -- unpromoted to
+a full gate for the same reason `macos-exactness` itself started that way and only shed the flag
+after a first clean run (see that job's own header comment): this is an untested platform
+combination for the conformance suite specifically, and a single cross-platform transcendental-
+function ULP difference pushing one iteration past tolerance should not be able to fail every
+future PR on its first run.
 
-**The nutation coefficient tables in `SwissEphNet/CPort/SweNut200a.h.cs` have never been
-independently diffed, value by value, against `external/swisseph/swenut2000a.h`.** The array
-lengths match exactly on both sides (`NLS` 678, `NLS_2000B` 77, `NPL` 687), which rules out gross
-truncation, but that is a length check, not a value check, and no commit or script in this
-repository's history performs the latter. The indirect evidence is real but is not the same
-claim: 24,561<!--doccount:grid-total-default-nutation--> of the 25,569<!--doccount:grid-total-combined-->
+**The SweTest text-output comparison (`swetest-diff` in `oracle.yml`) still runs on
+`windows-latest` only, with no Linux or macOS leg.** Unlike the bit-exact oracle's `sedump.c` (a
+small, purpose-built driver `macos-exactness`/`linux-exactness` already compile with
+clang/gcc) or the correctness oracle (a plain `dotnet test` with no C build at all), `swetest-diff`
+needs an actual `swetest` CLI binary built from `swetest.c` -- full argument parsing, not a
+minimal driver -- compared against `Programs/SweTest`'s .NET build via
+`scripts/verify-swetest-diff.ps1`, which currently only knows how to invoke
+`Tools/CReference/build-c.ps1`'s MSVC build. Adding a Linux/macOS leg needs a second,
+clang/gcc-based `swetest` build path (and its own `-ffp-contract=off`/no-builtin-substitution
+discipline, the same care `macos-exactness` already applies to `sedump.c`) that does not exist
+yet. Left as a known, un-implemented gap rather than attempted without the ability to validate it
+against a real runner.
+
+**The nutation coefficient tables in `SwissEphNet/CPort/SweNut200a.h.cs` are now value-diffed
+against `external/swisseph/swenut2000a.h`, not just length-checked.**
+`Tests/SwissEphNet.Tests/NutationTableFidelityTest.cs` parses the four coefficient arrays
+(`nls`, `cls`, `npl`, `icpl`) directly out of the pinned C header at test time and asserts
+element-for-element equality against the port's arrays (read via reflection, since
+`SweNut200a` is `internal`) -- so it re-checks on every future upstream bump, not just once.
+All four arrays match exactly. Before this test, the array lengths matched (`NLS` 678,
+`NLS_2000B` 77, `NPL` 687), which ruled out gross truncation, but that was a length check, not
+a value check. The indirect evidence already available was real but was not the same claim:
+24,561<!--doccount:grid-total-default-nutation--> of the 25,569<!--doccount:grid-total-combined-->
 bit-exact oracle rows exercise the default (non-`SEFLG_NONUT`)
 nutation path and match Astrodienst's own C bit for bit, which a wrong coefficient of any
-consequence would be very unlikely to survive. That is strong corroboration through the oracle,
-not a direct audit of the table itself.
+consequence would be very unlikely to survive -- strong corroboration through the oracle, now
+joined by a direct audit of the table itself.
 
-**Seven call sites in `SwissEphNet/CPort` transliterate a C fixed-size stack buffer
+**Eight live call sites in `SwissEphNet/CPort` transliterate a C fixed-size stack buffer
 (`char buf[N]`) as a live, unbounded C# `string`.** The C's buffer-boundary behavior (truncation,
-overflow) is consequently not reproduced at these sites: `SwephLib.cs:4682`; `SweHel.cs:327`;
-`Sweph.cs:7408`, `:8312`, `:8030-8031`, `:8128-8129`, `:9240-9241` (the last three are TLS-static
-pairs, `slast_stardata`/`slast_starname` sharing one site each, for `swe_fixstar2`,
-`swe_fixstar2_mag` and `swe_fixstar` respectively). None of these has produced an observed
-divergence in the baseline, the bit-exact oracle, or the correctness oracle to date -- the C#
-`string`'s lack of a bound has simply never been exercised past the C's own buffer size in any
-input any of the four instruments generates. That is an absence of a triggering input, not a
-proof the sites are safe against one.
+overflow) is consequently not reproduced at these sites -- corrected here after this citation
+list itself was found stale (see `docs/known-issues.md`'s "Eight live sites transliterate a
+C fixed-size buffer as an unbounded C# string" for how): `SweHel.cs:327` (`DeterObject`);
+`SwephLib.cs:4725` (`swe_get_astro_models`'s `s`/`samod0`); `Sweph.cs:7472`
+(`load_all_fixed_stars`'s `s`); `Sweph.cs:8770-8776` (`swi_fixstar_load_record`'s three buffers
+`s`, `sstar`, `fstar`); and four fixstar-family TLS-static `slast_stardata`/`slast_starname`
+string pairs, each replacing a `//static TLS char slast_stardata[AS_MAXCH];` /
+`slast_starname[AS_MAXCH]` comment pair: `swe_fixstar2` (`Sweph.cs:8087-8135`),
+`swe_fixstar2_mag` (`:8187-8216`), `swe_fixstar` (`:9296-9354`), and `swe_fixstar_mag`
+(`:9409-9462`). None of these has produced an observed divergence in the baseline, the
+bit-exact oracle, or the correctness oracle to date -- the C# `string`'s lack of a bound has
+simply never been exercised past the C's own buffer size in any input any of the four
+instruments generates. That is an absence of a triggering input, not a proof the sites are
+safe against one.
 
-An earlier version of this document said "eleven call sites" and listed twelve; recounted, the
-correct number is seven. Five of the twelve previously listed were not live call sites at all:
-`SwephLib.cs:4893` and `:4926` sit inside `swi_open_trace`'s entirely hand-commented `#if TRACE`
-body (the live implementation is the one-line stub three lines above,
-`internal void swi_open_trace(out string serr) { serr = null; }`); `SweHel.cs:2493` sits inside
-`get_asc_obl_old`, itself guarded out by `//#if 0` in the C and never transliterated as live code
-at all; `Sweph.cs:420` sits inside `swe_calc`'s `#if TRACE` block, inside the FORCE_IFLAG debug
-mechanism, which the port carries only as a comment; and `Sweph.cs:8904` sits in
-`swi_fixstar_calc_from_record`, whose C buffer was dropped outright rather than carried forward as
-a string -- no identifier named `s` appears anywhere else across that function's 323 lines. Each
-of the five is a reference to commented-out or eliminated C, not to a live C# `string` standing in
-for a live C buffer, so none belongs on this list.
+An earlier version of this document cited seven sites at different line numbers
+(`SwephLib.cs:4682`; `SweHel.cs:327`; `Sweph.cs:7408`, `:8312`, `:8030-8031`, `:8128-8129`,
+`:9240-9241`) and missed the `swe_fixstar_mag` TLS pair entirely. Re-verified directly against
+the current tree: only the `SweHel.cs:327` citation still pointed at the right code: every
+other old line number now lands on unrelated code (e.g. `SwephLib.cs:4682` is a `switch
+(biasmod)` lookup with no buffer involved), evidence the citations had drifted from the source
+across an intervening edit rather than being re-checked. The eight sites above were found fresh
+by grepping `SwissEphNet/CPort/` for `//char \w+\[`/`AS_MAXCH` and reading each hit's enclosing
+function to confirm it is live.
+
+Confirmed NOT live, so excluded from the eight above (buffer dropped outright rather than
+carried forward as an unbounded string, or the C itself is dead code): `SweHel.cs:2493` sits
+inside `get_asc_obl_old`, itself guarded out by `//#if 0` in the C and never transliterated as
+live code at all; `Sweph.cs:8968` sits in `swi_fixstar_calc_from_record`, whose C buffer was
+dropped outright rather than carried forward as a string -- no identifier named `s` appears
+anywhere else across that function; and `Sweph.cs:8376` carries forward only the pointer `sp`,
+not the `si[AS_MAXCH]` buffer itself. `Sweph.h.cs:814-824`'s `fixed_star.starno` field is
+unbounded-vs-`char[10]` in structure but inert in practice -- its own adjacent comment notes
+upstream never reads or writes it either. `SwephLib.cs:4893` sits inside a separate,
+entirely-commented-out alternate `swi_strcpy(char*, char*)` body (`:4890-4917`) that sits just
+above, but is not itself guarded by, the `#if TRACE` block starting at `:4919` -- the live
+`swi_strcpy` (`:4885-4889`) is a two-line `to = from;` with no buffer at all. `SwephLib.cs:4926`
+genuinely is inside `swi_open_trace`'s hand-commented `#if TRACE` body. `Sweph.cs:420` (inside
+`swe_calc`'s `#if TRACE`/FORCE_IFLAG debug block, carried only as a comment) remains excluded
+for the same reason as before. All three are references to commented-out C, not a live C#
+`string`, so all three stay excluded -- only the reason given for `:4893` was wrong.
 
 **The `reason` column caveat above** applies to every number in this document that is sourced
 from `known-fail.tsv`'s category counts rather than a fresh run: category is gated and reliable,
 free text is not.
 
-**The bit-exact oracle's house-code coverage is narrower than "17,789 of 17,789 match" suggests,
-though this record closes part of the gap.** Before this record, both drivers called only the
-six-argument `swe_houses`/`swe_houses_armc` forms; they now also call `swe_houses_ex` (the
-iflag-taking, sidereal/radians-capable form) and `swe_house_name`. `swe_houses_ex2`/
-`swe_houses_armc_ex2`'s own speed-derivative outputs (`cusp_speed`/`ascmc_speed`), `swe_house_pos`,
-and every house-code `serr` path (`swe_houses_ex` has none either, matching `swe_houses`) still
-have no bit-exact coverage at all -- some of the speed gap is partly covered by the correctness
-oracle instead (house systems `'P'`/`'W'`/`'K'` only, for speeds). House system `'J'` (Savard-A)
-still has no external validation of its cusp *computation* on either instrument: `HOUSE_NAME`'s new
-coverage only confirms both sides agree on the string `swe_house_name` returns for `'J'` (a lookup
-table entry), not the geometry `swe_houses_ex` would compute for it -- `'J'` stays deliberately
-excluded from every hsys sweep that actually computes cusps, on both grids. See
-`docs/known-issues.md`, "What the oracle grids do not cover in the house
-code," for the full accounting.
+**The bit-exact oracle's house-code coverage is narrower than the current 22,289-of-22,289
+analytic-grid match suggests, though it is wider than an earlier version of this note claimed.**
+Both drivers call the six-argument `swe_houses`/`swe_houses_armc` forms, `swe_houses_ex` (the
+iflag-taking, sidereal/radians-capable form), `swe_house_name`, and -- confirmed directly,
+correcting this note -- `swe_houses_ex2`/`swe_houses_armc_ex2` too, with real (non-null)
+`cusp_speed`/`ascmc_speed` arrays and a real `serr`: 1,500 `HOUSES_EX2` and 3,000
+`HOUSES_ARMC_EX2` rows are already in the committed grid, over the same 25 house letters every
+other sweep uses, and a fresh `scripts/run-oracle-dump.ps1` + `scripts/verify-oracle.ps1` run
+reports all of it bit-identical (0 regressions, file-level SHA-256 match). `swe_house_pos` and
+house systems `'Z'`/`'0'` genuinely still have no bit-exact coverage at all. House system `'J'`
+(Savard-A) still has no external validation of its cusp *computation* on this instrument:
+`HOUSE_NAME`'s coverage only confirms both sides agree on the string `swe_house_name` returns for
+`'J'` (a lookup table entry), not the geometry -- `'J'` stays deliberately excluded from every
+hsys sweep on both grids that actually computes cusps. `'J'`'s cusp geometry does have external
+validation now, just via a different instrument (a pyswisseph replay, not this grid) -- see
+`docs/known-issues.md`, "What the oracle grids do not cover in the house code," for the full,
+now-corrected accounting.
 
 ## Sources
 

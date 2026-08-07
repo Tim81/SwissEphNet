@@ -10,18 +10,18 @@
 # Format: <area>\t<count>
 astromodels	329
 atmo	1676
-ayanamsa	2464
-calc	12608
+ayanamsa	2523
+calc	16688
 calc-defaulteph	2720
 coord	394
-datetime	513
+datetime	693
 eclipse	1034
 format	640
 gauquelin	588
 house-pos	31528
-houses	13440
-houses-armc	55512
-misc	34
+houses	25200
+houses-armc	109944
+misc	41
 nodaps	360
 orbit	792
 pheno	1472

@@ -1662,6 +1662,65 @@ AYEX|9|2371428.5714285714|0	2	20.467860888817285
 AYEX|9|2371428.5714285714|NONUT	66	20.471105689753415	
 AYEX|9|2600000|0	2	29.21653678601646	
 AYEX|9|2600000|NONUT	66	29.216265172581075	
+AYNAME|0	Fagan/Bradley
+AYNAME|1	Lahiri
+AYNAME|10	Babylonian/Kugler 2
+AYNAME|11	Babylonian/Kugler 3
+AYNAME|12	Babylonian/Huber
+AYNAME|13	Babylonian/Eta Piscium
+AYNAME|14	Babylonian/Aldebaran = 15 Tau
+AYNAME|15	Hipparchos
+AYNAME|16	Sassanian
+AYNAME|17	Galact. Center = 0 Sag
+AYNAME|18	J2000
+AYNAME|19	J1900
+AYNAME|2	De Luce
+AYNAME|20	B1950
+AYNAME|21	Suryasiddhanta
+AYNAME|22	Suryasiddhanta, mean Sun
+AYNAME|23	Aryabhata
+AYNAME|24	Aryabhata, mean Sun
+AYNAME|25	SS Revati
+AYNAME|255	
+AYNAME|256|ECL_T0	Fagan/Bradley
+AYNAME|257|ECL_T0	Lahiri
+AYNAME|26	SS Citra
+AYNAME|27	True Citra
+AYNAME|273|ECL_T0	Galact. Center = 0 Sag
+AYNAME|274|ECL_T0	J2000
+AYNAME|28	True Revati
+AYNAME|283|ECL_T0	True Citra
+AYNAME|29	True Pushya (PVRN Rao)
+AYNAME|3	Raman
+AYNAME|30	Galactic Center (Gil Brand)
+AYNAME|31	Galactic Equator (IAU1958)
+AYNAME|32	Galactic Equator
+AYNAME|33	Galactic Equator mid-Mula
+AYNAME|34	Skydram (Mardyks)
+AYNAME|35	True Mula (Chandra Hari)
+AYNAME|36	Dhruva/Gal.Center/Mula (Wilhelm)
+AYNAME|37	Aryabhata 522
+AYNAME|38	Babylonian/Britton
+AYNAME|39	"Vedic"/Sheoran
+AYNAME|4	Usha/Shashi
+AYNAME|40	Cochrane (Gal.Center = 0 Cap)
+AYNAME|41	Galactic Equator (Fiorenza)
+AYNAME|42	Vettius Valens
+AYNAME|43	Lahiri 1940
+AYNAME|44	Lahiri VP285
+AYNAME|45	Krishnamurti-Senthilathiban
+AYNAME|46	Lahiri ICRC
+AYNAME|47	
+AYNAME|5	Krishnamurti
+AYNAME|512|SSY_PLANE	Fagan/Bradley
+AYNAME|513|SSY_PLANE	Lahiri
+AYNAME|529|SSY_PLANE	Galact. Center = 0 Sag
+AYNAME|530|SSY_PLANE	J2000
+AYNAME|539|SSY_PLANE	True Citra
+AYNAME|6	Djwhal Khul
+AYNAME|7	Yukteshwar
+AYNAME|8	J.N. Bhasin
+AYNAME|9	Babylonian/Kugler 1
 AYUSER|2299160.5|-5.5|1000000|False	305.2766812351482
 AYUSER|2299160.5|-5.5|1000000|True	305.2767014140405
 AYUSER|2299160.5|-5.5|1228571.4285714286|False	313.88599423870784

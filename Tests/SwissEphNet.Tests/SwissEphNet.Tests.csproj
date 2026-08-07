@@ -15,6 +15,7 @@
     <None Remove="files\eop_1962_today.txt" />
     <None Remove="files\eop_finals.txt" />
     <None Remove="files\sefstars.txt" />
+    <None Remove="files\swenut2000a.h" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,6 +25,7 @@
     <EmbeddedResource Include="files\seas_18.se1" />
     <EmbeddedResource Include="files\sedeltat.txt" />
     <EmbeddedResource Include="files\sefstars.txt" />
+    <EmbeddedResource Include="files\swenut2000a.h" />
   </ItemGroup>
 
   <!--

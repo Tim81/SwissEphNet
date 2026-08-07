@@ -32,7 +32,7 @@ Read the status line first and the body for how it got there.
 
 | Entry | Status |
 |---|---|
-| `swe_houses_armc`, hsys `'Y'` (APC houses) | open |
+| `swe_houses_armc`, hsys `'Y'` (APC houses) | won't fix |
 | `swe_houses_armc` reports success while emitting NaN cusps | closed |
 | `swe_houses_armc`, hsys `'i'` (Makransky): cusp = 360.0 | won't fix |
 | `swe_calc(SE_ECL_NUT)` returns all-zero output | won't fix |
@@ -43,8 +43,8 @@ Read the status line first and the body for how it got there.
 | Five transliteration-fidelity defects | closed |
 | `swe_fixstar_ut` distance speed | record |
 | Negative-zero fields under SIDEREAL | record |
-| hsys `'I'` (Sunshine): divergences near tolerance | open |
-| `swe_house_pos`: 27 cross-platform divergences | open |
+| hsys `'I'` (Sunshine): divergences near tolerance | record |
+| `swe_house_pos`: 27 cross-platform divergences | record |
 | `hcusp[36]`: faithful to 2.08, not 2.10.03 | closed |
 | hsys narrowed to `char` | closed |
 | Cross-platform divergence, and the platform lock | record |
@@ -55,7 +55,7 @@ Read the status line first and the body for how it got there.
 | The 7.2.x diagnosis in regenerations.log | record |
 | `SE_VERSION` | closed |
 | Constants from the header delta | closed |
-| `sid_data` is a struct, so the copy does not alias | open |
+| `sid_data` is a struct, so the copy does not alias | closed |
 | `swe_calc`'s serr for ipl 13 | closed |
 | OnLoadFile superseded by IEphemerisFileProvider | closed |
 | Pointer arithmetic as concatenation in SweTest | closed |
@@ -70,74 +70,147 @@ Read the status line first and the body for how it got there.
 | `swe_set_jpl_file`'s AS_MAXCH clamps | won't fix |
 | swetest.c's zodiac field | closed |
 | `swe_solcross(SEFLG_HELCTR)` upstream hang | won't fix |
-| `insert_gap_string_for_tabs` drops LEN_SOUT | open |
+| `insert_gap_string_for_tabs` drops LEN_SOUT | closed |
 | The 5% waiver caps divide by the whole area | record |
-| `DivergenceReport`'s field-compared count | open |
-| 31 of 107 public entry points have no matrix coverage | open |
+| `DivergenceReport`'s field-compared count | closed |
+| 31 of 107 public entry points have no matrix coverage | closed |
 | SweJPL rejected a non-ASCII constant-name block | closed |
 | The analytic grid's artefacts depend on SE_EPHE_PATH | closed, one residual |
 | swetest `-D<n>`: `xobl[0]` aliasing | won't fix |
 | `%-Ns` / `%.Ns` padded by characters, C by bytes | closed / won't fix |
 | `C.atoi` saturation; `C.atof`'s remaining gaps | closed / won't fix |
 | `SwissEph.DefaultFileProvider` widened to a property | record |
+| Eight live buffer-vs-unbounded-string sites | won't fix |
+
+## Eight live sites transliterate a C fixed-size buffer as an unbounded C# string
+
+**Status: won't fix.** All eight triaged; none has a plausible trigger with real data.
+
+`docs/compliance-2.10.03.md`'s "What this record does not cover" originally cited seven
+call sites where a C `char buf[AS_MAXCH]` (256 bytes, `SwissEph.sweodef.h.cs:137`) fixed-size
+stack buffer is transliterated as a live, unbounded C# `string` -- the C's truncation-on-
+overflow behavior is consequently not reproduced. **That citation was itself stale**: six of
+its seven line numbers pointed at unrelated code when checked directly against the current
+tree (`SwephLib.cs:4682` is a `switch (biasmod)` lookup with no buffer at all), and its count
+of three fixstar TLS-cache pairs missed a fourth, `swe_fixstar_mag`. The compliance doc's
+citation list has been corrected to the real eight, found by grepping `SwissEphNet/CPort/`
+for `//char \w+\[`/`AS_MAXCH` and reading each hit's enclosing function to confirm it is
+live: `SweHel.cs:327` (`DeterObject`); `SwephLib.cs:4725` (`swe_get_astro_models`); `Sweph.cs:
+7472` (`load_all_fixed_stars`); `Sweph.cs:8770-8776` (`swi_fixstar_load_record`, three
+buffers in one function); and four fixstar-family TLS-static `slast_stardata`/
+`slast_starname` pairs (`swe_fixstar2` at `:8087-8135`, `swe_fixstar2_mag` at `:8187-8216`,
+`swe_fixstar` at `:9296-9354`, `swe_fixstar_mag` at `:9409-9462`).
+
+**Triage: none is load-bearing enough to add truncation.** Two categories:
+
+- `SweHel.cs:327` and `SwephLib.cs:4725` hold short, code-controlled strings (a celestial
+  body name being matched against literal prefixes like `"sun"`/`"venus"`; a debug-only
+  model-name string for `swe_get_astro_models`, itself commented "function for inhouse
+  testing only"). Truncating a 256+ character input to either would not change the
+  prefix-match or debug-formatting outcome for any input that could plausibly reach them.
+- The other six (`load_all_fixed_stars`, `swi_fixstar_load_record`, and all four TLS cache
+  pairs) hold star-catalog lines/records read from `sefstars.txt` or a user-supplied star
+  file. Measured directly: the longest line in the shipped `external/swisseph/ephe/
+  sefstars.txt` is 129 characters (`awk '{ if (length > max) max = length } END { print max
+  }' sefstars.txt`), 127 bytes under the 256-byte bound -- no shipped data can trigger the
+  C's truncation. A user-supplied file with an unusually long line remains a theoretical
+  trigger, but reproducing C's truncation there would make the port a strict *regression*
+  against such a file (silently losing catalog fields the C# could otherwise parse
+  correctly) for zero observed fidelity benefit, since nothing currently depends on matching
+  C's truncation behavior.
+
+Not fixed, for the same reason other `won't fix` entries in this file give: none of the four
+verification instruments (baseline, bit-exact oracle, correctness oracle, SweTest diff) has
+produced an observed divergence from any of these eight, and adding truncation here would
+trade a correctness improvement (parsing a legitimately longer input in full) for reproducing
+a C limitation with no demonstrated trigger.
 
 ## swe_houses_armc, hsys 'Y' (APC houses): a genuine, large divergence
 
-**Status: open.** Re-measured against the current matrix and unchanged; still the only
-beyond-tolerance `'Y'` field in `houses-armc`. The mechanism is still unidentified, and
-the one candidate left standing is untested.
+**Status: won't fix.** Mechanism found and confirmed directly: catastrophic
+cancellation inside `apc_sector`, inherent to the formula and shared with the C.
+Two things this entry previously said turned out to be wrong when checked directly
+against the current tree and a live Linux run -- see "Corrections" below.
 
 `swe_houses_armc(armc=270, geolat=50, eps=40, hsys='Y', ...)`:
 
-| Platform | cusp[2] |
+| Platform | cusp[1] |
 |---|---|
 | Windows | `270` |
 | Linux | `243.43494882292202` |
 
-A 26.6-degree difference is not floating-point noise -- reproduced independently
-(same inputs, same commit, `BaselineGen` run inside the Linux container and diffed
-against the committed Windows baseline). The two platforms are taking different
-code paths through the APC houses calculation in `SweHouse.cs`, most likely because
-an `acos`/`asin` argument lands marginally outside `[-1, 1]` on one platform and not
-the other (a classic source of platform-dependent NaN/branch divergence in
-trigonometric code that does not clamp its inputs). This is a numerical-stability
-problem in the port, not in the harness or the tolerance.
+A 26.6-degree difference is not floating-point noise -- reproduced directly: a
+standalone probe referencing this repo's `SwissEphNet.csproj` was run natively on
+Windows and inside a Linux container (`mcr.microsoft.com/dotnet/sdk:10.0`, Ubuntu
+24.04.4, .NET 10.0.10 -- the same environment `Tools/BaselineGen/README.md`'s
+"Platform lock" measurement uses), calling `swe_houses_armc` with these exact
+inputs on both. Both reproduced their respective committed-baseline value exactly.
+
+**Mechanism, confirmed by instrumenting `apc_sector` (`SweHouse.cs:934-986`) directly:**
+`geolat=50` and `eps=40` are complementary (`50 + 40 = 90`), so `Math.Tan(ph) *
+Math.Tan(e)` evaluates to `0.9999999999999999` -- one ULP below the mathematical
+value of exactly `1`. With `armc=270`, `Math.Sin(az)` is exactly `-1`, so `kv`'s
+denominator, `1 + Math.Tan(ph) * Math.Tan(e) * Math.Sin(az)`, collapses to
+`1.1102230246251565E-16`: a near-total cancellation between two values close to `1`
+and `-1`, leaving only a residual at the scale of one ULP. Measured directly: this
+denominator (and the numerator, and `kv` down to its `atan` call's *input*) is
+bit-for-bit identical on both platforms. `Math.Atan` itself then returns results one
+ULP apart (`kv` bits `...3AA4` on Windows vs `...3AA5` on Linux) for that identical
+input -- ordinary cross-platform libm noise of exactly the kind this file's "calc/
+pheno SPEED fields" entry already documents elsewhere in this matrix. `dasc` and the
+normalized right-ascension `a` that feed into the function's final step both then
+print bit-identical on both platforms despite that. The 26.6-degree divergence
+appears only in `apc_sector`'s last line, `dret = Math.Atan2(y, x)` (`SweHouse.cs:
+983-984): `y` and `x` are themselves each built from several further `Tan`/`Sin`/
+`Cos` calls on `dasc`/`ph`/`az`/`a`/`e`, and at this exact geometric configuration
+their combination lands `atan2` at a second near-singularity, where even a single
+one-ULP difference anywhere upstream flips the returned angle by tens of degrees.
+Hand-reproducing the full function (kv through dret) outside the library, on both
+platforms, matches each platform's real `cusp[1]` output exactly (`270` on Windows,
+`243.43494882292202` on Linux), confirming this account end to end rather than only
+at the boundary.
+
+Because `apc_sector` is byte-identical to `swehouse.c`'s C (already established
+below) and no argument ever leaves an unclamped domain (also already established
+below), this is not a mistransliteration and not a branch split -- it is inherent
+numerical instability in the C formula itself at this specific `geolat`/`eps`/`armc`
+combination, amplified by ordinary cross-platform transcendental-function ULP noise
+that this repository's own measurements already establish happens elsewhere too.
+The C would show the same sensitivity if built against a different platform's libm.
+Nothing in `SweHouse.cs` can be changed here without deviating from the C's own
+(byte-identical) formula, which the transliteration freeze does not permit absent a
+cited divergence from the C -- and there is none to cite.
 
 This is not a tolerance problem: it survives every threshold measured in
 `Tools/BaselineGen/README.md`'s "Platform lock" table, including the loosest
 (1e-8 absolute / 1e-8 relative -- eight orders of magnitude looser than what
-ships). It is the only `houses-armc` field that does. Everything else that
-diverges cross-platform shrinks as the tolerance loosens, the way accumulated
-floating-point noise should; this one field does not move, which is exactly the
-signature of two platforms executing genuinely different branches rather than
-the same branch with a slightly different rounding error.
+ships). It is the only `houses-armc` field that does, which is exactly what
+catastrophic cancellation at a near-singularity looks like: not bounded accumulated
+rounding error that shrinks as tolerance loosens, but an unbounded amplification of
+sub-ULP input noise.
 
-**Checked during the 2.10.03 port, and the hypothesis above is wrong.** `apc_sector`
-contains no `acos` or `asin` at all -- in either C version or in the port, which uses
-only `Atan`, `Atan2` and `Tan`. So an argument straying outside `[-1, 1]` cannot be
-the mechanism, and no amount of clamping there would change anything. 2.10.03 does
-not touch `apc_sector`; the function is byte-identical between the two versions.
+**Corrections to this entry's own history, found while confirming the mechanism
+above.** Both are corrected, not merely noted, everywhere above:
 
-2.10.03 does add a clamp of exactly the suspected shape elsewhere, in Alcabitius
-(`swehouse.c:1602-1606`, `if (r > 1) r = 1; if (r < -1) r = -1;` before `acosd`),
-which is why the shape looked plausible here. The second Alcabitius site, in
-`swe_house_pos`, is still unclamped in 2.10.03 and the port follows it: a latent NaN
-whenever `|tanfi * tand(dek)| > 1`, inherited rather than introduced.
-
-A better candidate for `'Y'`, untested: the failing input is `armc=270, geolat=50,
-eps=40`, where `Math.Abs(fi) >= 90 - ekl` compares 50 against 50.0 exactly. A branch
-taken on an exact equality, followed by the `acmc < 0` sign test, would split two
-platforms without either being wrong. That is a comparison boundary rather than a
-domain overrun, and it would need a targeted measurement rather than a code read.
-
-**Re-measured against the current matrix, and unchanged.** `H|Y|40|50|270` cusp[2]
-is still `270` in the committed Windows baseline and still `243.43494882292202` on
-Linux, to every digit. It is also still the *only* `'Y'` field in `houses-armc`
-beyond tolerance: 1 of 1,243 `H|Y|*` fields that differ at all, the other 1,242
-sitting inside tolerance. That singularity is the finding's whole weight, and it
-survives at the larger matrix size, so nothing here has drifted. The exact-equality
-candidate above remains untested; this re-measure re-confirmed the symptom and says
-nothing about the mechanism.
+- **The diverging field is `cusp[1]`, not `cusp[2]`.** `cusp[2]` for this exact case
+  is `90` on both platforms, bit-identical -- confirmed directly against the
+  committed baseline file (`Tests/baseline/baseline-houses-armc.tsv`, row
+  `H|Y|40|50|270`) and against a live Linux run. This entry cited `cusp[2]` from its
+  first version through its most recent "re-measured, unchanged" pass; the actual
+  row was never wrong, the array index attached to it was.
+- **The two acos/asin-clamp hypotheses (the original one, and the "exact-equality
+  branch" one that replaced it) were both dead ends, and are now superseded rather
+  than merely refuted.** `apc_sector` contains no `acos`/`asin` (confirmed, as
+  before: only `Atan`, `Atan2`, `Tan`), so no clamp is relevant. The exact-equality
+  branch this entry proposed next (`Math.Abs(fi) >= 90 - ekl`, comparing `50` against
+  `90 - 40`) was measured directly and found to evaluate identically -- `True` on
+  both platforms, with `90 - ekl` itself bit-identical on both, because `90 - 40` is
+  an exact integer subtraction with no rounding possible on any IEEE-754 platform.
+  That branch's outcome cannot differ between platforms for this input, full stop --
+  and a global branch flip would in any case have shifted many or all of the 12
+  house cusps together, not isolated `cusp[1]` alone while `cusp[2..12]` stay within
+  tolerance. The real mechanism, above, was found by instrumenting the actual
+  computation rather than reading the code for a second candidate.
 
 ## swe_houses_armc reports success while emitting NaN cusps
 
@@ -589,53 +662,70 @@ the mean node (`ipl = 10`), which does not show this pattern in this data.
 
 ## hsys 'I' (Sunshine houses): smaller, more numerous divergences near tolerance
 
-**Status: open.** Re-measured after the `SweHouse` delta landed, which is what this entry
-was waiting on: 209 fields beyond tolerance, still there. The platform labels in the
-original write-up were inverted and are corrected below.
+**Status: record.** Mechanism confirmed: ordinary cross-platform ULP noise compounding
+through a long, faithfully-transliterated trig chain, not a domain-clamp flip or a
+mistransliteration. One more array-index citation error found and corrected, matching
+the pattern found in the `'Y'` entry above.
 
-Not one of the two findings this doc originally set out to record, but visible in
-the same Linux run: `swe_houses_armc` with `hsys='I'` produces a cluster of small
-(1e-10 to 1e-11 absolute) but tolerance-exceeding divergences, mostly at extreme
-`geolat` and specific `armc` values. Unlike the 'Y' finding, these are not obviously
-wrong (both platforms agree to 10+ significant figures) and are not a raw-360-style
-wraparound artifact either (see the cross-platform section below) -- just
-accumulated ULP drift through a computation path
-(declination/ascensional-difference trig for Sunshine houses) that is evidently more
-sensitive to it than most.
+`swe_houses_armc` with `hsys='I'` produces a cluster of small (1e-10 to 1e-11
+absolute) but tolerance-exceeding divergences, mostly at extreme `geolat` and
+specific `armc` values. Confirmed still present at 209 `'I'` fields beyond tolerance
+in `houses-armc` (re-measured live via a Linux container report-only run against the
+committed Windows baseline: `houses-armc` shows 210 fields beyond tolerance total,
+209 attributable to `'I'` and 1 to `'Y'` -- matching this entry and the `'Y'` entry
+above exactly).
 
-**Re-measured after the 2.10.03 SweHouse delta landed, which is what this entry was
-waiting on.** The cluster is still there and is now counted rather than described:
-209 `'I'` fields in `houses-armc` are beyond tolerance, out of 3,338 that differ at
-all. Those 209 plus the single `'Y'` field are the entire beyond-tolerance content
-of the area -- 210 of 210 -- so porting the delta neither introduced this nor
-cleared it.
+**The array index in this entry's own example was wrong, the same mistake as the
+`'Y'` entry above -- corrected here.** For `H|I|0|-89|0`, the value
+`119.99999999997604` (Windows) / `120.00000000000338` (Linux) is **`cusp[2]`, not
+`cusp[3]`** -- confirmed directly against the committed baseline
+(`Tests/baseline/baseline-houses-armc.tsv`, row `H|I|0|-89|0`: field 4 after the case
+id, i.e. `cusp[2]`, holds `119.99999999997604`) and against a live probe run natively
+on Windows and inside a Linux container (`mcr.microsoft.com/dotnet/sdk:10.0`, Ubuntu
+24.04.4, .NET 10.0.10), both reproducing their platform's committed value bit for
+bit. `cusp[3]` for this case is `149.9999999999815` (Windows) / `150.00000000000557`
+(Linux) -- also cross-platform-divergent, but within tolerance, not the field this
+entry names. The direction (Windows lower, Linux higher) was previously corrected
+from an earlier, inverted write-up and remains correct.
 
-**The platform labels in the original write-up were inverted, and are corrected
-here.** For `H|I|0|-89|0` cusp[3], the value is `119.99999999997604` on **Windows**
-and `120.00000000000338` on **Linux**, not the other way round. Checked directly
-against the committed baseline, which is Windows-generated by construction and
-which `scripts/verify-baseline.ps1` reproduces exactly on Windows: the row holds
-`119.99999999997604`. The magnitude of the divergence, about 2.7e-11 absolute, was
-right; only the attribution was backwards. Nothing downstream depended on the
-direction, but a reader trying to reproduce it on one platform would have chased
-the wrong number.
+**Mechanism, confirmed by comparing the port against the C line by line and by
+inspecting the full cusp vector, not just the one cited field.** `sunshine_solution_treindl`
+(`SweHouse.cs:3358-3437`) matches `swehouse.c:3048-3131` operation for operation --
+every `sind`/`cosd`/`tand`/`asind`/`acosd`/`atand` call and every intermediate
+(`xhs`, `cosa`, `alph`, `alpha2`, `b`, `cosc`, `c`, `sinzd`, `zd`, `rax`, `pole`)
+appears in the same order in both, so this is not a reordering defect. Unlike hsys
+`'Y'`'s `apc_sector`, this function *does* call `acosd`/`asind` (`swehouse.c:3086`,
+`:3091`, `:3109`, `:3116`) -- but the probe's full cusp vector for `H|I|0|-89|0`
+shows small, graduated cross-platform differences at nearly every cusp (1..3, 5, 6,
+8, 9, 11, 12 all differ at the 1e-10-to-1e-13 relative level; only 1, 4, 7, 10 --
+exact 90-degree-multiple sector boundaries -- are bit-identical), with no `NaN` and
+no discontinuity on either platform. That pattern is the signature of ordinary
+accumulated rounding noise through a chain of roughly ten chained transcendental
+calls per cusp, not a domain-boundary argument flipping in or out of `[-1, 1]`
+(which would produce a `NaN` on one platform, not a smoothly-graduated difference
+across many adjacent fields). Because the transliteration is confirmed faithful and
+the pattern is inconsistent with a branch/domain defect, this is inherent numerical
+sensitivity shared with the C, the same disposition as the `'Y'` entry above, not a
+port defect to fix.
 
 ## swe_house_pos: 27 cross-platform divergences, twelve of them whole-house jumps
 
-**Status: open.** Found by the current re-measure and not recorded before it. Twelve of
-the 27 place a point in a different house on the two platforms, which is not rounding
-noise.
+**Status: record.** The "same cusp, different rounding side" lead is refuted by the
+values' own magnitudes; a different, evidenced mechanism is documented below.
 
-Found by the cross-platform re-measure that refreshed the two entries above, and
-not recorded anywhere before it. The `house-pos` area has 27 fields beyond
-tolerance between Windows and Linux, every one of them `xp[0]` (the returned house
-position itself, array index 0), and they split into two unrelated groups.
+The `house-pos` area has 27 fields beyond tolerance between Windows and Linux,
+every one of them `xp[0]` (the returned house position itself, array index 0), and
+they split into two unrelated groups.
 
 **Twelve large ones, under `'C'`, `'H'` and `'J'`, four each.** These are not
 floating-point noise: the two platforms differ by between 1.35 and 2.76 *sectors*,
 i.e. they place the point in a different house. Case ids are
 `HP|hsys|eps|armc|geolat|lon|lat`, and all twelve sit at `eps=40`, `armc` of 90 or
-270, `geolat` of +45 or -45, `lon` of 90 or 270, and `lat` of +5 or -5:
+270, `geolat` of +45 or -45, `lon` of 90 or 270, and `lat` of +5 or -5. Re-verified
+directly, bit for bit: a probe calling `swe_house_pos` with these exact inputs,
+run natively on Windows and inside a Linux container
+(`mcr.microsoft.com/dotnet/sdk:10.0`, Ubuntu 24.04.4, .NET 10.0.10), reproduces
+every value below exactly on its respective platform:
 
 | case | Windows | Linux |
 |---|---|---|
@@ -648,14 +738,41 @@ armc=37.5, geolat=0`. Same house system as the APC finding above but a different
 area and a different order of magnitude, so treat them as a separate observation
 rather than the same one seen twice.
 
-A lead, explicitly untested: in every one of the twelve large cases, one platform
-returns a value sitting essentially exactly on a house cusp (`1.0000000092592594`,
-`7.000000009259259`, or a bare `1` or `7`) while the other returns a mid-house
-value. The inputs are symmetric configurations, so a point landing exactly on a
-cusp and the two platforms disagreeing about which side of it the point falls
-would produce this shape. That is a lead to test, not a mechanism found -- the same
-distinction this file's `SE_EPHE_PATH` entry ends on. Confirming it needs a
-targeted measurement of the branch, not another read of the code.
+**The "same cusp, disagreeing about which side" lead is refuted by the values
+themselves, not merely left untested.** If the two platforms were landing near the
+*same* boundary and disagreeing only about which side of it the fractional part
+falls on, both values would sit close together, near the same integer, on either
+side of it (like `6.999999991` vs `7.000000009`). They do not: `7.000000009259259`
+vs `8.989096080910333` are nearly two whole houses apart, and `1` vs
+`3.7548003003837302` are more than two apart. Landing near-exactly on a cusp on
+*one* platform is real (`hpos = xp[0] / 30.0 + 1` with `xp[0]` near a multiple of
+`30`), but the other platform is not near that same boundary at all -- it computed
+a substantially different `xp[0]` upstream of the divide.
+
+**A better-evidenced mechanism, by structural analogy with the fully-traced `'Y'`
+finding above (not traced to the same atan2-argument level here, so this remains a
+strong inference, not a full derivation).** Hsys `'C'` and `'H'` (`SweHouse.cs:
+2723-2732`, `:2868-2874`) both compute `xeq[0] = swe_degnorm(mdd - 90)` then rotate
+it with `SE.swe_cotrans(xeq, xp, ...)` before dividing by 30 -- `swe_cotrans`
+(`SwephLib.cs:234-249`) converts to Cartesian, rotates, and converts back via
+`swi_cartpol`, which resolves the result angle with `Math.Atan2` internally, the
+same category of computation that produced hsys `'Y'`'s confirmed near-singularity
+above. `'J'` (`SweHouse.cs:2734-2793`) uses the same `swe_cotrans` call plus its own
+further `asind`/`swe_degnorm` chain. Both `'C'`/`'H'`'s own code comments note a
+`MILLIARCSEC` nudge is deliberately added "to make sure that a call with a house
+cusp position returns a value within the house" -- i.e. this formula is already
+known, by its own authors, to land results essentially exactly on a 30-degree
+cusp boundary for some inputs. All twelve failing cases sit at maximally symmetric,
+axis-aligned inputs (`geolat=+-45`, `lon`/`armc` at `90`/`270`) -- exactly the
+configuration most likely to drive `swe_cotrans`'s internal rotation to a
+coordinate-system near-singularity, where (as directly measured for `'Y'` above)
+sub-ULP cross-platform differences in the underlying `Tan`/`Sin`/`Cos`/`Atan2`
+calls get amplified into a substantially different result. Given `swe_cotrans` is a
+plain, unclamped, faithfully-ported coordinate rotation (no domain-restricted
+`acos`/`asin` argument in the `'C'`/`'H'` path at all), this is far more consistent
+with the evidence than a branch/rounding-side flip, and matches the disposition of
+every other confirmed-inherent finding in this file: shared with the C, not a
+port defect, not fixable without deviating from the C's own formula.
 
 Worth noting for `'J'` (Savard-A) specifically: four of these twelve are `'J'`, and
 `'J'` is the one house system with no external validation of its cusp computation
@@ -1061,28 +1178,94 @@ each with both `char hsys` and `int hsys` overloads in `CPort/SweHouse.cs`; the 
 
 ## sid_data is a struct, so `sip = swed.sidd` copies where the C aliases
 
-**Status: open.** One site fixed, seven unaudited. Confirmed on the current tree:
-`sid_data` is still a `struct` and the eight copy sites are exactly where this entry says.
+**Status: closed.** All ten copy sites are now individually accounted for (`Sweph.cs:3426`,
+`:3540`, `:3583`, `:3883`, `:3920`, `:6098`, `:6785`; `SweHouse.cs:301`, `:429`, `:538`). One
+was a demonstrated bug and is now fixed; a second got the same defensive re-read during this
+audit but, checked carefully, has no demonstrated observable effect (see below -- an earlier
+version of this entry overclaimed it); the remaining eight were audited and confirmed harmless
+(no mutation of `swed.sidd` between copy and last read of `sip`), not just left alone.
 
 The C writes `struct sid_data *sip = &swed.sidd;` and reads through the pointer, so it sees
 any later mutation of `swed.sidd`. `sid_data` is a **struct** in this port
-(`CPort/Sweph.h.cs`), so `sid_data sip = swed.sidd;` takes a snapshot. Eight sites use that
-form: five in `CPort/Sweph.cs` and three in `CPort/SweHouse.cs`.
+(`CPort/Sweph.h.cs`), so `sid_data sip = swed.sidd;` takes a snapshot instead. `swed.sidd` is
+only ever mutated in two places: `Sweph.cs:1505` (`swe_close`'s full reset to a fresh
+`sid_data()`, never called mid-computation by anything this audit covers) and `Sweph.cs:3483`
+(`swe_set_sid_mode`'s own write-back). So the only way a `sip` snapshot can go stale is if the
+function holding it calls `swe_set_sid_mode` (or something that does) between the copy and a
+later read of `sip` -- and the only thing that ever does that internally is the
+`SE_SIDM_FAGAN_BRADLEY` fallback (`if ((iflag & SEFLG_SIDEREAL) && !swed.ayana_is_set)
+swe_set_sid_mode(...)`), which appears at four call sites (`Sweph.cs:762`, `:3627`,
+`:7614`, `:9002`) plus one C# counterpart the C doesn't share
+(`SweHouse.cs:310`, inside `swe_houses_ex2`).
 
-Most are harmless because nothing mutates `swed.sidd` between the copy and the reads, and
-`swe_set_sid_mode` works because it deliberately copies, mutates and writes back.
+**One site was not harmless: `swi_get_ayanamsa_ex` (`Sweph.cs:3583`, fallback at `:3627`) --
+fixed previously.** With no prior `swe_set_sid_mode` call, it read pre-fallback state and
+returned 92.525 where the C returns 24.754, 67.8 degrees out. Re-reads `swed.sidd` at `:3634`
+after the fallback.
 
-One was not harmless and is fixed: `swi_get_ayanamsa_ex` took its copy before the
-`SE_SIDM_FAGAN_BRADLEY` fallback ran, so with no prior `swe_set_sid_mode` it read
-pre-fallback state and returned 92.525 where the C returns 24.754 -- 67.8 degrees out. It
-now re-reads `swed.sidd` after the fallback.
+**A second site, `swe_houses_ex2` (`SweHouse.cs:301`, fallback at `:310`), got the identical
+re-read fix during this audit, but -- checked carefully, and corrected here after an initial
+overclaim -- it has no demonstrated observable effect for any currently reachable input,
+unlike the site above.** `sip` is copied at line 301, and the fallback at line 310 always
+installs `SE_SIDM_FAGAN_BRADLEY`, whose value is `0`
+(`SwissEph.swephexp.h.cs:262`). The only read of `sip` inside `swe_houses_ex2`'s own body
+afterward is `sip.sid_mode`, at lines `:366`/`:368`, choosing between
+`sidereal_houses_ecl_t0`/`sidereal_houses_ssypl`/`sidereal_houses_trad`. The `!ayana_is_set`
+guard that reaches this fallback at all is only ever true while `swed.sidd` still holds its
+all-zero default (the only two places `swed.sidd` is ever mutated are `swe_close`'s reset to a
+fresh, zero `sid_data()` and `swe_set_sid_mode`'s own write-back, and the latter always sets
+`ayana_is_set = true` in the same call -- so "`ayana_is_set` false" and "`swed.sidd` all zero"
+are the same condition). `sid_mode` `0` therefore already reads as `0` *before* the fallback,
+and `swe_set_sid_mode(0, 0, 0)` sets `sid_mode` back to plain `0` too -- mode `0` matches
+none of `swe_set_sid_mode`'s special-case checks (`Sweph.cs:3436-3461`) that would OR in
+`SE_SIDBIT_ECL_T0`/`SE_SIDBIT_SSY_PLANE`. So `sip.sid_mode` is `0` on both sides of the
+fallback, and the branch chosen at `:366`/`:368` (the `else`, `sidereal_houses_trad`) is
+identical whether or not the re-read happens. `sip.t0`/`sip.ayan_t0` are never read directly
+in `swe_houses_ex2`'s own body at all: `sidereal_houses_ecl_t0`/`sidereal_houses_ssypl` each
+take their own fresh `sip = swed.sidd;` copy at their own entry, always after this fallback has
+already run (see the harmless list below); `sidereal_houses_trad` does not read `sip` at
+all -- it delegates ayanamsa entirely to `swe_get_ayanamsa_ex`
+(`SweHouse.cs:655`) -> `swi_get_ayanamsa_ex`, which takes its own fresh, already-fixed copy at
+its own call time, likewise always after the fallback. So every path this dispatch can reach
+ends up reading post-fallback state regardless of this specific fix. The change is kept
+anyway -- it costs nothing, matches the C's pointer semantics
+(`swehouse.c:221`, `struct sid_data *sip = &swed.sidd;`) the same way the `swi_get_ayanamsa_ex`
+fix does, and is defensive against a future change (a different fallback mode, or a future
+edit that adds a direct `t0`/`ayan_t0` read to `swe_houses_ex2` itself) -- but it should be
+described as a fidelity fix following an established precedent, not as a demonstrated bug
+fix the way the entry above is. `scripts/verify-baseline.ps1` staying 100% EXACT on both TFMs
+after this change is expected either way, for the reason just given, not evidence either for
+or against an observable effect.
 
-The remaining seven are unaudited. The general fix would be to make `sid_data` a class so
-the assignment aliases as the C's pointer does, which would cover all of them at once; the
-cost is that `swe_set_sid_mode`'s copy-mutate-write-back would need revisiting, since with a
-class its intermediate writes would become visible to anything reading `swed.sidd`
-concurrently. Worth doing as its own change with its own measurement, not folded into a
-porting stage.
+**The remaining eight copy sites are confirmed harmless, not merely unaudited:**
+
+- `swe_set_sid_mode` itself (`Sweph.cs:3426`) -- deliberately copies, mutates, and writes
+  back in a `finally` block (`:3483`); this is the mutator, not a stale-read site.
+- `get_aya_correction` (`Sweph.cs:3540`) -- calls `swi_precess`/`swi_epsiln`/`swi_coortrf`/
+  `swi_cartpol` only; none mutate `swed.sidd`.
+- `swi_trop_ra2sid_lon` (`Sweph.cs:3883`) and `swi_trop_ra2sid_lon_sosy` (`Sweph.cs:3920`) --
+  both call `get_aya_correction` (confirmed harmless above) and otherwise only coordinate-
+  transform helpers; no path to `swe_set_sid_mode`.
+- `lunar_osc_elem` (`Sweph.cs:6098` declares `sip`, the copy from `swed.sidd` is at `:6102`
+  inside the `SID_TNODE_FROM_ECL_T0` guard) and `swi_plan_for_osc_elem` (`Sweph.cs:6785`
+  declares `sip`, copy at `:6828`, same guard) -- neither calls `swe_set_sid_mode` or
+  `swi_get_ayanamsa_ex` anywhere in their bodies (confirmed by grep: the only four
+  `swe_set_sid_mode` call sites in `Sweph.cs` all fall outside both functions' line ranges).
+- `sidereal_houses_ecl_t0` (`SweHouse.cs:429`) and `sidereal_houses_ssypl` (`SweHouse.cs:538`)
+  -- both copy `sip` at their own entry, and both are called exclusively from
+  `swe_houses_ex2` (confirmed by grep: no other call sites exist) at a point after that
+  function's own fallback has already run -- so their copies always see the post-fallback
+  state already.
+
+The general fix -- making `sid_data` a class so the assignment aliases as the C's pointer
+does, covering every present and future copy site at once -- remains undone. The cost is that
+`swe_set_sid_mode`'s copy-mutate-write-back would need revisiting, since with a class its
+intermediate writes would become visible to anything reading `swed.sidd` concurrently. Worth
+doing as its own change with its own measurement, not folded into this audit: every currently
+existing copy site is now individually confirmed correct (one demonstrated bug fixed, one
+defensive re-read with no demonstrated effect, eight harmless), so the
+class change would be a defensive/structural improvement against *future* copy sites, not a
+fix for a live bug.
 
 ## swe_calc's serr for ipl 13: a range gate the C does not have there
 
@@ -1405,19 +1588,25 @@ the four fixed-star entry points, as recorded above.
 
 ## What the oracle grids do not cover in the house code
 
-**Status: open, narrowed.** A coverage gap, not a defect. House system `'J'`'s cusp
-computation and `swe_house_pos` **now do have external validation** -- against Astrodienst's
-own libswe rather than the analytic grid, see the correction at the end of this entry. What
-remains genuinely uncovered is the speed derivatives, verified for only two house systems.
+**Status: open, narrowed.** House system `'J'`'s cusp computation and `swe_house_pos`
+**have external validation** -- against Astrodienst's own libswe rather than the analytic grid,
+see the correction later in this entry. **The speed-derivative gap this entry used to describe is
+also closed**, found stale while working on it: `HOUSES_EX2`/`HOUSES_ARMC_EX2` rows, real
+`cusp_speed`/`ascmc_speed` arrays and all, are already in the committed grid and already pass
+bit-exact -- re-verified directly below. What remains genuinely uncovered is `swe_house_pos`
+itself, `'Z'`/`'0'`, and `'J'`'s cusp computation on *this* instrument specifically (covered on a
+different one, see below).
 
-The bit-exact comparison reports 17,789 of 17,789 analytic-grid rows matching MSVC-built
-2.10.03 C. That is a real result and it is narrower than it sounds, so this records what it
+The bit-exact comparison reports 22,289 of 22,289 analytic-grid rows (and 3,280 of 3,280
+files-grid rows) matching MSVC-built 2.10.03 C -- re-run directly (`scripts/run-oracle-dump.ps1`
+then `scripts/verify-oracle.ps1`) rather than assumed from a prior number, since this entry had
+already gone stale once before (see the correction below); both grids are SHA-256 identical
+between the C and .NET dumps, not merely row-comparator-clean. This records what that result
 does and does not establish, to stop it being cited for things it never touched.
 
 Both replay drivers (`Tools/OracleDump/Program.cs`, `Tools/CReference/sedump.c`) call
-`swe_houses` and `swe_houses_armc` in their **six-argument** form, plus, as of the addition that
-closed part of this gap, `swe_houses_ex` (the iflag-taking, sidereal/radians-capable sibling) and
-`swe_house_name` (a pure lookup, not a cusp computation). That determines the coverage.
+`swe_houses` and `swe_houses_armc` in their **six-argument** form, plus `swe_houses_ex`/
+`swe_houses_armc_ex2`-family calls and `swe_house_name`. That determines the coverage.
 
 **Genuinely covered.** Twenty-five house letters crossed with latitudes to 89 degrees and
 obliquities including 0. The `eps = 0` column is what earns the grid its keep: `tand(0)` is
@@ -1431,26 +1620,38 @@ dimension on top of what that sweep already proves). `swe_house_name`'s own swit
 full -- every case label it has, INCLUDING `'J'` (see below) and one letter (`'P'`) that
 deliberately is not a case label, to exercise its default/Placidus branch.
 
-**Not covered by the grid at all**, because none of the four entry points above has such a
-parameter or reaches it:
+**Also genuinely covered, found stale while investigating this entry for other work:** `swe_houses_ex2`
+and `swe_houses_armc_ex2` are called directly, with real (non-null) `cusp_speed`/`ascmc_speed`
+arrays -- `Tools/CReference/sedump.c`'s `process_houses_ex2`/`process_houses_armc_ex2`
+(dispatched for every `HOUSES_EX2`/`HOUSES_ARMC_EX2` row) and `Tools/OracleDump/Program.cs`'s own
+matching handlers both pass real arrays, not `NULL`. `Tools/OracleGrid/grid-analytic.tsv` already
+carries 1,500 `HOUSES_EX2` rows and 3,000 `HOUSES_ARMC_EX2` rows, over the same 25-letter
+`$HouseLetters` list every other house sweep in that script uses -- confirmed directly
+(`grep -c` against the committed grid file), so every non-`'J'` `do_interpol` letter (`L Q S X M
+F B Y`, plus `I`/`i`) is included, not just the two the correctness oracle's suite 6 covers. A
+fresh `scripts/run-oracle-dump.ps1` + `scripts/verify-oracle.ps1` run (this session, against the
+current tree) reports all of it bit-identical: 0 regressions, 0 differing rows, file-level SHA-256
+match on both grids. `swe_houses_ex2` and `swe_houses_armc_ex2` also carry a **real** `serr` (not
+hardcoded `NULL` the way `swe_houses`/`swe_houses_armc`/`swe_houses_ex` are), and that is
+exercised and compared too, not just the numeric fields -- `sedump.c`'s own comment on
+`process_houses_armc_ex2` cites the two branches that write it (`swehouse.c:667`/CalcH failure,
+and the hsys `'I'` invalid-declination message).
 
-- every speed derivative, so `AscDash` and all nine speed fields
-- `swe_houses_ex2`'s and `swe_houses_armc_ex2`'s own `cusp_speed`/`ascmc_speed` outputs (`swe_houses_ex`
-  forwards to `swe_houses_ex2` with both hardcoded `NULL`, so calling it proves nothing about them)
+This entry previously said all of the above was "not covered by the grid at all... because none
+of the four entry points above has such a parameter or reaches it." That was true when written
+and is no longer true; something else evidently added the `HOUSES_EX2`/`HOUSES_ARMC_EX2` coverage
+without this entry being updated to match, the same class of drift already found and corrected in
+several other entries in this file. Recorded here rather than silently deleted, since "this
+entry was already wrong once" is itself useful context for whoever next revisits it.
+
+**Still not covered by the grid at all**, because no entry point sedump.c/OracleDump.Program.cs
+calls has such a parameter or reaches it:
+
 - `swe_house_pos`
-- `serr` on any house path, including the threading added through `sidereal_houses_*`
-  (`swe_houses_ex` has no `serr` parameter either, matching `swe_houses`)
 - house systems `'Z'` and `'0'`
-- house system `'J'`'s cusp **computation** specifically -- see below; its *name* is covered
-
-**Partly covered elsewhere.** The speed fields are exercised by conformance suite 6 testcases
-8 and 9, all 1,080 iterations of which pass against `t.exp`. But testcase 8 uses only hsys `'P'`
-and `'W'`, and testcase 9 only `'K'` and `'P'`. So `AscDash` is verified against Astrodienst for
-Placidus and Koch, and for nothing else -- not Campanus, Horizon, Regiomontanus, Topocentric,
-Savard-A, the Gauquelin per-sector speeds, or the equal-house fill loops. The `do_interpol`
-numerical-differentiation path, reached by `L Q S X M F B Y I`, has no coverage in either
-oracle, because the two systems that do carry speeds through conformance both take the analytic
-path.
+- house system `'J'`'s cusp **computation** specifically -- see below; its *name* is covered, and
+  its cusp geometry now has external validation too, but via a different instrument (the
+  pyswisseph replay below), not this grid
 
 **House system `'J'` (Savard-A) has no external validation of its cusp computation, though its
 *name* now does.** `swe_house_name('J')` is bit-exact verified: both `sedump.c` and the port agree
@@ -1957,12 +2158,8 @@ production rather than during an oracle run.
 
 ## insert_gap_string_for_tabs drops swetest.c's LEN_SOUT bound
 
-**Status: open.** Confirmed on the current tree: `LEN_SOUT` appears nowhere in
-`Programs/SweTest/Program.cs` outside comments and its own declaration, so the port has no
-equivalent of the C's bound.
-
-`Programs/SweTest/Program.cs`'s `insert_gap_string_for_tabs` (near line 3410) replaces
-swetest.c:2801-2814's bounded tab-replacement loop --
+**Status: closed.** `insert_gap_string_for_tabs` (`Programs/SweTest/Program.cs:3485`) now
+reproduces swetest.c:2815-2828's bounded tab-replacement loop --
 
 ```c
 while((sp = strchr(sout, '\t')) != NULL && strlen(sout) + strlen(gap) < LEN_SOUT) {
@@ -1972,25 +2169,55 @@ while((sp = strchr(sout, '\t')) != NULL && strlen(sout) + strlen(gap) < LEN_SOUT
 }
 ```
 
--- with an unconditional `sout = sout?.Replace("\t", gap, StringComparison.Ordinal);`. The C loop
-stops substituting once `sout` would grow past `LEN_SOUT` (1000) bytes; the port's `Replace` has no
-such limit and keeps substituting regardless of the result's length.
+-- with a C# loop that repeatedly replaces the first remaining tab with `gap`, stopping once
+the result would reach `LEN_SOUT` (1000) bytes, the same bound the C checks live via
+`strlen(sout) + strlen(gap) < LEN_SOUT`. Previously the method used an unconditional
+`sout?.Replace("\t", gap, StringComparison.Ordinal)`, which had no such limit and kept
+substituting regardless of the result's length -- this was the real, pre-existing divergence
+this entry originally recorded, and the fix is a straightforward transliteration of the C loop
+using `string.IndexOf('\t')`/`Substring` in place of `strchr`/`strcpy`/`strcat`, citing
+swetest.c:2815-2828 under the transliteration freeze's one permitted exception
+(`CONTRIBUTING.md`). `LEN_SOUT` (`Program.cs:753`) is now genuinely read by this method, matching
+the C.
+
+**Bound now counts bytes, not UTF-16 code units, found during PR review.** The first version of
+this fix compared `sout.Length + gap.Length` against `LEN_SOUT` -- correct for ASCII, but C's
+`strlen` counts bytes, and .NET's `string.Length` counts UTF-16 code units, so a multi-byte
+`gap` or `sout` would let the port substitute further than the C's own bound permits. The
+comparison now uses `System.Text.Encoding.UTF8.GetByteCount` on both sides instead, matching
+`strlen`'s behavior on a UTF-8-encoded C string (this repository's established default encoding
+for text -- see this file's own note on the `sefstars.txt`/`seasnam.txt`/`seorbel.txt`
+data-file encoding audit, above).
 
 This was previously misdocumented rather than left unrecorded: a comment beside `LEN_SOUT`'s own
-declaration (`Program.cs:747-751`) claimed the port's dynamic strings made the bound irrelevant and
-that leaving `LEN_SOUT` unread was "left assigned, unread, to match" the C -- but the C does read it,
-live, at exactly this site. `LEN_SOUT` is genuinely unread anywhere in the C# (confirmed: it appears
-nowhere outside comments and its own declaration), so the port has no equivalent guard at all, not a
-faithful match with one. That comment is now corrected to describe the divergence instead of denying
-it.
+declaration (`Program.cs:747-751`, before this fix) claimed the port's dynamic strings made the
+bound irrelevant -- but the C does read it, live, at exactly this site. That comment is now
+corrected to reflect the fix.
 
-**Not fixed in this pass.** `-gap0`/`-gap1`/similar SweTest CLI options that request a
-tab-replacement gap wider than what `LEN_SOUT` bytes of accumulated substitutions would allow are
-the only way to reach the missing bound, and only once `sout` is already within `strlen(gap)` bytes
-of 1000 -- an edge unlikely to matter for typical CLI usage, and neither the correctness oracle nor
-`scripts/verify-swetest-diff.ps1` has caught a divergence from it. `Programs/SweTest/Program.cs` is
-transliteration-frozen (`CONTRIBUTING.md`); reproducing the bound is in scope as a fidelity fix under
-that freeze's one exception, but is separate work from documenting what currently diverges.
+**Bound needs Windows ANSI semantics, not UTF-8, found during PR review.** The UTF-8 fix above
+matches the C reference's `strlen` on Linux/macOS, where the C runtime holds `argv` in whatever
+narrow encoding the process's UTF-8 locale implies -- but not on Windows. There, the MSVC CRT
+startup builds `argv` by converting the wide command line (`GetCommandLineW`) via
+`WideCharToMultiByte(CP_ACP, ...)`, i.e. the process's single-byte ANSI code page (Western
+installs, including the `windows-latest` CI runner: code page 1252), not UTF-8. A single-byte
+code page maps exactly one narrow byte per UTF-16 code unit -- an unmappable character falls
+back to `'?'`, still one byte -- so on Windows the native `strlen` byte count equals
+`sout.Length`/`gap.Length`, the same values the first version of this fix used and then moved
+away from. Counting UTF-8 bytes unconditionally fixed Linux/macOS but reintroduced the opposite
+divergence on Windows: an accented character such as `e-acute` is 1 byte under code page 1252 but
+2 bytes in UTF-8, so the port's UTF-8-counted bound was hit one byte earlier than the C
+reference's, causing it to stop substituting tabs sooner than `swetest.c` does on Windows.
+
+`insert_gap_string_for_tabs` (`Program.cs:3485`) now calls a new `NativeByteCount(string,
+bool isWindows)` helper (`Program.cs:3485`, just above) that returns `s.Length` when
+`isWindows` and `Encoding.UTF8.GetByteCount(s)` otherwise, with `isWindows` supplied via
+`RuntimeInformation.IsOSPlatform(OSPlatform.Windows)` -- the same platform-detection pattern
+`SwissEph.sweodef.h.cs`'s `PathSeparatorFor` uses, and split out the same way so both branches
+stay unit-testable from a single runner. This is deliberately scoped to single-byte ANSI code
+pages: a non-Western Windows install whose default code page is double-byte (e.g. Shift-JIS,
+code page 932) would not fit the `s.Length` shortcut, but that is outside what this fix (or the
+review comment it closes) was scoped to -- the CI matrix and the C reference build it compares
+against both run under code page 1252.
 
 ## The 5% waiver caps divide by the whole area, not by the relevant sub-scope
 
@@ -2024,58 +2251,67 @@ narrow, when the fraction that matters (of the sub-scope the waiver names) could
 
 ## DivergenceReport's field-compared count includes non-numeric fields
 
-**Status: open.** A mislabeled denominator: the count includes non-numeric fields. The two
-numerators derived from it are correct. Not renamed, because doing so moves a number two
-documents cite.
+**Status: closed.** `DivergenceStats` now carries a second, correctly-labeled counter,
+`NumericFieldsCompared`, alongside the original `FieldsCompared`. `DivergenceReport.Collect`
+(`Tools/BaselineVerify/DivergenceReport.cs`) parses every field's numeric-ness unconditionally
+(not only for fields that differ, so equal-and-numeric fields are counted too) and increments
+`NumericFieldsCompared` only for fields that actually parse as finite, non-NaN doubles on both
+sides -- excluding `serr` diagnostic strings and planet names the way `FieldsCompared` never
+did. `Tools/BaselineVerify/Program.cs`'s `--report-only` output gained a `NUMERIC` column and
+now prints "N fields compared (M of them numeric)" instead of the old, misleading "N numeric
+fields compared".
 
-`--report-only`'s "N numeric fields compared" figure (`Tools/BaselineGen/README.md`'s "Platform
-lock" section cites 3,547,367 for the current matrix) is produced by
-`DivergenceReport.Collect` (`Tools/BaselineVerify/DivergenceReport.cs:81`), which increments
-`stats.FieldsCompared` unconditionally, for every field of every matched case id, before the
-numeric-parse check nine lines later (`:87`, `Comparer.TryParseDouble`) that decides whether a
-field is actually numeric. So the denominator includes `serr` diagnostic strings and planet
-names (`swe_get_planet_name`'s own output, the `misc` area) alongside every genuinely numeric
-field -- it is a "fields compared" count, not a "numeric fields compared" count, despite the
-label. The two numerators derived from it, `FieldsDiffering` and `FieldsBeyondTolerance`, are
-unaffected: both are only ever incremented after the parse check succeeds, so the DIFFER and
-BEYOND figures the "Platform lock" table reports are correct as stated. Only the denominator --
-and therefore the DIFFER% figure computed from it -- is inflated by however many non-numeric
-fields exist across the matrix. Not fixed here: renaming the counter or filtering it changes a
-number this file and `Tools/BaselineGen/README.md` both already cite, which is out of scope for a
-tooling-defect pass that is not re-measuring cross-platform drift.
+`FieldsCompared` itself, and the DIFFER% figure computed from it, are deliberately unchanged --
+`Tools/BaselineGen/README.md`'s "Platform lock" section already cites both the raw count
+(3,547,935 for the current matrix) and the percentage derived from it (66,390 / 3,547,935 =
+1.8712%), so the fix adds an accurate second number rather than changing the meaning of the
+one already cited elsewhere. `FieldsDiffering`/`FieldsBeyondTolerance` were already correct
+(both only ever incremented after a successful numeric parse) and are unaffected.
 
 ## 31 of 107 public `swe_*` entry points have no matrix coverage
 
-**Status: open.** A work queue. Confirmed on the current tree: none of the seven named
-functions appears in any `.cs` under `Tools/BaselineMatrix/`, and `swe_rise_transit` and
-`swe_set_timeout` are still absent from the port's public surface entirely.
+**Status: closed.** The 7 gaps with no stated reason are now covered; the 24 deliberate
+exclusions are unchanged.
 
 `SwissEphNet`'s public API surface is 107 `swe_*` methods; cross-referencing that list against
-every function name that appears anywhere under `Tools/BaselineMatrix/` finds 31 with no
-matrix coverage at all -- no area's generator calls them, under any name. Eight of the 31 are a
-deliberate, already-decided exclusion: the functions the bit-exact conformance oracle
-(`Tests/SwissEphNet.Conformance.Tests`) covers instead, where a second, tolerance-based
-characterization would add nothing the oracle does not already check more strictly. The fixed-star
-family (`swe_fixstar[_ut]`, `_mag`, `swe_fixstar2[_ut]`, `_mag`) is out of reach under this harness's
+every function name that appears anywhere under `Tools/BaselineMatrix/` found 31 with no
+matrix coverage at all -- no area's generator called them, under any name. The fixed-star family
+(`swe_fixstar[_ut]`, `_mag`, `swe_fixstar2[_ut]`, `_mag`) is out of reach under this harness's
 no-real-files rule (`Tools/BaselineMatrix/Areas.cs`'s `NoEphemerisFilesProvider`) for the same
 reason `sefstars.txt`-dependent ayanamsa modes are already noted as frozen-without-the-file
-behavior in `Tools/BaselineMatrix/Ayanamsa.cs`'s own doc comment -- confirmed absent from the
-matrix but excluded for a real, load-bearing reason.
+behavior in `Tools/BaselineMatrix/Ayanamsa.cs`'s own doc comment -- a real, load-bearing
+exclusion, not an oversight.
 
-The rest have no stated reason and are simply gaps: `swe_houses_ex2`, `swe_houses_armc_ex2`,
-`swe_get_ayanamsa_name`, `swe_calc_pctr`, `swe_lat_to_lmt`, `swe_lmt_to_lat`, and
-`swe_get_current_file_data` -- all confirmed present in `SwissEphNet/CPort/` (`SweHouse.cs`,
-`Sweph.cs`) and confirmed absent from every `.cs` file under `Tools/BaselineMatrix/`. None of the
-seven needs a real ephemeris file: `swe_houses_ex2`/`swe_houses_armc_ex2` are the same
-sidereal-aware house calls `HousesEx.cs`/`Houses.cs` already sweep, minus the "_ex2" `nutlo[]`
-out-parameter; `swe_get_ayanamsa_name` is a lookup table keyed by `sid_mode`, no calculation at
-all; `swe_calc_pctr` (planet-centric coordinates) is `swe_calc` with a second body, already fully
-in scope for `Calc.cs`'s existing sweep shape; `swe_lat_to_lmt`/`swe_lmt_to_lat` are pure time-zone
-arithmetic, siblings of `swe_utc_time_zone` (already covered in `datetime`); and
-`swe_get_current_file_data` reports on whatever ephemeris file is currently open, which is always
-"none" under this harness's no-files rule -- a one-row, low-value addition, but not a
-zero-value one, since the "no file open" response itself is behavior worth freezing. Recorded as
-a work queue, not fixed here: closing this gap is new matrix coverage, not a tooling defect fix.
+**Re-measured directly while closing the 7 below** (`comm -23` between the port's public `swe_*`
+names and every name called as `swe.swe_*(` anywhere under `Tools/BaselineMatrix/`): 24 remain
+uncovered after this entry's fix, not just the fixed-star family -- also `swe_close`,
+`swe_dotnet_version`, `swe_get_library_path`, `swe_heliacal_angle`, `swe_heliacal_pheno_ut`,
+`swe_heliacal_ut`, `swe_helio_cross[_ut]`, `swe_mooncross[_ut]`, `swe_mooncross_node[_ut]`,
+`swe_set_ephe_path`, `swe_set_jpl_file`, `swe_solcross[_ut]`, `swe_topo_arcus_visionis`, and
+`swe_vis_limit_mag`. This entry's own earlier text described the pre-fix 31 as splitting into
+"eight, oracle-covered" plus the fixed-star family; that framing is not re-derived or endorsed
+here -- this list is what is actually absent from `Tools/BaselineMatrix/` today, confirmed by
+direct measurement rather than carried forward from the earlier count. Whether any of these 24
+belongs on a future matrix-coverage pass is a separate question this fix does not answer.
+
+**The remaining 7 -- `swe_houses_ex2`, `swe_houses_armc_ex2`, `swe_get_ayanamsa_name`,
+`swe_calc_pctr`, `swe_lat_to_lmt`, `swe_lmt_to_lat`, and `swe_get_current_file_data` -- now have
+matrix coverage.** `swe_houses_ex2` (`HousesEx.cs`'s `BuildHousesEx2Row`) sweeps the same
+tjd/armc-derivation and sidereal-branch grid as the existing `swe_houses_ex` coverage, plus the
+`cusp_speed`/`ascmc_speed` out-parameters the `_ex2` form adds -- 11,760 new rows in the `houses`
+area. `swe_houses_armc_ex2` (`Houses.cs`'s `AddArmcEx2Rows`) is the armc-based sibling, same
+treatment -- 54,432 new rows in `houses-armc`. `swe_get_ayanamsa_name` (`Ayanamsa.cs`'s
+`AddAyanamsaNameRows`) sweeps every predefined sid_mode plus the out-of-range and
+`SE_SIDBITS`-wraparound edges -- 59 new rows in `ayanamsa`. `swe_calc_pctr` (`Calc.cs`'s
+`BuildPctrRow`) sweeps `Grids.CalcPlanets` against three center bodies -- 4,080 new rows in
+`calc`. `swe_lat_to_lmt`/`swe_lmt_to_lat` (`DateTime_.cs`'s `AddLatToLmt`/`AddLmtToLat`) sweep the
+existing Julian-day grid against a spread of longitudes -- 180 new rows in `datetime`.
+`swe_get_current_file_data` (`Misc.cs`) adds one row per `ifno` (including two out-of-range
+values) -- 7 new rows in `misc`, all resolving through the "no file open" branch under this
+harness's no-files rule, which is itself the behavior worth freezing here. Regenerated via
+`regenerate-baseline.ps1 -FromLocal` (deviation log entry 25, `Tests/baseline/baseline-2.8.0.2.env.txt`):
+SCOPE-OK, 0 changed/removed anywhere, only the new case ids listed above added; `scripts/verify-baseline.ps1`
+is 100% EXACT on both TFMs afterward.
 
 **107 here vs. 108 elsewhere in this repository is not a typo; the two count different
 populations, measured and reconciled below.** `Tools/OracleGrid/gen-grid-files.ps1`'s own header

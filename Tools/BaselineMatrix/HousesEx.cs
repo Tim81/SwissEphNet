@@ -65,6 +65,12 @@ internal static class HousesEx
                         foreach (var variant in Variants)
                         {
                             rows.Add(BuildHousesExRow(jd, geolat, geolon, hsys, variant));
+#if !USE_REFERENCE_PACKAGE
+                            // swe_houses_ex2 does not exist in the reference package
+                            // (SwissEphNet 2.8.0.2, pre-2.10.03) at all -- reference mode's
+                            // "compile-only regression guard" build has no such method to call.
+                            rows.Add(BuildHousesEx2Row(jd, geolat, geolon, hsys, variant));
+#endif
                         }
                     }
                 }
@@ -115,6 +121,61 @@ internal static class HousesEx
         for (var a = 0; a <= 9; a++)
         {
             fields[i++] = D(ascmc[a]);
+        }
+        return fields;
+    }
+
+    /// <summary>
+    /// swe_houses_ex2: the same tjd/armc-derivation and sidereal-branch coverage as
+    /// BuildHousesExRow above, plus the cusp_speed/ascmc_speed out-parameters swe_houses_ex
+    /// has no way to request. Previously uncovered anywhere in this matrix
+    /// (docs/known-issues.md, "31 of 107 public swe_* entry points have no matrix coverage").
+    /// Passing non-null cusp_speed/ascmc_speed arrays turns on speed computation the same way
+    /// AddArmcEx2Rows in Houses.cs does for swe_houses_armc_ex2.
+    /// </summary>
+#if !USE_REFERENCE_PACKAGE
+    private static string BuildHousesEx2Row(double jd, double geolat, double geolon, char hsys, Variant variant)
+    {
+        var caseId = $"HX2|{D(jd)}|{D(geolat)}|{D(geolon)}|{hsys}|{variant.Name}";
+        return SafeRow(caseId, () =>
+        {
+            using var swe = new SwissEph();
+            if (variant.Sidereal)
+            {
+                swe.swe_set_sid_mode(variant.SidMode, 0, 0);
+            }
+            var iflag = variant.Sidereal ? SwissEph.SEFLG_SIDEREAL : 0;
+            var cusp = new double[40];
+            var ascmc = new double[10];
+            var cuspSpeed = new double[40];
+            var ascmcSpeed = new double[10];
+            string? serr = null;
+            var retc = swe.swe_houses_ex2(jd, iflag, geolat, geolon, hsys, cusp, ascmc, cuspSpeed, ascmcSpeed, ref serr);
+            return FieldsWithSpeed(retc, cusp, ascmc, cuspSpeed, ascmcSpeed);
+        });
+    }
+#endif
+
+    private static string[] FieldsWithSpeed(int retc, double[] cusp, double[] ascmc, double[] cuspSpeed, double[] ascmcSpeed)
+    {
+        var fields = new string[1 + 37 + 10 + 37 + 10];
+        var i = 0;
+        fields[i++] = I(retc);
+        for (var c = 0; c < 37; c++)
+        {
+            fields[i++] = D(cusp[c]);
+        }
+        for (var a = 0; a <= 9; a++)
+        {
+            fields[i++] = D(ascmc[a]);
+        }
+        for (var c = 0; c < 37; c++)
+        {
+            fields[i++] = D(cuspSpeed[c]);
+        }
+        for (var a = 0; a <= 9; a++)
+        {
+            fields[i++] = D(ascmcSpeed[a]);
         }
         return fields;
     }

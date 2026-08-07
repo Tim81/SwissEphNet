@@ -114,6 +114,79 @@ internal static class Houses
     }
 
     /// <summary>
+    /// swe_houses_armc_ex2: the same armc-based computation as AddRows above, plus the
+    /// cusp_speed/ascmc_speed out-parameters swe_houses_armc itself has no way to request.
+    /// Was previously uncovered anywhere in this matrix (docs/known-issues.md, "31 of 107
+    /// public swe_* entry points have no matrix coverage") -- passing non-null cusp_speed/
+    /// ascmc_speed arrays turns on h.do_speed/h.do_hspeed (SweHouse.cs's swe_houses_armc_ex2),
+    /// so this also newly exercises the speed-derivative code path itself, not just the
+    /// entry point's existence.
+    /// </summary>
+    public static void AddArmcEx2Rows(List<string> rows)
+    {
+#if !USE_REFERENCE_PACKAGE
+        // swe_houses_armc_ex2 does not exist in the reference package (SwissEphNet 2.8.0.2,
+        // pre-2.10.03) at all -- reference mode's own "compile-only regression guard" build
+        // has no such method to call, so this sweep is local-mode only.
+        foreach (var hsys in Grids.HouseSystems)
+        {
+            foreach (var eps in Grids.Eps)
+            {
+                foreach (var geolat in Grids.GeoLats)
+                {
+                    foreach (var armc in Grids.Armcs)
+                    {
+                        rows.Add(BuildArmcEx2Row(hsys, eps, geolat, armc));
+                    }
+                }
+            }
+        }
+#endif
+    }
+
+#if !USE_REFERENCE_PACKAGE
+    private static string BuildArmcEx2Row(char hsys, double eps, double geolat, double armc)
+    {
+        var caseId = $"HAEX2|{hsys}|{D(eps)}|{D(geolat)}|{D(armc)}";
+        return SafeRow(caseId, () =>
+        {
+            using var swe = new SwissEph();
+            var cusp = new double[40];
+            var ascmc = new double[10];
+            var cuspSpeed = new double[40];
+            var ascmcSpeed = new double[10];
+            string? serr = null;
+            var retc = swe.swe_houses_armc_ex2(armc, geolat, eps, hsys, cusp, ascmc, cuspSpeed, ascmcSpeed, ref serr);
+            return FieldsWithSpeed(retc, cusp, ascmc, cuspSpeed, ascmcSpeed);
+        });
+    }
+#endif
+
+    private static string[] FieldsWithSpeed(int retc, double[] cusp, double[] ascmc, double[] cuspSpeed, double[] ascmcSpeed)
+    {
+        var fields = new string[1 + CuspCount + 10 + CuspCount + 10];
+        var i = 0;
+        fields[i++] = I(retc);
+        for (var c = 0; c < CuspCount; c++)
+        {
+            fields[i++] = D(cusp[c]);
+        }
+        for (var a = 0; a <= 9; a++)
+        {
+            fields[i++] = D(ascmc[a]);
+        }
+        for (var c = 0; c < CuspCount; c++)
+        {
+            fields[i++] = D(cuspSpeed[c]);
+        }
+        for (var a = 0; a <= 9; a++)
+        {
+            fields[i++] = D(ascmcSpeed[a]);
+        }
+        return fields;
+    }
+
+    /// <summary>
     /// Deliberately violates the "fresh SwissEph per row" rule used everywhere
     /// else in this file -- on purpose, and only here. saved_sundec is dead code
     /// across every other row in the baseline: every one of them constructs a

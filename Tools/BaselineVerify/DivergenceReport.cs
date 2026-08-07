@@ -10,6 +10,17 @@ namespace BaselineVerify;
 internal sealed class DivergenceStats
 {
     public int FieldsCompared;
+
+    /// <summary>
+    /// Of FieldsCompared, how many actually parsed as numeric (finite, non-NaN) doubles on
+    /// both sides -- unlike FieldsCompared, this excludes serr diagnostic strings, planet
+    /// names, and other non-numeric fields. See docs/known-issues.md, "DivergenceReport's
+    /// field-compared count includes non-numeric fields": FieldsCompared is kept as-is
+    /// because Tools/BaselineGen/README.md and other docs already cite the number it
+    /// produces; this is the correctly-labeled count added alongside it.
+    /// </summary>
+    public int NumericFieldsCompared;
+
     public int FieldsDiffering;
 
     /// <summary>Of FieldsDiffering, how many are still beyond tolerance (i.e. would actually fail the gate) after the angle-wraparound allowance.</summary>
@@ -80,15 +91,22 @@ internal static class DivergenceReport
                 var r = referenceFields[i];
                 stats.FieldsCompared++;
 
+                // Parsed unconditionally (not just for differing fields) so equal-and-numeric
+                // fields still count toward NumericFieldsCompared -- an equal field never
+                // reaches FieldsDiffering, but it is still a numeric one.
+                double lv = 0, rv = 0;
+                var isNumeric = Comparer.TryParseDouble(l, out lv) && Comparer.TryParseDouble(r, out rv)
+                    && !double.IsNaN(lv) && !double.IsNaN(rv) && !double.IsInfinity(lv) && !double.IsInfinity(rv);
+                if (isNumeric)
+                {
+                    stats.NumericFieldsCompared++;
+                }
+
                 if (string.Equals(l, r, StringComparison.Ordinal))
                 {
                     continue;
                 }
-                if (!Comparer.TryParseDouble(l, out var lv) || !Comparer.TryParseDouble(r, out var rv))
-                {
-                    continue;
-                }
-                if (double.IsNaN(lv) || double.IsNaN(rv) || double.IsInfinity(lv) || double.IsInfinity(rv))
+                if (!isNumeric)
                 {
                     continue;
                 }

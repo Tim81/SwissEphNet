@@ -77,6 +77,14 @@ $ErrorActionPreference = 'Stop'
 #                                      sitting at job level used to silently absorb (its "Run gate
 #                                      unit tests" step, which has nothing to do with cross-platform
 #                                      drift).
+#   workflows/baseline.yml:verify-baseline-macos -- macOS counterpart to verify-baseline-linux
+#                                      above, same script, same --report-only design, same reason.
+#   workflows/conformance.yml:conformance-macos -- macOS counterpart to the Windows conformance
+#                                      job, added when macOS gained a leg on this instrument for the
+#                                      first time; continue-on-error here (unlike macos-exactness in
+#                                      oracle.yml, which shed its own initial flag) stays until this
+#                                      combination has actually run clean in CI -- see that job's own
+#                                      comment.
 #
 # Keyed on the path RELATIVE TO $GithubDir (below), not a bare filename -- MEDIUM 2's own fix, the
 # fourth of the four demonstrated evasions. $label used to be `Split-Path -Leaf $Path`, so a second
@@ -88,7 +96,12 @@ $ErrorActionPreference = 'Stop'
 # second site from the printed list entirely. A relative-path label keeps "workflows/oracle.yml"
 # and "workflows/extra/oracle.yml" distinct.
 function Get-ExpectedStepLevelFlags {
-    return @('workflows/oracle.yml:swetest-diff', 'workflows/baseline.yml:verify-baseline-linux')
+    return @(
+        'workflows/oracle.yml:swetest-diff',
+        'workflows/baseline.yml:verify-baseline-linux',
+        'workflows/baseline.yml:verify-baseline-macos',
+        'workflows/conformance.yml:conformance-macos'
+    )
 }
 
 # Parses one workflow-shaped YAML file's line stream and returns every continue-on-error
