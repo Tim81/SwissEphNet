@@ -3482,6 +3482,23 @@ namespace SweTest
             return SwissEph.OK;
         }
 
+        /// <summary>
+        /// swetest.c:2815-2828's strlen(sout)/strlen(gap) bound counts bytes in whatever narrow
+        /// encoding the C runtime holds sout/gap in -- and that encoding is platform-dependent.
+        /// On Windows, the MSVC CRT startup converts the wide command line to argv via
+        /// WideCharToMultiByte(CP_ACP, ...), a single-byte ("Western") ANSI code page: every
+        /// UTF-16 code unit produces exactly one narrow byte there (an unmappable character
+        /// falls back to '?', still one byte), so the native byte count equals
+        /// sout.Length/gap.Length. On non-Windows the C reference runs under a UTF-8 locale, so
+        /// strlen counts UTF-8 bytes instead. Split out with an isWindows parameter for the same
+        /// reason as SwissEph.sweodef.h.cs's PathSeparatorFor: both branches stay reachable from
+        /// any single runner's tests.
+        /// </summary>
+        internal static int NativeByteCount(string s, bool isWindows)
+        {
+            return isWindows ? s.Length : System.Text.Encoding.UTF8.GetByteCount(s);
+        }
+
         static void insert_gap_string_for_tabs(ref string sout, string gap)
         {
             //char* sp;
@@ -3495,15 +3512,20 @@ namespace SweTest
             // swetest.c:2815-2828's bounded loop stops substituting once sout would grow past
             // LEN_SOUT (1000) bytes; an unconditional string.Replace here has no such bound
             // (docs/known-issues.md, "insert_gap_string_for_tabs drops swetest.c's LEN_SOUT
-            // bound"). C's strlen counts UTF-8 bytes, not UTF-16 code units, so the bound check
-            // below counts bytes (System.Text.Encoding.UTF8.GetByteCount) rather than
-            // sout.Length/gap.Length -- for an ASCII gap the two coincide, but a multi-byte
-            // gap or sout would otherwise let the port substitute past the C's own bound.
+            // bound"). The bound check below counts native bytes via NativeByteCount (above)
+            // rather than sout.Length/gap.Length -- for an ASCII gap all of UTF-16 length,
+            // UTF-8 bytes and native ANSI bytes coincide, but a multi-byte gap or sout would
+            // otherwise let the port substitute past the C reference's own bound, and using
+            // UTF-8 unconditionally (this bound's first fix) would do that on Windows for any
+            // non-ASCII character representable in a single Windows-1252 byte, e.g. "e" with an
+            // accent -- 1 native byte there, 2 UTF-8 bytes.
             // IndexOf(char) is already ordinal, so no StringComparison overload is needed here
             // (see the identical reasoning on SwephLib.cs's Contains('+') site).
+            bool isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(
+                System.Runtime.InteropServices.OSPlatform.Windows);
             int sp;
             while ((sp = sout.IndexOf('\t')) >= 0
-                && System.Text.Encoding.UTF8.GetByteCount(sout) + System.Text.Encoding.UTF8.GetByteCount(gap) < LEN_SOUT)
+                && NativeByteCount(sout, isWindows) + NativeByteCount(gap, isWindows) < LEN_SOUT)
             {
                 sout = sout.Substring(0, sp) + gap + sout.Substring(sp + 1);
             }

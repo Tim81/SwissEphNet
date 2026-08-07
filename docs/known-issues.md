@@ -2194,6 +2194,31 @@ declaration (`Program.cs:747-751`, before this fix) claimed the port's dynamic s
 bound irrelevant -- but the C does read it, live, at exactly this site. That comment is now
 corrected to reflect the fix.
 
+**Bound needs Windows ANSI semantics, not UTF-8, found during PR review.** The UTF-8 fix above
+matches the C reference's `strlen` on Linux/macOS, where the C runtime holds `argv` in whatever
+narrow encoding the process's UTF-8 locale implies -- but not on Windows. There, the MSVC CRT
+startup builds `argv` by converting the wide command line (`GetCommandLineW`) via
+`WideCharToMultiByte(CP_ACP, ...)`, i.e. the process's single-byte ANSI code page (Western
+installs, including the `windows-latest` CI runner: code page 1252), not UTF-8. A single-byte
+code page maps exactly one narrow byte per UTF-16 code unit -- an unmappable character falls
+back to `'?'`, still one byte -- so on Windows the native `strlen` byte count equals
+`sout.Length`/`gap.Length`, the same values the first version of this fix used and then moved
+away from. Counting UTF-8 bytes unconditionally fixed Linux/macOS but reintroduced the opposite
+divergence on Windows: an accented character such as `e-acute` is 1 byte under code page 1252 but
+2 bytes in UTF-8, so the port's UTF-8-counted bound was hit one byte earlier than the C
+reference's, causing it to stop substituting tabs sooner than `swetest.c` does on Windows.
+
+`insert_gap_string_for_tabs` (`Program.cs:3485`) now calls a new `NativeByteCount(string,
+bool isWindows)` helper (`Program.cs:3485`, just above) that returns `s.Length` when
+`isWindows` and `Encoding.UTF8.GetByteCount(s)` otherwise, with `isWindows` supplied via
+`RuntimeInformation.IsOSPlatform(OSPlatform.Windows)` -- the same platform-detection pattern
+`SwissEph.sweodef.h.cs`'s `PathSeparatorFor` uses, and split out the same way so both branches
+stay unit-testable from a single runner. This is deliberately scoped to single-byte ANSI code
+pages: a non-Western Windows install whose default code page is double-byte (e.g. Shift-JIS,
+code page 932) would not fit the `s.Length` shortcut, but that is outside what this fix (or the
+review comment it closes) was scoped to -- the CI matrix and the C reference build it compares
+against both run under code page 1252.
+
 ## The 5% waiver caps divide by the whole area, not by the relevant sub-scope
 
 **Status: record.** The caps do what their names say. Recorded because the fraction a
