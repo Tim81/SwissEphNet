@@ -106,32 +106,71 @@ namespace SwissEphNet
         /// </summary>
         public const String ODEGREE_STRING = "°";
 
+        /// <summary>
+        /// Pi, to full <see cref="double"/> precision.
+        /// </summary>
         public const double M_PI = 3.14159265358979323846;
 
         //public const double DEGTORAD = 0.0174532925199433;
         //public const double RADTODEG = 57.2957795130823;
+        /// <summary>
+        /// Multiply a value in radians by this to convert it to degrees (<c>180 / <see cref="M_PI"/></c>).
+        /// </summary>
         public const double RADTODEG = (180.0 / M_PI);
+        /// <summary>
+        /// Multiply a value in degrees by this to convert it to radians (<c><see cref="M_PI"/> / 180</c>).
+        /// </summary>
         public const double DEGTORAD = (M_PI / 180.0);
 
-        public const int DEG = 360000;  /* degree expressed in centiseconds */
-        public const int DEG7_30 = (2700000);	/* 7.5 degrees */
+        /// <summary>
+        /// One degree, expressed in centiseconds of arc (see the <c>swe_csnorm</c>/<c>swe_difcsn</c>/
+        /// <c>swe_split_deg</c> family, whose <c>cs</c> parameters use this unit: 1 degree = 360000
+        /// centiseconds of arc, i.e. 1/100 of an arc-second).
+        /// </summary>
+        public const int DEG = 360000;
+        /// <summary>7.5 degrees, in centiseconds of arc (see <see cref="DEG"/>).</summary>
+        public const int DEG7_30 = (2700000);
+        /// <summary>15 degrees, in centiseconds of arc (see <see cref="DEG"/>).</summary>
         public const int DEG15 = (15 * DEG);
+        /// <summary>24 degrees, in centiseconds of arc (see <see cref="DEG"/>).</summary>
         public const int DEG24 = (24 * DEG);
+        /// <summary>30 degrees, in centiseconds of arc (see <see cref="DEG"/>).</summary>
         public const int DEG30 = (30 * DEG);
+        /// <summary>60 degrees, in centiseconds of arc (see <see cref="DEG"/>).</summary>
         public const int DEG60 = (60 * DEG);
+        /// <summary>90 degrees, in centiseconds of arc (see <see cref="DEG"/>).</summary>
         public const int DEG90 = (90 * DEG);
+        /// <summary>120 degrees, in centiseconds of arc (see <see cref="DEG"/>).</summary>
         public const int DEG120 = (120 * DEG);
+        /// <summary>150 degrees, in centiseconds of arc (see <see cref="DEG"/>).</summary>
         public const int DEG150 = (150 * DEG);
+        /// <summary>180 degrees, in centiseconds of arc (see <see cref="DEG"/>); the upper bound used by
+        /// the <c>[-DEG180, DEG180)</c> normalization functions such as <c>swe_difcs2n</c>.</summary>
         public const int DEG180 = (180 * DEG);
+        /// <summary>270 degrees, in centiseconds of arc (see <see cref="DEG"/>).</summary>
         public const int DEG270 = (270 * DEG);
+        /// <summary>360 degrees, in centiseconds of arc (see <see cref="DEG"/>); the upper bound used by
+        /// the <c>[0, DEG360)</c> normalization functions such as <c>swe_csnorm</c>/<c>swe_difcsn</c>.</summary>
         public const int DEG360 = (360 * DEG);
 
         //public const double CSTORAD = 4.84813681109536E-08; /* centisec to rad: pi / 180 /3600/100 */
         //public const double RADTOCS = 2.06264806247096E+07; /* rad to centisec 180*3600*100/pi */
+        /// <summary>
+        /// Multiply a value in centiseconds of arc (see <see cref="DEG"/>) by this to convert it to
+        /// radians.
+        /// </summary>
         public const double CSTORAD	= (DEGTORAD / 360000.0);
+        /// <summary>
+        /// Multiply a value in radians by this to convert it to centiseconds of arc (see
+        /// <see cref="DEG"/>).
+        /// </summary>
         public const double RADTOCS = (RADTODEG * 360000.0);
 
-        public const double CS2DEG = (1.0 / 360000.0);	/* centisec to degree */
+        /// <summary>
+        /// Multiply a value in centiseconds of arc (see <see cref="DEG"/>) by this to convert it to
+        /// degrees.
+        /// </summary>
+        public const double CS2DEG = (1.0 / 360000.0);
 
         /// <summary>used for string declarations, allowing 255 char+\0 (sweodef.h:261)</summary>
         public const int AS_MAXCH = 256;
