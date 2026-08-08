@@ -17,7 +17,7 @@
       that package anyway. Until the release lands, build from source or
       reference the project directly.
 
-      The "port revision" above is the fourth component, for a fork-only
+      The "port revision" above is the fourth component, for a port-only
       release made while upstream stays put: 2.10.3, then 2.10.3.1, 2.10.3.2,
       resetting whenever upstream moves. Two things to know before using it.
       NuGet normalizes a trailing zero away, so 2.10.3.0 and 2.10.3 are the
@@ -25,7 +25,7 @@
       not assumed: packing 2.10.3.0 produces a .2.10.3.nupkg. And four components
       are not valid SemVer 2.0, which has exactly three; NuGet accepts them
       for backwards compatibility. That is a deliberate choice, because the
-      alternatives are worse. Build metadata (2.10.3+fork.1) is ignored by
+      alternatives are worse. Build metadata (2.10.3+rev.1) is ignored by
       NuGet when comparing versions, so a second package differing only there
       cannot be published. A prerelease suffix (2.10.3-rev1) sorts BEFORE
       2.10.3, which is backwards for a release that comes after it.
@@ -39,15 +39,15 @@
       2.10.3.1. On .NET Framework, which is the host for the netstandard2.0
       asset, an assembly reference binds on the full four-part version, so a
       consumer compiled against 2.10.3.0 does not load 2.10.3.1 without a
-      binding redirect: a fork-only revision is a binding-identity break there,
+      binding redirect: a port-only revision is a binding-identity break there,
       not just a package-version bump. net8.0 and net10.0 roll forward on
-      assembly version and are unaffected. So a fork-only release either
+      assembly version and are unaffected. So a port-only release either
       accepts that break for .NET Framework consumers, or pins AssemblyVersion
       to 2.10.3.0 here and lets only Version and FileVersion carry the fourth
       component. Decide it deliberately at the point of making one; do not
       discover it from a consumer's FileLoadException.
     -->
-    <Version>2.10.3</Version>
+    <Version>2.10.3.1</Version>
     <!--
       Plain SemVer, with no descriptive text. The SDK appends +<commit sha> to
       whatever is here, so anything with spaces or parentheses in the core
@@ -57,12 +57,12 @@
       used to carry now lives in the AssemblyMetadata items below, which is
       where arbitrary text belongs.
     -->
-    <InformationalVersion>2.10.3</InformationalVersion>
+    <InformationalVersion>2.10.3.1</InformationalVersion>
     <Authors>Yan Grenier, Timothy van der Ham</Authors>
     <!--
       Company is the publisher field, distinct from Authors above: NuGet shows it separately, and
       it should name whoever is actually publishing this package, not the original author of the
-      code it is a fork of. This fork is published by Timothy van der Ham; Yan Grenier is credited
+      code it continues. This package is published by Timothy van der Ham; Yan Grenier is credited
       in Authors, Copyright and NOTICE, which is where authorship attribution belongs. Setting
       Company to Yan Grenier here would sit awkwardly next to Description's own "Not published or
       endorsed by Yan Grenier" line below.
@@ -70,7 +70,7 @@
     <Company>Timothy van der Ham</Company>
     <Product>SwissEphSharp</Product>
     <Title>SwissEphSharp</Title>
-    <Description>Swiss Ephemeris .Net portage. SwissEphSharp is the package ID this project is distributed under: a fork of Yan Grenier's SwissEphNet, tracking Swiss Ephemeris 2.10.03. The assembly is now named SwissEphSharp too, so it can coexist with the original SwissEphNet package; the namespace stays SwissEphNet, so source that only uses the public API needs no changes beyond the PackageReference itself. Callers of the removed OnLoadFile event still need to migrate to SwissEph.FileProvider. Not published or endorsed by Yan Grenier or Astrodienst.</Description>
+    <Description>Swiss Ephemeris .Net portage. SwissEphSharp is the package ID this project is distributed under: the continuation of Yan Grenier's SwissEphNet C# port, tracking Swiss Ephemeris 2.10.03. The assembly is now named SwissEphSharp too, so it can coexist with the original SwissEphNet package; the namespace stays SwissEphNet, so source that only uses the public API needs no changes beyond the PackageReference itself. Callers of the removed OnLoadFile event still need to migrate to SwissEph.FileProvider. Not published or endorsed by Yan Grenier or Astrodienst.</Description>
     <Copyright>Copyright (C) 1997-2021 Astrodienst AG; (C) 2014-2019 Yan Grenier; (C) 2026 Timothy van der Ham</Copyright>
     <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/Tim81/SwissEphNet</PackageProjectUrl>
@@ -89,9 +89,30 @@
       an API this library no longer has.
     -->
     <PackageReadmeFile>README.nuget.md</PackageReadmeFile>
-    <PackageReleaseNotes>2.10.3 (the first release of this fork published to nuget.org, under the
-SwissEphSharp package ID; entries from 2.8.0.2 down are the original project's, published under
-SwissEphNet):
+    <PackageReleaseNotes>2.10.3.1:
+- Full XML documentation (&lt;summary&gt;, &lt;param&gt;, &lt;returns&gt;) added for all 116
+  public swe_* methods in SwissEphNet/SwissEph.swephexp.h.cs, plus the SEFLG_*/SE_*/SEMOD_*
+  constants they reference. Purely additive: no signature or behavior changed, and
+  SwissEphNet/CPort/ is untouched. IntelliSense now shows the same documentation a C caller
+  gets from swephexp.h instead of nothing (CS1591 is suppressed repo-wide, so this gap was
+  previously silent).
+- Programs/SweTest: fixed insert_gap_string_for_tabs's LEN_SOUT bound. It now counts bytes the
+  way the C's strlen does, using native single-byte semantics on Windows (the narrow-argv code
+  page) and UTF-8 elsewhere, instead of counting UTF-16 characters. Accented -g gap values no
+  longer stop tab substitution one byte early. This affects the SweTest program's console
+  output, not the SwissEphSharp library API.
+- swe_houses_ex2 now re-reads sid_data after its SE_SIDM_FAGAN_BRADLEY fallback, matching the
+  C's pointer semantics (swehouse.c:221). No input reachable through the public API changes
+  value from this today; it closes an audited fidelity gap rather than fixing an observed bug.
+- Test coverage: BaselineMatrix now exercises 7 more of the library's 107 public entry points,
+  all 100% EXACT on both TFMs. A new NutationTableFidelityTest value-diffs the nutation
+  coefficient table against upstream source instead of only checking its length.
+- CI gained macOS legs on the baseline and conformance gates (report-only).
+- No breaking changes. See docs/known-issues.md and docs/compliance-2.10.03.md for the
+  verification detail behind this release.
+
+2.10.3 (the first release published to nuget.org, under the SwissEphSharp
+package ID):
 - LICENSE CHANGE, read this before upgrading. 2.8.0.2 was distributed under the GNU General
   Public License version 2 or later. This release is under the Swiss Ephemeris dual license:
   the GNU Affero General Public License, or a Swiss Ephemeris Professional License bought from
@@ -136,63 +157,16 @@ SwissEphNet):
   verification numbers behind this release and docs/known-issues.md and the "V:2.10.3" section
   of README.md for the full list.
 
-- You are also inheriting everything in the 2.8.1.0 entry below, even though no such package was
-  ever published. On nuget.org the step is 2.8.0.2 straight to this release, so those changes
-  arrive with it: DIR_GLUE went from '\' to '/' on every platform, which changes the asteroid
-  file names a file provider is asked for; DefaultEncoding became UTF-8 explicitly rather than
-  falling back to it when Windows-1252 could not be resolved; and C.strcmp, strncmp, strstr and
-  strchr became ordinal instead of culture-sensitive, which affects fixed-star name search and
-  sort under a non-invariant culture. Read that entry as part of this one.
+- You are also inheriting everything in CHANGELOG.md's 2.8.1.0 entry, even though no such
+  package was ever published. On nuget.org the step is 2.8.0.2 straight to this release, so
+  those changes arrive with it: DIR_GLUE went from '\' to '/' on every platform, which changes
+  the asteroid file names a file provider is asked for; DefaultEncoding became UTF-8 explicitly
+  rather than falling back to it when Windows-1252 could not be resolved; and C.strcmp,
+  strncmp, strstr and strchr became ordinal instead of culture-sensitive, which affects
+  fixed-star name search and sort under a non-invariant culture.
 
-2.8.1.0 (not published to nuget.org; source-only distribution):
-- Package ID renamed from SwissEphNet to SwissEphSharp. SwissEphNet on nuget.org belongs to the
-  upstream author's own release and this fork cannot publish under it. At this release the
-  assembly name and namespace were unaffected: both stayed SwissEphNet, so the only change a
-  consumer needed to make was the PackageReference itself. The assembly was renamed too, later,
-  at 2.10.3 above -- see that entry and the "Package name" section of README.md.
-- Retarget the library to netstandard2.0;net8.0;net10.0, dropping net40 and netstandard1.0.
-- Relicense from GPL-2.0-or-later to the Swiss Ephemeris 2.10.3 dual license: AGPL-3.0
-  or a Swiss Ephemeris Professional License from Astrodienst. See LICENSE and NOTICE.
-- Fix SwissEph.DIR_GLUE: was hardcoded to '\\' on every platform, now '/' per the upstream C
-  source. Asteroid file names passed to OnLoadFile change accordingly, e.g. "ast4/se04179.se1"
-  instead of "ast4\se04179.se1".
-- Fix SwissEph.DefaultEncoding: was falling back to UTF-8 silently whenever Windows-1252 could
-  not be resolved (missing System.Text.Encoding.CodePages reference); UTF-8 is now the explicit,
-  deliberate default, matching the actual encoding of the ephemeris data files.
-  You can still override it via the static SwissEphNet.SwissEph.DefaultEncoding property.
-- Fix C.strcmp/strncmp/strstr/strchr: were culture-sensitive (string.Compare/IndexOf), now
-  ordinal, matching C's byte-wise semantics. Affects fixed-star name search/sort under
-  non-invariant cultures.
-- Several additional port bug fixes with no signature change: swe_fixstar multi-word star names
-  and an off-by-one in search-name formatting, a missing ref-parameter mutation and missing guard
-  in the heliacal Moon branch, swe_set_astro_models throwing on short input, C.atoi sign handling,
-  CPointer&lt;T&gt;.operator != always returning false, and a netstandard2.0-only infinite
-  recursion in a string-extension method. See NOTICE and docs/known-issues.md for details.
-
-2.8.0.2:
-- Fix the #41 issue
-
-2.8.0.1:
-- Update to version 2.08 of SwissEphemeris
-
-2.7.1.3:
-- Update to version 2.07.1 of SwissEphemeris
-- Inlcude the PR #34 - swe_house_pos: parameter geolon is actually geolat - thanks to aleksamagicka
-
-2.6.0.24:
-- Include the PR #32 - Make fixed star name parameter ref  - thanks to aleksamagicka
-
-2.6.0.23:
-- Fix the #29 issue
-
-2.6.0.22:
-- Fix the #27 issue
-
-2.6.0.21:
-- Update to VS 2017 project
-
-2.6.0.18:
-- Update the code to the Swiss Ephemeris 2.06.00 version.
+Full history, back to the 2.08 upgrade: CHANGELOG.md at
+https://github.com/Tim81/SwissEphNet/blob/main/CHANGELOG.md.
 </PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
     <!--

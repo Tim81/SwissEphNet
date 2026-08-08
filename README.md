@@ -207,18 +207,19 @@ for the AGPL text, and `NOTICE` for attribution. To read them in the repository 
 [`NOTICE`](https://github.com/Tim81/SwissEphNet/blob/release/2.10.03/NOTICE). These links are
 absolute rather than relative because this section also renders on nuget.org's package page,
 where a relative link to a file in this repository does not resolve, and they name
-`release/2.10.03` rather than `main` because `main` is still the upstream project's pre-fork
-state: it carries no `NOTICE` and no `agpl-3.0.txt` at all, and its `LICENSE` is the
+`release/2.10.03` rather than `main` because `main` is still the state inherited from
+[ygrenier/SwissEphNet](https://github.com/ygrenier/SwissEphNet), before this project's own
+changes: it carries no `NOTICE` and no `agpl-3.0.txt` at all, and its `LICENSE` is the
 1997-2008 pre-relicense text rather than the dual AGPL one this library is offered under.
 
-## The fork, and who wrote what
+## Project history, and who wrote what
 
-This repository, https://github.com/Tim81/SwissEphNet, is a maintained fork of
-[ygrenier/SwissEphNet](https://github.com/ygrenier/SwissEphNet). The original C-to-C# port is
-Yan Grenier's work (2014-2019); this fork continues it. Since 2026 it has been maintained by
-Timothy van der Ham, who has modernized the build and target frameworks (netstandard2.0, net8.0,
-net10.0) and fixed a number of bugs in the port: the fixed-star search returning the wrong star,
-multi-word star names being unfindable, the heliacal Moon branch never being taken,
+This repository, https://github.com/Tim81/SwissEphNet, continues the C# port of Swiss Ephemeris
+that [Yan Grenier](https://github.com/ygrenier/SwissEphNet) originally wrote (2014-2019). Since
+2026 it has been maintained by Timothy van der Ham, who has modernized the build and target
+frameworks (netstandard2.0, net8.0, net10.0) and fixed a number of bugs in the port: the
+fixed-star search returning the wrong star, multi-word star names being unfindable,
+the heliacal Moon branch never being taken,
 `swe_set_astro_models` throwing, the `DIR_GLUE` path separator, culture-sensitive string
 comparison, and a netstandard2.0 infinite recursion. See `NOTICE` and the package release notes
 for details.
@@ -228,10 +229,10 @@ for details.
 This project carries three names, and meeting them separately can look like something is broken.
 It isn't:
 
-- The **repository** is `Tim81/SwissEphNet`, a fork of `ygrenier/SwissEphNet`, and keeps that
+- The **repository** is `Tim81/SwissEphNet`, continuing `ygrenier/SwissEphNet`, and keeps that
   name.
 - The **NuGet package ID** is `SwissEphSharp`. The `SwissEphNet` ID on nuget.org already belongs
-  to the upstream author's own release, so this fork cannot publish under it.
+  to the upstream author's own release, so this project cannot publish under it.
 - The **assembly** is now `SwissEphSharp.dll`, matching the package ID, so this package and the
   original `SwissEphNet` package can be referenced together without one silently displacing the
   other; see the "V:2.10.3" section below for what that collision used to look like.
@@ -251,15 +252,15 @@ too.
 
 ## Version numbers
 
-The package version tracks upstream, with a fourth component for releases this fork makes on its
-own. `2.10.3` tracks Swiss Ephemeris C 2.10.03; a fork-only release while upstream stays put would
-be `2.10.3.1`, then `2.10.3.2`, and the fourth component resets whenever upstream moves.
+The package version tracks upstream, with a fourth component for releases this project makes on
+its own. `2.10.3` tracks Swiss Ephemeris C 2.10.03; a port-only release while upstream stays put
+would be `2.10.3.1`, then `2.10.3.2`, and the fourth component resets whenever upstream moves.
 
 Two things about that are worth knowing rather than discovering. NuGet normalizes a trailing zero
 away, so `2.10.3.0` and `2.10.3` are the same package and writing the `.0` achieves nothing.
 And four components are not valid SemVer 2.0, which has exactly three; NuGet accepts them for
 backwards compatibility. That is a deliberate choice, because the two obvious alternatives are
-worse. Build metadata (`2.10.3+fork.1`) is ignored by NuGet when it compares versions, so a second
+worse. Build metadata (`2.10.3+rev.1`) is ignored by NuGet when it compares versions, so a second
 package differing only there cannot be published at all. A prerelease suffix (`2.10.3-rev1`) sorts
 *before* `2.10.3`, which is backwards for a release that comes after it.
 
@@ -268,7 +269,7 @@ build metadata. The upstream version and tag it used to spell out are now `Assem
 entries, `UpstreamSwissEphemerisVersion` and `UpstreamSwissEphemerisTag`, which is where text that
 does not have to parse as a version belongs.
 
-This fork is not published or endorsed by Yan Grenier or Astrodienst. See "About this repository"
+This project is not published or endorsed by Yan Grenier or Astrodienst. See "About this repository"
 above and `NOTICE` for the credit both are owed.
 
 # Upgrading from 2.8.0.2
@@ -294,7 +295,7 @@ So if you are running 2.8.0.2 server-side today and cannot publish your source, 
 licensing decision before it is a technical one, and the Professional License is the route that
 keeps it available to you. See "License" above for both options in full.
 
-This is not a change this fork chose. It follows Astrodienst's own relicensing of Swiss Ephemeris,
+This is not a change this project chose. It follows Astrodienst's own relicensing of Swiss Ephemeris,
 and it applies to the C library this port tracks just as much as to the port.
 
 ## Will your numbers change?
@@ -335,7 +336,7 @@ and Gauquelin, because 2.10.03 iterates `CalcH`'s pole-height calculation to con
 (`niter_max = 100`) where 2.08 always stopped after exactly two iterations; the old and new cusps
 only agree where two iterations happened to already converge.
 
-A further set of smaller numeric shifts, some upstream's and some this fork's, is itemized with
+A further set of smaller numeric shifts, some upstream's and some this project's, is itemized with
 exact C line citations under "Breaking changes" below: the `swe_refrac_extended`/`calc_dip` predicate
 and constant fix, the `swe_lun_eclipse_when` search-precision threshold, fixed stars being routed
 onto `swe_rise_trans`'s slower path, and a handful of `serr` messages that now report a failure the
@@ -1171,7 +1172,7 @@ above.
 
 ## Continuous Integration
 
-This fork replaced the upstream project's AppVeyor CI with GitHub Actions; see
+This project replaced the upstream project's AppVeyor CI with GitHub Actions; see
 `.github/workflows/`.
 
 # Contributing
