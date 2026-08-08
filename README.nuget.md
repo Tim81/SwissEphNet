@@ -33,7 +33,7 @@ dotnet add package SwissEphSharp
 
 The package ID is `SwissEphSharp`; the namespace and every type name stay `SwissEphNet`, so
 `using SwissEphNet;` is what you write. The `SwissEphNet` package ID on nuget.org belongs to the
-upstream project's own release, which is why this fork cannot publish under it.
+upstream project's own release, which is why this project cannot publish under it.
 
 ## Your first calculation
 
@@ -152,9 +152,9 @@ every breaking change with the C source line each one corresponds to.
 ## Credits
 
 The original C-to-C# port is [Yan Grenier](https://github.com/ygrenier/SwissEphNet)'s work
-(2014-2019). This fork, maintained by Timothy van der Ham, continues it: modernised target
-frameworks, the 2.10.03 upgrade, and a number of bug fixes in the port. The Swiss Ephemeris itself
-is by Astrodienst. See `NOTICE` in this package for the full attribution.
+(2014-2019). SwissEphSharp continues it, maintained since 2026 by Timothy van der Ham:
+modernised target frameworks, the 2.10.03 upgrade, and a number of bug fixes in the port. The
+Swiss Ephemeris itself is by Astrodienst. See `NOTICE` in this package for the full attribution.
 
 This package is not published or endorsed by Yan Grenier or Astrodienst.
 

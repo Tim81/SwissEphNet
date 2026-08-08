@@ -320,7 +320,7 @@ tree.
 
 **Six astrology-program entry points, added in this record.** `HOUSES_EX`, `AYANAMSA_UT`,
 `SIDTIME`, `AZALT`, `HOUSE_NAME` and `NOD_APS_UT` are calls a real astrology program makes (this
-fork's own use case; Celestium is named only as one example consumer, not a source this record
+project's own use case; Celestium is named only as one example consumer, not a source this record
 references) that no grid measured before this addition. `HOUSES_EX` (`swe_houses_ex`, the
 sidereal/radians-capable sibling of `swe_houses`) is the highest-value of the six: 1,500<!--doccount:grid-analytic-func-houses-ex-->
 analytic rows plus 300<!--doccount:grid-files-func-houses-ex--> file-backed rows, the latter

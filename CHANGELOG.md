@@ -1,6 +1,6 @@
 # Changelog
 
-Fork history from the Swiss Ephemeris 2.08 upgrade forward. Entries are prose bullets, not a
+Project history from the Swiss Ephemeris 2.08 upgrade forward. Entries are prose bullets, not a
 generated commit list — for anything earlier, see git history.
 
 ## 2.10.3.1
@@ -28,7 +28,7 @@ generated commit list — for anything earlier, see git history.
 - No breaking changes. See `docs/known-issues.md` and `docs/compliance-2.10.03.md` for the
   verification detail behind this release.
 
-## 2.10.3 (the first release of this fork published to nuget.org, under the SwissEphSharp package ID; entries from 2.8.0.2 down are the original project's, published under SwissEphNet)
+## 2.10.3 (the first release published to nuget.org, under the SwissEphSharp package ID; entries from 2.8.0.2 down are the original project's, published under SwissEphNet)
 
 - LICENSE CHANGE, read this before upgrading. 2.8.0.2 was distributed under the GNU General
   Public License version 2 or later. This release is under the Swiss Ephemeris dual license:
@@ -84,7 +84,7 @@ generated commit list — for anything earlier, see git history.
 ## 2.8.1.0 (not published to nuget.org; source-only distribution)
 
 - Package ID renamed from SwissEphNet to SwissEphSharp. SwissEphNet on nuget.org belongs to the
-  upstream author's own release and this fork cannot publish under it. At this release the
+  upstream author's own release and this project cannot publish under it. At this release the
   assembly name and namespace were unaffected: both stayed SwissEphNet, so the only change a
   consumer needed to make was the PackageReference itself. The assembly was renamed too, later,
   at 2.10.3 above -- see that entry and the "Package name" section of README.md.

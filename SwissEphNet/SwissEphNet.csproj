@@ -17,7 +17,7 @@
       that package anyway. Until the release lands, build from source or
       reference the project directly.
 
-      The "port revision" above is the fourth component, for a fork-only
+      The "port revision" above is the fourth component, for a port-only
       release made while upstream stays put: 2.10.3, then 2.10.3.1, 2.10.3.2,
       resetting whenever upstream moves. Two things to know before using it.
       NuGet normalizes a trailing zero away, so 2.10.3.0 and 2.10.3 are the
@@ -25,7 +25,7 @@
       not assumed: packing 2.10.3.0 produces a .2.10.3.nupkg. And four components
       are not valid SemVer 2.0, which has exactly three; NuGet accepts them
       for backwards compatibility. That is a deliberate choice, because the
-      alternatives are worse. Build metadata (2.10.3+fork.1) is ignored by
+      alternatives are worse. Build metadata (2.10.3+rev.1) is ignored by
       NuGet when comparing versions, so a second package differing only there
       cannot be published. A prerelease suffix (2.10.3-rev1) sorts BEFORE
       2.10.3, which is backwards for a release that comes after it.
@@ -39,9 +39,9 @@
       2.10.3.1. On .NET Framework, which is the host for the netstandard2.0
       asset, an assembly reference binds on the full four-part version, so a
       consumer compiled against 2.10.3.0 does not load 2.10.3.1 without a
-      binding redirect: a fork-only revision is a binding-identity break there,
+      binding redirect: a port-only revision is a binding-identity break there,
       not just a package-version bump. net8.0 and net10.0 roll forward on
-      assembly version and are unaffected. So a fork-only release either
+      assembly version and are unaffected. So a port-only release either
       accepts that break for .NET Framework consumers, or pins AssemblyVersion
       to 2.10.3.0 here and lets only Version and FileVersion carry the fourth
       component. Decide it deliberately at the point of making one; do not
@@ -62,7 +62,7 @@
     <!--
       Company is the publisher field, distinct from Authors above: NuGet shows it separately, and
       it should name whoever is actually publishing this package, not the original author of the
-      code it is a fork of. This fork is published by Timothy van der Ham; Yan Grenier is credited
+      code it continues. This package is published by Timothy van der Ham; Yan Grenier is credited
       in Authors, Copyright and NOTICE, which is where authorship attribution belongs. Setting
       Company to Yan Grenier here would sit awkwardly next to Description's own "Not published or
       endorsed by Yan Grenier" line below.
@@ -70,7 +70,7 @@
     <Company>Timothy van der Ham</Company>
     <Product>SwissEphSharp</Product>
     <Title>SwissEphSharp</Title>
-    <Description>Swiss Ephemeris .Net portage. SwissEphSharp is the package ID this project is distributed under: a fork of Yan Grenier's SwissEphNet, tracking Swiss Ephemeris 2.10.03. The assembly is now named SwissEphSharp too, so it can coexist with the original SwissEphNet package; the namespace stays SwissEphNet, so source that only uses the public API needs no changes beyond the PackageReference itself. Callers of the removed OnLoadFile event still need to migrate to SwissEph.FileProvider. Not published or endorsed by Yan Grenier or Astrodienst.</Description>
+    <Description>Swiss Ephemeris .Net portage. SwissEphSharp is the package ID this project is distributed under: the continuation of Yan Grenier's SwissEphNet C# port, tracking Swiss Ephemeris 2.10.03. The assembly is now named SwissEphSharp too, so it can coexist with the original SwissEphNet package; the namespace stays SwissEphNet, so source that only uses the public API needs no changes beyond the PackageReference itself. Callers of the removed OnLoadFile event still need to migrate to SwissEph.FileProvider. Not published or endorsed by Yan Grenier or Astrodienst.</Description>
     <Copyright>Copyright (C) 1997-2021 Astrodienst AG; (C) 2014-2019 Yan Grenier; (C) 2026 Timothy van der Ham</Copyright>
     <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/Tim81/SwissEphNet</PackageProjectUrl>
@@ -111,7 +111,7 @@
 - No breaking changes. See docs/known-issues.md and docs/compliance-2.10.03.md for the
   verification detail behind this release.
 
-2.10.3 (the first release of this fork published to nuget.org, under the SwissEphSharp
+2.10.3 (the first release published to nuget.org, under the SwissEphSharp
 package ID):
 - LICENSE CHANGE, read this before upgrading. 2.8.0.2 was distributed under the GNU General
   Public License version 2 or later. This release is under the Swiss Ephemeris dual license:

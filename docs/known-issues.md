@@ -2078,8 +2078,8 @@ unconditionally at `:1282` with the variable it writes into declared only under 
 both; `Programs/SweTest/Program.cs:770` carries the equivalent `spmoon` default for the port.
 
 Astrodienst fixed both upstream, released in `v2.10.3bfinal` (`f4dcd18e`), the tag this port now
-pins: `static char spmoon[AS_MAXCH] = "9501";  // Jupiter Moon Io` (matching the value this fork's
-own patch already used -- an earlier version of that patch used `"9001"`, which is not a moon of
+pins: `static char spmoon[AS_MAXCH] = "9501";  // Jupiter Moon Io` (matching the value this
+project's own patch already used -- an earlier version of that patch used `"9001"`, which is not a moon of
 anything; the planetary-moon numbering is `SE_PLMOON_OFFSET`, 9000, plus the host planet's number
 times 100, so 95xx is a Jupiter moon and Io is the first one, `9501`, not `9001`) and
 `#ifndef _WINDOWS` around the `gethostname` block, with `sweodef.h` now defining `_WINDOWS` under
@@ -2435,7 +2435,7 @@ and `swe_set_timeout` in the 2.10.03 header with no same-named public method any
 at all (not merely missing from `Tools/BaselineMatrix` -- absent from the port's public surface
 entirely, a porting gap wider than a matrix-coverage one), and `swe_dotnet_version` in the port's
 public surface with no counterpart in Astrodienst's header at all (a port-only addition, this
-fork's own informational sibling to `swe_version`). 108 header names minus those 2, plus that 1,
+project's own informational sibling to `swe_version`). 108 header names minus those 2, plus that 1,
 is 107 -- the port's own count, exactly. Whether `swe_rise_transit`/`swe_set_timeout` themselves
 belong on some future work queue is a separate question this section does not answer; the point
 here is only that "107" and "108" are two different, correctly-computed numbers, not one stale and
@@ -2852,8 +2852,8 @@ each:
   detecting a `0x`/`0X` prefix, parsing hex significand digits with an optional `.`, and handling
   an optional `p`-exponent when present -- a materially different code path from the
   decimal-and-backoff loop `atof` already has, for a token type no ephemeris or configuration file
-  in this repository has ever been observed to contain -- the data-file encoding audit this fork
-  ran across `sefstars.txt`, `seasnam.txt`, `seorbel.txt` and the rest found only plain ASCII and
+  in this repository has ever been observed to contain -- the data-file encoding audit this
+  project ran across `sefstars.txt`, `seasnam.txt`, `seorbel.txt` and the rest found only plain ASCII and
   UTF-8 text. Adding it on spec, with no reproducer and an unverified
   cross-platform C behavior to match, risks introducing exactly the kind of untested
   platform-dependent divergence the characterization baseline's platform lock exists to catch,

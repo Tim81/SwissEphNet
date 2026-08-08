@@ -4,9 +4,9 @@
 
 Swiss Ephemeris is dual-licensed by Astrodienst: a free-software option plus a commercial
 "Professional" option. The free option's terms changed between the versions of Swiss Ephemeris
-this fork has tracked:
+this project has tracked:
 
-- At Swiss Ephemeris 2.08 (what this fork was previously aligned with), the free option was
+- At Swiss Ephemeris 2.08 (what this project was previously aligned with), the free option was
   "GNU public license version 2 or later", referencing
   `http://www.gnu.org/licenses/old-licenses/gpl-2.0.html`.
 - Upstream (`aloistr/swisseph`) changed the free option to the GNU Affero General Public
@@ -23,7 +23,7 @@ This repository has now adopted the 2.10 license text ahead of the 2.10.03 port 
   `https://github.com/aloistr/swisseph/blob/v2.10.3bfinal/agpl-3.0.txt` (likewise unchanged from
   `v2.10.3final`).
 - `NOTICE` added, recording attribution for Astrodienst, Yan Grenier's original port, and this
-  fork's maintenance.
+  project's ongoing maintenance.
 - The per-file license header comment (the block starting `/* Copyright (C) 1997 - 2008
   Astrodienst AG...`) was updated to the 2.10 wording in every source file that carried it: the
   copyright line becomes `1997 - 2021`, item (a) becomes "GNU Affero General Public License
@@ -38,7 +38,7 @@ This repository has now adopted the 2.10 license text ahead of the 2.10.03 port 
 - `SwissEphNet/SwissEphNet.csproj` keeps `PackageLicenseFile=LICENSE` (not
   `PackageLicenseExpression`, since NuGet only accepts OSI/FSF-approved SPDX identifiers there and
   the Professional license option has none), now packs `agpl-3.0.txt` and `NOTICE` alongside
-  `LICENSE`, and credits Astrodienst, Yan Grenier, and the fork maintainer in `Copyright`.
+  `LICENSE`, and credits Astrodienst, Yan Grenier, and the current maintainer in `Copyright`.
 - `README.md` gained a license section up top, stating the AGPL/Professional choice and, in
   particular, that the AGPL's network clause reaches server-side and SaaS use: operating a
   network service built on an AGPL-covered library obliges you to offer the complete
@@ -53,8 +53,8 @@ headers still carry it too.
 ## Why this had to land before the 2.10.03 port
 
 Once source code written against Swiss Ephemeris 2.10.03 lands in this repository's git history
-under the old GPL-2-or-later header, that history is effectively permanent: this fork has 46
-siblings in the same GitHub network, and rewriting shared history to fix a licensing mismatch
+under the old GPL-2-or-later header, that history is effectively permanent: this repository has 46
+siblings in the same GitHub fork network, and rewriting shared history to fix a licensing mismatch
 after the fact would be disruptive to anyone who has forked or pulled from this repository in the
 meantime. Doing the relicense first, as a comment-only, no-behavior-change commit, means the
 2.10.03 port's own diffs will already show the correct (AGPL) header wherever the C source
@@ -69,7 +69,7 @@ almost entirely of the substantive code changes, not comment churn.
 ## What did not change
 
 - The dual-license model itself is unchanged: a free option plus a commercial Professional
-  option purchased from Astrodienst. This fork did not switch to "AGPL only".
+  option purchased from Astrodienst. This project did not switch to "AGPL only".
 - Yan Grenier's original port attribution - the "This is a port of the Swiss Ephemeris Free
   Edition ... Yan Grenier" comment block at the top of each ported file - was left untouched.
   Only the separate Astrodienst copyright/license paragraph beneath it was rewritten.

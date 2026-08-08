@@ -10,8 +10,8 @@ SwissEphNet is a C-to-C# port of the Swiss Ephemeris Free Edition,
 originally created by Yan Grenier (https://github.com/ygrenier/SwissEphNet),
 2014-2019.
 
-This repository (https://github.com/Tim81/SwissEphNet) is a maintained fork
-of Yan Grenier's SwissEphNet, continuing that work. Since 2026 it has been
+This repository (https://github.com/Tim81/SwissEphNet) continues Yan
+Grenier's SwissEphNet C-to-C# port. Since 2026 it has been
 maintained by Timothy van der Ham, who modernized the build and target
 frameworks and fixed a number of bugs in the port, including the fixed-star
 search returning the wrong star, multi-word star names being unfindable,
