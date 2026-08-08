@@ -1327,7 +1327,7 @@ namespace SwissEphNet
         /// DotNet version is the same than the SwissEph version. So we use only Revision part for our version.
         /// </remarks>
         /// <returns>A version string of the form <c>"{major}.{minor:D2}.{build:D2}-net-{revision:D4}"</c>,
-        /// where the revision segment carries the fork's own revision.</returns>
+        /// where the revision segment carries this project's own revision.</returns>
         public string swe_dotnet_version()
         {
             var vrs = new System.Reflection.AssemblyName(typeof(SwissEph).GetAssembly().FullName).Version;
