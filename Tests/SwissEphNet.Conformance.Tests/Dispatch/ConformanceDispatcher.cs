@@ -83,9 +83,11 @@ public sealed class ConformanceDispatcher
     private static readonly string[] PlanetFields = ["ipl", "iplctr"];
 
     /// <summary>
-    /// Testcases whose target function does not exist in SwissEphNet at all
-    /// (2.10-only additions; port is at 2.08) -- true regardless of what data
-    /// the iteration needs, so checked before any data-availability check.
+    /// Testcases whose target function does not exist in SwissEphNet at all --
+    /// true regardless of what data the iteration needs, so checked before any
+    /// data-availability check. The port now tracks the same pinned C tag
+    /// (v2.10.3bfinal) the conformance corpus targets, so this switch currently
+    /// has no cases; it stays as the mechanism for the next API gap, not dead code.
     /// </summary>
     private static bool TryGetStaticNotImplementedReason(int suiteId, int testCaseId, out string reason)
     {

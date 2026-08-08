@@ -4,8 +4,12 @@ namespace OracleVerify;
 /// Why a row in Tests/oracle/known-diff.tsv is allowed to differ -- see that file's own header
 /// for the definition of each:
 /// <list type="bullet">
-/// <item><see cref="PortVersion"/>: the port is at 2.08, the C reference is 2.10.03. The work
-/// queue; must shrink to zero as porting lands, never grow without a reviewed reason.</item>
+/// <item><see cref="PortVersion"/>: the port lags the pinned C reference tag -- a function that
+/// exists in the C but not yet in SwissEphNet, or vice versa. The port now tracks v2.10.3bfinal
+/// (the same tag <c>external/swisseph</c> pins), so this category currently has zero rows in
+/// every known-diff file; it stays defined for the next time the pinned C tag moves ahead of the
+/// port, not as dead code. Must shrink to zero as porting lands, never grow without a reviewed
+/// reason.</item>
 /// <item><see cref="LibmResidual"/>: a difference traced to a named C runtime function with a
 /// pinned maximum ULP. Never assigned automatically -- see <see cref="RowComparer"/>'s remarks --
 /// only by a human who has actually traced the row to a specific function, which is why the

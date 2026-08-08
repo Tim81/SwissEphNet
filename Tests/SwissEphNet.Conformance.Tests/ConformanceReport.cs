@@ -58,10 +58,15 @@ public sealed record CategoryDrift(IterationResult Result, FailureCategory Recor
 /// CONTRIBUTING.md. Exists because reporting 12,757 iteration rows is not something a
 /// contributor can read; 60 testcase-level rows is. Two gates in this repo have opposite
 /// expectations (the characterization baseline expects zero diffs, this oracle expects most
-/// iterations to fail because the port is at 2.08 and the corpus is 2.10.03) and grouping by
-/// testcase, split into <see cref="IsActionable"/> and parked, is what makes a red oracle run
-/// legible instead of alarming: most testcases are expected to be parked on
-/// NOT-IMPLEMENTED/DATA-MISSING, a handful carry the actual porting work queue.
+/// iterations to fail) and grouping by testcase, split into <see cref="IsActionable"/> and
+/// parked, is what makes a red oracle run legible instead of alarming: most testcases are
+/// expected to be parked on NOT-IMPLEMENTED/DATA-MISSING, a handful carry the actual porting
+/// work queue. The port now tracks the same pinned tag (v2.10.3bfinal) the C reference is built
+/// from, so most failures are not a version gap: t.exp is Astrodienst's own expected-output
+/// file, dated to a specific historical run (14.12.2023), and Tests/conformance/value-mismatch-
+/// triage.tsv found the overwhelming majority of VALUE-MISMATCH rows reproduce against a fresh
+/// build of the real C too -- t.exp drift, not a port defect. See docs/known-issues.md's "What
+/// Tests/conformance/known-fail.tsv's 1,423 rows actually are" entry for the current breakdown.
 /// </summary>
 public sealed record TestCaseSummary(
     int Suite,
@@ -77,10 +82,13 @@ public sealed record TestCaseSummary(
 {
     /// <summary>
     /// True when at least one iteration in this testcase is VALUE-MISMATCH or ERROR --
-    /// something a porting PR against the current 2.08 code could plausibly fix. False means
-    /// every non-passing iteration here is NOT-IMPLEMENTED (2.10-only API), DATA-MISSING (a
-    /// data file this repo does not ship), or UNREPRODUCIBLE (a structural gap) -- parked on
-    /// something outside the scope of "fix the port's logic", not evidence of a bug.
+    /// something a porting PR could plausibly fix, though most VALUE-MISMATCH rows turn out to
+    /// be t.exp drift rather than a port defect once checked against the real C -- see
+    /// docs/known-issues.md's "What Tests/conformance/known-fail.tsv's 1,423 rows actually are"
+    /// entry. False means every non-passing iteration here is NOT-IMPLEMENTED (an API the port
+    /// doesn't have yet), DATA-MISSING (a data file this repo does not ship), or UNREPRODUCIBLE
+    /// (a structural gap) -- parked on something outside the scope of "fix the port's logic",
+    /// not evidence of a bug.
     /// </summary>
     public bool IsActionable => ValueMismatch > 0 || Error > 0;
 }

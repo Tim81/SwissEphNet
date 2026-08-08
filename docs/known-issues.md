@@ -81,6 +81,7 @@ Read the status line first and the body for how it got there.
 | `C.atoi` saturation; `C.atof`'s remaining gaps | closed / won't fix |
 | `SwissEph.DefaultFileProvider` widened to a property | record |
 | Eight live buffer-vs-unbounded-string sites | won't fix |
+| What `known-fail.tsv`'s 1,423 rows actually are | record |
 
 ## Eight live sites transliterate a C fixed-size buffer as an unbounded C# string
 
@@ -2926,3 +2927,60 @@ one thread and a `new SwissEph()` construction (which reads this into the new in
 guarantee on which value the new instance observes. The XML doc comment now states this
 explicitly, matching the pattern this document has used to record other unsynchronized static
 state, rather than leaving it implicit.
+
+## What `Tests/conformance/known-fail.tsv`'s 1,423 rows actually are
+
+**Status: record.** Not a defect and not new information -- a correction to how several comments
+in this repository (and this project's own local working notes) described the conformance oracle,
+found stale while explaining it. `known-fail.tsv` currently has 1,423 rows: 759 `DATA-MISSING`,
+664 `VALUE-MISMATCH`, 0 `NOT-IMPLEMENTED` (confirmed directly, `awk -F'\t' 'NR>1{print $4}'
+Tests/conformance/known-fail.tsv | sort | uniq -c`).
+
+**The stale framing.** Several checked-in comments describe this list as reflecting "the port is
+at 2.08, the C reference is 2.10.03" -- true when first written, not true now. The port pins
+`external/swisseph` at `v2.10.3bfinal` (`f4dcd18e`), the same tag the C reference is built from;
+`Tools/OracleVerify`'s `PORT-VERSION` diff category (the same "port lags the C" concept, for the
+bit-exact oracle and the swetest text diff rather than this conformance suite) has zero rows in
+every known-diff file in this repository (`Tests/oracle/known-diff*.tsv`,
+`Tests/swetest/known-diff.tsv` -- confirmed by grep), confirming the port has caught up in every
+gate that tracks this. `Tests/SwissEphNet.Conformance.Tests/ConformanceReport.cs`,
+`Tests/SwissEphNet.Conformance.Tests/Dispatch/ConformanceDispatcher.cs`,
+`scripts/verify-swetest-diff.ps1` and `Tools/OracleVerify/DiffCategory.cs` carried this same stale
+"port is at 2.08" framing in their own doc comments; corrected alongside this entry.
+
+**What the 1,423 rows are not: a queue of 1,423 confirmed port bugs.** `known-fail.tsv` means
+"diverges from `external/swisseph/setest/t.exp`," Astrodienst's own expected-output file --
+`scripts/regenerate-known-fail.ps1` compares the port's output to `t.exp` directly, with no C
+build anywhere in that loop. `t.exp` itself is a fixed historical snapshot: `docs/compliance-
+2.10.03.md:579` dates it "user `alois`, 14.12.2023." A row diverging from that snapshot says
+nothing on its own about whether the *current* vendored C (`v2.10.3bfinal`) would also diverge
+from it.
+
+**The one place this was actually checked.** `Tests/conformance/value-mismatch-triage.tsv` (669
+lines) drove all 668 `VALUE-MISMATCH` rows that were on `known-fail.tsv` as of 2026-08-02 through
+Astrodienst's own C, built fresh from the same pinned commit (`external/.c-reference/build-
+2.10.03/libswe-2.10.03.lib`, MSVC), via a scratch driver replaying the same dispatch sequence as
+`Tests/SwissEphNet.Conformance.Tests`. Result: **664 rows classified `DRIFT`** -- the real C
+reproduces the *port's* output, not `t.exp`'s, meaning `t.exp` is stale relative to the C source
+as it exists today, not the port disagreeing with a still-correct reference (one dominant cause,
+a sidereal Whole-Sign ayanamsa-fallback case in suite 6 testcase 3, accounts for 360 of the 664).
+**4 rows classified `PORT-DEFECT`** -- suite 1 testcase 1, iterations 377/379/383/385 (`ipl=22`,
+`SE_INTP_PERG`): the real C returned the correct `ERR` and the port did not, missing the JD-range
+guard `sweph.c:994-1006` gives `SE_INTP_PERG` that the port's own `SE_INTP_APOG` branch already
+had. **Already fixed and verified on the current tree**: `SwissEphNet/CPort/Sweph.cs:1188-1195`
+carries the guard (mirroring the `SE_INTP_APOG` guard at `:1161-1168` immediately above it),
+those four rows are absent from the current `known-fail.tsv` (confirmed directly, `grep`), and
+`Tests/SwissEphNet.Conformance.Tests` passes 67/67 on both net8.0 and net10.0.
+
+**What was never cross-checked this way.** The other 759 rows (`DATA-MISSING`) were never driven
+through the real C at all -- they were addressed by widening the port's own ephemeris data
+availability and re-running against `t.exp` (`docs/compliance-2.10.03.md:506-518`), which is a
+port-vs-`t.exp` check with more data, not a port-vs-real-C check. Whether any of those 759 would
+also turn out to be `t.exp` drift rather than a real gap is genuinely unverified either way --
+this entry does not claim otherwise, and this is exactly the kind of overclaim this correction
+exists to avoid repeating in the other direction.
+
+**Bottom line.** Of everything in `known-fail.tsv` that has actually been checked against a fresh
+build of the real, pinned C, only 4 of 668 checked rows were confirmed port defects, and those are
+already fixed. The list's size (1,423) measures divergence from a 2023 snapshot file, not a live
+count of things wrong with the port today.

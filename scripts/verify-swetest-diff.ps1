@@ -9,16 +9,19 @@
     ULP distances, tolerances. Neither one ever runs Programs/SweTest, and neither one would notice
     if print_line printed a value in the wrong column, dropped a decimal place, or mis-spelled a
     house-system label. Programs/SweTest/Program.cs is also a frozen, line-by-line transliteration
-    (CONTRIBUTING.md, "Transliterated files must never be reformatted") of swetest.c, the single
-    largest file still to port to 2.10.03 -- a regression there is both easy to introduce and, until
-    this script existed, invisible to every other gate in this repo.
+    (CONTRIBUTING.md, "Transliterated files must never be reformatted") of swetest.c, one of the
+    largest transliterated files in this repo -- a regression there is both easy to introduce and,
+    until this script existed, invisible to every other gate in this repo.
 
     This runs every row of Tools/SwetestDiff/args-grid.tsv through both
     external/.c-reference/swetest.exe (Astrodienst's own C, MSVC-built by Tools/CReference/build-
     c.ps1, linked against 2.10.03) and Programs/SweTest (this port, built here), and diffs their
-    combined stdout+stderr line by line. Differences are expected, not a failure by themselves: the
-    port is at 2.08, the C reference is 2.10.03, exactly the situation
-    Tests/SwissEphNet.Conformance.Tests already lives in. What gates is Tests/swetest/known-diff.tsv
+    combined stdout+stderr line by line. Differences are expected, not a failure by themselves --
+    Tests/swetest/known-diff.tsv currently carries 15 rows, every one the same documented DIR_GLUE
+    `\` vs `/` path-separator choice (docs/known-issues.md), not a version gap: this port now
+    tracks the same pinned C tag (v2.10.3bfinal) swetest.exe is built from, and the PORT-VERSION
+    diff category has zero rows here (see Tools/OracleVerify/DiffCategory.cs). What gates is
+    Tests/swetest/known-diff.tsv
     -- every case_id that differs must be listed there under a category that still matches; an
     unlisted difference is a regression, a listed case_id that now matches must be pruned, and a
     listed case_id absent from the current grid is stale. This mirrors scripts/verify-oracle.ps1's
