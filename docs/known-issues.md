@@ -32,7 +32,7 @@ Read the status line first and the body for how it got there.
 
 | Entry | Status |
 |---|---|
-| `swe_houses_armc`, hsys `'Y'` (APC houses) | won't fix |
+| `swe_houses_armc`, hsys `'Y'` (APC houses) | won't fix, reported upstream |
 | `swe_houses_armc` reports success while emitting NaN cusps | closed |
 | `swe_houses_armc`, hsys `'i'` (Makransky): cusp = 360.0 | won't fix |
 | `swe_calc(SE_ECL_NUT)` returns all-zero output | won't fix |
@@ -97,9 +97,11 @@ citation list has been corrected to the real eight, found by grepping `SwissEphN
 for `//char \w+\[`/`AS_MAXCH` and reading each hit's enclosing function to confirm it is
 live: `SweHel.cs:327` (`DeterObject`); `SwephLib.cs:4725` (`swe_get_astro_models`); `Sweph.cs:
 7472` (`load_all_fixed_stars`); `Sweph.cs:8770-8776` (`swi_fixstar_load_record`, three
-buffers in one function); and four fixstar-family TLS-static `slast_stardata`/
-`slast_starname` pairs (`swe_fixstar2` at `:8087-8135`, `swe_fixstar2_mag` at `:8187-8216`,
-`swe_fixstar` at `:9296-9354`, `swe_fixstar_mag` at `:9409-9462`).
+buffers in one function); and four fixstar-family TLS-static call sites (`swe_fixstar2` at
+`:8087-8135`, `swe_fixstar2_mag` at `:8187-8216`, `swe_fixstar` at `:9296-9354`,
+`swe_fixstar_mag` at `:9409-9462`) -- the first two cache `slast_stardata` as a `fixed_star`
+struct field and carry only `slast_starname` as the live string; the last two carry both
+`slast_stardata`/`slast_starname` as live strings.
 
 **Triage: none is load-bearing enough to add truncation.** Two categories:
 
@@ -127,10 +129,13 @@ a C limitation with no demonstrated trigger.
 
 ## swe_houses_armc, hsys 'Y' (APC houses): a genuine, large divergence
 
-**Status: won't fix.** Mechanism found and confirmed directly: catastrophic
-cancellation inside `apc_sector`, inherent to the formula and shared with the C.
-Two things this entry previously said turned out to be wrong when checked directly
-against the current tree and a live Linux run -- see "Corrections" below.
+**Status: won't fix, reported upstream.** Mechanism found and confirmed directly:
+catastrophic cancellation inside `apc_sector`, inherent to the formula and shared
+with the C. Two things this entry previously said turned out to be wrong when
+checked directly against the current tree and a live Linux run -- see
+"Corrections" below. Reported to Astrodienst: `docs/upstream/swe_houses_armc-
+apc-polar-discontinuity.md`, which supersedes this entry's account with a deeper
+one -- see "What the upstream report adds" below.
 
 `swe_houses_armc(armc=270, geolat=50, eps=40, hsys='Y', ...)`:
 
@@ -211,6 +216,105 @@ above.** Both are corrected, not merely noted, everywhere above:
   house cusps together, not isolated `cusp[1]` alone while `cusp[2..12]` stay within
   tolerance. The real mechanism, above, was found by instrumenting the actual
   computation rather than reading the code for a second candidate.
+
+**What the upstream report adds.** Building Astrodienst's own C directly (MSVC,
+gcc, and clang on Linux -- not just comparing against the port) and testing
+nearby ARMC values found this is worse than a cross-platform rounding
+difference: `cusp[1]` jumps by roughly 90-180 degrees within two-millionths of a
+degree of ARMC, reproducibly on a single build, on a single platform -- no
+cross-platform comparison needed to see it. And it triggers at the real mean
+obliquity (`eps=23.4392911`, `geolat=66.5607089` -- the Arctic/Antarctic
+Circle), not just the round-number case above, on an ARMC value (`270`) any
+chart's sidereal time passes through twice a day. Because `swe_houses_armc_ex2`
+computes `cusp_speed` by central difference straddling exactly this jump, a
+caller requesting cusp speeds near this locus gets values in the millions of
+degrees per day -- confirmed identically on MSVC and gcc, same digits. The
+existing `> 90` degree guard in the interpolation block (`swehouse.c:711-717`)
+already exists for exactly this failure mode, but only checks `ac`, which for
+`'Y'` houses is not `cusp[1]` (`:1810` leaves `hsp->ac = hsp->cusp[1];`
+commented out) -- so the guard that would catch this never fires for the field
+that actually jumps.
+
+A second round of investigation went after root cause directly and settled it.
+An 80-bit extended-precision run on Linux proves the jump is a real
+discontinuity, not a double-precision artifact. A 60-digit arbitrary-precision
+sweep of approach directions in `(geolat, armc)` space proves no single value
+exists at the exact point at all -- the limit sweeps continuously through the
+full 0-360 degree range depending only on the direction of approach, in closed
+form (`kv -> atan(-tan(theta)/K)` to leading order). And an altitude scan of
+the ecliptic against the horizon found the actual mechanism: at this exact
+latitude and ARMC, the ecliptic is tangent to the horizon rather than crossing
+it, so which of two nearby points counts as "rising" flips discontinuously.
+That's a property of the sky, not of `apc_sector`'s formula -- confirmed
+because the same jump shows up in the generic Ascendant calculation shared by
+nearly every house system (Placidus, Koch, Equal, and others all jump too),
+and independently in `swe_house_pos`'s own, textually distinct formula for
+`'Y'` houses (a fixed sky point changes house by ~70 degrees for a
+one-millionth-of-a-degree ARMC change). Placidus and Koch are unaffected in
+practice only because they're not among the nine house systems that compute
+`cusp_speed` by the finite-difference path `'Y'` uses unconditionally; their
+`cusp[1]` jumps too, just silently, with no speed consequence. I tried the fix
+that finding suggests -- reuse `ac` for `cusp[1]`/`cusp[7]`, mirroring the
+existing (and working) `cusp[10] = hsp->mc` treatment for the MC axis two
+lines above it in the same function -- built it, compiled it, and it does not
+fix the speed blow-up, because `'Y'` stays on the finite-difference path
+regardless of where `cusp[1]`'s value comes from.
+
+**This is not a `'Y'`-only bug.** I originally read the other eight
+finite-difference house systems' code, found a defense against
+`sin(armc)=+-1` in six of them, and concluded `'Y'` was the outlier. Wrong --
+running all nine at the identical singular input (not reading their code and
+guessing) found seven of nine actually blow up there: `I`, `L`, `Q`, `S`, `F`,
+`B`, and `Y`. Only `X` (Meridian, its own explicit `armc=90/270` special case)
+and `M` (Morinus, rotation-based, no comparable ratio) are immune. The six
+other systems' own defenses are real but answer a different question --
+they protect each system's *additional* formula work from failure modes
+specific to that construction, none of them were ever positioned to catch a
+problem in the shared, generic `ac` itself, computed once before any
+case-specific code runs.
+
+The speed blow-up is now fixed and verified for all seven, not just
+partially mitigated for one. The first guard attempt (extending the existing
+`ac`-only `>90` check to every `cusp[i]`, comparing each offset sample to the
+center) rescued 4 of 6 affected cusps at the `'Y'` locus; tracing why the
+other two still failed found the existing `ac` guard runs first and mutates
+one offset sample before the per-cusp check ever sees it, corrupting the
+comparison for `cusp[7]`. The corrected version compares the two offset
+samples directly against each other, saved before the `ac` guard can touch
+them -- and that revealed the problem was undercounted: 6 of 12 cusps
+genuinely straddle the jump at this input, not 2, with the other two "fixed"
+cusps in the first attempt only looking plausible by accident. The corrected
+patch resolves all 6 to a documented `0` and leaves the other 6 untouched,
+fixes all seven broken house systems at the same locus (confirmed both
+hemispheres and through the real `swe_houses_ex2` entry point, tropical and
+sidereal), and is verified with zero regressions across 432 ordinary points
+plus a 25,272-row adversarial sweep targeting every system's own edge cases
+(every one of the ~2,700 changed fields traces to `armc` within 0.001
+degrees of 90/270 or to the literal geographic pole, a separate pre-existing
+degeneracy), on both MSVC/Windows and gcc/Linux.
+
+Pushing further on the step-convergence check found the earlier "steep but
+legitimate, leave it alone" conclusion needed correcting, not just repeating.
+The converged magnitude near (not at) the singular point scales as a clean
+`~C/offset` with no natural break -- textbook approach-to-a-jump behavior --
+so there is no principled place, magnitude or convergence-based, to draw a
+line between "acceptably steep" and "too steep to trust"; every value on
+that curve is simultaneously a real limit and practically useless. This is
+not hypothetical: testing through the real `swe_houses_ex2` wrapper at
+J2000, `hsys 'Y'`/`'I'` converge to ~5.0e6 deg/day and get caught by the
+guard; `hsys 'S'` converges to ~4.2e6 deg/day at a point where the guard's
+90-degree threshold happens not to fire, though the value is exactly as
+real (and exactly as useless) as the one that did. The patch remains
+correct and complete for what it targets -- the exact discontinuity, which
+has no derivative at all -- and deliberately does not attempt to bound the
+surrounding region, since any such bound is a design choice about how large
+an API should ever report a "speed," not a correctness fix.
+`external/swisseph`'s own git history also has two already-shipped defensive
+patterns for this exact class of problem (`swi_armc_to_mc`'s ARMC=90/270
+guard, 2016; `swe_house_pos`'s
+`MILLIARCSEC` clamp for `hsys 'I'`/`'Y'`, 2017) that never reached
+`apc_sector` itself. Full detail, all measured, in the upstream report, not
+repeated here.
 
 ## swe_houses_armc reports success while emitting NaN cusps
 
@@ -1209,7 +1313,7 @@ overclaim -- it has no demonstrated observable effect for any currently reachabl
 unlike the site above.** `sip` is copied at line 301, and the fallback at line 310 always
 installs `SE_SIDM_FAGAN_BRADLEY`, whose value is `0`
 (`SwissEph.swephexp.h.cs:262`). The only read of `sip` inside `swe_houses_ex2`'s own body
-afterward is `sip.sid_mode`, at lines `:366`/`:368`, choosing between
+afterward is `sip.sid_mode`, at lines `:369`/`:371`, choosing between
 `sidereal_houses_ecl_t0`/`sidereal_houses_ssypl`/`sidereal_houses_trad`. The `!ayana_is_set`
 guard that reaches this fallback at all is only ever true while `swed.sidd` still holds its
 all-zero default (the only two places `swed.sidd` is ever mutated are `swe_close`'s reset to a

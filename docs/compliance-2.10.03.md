@@ -691,13 +691,14 @@ list itself was found stale (see `docs/known-issues.md`'s "Eight live sites tran
 C fixed-size buffer as an unbounded C# string" for how): `SweHel.cs:327` (`DeterObject`);
 `SwephLib.cs:4725` (`swe_get_astro_models`'s `s`/`samod0`); `Sweph.cs:7472`
 (`load_all_fixed_stars`'s `s`); `Sweph.cs:8770-8776` (`swi_fixstar_load_record`'s three buffers
-`s`, `sstar`, `fstar`); and four fixstar-family TLS-static `slast_stardata`/`slast_starname`
-string pairs, each replacing a `//static TLS char slast_stardata[AS_MAXCH];` /
-`slast_starname[AS_MAXCH]` comment pair: `swe_fixstar2` (`Sweph.cs:8087-8135`),
-`swe_fixstar2_mag` (`:8187-8216`), `swe_fixstar` (`:9296-9354`), and `swe_fixstar_mag`
-(`:9409-9462`). None of these has produced an observed divergence in the baseline, the
-bit-exact oracle, or the correctness oracle to date -- the C# `string`'s lack of a bound has
-simply never been exercised past the C's own buffer size in any input any of the four
+`s`, `sstar`, `fstar`); and four fixstar-family TLS-static call sites, each replacing a
+`//static TLS char slast_stardata[AS_MAXCH];` / `slast_starname[AS_MAXCH]` comment pair with
+a live cache: `swe_fixstar2` (`Sweph.cs:8087-8135`) and `swe_fixstar2_mag` (`:8187-8216`) cache
+`slast_stardata` as a `fixed_star` struct field and carry only `slast_starname` as the live
+unbounded C# `string`; `swe_fixstar` (`:9296-9354`) and `swe_fixstar_mag` (`:9409-9462`) carry
+both halves as unbounded C# `string`s. None of these has produced an observed divergence in the
+baseline, the bit-exact oracle, or the correctness oracle to date -- the C# `string`'s lack of a
+bound has simply never been exercised past the C's own buffer size in any input any of the four
 instruments generates. That is an absence of a triggering input, not a proof the sites are
 safe against one.
 
