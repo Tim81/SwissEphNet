@@ -196,15 +196,17 @@ namespace SwissEphNet
         /// <param name="input">The input.</param>
         /// <returns>A string with all string meta chars are replaced</returns>
         public static string ReplaceMetaChars(string input) {
-            return Regex.Replace(input, @"(\\)(\d{3}|[^\d]|0)?", new MatchEvaluator(ReplaceMetaCharsMatch));
+            return Regex.Replace(input, @"(\\)(\d{3}|x[0-9A-Fa-f]{1,2}|[^\d]|0)?", new MatchEvaluator(ReplaceMetaCharsMatch));
         }
         private static string ReplaceMetaCharsMatch(Match m) {
+            // convert hex quotes (like \x1B), capped at 2 digits (one byte)
+            if (m.Groups[2].Length > 1 && m.Groups[2].Value[0] == 'x')
+                return ((char)Convert.ToInt32(m.Groups[2].Value.Substring(1), 16)).ToString();
             // convert octal quotes (like \040)
             if (m.Groups[2].Length == 3)
                 return Convert.ToChar(Convert.ToByte(m.Groups[2].Value, 8)).ToString();
             else {
                 // convert all other special meta characters
-                //TODO: \xhhh hex and possible dec !!
                 switch (m.Groups[2].Value) {
                     case "0":           // null
                         return "\0";

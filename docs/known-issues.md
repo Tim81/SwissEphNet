@@ -444,7 +444,8 @@ normalizes this path and the port follows, the gate reports the change rather th
 
 **Status: won't fix.** The behaviour still reproduces, and it is what upstream C does:
 `sweph.c` writes only `x[0..3]` in both 2.08 and 2.10.3b. See the correction at the end of
-this entry, which also detaches 30 rows this entry had wrongly attributed to it.
+this entry, which also detaches and fully explains 30 rows this entry had wrongly attributed
+to it -- they turned out not to be a divergence at all, just a measurement artifact.
 
 `swe_calc`/`swe_calc_ut` with `ipl = SE_ECL_NUT` (the pseudo-body used to get
 obliquity and nutation via `xx[0]`/`xx[1]`) returns success (`retc` echoing the
@@ -487,14 +488,41 @@ Astrodienst, not a fidelity fix. The user-facing complaint in the opening paragr
 zeros with a success code and empty `serr` -- is a fair criticism of the upstream API, and is
 the right thing to report upstream rather than to patch here.
 
-**The 30 `CDEF|-1|*` / `CUDEF|-1|*` rows do not belong to this entry.** The paragraph above
+**The 30 `CDEF|-1|*` / `CUDEF|-1|*` rows do not belong to this entry, and are not a divergence
+at all.** The paragraph above ("Checked against 2.10.03's `sweph.c`, and this is still open")
 cites `Tests/baseline/baseline-2.8.0.2.env.txt`'s pyswisseph replay notes as independent
-corroboration. They are not corroboration of *this* mechanism: those rows are J2000,
-no-nutation and sidereal flag combinations, and none of them sets `SEFLG_EQUATORIAL` or
-`SEFLG_XYZ`, which are the only two flags the branch shape above can strand. Whatever makes
-real 2.10.03 C return non-zero where the port returns zero on those 30 rows is a different,
-currently unattributed mechanism. It is recorded here as open and unexplained rather than
-left attached to a `won't fix`, because conflating the two would retire a live question.
+corroboration that real 2.10.03 C returns non-zero where the port returns zero on these 30
+rows (J2000/NONUT/SIDEREAL flag combos, none of which sets `SEFLG_EQUATORIAL`/`SEFLG_XYZ`, so
+they are not corroboration of the `won't fix` mechanism above either way). That corroboration
+claim is now known to be wrong, not just misattributed: verified directly by running
+`external/.c-reference/oracle-dump-c/sedump.exe` (2.10.03-linked, no rebuild needed) against
+all 30 cases in a hand-authored grid (`ipl=-1`, the same 5 jds, `iflag` 32/64/65536 for
+J2000/NONUT/SIDEREAL, both `CALC` and `CALC_UT`). `sedump.c` calls `swe_close()` -- which
+`memset`s `swed.nut`/`nut2000`/`nutv` -- unconditionally before every row, so each case is
+evaluated in complete isolation. Result: real C returns **exactly the same zero values the
+port does, for all 30 cases** (`xx[2]=xx[3]=0`, `xx[0]==xx[1]`, at every one of the 5 jds,
+under both `CALC`/`CALC_UT`).
+
+The actual mechanism: `scripts/validate-seeded-areas.py`'s `replay_calc_defaulteph` drives
+every row of the `calc-defaulteph` area through **one shared, never-reset pyswisseph
+session** -- confirmed by reading it: no `swe.close()`/`set_ephe_path()` between rows, unlike
+`replay_datetime`, which already resets state between rows for exactly this class of problem.
+`Tools/BaselineMatrix/Areas.cs`'s alphabetical row sort puts a non-`NONUT`-forcing case (e.g.
+the bare `"0"` flag combo, which the port's own fresh-instance baseline shows computes a real,
+non-zero nutation for `ipl=-1` at every one of these jds) immediately before each
+`J2000`/`NONUT`/`SIDEREAL` case for the same jd. `swi_check_nutation` (`sweph.c:6033-6049`,
+textually identical in the port's `CPort/Sweph.cs:7136-7164`) skips recomputing
+`swed.nut.nutlo` **unconditionally** whenever `SEFLG_NONUT` is effectively set -- `plaus_iflag`
+forces it on for `J2000`/`SIDEREAL` too, and the `&&` short-circuits before the
+`tjd != swed.nut.tnut` staleness check is ever reached -- so in the replay script's shared,
+unreset session, the `J2000`/`NONUT`/`SIDEREAL` calls read back whatever nutation value the
+immediately preceding, non-`NONUT` call for that jd left cached. That's a real, non-zero
+value, but it belongs to the *previous* call, not evidence of anything about `SE_ECL_NUT`
+under `J2000`/`NONUT`/`SIDEREAL` -- a state leak in the Python harness, not a port defect.
+Status: closed, explained -- not `won't fix` (there was never anything here to fix).
+`scripts/validate-seeded-areas.py`'s `replay_calc_defaulteph` now resets state between rows,
+matching `replay_datetime`'s existing pattern, so a future run of that script will not
+reproduce this artifact.
 
 ## swe_houses and swe_houses_ex(iflag=0) disagree with each other
 
@@ -2030,14 +2058,14 @@ the one both Windows and everything else accept. The C instead compiles a differ
 platform (`sweodef.h:304` gives `"/"`, `:319` gives `"\\"` under MSDOS), so on Windows the C joins
 paths with `\` and the port joins with `/`. Both still open the file -- Windows accepts either
 separator -- so there is no numeric effect. The `"SwissEph file '%s' not found in PATH '%s'"`
-warning (`sweph.c:2400`, `Sweph.cs:2807`) embeds the joined path, though, so its *text* differs by
+warning (`sweph.c:2400`, `Sweph.cs:2880`) embeds the joined path, though, so its *text* differs by
 one character on Windows, and that text mismatch is already visible in 11 rows of
 `Tests/swetest/known-diff.tsv`. Changing `DIR_GLUE` back to a per-platform value would be a
 breaking change for any `IEphemerisFileProvider` consumer that matches on the separator in a file
 name it receives -- the same consumers called out in "DIR_GLUE fixed" above -- so it belongs with that
-entry's deferred release-stage work, not with this file-layer note. It has not been added there yet:
-`README.md`'s `# Breaking changes` / `## V:2.10.3` section, which is where that deferred work
-belongs, has no entry for this Windows-only diagnostic-text divergence.
+entry's deferred release-stage work, not with this file-layer note. It has landed there:
+`README.md`'s `# Breaking changes` / `## V:2.10.3` section (`README.md:678-693`) carries this
+divergence, in the bullet directly after `OnLoadFile`'s.
 
 **`swi_fopen` never checked `AS_MAXCH`. Closed:** it now does, at the same site the C does. What
 follows is the state as originally found, kept for the record:

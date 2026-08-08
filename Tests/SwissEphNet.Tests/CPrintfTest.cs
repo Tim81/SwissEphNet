@@ -889,7 +889,12 @@ namespace SwissEphNet.Tests
             Assert.Equal("%%", C.ReplaceMetaChars("%%"));
             Assert.Equal(" ", C.ReplaceMetaChars(@"\040"));
             Assert.Equal("\0", C.ReplaceMetaChars(@"\0"));
+            // \x with no following hex digits falls through to the default case (drop the backslash)
             Assert.Equal("\a\b\f\v\r\n\tx", C.ReplaceMetaChars(@"\a\b\f\v\r\n\t\x"));
+            Assert.Equal("A", C.ReplaceMetaChars(@"\x41"));
+            Assert.Equal("\x1B", C.ReplaceMetaChars(@"\x1B"));
+            Assert.Equal("\x01", C.ReplaceMetaChars(@"\x1"));
+            Assert.Equal("\xFF", C.ReplaceMetaChars(@"\xff"));
         }
 
         #endregion
