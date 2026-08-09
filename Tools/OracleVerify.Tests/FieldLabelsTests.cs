@@ -42,6 +42,7 @@ public class FieldLabelsTests
     [InlineData("AZALT", 3)]
     [InlineData("NODAPSUT", 24)]
     [InlineData("GETCURRENTFILEDATA", 3)]
+    [InlineData("HOUSEPOS", 1)]
     public void For_returns_the_documented_column_count(string func, int expectedCount)
     {
         var labels = FieldLabels.For(func, $"{func}|1");

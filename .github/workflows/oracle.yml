@@ -457,13 +457,13 @@ jobs:
   # recording ULP distances captured from one specific compiler, which a future windows-latest MSVC
   # could shift without any change to this port. Neither list records anything toolchain-sensitive
   # any more: known-diff.tsv (analytic) is header-only, and every one of the
-  # 22,289<!--doccount:grid-analytic-total--> analytic rows is required to be bit-identical;
+  # 27,437<!--doccount:grid-analytic-total--> analytic rows is required to be bit-identical;
   # known-diff-files.tsv (file-backed) is header-only too, same as known-diff.tsv: it briefly
   # carried 5 recorded SERR entries, all a single deliberate, platform-portable path-separator
   # choice (DIR_GLUE) rather than a compiler-version-sensitive ULP, and they are gone now, not
   # waived -- the returned file path was scoped down to its basename (see
   # docs/compliance-2.10.03.md's "The last two 2.10.03-only entry points") -- so every one of the
-  # 3,280<!--doccount:grid-files-total--> file-backed rows is required to be bit-identical, full
+  # 3,376<!--doccount:grid-files-total--> file-backed rows is required to be bit-identical, full
   # stop, not "bit-identical or one of 5 recorded exceptions".
   #
   # Second, verify-oracle.ps1 does far more than that comparison. It exits 1 on a missing or

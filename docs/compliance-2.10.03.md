@@ -51,7 +51,7 @@ table and the two paragraphs above are that specific point-in-time record's own 
 not updated here -- rewriting them to the current total would misrepresent what was actually
 checked on Linux and macOS at that time, and rewriting the hashes in place would make a past,
 already-quoted measurement silently point at bytes it never actually saw. The grid's current
-total is 25,569<!--doccount:grid-total-combined-->, per "The last two 2.10.03-only entry points"
+total is 30,813<!--doccount:grid-total-combined-->, per "The last two 2.10.03-only entry points"
 above; `scripts/run-oracle-dump.ps1` (JPL leg last, `-JplFile` against the same DE406 as before,
 sha256 `b23009e2…9342d`) plus `scripts/verify-oracle.ps1 -Grid Analytic`/`-Grid Files`/`-Grid Jpl`
 all exited 0 on Windows this session, and all three known-diff lists (analytic, files, JPL) are
@@ -102,9 +102,9 @@ request, the same way `oracle-dump` and `macos-exactness` already did for their 
 (`crt-parity`, `c-reference-validate`, `swetest-diff`) check instead, since none of them replay
 this grid.
 
-25,569<!--doccount:grid-total-combined--> is the sum of the two grids, and neither is a single homogeneous function. Recounted by
+30,813<!--doccount:grid-total-combined--> is the sum of the two grids, and neither is a single homogeneous function. Recounted by
 `func` column rather than trusted from an earlier draft of this document:
-`Tools/OracleGrid/grid-analytic.tsv` is 22,289<!--doccount:grid-analytic-total--> rows -- 6,600<!--doccount:grid-analytic-func-houses-armc--> `HOUSES_ARMC`, 3,300<!--doccount:grid-analytic-func-houses--> `HOUSES`, 2,160<!--doccount:grid-analytic-func-calc-->
+`Tools/OracleGrid/grid-analytic.tsv` is 27,437<!--doccount:grid-analytic-total--> rows -- 7,392<!--doccount:grid-analytic-func-houses-armc--> `HOUSES_ARMC`, 3,696<!--doccount:grid-analytic-func-houses--> `HOUSES`, 2,160<!--doccount:grid-analytic-func-calc-->
 `CALC`, 2,160<!--doccount:grid-analytic-func-calc-ut--> `CALC_UT` (all `SEFLG_MOSEPH`, opening no ephemeris file), 600<!--doccount:grid-analytic-crossing-total--> crossing rows
 (`HELIO_CROSS`/`HELIO_CROSS_UT` 192<!--doccount:grid-analytic-func-helio-cross--><!--doccount:grid-analytic-func-helio-cross-ut--> each, `SOLCROSS`/`SOLCROSS_UT` 48<!--doccount:grid-analytic-func-solcross--><!--doccount:grid-analytic-func-solcross-ut--> each,
 `MOONCROSS`/`MOONCROSS_UT` 48<!--doccount:grid-analytic-func-mooncross--><!--doccount:grid-analytic-func-mooncross-ut--> each, `MOONCROSS_NODE`/`MOONCROSS_NODE_UT` 12<!--doccount:grid-analytic-func-mooncross-node--><!--doccount:grid-analytic-func-mooncross-node-ut--> each),
@@ -119,7 +119,7 @@ points added in an earlier record (see "Six astrology-program entry points" belo
 text here described the grid as just `swe_calc`/`swe_calc_ut` plus `swe_houses`/`swe_houses_armc`
 and omitted all 600 crossing rows; before that it also had no direct ayanamsa coverage at all --
 see "Direct vs. indirect ayanamsa coverage" below.
-`Tools/OracleGrid/grid-files.tsv` is 3,280<!--doccount:grid-files-total--> rows -- 900<!--doccount:grid-files-func-calc--> `CALC`, 900<!--doccount:grid-files-func-calc-ut--> `CALC_UT` (`SEFLG_SWIEPH`,
+`Tools/OracleGrid/grid-files.tsv` is 3,376<!--doccount:grid-files-total--> rows -- 900<!--doccount:grid-files-func-calc--> `CALC`, 900<!--doccount:grid-files-func-calc-ut--> `CALC_UT` (`SEFLG_SWIEPH`,
 reading the shipped `.se1` files), 208<!--doccount:grid-files-fixstar-family-total--> across the `swe_fixstar` family (`FIXSTAR`/`FIXSTAR_UT`/
 `FIXSTAR2`/`FIXSTAR2_UT` 48<!--doccount:grid-files-func-fixstar--><!--doccount:grid-files-func-fixstar-ut--><!--doccount:grid-files-func-fixstar2--><!--doccount:grid-files-func-fixstar2-ut--> each, `FIXSTAR_MAG` 8<!--doccount:grid-files-func-fixstar-mag-->, `FIXSTAR2_MAG` 8<!--doccount:grid-files-func-fixstar2-mag-->, reading `sefstars.txt`), 24<!--doccount:grid-files-func-get-planet-name-->
 `GET_PLANET_NAME`, 220<!--doccount:grid-files-crossing-total--> crossing rows (`HELIO_CROSS`/`HELIO_CROSS_UT` 72<!--doccount:grid-files-func-helio-cross--><!--doccount:grid-files-func-helio-cross-ut--> each,
@@ -157,10 +157,10 @@ entirely). The oracle already reached both on every `HOUSES`/`HOUSES_EX` row, be
 `cusp_speed`/`ascmc_speed`/`serr` hardcoded `NULL`, so `h.do_speed`/`h.do_hspeed`
 (`swehouse.c:642-647`) stayed `FALSE` and the 2.10 speed feature was switched off in every row that
 reached it that way. `HOUSES_EX2` (`swe_houses_ex2`, called with real `cusp_speed`/`ascmc_speed`
-arrays) is 1,500<!--doccount:grid-analytic-func-houses-ex2--> analytic rows plus
-300<!--doccount:grid-files-func-houses-ex2--> file-backed rows, mirroring `HOUSES_EX`'s own sweep
-exactly. `HOUSES_ARMC_EX2` (`swe_houses_armc_ex2`) is 3,000<!--doccount:grid-analytic-func-houses-armc-ex2-->
-analytic rows plus 200<!--doccount:grid-files-func-houses-armc-ex2--> file-backed rows; the
+arrays) is 1,680<!--doccount:grid-analytic-func-houses-ex2--> analytic rows plus
+336<!--doccount:grid-files-func-houses-ex2--> file-backed rows, mirroring `HOUSES_EX`'s own sweep
+exactly. `HOUSES_ARMC_EX2` (`swe_houses_armc_ex2`) is 3,360<!--doccount:grid-analytic-func-houses-armc-ex2-->
+analytic rows plus 224<!--doccount:grid-files-func-houses-armc-ex2--> file-backed rows; the
 file-backed rows exist for dispatch/schema parity with `grid-analytic.tsv` even though
 `swe_houses_armc_ex2` itself opens no file (pure geometry, like `swe_houses_armc`). Both guarded
 behind `SWISSEPH_HAS_HOUSES_EX2` in `sedump.c`, the same compiled-in-2.10.03-only pattern
@@ -322,8 +322,8 @@ tree.
 `SIDTIME`, `AZALT`, `HOUSE_NAME` and `NOD_APS_UT` are calls a real astrology program makes (this
 project's own use case; Celestium is named only as one example consumer, not a source this record
 references) that no grid measured before this addition. `HOUSES_EX` (`swe_houses_ex`, the
-sidereal/radians-capable sibling of `swe_houses`) is the highest-value of the six: 1,500<!--doccount:grid-analytic-func-houses-ex-->
-analytic rows plus 300<!--doccount:grid-files-func-houses-ex--> file-backed rows, the latter
+sidereal/radians-capable sibling of `swe_houses`) is the highest-value of the six: 1,680<!--doccount:grid-analytic-func-houses-ex-->
+analytic rows plus 336<!--doccount:grid-files-func-houses-ex--> file-backed rows, the latter
 covering `SIDEREAL` `sid_mode`s that can drive the ayanamsa through a file-backed `swe_calc`, which
 the analytic grid's forced `SEFLG_MOSEPH` can never reach. `AYANAMSA_UT` (`swe_get_ayanamsa_ut`)
 mirrors `AYANAMSA`'s own sweep, 200<!--doccount:grid-analytic-func-ayanamsa-ut--> rows. `SIDTIME`
@@ -382,7 +382,7 @@ line -- the C side emitted the sentinel for 4,500 analytic rows while the port c
 values, and the job's `cmp` failed. Nothing catches it earlier, because the sentinel branch
 compiles cleanly; a macro added here has to be added to all five. At last measurement from this
 workstation (14,820 and 2,244 rows -- the grid's size at that time, four additions before the
-current 25,569<!--doccount:grid-total-combined--> total this record's "Of the 25,569 oracle rows"
+current 30,813<!--doccount:grid-total-combined--> total this record's "Of the 25,569 oracle rows"
 paragraph below cites (`8f601cf` to 18,064, `6d63999` to 20,532, `5ced3b8` to 25,540, `571092e` to
 25,569); not re-quoted as a "current" figure here because it was not current even
 when this sentence was first written, only "at last measurement"), both grids produced exactly
@@ -409,7 +409,7 @@ way the Windows and Linux jobs do. It builds the C reference twice: once with `-
 which is the gate, and once, kept alongside as a diagnostic rather than gated, with clang's math
 builtins left on. With `-fno-builtin`, both grids are bit-identical against the port. At last
 measurement from this workstation -- four grid additions before the current
-25,569<!--doccount:grid-total-combined--> total (see the gcc paragraph above for the specific
+30,813<!--doccount:grid-total-combined--> total (see the gcc paragraph above for the specific
 commits), so the figures below are what that specific,
 older run found, not a current claim; `macos-exactness` re-verifies the current row count on every
 push and pull request -- with the diagnostic build's builtins left on, 62 of 14,819 analytic rows
@@ -425,18 +425,56 @@ arithmetic drops one real row from the printed total. The gate itself compares t
 for whole-file equality, not this printed count, so the off-by-one affects only the diagnostic
 step's own summary line, not what is actually gated.
 
-Of the 25,569<!--doccount:grid-total-combined--> oracle rows, 24,561<!--doccount:grid-total-default-nutation--> exercise
-the default nutation path rather than opting out via `SEFLG_NONUT`: 21,281<!--doccount:grid-analytic-default-nutation-->
-of the analytic grid's 22,289<!--doccount:grid-analytic-total--> rows (1,008<!--doccount:grid-analytic-nonut-optout-->
-opt out) and all 3,280<!--doccount:grid-files-default-nutation--> files-grid rows
+Of the 30,813<!--doccount:grid-total-combined--> oracle rows, 29,805<!--doccount:grid-total-default-nutation--> exercise
+the default nutation path rather than opting out via `SEFLG_NONUT`: 26,429<!--doccount:grid-analytic-default-nutation-->
+of the analytic grid's 27,437<!--doccount:grid-analytic-total--> rows (1,008<!--doccount:grid-analytic-nonut-optout-->
+opt out) and all 3,376<!--doccount:grid-files-default-nutation--> files-grid rows
 (0<!--doccount:grid-files-nonut-optout--> opt out) -- the 29 `PCTR`/`GET_CURRENT_FILE_DATA` rows
 this record adds carry no `SEFLG_NONUT` row of their own. Recomputed directly from both grids'
 `iflag` columns (bit 64, `swephexp.h:193`), not carried forward from an earlier row count. All
-24,561 are among the bit-identical rows above (the five `GET_CURRENT_FILE_DATA` rows that briefly
+29,805 are among the bit-identical rows above (the five `GET_CURRENT_FILE_DATA` rows that briefly
 recorded `SERR`-only differences in `Tests/oracle/known-diff-files.tsv` are gone now, not waived --
 see "The last two 2.10.03-only entry points" above) -- see "What this record
 does not cover" for how this corroboration is now joined by a direct, value-for-value audit of
 the nutation coefficient tables themselves.
+
+**A third gap closed: `swe_house_pos` and hsys `'J'`/`'Z'`/`'0'`.** `swe_house_pos` had no bit-exact
+coverage of any kind before this addition -- `sedump.c` and `Tools/OracleDump/Program.cs` never
+called it. `HOUSE_POS` is 3,240<!--doccount:grid-analytic-func-house-pos--> analytic-grid rows,
+analytic-only (the function takes its body position directly, with no ephemeris-file dependency),
+reusing `HOUSES_ARMC`'s own armc/eps/hsys/geolat columns plus `xin0`/`xin1` (added earlier for
+`AZALT`, otherwise unused by any `HOUSES_ARMC`-shaped row) for `swe_house_pos`'s own `xpin[0]`/
+`xpin[1]`. Every hsys letter this port implements is covered except `'G'` (Gauquelin, see below),
+plus `'Z'`/`'0'` as deliberate default/Placidus-fallback sentinels, the same reasoning
+`$HouseNameLetters`' own `'P'` already established.
+
+`$HouseLetters` itself also gained `'J'`: the exclusion comment claimed the port did not implement
+it yet, which was stale by the time this correction landed -- `SwissEphNet/CPort/SweHouse.cs:1378`/
+`:2737` (cusp computation) and `:1018` (house name) already had real `case 'J':` blocks, and the
+pinned C implements it too. `'J'` now crosses `HOUSES`/`HOUSES_ARMC`/`HOUSES_EX`/`HOUSES_EX2`/
+`HOUSES_ARMC_EX2` alongside every other letter, not only `HOUSE_NAME`'s own separate
+`$HouseNameLetters` list -- most of why the analytic grid's per-func counts above moved (25 letters
+to 28).
+
+`'G'` is excluded from `HOUSE_POS` specifically. `external/pyswisseph-2.08/swehouse.c:1813` declares
+`double hcusp[36]` inside `swe_house_pos`, one slot short of the 37
+`external/swisseph`'s (2.10.03) `swehouse.c:2224` declares for the same function. Reproduced
+directly: a two-row grid isolating `'G'` crashes `Tools/CReference/build-c.ps1`'s `sedump-2.08.exe`
+with a stack-buffer-overrun fault; the pinned 2.10.03 build has no such defect, confirmed directly by
+its own dump. Not a port bug and not fixable here -- a real, pre-existing defect in the vendored,
+unmodified 2.08 C, costing no coverage against the pinned target. Only the diagnostic-only 2.08
+classification leg (`Tools/OracleVerify`'s `classify` mode) cannot reach `'G'` through
+`swe_house_pos`.
+
+`scripts/verify-oracle.ps1` reports the analytic grid SHA-256 identical between the C and .NET dumps
+with the addition in place: `dump-c-2.10.03.tsv`/`dump-net.tsv` at `c3505114…9d09b`. One driver-code
+fix was needed to get there: this grid's first-ever `NaN` result (hsys `'Y'`'s already-documented
+near-singularity, reached through `swe_house_pos` too) showed MSVC's `%.17g` printing
+`-nan(ind)`/`nan` where .NET's `ToString("G17")` prints `NaN` -- the underlying bit pattern already
+matched (confirmed via the hex column, what the row-level comparator actually checks), so this was a
+decimal-text formatting choice in each side's own driver code, not a computed-value difference.
+`Tools/CReference/sedump.c`'s `emit_value` now special-cases `isnan` to print `NaN` uniformly,
+matching .NET.
 
 ## 2. Characterization baseline
 
@@ -544,6 +582,97 @@ crossing functions that already carry this check -- wiring it into suite 1 uncon
 "Correctness oracle known-fail list"). Treat the numbers above, sourced from the category column
 and from the Phase 6 probe's direct run, as load-bearing; treat individual `reason` strings as
 best-effort commentary.
+
+**The Phase 6 residual, triaged against a fresh MSVC build of the real C, on the same widened
+data.** Phase 6 measured 504 of (then-)713 rows passing outright and left the rest -- roughly 209
+by its own count -- as "new findings, out of scope," never driven through the DRIFT-vs-PORT-DEFECT
+methodology section 3a applies to `VALUE-MISMATCH`. A follow-up probe repeated Phase 6's setup
+(era files, `ephe/sat/`, JPL DE431 -- SHA-256 `fe3d0323d2…be71149`, matching the value already
+recorded above) and re-measured precisely, rather than estimating from the earlier prose: **514 of
+the (then-)759 `DATA-MISSING` rows pass outright**, 223 come back `VALUE-MISMATCH`-shaped instead
+of passing, and 22 stay genuinely `DATA-MISSING` even with all three opt-ins set (16 numbered-
+asteroid rows with no opt-in mechanism at all, plus a handful of `ephe/sat/` edges the three
+opt-ins do not reach) -- 514 + 223 + 22 = 759 exactly.
+
+Of the 223, 222 map directly onto functions the bit-exact oracle's own drivers already implement
+(`CALC`/`CALC_UT`, `PCTR`, and the eight crossing functions) and were replayed through
+`Tools/CReference/sedump.c` itself -- a scratch grid built directly from `t.exp`'s own field
+values for these 223 iterations, not a hand-transcription, run against the same MSVC-built
+2.10.03 C `scripts/verify-oracle.ps1` gates on -- rather than reconstructing a second scratch
+P/Invoke driver for functions this repository already has one for. The 223rd (suite 5 testcase 3
+iteration 6, `swe_deltat_ex`) is the one row this session's earlier paragraph already names as a
+"0.42% relative" delta-T finding; checked directly by P/Invoke against the same MSVC build after
+proper `swe_set_ephe_path` initialization, it returns `0.411172249493582`, matching the port's own
+`0.41117224949358216` and clearly diverging from `t.exp`'s `0.40946234392815261671`.
+
+**Result: 0 confirmed `PORT-DEFECT` among the 223.** 219 of 222 sedump-replayed rows classify
+`DRIFT` unambiguously (the real C's value sits far closer to the port's own output than to
+`t.exp`'s, field for field); the delta-T row is a clean, confirmed `DRIFT` on top of that. The
+remaining 3 -- all citing bodies in the Pluto-moon-adjacent numbered range under `SEFLG_JPLEPH` --
+sit at a 1e-6-to-1e-8 relative distance from *both* the port's output and `t.exp`'s, indistinguishable
+at that scale; this reads as JPL-interpolation floating-point noise, the same class of finding
+already named elsewhere in this record as a few-ULP libm residual, not a confident signal either
+direction. None of the three exceeds the resolution needed to flip a `DRIFT` verdict to
+`PORT-DEFECT`.
+
+**Cross-checked on Linux, both sides.** `sedump.c` was rebuilt with `gcc 13.3.0` (matching
+`linux-exactness`'s own recipe exactly: `-O2`, the same four `SWISSEPH_HAS_*` macros, no
+`-ffp-contract=off`/`-fno-builtin`) inside a local `mcr.microsoft.com/dotnet/sdk:10.0` container
+and replayed against the same 222-row scratch grid, the same widened ephemeris directory and the
+same DE431 file. Only 6 of 214 analytic-grid rows differ from the Windows/MSVC build at all, and
+every one is either a few-ULP hex-column shift (the same Windows-vs-Linux libm class "2.
+Characterization baseline" below already quantifies) or a path-string-only difference in a
+file-not-found message (the two runs point `-JplFile` at genuinely different absolute paths on
+each OS, which is a property of this probe's own setup, not of either build). The delta-T P/Invoke
+check, rebuilt and rerun the same way on Linux, returns the identical `0.41117224949358216` bit
+for bit. The port's own side was checked too: `Tests/SwissEphNet.Conformance.Tests` re-run inside
+the same container, same three opt-ins set, reproduces the identical 514/223/22 split, and of the
+236 total regression rows (223 plus the 12 already-`VALUE-MISMATCH` rows below) only ~11 differ
+from the Windows .NET run, every one at the last 1-3 significant digits -- consistent with, not
+larger than, this project's already-documented cross-platform `Math` drift. The `DRIFT` verdict
+holds on both platforms, on both sides of the comparison.
+
+**12 rows already classified `VALUE-MISMATCH` before this widening also moved.** Distinct from the
+223 above (which started `DATA-MISSING`), these 12 were already on the actionable queue and simply
+had their `magnitude_key` shift once real data was present for other rows in the same run (global
+`swed` state a `VALUE-MISMATCH` row's own dispatch can be sensitive to). Not re-triaged this
+session -- section 3a's own methodology already covers `VALUE-MISMATCH` rows, and re-running it
+for these 12 specifically is future work, not part of what this probe set out to measure.
+
+**Everything from this probe was measured locally and reverted afterward, per Phase 6's own
+precedent** (widened sparse-checkout, `Tests/conformance/required-ephemeris-files.tsv`, and the
+temporary scratch drivers used to generate/replay the 222-row grid) -- nothing here is a standing
+feature, and none of it was pushed.
+
+**Correction: the remaining 22 are not two separate classes, and are no longer untestable.** The
+paragraph above describes them as "16 numbered-asteroid rows... plus a handful of `ephe/sat/`
+edges the three opt-ins do not reach" -- both halves of that were wrong once checked. All 22 cite
+the same two bodies, `ipl=10433` (433 Eros, 20 rows) and `ipl=10010` (10 Hygiea, 2 rows); the 6
+that looked like a distinct `ephe/sat/`-adjacent class are Eros rows under `SEFLG_JPLEPH` whose
+`known-fail.tsv` reason text is stale -- `ConformanceDispatcher.cs:32` checks
+`NeedsJplDataWeDoNotHave` before `NeedsAsteroidFileWeDoNotShip` at `:49`, so under the narrow
+checkout the JPL check fires first and its reason is what got recorded, masking the asteroid
+check that would also fail; regenerating `known-fail.tsv` was never done for these rows (per this
+probe's own no-regeneration rule), so the reason text still says JPL. `se00433s.se1` and
+`se00010s.se1` -- the two per-asteroid files `NeedsAsteroidFileWeDoNotShip`'s own doc comment
+names, real Astrodienst data (`SWISSEPH  3` header, "Created for Astrodienst in Switzerland
+2026/03/13, based on JPL Ephemeris DE441, short"), obtained from Alois Treindl's public Dropbox
+`all_ast/ast0/` folder (linked from `https://www.astro.com/ftp/swisseph/ephe/`'s own "Asteroid
+files for all available numbered asteroids" section) -- were placed at
+`external/swisseph/ephe/ast0/` and a temporary, session-only opt-in
+(`SWISSEPH_CONFORMANCE_INCLUDE_ASTEROID`, real file-presence check, same shape as
+`NeedsEraFileWeDoNotShip`'s) added to `NeedsAsteroidFileWeDoNotShip` for the duration of this
+measurement. All 22 rows then computed real values -- none stayed `DATA-MISSING`. Triaged the same
+way as the 223 above: the 13 `swe_calc`/`swe_calc_ut` rows (suite 1 testcases 1 and 5) replayed
+through `sedump.c` and the 9 `swe_get_orbital_elements` rows (suite 7 testcase 3, a function
+neither driver implements) checked by direct P/Invoke against the same MSVC build. **All 22
+classify `DRIFT`**: every real-C value matches the port's own output (several bit for bit) and
+diverges from `t.exp`'s stale expectation, the same picture as the 223-row population above --
+**0 confirmed `PORT-DEFECT` across the full 245-row residual now measured.** Not a standing
+feature: the two files, the temporary opt-in, and the widened manifest entry were all reverted
+before this session ended, and per-asteroid file support (fetching, verifying, opting in) remains
+future work if this repo ever wants it as a shipped, gated capability rather than a one-time
+measurement.
 
 ## 3a. VALUE-MISMATCH triage against Astrodienst's own C
 
@@ -678,7 +807,7 @@ element-for-element equality against the port's arrays (read via reflection, sin
 All four arrays match exactly. Before this test, the array lengths matched (`NLS` 678,
 `NLS_2000B` 77, `NPL` 687), which ruled out gross truncation, but that was a length check, not
 a value check. The indirect evidence already available was real but was not the same claim:
-24,561<!--doccount:grid-total-default-nutation--> of the 25,569<!--doccount:grid-total-combined-->
+29,805<!--doccount:grid-total-default-nutation--> of the 30,813<!--doccount:grid-total-combined-->
 bit-exact oracle rows exercise the default (non-`SEFLG_NONUT`)
 nutation path and match Astrodienst's own C bit for bit, which a wrong coefficient of any
 consequence would be very unlikely to survive -- strong corroboration through the oracle, now

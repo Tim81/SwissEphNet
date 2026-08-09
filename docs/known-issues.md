@@ -907,11 +907,15 @@ with the evidence than a branch/rounding-side flip, and matches the disposition 
 every other confirmed-inherent finding in this file: shared with the C, not a
 port defect, not fixable without deviating from the C's own formula.
 
-Worth noting for `'J'` (Savard-A) specifically: four of these twelve are `'J'`, and
-`'J'` is the one house system with no external validation of its cusp computation
-at all, per "What the oracle grids do not cover in the house code" below. A
-cross-platform divergence in a system whose only evidence is transliteration review
-is worth more attention than the same divergence elsewhere, not less.
+Worth noting for `'J'` (Savard-A) specifically: four of these twelve are `'J'`.
+When this cross-platform divergence was first found, `'J'`'s cusp computation had
+no external validation at all, making a divergence here worth more attention than
+the same divergence elsewhere. It has since gained two independent forms of
+validation -- see "What the oracle grids do not cover in the house code" below --
+so this specific note is historical framing, not the current evidentiary state;
+the divergence itself is unchanged and still worth the same attention on its own
+terms (a real cross-platform difference, not fixable without deviating from the
+C's own formula, per the mechanism traced above).
 
 ## hcusp[36] fixed: swe_house_pos was faithful to 2.08, not to 2.10.03
 
@@ -1846,6 +1850,63 @@ Placidus and Koch alone, through conformance suite 6 testcases 8 and 9, exactly 
 above. The `do_interpol` path reached by `L Q S X M F B Y I` still has no coverage in any oracle.
 That is now the whole of this entry's remaining scope.
 
+**Correction: `swe_house_pos`, `'Z'`, `'0'` and `'J'`'s cusp computation are now bit-exact-verified
+too, not merely replay-verified.** Everything above this paragraph describes the state before this
+addition landed; kept rather than rewritten, per this file's own append-only convention. Two
+independent things changed:
+
+`Tools/OracleGrid/gen-grid-analytic.ps1`'s `$HouseLetters` excluded `'J'` with a comment claiming
+the port did not implement it yet -- stale by the time this correction landed:
+`SwissEphNet/CPort/SweHouse.cs:1378`/`:2737` (cusp computation) and `:1018` (house name) already
+had real `case 'J':` blocks, and the pinned C (`v2.10.3bfinal`) implements it too. `'J'` is now in
+`$HouseLetters` itself, alongside every other letter, not carried only by the separate
+`$HouseNameLetters` list -- so it also now runs through `HOUSES`/`HOUSES_ARMC`/`HOUSES_EX`/
+`HOUSES_EX2`/`HOUSES_ARMC_EX2`, not just `HOUSE_NAME`. "Twenty-five house letters" above is now
+twenty-eight: `'J'`, plus `'Z'`/`'0'` (see next paragraph), both now cross the same sweep.
+
+Separately, `swe_house_pos` gained its first bit-exact coverage of any kind: a `HOUSE_POS` row
+generator in `gen-grid-analytic.ps1` (3,240 rows -- every hsys letter this port implements except
+`'G'`, see below, plus `'Z'`/`'0'` as deliberate default/Placidus-fallback sentinels, the same
+reasoning `$HouseNameLetters`' own `'P'` already established, crossed with a representative
+armc/eps/geolat spread and a cycled `xpin` sweep reusing this grid's existing `xin0`/`xin1`
+columns, added originally for `AZALT` and otherwise unused by any `HOUSES_ARMC`-shaped row), a
+matching `process_house_pos` in `Tools/CReference/sedump.c`, and a matching `ProcessHousePos` in
+`Tools/OracleDump/Program.cs`. `scripts/verify-oracle.ps1` reports both grids SHA-256 identical
+between the C and .NET dumps with the addition in place -- bit-exact at the file level, the same
+standard of proof this entry's own "genuinely covered" paragraph above holds every other letter to,
+not merely row-comparator-clean.
+
+`swe_house_pos` needs no `SWISSEPH_HAS_*` guard in `sedump.c`: it exists in both 2.08 and 2.10.03
+(`external/pyswisseph-2.08/swephexp.h:796`), confirmed directly by a clean 2.08 build.
+
+**`'G'` (Gauquelin) is deliberately excluded from the `HOUSE_POS` sweep specifically -- a real,
+pre-existing defect in the vendored, unmodified 2.08 C, not a port bug and not fixable here.**
+`external/pyswisseph-2.08/swehouse.c:1813` declares `double hcusp[36]` inside `swe_house_pos`, one
+slot short of the 37 `external/swisseph` (2.10.03) `swehouse.c:2224` declares for the same
+function -- the same sizing gap "hcusp[36] fixed" above already documents for the port, but never
+previously observed in the vendored 2.08 C itself, because nothing in this repo's oracle tooling
+called `swe_house_pos` with hsys `'G'` before this addition. Reproduced directly: a two-row grid
+isolating `'G'` from every other letter crashes `Tools/CReference/build-c.ps1`'s `sedump-2.08.exe`
+with a stack-buffer-overrun fault (`STATUS_STACK_BUFFER_OVERRUN`); the pinned 2.10.03 build (this
+port's actual target, and the only one `scripts/verify-oracle.ps1` gates on) has no such defect --
+confirmed directly, it dumps every `'G'` `HOUSE_POS` row without error. This costs no coverage
+against the pinned target; it only means the diagnostic-only 2.08 classification leg
+(`Tools/OracleVerify`'s `classify` mode) cannot reach `'G'` through `swe_house_pos`. See
+`gen-grid-analytic.ps1`'s own `$HousePosLetters` comment for the full reproduction.
+
+**One driver-code-only formatting fix, unrelated to any of the above but found while adding
+`HOUSE_POS`.** This grid's first-ever `NaN` result (from hsys `'Y'`'s already-documented
+near-singularity, see "`swe_house_pos`: 27 cross-platform divergences" below, now reached through
+`swe_house_pos` too) exposed that MSVC's `%.17g` prints the canonical negative "indefinite" quiet
+NaN as `-nan(ind)` and other NaN payloads as `nan`/`-nan` depending on the sign bit, where .NET's
+`ToString("G17")` always prints `NaN`. The underlying bit pattern was already identical on both
+sides (confirmed via the hex column, which is what the row-level comparator actually checks) --
+this was a decimal-text rendering choice in each side's own driver code, not a computed-value
+difference. `Tools/CReference/sedump.c`'s `emit_value` now special-cases `isnan` to print `NaN`
+uniformly, matching .NET, so the file-level SHA-256 check (`scripts/verify-oracle.ps1`) stays
+exact without needing a `known-diff.tsv` entry for something the row comparator already considered
+a pass.
+
 ## The pyswisseph replay's swe_house_name limitation: 2 expected disagreements
 
 **Status: record.** Expected replay noise, not a defect. The port matches the C; the Python
@@ -1985,6 +2046,24 @@ that the evidence now exists and has been taken, not that it is now automatic.
 `swe_rise_trans`'s `!do_fixstar` gate is genuinely not reachable this way and keeps this entry
 open: the replay compares baseline rows, and the baseline has no row that both names a star and
 produces a computed result, so there is nothing for a replay to compare against either.
+
+**Correction: the gate does have real, passing external-reference coverage -- just not from the
+baseline or its replay, both of which stay closed to it by design.** This entry's own framing
+("what remains genuinely uncheckable in this repository") reads as a whole-repository claim, and
+it is not one: `external/swisseph/setest/t.exp` carries 5 real `ipl: -1`/`star: Regulus` rows in
+suite 9 testcase 1 (`swe_rise_trans`, `t.exp` line 341573 onward) and 5 more in testcase 2
+(`swe_rise_trans_true_hor`), and `Tests/SwissEphNet.Conformance.Tests/Dispatch/Suite09Rise.cs`
+already dispatches both (`ipl == -1` reads the `star` field and calls `swe.swe_rise_trans`/
+`swe_rise_trans_true_hor` with it). None of these 10 rows appear in
+`Tests/conformance/known-fail.tsv`, so all 10 already pass against Astrodienst's own reference
+values -- and unlike the baseline, the conformance harness resolves real ephemeris files
+(`Tests/SwissEphNet.Conformance.Tests/Dispatch/EphemerisFileResolver.cs`), so these are genuine
+fixed-star lookups against `sefstars.txt`, not a gate skipped before it can run.
+
+What stays true, narrower than the paragraph above states it: the baseline specifically cannot
+reach this gate, by design (it never subscribes to `OnLoadFile`), and neither can a replay over
+baseline rows, for the same reason. That is a real, permanent limit of those two instruments, not
+a gap in the repository's evidence as a whole.
 
 ## eclipse_how's 100-to-1 change: the counter-example worth reading carefully
 
@@ -2620,8 +2699,11 @@ The 621 rows were still environment-sensitive, and the sentinel path alone could
 (`sweph.c:1327`), so an exported `SE_EPHE_PATH` overrode the sentinel on both sides. Worse, that
 priority is not specific to the sentinel: it applies exactly as much when a real, explicit
 `ephe-dir` is passed, which is grid-files.tsv's normal case, not grid-analytic.tsv's. Measured on
-grid-files.tsv (3,280<!--doccount:grid-files-total--> rows, the grid CI actually gates, current
-tree, re-measured after the grid grew from the 3,251 rows this fix was first measured against)
+grid-files.tsv (3,280 rows at the time, re-measured after the grid grew from the 3,251 rows this
+fix was first measured against; the grid is 3,376<!--doccount:grid-files-total--> rows as of the
+`swe_house_pos`/hsys `'J'`/`'Z'`/`'0'` addition, and this specific experiment -- deliberately
+hijacking `SE_EPHE_PATH` and re-counting -- has not been re-run at that size, so the row counts in
+this paragraph are the 3,280-row measurement, not re-verified against the current total)
 with the explicit ephe-dir still passed
 and `SE_EPHE_PATH` pointed at an empty directory: **2,246 rows changed, 2,241 of them in value
 columns.** That is not a reproducibility footnote, it is the gated grid silently reading from a
@@ -2667,9 +2749,11 @@ The other known, deliberate divergence in this file ("DIR_GLUE fixed: CPort/Swep
 mis-transliteration") is *not* touched by the fix above and must not be. But the hijacked
 configuration used to measure the fix also measured DIR_GLUE's consequence for the first time:
 under `SE_EPHE_PATH` pointed at an empty directory (files grid, before the env-clearing fix), the
-C and the port disagree on **1,754 of 3,280<!--doccount:grid-files-total--> rows -- all 1,754 in the `err` column, zero in any
-value column, zero in `retc`** (re-measured directly on the current tree, up from 1,738 of 3,251
-at the grid size this was first measured against).
+C and the port disagree on **1,754 of 3,280 rows -- all 1,754 in the `err` column, zero in any
+value column, zero in `retc`** (re-measured directly on the tree at the time, up from 1,738 of
+3,251 at the grid size this was first measured against; the grid has since grown to
+3,376<!--doccount:grid-files-total--> rows with the `swe_house_pos`/hsys `'J'`/`'Z'`/`'0'`
+addition, and this experiment has not been re-run at that size).
 
 Of those 1,754, character-diffing each pair of `err` strings splits them two ways:
 

@@ -48,6 +48,11 @@ namespace OracleVerify;
 /// grid-jpl.tsv) carries three: tfstart, tfend, denum (denum widened to double -- see
 /// Tools/CReference/sedump.c's process_get_current_file_data). Both are new in 2.10.03 -- see
 /// gen-grid-files.ps1's own header for why grid-analytic.tsv carries neither func token.
+///
+/// HOUSEPOS (grid-analytic.tsv only) carries a single value, hpos -- swe_house_pos returns its
+/// result as a plain double, not through an output array the way HOUSES/HOUSESARMC do. See
+/// Tools/OracleGrid/gen-grid-analytic.ps1's New-HousePosRow for why this func had no bit-exact
+/// coverage at all before this addition.
 /// </summary>
 internal static class FieldLabels
 {
@@ -74,11 +79,13 @@ internal static class FieldLabels
         .Concat(BuildLabels("xaphe", 6))
         .ToArray();
     private static readonly string[] GetCurrentFileDataLabels = ["tfstart", "tfend", "denum"];
+    private static readonly string[] HousePosLabels = ["hpos"];
 
     public static IReadOnlyList<string> For(string func, string caseId) => func switch
     {
         "CALC" or "CALCUT" => XxLabels,
         "HOUSES" or "HOUSESARMC" or "HOUSESEX" => HouseLabels,
+        "HOUSEPOS" => HousePosLabels,
         "HOUSESEX2" or "HOUSESARMCEX2" => HouseSpeedLabels,
         "FIXSTAR" or "FIXSTARUT" or "FIXSTAR2" or "FIXSTAR2UT" => XxLabels,
         "FIXSTARMAG" or "FIXSTAR2MAG" => MagLabels,

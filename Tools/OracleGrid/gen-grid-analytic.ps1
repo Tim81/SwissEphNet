@@ -32,11 +32,17 @@
                                   swe_set_* call before that row's swe_calc/swe_calc_ut runs.
 
       swe_houses / swe_houses_armc -- every house-system letter this port actually implements
-                                  (SwissEphNet/CPort/SweHouse.cs's switch statements). Upstream
-                                  2.10.03 adds 'J', which this port does not implement yet, so 'J'
-                                  is deliberately absent here -- adding it once the port supports
-                                  it is future work for whoever lands that porting PR, not this
-                                  script's job to anticipate. Crossed with geographic latitudes
+                                  (SwissEphNet/CPort/SweHouse.cs's switch statements), plus 'Z'
+                                  and '0', which are not case labels in either the C or the port
+                                  and deliberately exercise the shared default/Placidus fallback
+                                  branch under a different hsys byte value -- the same reason
+                                  $HouseNameLetters below already includes a deliberate 'P' for
+                                  its own sweep. 'J' was excluded here until this addition on the
+                                  belief the port did not implement it; SwissEphNet/CPort/
+                                  SweHouse.cs actually has real case 'J' blocks (cusp computation
+                                  and house name both), and the pinned C (v2.10.3bfinal) added it
+                                  too, so it is included now like every other real letter, not as
+                                  a fallback sentinel. Crossed with geographic latitudes
                                   (including near-polar and polar-circle extremes, where Placidus
                                   and Koch degenerate), longitudes, Julian days and ARMC values.
 
@@ -222,6 +228,29 @@ function Get-NextSidMode {
     return $mode
 }
 
+# Cycles deterministically through a small set of ecliptic longitudes/latitudes for
+# swe_house_pos's xpin argument, the same "cycle rather than cross" reasoning as
+# Get-NextSidMode above: xpin is independent of hsys/armc/eps/geolat (swe_house_pos treats it as
+# an opaque body position), so crossing it fully against the HOUSE_POS sweep below would multiply
+# that sweep's row count by 24 (8 longitudes x 3 latitudes) for no added proof -- cycling instead
+# still exercises every (longitude, latitude) pair at least once across that sweep's 3,360 rows
+# (140 times each) while keeping the row count matched to HOUSES_ARMC_EX2's own precedent.
+$HousePosXin0Values = @(0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0)
+$script:housePosXin0CycleNext = 0
+function Get-NextHousePosXin0 {
+    $value = $HousePosXin0Values[$script:housePosXin0CycleNext % $HousePosXin0Values.Count]
+    $script:housePosXin0CycleNext++
+    return $value
+}
+
+$HousePosXin1Values = @(0.0, 60.0, -60.0)
+$script:housePosXin1CycleNext = 0
+function Get-NextHousePosXin1 {
+    $value = $HousePosXin1Values[$script:housePosXin1CycleNext % $HousePosXin1Values.Count]
+    $script:housePosXin1CycleNext++
+    return $value
+}
+
 # ---------------------------------------------------------------------------------------
 # Row builders
 # ---------------------------------------------------------------------------------------
@@ -298,6 +327,26 @@ function New-HousesArmcEx2Row {
         $caseId, 'HOUSES_ARMC_EX2', '', '', '', "$Hsys",
         '', (Fmt $GeoLat), '', (Fmt $Armc), (Fmt $Eps), '', '', '', '', '',
         '', '', '', '', '', ''
+    )
+    return ($fields -join "`t")
+}
+
+# swe_house_pos(armc, geolat, eps, hsys, xpin, serr) -- unlike HOUSES_ARMC above, neither
+# sedump.c nor Tools/OracleDump/Program.cs has ever called this function; it has no bit-exact
+# coverage at all before this addition (only t.exp conformance suite 6 testcase 6 and a
+# pyswisseph replay, both weaker forms of evidence -- see docs/known-issues.md's "What the oracle
+# grids do not cover in the house code"). Reuses HOUSES_ARMC's own armc/eps/hsys/geolat columns
+# and this grid's existing xin0/xin1 columns (added for AZALT's body-position input, otherwise
+# unused by any HOUSES_ARMC-shaped row) for xpin[0]/xpin[1] -- no new column needed. Analytic
+# grid only: swe_house_pos takes xpin directly with no ephemeris-file dependency, the same reason
+# SIDTIME and AZALT are analytic-only.
+function New-HousePosRow {
+    param([char] $Hsys, [double] $GeoLat, [double] $Eps, [double] $Armc, [double] $Xin0, [double] $Xin1)
+    $caseId = "HOUSEPOS|$Hsys|$(Fmt $GeoLat)|$(Fmt $Eps)|$(Fmt $Armc)|$(Fmt $Xin0)|$(Fmt $Xin1)"
+    $fields = @(
+        $caseId, 'HOUSE_POS', '', '', '', "$Hsys",
+        '', (Fmt $GeoLat), '', (Fmt $Armc), (Fmt $Eps), '', '', '', '', '',
+        '', '', '', '', (Fmt $Xin0), (Fmt $Xin1)
     )
     return ($fields -join "`t")
 }
@@ -527,13 +576,19 @@ $FlagCombos = @(
 )
 
 # Every house-system letter SwissEphNet/CPort/SweHouse.cs actually implements a case for
-# (confirmed by grepping its switch statements). Deliberately excludes 'J' (upstream 2.10.03
-# only; not yet ported) and any letter this port has no case for at all -- an untested letter
-# here would silently exercise only the shared default/fallback branch under a name that implies
-# real per-system coverage.
+# (confirmed by grepping its switch statements), including 'J' -- upstream 2.10.03 (the pinned
+# v2.10.3bfinal) added it, and SwissEphNet/CPort/SweHouse.cs:1378/2737 (cusp computation) and
+# :1018 (house name) show the port already has real case 'J' blocks too, so an earlier version of
+# this comment excluding it as "not yet ported" was stale by the time this correction landed.
+# Plus 'Z' and '0', deliberately: neither is a case label in the C or the port, so both fall
+# through to the shared default/Placidus branch under a distinct hsys byte value -- included on
+# purpose to exercise that branch by name, the same reason $HouseNameLetters below already
+# includes a deliberate 'P'. Every other absent letter is one this port has no case for at all --
+# an untested letter here would silently exercise only the fallback branch under a name that
+# implies real per-system coverage, which 'Z'/'0' are documented as not being.
 $HouseLetters = @(
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'i', 'K', 'L', 'M', 'N', 'O',
-    'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'i', 'J', 'K', 'L', 'M', 'N', 'O',
+    'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0'
 )
 
 # Near-polar and polar-circle extremes alongside ordinary latitudes: Placidus and Koch degenerate
@@ -742,9 +797,8 @@ $AyanamsaUserParams = @(
 )
 
 # ---------------------------------------------------------------------------------------
-# swe_houses_ex grid values. Same 25-letter house-system list as HOUSES/HOUSES_ARMC above (see
-# $HouseLetters' own comment for why 'J' is excluded -- swe_houses_ex shares the exact same
-# per-system switch in swehouse.c that HOUSES/HOUSES_ARMC already avoid 'J' for). Smaller than
+# swe_houses_ex grid values. Same $HouseLetters house-system list as HOUSES/HOUSES_ARMC above --
+# swe_houses_ex shares the exact same per-system switch in swehouse.c. Smaller than
 # HOUSES' own geolat/geolon/tjd cross product on purpose: iflag is a new dimension HOUSES does not
 # have, and this grid's row budget goes toward sweeping iflag (PLAIN/SIDEREAL/RADIANS) rather than
 # re-covering the geolat/geolon/tjd spread HOUSES/HOUSES_ARMC already prove.
@@ -810,11 +864,12 @@ $AzAltTjd = @(1500000.0, 2400000.0)
 # ---------------------------------------------------------------------------------------
 # swe_house_name grid values -- trivial, but zero coverage before this addition. Every letter
 # swehouse.c's switch actually cases on (25 -- see swe_house_name's own header comment for the
-# full list, which INCLUDES 'J' unlike $HouseLetters above: swe_house_name is a pure lookup that
-# both the C and the port agree on for 'J', even though neither side's actual house-cusp
-# *computation* implements that system yet -- see docs/known-issues.md's "What the oracle grids
-# do not cover in the house code" for that distinction), plus 'P', which is deliberately NOT one
-# of the switch's case labels and therefore exercises the default ("Placidus") branch.
+# full list, which includes 'J': swe_house_name is a pure lookup that both the C and the port
+# agree on for 'J' -- see $HouseLetters above for the same letter's cusp-computation coverage,
+# added alongside this addition), plus 'P', which is deliberately NOT one of the switch's case
+# labels and therefore exercises the default ("Placidus") branch. Does not include 'Z'/'0':
+# those are the same non-case-label fallback branch 'P' here already exercises, and $HouseLetters
+# above covers them for the cusp side specifically, which is where the open gap was.
 # ---------------------------------------------------------------------------------------
 $HouseNameLetters = @(
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'i', 'J', 'K', 'L', 'M', 'N',
@@ -859,6 +914,7 @@ $calcUtCount = 0
 $housesCount = 0
 $housesArmcCount = 0
 $housesArmcEx2Count = 0
+$housePosCount = 0
 $solCrossCount = 0
 $solCrossUtCount = 0
 $moonCrossCount = 0
@@ -932,6 +988,41 @@ foreach ($hsys in $HouseLetters) {
             foreach ($armc in $HouseArmcs) {
                 $rows.Add((New-HousesArmcEx2Row -Hsys $hsys -GeoLat $geolat -Eps $eps -Armc $armc))
                 $housesArmcEx2Count++
+            }
+        }
+    }
+}
+
+# HOUSE_POS: same cross-section as HOUSES_ARMC_EX2 above ($HouseLetters minus 'G' -- see below --
+# x 5 latitudes x 3 eps x 8 armc), with xpin[0]/xpin[1] cycled rather than crossed -- see
+# Get-NextHousePosXin0/Get-NextHousePosXin1's own comment for why.
+#
+# 'G' (Gauquelin) is excluded here, and only here (HOUSES/HOUSES_ARMC/HOUSES_EX/HOUSES_EX2/
+# HOUSES_ARMC_EX2 above all keep it): confirmed by direct reproduction, external/pyswisseph-2.08's
+# own vendored swehouse.c:1813 declares `double hcusp[36]` inside swe_house_pos, one slot short of
+# the 37 external/swisseph (2.10.03) swehouse.c:2224 declares for the same function -- the same
+# sizing gap docs/known-issues.md's "hcusp[36] fixed: swe_house_pos was faithful to 2.08, not to
+# 2.10.03" entry already documents for the port, but never previously observed in the vendored 2.08
+# C itself because nothing in this repo's oracle tooling called swe_house_pos with hsys 'G' before
+# this addition. Astrodienst's own real, unmodified 2.08 swe_house_pos writes hcusp[36] (the 37th
+# slot) for this house system and overruns the array, crashing Tools/CReference/build-c.ps1's
+# sedump-2.08.exe with a stack-buffer-overrun fault (STATUS_STACK_BUFFER_OVERRUN) -- reproduced
+# directly with a two-row grid isolating 'G' from every other letter. The pinned 2.10.03 build (this
+# port's actual target, and the one scripts/verify-oracle.ps1 gates on) has no such defect --
+# confirmed directly, sedump.exe already dumps every 'G' HOUSE_POS row without error -- so this
+# exclusion costs no bit-exact coverage against 2.10.03, only against the diagnostic-only 2.08 leg
+# Tools/OracleVerify's classify mode uses to separate transliteration bugs from porting gaps, which
+# cannot run past a crash at all. Not a port bug, not a driver bug: a real, pre-existing defect in
+# historical, vendored, unmodified upstream C this repo does not patch.
+$HousePosLetters = $HouseLetters | Where-Object { $_ -ne 'G' }
+foreach ($hsys in $HousePosLetters) {
+    foreach ($geolat in $HousesExGeoLats) {
+        foreach ($eps in $HouseEps) {
+            foreach ($armc in $HouseArmcs) {
+                $xin0 = Get-NextHousePosXin0
+                $xin1 = Get-NextHousePosXin1
+                $rows.Add((New-HousePosRow -Hsys $hsys -GeoLat $geolat -Eps $eps -Armc $armc -Xin0 $xin0 -Xin1 $xin1))
+                $housePosCount++
             }
         }
     }
@@ -1128,7 +1219,7 @@ foreach ($ipl in $NodApsRejectedIpl) {
 }
 
 $totalRows = $rows.Count
-$expectedTotal = $calcCount + $calcUtCount + $housesCount + $housesArmcCount + $housesArmcEx2Count +
+$expectedTotal = $calcCount + $calcUtCount + $housesCount + $housesArmcCount + $housesArmcEx2Count + $housePosCount +
     $solCrossCount + $solCrossUtCount + $moonCrossCount + $moonCrossUtCount +
     $moonCrossNodeCount + $moonCrossNodeUtCount + $helioCrossCount + $helioCrossUtCount +
     $ayanamsaCount + $ayanamsaExCount + $ayanamsaExUtCount +
@@ -1169,10 +1260,11 @@ $headerLines = @(
     '# applied via its own swe_set_* call before that row runs.'
     '#'
     "# swe_houses / swe_houses_armc: every house-system letter this port implements"
-    '# (SwissEphNet/CPort/SweHouse.cs; upstream 2.10.03 adds ''J'', which this port does not'
-    '# implement yet, so ''J'' is deliberately absent here), crossed with geographic latitudes --'
-    '# including polar and near-polar extremes, where Placidus and Koch degenerate -- longitudes,'
-    '# Julian days and ARMC values.'
+    "# (SwissEphNet/CPort/SweHouse.cs), including 'J' (upstream 2.10.03 added it, and the port"
+    "# already has real case 'J' blocks too), plus 'Z' and '0' -- not case labels in either the C"
+    "# or the port, included deliberately to exercise the shared default/Placidus fallback branch"
+    "# by name -- crossed with geographic latitudes -- including polar and near-polar extremes,"
+    '# where Placidus and Koch degenerate -- longitudes, Julian days and ARMC values.'
     '#'
     '# swe_solcross / swe_solcross_ut / swe_mooncross / swe_mooncross_ut / swe_mooncross_node /'
     '# swe_mooncross_node_ut / swe_helio_cross / swe_helio_cross_ut: the eight crossing functions,'
@@ -1204,9 +1296,9 @@ $headerLines = @(
     '# does not apply to that row''s func)'
     '#'
     '#   case_id    stable, unique, pipe-delimited id; ordinal comparison sorts it deterministically'
-    '#   func       CALC | CALC_UT | HOUSES | HOUSES_ARMC | HOUSES_ARMC_EX2 | SOLCROSS | SOLCROSS_UT |'
-    '#              MOONCROSS | MOONCROSS_UT | MOONCROSS_NODE | MOONCROSS_NODE_UT | HELIO_CROSS |'
-    '#              HELIO_CROSS_UT | HOUSES_EX | HOUSES_EX2'
+    '#   func       CALC | CALC_UT | HOUSES | HOUSES_ARMC | HOUSES_ARMC_EX2 | HOUSE_POS | SOLCROSS |'
+    '#              SOLCROSS_UT | MOONCROSS | MOONCROSS_UT | MOONCROSS_NODE | MOONCROSS_NODE_UT |'
+    '#              HELIO_CROSS | HELIO_CROSS_UT | HOUSES_EX | HOUSES_EX2'
     '#   ipl        body number                                        [CALC, CALC_UT, HELIO_CROSS, HELIO_CROSS_UT]'
     '#   tjd        Julian day (ET for CALC/SOLCROSS/MOONCROSS/MOONCROSS_NODE/HELIO_CROSS; UT for'
     '#              the corresponding _UT funcs and HOUSES)'
@@ -1215,13 +1307,13 @@ $headerLines = @(
     '#   iflag      swe_calc/crossing-func iflag, with SEFLG_MOSEPH already OR-ed in'
     '#              [CALC, CALC_UT, SOLCROSS, SOLCROSS_UT, MOONCROSS, MOONCROSS_UT, MOONCROSS_NODE,'
     '#              MOONCROSS_NODE_UT, HELIO_CROSS, HELIO_CROSS_UT]'
-    '#   hsys       house-system letter          [HOUSES, HOUSES_ARMC, HOUSES_ARMC_EX2, HOUSES_EX, HOUSES_EX2]'
+    '#   hsys       house-system letter          [HOUSES, HOUSES_ARMC, HOUSES_ARMC_EX2, HOUSE_POS, HOUSES_EX, HOUSES_EX2]'
     '#   geolon     geographic longitude, degrees east    [HOUSES, HOUSES_EX, HOUSES_EX2; CALC/CALC_UT topo rows]'
-    '#   geolat     geographic latitude, degrees north    [HOUSES, HOUSES_ARMC, HOUSES_ARMC_EX2, HOUSES_EX,'
-    '#              HOUSES_EX2; CALC/CALC_UT topo rows]'
+    '#   geolat     geographic latitude, degrees north    [HOUSES, HOUSES_ARMC, HOUSES_ARMC_EX2, HOUSE_POS,'
+    '#              HOUSES_EX, HOUSES_EX2; CALC/CALC_UT topo rows]'
     '#   height     observer height above sea level, metres            [CALC/CALC_UT topo rows only]'
-    '#   armc       ARMC, degrees                                      [HOUSES_ARMC, HOUSES_ARMC_EX2]'
-    '#   eps        obliquity of the ecliptic, degrees                 [HOUSES_ARMC, HOUSES_ARMC_EX2]'
+    '#   armc       ARMC, degrees                                      [HOUSES_ARMC, HOUSES_ARMC_EX2, HOUSE_POS]'
+    '#   eps        obliquity of the ecliptic, degrees                 [HOUSES_ARMC, HOUSES_ARMC_EX2, HOUSE_POS]'
     '#   sid_mode   swe_set_sid_mode mode, applied before the row runs [CALC/CALC_UT rows whose iflag'
     '#              carries SEFLG_SIDEREAL; SOLCROSS/MOONCROSS rows whose iflag carries it too]'
     '#   x2cross    target ecliptic longitude to cross, degrees        [SOLCROSS, SOLCROSS_UT, MOONCROSS,'
@@ -1255,16 +1347,19 @@ $headerLines = @(
     '# astrology-program consumer of this library actually calls that no grid measured before this'
     '# addition (Celestium is one example such consumer, named only as that -- nothing about its'
     '# own source is referenced here). HOUSES_EX is swe_houses with an iflag (SEFLG_SIDEREAL,'
-    '# SEFLG_RADIANS), the sidereal house path -- same 25-letter hsys set as HOUSES/HOUSES_ARMC'
-    '# ('' J'' excluded for the same reason). AYANAMSA_UT is the UT sibling of AYANAMSA. SIDTIME'
+    "# SEFLG_RADIANS), the sidereal house path -- same hsys set as HOUSES/HOUSES_ARMC above."
+    '# AYANAMSA_UT is the UT sibling of AYANAMSA. SIDTIME'
     '# (swe_sidtime) and AZALT (swe_azalt) had zero coverage anywhere in this repository before'
     '# this addition; AZALT reuses the geolon/geolat/height columns for its geopos parameter and'
     '# gets five new trailing columns (method/calc_flag/atpress/attemp/xin0/xin1 -- method is'
     '# NOD_APS_UT''s own, the other four are AZALT''s; xin[2] has no column at all, since'
-    '# swe_azalt''s own body never reads it). HOUSE_NAME (swe_house_name) is a pure lookup, swept'
-    '# across a wider hsys set than HOUSES/HOUSES_ARMC on purpose: it INCLUDES ''J'' (both the C and'
-    '# the port agree on its name even though neither implements that house system''s cusp'
-    '# computation yet) and ''P'' (not a case label, so it exercises the default/Placidus branch).'
+    '# swe_azalt''s own body never reads it). HOUSE_POS (swe_house_pos) reuses xin0/xin1 too, for'
+    '# its own xpin[0]/xpin[1] body-position argument -- unrelated to AZALT''s use of the same'
+    '# columns beyond both needing a two-double position input; see New-HousePosRow''s own comment'
+    '# for why this func had no bit-exact coverage at all before this addition. HOUSE_NAME'
+    '# (swe_house_name) is a pure lookup, swept'
+    '# across its own $HouseNameLetters set (both the C and the port agree on the name for ''J'''
+    '# and for ''P'' -- not a case label, so it exercises the default/Placidus branch).'
     '# NOD_APS_UT (swe_nod_aps_ut) reuses the ipl column and adds method (its own bitmask'
     '# parameter); both accepted and rejected ipl values are covered, to exercise the serr path as'
     '# well as the real one.'
@@ -1318,6 +1413,7 @@ Write-Host "  CALC_UT            $calcUtCount"
 Write-Host "  HOUSES             $housesCount"
 Write-Host "  HOUSES_ARMC        $housesArmcCount"
 Write-Host "  HOUSES_ARMC_EX2    $housesArmcEx2Count"
+Write-Host "  HOUSE_POS          $housePosCount"
 Write-Host "  SOLCROSS           $solCrossCount"
 Write-Host "  SOLCROSS_UT        $solCrossUtCount"
 Write-Host "  MOONCROSS          $moonCrossCount"

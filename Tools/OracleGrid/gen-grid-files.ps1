@@ -682,13 +682,14 @@ $HelioCrossDir = @(1, -1)
 # grid-analytic.tsv counterpart: this grid's job is proving the file layer is exercised, not
 # re-covering the geolat/geolon/iflag spread grid-analytic.tsv already covers.
 # ---------------------------------------------------------------------------------------
-# Every house-system letter SwissEphNet/CPort/SweHouse.cs actually implements a case for --
-# matches gen-grid-analytic.ps1's own $HouseLetters exactly (same comment there on why 'J' is
-# deliberately excluded). This grid never carries swe_houses/swe_houses_armc rows of its own, so
+# Every house-system letter SwissEphNet/CPort/SweHouse.cs actually implements a case for, plus
+# 'Z'/'0' as deliberate default/Placidus-fallback sentinels -- matches gen-grid-analytic.ps1's own
+# $HouseLetters exactly (same comment there for the reasoning, including why 'J' is included
+# rather than excluded). This grid never carries swe_houses/swe_houses_armc rows of its own, so
 # it has no such list already in scope; HOUSES_EX is the first func here that needs one.
 $HouseLetters = @(
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'i', 'K', 'L', 'M', 'N', 'O',
-    'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'i', 'J', 'K', 'L', 'M', 'N', 'O',
+    'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0'
 )
 $HousesExGeoLats = @(-66, 66)
 $HousesExGeoLon = -118.24

@@ -11,7 +11,10 @@
 //                                          swe_houses_armc_ex2 (the speed-bearing forms --
 //                                          see ProcessHousesEx2/ProcessHousesArmcEx2 below),
 //                                          swe_get_ayanamsa_ut, swe_sidtime, swe_azalt,
-//                                          swe_house_name and swe_nod_aps_ut. Touches no
+//                                          swe_house_name, swe_nod_aps_ut and swe_house_pos
+//                                          (HOUSE_POS -- see ProcessHousePos below; no
+//                                          ephemeris-file dependency, so analytic-grid only,
+//                                          like SIDTIME/AZALT). Touches no
 //                                          ephemeris data file. AYANAMSA_EX/AYANAMSA_EX_UT rows
 //                                          now always carry SEFLG_MOSEPH too -- see
 //                                          gen-grid-analytic.ps1's $AyanamsaExIflagCombos comment.
@@ -287,6 +290,9 @@ internal static class Program
                     break;
                 case "HOUSES_ARMC":
                     ProcessHousesArmc(swe, caseId, fields, sidModeIndex: 11, writer);
+                    break;
+                case "HOUSE_POS":
+                    ProcessHousePos(swe, caseId, fields, writer);
                     break;
                 case "SOLCROSS":
                 case "SOLCROSS_UT":
@@ -1131,6 +1137,37 @@ internal static class Program
         var retc = swe.swe_houses_armc(armc, geolat, eps, hsys, cusp, ascmc);
 
         WriteHousesRow(writer, caseId, retc, cusp, ascmc);
+    }
+
+    // HOUSE_POS: swe_house_pos(armc, geolat, eps, hsys, xpin, ref serr). Unlike HOUSES/
+    // HOUSES_ARMC above, this has a real serr parameter but returns its result (the house
+    // position) as a plain double, not through an int retc -- same OK-sentinel-plus-real-serr
+    // shape as ProcessSidtime's OK sentinel combined with a real err column. xpin[0]/xpin[1]
+    // come from this grid's xin0/xin1 columns, added originally for AZALT and otherwise unused
+    // by any HOUSES_ARMC-shaped row -- see Tools/OracleGrid/gen-grid-analytic.ps1's
+    // New-HousePosRow for why no new column was needed.
+    private static void ProcessHousePos(SwissEph swe, string caseId, string[] fields, TextWriter writer)
+    {
+        var armc = ParseDouble(fields[9], caseId, "armc");
+        var eps = ParseDouble(fields[10], caseId, "eps");
+        var hsys = ParseHsys(fields[5], caseId);
+        var geolat = ParseDouble(fields[7], caseId, "geolat");
+        var xpin = new[]
+        {
+            ParseDouble(fields[20], caseId, "xin0"),
+            ParseDouble(fields[21], caseId, "xin1"),
+        };
+
+        string? serr = null;
+        var hpos = swe.swe_house_pos(armc, geolat, eps, hsys, xpin, ref serr);
+
+        writer.Write(caseId);
+        writer.Write('\t');
+        writer.Write(SwissEph.OK.ToString(CultureInfo.InvariantCulture));
+        writer.Write('\t');
+        writer.Write(EscapeErr(serr));
+        EmitValue(writer, hpos);
+        writer.Write('\n');
     }
 
     // No serr output parameter on swe_houses/swe_houses_armc -- the err column stays empty for

@@ -21,8 +21,10 @@
  *                                          swe_houses_armc_ex2 (the 2.10.03 speed-bearing forms
  *                                          of swe_houses_ex/swe_houses_armc -- see
  *                                          SWISSEPH_HAS_HOUSES_EX2 below), swe_get_ayanamsa_ut,
- *                                          swe_sidtime, swe_azalt, swe_house_name and
- *                                          swe_nod_aps_ut. Touches no ephemeris data file.
+ *                                          swe_sidtime, swe_azalt, swe_house_name,
+ *                                          swe_nod_aps_ut and swe_house_pos (HOUSE_POS -- no
+ *                                          ephemeris-file dependency, so analytic-grid only, like
+ *                                          SIDTIME/AZALT). Touches no ephemeris data file.
  *                                          See gen-grid-analytic.ps1's header.
  *   Tools/OracleGrid/grid-files.tsv     -- swe_calc/swe_calc_ut (SEFLG_SWIEPH), the
  *                                          swe_fixstar family (including swe_fixstar2_mag, not
@@ -382,6 +384,7 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include <errno.h>
+#include <math.h>
 #include "swephexp.h"
 
 #define MAX_LINE 4096
@@ -566,8 +569,26 @@ static const char *basename_of(const char *s)
     return last;
 }
 
+/*
+ * The decimal text column is diagnostic only -- the hex column beside it is the actual
+ * bit-exact comparison basis (Tools/OracleVerify/RowComparer.cs only ever reads the hex field
+ * into DumpRow.Values). For every finite value and for +-Infinity, %.17g and .NET's G17
+ * (Tools/OracleDump/Program.cs's ToCStyleG17) already print the identical digits. NaN is the one
+ * exception: MSVC's UCRT prints the canonical negative "indefinite" quiet NaN (bit pattern
+ * 0xfff8000000000000, e.g. from swe_house_pos hitting an acos/asin domain error) as
+ * "-nan(ind)" and any other NaN payload as "nan"/"-nan" depending on the sign bit, where .NET's
+ * ToString("G17") always prints "NaN" regardless of payload or sign -- a driver-code text-
+ * formatting choice on each side, not a computed-value difference (the hex column already proves
+ * that: reproduced directly, both sides agree on the bit pattern exactly). Special-cased here,
+ * in sedump.c's own driver code rather than in the vendored swehouse.c this dump replays, so the
+ * decimal column matches .NET's without touching a single vendored source file.
+ */
 static void emit_value(FILE *out, double v)
 {
+    if (isnan(v)) {
+        fprintf(out, "\tNaN\t%016llx", (unsigned long long)bits_of(v));
+        return;
+    }
     fprintf(out, "\t%.17g\t%016llx", v, (unsigned long long)bits_of(v));
 }
 
@@ -796,6 +817,39 @@ static void process_houses_armc(FILE *out, const char *case_id, char *fields[], 
     fprintf(out, "%s\t%d\t", case_id, retc); /* no serr param on swe_houses_armc */
     for (i = 0; i < CUSP_COUNT; i++) emit_value(out, cusp[i]);
     for (i = 0; i < ASCMC_COUNT; i++) emit_value(out, ascmc[i]);
+    fputc('\n', out);
+}
+
+/*
+ * HOUSE_POS: swe_house_pos(armc, geolat, eps, hsys, xpin, serr) -- unlike swe_houses/
+ * swe_houses_armc above, this function has a real serr parameter but returns its result (the
+ * house position) as a plain double, not through an int32 retc the way most of this driver's
+ * other funcs do. Same shared OK-sentinel-plus-real-serr convention as process_ayanamsa_ex's
+ * output column shape, just with one value field (hpos) instead of daya. xpin[0]/xpin[1] come
+ * from this grid's xin0/xin1 columns, added originally for AZALT and otherwise unused by any
+ * HOUSES_ARMC-shaped row -- see Tools/OracleGrid/gen-grid-analytic.ps1's New-HousePosRow for why
+ * no new column was needed. No SWISSEPH_HAS_* guard: swe_house_pos exists in both 2.08 and
+ * 2.10.03 (external/pyswisseph-2.08/swephexp.h:796), unlike the HOUSES_EX2 family below.
+ */
+static void process_house_pos(FILE *out, const char *case_id, char *fields[])
+{
+    double armc, eps, geolat, xpin[6] = { 0 }, hpos;
+    int hsys;
+    char serr[AS_MAXCH];
+
+    armc = parse_double(fields[9], case_id, "armc");
+    eps = parse_double(fields[10], case_id, "eps");
+    hsys = parse_hsys(fields[5], case_id);
+    geolat = parse_double(fields[7], case_id, "geolat");
+    xpin[0] = parse_double(fields[20], case_id, "xin0");
+    xpin[1] = parse_double(fields[21], case_id, "xin1");
+
+    serr[0] = '\0';
+    hpos = swe_house_pos(armc, geolat, eps, hsys, xpin, serr);
+
+    fprintf(out, "%s\t%d\t", case_id, OK);
+    emit_escaped(out, serr);
+    emit_value(out, hpos);
     fputc('\n', out);
 }
 
@@ -1551,6 +1605,8 @@ int main(int argc, char **argv)
                 process_houses(out, case_id, fields, 11);
             } else if (strcmp(func, "HOUSES_ARMC") == 0) {
                 process_houses_armc(out, case_id, fields, 11);
+            } else if (strcmp(func, "HOUSE_POS") == 0) {
+                process_house_pos(out, case_id, fields);
             } else if (strcmp(func, "SOLCROSS") == 0 || strcmp(func, "SOLCROSS_UT") == 0
                        || strcmp(func, "MOONCROSS") == 0 || strcmp(func, "MOONCROSS_UT") == 0) {
                 process_crossing_deg(out, case_id, func, fields, 11, 12);
