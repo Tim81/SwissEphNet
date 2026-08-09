@@ -55,13 +55,19 @@ namespace SwissEphNet
         public T[] ToArray() {
             if (BaseArray == null) return null;
             // Clamp rather than let `new T[negative]` throw OverflowException:
-            // the old BaseArray.Skip(BaseIndex).ToArray() silently returned an
-            // empty array when BaseIndex overran BaseArray.Length. Array.Copy
-            // itself throws on an out-of-range sourceIndex even at length 0,
-            // so skip the call entirely once the clamp already zeroed the length.
-            int length = Math.Max(0, BaseArray.Length - BaseIndex);
+            // the old BaseArray.Skip(BaseIndex).ToArray() treated a non-positive
+            // BaseIndex as Skip(0) -- LINQ's own documented behavior for a
+            // count <= 0 -- returning the full array, and returned an empty
+            // array once BaseIndex reached or exceeded BaseArray.Length.
+            // Array.Copy itself throws on a negative or otherwise out-of-range
+            // sourceIndex even at length 0, so both ends are clamped before it
+            // runs, not after: a negative BaseIndex reaching this unclamped
+            // used to throw ArgumentOutOfRangeException instead of returning
+            // the full array the old Skip-based implementation did.
+            int start = Math.Max(0, BaseIndex);
+            int length = Math.Max(0, BaseArray.Length - start);
             T[] result = new T[length];
-            if (length > 0) Array.Copy(BaseArray, BaseIndex, result, 0, length);
+            if (length > 0) Array.Copy(BaseArray, start, result, 0, length);
             return result;
         }
 
