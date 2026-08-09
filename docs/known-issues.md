@@ -32,7 +32,7 @@ Read the status line first and the body for how it got there.
 
 | Entry | Status |
 |---|---|
-| `swe_houses_armc`, hsys `'Y'` (APC houses) | won't fix, reported upstream |
+| `swe_houses_armc`, hsys `'Y'` (APC houses) | open upstream |
 | `swe_houses_armc` reports success while emitting NaN cusps | closed |
 | `swe_houses_armc`, hsys `'i'` (Makransky): cusp = 360.0 | won't fix |
 | `swe_calc(SE_ECL_NUT)` returns all-zero output | won't fix |
@@ -136,13 +136,14 @@ a C limitation with no demonstrated trigger.
 
 ## swe_houses_armc, hsys 'Y' (APC houses): a genuine, large divergence
 
-**Status: won't fix, reported upstream.** Mechanism found and confirmed directly:
-catastrophic cancellation inside `apc_sector`, inherent to the formula and shared
-with the C. Two things this entry previously said turned out to be wrong when
-checked directly against the current tree and a live Linux run -- see
-"Corrections" below. Reported to Astrodienst: `docs/upstream/swe_houses_armc-
-apc-polar-discontinuity.md`, which supersedes this entry's account with a deeper
-one -- see "What the upstream report adds" below.
+**Status: open upstream.** Mechanism found and confirmed directly: catastrophic
+cancellation inside `apc_sector`, inherent to the formula and shared with the C.
+Two things this entry previously said turned out to be wrong when checked
+directly against the current tree and a live Linux run -- see "Corrections"
+below. Report drafted for Astrodienst, not yet sent -- scheduled for the week
+of 2026-08-10: `docs/upstream/swe_houses_armc-apc-polar-discontinuity.md`,
+which supersedes this entry's account with a deeper one -- see "What the
+upstream report adds" below.
 
 `swe_houses_armc(armc=270, geolat=50, eps=40, hsys='Y', ...)`:
 
@@ -3136,18 +3137,47 @@ carries the guard (mirroring the `SE_INTP_APOG` guard at `:1161-1168` immediatel
 those four rows are absent from the current `known-fail.tsv` (confirmed directly, `grep`), and
 `Tests/SwissEphNet.Conformance.Tests` passes 67/67 on both net8.0 and net10.0.
 
-**What was never cross-checked this way.** The other 759 rows (`DATA-MISSING`) were never driven
-through the real C at all -- they were addressed by widening the port's own ephemeris data
-availability and re-running against `t.exp` (`docs/compliance-2.10.03.md:506-518`), which is a
-port-vs-`t.exp` check with more data, not a port-vs-real-C check. Whether any of those 759 would
-also turn out to be `t.exp` drift rather than a real gap is genuinely unverified either way --
-this entry does not claim otherwise, and this is exactly the kind of overclaim this correction
-exists to avoid repeating in the other direction.
+**Update 2026-08-09: the DATA-MISSING side has since been checked too, with a committed
+per-row artifact.** `Tests/conformance/regenerations.log` entries 54 (2026-08-08) and 55
+(2026-08-09) first probed all 759 `DATA-MISSING` rows against a fresh MSVC build of the
+pinned C used above, but reverted every temporary change afterward without committing a
+result. Two later entries (both 2026-08-09) redid the work for real and committed
+`Tests/conformance/data-missing-triage.tsv`, mirroring `value-mismatch-triage.tsv`'s
+format for all 759 rows. Final measured result -- not identical to the two probes'
+514/242/3/0 estimate, since this run hit a real check-ordering gap the probes didn't
+surface (see below): **503 `RESOLVED`** (the port now computes a real value that matches
+`t.exp` once the data is present), **231 `DRIFT`** (real C reproduces the port's own
+output, not `t.exp`'s -- `t.exp` is stale here, not a port bug), **1 `AMBIGUOUS`** (a
+Pluto-moon-adjacent `SEFLG_JPLEPH` row, port/`t.exp`/C all within floating-point noise of
+each other), and **24 rows still genuinely `DATA-MISSING`** even with `de431.eph` and the
+two per-asteroid files (`se00433s.se1`/`se00010s.se1`) present. **0 of the 735 resolved
+rows confirmed `PORT-DEFECT`.**
 
-**Bottom line.** Of everything in `known-fail.tsv` that has actually been checked against a fresh
-build of the real, pinned C, only 4 of 668 checked rows were confirmed port defects, and those are
-already fixed. The list's size (1,423) measures divergence from a 2023 snapshot file, not a live
-count of things wrong with the port today.
+**Why 24 rows didn't resolve.** `ConformanceDispatcher.Dispatch`
+(`Tests/SwissEphNet.Conformance.Tests/Dispatch/ConformanceDispatcher.cs:32-55`) checks
+`NeedsJplDataWeDoNotHave` before `NeedsAsteroidFileWeDoNotShip`, and the latter
+(`EphemerisFileResolver.cs:167-168`) gates purely on `ipl > SE_AST_OFFSET + 4` with no
+file-presence check -- unlike the JPL/moon checks, it has no opt-in mechanism at all
+(see that method's own doc comment). These 24 rows all carry a stale "needs JPL data"
+`known-fail.tsv` reason that masked their true blocker: a numbered-asteroid `ipl` this
+repo has never fetched a file for, beyond the two (Eros/Hygiea) obtained for this triage.
+Not further diagnosed to specific asteroid numbers in this pass -- recorded honestly as
+still `DATA-MISSING` in `data-missing-triage.tsv` rather than guessed at.
+
+One thread left open, not yet re-triaged: 12 rows already `VALUE-MISMATCH` before the
+2026-08-08 widening had their `magnitude_key` shift once real data was present elsewhere
+in that run -- future work for a fresh section-3a-style pass, not covered by any of these
+entries. All widened ephemeris checkouts, downloaded files (including the 2.79 GB
+`de431.eph`) and scratch drivers were reverted after each of the four sessions; only
+`data-missing-triage.tsv` and the `regenerations.log` entries were committed.
+
+**Bottom line.** 1,399 of `known-fail.tsv`'s 1,423 rows -- all 664 `VALUE-MISMATCH` and
+735 of 759 `DATA-MISSING` -- have now been checked against a fresh build of the real,
+pinned C. Only 4 were confirmed port defects, and those are already fixed. The remaining
+24 rows are a real, narrow, honestly-unresolved gap (see above), not a defect and not yet
+checked against real C either. The list's size (1,423) measures divergence from a 2023
+snapshot file, not a live count of things wrong with the
+port today.
 
 ## Ephemeris file byte order was taken from the host, not the file
 
