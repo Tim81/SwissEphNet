@@ -876,15 +876,37 @@ jobs:
       # and incidental file bytes (blank lines, line endings) that OracleDump/sedump wrote but no
       # per-field comparison ever inspects. scripts/verify-oracle.ps1 asserts the same file-level
       # equality on Windows for the same reason.
+      #
+      # Unlike Windows (Tools/OracleVerify's known-diff.tsv, a per-case_id waiver checked by C#)
+      # and Linux (a hard, unconditional zero -- linux-exactness's own copy of this step has no
+      # waiver at all, relying on gcc/glibc simply not diverging here), this platform needed its
+      # first-ever exception the day HOUSE_POS landed: hsys 'Y' has an already-documented
+      # near-singularity (docs/known-issues.md's "swe_house_pos: 27 cross-platform divergences")
+      # where a long chain of trig calls near a coordinate-system edge case amplifies a sub-ULP
+      # difference into a qualitatively different result -- here, which of the two possible NaN
+      # bit patterns (0xfff8... "indefinite", 0x7ff8... plain) Apple's libSystem produces for a
+      # HOUSE_POS|Y row, versus what the port produces for the identical input. Both sides already
+      # render "NaN" as decimal text (Tools/CReference/sedump.c's emit_value and .NET's
+      # ToString("G17") agree on that), so the exception below matches on exactly that signal
+      # instead of a hardcoded case_id list: a HOUSEPOS|Y row where the decimal column already
+      # reads "NaN" on both sides, differing only in the hex payload. That is a narrow, structural
+      # match on the documented failure class, not a blanket NaN allowance -- a HOUSEPOS|Y row
+      # where only ONE side is NaN (a real value on the other) still fails below, as does any
+      # difference outside HOUSEPOS|Y entirely.
+      #
+      # What this does NOT do, unlike Windows' known-diff.tsv mechanism: detect a stale exception
+      # (one that stopped differing, meaning the underlying platform behavior changed and the
+      # exception should be removed). The excluded-row count is printed every run specifically so
+      # a silent change here is at least visible in the log, even though nothing fails on it.
       - name: Compare, bit for bit, and quantify any difference
         shell: bash
         run: |
-          # set +e for the whole block. This step is built out of diff, cmp and grep, and every
-          # one of them exits non-zero for the ordinary case it is being asked about: diff exits
-          # 1 when files differ, cmp the same, grep -c 1 when it counts nothing. Under the
-          # default -e -o pipefail any of those aborts the step mid-report, which is how an
-          # earlier revision died after printing the per-func breakdown and never reached the
-          # -fno-builtin comparison or the files grid at all. rc is tracked by hand instead.
+          # set +e for the whole block. This step is built out of diff, cmp, grep and awk, and
+          # most of them exit non-zero for the ordinary case being asked about: diff exits 1 when
+          # files differ, cmp the same, grep -c 1 when it counts nothing. Under the default -e
+          # -o pipefail any of those aborts the step mid-report, which is how an earlier revision
+          # died after printing the per-func breakdown and never reached the -fno-builtin
+          # comparison or the files grid at all. rc is tracked by hand instead.
           set +e
           rc=0
           # macOS ships BSD diff, which has none of GNU's --unchanged-line-format options, so
@@ -905,19 +927,43 @@ jobs:
               rc=1
               continue
             fi
-            if cmp -s "c-$g.tsv" "net-$g.tsv"; then
+
+            # Build filtered copies with the documented HOUSEPOS|Y NaN-sign exception applied
+            # (see this step's own header comment) -- both files together, one pass, since the
+            # exclusion decision needs to see the same line from each side at once. Every other
+            # row, from every other func and every other hsys letter, is copied through unchanged.
+            rm -f "c-$g-filtered.tsv" "net-$g-filtered.tsv" "excluded-$g.txt"
+            awk -F'\t' '
+              FNR==NR { c_case[FNR]=$1; c_dec[FNR]=$4; c_line[FNR]=$0; next }
+              {
+                known_nan = (c_case[FNR] ~ /^HOUSEPOS\|Y\|/) && (c_dec[FNR] == "NaN") && ($4 == "NaN")
+                if (known_nan) {
+                  print c_case[FNR] >> "excluded-'"$g"'.txt"
+                } else {
+                  print c_line[FNR] >> "c-'"$g"'-filtered.tsv"
+                  print $0 >> "net-'"$g"'-filtered.tsv"
+                }
+              }
+            ' "c-$g.tsv" "net-$g.tsv"
+            excluded=$(wc -l < "excluded-$g.txt" 2>/dev/null || echo 0)
+            if [ "$excluded" != "0" ]; then
+              echo "$g: $excluded row(s) excepted under the documented HOUSEPOS|Y NaN-sign class:"
+              sed 's/^/    /' "excluded-$g.txt"
+            fi
+
+            if cmp -s "c-$g-filtered.tsv" "net-$g-filtered.tsv"; then
               m=$(diff "nb-$g.tsv" "net-$g.tsv" | grep -c '^<' || true)
-              echo "$g: BIT-IDENTICAL, $total rows, sha256 $(shasum -a 256 "c-$g.tsv" | cut -c1-32)"
+              echo "$g: BIT-IDENTICAL apart from $excluded excepted row(s) above, $total total rows, sha256 $(shasum -a 256 "c-$g.tsv" | cut -c1-32)"
               echo "  (with clang's math builtins left on, $m of $total rows would differ)"
             else
-              n=$(diff "c-$g.tsv" "net-$g.tsv" | grep -c '^<' || true)
-              echo "::error::$g: $n of $total rows differ between the clang C reference and the port"
+              n=$(diff "c-$g-filtered.tsv" "net-$g-filtered.tsv" | grep -c '^<' || true)
+              echo "::error::$g: $n of $total rows differ between the clang C reference and the port (beyond the $excluded already-excepted row(s) above)"
               echo "  by func:"
-              diff "c-$g.tsv" "net-$g.tsv" | grep '^<' | sed 's/^< //'                 | cut -d'|' -f1 | sort | uniq -c | sort -rn | sed 's/^/    /'
+              diff "c-$g-filtered.tsv" "net-$g-filtered.tsv" | grep '^<' | sed 's/^< //'                 | cut -d'|' -f1 | sort | uniq -c | sort -rn | sed 's/^/    /'
               m=$(diff "nb-$g.tsv" "net-$g.tsv" | grep -c '^<' || true)
               echo "  (the builtins-on diagnostic build differs from the port on $m rows)"
               echo "  first differing row, C then port:"
-              diff "c-$g.tsv" "net-$g.tsv" | head -4 | sed 's/^/    /'
+              diff "c-$g-filtered.tsv" "net-$g-filtered.tsv" | head -4 | sed 's/^/    /'
               rc=1
             fi
           done
