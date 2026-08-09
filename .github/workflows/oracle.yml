@@ -1060,6 +1060,11 @@ jobs:
       # before -- NativeAOT codegen, this platform's libm, this runner image -- should not be able
       # to fail the branch on its first execution. It then passed clean on this runner image, so
       # the promotion criterion that comment set out is met and continue-on-error is gone.
+      #
+      # Same HOUSEPOS|Y NaN-sign exception as the JIT comparison above (see that step's own header
+      # comment for the mechanism and why it's narrow) -- the AOT binary runs the identical port
+      # code against the identical libm, so it hits the identical near-singularity, on the same
+      # two rows.
       - name: Compare the AOT binary against the C reference, bit for bit
         shell: bash
         run: |
@@ -1072,15 +1077,35 @@ jobs:
               rc=1
               continue
             fi
-            if cmp -s "c-$g.tsv" "aot-$g.tsv"; then
-              echo "$g: AOT BIT-IDENTICAL to the clang C reference, $total rows"
+
+            rm -f "c-aot-$g-filtered.tsv" "aot-$g-filtered.tsv" "excluded-aot-$g.txt"
+            awk -F'\t' '
+              FNR==NR { c_case[FNR]=$1; c_dec[FNR]=$4; c_line[FNR]=$0; next }
+              {
+                known_nan = (c_case[FNR] ~ /^HOUSEPOS\|Y\|/) && (c_dec[FNR] == "NaN") && ($4 == "NaN")
+                if (known_nan) {
+                  print c_case[FNR] >> "excluded-aot-'"$g"'.txt"
+                } else {
+                  print c_line[FNR] >> "c-aot-'"$g"'-filtered.tsv"
+                  print $0 >> "aot-'"$g"'-filtered.tsv"
+                }
+              }
+            ' "c-$g.tsv" "aot-$g.tsv"
+            excluded=$(wc -l < "excluded-aot-$g.txt" 2>/dev/null || echo 0)
+            if [ "$excluded" != "0" ]; then
+              echo "$g: $excluded row(s) excepted under the documented HOUSEPOS|Y NaN-sign class:"
+              sed 's/^/    /' "excluded-aot-$g.txt"
+            fi
+
+            if cmp -s "c-aot-$g-filtered.tsv" "aot-$g-filtered.tsv"; then
+              echo "$g: AOT BIT-IDENTICAL to the clang C reference apart from $excluded excepted row(s) above, $total total rows"
             else
-              n=$(diff "c-$g.tsv" "aot-$g.tsv" | grep -c '^<' || true)
-              echo "::warning::$g: $n of $total rows differ between the clang C reference and the AOT-published port (the JIT comparison above this section already gates on this same C reference; this step is diagnostic on first landing -- see the job comment above it)"
+              n=$(diff "c-aot-$g-filtered.tsv" "aot-$g-filtered.tsv" | grep -c '^<' || true)
+              echo "::warning::$g: $n of $total rows differ between the clang C reference and the AOT-published port, beyond the $excluded already-excepted row(s) above (the JIT comparison above this section already gates on this same C reference; this step is diagnostic on first landing -- see the job comment above it)"
               echo "  by func:"
-              diff "c-$g.tsv" "aot-$g.tsv" | grep '^<' | sed 's/^< //' | cut -d'|' -f1 | sort | uniq -c | sort -rn | sed 's/^/    /'
+              diff "c-aot-$g-filtered.tsv" "aot-$g-filtered.tsv" | grep '^<' | sed 's/^< //' | cut -d'|' -f1 | sort | uniq -c | sort -rn | sed 's/^/    /'
               echo "  first differing row, C then AOT:"
-              diff "c-$g.tsv" "aot-$g.tsv" | head -4 | sed 's/^/    /'
+              diff "c-aot-$g-filtered.tsv" "aot-$g-filtered.tsv" | head -4 | sed 's/^/    /'
               rc=1
             fi
           done
