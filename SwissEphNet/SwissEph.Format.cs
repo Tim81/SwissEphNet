@@ -287,27 +287,27 @@ namespace SwissEphNet
                 char c = format[i];
                 int l = 1;
                 // Search length of segment
-                char[] cf = null;
+                char cfLower = '\0', cfUpper = '\0';
                 switch (c) {
                     case 'd':
-                    case 'D': cf = new char[] { 'd', 'D' }; break;
+                    case 'D': cfLower = 'd'; cfUpper = 'D'; break;
                     case 'a':
-                    case 'A': cf = new char[] { 'a', 'A' }; break;
+                    case 'A': cfLower = 'a'; cfUpper = 'A'; break;
                     case 'n':
-                    case 'N': cf = new char[] { 'n', 'N' }; break;
+                    case 'N': cfLower = 'n'; cfUpper = 'N'; break;
                     case 'g':
-                    case 'G': cf = new char[] { 'g', 'G' }; break;
+                    case 'G': cfLower = 'g'; cfUpper = 'G'; break;
                     case 'm':
-                    case 'M': cf = new char[] { 'm', 'M' }; break;
+                    case 'M': cfLower = 'm'; cfUpper = 'M'; break;
                     case 's':
-                    case 'S': cf = new char[] { 's', 'S' }; break;
+                    case 'S': cfLower = 's'; cfUpper = 'S'; break;
                     case 'p':
-                    case 'P': cf = new char[] { 'p', 'P' }; break;
+                    case 'P': cfLower = 'p'; cfUpper = 'P'; break;
                     case 'z':
-                    case 'Z': cf = new char[] { 'z', 'Z' }; break;
+                    case 'Z': cfLower = 'z'; cfUpper = 'Z'; break;
                 }
-                if (cf != null) {
-                    while (i + 1 < fmtLen && (format[i + 1] == cf[0] || format[i + 1] == cf[1])) { i++; l++; }
+                if (cfLower != '\0') {
+                    while (i + 1 < fmtLen && (format[i + 1] == cfLower || format[i + 1] == cfUpper)) { i++; l++; }
                 }
                 // Format
                 switch (c) {

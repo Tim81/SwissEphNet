@@ -49,14 +49,14 @@ namespace SwissEphNet
             // netstandard2.0 fails with CS1503 (char does not convert to
             // string), which is exactly the signature that made the compiler
             // fall back to this extension instead once it type-checks.
-            // s.Contains(c.ToString()) binds to the one Contains overload
-            // that exists on every TFM and is already ordinal
-            // (culture-insensitive) per its documented behavior, so the
-            // CA1307 suggestion to add StringComparison explicitly is a false
-            // positive here (that overload of Contains is not available on
-            // netstandard2.0 either).
+            // s.IndexOf(c) is a distinct method name (not Contains), so it
+            // carries none of that recursion risk, exists on every targeted
+            // TFM, and needs no c.ToString() allocation per call. The
+            // IndexOf(char, StringComparison) overload CA1307 suggests does
+            // not exist on netstandard2.0 either -- same false positive as
+            // the old Contains(string) call had.
 #pragma warning disable CA1307
-            return s.Contains(c.ToString());
+            return s.IndexOf(c) >= 0;
 #pragma warning restore CA1307
         }
 
@@ -71,11 +71,12 @@ namespace SwissEphNet
             if (charSet == null || String.IsNullOrEmpty(s)) return false;
             foreach (var c in charSet)
             {
-                // See the single-char Contains(Char) overload above: this
-                // must stay on the string overload, not s.Contains(c), or it
-                // recurses unboundedly on netstandard2.0.
+                // Ordinal is already correct char-search semantics here; the
+                // StringComparison overload CA1307 suggests (present on
+                // net8.0/net10.0, absent on netstandard2.0) would add no
+                // behavior change, only noise.
 #pragma warning disable CA1307
-                if (s.Contains(c.ToString())) return true;
+                if (s.Contains(c)) return true;
 #pragma warning restore CA1307
             }
             return false;

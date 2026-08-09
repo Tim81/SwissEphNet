@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace SwissEphNet
@@ -53,8 +52,24 @@ namespace SwissEphNet
         /// <summary>
         /// Convert the pointer to an array
         /// </summary>
-        public T[] ToArray()
-            => BaseArray != null ? BaseArray.Skip(BaseIndex).ToArray() : null;
+        public T[] ToArray() {
+            if (BaseArray == null) return null;
+            // Clamp rather than let `new T[negative]` throw OverflowException:
+            // the old BaseArray.Skip(BaseIndex).ToArray() treated a non-positive
+            // BaseIndex as Skip(0) -- LINQ's own documented behavior for a
+            // count <= 0 -- returning the full array, and returned an empty
+            // array once BaseIndex reached or exceeded BaseArray.Length.
+            // Array.Copy itself throws on a negative or otherwise out-of-range
+            // sourceIndex even at length 0, so both ends are clamped before it
+            // runs, not after: a negative BaseIndex reaching this unclamped
+            // used to throw ArgumentOutOfRangeException instead of returning
+            // the full array the old Skip-based implementation did.
+            int start = Math.Max(0, BaseIndex);
+            int length = Math.Max(0, BaseArray.Length - start);
+            T[] result = new T[length];
+            if (length > 0) Array.Copy(BaseArray, start, result, 0, length);
+            return result;
+        }
 
         /// <summary>
         /// Read value pointed by access
@@ -74,7 +89,7 @@ namespace SwissEphNet
         /// Explicit converision of an ArrayAccess to an array
         /// </summary>
         public static explicit operator T[](CPointer<T> array) {
-            return array.BaseArray == null ? null : array.BaseArray.Skip(array.BaseIndex).ToArray();
+            return array.ToArray();
         }
 
         /// <summary>

@@ -821,13 +821,33 @@ def replay_gauquelin(rows, swe, tol):
                 yield RowResult(case_id, "DISAGREE", detail=f"exp retc={exp_retc} (success) but pyswisseph raised {type(ex).__name__}: {ex}")
 
 
-def replay_calc_defaulteph(rows, swe, tol):
+def replay_calc_defaulteph(rows, swe, tol, ephe_path):
+    # The C# baseline gives every row a brand-new SwissEph() instance (see
+    # Tools/BaselineMatrix/CalcDefaultEph.cs), so nutation state can never leak between
+    # rows. pyswisseph has no per-call instance: swi_check_nutation's cached
+    # swed.nut.nutlo persists across calls and is read back unconditionally whenever
+    # SEFLG_NONUT is effectively set (forced on for J2000/SIDEREAL too), skipping
+    # recomputation entirely. Without a reset, a row immediately preceding a
+    # J2000/NONUT/SIDEREAL case for the same jd (this area's rows sort alphabetically,
+    # so e.g. "0" sorts right before "J2000"/"NONUT") leaks its real, non-zero nutation
+    # value into the following row -- not a genuine port-vs-pyswisseph disagreement, a
+    # test-harness bug. This produced exactly 30 false CDEF|-1|*/CUDEF|-1|* disagreements
+    # (ipl=-1 is SE_ECL_NUT) before this reset was added; see docs/known-issues.md's
+    # "swe_calc(SE_ECL_NUT) returns success with all-zero output" entry for the full
+    # diagnosis, verified against an isolated real-C run via Tools/CReference/sedump.c
+    # (which resets the same way, per row, and reproduced the port's zero output exactly).
+    #
+    # swe.close() resets swed.nut/nut2000/nutv (and other global C state) but also
+    # invalidates the ephemeris path, so it must be followed by swe.set_ephe_path()
+    # before the next row -- omitting that would silently fall back to Moshier.
     for parts, fields in rows:
         prefix = parts[0]
         case_id = "|".join(parts)
         if prefix not in ("CDEF", "CUDEF"):
             yield RowResult(case_id, "SKIP", reason=f"unrecognized prefix {prefix}")
             continue
+        swe.close()
+        swe.set_ephe_path(ephe_path)
         ipl = int(parts[1])
         jd = to_float(parts[2])
         flag = CALC_IFLAG_COMBOS[parts[3]]
@@ -882,7 +902,12 @@ def run_one_area(area: str, baseline_dir: str, tol: float, max_detail: int, swe,
         print(f"[{area}] MISSING: {path}")
         return 0, 0, 0
     rows = read_rows(path)
-    results = list(AREA_REPLAYERS[area](rows, swe, tol))
+    if area == "calc-defaulteph":
+        # The only replayer that needs to reset per-row state (see its own
+        # comment) -- so it's the only one that needs the ephemeris path back.
+        results = list(AREA_REPLAYERS[area](rows, swe, tol, empty_ephe))
+    else:
+        results = list(AREA_REPLAYERS[area](rows, swe, tol))
 
     agree = [r for r in results if r.status == "AGREE"]
     disagree = [r for r in results if r.status == "DISAGREE"]

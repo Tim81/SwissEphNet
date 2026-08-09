@@ -163,6 +163,32 @@ namespace SwissEphNet.Tests
         }
 
         [Fact]
+        public void TestToArrayWithBaseIndexPastEnd() {
+            // Regression test: ToArray()/the explicit T[] cast build the result
+            // via Array.Copy, which throws ArgumentException on an out-of-range
+            // sourceIndex even at a copy length of 0. BaseArray.Skip(BaseIndex)
+            // .ToArray() (the prior LINQ-based implementation) tolerated this by
+            // returning an empty array instead.
+            int[] array = new int[] { 0, 1, 2 };
+            CPointer<int> target = new CPointer<int>(array, 10);
+            Assert.Equal(Array.Empty<int>(), target.ToArray());
+            Assert.Equal(Array.Empty<int>(), (int[])target);
+        }
+
+        [Fact]
+        public void TestToArrayWithNegativeBaseIndex() {
+            // Regression test: BaseArray.Skip(BaseIndex).ToArray() (the prior
+            // LINQ-based implementation) treats a non-positive count as
+            // Skip(0) -- documented .NET behavior -- and returns the full
+            // array. The Array.Copy-based replacement must match that, not
+            // throw ArgumentOutOfRangeException on the negative sourceIndex.
+            int[] array = new int[] { 0, 1, 2, 3, 4 };
+            CPointer<int> target = new CPointer<int>(array, -2);
+            Assert.Equal(array, target.ToArray());
+            Assert.Equal(array, (int[])target);
+        }
+
+        [Fact]
         public void TestEqualityWithArray() {
             int[] array1 = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             int[] array2 = new int[] { 9, 8, 7, 6, 5, 4, 3, 2, 1 };
