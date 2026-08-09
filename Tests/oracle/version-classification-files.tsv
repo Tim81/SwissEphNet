@@ -2187,6 +2187,14 @@ HELIOCROSS|6|180|2195878|PLAIN|-1	TRACKS-2.10.03	retc -9999!=0; serr differs; 1 
 HELIOCROSS|6|180|2195878|PLAIN|1	TRACKS-2.10.03	retc -9999!=0; serr differs; 1 field(s) differ, worst jd_cross (unrelated)	MATCH	retc -9999!=0; serr differs; 1 field(s) differ, worst jd_cross (unrelated)
 HELIOCROSS|6|180|2488072|PLAIN|-1	TRACKS-2.10.03	retc -9999!=0; serr differs; 1 field(s) differ, worst jd_cross (unrelated)	MATCH	retc -9999!=0; serr differs; 1 field(s) differ, worst jd_cross (unrelated)
 HELIOCROSS|6|180|2488072|PLAIN|1	TRACKS-2.10.03	retc -9999!=0; serr differs; 1 field(s) differ, worst jd_cross (unrelated)	MATCH	retc -9999!=0; serr differs; 1 field(s) differ, worst jd_cross (unrelated)
+HOUSESARMCEX2|0|-66|23.4392911|0	TRACKS-2.10.03	retc -9999!=0; serr differs; 37 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 37 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESARMCEX2|0|-66|23.4392911|180	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESARMCEX2|0|-66|23.4392911|270	TRACKS-2.10.03	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[5] (unrelated)
+HOUSESARMCEX2|0|-66|23.4392911|90	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[1] (unrelated)
+HOUSESARMCEX2|0|66|23.4392911|0	TRACKS-2.10.03	retc -9999!=0; serr differs; 37 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 37 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESARMCEX2|0|66|23.4392911|180	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESARMCEX2|0|66|23.4392911|270	TRACKS-2.10.03	retc -9999!=0; serr differs; 38 field(s) differ, worst cusp_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 38 field(s) differ, worst cusp_speed[1] (unrelated)
+HOUSESARMCEX2|0|66|23.4392911|90	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst ascmc_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst ascmc_speed[5] (unrelated)
 HOUSESARMCEX2|A|-66|23.4392911|0	TRACKS-2.10.03	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[1] (unrelated)
 HOUSESARMCEX2|A|-66|23.4392911|180	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)
 HOUSESARMCEX2|A|-66|23.4392911|270	TRACKS-2.10.03	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[5] (unrelated)
@@ -2259,6 +2267,14 @@ HOUSESARMCEX2|I|66|23.4392911|0	TRACKS-2.10.03	retc -9999!=0; serr differs; 37 f
 HOUSESARMCEX2|I|66|23.4392911|180	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[3] (unrelated)
 HOUSESARMCEX2|I|66|23.4392911|270	TRACKS-2.10.03	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[0] (unrelated)	MATCH	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[0] (unrelated)
 HOUSESARMCEX2|I|66|23.4392911|90	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst ascmc_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst ascmc_speed[5] (unrelated)
+HOUSESARMCEX2|J|-66|23.4392911|0	TRACKS-2.10.03	retc -9999!=0; serr differs; 37 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 37 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESARMCEX2|J|-66|23.4392911|180	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESARMCEX2|J|-66|23.4392911|270	TRACKS-2.10.03	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[5] (unrelated)
+HOUSESARMCEX2|J|-66|23.4392911|90	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[1] (unrelated)
+HOUSESARMCEX2|J|66|23.4392911|0	TRACKS-2.10.03	retc -9999!=0; serr differs; 37 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 37 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESARMCEX2|J|66|23.4392911|180	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESARMCEX2|J|66|23.4392911|270	TRACKS-2.10.03	retc -9999!=0; serr differs; 38 field(s) differ, worst cusp_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 38 field(s) differ, worst cusp_speed[1] (unrelated)
+HOUSESARMCEX2|J|66|23.4392911|90	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst ascmc_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst ascmc_speed[5] (unrelated)
 HOUSESARMCEX2|K|-66|23.4392911|0	TRACKS-2.10.03	retc -9999!=0; serr differs; 37 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 37 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESARMCEX2|K|-66|23.4392911|180	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESARMCEX2|K|-66|23.4392911|270	TRACKS-2.10.03	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[5] (unrelated)
@@ -2379,6 +2395,14 @@ HOUSESARMCEX2|Y|66|23.4392911|0	TRACKS-2.10.03	retc -9999!=0; serr differs; 37 f
 HOUSESARMCEX2|Y|66|23.4392911|180	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[3] (unrelated)
 HOUSESARMCEX2|Y|66|23.4392911|270	TRACKS-2.10.03	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[0] (unrelated)	MATCH	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[0] (unrelated)
 HOUSESARMCEX2|Y|66|23.4392911|90	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst ascmc_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst ascmc_speed[5] (unrelated)
+HOUSESARMCEX2|Z|-66|23.4392911|0	TRACKS-2.10.03	retc -9999!=0; serr differs; 37 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 37 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESARMCEX2|Z|-66|23.4392911|180	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESARMCEX2|Z|-66|23.4392911|270	TRACKS-2.10.03	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[5] (unrelated)
+HOUSESARMCEX2|Z|-66|23.4392911|90	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[1] (unrelated)
+HOUSESARMCEX2|Z|66|23.4392911|0	TRACKS-2.10.03	retc -9999!=0; serr differs; 37 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 37 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESARMCEX2|Z|66|23.4392911|180	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESARMCEX2|Z|66|23.4392911|270	TRACKS-2.10.03	retc -9999!=0; serr differs; 38 field(s) differ, worst cusp_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 38 field(s) differ, worst cusp_speed[1] (unrelated)
+HOUSESARMCEX2|Z|66|23.4392911|90	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst ascmc_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst ascmc_speed[5] (unrelated)
 HOUSESARMCEX2|i|-66|23.4392911|0	TRACKS-2.10.03	retc -9999!=0; serr differs; 37 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 37 field(s) differ, worst cusp_speed[3] (unrelated)
 HOUSESARMCEX2|i|-66|23.4392911|180	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[5] (unrelated)
 HOUSESARMCEX2|i|-66|23.4392911|270	TRACKS-2.10.03	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[5] (unrelated)
@@ -2387,6 +2411,18 @@ HOUSESARMCEX2|i|66|23.4392911|0	TRACKS-2.10.03	retc -9999!=0; serr differs; 37 f
 HOUSESARMCEX2|i|66|23.4392911|180	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[9] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst cusp_speed[9] (unrelated)
 HOUSESARMCEX2|i|66|23.4392911|270	TRACKS-2.10.03	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[0] (unrelated)	MATCH	retc -9999!=0; serr differs; 38 field(s) differ, worst ascmc_speed[0] (unrelated)
 HOUSESARMCEX2|i|66|23.4392911|90	TRACKS-2.10.03	retc -9999!=0; serr differs; 39 field(s) differ, worst ascmc_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 39 field(s) differ, worst ascmc_speed[5] (unrelated)
+HOUSESEX2|0|-66|-118.24|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
+HOUSESEX2|0|-66|-118.24|2269091|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
+HOUSESEX2|0|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
+HOUSESEX2|0|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESEX2|0|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESEX2|0|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESEX2|0|66|-118.24|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESEX2|0|66|-118.24|2269091|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESEX2|0|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESEX2|0|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESEX2|0|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESEX2|0|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)
 HOUSESEX2|A|-66|-118.24|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)
 HOUSESEX2|A|-66|-118.24|2269091|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)
 HOUSESEX2|A|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)
@@ -2495,6 +2531,18 @@ HOUSESEX2|I|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr diffe
 HOUSESEX2|I|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[3] (unrelated)
 HOUSESEX2|I|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[3] (unrelated)
 HOUSESEX2|I|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESEX2|J|-66|-118.24|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESEX2|J|-66|-118.24|2269091|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESEX2|J|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESEX2|J|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESEX2|J|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESEX2|J|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESEX2|J|66|-118.24|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[6] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[6] (unrelated)
+HOUSESEX2|J|66|-118.24|2269091|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[6] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[6] (unrelated)
+HOUSESEX2|J|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[6] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[6] (unrelated)
+HOUSESEX2|J|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESEX2|J|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESEX2|J|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)
 HOUSESEX2|K|-66|-118.24|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|K|-66|-118.24|2269091|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|K|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
@@ -2533,25 +2581,25 @@ HOUSESEX2|M|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differ
 HOUSESEX2|M|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[2] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[2] (unrelated)
 HOUSESEX2|N|-66|-118.24|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|N|-66|-118.24|2269091|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)
-HOUSESEX2|N|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)
+HOUSESEX2|N|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 32 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 32 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|N|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|N|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)
-HOUSESEX2|N|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)
+HOUSESEX2|N|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 32 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 32 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|N|66|-118.24|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|N|66|-118.24|2269091|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)
-HOUSESEX2|N|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)
+HOUSESEX2|N|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 32 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 32 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|N|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|N|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|N|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 31 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|O|-66|-118.24|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|O|-66|-118.24|2269091|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
-HOUSESEX2|O|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[4] (unrelated)
+HOUSESEX2|O|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|O|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|O|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
-HOUSESEX2|O|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[4] (unrelated)
+HOUSESEX2|O|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|O|66|-118.24|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|O|66|-118.24|2269091|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
-HOUSESEX2|O|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[4] (unrelated)
+HOUSESEX2|O|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|O|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|O|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|O|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
@@ -2581,7 +2629,7 @@ HOUSESEX2|Q|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differ
 HOUSESEX2|Q|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)
 HOUSESEX2|R|-66|-118.24|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|R|-66|-118.24|2269091|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
-HOUSESEX2|R|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
+HOUSESEX2|R|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[4] (unrelated)
 HOUSESEX2|R|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)
 HOUSESEX2|R|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)
 HOUSESEX2|R|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)
@@ -2593,7 +2641,7 @@ HOUSESEX2|R|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differ
 HOUSESEX2|R|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)
 HOUSESEX2|S|-66|-118.24|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)
 HOUSESEX2|S|-66|-118.24|2269091|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)
-HOUSESEX2|S|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 41 field(s) differ, worst ascmc_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 41 field(s) differ, worst ascmc_speed[1] (unrelated)
+HOUSESEX2|S|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)
 HOUSESEX2|S|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)
 HOUSESEX2|S|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)
 HOUSESEX2|S|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst ascmc_speed[1] (unrelated)
@@ -2674,7 +2722,19 @@ HOUSESEX2|Y|66|-118.24|2269091|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differ
 HOUSESEX2|Y|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[11] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[11] (unrelated)
 HOUSESEX2|Y|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)
 HOUSESEX2|Y|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)
-HOUSESEX2|Y|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESEX2|Y|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESEX2|Z|-66|-118.24|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
+HOUSESEX2|Z|-66|-118.24|2269091|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[4] (unrelated)
+HOUSESEX2|Z|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[4] (unrelated)	MATCH	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[4] (unrelated)
+HOUSESEX2|Z|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESEX2|Z|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESEX2|Z|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESEX2|Z|66|-118.24|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESEX2|Z|66|-118.24|2269091|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESEX2|Z|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[5] (unrelated)
+HOUSESEX2|Z|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESEX2|Z|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESEX2|Z|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 40 field(s) differ, worst cusp_speed[3] (unrelated)
 HOUSESEX2|i|-66|-118.24|2269091|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 41 field(s) differ, worst ascmc_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 41 field(s) differ, worst ascmc_speed[1] (unrelated)
 HOUSESEX2|i|-66|-118.24|2269091|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 41 field(s) differ, worst ascmc_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 41 field(s) differ, worst ascmc_speed[1] (unrelated)
 HOUSESEX2|i|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 41 field(s) differ, worst ascmc_speed[1] (unrelated)	MATCH	retc -9999!=0; serr differs; 41 field(s) differ, worst ascmc_speed[1] (unrelated)
@@ -2687,6 +2747,18 @@ HOUSESEX2|i|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr diffe
 HOUSESEX2|i|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[3] (unrelated)
 HOUSESEX2|i|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[3] (unrelated)
 HOUSESEX2|i|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[3] (unrelated)	MATCH	retc -9999!=0; serr differs; 41 field(s) differ, worst cusp_speed[3] (unrelated)
+HOUSESEX|0|-66|-118.24|2269091|PLAIN	TRACKS-2.10.03	6 field(s) differ, worst cusp[2] (ulp=164142226259)	MATCH	6 field(s) differ, worst cusp[2] (ulp=164142226259)
+HOUSESEX|0|-66|-118.24|2269091|RADIANS	TRACKS-2.10.03	6 field(s) differ, worst cusp[2] (ulp=183348626546)	MATCH	6 field(s) differ, worst cusp[2] (ulp=183348626546)
+HOUSESEX|0|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[2] (ulp=164140602955)	MATCH	19 field(s) differ, worst cusp[2] (ulp=164140602955)
+HOUSESEX|0|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=37167102584)	MATCH	20 field(s) differ, worst cusp[6] (ulp=37167102584)
+HOUSESEX|0|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=41516052065)	MATCH	20 field(s) differ, worst cusp[6] (ulp=41516052065)
+HOUSESEX|0|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=246023368592)	MATCH	20 field(s) differ, worst cusp[5] (ulp=246023368592)
+HOUSESEX|0|66|-118.24|2269091|PLAIN	TRACKS-2.10.03	6 field(s) differ, worst cusp[12] (ulp=7948453389338)	MATCH	6 field(s) differ, worst cusp[12] (ulp=7948453389338)
+HOUSESEX|0|66|-118.24|2269091|RADIANS	TRACKS-2.10.03	6 field(s) differ, worst cusp[12] (ulp=8878507653456)	MATCH	6 field(s) differ, worst cusp[12] (ulp=8878507653456)
+HOUSESEX|0|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[12] (ulp=15896905155372)	MATCH	19 field(s) differ, worst cusp[12] (ulp=15896905155372)
+HOUSESEX|0|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[9] (ulp=549118731032)	MATCH	20 field(s) differ, worst cusp[9] (ulp=549118731032)
+HOUSESEX|0|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[9] (ulp=613371509816)	MATCH	20 field(s) differ, worst cusp[9] (ulp=613371509816)
+HOUSESEX|0|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[8] (ulp=554784368228)	MATCH	20 field(s) differ, worst cusp[8] (ulp=554784368228)
 HOUSESEX|A|-66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|A|-66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|A|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[1] (ulp=12906112)	MATCH	19 field(s) differ, worst cusp[1] (ulp=12906112)
@@ -2795,186 +2867,210 @@ HOUSESEX|I|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst 
 HOUSESEX|I|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	21 field(s) differ, worst cusp[5] (ulp=5451579776)	MATCH	21 field(s) differ, worst cusp[5] (ulp=5451579776)
 HOUSESEX|I|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	21 field(s) differ, worst cusp[5] (ulp=6089473058)	MATCH	21 field(s) differ, worst cusp[5] (ulp=6089473058)
 HOUSESEX|I|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	21 field(s) differ, worst cusp[7] (unrelated)	MATCH	21 field(s) differ, worst cusp[7] (unrelated)
+HOUSESEX|J|-66|-118.24|2269091|PLAIN	TRACKS-2.10.03	8 field(s) differ, worst cusp[12] (unrelated)	MATCH	8 field(s) differ, worst cusp[12] (unrelated)
+HOUSESEX|J|-66|-118.24|2269091|RADIANS	TRACKS-2.10.03	8 field(s) differ, worst cusp[12] (unrelated)	MATCH	8 field(s) differ, worst cusp[12] (unrelated)
+HOUSESEX|J|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[2] (unrelated)	MATCH	19 field(s) differ, worst cusp[2] (unrelated)
+HOUSESEX|J|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (unrelated)	MATCH	20 field(s) differ, worst cusp[5] (unrelated)
+HOUSESEX|J|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (unrelated)	MATCH	20 field(s) differ, worst cusp[5] (unrelated)
+HOUSESEX|J|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (unrelated)	MATCH	20 field(s) differ, worst cusp[5] (unrelated)
+HOUSESEX|J|66|-118.24|2269091|PLAIN	TRACKS-2.10.03	8 field(s) differ, worst cusp[12] (unrelated)	MATCH	8 field(s) differ, worst cusp[12] (unrelated)
+HOUSESEX|J|66|-118.24|2269091|RADIANS	TRACKS-2.10.03	8 field(s) differ, worst cusp[12] (unrelated)	MATCH	8 field(s) differ, worst cusp[12] (unrelated)
+HOUSESEX|J|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	8 field(s) differ, worst cusp[12] (unrelated)	MATCH	8 field(s) differ, worst cusp[12] (unrelated)
+HOUSESEX|J|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (unrelated)	MATCH	20 field(s) differ, worst cusp[5] (unrelated)
+HOUSESEX|J|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (unrelated)	MATCH	20 field(s) differ, worst cusp[5] (unrelated)
+HOUSESEX|J|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (unrelated)	MATCH	20 field(s) differ, worst cusp[6] (unrelated)
 HOUSESEX|K|-66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|K|-66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|K|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[1] (ulp=3457186101610)	MATCH	19 field(s) differ, worst cusp[1] (ulp=3457186101610)
+HOUSESEX|K|-66|-118.24|2269091|SIDEREAL	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|K|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=1003232060)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=1003232060)
 HOUSESEX|K|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=1120620967)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=1120620967)
-HOUSESEX|K|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=62729353167)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=62729353167)
+HOUSESEX|K|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=2006367873)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=2006367873)
 HOUSESEX|K|66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|K|66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|K|66|-118.24|2269091|SIDEREAL	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|K|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=28104516992)	MATCH	20 field(s) differ, worst cusp[5] (ulp=28104516992)
 HOUSESEX|K|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=31393046796)	MATCH	20 field(s) differ, worst cusp[5] (ulp=31393046796)
-HOUSESEX|K|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[7] (ulp=125458706318)	MATCH	20 field(s) differ, worst cusp[7] (ulp=125458706318)
+HOUSESEX|K|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[7] (ulp=3999829682)	MATCH	20 field(s) differ, worst cusp[7] (ulp=3999829682)
 HOUSESEX|L|-66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|L|-66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|L|-66|-118.24|2269091|SIDEREAL	AGREES-BOTH	MATCH	MATCH	MATCH
+HOUSESEX|L|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[1] (ulp=12906112)	MATCH	19 field(s) differ, worst cusp[1] (ulp=12906112)
 HOUSESEX|L|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=3603632192)	MATCH	20 field(s) differ, worst cusp[5] (ulp=3603632192)
 HOUSESEX|L|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=4025295794)	MATCH	20 field(s) differ, worst cusp[5] (ulp=4025295794)
-HOUSESEX|L|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=28828287560)	MATCH	20 field(s) differ, worst cusp[5] (ulp=28828287560)
+HOUSESEX|L|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=3999829666)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=3999829666)
 HOUSESEX|L|66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|L|66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|L|66|-118.24|2269091|SIDEREAL	AGREES-BOTH	MATCH	MATCH	MATCH
+HOUSESEX|L|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst ascmc[5] (ulp=12906112)	MATCH	19 field(s) differ, worst ascmc[5] (ulp=12906112)
 HOUSESEX|L|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=14475816256)	MATCH	20 field(s) differ, worst cusp[5] (ulp=14475816256)
 HOUSESEX|L|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=16169641958)	MATCH	20 field(s) differ, worst cusp[5] (ulp=16169641958)
-HOUSESEX|L|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[7] (ulp=3999829682)	MATCH	20 field(s) differ, worst cusp[7] (ulp=3999829682)
+HOUSESEX|L|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[7] (ulp=3999464498)	MATCH	20 field(s) differ, worst cusp[7] (ulp=3999464498)
 HOUSESEX|M|-66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|M|-66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|M|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[12] (ulp=25812224)	MATCH	19 field(s) differ, worst cusp[12] (ulp=25812224)
+HOUSESEX|M|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[12] (ulp=565328896448)	MATCH	19 field(s) differ, worst cusp[12] (ulp=565328896448)
 HOUSESEX|M|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=7162652544)	MATCH	20 field(s) differ, worst cusp[5] (ulp=7162652544)
 HOUSESEX|M|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=8000759685)	MATCH	20 field(s) differ, worst cusp[5] (ulp=8000759685)
-HOUSESEX|M|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=7681505074)	MATCH	20 field(s) differ, worst cusp[6] (ulp=7681505074)
+HOUSESEX|M|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=3840579385)	MATCH	20 field(s) differ, worst cusp[6] (ulp=3840579385)
 HOUSESEX|M|66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|M|66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|M|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[12] (ulp=25812224)	MATCH	19 field(s) differ, worst cusp[12] (ulp=25812224)
+HOUSESEX|M|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[12] (ulp=5927968)	MATCH	19 field(s) differ, worst cusp[12] (ulp=5927968)
 HOUSESEX|M|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=7162652544)	MATCH	20 field(s) differ, worst cusp[5] (ulp=7162652544)
 HOUSESEX|M|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=8000759685)	MATCH	20 field(s) differ, worst cusp[5] (ulp=8000759685)
-HOUSESEX|M|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=3840569945)	MATCH	20 field(s) differ, worst cusp[6] (ulp=3840569945)
+HOUSESEX|M|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=7694207346)	MATCH	20 field(s) differ, worst cusp[6] (ulp=7694207346)
 HOUSESEX|N|-66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|N|-66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|N|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	7 field(s) differ, worst ascmc[0] (ulp=282664448224)	MATCH	7 field(s) differ, worst ascmc[0] (ulp=282664448224)
+HOUSESEX|N|-66|-118.24|2269091|SIDEREAL	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|N|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	8 field(s) differ, worst ascmc[7] (ulp=1003232060)	MATCH	8 field(s) differ, worst ascmc[7] (ulp=1003232060)
 HOUSESEX|N|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	8 field(s) differ, worst ascmc[7] (ulp=1120620967)	MATCH	8 field(s) differ, worst ascmc[7] (ulp=1120620967)
-HOUSESEX|N|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	8 field(s) differ, worst ascmc[7] (ulp=1999741681)	MATCH	8 field(s) differ, worst ascmc[7] (ulp=1999741681)
+HOUSESEX|N|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	9 field(s) differ, worst ascmc[3] (ulp=1683271546)	MATCH	9 field(s) differ, worst ascmc[3] (ulp=1683271546)
 HOUSESEX|N|66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|N|66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|N|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	7 field(s) differ, worst ascmc[5] (ulp=2963984)	MATCH	7 field(s) differ, worst ascmc[5] (ulp=2963984)
+HOUSESEX|N|66|-118.24|2269091|SIDEREAL	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|N|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	8 field(s) differ, worst ascmc[3] (ulp=898695251)	MATCH	8 field(s) differ, worst ascmc[3] (ulp=898695251)
 HOUSESEX|N|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	8 field(s) differ, worst ascmc[3] (ulp=1003852231)	MATCH	8 field(s) differ, worst ascmc[3] (ulp=1003852231)
-HOUSESEX|N|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	8 field(s) differ, worst ascmc[3] (ulp=1797291426)	MATCH	8 field(s) differ, worst ascmc[3] (ulp=1797291426)
+HOUSESEX|N|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	8 field(s) differ, worst ascmc[3] (ulp=897859541)	MATCH	8 field(s) differ, worst ascmc[3] (ulp=897859541)
 HOUSESEX|O|-66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|O|-66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|O|-66|-118.24|2269091|SIDEREAL	AGREES-BOTH	MATCH	MATCH	MATCH
+HOUSESEX|O|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[1] (ulp=3246608)	MATCH	19 field(s) differ, worst cusp[1] (ulp=3246608)
 HOUSESEX|O|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=3419359328)	MATCH	20 field(s) differ, worst cusp[5] (ulp=3419359328)
 HOUSESEX|O|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=1909730515)	MATCH	20 field(s) differ, worst cusp[5] (ulp=1909730515)
-HOUSESEX|O|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	21 field(s) differ, worst cusp[5] (ulp=3418730728)	MATCH	21 field(s) differ, worst cusp[5] (ulp=3418730728)
+HOUSESEX|O|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=6832032978)	MATCH	20 field(s) differ, worst cusp[5] (ulp=6832032978)
 HOUSESEX|O|66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|O|66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|O|66|-118.24|2269091|SIDEREAL	AGREES-BOTH	MATCH	MATCH	MATCH
+HOUSESEX|O|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[11] (ulp=51945728)	MATCH	19 field(s) differ, worst cusp[11] (ulp=51945728)
 HOUSESEX|O|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=27518308096)	MATCH	20 field(s) differ, worst cusp[5] (ulp=27518308096)
 HOUSESEX|O|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=30738245175)	MATCH	20 field(s) differ, worst cusp[5] (ulp=30738245175)
-HOUSESEX|O|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[7] (ulp=2003121289)	MATCH	20 field(s) differ, worst cusp[7] (ulp=2003121289)
+HOUSESEX|O|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=1392529142272)	MATCH	20 field(s) differ, worst cusp[6] (ulp=1392529142272)
 HOUSESEX|P|-66|-118.24|2269091|PLAIN	TRACKS-2.10.03	6 field(s) differ, worst cusp[2] (ulp=164142226259)	MATCH	6 field(s) differ, worst cusp[2] (ulp=164142226259)
 HOUSESEX|P|-66|-118.24|2269091|RADIANS	TRACKS-2.10.03	6 field(s) differ, worst cusp[2] (ulp=183348626546)	MATCH	6 field(s) differ, worst cusp[2] (ulp=183348626546)
 HOUSESEX|P|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[2] (ulp=164140602955)	MATCH	19 field(s) differ, worst cusp[2] (ulp=164140602955)
 HOUSESEX|P|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=37167102584)	MATCH	20 field(s) differ, worst cusp[6] (ulp=37167102584)
 HOUSESEX|P|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=41516052065)	MATCH	20 field(s) differ, worst cusp[6] (ulp=41516052065)
-HOUSESEX|P|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=246023368592)	MATCH	20 field(s) differ, worst cusp[5] (ulp=246023368592)
+HOUSESEX|P|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=37167223584)	MATCH	20 field(s) differ, worst cusp[6] (ulp=37167223584)
 HOUSESEX|P|66|-118.24|2269091|PLAIN	TRACKS-2.10.03	6 field(s) differ, worst cusp[12] (ulp=7948453389338)	MATCH	6 field(s) differ, worst cusp[12] (ulp=7948453389338)
 HOUSESEX|P|66|-118.24|2269091|RADIANS	TRACKS-2.10.03	6 field(s) differ, worst cusp[12] (ulp=8878507653456)	MATCH	6 field(s) differ, worst cusp[12] (ulp=8878507653456)
-HOUSESEX|P|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[12] (ulp=15896905155372)	MATCH	19 field(s) differ, worst cusp[12] (ulp=15896905155372)
+HOUSESEX|P|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	6 field(s) differ, worst cusp[12] (ulp=15896906778676)	MATCH	6 field(s) differ, worst cusp[12] (ulp=15896906778676)
 HOUSESEX|P|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[9] (ulp=549118731032)	MATCH	20 field(s) differ, worst cusp[9] (ulp=549118731032)
 HOUSESEX|P|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[9] (ulp=613371509816)	MATCH	20 field(s) differ, worst cusp[9] (ulp=613371509816)
-HOUSESEX|P|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[8] (ulp=554784368228)	MATCH	20 field(s) differ, worst cusp[8] (ulp=554784368228)
+HOUSESEX|P|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[8] (ulp=554785900664)	MATCH	20 field(s) differ, worst cusp[8] (ulp=554785900664)
 HOUSESEX|Q|-66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|Q|-66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|Q|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[1] (ulp=6493216)	MATCH	19 field(s) differ, worst cusp[1] (ulp=6493216)
+HOUSESEX|Q|-66|-118.24|2269091|SIDEREAL	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|Q|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=4006933632)	MATCH	20 field(s) differ, worst cusp[5] (ulp=4006933632)
 HOUSESEX|Q|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=4475787826)	MATCH	20 field(s) differ, worst cusp[5] (ulp=4475787826)
-HOUSESEX|Q|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=4011960242)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=4011960242)
+HOUSESEX|Q|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=4012734146)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=4012734146)
 HOUSESEX|Q|66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|Q|66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|Q|66|-118.24|2269091|SIDEREAL	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|Q|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=13962309056)	MATCH	20 field(s) differ, worst cusp[5] (ulp=13962309056)
 HOUSESEX|Q|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=15596048910)	MATCH	20 field(s) differ, worst cusp[5] (ulp=15596048910)
-HOUSESEX|Q|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[7] (ulp=2006186161)	MATCH	20 field(s) differ, worst cusp[7] (ulp=2006186161)
+HOUSESEX|Q|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[7] (ulp=4012734162)	MATCH	20 field(s) differ, worst cusp[7] (ulp=4012734162)
 HOUSESEX|R|-66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|R|-66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|R|-66|-118.24|2269091|SIDEREAL	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|R|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=7216063520)	MATCH	20 field(s) differ, worst cusp[5] (ulp=7216063520)
 HOUSESEX|R|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=4030210159)	MATCH	20 field(s) differ, worst cusp[5] (ulp=4030210159)
-HOUSESEX|R|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=4012734146)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=4012734146)
+HOUSESEX|R|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=28863394212)	MATCH	20 field(s) differ, worst cusp[5] (ulp=28863394212)
 HOUSESEX|R|66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|R|66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|R|66|-118.24|2269091|SIDEREAL	AGREES-BOTH	MATCH	MATCH	MATCH
+HOUSESEX|R|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst ascmc[5] (ulp=16)	MATCH	19 field(s) differ, worst ascmc[5] (ulp=16)
 HOUSESEX|R|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=5651950432)	MATCH	20 field(s) differ, worst cusp[5] (ulp=5651950432)
 HOUSESEX|R|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=6313289229)	MATCH	20 field(s) differ, worst cusp[5] (ulp=6313289229)
-HOUSESEX|R|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=35870066832)	MATCH	20 field(s) differ, worst cusp[6] (ulp=35870066832)
+HOUSESEX|R|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=8954939428)	MATCH	20 field(s) differ, worst cusp[6] (ulp=8954939428)
 HOUSESEX|S|-66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|S|-66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|S|-66|-118.24|2269091|SIDEREAL	AGREES-BOTH	MATCH	MATCH	MATCH
+HOUSESEX|S|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[1] (ulp=46741888)	MATCH	19 field(s) differ, worst cusp[1] (ulp=46741888)
 HOUSESEX|S|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=15151620096)	MATCH	20 field(s) differ, worst cusp[5] (ulp=15151620096)
 HOUSESEX|S|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=16924522092)	MATCH	20 field(s) differ, worst cusp[5] (ulp=16924522092)
-HOUSESEX|S|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=4012498306)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=4012498306)
+HOUSESEX|S|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=4012372306)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=4012372306)
 HOUSESEX|S|66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|S|66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|S|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[12] (ulp=16)	MATCH	19 field(s) differ, worst cusp[12] (ulp=16)
+HOUSESEX|S|66|-118.24|2269091|SIDEREAL	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|S|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=6162914848)	MATCH	20 field(s) differ, worst cusp[6] (ulp=6162914848)
 HOUSESEX|S|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=6884041960)	MATCH	20 field(s) differ, worst cusp[6] (ulp=6884041960)
-HOUSESEX|S|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[7] (ulp=4723107730)	MATCH	20 field(s) differ, worst cusp[7] (ulp=4723107730)
+HOUSESEX|S|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[7] (ulp=9458795876)	MATCH	20 field(s) differ, worst cusp[7] (ulp=9458795876)
 HOUSESEX|T|-66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|T|-66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|T|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[12] (ulp=1495740416)	MATCH	19 field(s) differ, worst cusp[12] (ulp=1495740416)
+HOUSESEX|T|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[12] (ulp=79738624)	MATCH	19 field(s) differ, worst cusp[12] (ulp=79738624)
 HOUSESEX|T|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=5886480912)	MATCH	20 field(s) differ, worst cusp[5] (ulp=5886480912)
 HOUSESEX|T|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=6575262289)	MATCH	20 field(s) differ, worst cusp[5] (ulp=6575262289)
-HOUSESEX|T|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=4012372306)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=4012372306)
+HOUSESEX|T|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (unrelated)	MATCH	20 field(s) differ, worst ascmc[7] (unrelated)
 HOUSESEX|T|66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|T|66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|T|66|-118.24|2269091|SIDEREAL	AGREES-BOTH	MATCH	MATCH	MATCH
+HOUSESEX|T|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst ascmc[5] (unrelated)	MATCH	19 field(s) differ, worst ascmc[5] (unrelated)
 HOUSESEX|T|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=6337407040)	MATCH	20 field(s) differ, worst cusp[5] (ulp=6337407040)
 HOUSESEX|T|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=7078951608)	MATCH	20 field(s) differ, worst cusp[5] (ulp=7078951608)
-HOUSESEX|T|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=20192906696)	MATCH	20 field(s) differ, worst cusp[6] (ulp=20192906696)
+HOUSESEX|T|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (unrelated)	MATCH	20 field(s) differ, worst cusp[6] (unrelated)
 HOUSESEX|U|-66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|U|-66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|U|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[12] (ulp=39869312)	MATCH	19 field(s) differ, worst cusp[12] (ulp=39869312)
+HOUSESEX|U|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[12] (unrelated)	MATCH	19 field(s) differ, worst cusp[12] (unrelated)
 HOUSESEX|U|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=1003232060)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=1003232060)
 HOUSESEX|U|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=1120620967)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=1120620967)
-HOUSESEX|U|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (unrelated)	MATCH	20 field(s) differ, worst ascmc[7] (unrelated)
+HOUSESEX|U|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=58857693726)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=58857693726)
 HOUSESEX|U|66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|U|66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|U|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst ascmc[5] (unrelated)	MATCH	19 field(s) differ, worst ascmc[5] (unrelated)
+HOUSESEX|U|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst ascmc[5] (ulp=21616487068)	MATCH	19 field(s) differ, worst ascmc[5] (ulp=21616487068)
 HOUSESEX|U|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=2893514960)	MATCH	20 field(s) differ, worst cusp[5] (ulp=2893514960)
 HOUSESEX|U|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=3232087232)	MATCH	20 field(s) differ, worst cusp[5] (ulp=3232087232)
-HOUSESEX|U|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (unrelated)	MATCH	20 field(s) differ, worst cusp[6] (unrelated)
+HOUSESEX|U|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=27558238396560)	MATCH	20 field(s) differ, worst cusp[6] (ulp=27558238396560)
 HOUSESEX|V|-66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|V|-66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|V|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst ascmc[0] (unrelated)	MATCH	19 field(s) differ, worst ascmc[0] (unrelated)
+HOUSESEX|V|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[1] (ulp=2071543073424)	MATCH	19 field(s) differ, worst cusp[1] (ulp=2071543073424)
 HOUSESEX|V|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[4] (ulp=1945176608)	MATCH	20 field(s) differ, worst cusp[4] (ulp=1945176608)
 HOUSESEX|V|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[4] (ulp=2172783126)	MATCH	20 field(s) differ, worst cusp[4] (ulp=2172783126)
-HOUSESEX|V|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=58857693726)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=58857693726)
+HOUSESEX|V|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=2006367873)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=2006367873)
 HOUSESEX|V|66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|V|66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|V|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst ascmc[5] (ulp=21616487068)	MATCH	19 field(s) differ, worst ascmc[5] (ulp=21616487068)
+HOUSESEX|V|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst ascmc[5] (ulp=129471442088)	MATCH	19 field(s) differ, worst ascmc[5] (ulp=129471442088)
 HOUSESEX|V|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[7] (ulp=2006464128)	MATCH	20 field(s) differ, worst cusp[7] (ulp=2006464128)
 HOUSESEX|V|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[7] (ulp=2241241943)	MATCH	20 field(s) differ, worst cusp[7] (ulp=2241241943)
-HOUSESEX|V|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[8] (ulp=1722060008153)	MATCH	20 field(s) differ, worst cusp[8] (ulp=1722060008153)
+HOUSESEX|V|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[8] (ulp=2006367881)	MATCH	20 field(s) differ, worst cusp[8] (ulp=2006367881)
 HOUSESEX|W|-66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|W|-66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|W|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	7 field(s) differ, worst ascmc[0] (ulp=129471442089)	MATCH	7 field(s) differ, worst ascmc[0] (ulp=129471442089)
+HOUSESEX|W|-66|-118.24|2269091|SIDEREAL	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|W|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	8 field(s) differ, worst ascmc[7] (ulp=1003232060)	MATCH	8 field(s) differ, worst ascmc[7] (ulp=1003232060)
 HOUSESEX|W|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	8 field(s) differ, worst ascmc[7] (ulp=1120620967)	MATCH	8 field(s) differ, worst ascmc[7] (ulp=1120620967)
 HOUSESEX|W|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	8 field(s) differ, worst ascmc[7] (ulp=2006367873)	MATCH	8 field(s) differ, worst ascmc[7] (ulp=2006367873)
 HOUSESEX|W|66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|W|66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|W|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	7 field(s) differ, worst ascmc[5] (ulp=129471442088)	MATCH	7 field(s) differ, worst ascmc[5] (ulp=129471442088)
+HOUSESEX|W|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	7 field(s) differ, worst ascmc[5] (ulp=12906112)	MATCH	7 field(s) differ, worst ascmc[5] (ulp=12906112)
 HOUSESEX|W|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	8 field(s) differ, worst ascmc[3] (ulp=898695251)	MATCH	8 field(s) differ, worst ascmc[3] (ulp=898695251)
 HOUSESEX|W|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	8 field(s) differ, worst ascmc[3] (ulp=1003852231)	MATCH	8 field(s) differ, worst ascmc[3] (ulp=1003852231)
-HOUSESEX|W|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	8 field(s) differ, worst ascmc[3] (ulp=1797342378)	MATCH	8 field(s) differ, worst ascmc[3] (ulp=1797342378)
+HOUSESEX|W|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	8 field(s) differ, worst ascmc[3] (ulp=1794115858)	MATCH	8 field(s) differ, worst ascmc[3] (ulp=1794115858)
 HOUSESEX|X|-66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|X|-66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|X|-66|-118.24|2269091|SIDEREAL	AGREES-BOTH	MATCH	MATCH	MATCH
+HOUSESEX|X|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[12] (ulp=12906112)	MATCH	19 field(s) differ, worst cusp[12] (ulp=12906112)
 HOUSESEX|X|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=4156948576)	MATCH	20 field(s) differ, worst cusp[5] (ulp=4156948576)
 HOUSESEX|X|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=4643356127)	MATCH	20 field(s) differ, worst cusp[5] (ulp=4643356127)
-HOUSESEX|X|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=3848058041)	MATCH	20 field(s) differ, worst cusp[6] (ulp=3848058041)
+HOUSESEX|X|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=3999829666)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=3999829666)
 HOUSESEX|X|66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|X|66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|X|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[12] (ulp=12906112)	MATCH	19 field(s) differ, worst cusp[12] (ulp=12906112)
+HOUSESEX|X|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[12] (ulp=13271296)	MATCH	19 field(s) differ, worst cusp[12] (ulp=13271296)
 HOUSESEX|X|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=4156948576)	MATCH	20 field(s) differ, worst cusp[5] (ulp=4156948576)
 HOUSESEX|X|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=4643356127)	MATCH	20 field(s) differ, worst cusp[5] (ulp=4643356127)
-HOUSESEX|X|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=3841605001)	MATCH	20 field(s) differ, worst cusp[6] (ulp=3841605001)
+HOUSESEX|X|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=137484166055)	MATCH	20 field(s) differ, worst cusp[6] (ulp=137484166055)
 HOUSESEX|Y|-66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|Y|-66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|Y|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[12] (ulp=206497792)	MATCH	19 field(s) differ, worst cusp[12] (ulp=206497792)
+HOUSESEX|Y|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[12] (ulp=26504960)	MATCH	19 field(s) differ, worst cusp[12] (ulp=26504960)
 HOUSESEX|Y|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=1003232060)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=1003232060)
 HOUSESEX|Y|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=1120620967)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=1120620967)
-HOUSESEX|Y|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=3999829666)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=3999829666)
+HOUSESEX|Y|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst ascmc[7] (ulp=2003403873)	MATCH	20 field(s) differ, worst ascmc[7] (ulp=2003403873)
 HOUSESEX|Y|66|-118.24|2269091|PLAIN	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|Y|66|-118.24|2269091|RADIANS	AGREES-BOTH	MATCH	MATCH	MATCH
-HOUSESEX|Y|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst ascmc[5] (ulp=13271296)	MATCH	19 field(s) differ, worst ascmc[5] (ulp=13271296)
+HOUSESEX|Y|66|-118.24|2269091|SIDEREAL	AGREES-BOTH	MATCH	MATCH	MATCH
 HOUSESEX|Y|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=5787817146)	MATCH	20 field(s) differ, worst cusp[5] (ulp=5787817146)
 HOUSESEX|Y|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[5] (ulp=6465053805)	MATCH	20 field(s) differ, worst cusp[5] (ulp=6465053805)
-HOUSESEX|Y|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[7] (ulp=278651712458)	MATCH	20 field(s) differ, worst cusp[7] (ulp=278651712458)
+HOUSESEX|Y|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	21 field(s) differ, worst cusp[5] (ulp=11574375545)	MATCH	21 field(s) differ, worst cusp[5] (ulp=11574375545)
+HOUSESEX|Z|-66|-118.24|2269091|PLAIN	TRACKS-2.10.03	6 field(s) differ, worst cusp[2] (ulp=164142226259)	MATCH	6 field(s) differ, worst cusp[2] (ulp=164142226259)
+HOUSESEX|Z|-66|-118.24|2269091|RADIANS	TRACKS-2.10.03	6 field(s) differ, worst cusp[2] (ulp=183348626546)	MATCH	6 field(s) differ, worst cusp[2] (ulp=183348626546)
+HOUSESEX|Z|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	6 field(s) differ, worst cusp[2] (ulp=154760936327)	MATCH	6 field(s) differ, worst cusp[2] (ulp=154760936327)
+HOUSESEX|Z|-66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=37167102584)	MATCH	20 field(s) differ, worst cusp[6] (ulp=37167102584)
+HOUSESEX|Z|-66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[6] (ulp=41516052065)	MATCH	20 field(s) differ, worst cusp[6] (ulp=41516052065)
+HOUSESEX|Z|-66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	21 field(s) differ, worst cusp[6] (ulp=44476915034)	MATCH	21 field(s) differ, worst cusp[6] (ulp=44476915034)
+HOUSESEX|Z|66|-118.24|2269091|PLAIN	TRACKS-2.10.03	6 field(s) differ, worst cusp[12] (ulp=7948453389338)	MATCH	6 field(s) differ, worst cusp[12] (ulp=7948453389338)
+HOUSESEX|Z|66|-118.24|2269091|RADIANS	TRACKS-2.10.03	6 field(s) differ, worst cusp[12] (ulp=8878507653456)	MATCH	6 field(s) differ, worst cusp[12] (ulp=8878507653456)
+HOUSESEX|Z|66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	19 field(s) differ, worst cusp[12] (ulp=15896905155372)	MATCH	19 field(s) differ, worst cusp[12] (ulp=15896905155372)
+HOUSESEX|Z|66|-118.24|2488072|PLAIN	TRACKS-2.10.03	20 field(s) differ, worst cusp[9] (ulp=549118731032)	MATCH	20 field(s) differ, worst cusp[9] (ulp=549118731032)
+HOUSESEX|Z|66|-118.24|2488072|RADIANS	TRACKS-2.10.03	20 field(s) differ, worst cusp[9] (ulp=613371509816)	MATCH	20 field(s) differ, worst cusp[9] (ulp=613371509816)
+HOUSESEX|Z|66|-118.24|2488072|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[8] (ulp=554784368228)	MATCH	20 field(s) differ, worst cusp[8] (ulp=554784368228)
 HOUSESEX|i|-66|-118.24|2269091|PLAIN	TRACKS-2.10.03	9 field(s) differ, worst cusp[2] (ulp=1919760992)	MATCH	9 field(s) differ, worst cusp[2] (ulp=1919760992)
 HOUSESEX|i|-66|-118.24|2269091|RADIANS	TRACKS-2.10.03	9 field(s) differ, worst cusp[11] (ulp=2097682223)	MATCH	9 field(s) differ, worst cusp[11] (ulp=2097682223)
 HOUSESEX|i|-66|-118.24|2269091|SIDEREAL	TRACKS-2.10.03	20 field(s) differ, worst cusp[11] (unrelated)	MATCH	20 field(s) differ, worst cusp[11] (unrelated)
