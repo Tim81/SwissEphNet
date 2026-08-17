@@ -1,0 +1,91 @@
+swehouse.c: Koch held the ascensional difference fixed
+
+Koch trisects the semi-arc of the MC, so one ascensional difference serves all
+four of its own cusps and moves as the MC does. The four AscDash() calls were
+taken with it constant. The error grows with latitude:
+
+    swetest -b1.1.2000 -ut12:00 -house13.4,60,K -speed
+      house 11  1303 52 17.7347  ->  940 42 43.6140     39 per cent high
+
+Below the polar circle only; above it the case bails to Porphyry before reaching
+this block.
+
+Part of an eight-step series. Applied in order, the eight produce a file
+byte-identical to the single patch "swehouse.c: compute house cusp speeds
+analytically"; take either the series or that patch, not both. Every step
+compiles. Steps 01 to 06 also apply to a clean tree on their own, so any one of
+them can be taken without the rest; 07 needs 01 to 05, not 06; 08 needs all seven to link. Do not
+drop 02 or 04 from the middle: nothing else needs them, so the result still
+builds clean and is quietly wrong.
+
+---
+ swehouse.c | 43 ++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 38 insertions(+), 5 deletions(-)
+diff --git a/swehouse.c b/swehouse.c
+index 668752a..d48d026 100644
+--- a/swehouse.c
++++ b/swehouse.c
+@@ -1070,7 +1070,7 @@ static int CalcH(
+  *  implemented for arguments in degrees.
+  ***********************************************************/
+ {
+-  double tane, tanfi, cosfi, sinfi, tant, sina, cosa, th2;
++  double tane, tanfi, cosfi, sinfi, tant, sina, cosa, th2, mc0;
+   double a, c, f, fh1, fh2, xh1, xh2, xs1, xs2, rectasc, ad3, acmc, vemc;
+   int 	i, ih, ih2, retc = OK;
+   double sine, cose;
+@@ -1391,6 +1391,7 @@ static int CalcH(
+       strcpy(hsp->serr, "within polar circle, switched to Porphyry"); 
+       goto porphyry;
+     }
++    mc0 = hsp->mc;
+     sina = sind(hsp->mc) * sine / cosd(fi);
+     if (sina > 1) sina = 1;
+     if (sina < -1) sina = -1;
+@@ -1402,10 +1403,42 @@ static int CalcH(
+     hsp->cusp[2] = Asc1(th + 120 + ad3, fi, sine, cose);
+     hsp->cusp[3] = Asc1(th + 150 + 2 * ad3, fi, sine, cose);
+     if (hsp->do_hspeed) {
+-      hsp->cusp_speed[11] = AscDash(th + 30 - 2 * ad3, fi, sine, cose);
+-      hsp->cusp_speed[12] = AscDash(th + 60 - ad3, fi, sine, cose);
+-      hsp->cusp_speed[2] = AscDash(th + 120 + ad3, fi, sine, cose);
+-      hsp->cusp_speed[3] = AscDash(th + 150 + 2 * ad3, fi, sine, cose);
++      /* Derivative of the four Asc1() calls just above. If the ad3 or sina
++       * expressions above change, this block has to change with them.
++       * Koch trisects the semi-arc of the MC rather than of each cusp, which
++       * is why one ascensional difference ad3 serves all four and why the
++       * derivative is a single chain through the MC. Like Placidus it is
++       * undefined beyond the polar circles, and the case bails to Porphyry
++       * there before reaching this block.
++       * ad3 is a third of the ascensional difference of the MC, so it moves
++       * as the MC does and the arguments of Asc1() below advance at a rate
++       * different from armc's. AscDash() supplies the derivative with respect
++       * to its first argument, already scaled by ARMCS, so it needs only the
++       * factor by which that argument actually moves.
++       * Differentiating ad3 = asind(sind(c) * sina) / 3 through
++       * c = atand(tanfi / cosa) and sina = sind(mc) * sine / cosd(fi):  */
++      double dad3 = 0, kk;
++      /* Neither test can fail as the code stands: the polar circle bailout
++       * above keeps cos(fi) above sin(ekl), so sina stays strictly inside
++       * +-1, cosa strictly above 0, and uu = sind(c) * sina with it. They
++       * guard the asind() and the division, and cost one comparison. */
++      if (cosa > VERY_SMALL) {
++	double uu = sind(c) * sina;
++	if (fabs(uu) < 1) {
++	  double dsina_dmc = cosd(mc0) * DEGTORAD * sine / cosd(fi);
++	  double dcosa_dsina = -sina / cosa;
++	  double dc_dcosa = (1 / DEGTORAD) * (-tanfi / (cosa * cosa))
++			  / (1 + (tanfi / cosa) * (tanfi / cosa));
++	  double du_dmc = (cosd(c) * DEGTORAD * sina * dc_dcosa * dcosa_dsina
++			   + sind(c)) * dsina_dmc;
++	  dad3 = du_dmc / (3 * DEGTORAD * sqrt(1 - uu * uu)) * hsp->mc_speed;
++	}
++      }
++      kk = dad3 / ARMCS;
++      hsp->cusp_speed[11] = AscDash(th + 30 - 2 * ad3, fi, sine, cose) * (1 - 2 * kk);
++      hsp->cusp_speed[12] = AscDash(th + 60 - ad3, fi, sine, cose) * (1 - kk);
++      hsp->cusp_speed[2] = AscDash(th + 120 + ad3, fi, sine, cose) * (1 + kk);
++      hsp->cusp_speed[3] = AscDash(th + 150 + 2 * ad3, fi, sine, cose) * (1 + 2 * kk);
+     }
+     break;
+   case 'L':	/* Pullen SD sinusoidal delta, ex Neo-Porphyry */

@@ -1,0 +1,149 @@
+swehouse.c: fill the Gauquelin sectors the Porphyry fallback leaves behind
+
+Gauquelin sectors return 36 cusps, and swephprg says so in red: "the array
+cusps must provide space for 13 doubles (declare as cusp[13]) ... With house
+system 'G' ... declare it as cusp[37]". Inside the polar circle 'G' cannot be
+computed, so CalcH() falls back to Porphyry and returns ERR, and
+swe_houses_armc_ex2() then copies twelve cusps instead of thirty-six:
+
+    // on failure, we only have 12 Porphyry cusps
+    if (retc < 0) {
+      ito = 12;
+      if (serr != NULL) strcpy(serr, h.serr);
+    }
+    for (i = 1; i <= ito; i++) {
+      cusp[i] = h.cusp[i];
+      if (h.do_hspeed) cusp_speed[i] = h.cusp_speed[i];
+    }
+
+Elements 13 to 36 of both arrays are never written. The caller sized them as
+the documentation requires, so on that path it reads back whatever it had
+there, which for an ordinary automatic array is uninitialised stack. Nothing
+in the return signals which elements are valid: the caller gets ERR and the
+message "within polar circle, switched to Porphyry", which says the house
+system changed, not that two thirds of the array it passed were left alone.
+
+Found by writing a sentinel into every element before the call and looking for
+survivors afterwards. 24 positions and 24 speeds survive on every 'G' call
+inside the polar circle; outside it none do, and no other house system leaves
+anything at all across 663,520 random calls spanning 1000 BC to 4100 AD.
+
+swetest does not show this one either: for 'G' inside the polar circle it prints
+12 house lines instead of its usual 36, so the affected sectors never reach the
+output. Filling the array with a sentinel first is what makes it visible.
+
+One consequence to know about rather than discover: after this patch the ERR
+path writes elements 13 to 36, where before it wrote only 1 to 12. A caller
+who ignored swephprg and declared cusp[13] was overrunning on every successful
+'G' call already, but happened to survive this particular failure path; now it
+overruns here too, and an address sanitizer will say so. The documented size
+is the fix for that caller, not this patch.
+
+    #include "swephexp.h"
+    #include <stdio.h>
+    int main(void) {
+      double c[37], a[10], cs[37]; char s[256]; int i;
+      for (i = 0; i < 37; i++) c[i] = -8.8e88;
+      swe_houses_armc_ex2(286.3561, 80.0, 23.4392911, 'G', c, a, cs, NULL, s);
+      for (i = 13; i <= 36; i++)
+        if (c[i] == -8.8e88) { printf("cusp %d never written\n", i); return 0; }
+      printf("all 36 written\n");
+      return 0;
+    }
+
+    hsys 'G', armc 286.3561, eps 23.4392911:
+
+      geolat 45        retc  0                                       0 unwritten
+      geolat 60        retc  0                                       0 unwritten
+      geolat 70        retc -1  within polar circle, switched to...  24 unwritten
+      geolat 81.0025   retc -1  within polar circle, switched to...  24 unwritten
+
+They are cleared to zero, before ito is clamped so that the loop bound is still
+the one the caller asked for. Zero is chosen over leaving them because the
+elements are documented as belonging to the caller's array and a defined value
+cannot be mistaken for a computed one; a caller that already ignores everything
+past the twelfth cusp on ERR is unaffected either way.
+
+Clearing them is not enough on its own. The three sidereal helpers compute
+ito = 36 for 'G' from hsys alone and then subtract the ayanamsa from cusp[1] to
+cusp[ito] whatever the call returned, so the cleared elements come back shifted
+and look like ordinary cusps rather than the "not computed" they are. Each
+helper now clamps ito to 12 when the call failed, the same way
+swe_houses_armc_ex2() already does. Sidereal 'G' at geolat 70, Fagan/Bradley:
+
+      cusp[13]   before   56.26356987   (the caller's own -999, shifted)
+      cusp[13]   cleared only  335.26356987
+      cusp[13]   with the clamp   0.00000000
+
+This touches only the ERR path of a house system that returns more than twelve
+cusps, which today is 'G' alone. Positions and speeds on every successful call
+are untouched: bit-identical over 663,520 random (date, latitude, longitude)
+configurations across all 26 house letters, with identical return codes and
+error strings.
+
+This is independent of the cusp speed patches and of the Sunshine and APC
+position fixes, and may be applied in any order with them.
+
+---
+ swehouse.c | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+diff --git a/swehouse.c b/swehouse.c
+index 1c5bbd3..5c180aa 100644
+--- a/swehouse.c
++++ b/swehouse.c
+@@ -382,6 +382,12 @@ static int sidereal_houses_ecl_t0(double tjde,
+   armcx = swe_degnorm(armc - dvpx);        /* 3 */
+   /* compute axes and houses: */
+   retc = swe_houses_armc_ex2(armcx, lat, epsx, hsys, cusp, ascmc, cusp_speed, ascmc_speed, serr);  /* 4 */
++  /* On failure only the twelve Porphyry cusps exist, and swe_houses_armc_ex2()
++   * has cleared 13 to 36. The loops below would otherwise subtract the ayanamsa
++   * from those cleared elements and hand the caller values that look like
++   * ordinary cusps rather than the "not computed" they are. */
++  if (retc < 0)
++    ito = 12;
+   /* distance between auxiliary vernal point and
+    * vernal point of t0 (a section on the sidereal plane) */
+   dvpxe = acos(swi_dot_prod_unit(x, xvpx)) * RADTODEG;  /* 5 */
+@@ -492,6 +498,12 @@ static int sidereal_houses_ssypl(double tjde,
+   armcx = swe_degnorm(armc - dvpx);        /* 3 */
+   /* compute axes and houses: */
+   retc = swe_houses_armc_ex2(armcx, lat, epsx, hsys, cusp, ascmc, cusp_speed, ascmc_speed, serr);  /* 4 */
++  /* On failure only the twelve Porphyry cusps exist, and swe_houses_armc_ex2()
++   * has cleared 13 to 36. The loops below would otherwise subtract the ayanamsa
++   * from those cleared elements and hand the caller values that look like
++   * ordinary cusps rather than the "not computed" they are. */
++  if (retc < 0)
++    ito = 12;
+   /* distance between the auxiliary vernal point at t and
+    * the sidereal zero point of 2000 at t
+    * (a section on the sidereal plane).
+@@ -564,6 +576,12 @@ static int sidereal_houses_trad(double tjde,
+ //fprintf(stderr, "armc=%f\n", armc);
+ //if (hsys == 'P') fprintf(stderr, "ay=%f, t=%f %c", ay, tjde, (char) hsys);
+   retc = swe_houses_armc_ex2(armc, lat, eps, ihs2, cusp, ascmc, cusp_speed, ascmc_speed, serr);
++  /* On failure only the twelve Porphyry cusps exist, and swe_houses_armc_ex2()
++   * has cleared 13 to 36. The loops below would otherwise subtract the ayanamsa
++   * from those cleared elements and hand the caller values that look like
++   * ordinary cusps rather than the "not computed" they are. */
++  if (retc < 0)
++    ito = 12;
+ //if (hsys == 'P') fprintf(stderr, "  h1=%f", cusp[1]);
+   for (i = 1; i <= ito; i++) {
+     //cusp[i] = swe_degnorm(cusp[i] - ay - nutl);
+@@ -663,6 +681,16 @@ int CALL_CONV swe_houses_armc_ex2(
+   if (h.do_hspeed) cusp_speed[0] = 0;
+   // on failure, we only have 12 Porphyry cusps
+   if (retc < 0) {
++    /* The caller sized the array for the house system it asked for, and
++     * for Gauquelin sectors that is cusp[37]. Copying only the twelve
++     * Porphyry cusps leaves 13 to 36 holding whatever the caller had
++     * there, which for a fresh automatic array is uninitialised stack.
++     * They are cleared before ito is clamped, so that a failure returns
++     * a defined value in every element it is documented to fill. */
++    for (i = 13; i <= ito; i++) {
++      cusp[i] = 0;
++      if (h.do_hspeed) cusp_speed[i] = 0;
++    }
+     ito = 12;
+     if (serr != NULL) strcpy(serr, h.serr);
+   }

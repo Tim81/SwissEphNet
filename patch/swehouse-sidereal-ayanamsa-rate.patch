@@ -1,0 +1,200 @@
+swehouse.c: subtract the ayanamsa's rate from the sidereal cusp speeds
+
+The sidereal entry points subtract the ayanamsa from every cusp and from every
+point in ascmc, and never subtract its rate from the corresponding speed. A
+sidereal call therefore returns sidereal positions beside tropical speeds, and
+the two are inconsistent by the rate of precession.
+
+    swetest -b1.1.2000 -ut12:00 -house13.4,52.5,P -speed
+      house  1   51 35  6.0567   600 43 39.5410
+    swetest -b1.1.2000 -ut12:00 -house13.4,52.5,P -speed -sid1
+      house  1   27 43 54.4557   600 43 39.5410     <- identical
+
+The positions differ by the ayanamsa, 23 degrees 51 minutes here, and the
+speeds do not differ at all. After this patch the sidereal speed reads
+600 43 39.3962, lower by 0.1448 arc seconds per day, 4.0e-5 degrees. It is
+small, but it is visible in swetest's own output, and a caller that integrates
+a cusp forward from a sidereal chart accumulates it.
+
+The rate is not general precession, and it is worth being exact about that
+because the sign is not constant. swe_get_ayanamsa_ex() includes the nutation
+in longitude unless SEFLG_NONUT is set, which is correct here since the
+position has the same term subtracted from it. The value at J2000 is mostly
+precession; what nutation dominates is the variation, which swings wider than
+the steady part. Stripping it leaves 3.82e-05 degrees per day, near the 50.3
+arc seconds a year of precession. With it, at four epochs; the rate
+column is the rate itself, Richardson-extrapolated, and the 0.1-day
+difference this patch computes reproduces it to about three digits
+(8.6558e-05 against 8.6572e-05 at the second epoch, for instance):
+
+      tjd_et        rate            NONUT rate
+      2451545.0     4.0212e-05      3.8245e-05
+      2415020.0     8.6572e-05      3.8228e-05
+      2460013.0    -1.6104e-06      3.8249e-05
+      2469000.0     7.8102e-07      3.8253e-05
+
+So on some dates the sidereal cusp speed comes out higher than the tropical
+one, not lower.
+
+The rate is a central difference of swe_get_ayanamsa_ex() over a fifth of a
+day, which costs two evaluations of it; no house computation is involved and no
+cusp is recomputed. A fifth rather than a whole day because the shortest
+nutation terms have periods near 5.6 days, and a full day of half-step leaves
+a truncation error near 3e-7 degrees per day - under half a per cent where the
+rate is large, but forty per cent of it at the epochs where nutation nearly
+cancels the whole rate; 0.1 brings that error down by a factor of 25. The
+tropical path is untouched.
+
+The star-based ayanamsas want a word of their own, because they inherit
+whatever a star's apparent position does and that is not always smooth over a
+day. True Revati, mode 28, is the sharpest of them: at tjd_et 2582405.7 the
+ayanamsa drops 5.9e-4 degrees inside half a day and then resumes its slow
+rise, and the central difference reads
+
+    step h        rate, degrees per day
+      0.01            -2.746e-03
+      0.05            -2.626e-03
+      0.10            -2.300e-03
+      1.00            -6.893e-05
+
+so the feature is real and it is the whole-day step that averages it away, not
+the tenth-day step that invents it. 0.1 recovers 84 per cent of the true rate.
+What that leaves in the cusp speed is 4.5e-4 degrees per day, 1.62 arc
+seconds, against a cusp 1 speed of 686.67 degrees per day at that date and
+latitude 52.5. It is 6.6e-7 relative, but it does reach the last digits
+swetest prints, so it is stated rather than buried. Nine of 4,000 dates
+sampled between 1200 and 2700 have a feature that sharp. Over the whole span
+from 1000 BC to 4100 the other 46 modes stay below 7e-06 degrees per day
+between the 0.1 and the 1.0 step.
+
+On error returns the speeds are deterministic now rather than the caller's
+own memory: the arrays are zeroed before the call, so a Porphyry fallback
+comes back with the rate correctly applied, and the one return that computes
+nothing comes back as -dayan, about -4e-5 degrees per day, in every slot.
+That is a believable-looking number in a slot that was never computed, which
+is why it is said here; with the Gauquelin fallback patch also applied those
+slots are exact zeros instead.
+
+Outside the range the ephemeris covers, the star-based modes cannot be
+evaluated at all. Both guarded calls fail, dayan is left at zero, and the
+sidereal speeds come back exactly equal to the tropical ones, which is what
+the library did before this patch. Measured at tjd 2900000.0 and 3218918.5 for
+mode 28: the difference against the tropical speed is 0.000e+00 to every bit.
+The formula-based modes are unaffected and keep their rate across the whole
+span.
+
+Two exclusions:
+
+  - armc keeps its tropical rate, because armc is not shifted by the ayanamsa
+    in the first place. ascmc[2] is skipped for the same reason its position
+    is skipped in the loop above.
+  - whole sign (W) and 0 Aries (N) cusps are excluded. They are pinned to
+    sidereal sign boundaries, which do not move in the sidereal frame, so
+    their speed is zero and subtracting a rate from it would make it wrong.
+    In the unpatched library those two report the equal house speeds instead
+    of zero, which is a separate defect, corrected by the analytic cusp speed
+    patch; this one is careful not to make it worse whichever of the two is
+    applied.
+
+Scope. This corrects sidereal_houses_trad(). The other two paths are taken when
+SE_SIDBIT_ECL_T0 or SE_SIDBIT_SSY_PLANE is set, and the caller does not have to
+ask for either: swe_set_sid_mode() forces SE_SIDBIT_ECL_T0 for SE_SIDM_J2000,
+SE_SIDM_J1900, SE_SIDM_B1950 and SE_SIDM_GALALIGN_MARDYKS. Of the 47
+predefined modes those four are the only ones this patch leaves alone. Their
+speeds already differ from the tropical ones without it, which is worth saying
+plainly: before this patch 43 of the 47 returned exactly the tropical speed and
+those four did not, and after it none of the 47 does. Those two paths project
+onto a different plane and reach swe_houses_armc_ex2() with an auxiliary armc
+and an auxiliary obliquity of their own, so their speeds need the rates of
+those auxiliary quantities as well as of the ayanamsa, which is a larger piece
+of work in a construction this patch does not otherwise touch. They keep the
+limitation, and it is the same limitation they have today. For whoever
+extends this, one measured fact: the auxiliary route carries none of the
+term on its own - at J2000 the ECL_T0 cusp speed sits 1.3e-9 degrees per
+day from the tropical one - so a bare subtraction of dayan there would
+remove nearly all of the inconsistency. What it would not remove is the
+part belonging to the auxiliary armc and obliquity's own rates, which I
+have not measured; shipping the almost-version is a choice I did not
+want to make silently, so those routes are left whole.
+
+Independent of the cusp speed patches and of the position fixes; applies in any
+order with them.
+---
+ swehouse.c | 52 +++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 51 insertions(+), 1 deletion(-)
+diff --git a/swehouse.c b/swehouse.c
+index 1c5bbd3..2840b31 100644
+--- a/swehouse.c
++++ b/swehouse.c
+@@ -546,13 +546,33 @@ static int sidereal_houses_trad(double tjde,
+ 			   char *serr)
+ {
+   int i, retc = OK;
+-  double ay;
++  double ay, dayan = 0;
+   int ito;
+   int ihs = toupper(hsys);
+   int ihs2 = ihs;
+ // ay = swe_get_ayanamsa(tjde);
+ //fprintf(stderr, "ay=%f\n", ay);
+   retc = swe_get_ayanamsa_ex(tjde, iflag, &ay, NULL);
++  /* and its rate, for the speeds. Two extra evaluations of a function
++   * that is smooth over a day; no house computation is involved. */
++  if (cusp_speed != NULL || ascmc_speed != NULL) {
++    double ay1, ay2;
++    /* One error return inside swe_houses_armc_ex2() writes nothing at all:
++     * the Sunshine declination check, reachable from here with SEFLG_MOSEPH
++     * at dates where the obliquity passes 24 degrees. The rate loops at the
++     * bottom of this function would then read whatever the caller had in
++     * the speed arrays. Deterministic zeros instead; every other path
++     * overwrites them before they are read. */
++    if (cusp_speed != NULL)
++      for (i = 0; i <= ((ihs == 'G') ? 36 : 12); i++)
++	cusp_speed[i] = 0;
++    if (ascmc_speed != NULL)
++      for (i = 0; i < SE_NASCMC; i++)
++	ascmc_speed[i] = 0;
++    if (swe_get_ayanamsa_ex(tjde - 0.1, iflag, &ay1, NULL) >= 0
++     && swe_get_ayanamsa_ex(tjde + 0.1, iflag, &ay2, NULL) >= 0)
++      dayan = swe_difdeg2n(ay2, ay1) / 0.2;	/* degrees per day */
++  }
+ //fprintf(stderr, "ay=%f\n", ay);
+ //fprintf(stderr, "nutl=%f\n", nutl);
+   if (ihs == 'G')
+@@ -583,6 +603,36 @@ static int sidereal_houses_trad(double tjde,
+     ascmc[i] = swe_degnorm(ascmc[i] - ay);
+   }
+ //if (hsys == 'P') fprintf(stderr, " => %f\n", cusp[1]);
++  /* Every longitude above has had the ayanamsa subtracted from it and no
++   * speed has had its rate subtracted, so a sidereal call returned exactly
++   * the tropical speeds beside sidereal positions. The term is the rate of
++   * the ayanamsa, about 0.145 arc seconds per day for Fagan/Bradley, which
++   * is 4.0e-5 degrees and shows in the last digits swetest prints. armc is
++   * not shifted and keeps its tropical rate. Whole sign
++   * and 0 Aries cusps are excluded: they are pinned to sidereal sign
++   * boundaries, which do not move in the sidereal frame at all. */
++  /* Not conditioned on retc. Inside the polar circle several systems fall
++   * back to Porphyry and return ERR having written every element, and the
++   * loop above has already taken the ayanamsa off those positions; skipping
++   * the speeds there would leave exactly the inconsistency this patch exists
++   * to remove, on every date at such latitudes. The one early return that
++   * writes nothing is the Sunshine declination check; the speed arrays are
++   * zeroed before the call above, so these loops read defined values on
++   * that path too. */
++  if (dayan != 0) {
++    /* The whole sign and 0 Aries carve-out is about cusps: those sit on
++     * sidereal sign boundaries and do not move in the sidereal frame at all.
++     * ascmc is not a house system quantity, the loop above shifts it by the
++     * ayanamsa for every letter including W and N, and its speeds need the
++     * rate for every letter too. */
++    if (cusp_speed != NULL && ihs != 'W' && ihs != 'N')
++      for (i = 1; i <= ito; i++)
++	cusp_speed[i] -= dayan;
++    if (ascmc_speed != NULL)
++      for (i = 0; i < SE_NASCMC; i++)
++	if (i != 2)	/* armc */
++	  ascmc_speed[i] -= dayan;
++  }
+   return retc;
+ }
+ 

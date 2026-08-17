@@ -1,0 +1,469 @@
+swehouse.c: the Placidus pole height follows the cusp
+
+Placidus and the Gauquelin sectors used AscDash() alone, which holds the pole
+height fixed. It is a function of the cusp, so the total derivative needs the
+implicit function theorem. plac_speed() supplies it with both partials in closed
+form.
+
+Two further changes ride on the same twelve lines and cannot be separated from
+it, because all three edit the same statements.
+
+The first is the |tant| < VERY_SMALL branch inside the six iteration loops.
+That branch sets a speed and breaks, and the plac_speed() call after the loop
+then overwrote it with a pole height belonging to an earlier iterate. It is
+guarded now.
+
+The second is the same test's other site, before the loops, where the first
+estimate is seeded. It reported hsp->armc_speed, which drops the obliquity
+factor; it now reports AscDash() at the pole height that belongs to the cusp.
+That site is live rather than defensive: instrumented against the
+unpatched library it fires 53,240 times in 5,181,120 Placidus and Gauquelin
+calls, about one in a hundred, and the value it substitutes differs from the
+old one by 22 per cent on average and by up to a factor of 8.2. It has no
+demonstration of its own here because reaching it takes a cusp landing on the
+ecliptic equator, which no swetest command line lands on directly.
+
+This step also carries pullen_sr_sectors() and pullen_sr_slopes(), which step 08
+uses. They sit in the same block as the plac_* helpers and splitting the block
+leaves a piece git apply will not place.
+
+Part of an eight-step series. Applied in order, the eight produce a file
+byte-identical to the single patch "swehouse.c: compute house cusp speeds
+analytically"; take either the series or that patch, not both. Every step
+compiles. Steps 01 to 06 also apply to a clean tree on their own, so any one of
+them can be taken without the rest; 07 needs 01 to 05, not 06; 08 needs all seven to link. Do not
+drop 02 or 04 from the middle: nothing else needs them, so the result still
+builds clean and is quietly wrong.
+
+---
+ swehouse.c | 273 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++------------
+ 1 file changed, 255 insertions(+), 18 deletions(-)
+diff --git a/swehouse.c b/swehouse.c
+index 5b38151..9bfa3c5 100644
+--- a/swehouse.c
++++ b/swehouse.c
+@@ -1073,6 +1073,10 @@ static int CalcH(
+   double tane, tanfi, cosfi, sinfi, tant, sina, cosa, th2, mc0;
+   double a, c, f, fh1, fh2, xh1, xh2, xs1, xs2, rectasc, ad3, acmc, vemc;
+   int 	i, ih, ih2, retc = OK;
++  int 	tant_small;		/* the |tant| < VERY_SMALL branch of a Placidus or
++				 * Gauquelin iteration fired and has already set
++				 * the speed, so plac_speed() must not overwrite it
++				 * with a pole height from an earlier iterate */
+   double sine, cose;
+   double x[3], krHorizonLon; /* BK 14.02.2006 */
+   int niter_max = 100; // maximum iterations allowed with Placidus
+@@ -1841,17 +1845,19 @@ porphyry:
+       tant = tand(asind(sine * sind(Asc1(rectasc, fh1, sine, cose))));
+       if (fabs(tant) < VERY_SMALL) {
+ 	hsp->cusp[ih] = rectasc;
+-	if (hsp->do_hspeed) hsp->cusp_speed[ih] = hsp->armc_speed;
++	if (hsp->do_hspeed) hsp->cusp_speed[ih] = AscDash(rectasc, atand(ih2 / 9.0 * tanfi), sine, cose);
+       } else {
+ 	/* pole height */
+ 	f = atand(sind(asind(tanfi * tant) * ih2 / 9)  /tant);
+         hsp->cusp[ih] = Asc1(rectasc, f, sine, cose);
+ 	cuspsv = 0;
++        tant_small = 0;
+         for (i = 1; i <= niter_max; i++) {
+ 	  tant = tand(asind(sine * sind(hsp->cusp[ih])));
+ 	  if (fabs(tant) < VERY_SMALL) {
+ 	    hsp->cusp[ih] = rectasc;
+-	    if (hsp->do_hspeed) hsp->cusp_speed[ih] = hsp->armc_speed;
++	    if (hsp->do_hspeed) hsp->cusp_speed[ih] = AscDash(rectasc, atand(ih2 / 9.0 * tanfi), sine, cose);
++	    tant_small = 1;
+ 	    break;
+ 	  }
+ 	  /* pole height */
+@@ -1870,7 +1876,7 @@ porphyry:
+ 	  strcpy(hsp->serr, "very close to polar circle, switched to Porphyry"); 
+ 	  goto porphyry;
+ 	}
+-	if (hsp->do_hspeed) hsp->cusp_speed[ih] = AscDash(rectasc, f, sine, cose);
++	if (hsp->do_hspeed && ! tant_small) hsp->cusp_speed[ih] = plac_speed(rectasc, hsp->cusp[ih], f, tanfi, ih2 / 9.0, sine, cose);
+       }
+       hsp->cusp[ih+18] = swe_degnorm(hsp->cusp[ih] + 180);
+       if (hsp->do_hspeed) hsp->cusp_speed[ih + 18] = hsp->cusp_speed[ih];
+@@ -1883,17 +1889,19 @@ porphyry:
+       tant = tand(asind(sine * sind(Asc1(rectasc, fh1, sine, cose))));
+       if (fabs(tant) < VERY_SMALL) {
+         hsp->cusp[ih] = rectasc;
+-	if (hsp->do_hspeed) hsp->cusp_speed[ih] = hsp->armc_speed;
++	if (hsp->do_hspeed) hsp->cusp_speed[ih] = AscDash(rectasc, atand(ih2 / 9.0 * tanfi), sine, cose);
+       } else {
+         f = atand(sind(asind(tanfi * tant) * ih2 / 9) / tant);
+         /*  pole height */
+         hsp->cusp[ih] = Asc1(rectasc, f, sine, cose);
+ 	cuspsv = 0;
++        tant_small = 0;
+         for (i = 1; i <= niter_max; i++) {
+ 	  tant = tand(asind(sine * sind(hsp->cusp[ih])));
+ 	  if (fabs(tant) < VERY_SMALL) {
+ 	    hsp->cusp[ih] = rectasc;
+-	    if (hsp->do_hspeed) hsp->cusp_speed[ih] = hsp->armc_speed;
++	    if (hsp->do_hspeed) hsp->cusp_speed[ih] = AscDash(rectasc, atand(ih2 / 9.0 * tanfi), sine, cose);
++	    tant_small = 1;
+ 	    break;
+ 	  }
+ 	  f = atand(sind(asind(tanfi * tant) * ih2 / 9) / tant);
+@@ -1912,7 +1920,7 @@ porphyry:
+ 	  strcpy(hsp->serr, "very close to polar circle, switched to Porphyry"); 
+ 	  goto porphyry;
+ 	}
+-	if (hsp->do_hspeed) hsp->cusp_speed[ih] = AscDash(rectasc, f, sine, cose);
++	if (hsp->do_hspeed && ! tant_small) hsp->cusp_speed[ih] = plac_speed(rectasc, hsp->cusp[ih], f, tanfi, ih2 / 9.0, sine, cose);
+       }
+       hsp->cusp[ih-18] = swe_degnorm(hsp->cusp[ih] + 180);
+       if (hsp->do_hspeed) hsp->cusp_speed[ih - 18] = hsp->cusp_speed[ih];
+@@ -2092,17 +2100,19 @@ porphyry:
+     ih = 11;
+     if (fabs(tant) < VERY_SMALL) {
+       hsp->cusp[ih] = rectasc;
+-      if (hsp->do_hspeed) hsp->cusp_speed[ih] = hsp->armc_speed;
++      if (hsp->do_hspeed) hsp->cusp_speed[ih] = AscDash(rectasc, atand(1.0 / 3 * tanfi), sine, cose);
+     } else {
+       /* pole height */
+       f = atand(sind(asind(tanfi * tant) / 3)  /tant);  
+       hsp->cusp[ih] = Asc1(rectasc, f, sine, cose);
+       cuspsv = 0;
++      tant_small = 0;
+       for (i = 1; i <= niter_max; i++) {
+ 	tant = tand(asind(sine * sind(hsp->cusp[ih])));
+ 	if (fabs(tant) < VERY_SMALL) {
+ 	  hsp->cusp[ih] = rectasc;
+-	  if (hsp->do_hspeed) hsp->cusp_speed[ih] = hsp->armc_speed;
++	  if (hsp->do_hspeed) hsp->cusp_speed[ih] = AscDash(rectasc, atand(1.0 / 3 * tanfi), sine, cose);
++	  tant_small = 1;
+ 	  break;
+ 	}
+ 	/* pole height */
+@@ -2117,7 +2127,7 @@ porphyry:
+ 	strcpy(hsp->serr, "very close to polar circle, switched to Porphyry"); 
+ 	goto porphyry;
+       }
+-      if (hsp->do_hspeed) hsp->cusp_speed[ih] = AscDash(rectasc, f, sine, cose);
++      if (hsp->do_hspeed && ! tant_small) hsp->cusp_speed[ih] = plac_speed(rectasc, hsp->cusp[ih], f, tanfi, 1.0 / 3, sine, cose);
+ #ifdef DEBUG_PLAC_ITER
+   fprintf(stderr, "h=%d, niter=%d\n", ih, i);
+ #endif
+@@ -2128,17 +2138,19 @@ porphyry:
+     ih = 12;
+     if (fabs(tant) < VERY_SMALL) {
+       hsp->cusp[ih] = rectasc;
+-      if (hsp->do_hspeed) hsp->cusp_speed[ih] = hsp->armc_speed;
++      if (hsp->do_hspeed) hsp->cusp_speed[ih] = AscDash(rectasc, atand(2.0 / 3 * tanfi), sine, cose);
+     } else {
+       f = atand(sind(asind(tanfi * tant) / 1.5) / tant);  
+       /*  pole height */
+       hsp->cusp[ih] = Asc1(rectasc, f, sine, cose);
+       cuspsv = 0;
++      tant_small = 0;
+       for (i = 1; i <= niter_max; i++) {
+ 	tant = tand(asind(sine * sind(hsp->cusp[ih])));
+ 	if (fabs(tant) < VERY_SMALL) {
+ 	  hsp->cusp[ih] = rectasc;
+-	  if (hsp->do_hspeed) hsp->cusp_speed[ih] = hsp->armc_speed;
++	  if (hsp->do_hspeed) hsp->cusp_speed[ih] = AscDash(rectasc, atand(2.0 / 3 * tanfi), sine, cose);
++	  tant_small = 1;
+ 	  break;
+ 	}
+ 	f = atand(sind(asind(tanfi * tant) / 1.5) / tant);  
+@@ -2153,7 +2165,7 @@ porphyry:
+ 	strcpy(hsp->serr, "very close to polar circle, switched to Porphyry"); 
+ 	goto porphyry;
+       }
+-      if (hsp->do_hspeed) hsp->cusp_speed[ih] = AscDash(rectasc, f, sine, cose);
++      if (hsp->do_hspeed && ! tant_small) hsp->cusp_speed[ih] = plac_speed(rectasc, hsp->cusp[ih], f, tanfi, 2.0 / 3, sine, cose);
+ #ifdef DEBUG_PLAC_ITER
+   fprintf(stderr, "h=%d, niter=%d\n", ih, i);
+ #endif
+@@ -2164,17 +2176,19 @@ porphyry:
+     ih = 2;
+     if (fabs(tant) < VERY_SMALL) {
+       hsp->cusp[ih] = rectasc;
+-      if (hsp->do_hspeed) hsp->cusp_speed[ih] = hsp->armc_speed;
++      if (hsp->do_hspeed) hsp->cusp_speed[ih] = AscDash(rectasc, atand(2.0 / 3 * tanfi), sine, cose);
+     } else {
+       f = atand(sind(asind(tanfi * tant) / 1.5) / tant);
+       /*  pole height */
+       hsp->cusp[ih] = Asc1(rectasc, f, sine, cose);
+       cuspsv = 0;
++      tant_small = 0;
+       for (i = 1; i <= niter_max; i++) {
+ 	tant = tand(asind(sine * sind(hsp->cusp[ih])));
+ 	if (fabs(tant) < VERY_SMALL) {
+ 	  hsp->cusp[ih] = rectasc;
+-	  if (hsp->do_hspeed) hsp->cusp_speed[ih] = hsp->armc_speed;
++	  if (hsp->do_hspeed) hsp->cusp_speed[ih] = AscDash(rectasc, atand(2.0 / 3 * tanfi), sine, cose);
++	  tant_small = 1;
+ 	  break;
+ 	}
+ 	f = atand(sind(asind(tanfi * tant) / 1.5) / tant);
+@@ -2189,7 +2203,7 @@ porphyry:
+ 	strcpy(hsp->serr, "very close to polar circle, switched to Porphyry"); 
+ 	goto porphyry;
+       }
+-      if (hsp->do_hspeed) hsp->cusp_speed[ih] = AscDash(rectasc, f, sine, cose);
++      if (hsp->do_hspeed && ! tant_small) hsp->cusp_speed[ih] = plac_speed(rectasc, hsp->cusp[ih], f, tanfi, 2.0 / 3, sine, cose);
+ #ifdef DEBUG_PLAC_ITER
+   fprintf(stderr, "h=%d, niter=%d\n", ih, i);
+ #endif
+@@ -2200,17 +2214,19 @@ porphyry:
+     ih = 3;
+     if (fabs(tant) < VERY_SMALL) {
+       hsp->cusp[ih] = rectasc;
+-      if (hsp->do_hspeed) hsp->cusp_speed[ih] = hsp->armc_speed;
++      if (hsp->do_hspeed) hsp->cusp_speed[ih] = AscDash(rectasc, atand(1.0 / 3 * tanfi), sine, cose);
+     } else {
+       f = atand(sind(asind(tanfi * tant) / 3) / tant);  
+       /*  pole height */
+       hsp->cusp[ih] = Asc1(rectasc, f, sine, cose);
+       cuspsv = 0;
++      tant_small = 0;
+       for (i = 1; i <= niter_max; i++) {
+ 	tant = tand(asind(sine * sind(hsp->cusp[ih])));
+ 	if (fabs(tant) < VERY_SMALL) {
+ 	  hsp->cusp[ih] = rectasc;
+-	  if (hsp->do_hspeed) hsp->cusp_speed[ih] = hsp->armc_speed;
++	  if (hsp->do_hspeed) hsp->cusp_speed[ih] = AscDash(rectasc, atand(1.0 / 3 * tanfi), sine, cose);
++	  tant_small = 1;
+ 	  break;
+ 	}
+ 	f = atand(sind(asind(tanfi * tant) / 3) / tant);
+@@ -2225,7 +2241,7 @@ porphyry:
+ 	strcpy(hsp->serr, "very close to polar circle, switched to Porphyry"); 
+ 	goto porphyry;
+       }
+-      if (hsp->do_hspeed) hsp->cusp_speed[ih] = AscDash(rectasc, f, sine, cose);
++      if (hsp->do_hspeed && ! tant_small) hsp->cusp_speed[ih] = plac_speed(rectasc, hsp->cusp[ih], f, tanfi, 1.0 / 3, sine, cose);
+ #ifdef DEBUG_PLAC_ITER
+   fprintf(stderr, "h=%d, niter=%d\n", ih, i);
+ #endif
+@@ -2378,6 +2394,227 @@ static double Asc2(double x, double f, double sine, double cose)
+   return (ass);
+ } /* Asc2 */
+ 
++/* Pole height used by Placidus and by the Gauquelin sectors: the cusp's own
++ * declination sets it, so it moves as the cusp moves. fac is 1/3 or 2/3 for
++ * Placidus and ih2/9 for the Gauquelin sectors. */
++/* The cusp sitting on an equinox is the degenerate case: the declination and
++ * with it tant go to zero, and the pole height becomes 0/0. Its limit is
++ * finite and independent of the cusp, atand(fac * tanfi), which is what the
++ * callers use for the speed in that branch; here it is reported through *ok
++ * so that plac_speed() skips the correction rather than differencing across it.
++ * *ok is a separate flag rather than a magic return value because 0 is also a
++ * perfectly good pole height: on the equator tanfi is 0 and every cusp has
++ * pole 0, which is not a degeneracy but the correct answer. */
++static double plac_pole(double cusp, double tanfi, double fac, double sine, int *ok)
++{
++  double tant = tand(asind(sine * sind(cusp)));
++  double v;
++  *ok = 0;
++  if (fabs(tant) < VERY_SMALL)
++    return 0;
++  v = tanfi * tant;
++  if (v > 1 || v < -1)
++    return 0;
++  *ok = 1;
++  return atand(sind(asind(v) * fac) / tant);
++}
++
++/* Partial derivative of Asc1() with respect to the pole height, the companion
++ * to AscDash(), which differentiates the first argument instead. Asc1() is
++ *   Asc = atan(sin x / c),   c = cos(e) cos x - tan f sin(e),
++ * mapped into the right quadrant, and the mapping leaves this derivative
++ * unchanged in all four of them, so one expression covers the circle.
++ * Both variables are in degrees and the conversion factors cancel. */
++static double AscDashPole(double x, double f, double sine, double cose)
++{
++  double sinx = sind(x), cosf = cosd(f);
++  double c = cose * cosd(x) - tand(f) * sine;
++  double d = sinx * sinx + c * c;
++  /* The two tests are not equally reachable. cos(f) cannot get small: f comes
++   * from atand() and would need |tant| below any usable tolerance, which
++   * plac_pole() already refuses. d can, in principle: it vanishes when x is
++   * near 0 and
++   * tan(f) approaches cot(eps), that is a pole height near 90 - eps, which is
++   * a real Placidus configuration near the polar circle. It did not occur in
++   * 1.4e7 sampled calls, but it is not impossible the way the other one is. */
++  if (d < VERY_SMALL_DENOM || fabs(cosf) < VERY_SMALL_DENOM)
++    return 0;
++  return sinx * sine / (cosf * cosf * d);
++}
++
++/* Derivative of plac_pole() with respect to the cusp, following the same chain
++ *   dek  = asin(sin(e) sin(cusp)),   T = tan(dek),
++ *   pole = atan(sin(fac * asin(tanfi T)) / T).
++ * *ok clears on the degeneracies plac_pole() itself reports, and additionally
++ * in a thin band where |tanfi T| approaches 1 and this derivative runs away
++ * although plac_pole() itself is still fine. The caller has already refused
++ * |tanfi T| > 1 and switched to Porphyry, so the band is only reachable within
++ * about 1e-5 of the polar circle; plac_speed() falls back to AscDash() there,
++ * as it did before. */
++static double plac_pole_slope(double cusp, double tanfi, double fac, double sine, int *ok)
++{
++  double s = sine * sind(cusp), rs = 1 - s * s;
++  double dek, cdek, tt, ddek, dtt, v, rv, dv, a, da, n, dn, q;
++  *ok = 0;
++  if (rs < VERY_SMALL_DENOM)
++    return 0;
++  dek = asind(s);
++  cdek = cosd(dek);
++  tt = tand(dek);
++  if (fabs(tt) < VERY_SMALL_DENOM)
++    return 0;
++  ddek = sine * cosd(cusp) / sqrt(rs);
++  dtt = DEGTORAD * ddek / (cdek * cdek);
++  v = tanfi * tt;
++  rv = 1 - v * v;
++  if (rv < VERY_SMALL_DENOM)
++    return 0;
++  dv = tanfi * dtt;
++  a = asind(v) * fac;
++  da = fac * RADTODEG / sqrt(rv) * dv;
++  n = sind(a);
++  dn = DEGTORAD * cosd(a) * da;
++  q = n / tt;
++  *ok = 1;
++  return RADTODEG / (1 + q * q) * (dn * tt - n * dtt) / (tt * tt);
++}
++
++/* True derivative of a cusp that is only defined implicitly, by
++ *   cusp = Asc1(rectasc, f(cusp)),
++ * as in Placidus and the Gauquelin sectors, where the iteration above has
++ * already converged on the cusp. Placidus trisects the diurnal and nocturnal
++ * semi-arcs of each ecliptic degree, so every cusp carries its own pole
++ * height, and that pole height is what makes the derivative implicit. Beyond
++ * the polar circles the trisection has nothing to divide and the system is
++ * undefined; falling back to Porphyry there is what the caller already does
++ * and is standard practice across programs, so no speed is produced for those
++ * latitudes by this function. AscDash() is the partial derivative with
++ * respect to rectasc alone, but the pole height follows the cusp, so
++ *   dcusp/dth = A_x / (1 - A_f * df/dcusp).
++ * Both partials are closed form, AscDashPole() and plac_pole_slope(). If
++ * either leaves its domain the correction is skipped rather than guessed. */
++static double plac_speed(double rectasc, double cusp, double f, double tanfi,
++			 double fac, double sine, double cose)
++{
++  double dA_df, df_dc, denom, ad, fc;
++  int k, ok;
++  /* The caller's cusp comes out of a loop that stops at VERY_SMALL_PLAC_ITER,
++   * a hundredth of an arcsecond, and its f belongs to the iterate before that.
++   * Both are far more accurate than the cusp needs to be, but they set a floor
++   * on the derivative, which depends on the pole height through the correction
++   * below, so the fixed point is refined here before differentiating.
++   *
++   * The loop runs to a tolerance rather than a fixed number of steps, and that
++   * matters. A version that took exactly one step was tried, because at
++   * ordinary latitudes one is enough: below 60 degrees it agreed with a fully
++   * converged reference to 4.7e-11 relative and ran Placidus at 1.33 times the
++   * unpatched cost instead of 1.60. It is wrong near the polar circle. The
++   * map's contraction factor approaches 1 as |tanfi tant| approaches 1, so one
++   * step barely moves the iterate and the implicit function correction is then
++   * evaluated at a pair that is not a fixed point. At latitude 66.5, armc
++   * 268.7, Placidus cusp 2 came out 743.729633 against a true 743.729661, and
++   * Gauquelin sector 2 at 66.5606 was out by 3.3 arcseconds a day. The onset is
++   * around latitude 65, which is inhabited. Fixed step counts are therefore
++   * not safe here whatever the count.
++   *
++   * 1e-9 degrees rather than the 1e-12 tried first: at 1e-9 the returned speed
++   * already agrees with a reference built at VERY_SMALL_PLAC_ITER = 1e-14 and
++   * niter_max = 2000 to 7.5e-11 relative at the worst point near the polar
++   * circle, and tightening to 1e-11 moves it by 3e-8 degrees per day, which
++   * nothing downstream can use. The composed map cannot settle below about
++   * 1e-13 degrees on cusps near 100 degrees anyway, so a target below that only
++   * makes the loop exit by exhaustion instead of by convergence. */
++  for (k = 0; k < 20; k++) {
++    fc = plac_pole(cusp, tanfi, fac, sine, &ok);
++    if (! ok)
++      break;
++    f = fc;
++    fc = Asc1(rectasc, f, sine, cose);
++    if (fabs(swe_difdeg2n(fc, cusp)) < 1e-9)
++      break;
++    cusp = fc;
++  }
++  ad = AscDash(rectasc, f, sine, cose);
++  /* f comes out of atand(), so it is always strictly inside +-90 and this
++   * never fires. It is kept because the expression below divides by cos(f)
++   * through Asc1(), and a future change to how f is formed should not be able
++   * to reach that division silently. */
++  if (fabs(f) > 90 - VERY_SMALL)
++    return ad;
++  dA_df = AscDashPole(rectasc, f, sine, cose);
++  df_dc = plac_pole_slope(cusp, tanfi, fac, sine, &ok);
++  if (! ok)			/* degenerate, see plac_pole() */
++    return ad;
++  denom = 1 - dA_df * df_dc;
++  if (fabs(denom) < VERY_SMALL_DENOM)
++    return ad;
++  return ad / denom;
++}
++
++/* Pullen SR sector widths for a quadrant of size q, factored out of case 'Q'
++ * so that the same code can be evaluated at neighbouring q when the cusp
++ * speeds are wanted. */
++static void pullen_sr_sectors(double q, double *x, double *xr, double *xr3, double *xr4, double *rp)
++{
++  double c, csq, ccr, cqx, r, r1, r2;
++  double third = 1.0 / 3.0;
++  double two23 = pow(2.0 * 2.0, third);        // 2^(2/3)
++  if (q < 1e-30) {    // degenerate case of quadrant = zer0
++    *x = *xr = *xr3 = 0;
++    *xr4 = 180;
++    if (rp != NULL) *rp = 0;
++    return;
++  }
++  c = (180 - q) / q;
++  csq = c * c;
++  ccr = pow(csq - c, third);          // cuberoot(c^2 -c)
++  cqx = sqrt(two23 * ccr + 1.0);      // sqrt{2^(2/3)*cuberoot(c^2-c) + 1}
++  r1 = 0.5 * cqx;
++  r2 = 0.5 * sqrt(-2*(1-2*c) / cqx - two23 * ccr + 2);
++  r = r1 + r2 - 0.5;
++  *x = q / (2 * r + 1);
++  *xr = r * *x;
++  *xr3 = *xr * r * r;
++  *xr4 = *xr3 * r;
++  if (rp != NULL) *rp = r;
++}
++
++/* Sector widths differentiated with respect to the quadrant size q.
++ * r is a root of a quartic and the radicals above are unpleasant to
++ * differentiate, but r never has to be differentiated in that form. Pullen
++ * (https://www.astrolog.org/astrolog/astsine.htm) defines the system by two
++ * equations, rx + x + rx = q and
++ * xr^3 + xr^4 + xr^3 = 180 - q, so the two quadrants add up:
++ *   q = x (1 + 2r),   180 - q = x r^3 (2 + r),
++ * and eliminating x leaves
++ *   F(r, q) = q r^3 (2 + r) - (180 - q)(1 + 2r) = 0.
++ * Implicit differentiation of F gives dr/dq, and the widths follow by the
++ * product rule. This is exact, and it is defined at q = 90, where a difference
++ * taken in q would have to turn one-sided. r running away as q goes to zero is
++ * the intended behaviour, not a numerical accident: Pullen notes that in the
++ * degenerate case Asc = MC, x goes to 0 and r goes to infinity, which is what
++ * the q < 1e-4 guard in case 'Q' stands in for. */
++static void pullen_sr_slopes(double q, double r, double x, double xr, double xr3,
++			     double *dx, double *dxr, double *dxr3, double *dxr4)
++{
++  double dFdr = q * (4 * r * r * r + 6 * r * r) - 2 * (180 - q);
++  double dFdq = r * r * r * (2 + r) + (1 + 2 * r);
++  double dr, den = 2 * r + 1;
++  /* dFdr cannot vanish on the constraint surface. Setting it to zero gives
++   * q r^2 (3 + 2r) = 180 - q, and substituting the two defining equations
++   * leaves (1 + 2r)(3 + 2r) = r(2 + r), that is (r + 1)^2 = 0. r is positive
++   * throughout, so this guard is defensive only. */
++  if (fabs(dFdr) < VERY_SMALL_DENOM) {
++    *dx = *dxr = *dxr3 = *dxr4 = 0;
++    return;
++  }
++  dr = -dFdq / dFdr;
++  *dx = 1 / den - q * 2 * dr / (den * den);
++  *dxr = dr * x + r * *dx;
++  *dxr3 = *dxr * r * r + xr * 2 * r * dr;
++  *dxr4 = *dxr3 * r + xr3 * dr;
++}
++
+ // derivative of Asc1, computes speed
+ // code contributed by Graham Dawson
+ static double AscDash(double x, double f, double sine, double cose)

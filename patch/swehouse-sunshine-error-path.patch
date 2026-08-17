@@ -1,0 +1,103 @@
+swehouse.c: the Sunshine declination check crashes and returns nothing
+
+swe_houses_armc_ex2() rejects a Sun declination outside -24..24 for the two
+Sunshine systems, and the rejection has two defects, one of them a crash in
+the shipped library.
+
+First, the message is written with sprintf(serr, ...) and serr is never
+checked. Three public entry points pass serr = NULL: swe_houses(),
+swe_houses_ex() and swe_houses_armc(). Any of them reaching this line is a
+segmentation fault, and reaching it needs nothing exotic:
+
+    #include "swephexp.h"
+    int main(void) {
+      double cusp[13], ascmc[10];
+      return swe_houses(630070.0, 52.5, 13.4, 'I', cusp, ascmc);
+    }
+
+      before   dies with a segmentation fault, signal 11
+      after    exits with status 255, the -1 return seen from a shell
+
+No contrived input there: 630070.0 is a date near 3000 BC, the Moshier
+ephemeris computes the true Sun, and its declination comes out -24.0019,
+because the obliquity itself exceeded 24 degrees before about 2800 BC --
+the library's own mean obliquity crosses 24 at a date in 2769 BC. The
+check rejects the real Sun of every midwinter that far back, by two
+thousandths of a degree at this one, and then crashes delivering the
+message. Whether -24..24 is the right bound for dates when the obliquity
+exceeded 24 degrees is a separate question and is left alone here; this
+patch only makes the rejection survivable. The same crash is reachable with
+modern dates through swe_houses_armc(), where ascmc[9] is the caller's own
+input:
+
+    double cusp[13], ascmc[10];
+    ascmc[9] = 90;
+    swe_houses_armc(100.0, 45.0, 23.4392911, 'I', cusp, ascmc);
+
+A fourth route reaches the same line through swe_house_pos(): its house
+position call passes the 99 sentinel, which recalls the declination a
+previous 'I' call left in a static, and if that earlier call was the
+rejected kind the recalled value re-fails the check with serr NULL. The
+static itself is upstream behaviour this patch leaves alone; the crash
+at the end of it is fixed with the others.
+
+Second, this is the one return from swe_houses_armc_ex2() that writes none
+of the four output arrays. The direct caller at least gets ERR back beside
+its own untouched memory; the sidereal wrappers do worse, subtracting the
+ayanamsa from whatever the caller had there and normalising it into 0..360,
+so the garbage comes back shaped like a longitude. The same laundering is
+described in "fill the Gauquelin sectors the Porphyry fallback leaves
+behind", which fixes it for the Porphyry fallback; this return needs its
+own line. After this patch the error path writes zeros: cusp[0..ito],
+cusp_speed[0..ito] when asked for, ascmc[0..8] and ascmc_speed[0..9].
+ascmc[9] is the caller's own input on this path and is left exactly as
+passed.
+
+Positions and speeds on every successful call are untouched: the error
+path is the only code this patch adds to. The harness's dump mode, run
+pristine and with this patch alone over its full 673,816-call sample,
+produces byte-for-byte identical files - identical enough that compare
+refuses the pair as indistinguishable, which is its guard against
+comparing a binary with itself doing exactly its job. cmp on the two
+dumps shows zero differing bytes.
+
+Independent of every other patch in the set; applies before or after any of
+them. The ayanamsa rate patch defends itself against this same return
+separately, by zeroing the speed arrays before the call, and the two
+compose in either order with either or both fixes doing the work.
+---
+ swehouse.c | 22 +++++++++++++++++++++-
+ 1 file changed, 21 insertions(+), 1 deletion(-)
+diff --git a/swehouse.c b/swehouse.c
+index 1c5bbd3..2b803a9 100644
+--- a/swehouse.c
++++ b/swehouse.c
+@@ -654,7 +654,27 @@ int CALL_CONV swe_houses_armc_ex2(
+       saved_sundec = h.sundec;
+     }
+     if (h.sundec < -24 || h.sundec > 24) {
+-      sprintf(serr, "House system I (Sunshine) needs valid Sun declination in ascmc[9]");
++      if (serr != NULL)
++        sprintf(serr, "House system I (Sunshine) needs valid Sun declination in ascmc[9]");
++      /* Every other return from this function writes the caller's arrays;
++       * this one returned with all four untouched, and the sidereal wrappers
++       * then subtract the ayanamsa from whatever the caller had there and
++       * hand it back through swe_degnorm() looking like a longitude. Zeros
++       * instead. ascmc[9] is the caller's own input and is left as passed. */
++      cusp[0] = 0;
++      for (i = 1; i <= ito; i++)
++        cusp[i] = 0;
++      if (cusp_speed != NULL) {
++        cusp_speed[0] = 0;
++        for (i = 1; i <= ito; i++)
++          cusp_speed[i] = 0;
++      }
++      for (i = 0; i < 9; i++)
++        ascmc[i] = 0;
++      if (ascmc_speed != NULL) {
++        for (i = 0; i < 10; i++)
++          ascmc_speed[i] = 0;
++      }
+       return ERR;
+     }
+   }

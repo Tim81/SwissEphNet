@@ -1,0 +1,84 @@
+swehouse.c: Krusinski returned zero for eight of twelve cusp speeds
+
+Only 1, 4, 7 and 10 were ever filled, by the generic code before the switch.
+
+    swetest -b1.1.2000 -ut12:00 -house13.4,52.5,U -speed
+      house 2  0 0 0.0000  ->  539 23 16.9198
+      house 3  0 0 0.0000  ->  453  5 58.5360
+
+The cusps come from a chain of rotations rather than a closed formula, but the
+chain is differentiable: swe_cotrans_sp() moves a velocity with its position, so
+nothing is differenced.
+
+Part of an eight-step series. Applied in order, the eight produce a file
+byte-identical to the single patch "swehouse.c: compute house cusp speeds
+analytically"; take either the series or that patch, not both. Every step
+compiles. Steps 01 to 06 also apply to a clean tree on their own, so any one of
+them can be taken without the rest; 07 needs 01 to 05, not 06; 08 needs all seven to link. Do not
+drop 02 or 04 from the middle: nothing else needs them, so the result still
+builds clean and is quietly wrong.
+
+---
+ swehouse.c | 50 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 50 insertions(+)
+diff --git a/swehouse.c b/swehouse.c
+index d48d026..5b38151 100644
+--- a/swehouse.c
++++ b/swehouse.c
+@@ -2002,6 +2002,56 @@ porphyry:
+       hsp->cusp[i+1] = swe_degnorm(hsp->cusp[i+1]);
+       hsp->cusp[i+7] = swe_degnorm(hsp->cusp[i+1]+180);
+     }
++    /* The cusps come out of a chain of rotations rather than a closed
++     * formula, but the chain is still differentiable. Only two things move:
++     * armc itself, and the Ascendant, which enters through its right
++     * ascension and its declination.
++     *   u    = RA(ac) - (th - 90)
++     *   kr   = longitude of (u, dec(ac)) rotated by -(90 - fi)
++     *   RA_i = longitude of (30i, 0) rotated by 90, shifted by kr, rotated
++     *          by (90 - fi), plus (th - 90)
++     *   cusp = ecliptic longitude having right ascension RA_i
++     * The two rotations are carried by swe_cotrans_sp(), which moves a
++     * velocity along with its position, so nothing here is differenced; the
++     * ecliptic/equator conversions are differentiated in closed form
++     * through dRA/dlon = cos(eps) / (cos^2 lon + cos^2 eps sin^2 lon).
++     * The singular direction enters only through ac_speed, which is
++     * AscDash()'s and is already correct at the horizon tangency. */
++    if (hsp->do_hspeed) {
++      double de, dde, u, du, kr, dkr, wac;
++      double xa[6];
++      xa[0] = hsp->ac; xa[1] = 0.0; xa[2] = 1.0;
++      swe_cotrans(xa, xa, -ekl);
++      de = xa[1];
++      wac = cosd(hsp->ac) * cosd(hsp->ac) + cose * cose * sind(hsp->ac) * sind(hsp->ac);
++      dde = cosd(hsp->ac) * sine / cosd(de) * hsp->ac_speed;
++      u = swe_degnorm(xa[0] - (th - 90));
++      du = cose / wac * hsp->ac_speed - ARMCS;
++      {
++	/* swe_cotrans_sp() rotates a position and its velocity together, so the
++	 * rotation needs no differencing: hand it (u, de) moving at (du, dde) and
++	 * read the rotated longitude and its rate straight back out. */
++	double xb[6];
++	xb[0] = u; xb[1] = de; xb[2] = 1.0;
++	xb[3] = du; xb[4] = dde; xb[5] = 0.0;
++	swe_cotrans_sp(xb, xb, -(90 - fi));
++	kr = xb[0];
++	dkr = xb[3];
++      }
++      for (i = 0; i < 6; i++) {
++	double xc[6], dRAi, wc;
++	xc[0] = 30.0 * i; xc[1] = 0.0; xc[2] = 1.0;
++	xc[3] = 0.0; xc[4] = 0.0; xc[5] = 0.0;
++	swe_cotrans_sp(xc, xc, 90);
++	xc[0] += kr; xc[3] = dkr;
++	swe_cotrans_sp(xc, xc, 90 - fi);
++	dRAi = xc[3] + ARMCS;
++	wc = cosd(hsp->cusp[i+1]) * cosd(hsp->cusp[i+1])
++	   + cose * cose * sind(hsp->cusp[i+1]) * sind(hsp->cusp[i+1]);
++	hsp->cusp_speed[i+1] = dRAi * wc / cose;
++	hsp->cusp_speed[i+7] = hsp->cusp_speed[i+1];
++      }
++    }
+     break;
+   case 'Y':     /* APC houses */
+     for (i = 1; i <= 12; i++) {

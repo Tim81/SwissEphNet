@@ -1,0 +1,163 @@
+swehouse.c: cusp speed groundwork
+
+Adds nothing that runs. A #define, two comment blocks and the forward
+declarations the later steps need.
+
+VERY_SMALL_DENOM is 1e-200 and exists because VERY_SMALL, an angular tolerance
+of 1e-10 degrees, is the wrong thing to compare a denominator against. Sums of
+squares and products of cosines reach 1e-10 at perfectly ordinary
+configurations, and refusing there reports a moving cusp as standing still. A
+denominator is unusable only when dividing by it would overflow. Guards that
+protect the domain of asin() or sqrt() keep VERY_SMALL, where a tolerance
+belongs.
+
+The two comment blocks state the units every speed is in, and where each house
+system's cusp speeds come from. Both are worth reading before the rest.
+
+Building this step alone warns nine times, "declared static but never defined":
+the declarations are here and the definitions arrive in steps 07 and 08. The
+pristine file and the finished series are both warning-free.
+
+Part of an eight-step series. Applied in order, the eight produce a file
+byte-identical to the single patch "swehouse.c: compute house cusp speeds
+analytically"; take either the series or that patch, not both. Every step
+compiles. Steps 01 to 06 also apply to a clean tree on their own, so any one of
+them can be taken without the rest; 07 needs 01 to 05, not 06; 08 needs all seven to link. Do not
+drop 02 or 04 from the middle: nothing else needs them, so the result still
+builds clean and is quietly wrong.
+
+---
+ swehouse.c | 114 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 114 insertions(+)
+diff --git a/swehouse.c b/swehouse.c
+index 1c5bbd3..892c931 100644
+--- a/swehouse.c
++++ b/swehouse.c
+@@ -72,6 +72,118 @@ house and (simple) aspect calculation
+ static double Asc1(double, double, double, double);
+ static double AscDash(double, double, double, double);
+ static double Asc2(double, double, double, double);
++/* VERY_SMALL is an angular tolerance in degrees, and it is the wrong thing to
++ * compare a denominator against. Sums of squares, products of cosines and the
++ * like reach 1e-10 at perfectly ordinary configurations without the cusp being
++ * degenerate, and refusing there reports a moving cusp as standing still. A
++ * denominator is only unusable when dividing by it would overflow, so the
++ * derivative code below tests against this instead. Guards that protect the
++ * domain of asin() or sqrt() keep VERY_SMALL, where a real tolerance belongs. */
++#define VERY_SMALL_DENOM 1e-200
++
++/* Units used by the cusp speed code below.
++ * Every cusp_speed[] and *_speed field is degrees of ecliptic longitude per
++ * day, and ARMCS, the rate of armc, is the only place a per-day factor enters.
++ * The helpers keep to one of two shapes:
++ *   - AscDash(), apc_sector_speed() and plac_speed() already carry the ARMCS
++ *     factor and return degrees per day directly. Note that AscDashPole(),
++ *     despite the name, belongs to the other group: it is the partial of
++ *     Asc1() in the pole height and carries no ARMCS;
++ *   - pullen_sr_slopes(), makransky_slope_w(), AscDashPole() and
++ *     plac_pole_slope() return a dimensionless degrees per degree, which is
++ *     multiplied by ARMCS, or by an existing per-day speed, exactly once at
++ *     the point of use. Case 'U' belongs to neither group: swe_cotrans_sp()
++ *     is handed rates that already carry ARMCS, so it returns degrees per day
++ *     throughout and no factor is applied at the end.
++ * Angles are in degrees throughout except inside apc_sector_speed(), which
++ * follows apc_sector() in taking radians; its result is a ratio of radians to
++ * radians, hence dimensionless, and is scaled by ARMCS like the rest. */
++
++/* Where each house system's cusp speeds come from.
++ *
++ *   A E D V     every cusp moves with the Ascendant or with the MC
++ *   C R T H     AscDash(), closed form, unchanged by this patch
++ *   P G         plac_speed(): AscDash() corrected by the implicit function
++ *               theorem, because the pole height follows the cusp
++ *   K           AscDash() times the rate of its own first argument; ad3 is
++ *               differentiated through the MC
++ *   O L S       chain rule from ac_speed and mc_speed through the quadrant
++ *               size acmc
++ *   Q           the same, but through the sector ratio r, which is
++ *               differentiated implicitly from the quadrant identity
++ *   X M         closed form through the ecliptic/equator conversion; armc is
++ *               the only thing that moves. The two use different relations and
++ *               so have different formulae, see the comments there
++ *   F           ac_speed scaled by the ratio of the two conversion factors,
++ *               the cos(eps) cancelling
++ *   B           AscDash() times the rate of its first argument; the semi-
++ *               diurnal arc is differentiated through the Ascendant
++ *   U           the rotations are carried by swe_cotrans_sp(), which moves a
++ *               velocity with its position; the conversions are closed form
++ *   Y           apc_sector() differentiated in closed form; cusps 1 4 7 10 are
++ *               not apc_sector()'s and take the Ascendant's and MC's speeds.
++ *               Opposite cusps are not 180 degrees apart in this system, so
++ *               all twelve are computed and the mirroring is skipped
++ *   I i         treindl: AscDash() is exact, the pole height does not move.
++ *               makransky: closed form, with cos(m) and sin(m) taken from
++ *               sqrt(cos^2 w + tan^2 pole) rather than from m.
++ *               As with Y, opposite cusps are not 180 degrees apart
++ *   W N         zero. The cusps stand still between sign ingresses and jump
++ *               when the Ascendant changes sign
++ *
++ * All of these are d(cusp)/d(armc) * ARMCS with the obliquity, and for
++ * Sunshine the solar declination, held fixed. That is the same convention the
++ * interpolation used: it handed the centre eps and sundec to both of its
++ * offset samples. Callers wanting a total d/dt would have to add the terms in
++ * d(eps)/dt and d(sundec)/dt themselves; both are small next to armc's rate.
++ *
++ * Seven places below hold a formula and its derivative as separate code, with
++ * nothing to make them agree. Change one and the other has to change too:
++ *
++ *   Asc1()                     AscDash(), in its first argument
++ *   Asc1()                     AscDashPole(), in the pole height
++ *   plac_pole()                plac_pole_slope()
++ *   apc_sector()               apc_sector_speed()
++ *   makransky_cusp_from_w()    makransky_slope_w()
++ *   ad3 in case 'K'            the dad3 block just below it
++ *   sda in case 'B'            the dsda block just below it
++ *
++ * and in case 'Q' the mapping from sector widths to cusps is written out once
++ * for the positions and again for the speeds.
++ *
++ * Sources for the definitions the derivatives below rest on. Each is also
++ * named at the case that uses it.
++ *
++ *   B   Alcabitius   diurnal arc of the Ascendant in six, meridian circles
++ *   F   Carter       poli-equatorial, 12 meridians 30 deg apart from the Asc
++ *   L Q Pullen       W. D. Pullen, "Sinusoidal House Systems",
++ *                    https://www.astrolog.org/astrolog/astsine.htm
++ *   M   Morinus      equator in twelve, projected from the ecliptic pole
++ *   X   Meridian     equator in twelve, projected from the equatorial pole
++ *   Y   APC          diurnal and nocturnal arcs of the Ascendant in six
++ *   I i Sunshine     B. Makransky, "Primary Directions: A Primer of
++ *                    Calculation", 1988: diurnal and nocturnal arcs of the
++ *                    Sun in six, projected with house circles
++ *   B F M X Y and the two Sunshine variants are described by Astrodienst,
++ *   "Tables of Houses for Astrology",
++ *   https://www.astro.com/swisseph/sweph_ht_e.htm
++ *   P G K O S W N are classical and are described in any of the above.
++ *
++ * Two of those definitions are checkable against the library itself rather
++ * than against a difference quotient, and both agree:
++ *   - Meridian cusp 1 is the equatorial ascendant. Its speed here matches
++ *     ascmc_speed[SE_EQUASC], computed by a different route, to 2e-13.
++ *   - Krusinski cusp 10 falls out of its chain of rotations, yet equals the
++ *     MC, and its speed equals mc_speed to 4e-14 relative.
++ */
++static double apc_sector_speed(int n, double ph, double e, double az);
++static void pullen_sr_sectors(double q, double *x, double *xr, double *xr3, double *xr4, double *r);
++static void pullen_sr_slopes(double q, double r, double x, double xr, double xr3,
++			     double *dx, double *dxr, double *dxr3, double *dxr4);
++static double plac_pole(double cusp, double tanfi, double fac, double sine, int *ok);
++static double plac_pole_slope(double cusp, double tanfi, double fac, double sine, int *ok);
++static double AscDashPole(double x, double f, double sine, double cose);
++static double plac_speed(double rectasc, double cusp, double f, double tanfi, double fac, double sine, double cose);
+ static int CalcH(double th, double fi, double ekl, char hsy, struct houses *hsp);
+ static int sidereal_houses_ecl_t0(double tjde, 
+                            double armc, 
+@@ -108,6 +220,8 @@ static int sidereal_houses_ssypl(double tjde,
+ 			   double *ascmc_speed,
+ 			   char *serr);
+ static int sunshine_solution_makransky(double ramc, double lat, double ecl, struct houses *hsp);
++static double makransky_cusp_from_w(double w, double pole, double ecl, int ih, double lat);
++static double makransky_slope_w(double w, double pole, double ecl, int ih, double lat);
+ static int sunshine_solution_treindl(double ramc, double lat, double ecl, struct houses *hsp);
+ #if 0
+ static void test_Asc1();

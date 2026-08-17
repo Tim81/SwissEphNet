@@ -1,0 +1,51 @@
+swehouse.c: Porphyry cusps 11 and 12 grew from the Ascendant
+
+They are offsets from the MC, so they grow from mc_speed.
+
+    swetest -b1.1.2000 -ut12:00 -house13.4,52.5,O -speed
+      house 11  687 38 11.2999  ->  426 54 36.0233
+      house 12  774 32 43.0587  ->  513 49  7.7822
+
+Five house systems fall back to Porphyry inside the polar circle and inherit
+these speeds, so the same defect shows through any of them there.
+
+Part of an eight-step series. Applied in order, the eight produce a file
+byte-identical to the single patch "swehouse.c: compute house cusp speeds
+analytically"; take either the series or that patch, not both. Every step
+compiles. Steps 01 to 06 also apply to a clean tree on their own, so any one of
+them can be taken without the rest; 07 needs 01 to 05, not 06; 08 needs all seven to link. Do not
+drop 02 or 04 from the middle: nothing else needs them, so the result still
+builds clean and is quietly wrong.
+
+---
+ swehouse.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+diff --git a/swehouse.c b/swehouse.c
+index 5f750e4..668752a 100644
+--- a/swehouse.c
++++ b/swehouse.c
+@@ -1470,6 +1470,11 @@ porphyry:
+     hsp->cusp[3] = swe_degnorm(hsp->ac + (180 - acmc) / 3 * 2);
+     hsp->cusp[11] = swe_degnorm(hsp->mc + acmc / 3);
+     hsp->cusp[12] = swe_degnorm(hsp->mc + acmc / 3 * 2);
++    /* Porphyry trisects each ecliptic quadrant equally, so every cusp is the
++     * Ascendant or the MC plus a fixed fraction of the quadrant acmc and the
++     * speeds follow directly. Cusps 11 and 12 are offsets from the MC and
++     * grow from mc_speed; before this patch they grew from ac_speed, which
++     * was wrong. */
+     if (hsp->do_hspeed) {
+       double q1_speed = hsp->ac_speed - hsp->mc_speed;	// rate of growth of quadrant 1
+       // double q4_speed = hsp->mc_speed - hsp->ac_speed;	// rate of growth of quadrant 4
+@@ -1477,8 +1482,10 @@ porphyry:
+       hsp->cusp_speed[10] = hsp->mc_speed; // dito
+       hsp->cusp_speed[2] = hsp->ac_speed  - q1_speed / 3;
+       hsp->cusp_speed[3] = hsp->ac_speed  - q1_speed / 3 * 2;
+-      hsp->cusp_speed[11] = hsp->ac_speed  + q1_speed / 3;
+-      hsp->cusp_speed[12] = hsp->ac_speed  + q1_speed / 3 * 2;
++      /* cusps 11 and 12 are offsets from the MC, not from the Ascendant,
++       * so they grow from mc_speed. q1_speed is d(acmc)/dt. */
++      hsp->cusp_speed[11] = hsp->mc_speed  + q1_speed / 3;
++      hsp->cusp_speed[12] = hsp->mc_speed  + q1_speed / 3 * 2;
+     }
+     break;
+   case 'Q':	/* Pullen sinusoidal ratio */

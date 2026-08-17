@@ -1,0 +1,83 @@
+swehouse.c: Porphyry cusps 11 and 12 grow from the Ascendant, not the MC
+
+Porphyry trisects each ecliptic quadrant, so every cusp is the Ascendant or the
+MC plus a fixed fraction of the quadrant. Cusps 11 and 12 are offsets from the
+MC, and their speeds were built from ac_speed.
+
+The correction needs no reference value, because the fix makes two identities
+hold that the geometry already requires:
+
+    speed[11] = mc' + (ac' - mc')/3  = (ac' + 2 mc')/3  = speed[3]
+    speed[12] = mc' + 2(ac' - mc')/3 = (2 ac' + mc')/3  = speed[2]
+
+After the patch cusp 11 reads 426.9100065 and so does cusp 3; cusp 12 reads
+513.8188284 and so does cusp 2. Before it neither pair matched. That is the
+whole argument, and it takes half a minute to confirm.
+
+Four cusp speeds change, not two. swehouse.c mirrors cusp_speed[5] onto 11 and
+cusp_speed[6] onto 12, so 5 and 6 move with them.
+
+    swetest -b1.1.2000 -ut12:00 -house13.4,52.5,O -speed
+
+      house  5  151 55  6.2512   687 38 11.2999   ->  426 54 36.0233
+      house  6  191 45  6.1539   774 32 43.0587   ->  513 49  7.7822
+      house 11  331 55  6.2512   687 38 11.2999   ->  426 54 36.0233
+      house 12   11 45  6.1539   774 32 43.0587   ->  513 49  7.7822
+
+The new values are the rates at which those cusps' own positions move; the old
+ones were not. Cusps 5 and 11 change by 38 per cent, 6 and 12 by 34, to numbers
+working code may already be reading, which is the reason to look at the
+demonstration before applying it.
+
+Five house systems fall back to Porphyry inside the polar circle and inherit its
+cusp speeds, so the same defect shows through any of them there. Koch makes it
+easiest to see, because the sign changes:
+
+    swetest -b1.1.2000 -ut12:00 -house13.4,80,K -speed
+
+      house 11  309 24 43.3718  -367 21 23.5702   ->  163  9 42.3058
+
+The old value had that cusp moving the wrong way round the zodiac. This is
+Porphyry's defect seen through Koch, not Koch's own; Koch's own patch shows
+below the polar circle, not above it.
+
+Positions are untouched.
+
+This is one concern lifted out of "swehouse.c: compute house cusp speeds
+analytically" so that it can be taken alone. That patch contains this change and
+rewrites the surrounding code as well, so the two cannot both be applied; it is
+also available as an eight-step series, of which this is one step. Independent of
+every other patch in the set.
+
+---
+ swehouse.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+diff --git a/swehouse.c b/swehouse.c
+index 5f750e4..668752a 100644
+--- a/swehouse.c
++++ b/swehouse.c
+@@ -1470,6 +1470,11 @@ porphyry:
+     hsp->cusp[3] = swe_degnorm(hsp->ac + (180 - acmc) / 3 * 2);
+     hsp->cusp[11] = swe_degnorm(hsp->mc + acmc / 3);
+     hsp->cusp[12] = swe_degnorm(hsp->mc + acmc / 3 * 2);
++    /* Porphyry trisects each ecliptic quadrant equally, so every cusp is the
++     * Ascendant or the MC plus a fixed fraction of the quadrant acmc and the
++     * speeds follow directly. Cusps 11 and 12 are offsets from the MC and
++     * grow from mc_speed; before this patch they grew from ac_speed, which
++     * was wrong. */
+     if (hsp->do_hspeed) {
+       double q1_speed = hsp->ac_speed - hsp->mc_speed;	// rate of growth of quadrant 1
+       // double q4_speed = hsp->mc_speed - hsp->ac_speed;	// rate of growth of quadrant 4
+@@ -1477,8 +1482,10 @@ porphyry:
+       hsp->cusp_speed[10] = hsp->mc_speed; // dito
+       hsp->cusp_speed[2] = hsp->ac_speed  - q1_speed / 3;
+       hsp->cusp_speed[3] = hsp->ac_speed  - q1_speed / 3 * 2;
+-      hsp->cusp_speed[11] = hsp->ac_speed  + q1_speed / 3;
+-      hsp->cusp_speed[12] = hsp->ac_speed  + q1_speed / 3 * 2;
++      /* cusps 11 and 12 are offsets from the MC, not from the Ascendant,
++       * so they grow from mc_speed. q1_speed is d(acmc)/dt. */
++      hsp->cusp_speed[11] = hsp->mc_speed  + q1_speed / 3;
++      hsp->cusp_speed[12] = hsp->mc_speed  + q1_speed / 3 * 2;
+     }
+     break;
+   case 'Q':	/* Pullen sinusoidal ratio */

@@ -1,0 +1,819 @@
+swehouse.c: closed-form cusp speeds for the nine interpolated systems
+
+Sunshine (I, i), Pullen SD (L), Pullen SR (Q), Sripati (S), Meridian (X),
+Morinus (M), Carter (F), Alcabitius (B) and APC (Y) differenced their cusps
+against armc with two extra CalcH() calls. That works until a cusp turns
+quickly, which is exactly where a chart wants the speed. Each now
+differentiates its own formula and drops the two calls with it.
+
+After this step no case block sets do_interpol. The machinery is kept, and is
+raised only when an analytic speed or a cusp position comes back non-finite, so
+an unexamined input degrades to the old behaviour rather than returning garbage.
+Measured over 663,520 calls with speeds requested, it was raised 0 times.
+
+At armc 270, geolat 66.5607089, eps 23.4392911, the eight systems that returned
+up to 15,551,878 degrees per day now return at most 665. Across all
+twenty six the largest there is 1,578, on Gauquelin, which was returning
+331 at that point; Placidus also rises there, 331 to 596. Those are the
+two letters the change makes larger, and both had been returning the
+cheap frozen-pole value this series replaces.
+
+Part of an eight-step series. Applied in order, the eight produce a file
+byte-identical to the single patch "swehouse.c: compute house cusp speeds
+analytically"; take either the series or that patch, not both. Every step
+compiles. Steps 01 to 06 also apply to a clean tree on their own, so any one of
+them can be taken without the rest; 07 needs 01 to 05, not 06; 08 needs all seven to link. Do not
+drop 02 or 04 from the middle: nothing else needs them, so the result still
+builds clean and is quietly wrong.
+---
+ swehouse.c | 611 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++------------
+ 1 file changed, 519 insertions(+), 92 deletions(-)
+diff --git a/swehouse.c b/swehouse.c
+index 9bfa3c5..0781bb1 100644
+--- a/swehouse.c
++++ b/swehouse.c
+@@ -832,6 +832,30 @@ int CALL_CONV swe_houses_armc_ex2(
+     for (i = SE_NASCMC; i < 10; i++)
+       ascmc_speed[i] = 0;
+   }
++  /* The house systems now compute cusp_speed in their own case blocks, so
++   * do_interpol is normally clear. It is still honoured, and is also raised
++   * here if any analytic speed came back non-finite, so that the generic
++   * interpolation below remains available as a fallback rather than letting
++   * a NaN or an infinity reach the caller. It exists so that a future house
++   * system, or an input outside what has been examined, degrades to the old
++   * behaviour instead of returning garbage.
++   * The cusp itself is tested as well, because a finite speed beside a
++   * non-finite position is not a usable answer either, and the analytic code
++   * does produce one: AscDash() decides on d > VERY_SMALL, which is false for
++   * a NaN, and so returns 0 rather than propagating it. Sunshine house system
++   * 'I' leaves a NaN in some cusps at latitudes beyond about 70 degrees, and
++   * reporting those cusps as standing still would hide it. Interpolating a
++   * NaN position gives a NaN speed, which is what the caller saw before this
++   * patch. */
++  if (h.do_hspeed && ! h.do_interpol) {
++    for (i = 1; i <= ito; i++) {
++      if (! (cusp_speed[i] > -1e300 && cusp_speed[i] < 1e300)
++       || ! (cusp[i] > -1e300 && cusp[i] < 1e300)) {
++	h.do_interpol = TRUE;
++	break;
++      }
++    }
++  }
+   if (h.do_interpol) {	// must compute cusp_speed via interpolation
+     double dt = 1.0 / 86400;
+     double darmc = dt * ARMCS;
+@@ -853,10 +877,16 @@ int CALL_CONV swe_houses_armc_ex2(
+ 	hm1 = h;	// use only lower interval
+ 	dt = dt / 2;
+       }
+-      for (i = 1; i <= 12; i++) {
++      /* ito, not 12. With Gauquelin sectors there are 36 cusps and the guard
++       * above scans all 36, so filling only 12 here would leave the bad speed
++       * in place in exactly the case that raised do_interpol. ito is 36 only
++       * when CalcH returned OK, and the rp1/rm1 test above covers the two
++       * offset samples, so all 36 are known good whenever this runs. */
++      for (i = 1; i <= ito; i++) {
+ 	double dx = swe_difdeg2n(hp1.cusp[i], hm1.cusp[i]);
+ 	cusp_speed[i] = dx / 2 / dt ;
+       }
++
+     }
+   }
+ #ifdef TRACE
+@@ -917,6 +947,83 @@ for (i = 1; i <=12; i++) {
+  * e  ecliptic obliquity
+  * az armc
+  */
++/* Derivative of apc_sector() with respect to az, scaled by ARMCS to give
++ * degrees per day. Mirrors apc_sector() line for line; if that changes, this
++ * has to change with it.
++ * APC, introduced by L. Knegt and used by the Dutch Werkgemeenschap van
++ * Astrologen, divides the diurnal and nocturnal arcs of the Ascendant into
++ * equal segments and carries great circles from the north point through them
++ * (astro.com/swisseph/sweph_ht_e.htm), so
++ * cusp 1 is the Ascendant and cusp 10 the MC exactly, and those two take
++ * ac_speed and mc_speed rather than this function. Cusps 12-6, 11-5, 2-8 and
++ * 3-9 are not exactly opposite in this system, which is why case 'Y' is
++ * excluded from the mirroring below and each of the twelve is computed here. Differentiating
++ *   kv = atan(T cos az / (1 + T sin az)),  T = tan(ph) tan(e)
++ * gives the compact
++ *   dkv/daz = -T (sin az + T) / (1 + T^2 + 2 T sin az),
++ * and the rest follows by the chain rule through sin(kv), a and the final
++ * atan2.
++ * Being analytic, this stays correct where the Ascendant turns arbitrarily
++ * fast, which is exactly where differencing the position fails. */
++static double apc_sector_speed(int n, double ph, double e, double az)
++{
++   int k, is_below_hor = 0;
++   double kv, dkv = 0, T, den, a, da, skv, dskv, P, N, D, dN, dD;
++   /* CalcH() clamps fi to exactly 90 - VERY_SMALL before the switch, so for a
++    * valid latitude this test is never true; it catches latitudes outside
++    * +-90. Kept to match apc_sector(), which guards the same way. */
++   if (fabs(ph * RADTODEG) > 90 - VERY_SMALL) {
++     kv = 0;
++   } else {
++     T = tan(ph) * tan(e);
++     kv = atan(T * cos(az) / (1 + T * sin(az)));
++     /* A sum of squares rather than 1 + T*T + 2*T*sin(az). The two are the
++     * same number, but the second is a difference of near-equal quantities
++     * when |T| approaches 1 with sin(az) near -1, and it can round to exactly
++     * zero there. The guard below then fires and reports twelve moving cusps
++     * as stationary, which is worse than the interpolation it replaces. This
++     * form cannot cancel and cannot come out negative. */
++    den = (1 + T * sin(az)) * (1 + T * sin(az)) + (T * cos(az)) * (T * cos(az));
++     if (fabs(den) < VERY_SMALL_DENOM)
++       return 0;
++     dkv = -T * (sin(az) + T) / den;
++   }
++   /* apc_sector() uses the declination of the Ascendant only through the
++    * product tan(dasc) * tan(ph), which the ascensional difference relation
++    * makes equal to sin(kv). Differentiating that form rather than the round
++    * trip through dasc keeps this function defined on the equator, where the
++    * round trip is 0/0. Upstream apc_sector() breaks that tie with a constant
++    * and returns wrong cusps within 1e-10 degrees of the equator; this
++    * derivative follows the corrected form, so in that band it will not agree
++    * with an unpatched apc_sector(). Everywhere else the two forms agree to a
++    * few units in the last place and it makes no difference. */
++   skv = sin(kv);
++   dskv = cos(kv) * dkv;
++   if (n < 8) {
++     is_below_hor = 1;
++     k = n - 1;
++   } else {
++     k = n - 13;
++   }
++   if (is_below_hor) {
++     a = kv + az + PI/2 + k * (PI/2 - kv) / 3;
++     da = dkv * (1 - k / 3.0) + 1;
++   } else {
++     a = kv + az + PI/2 + k * (PI/2 + kv) / 3;
++     da = dkv * (1 + k / 3.0) + 1;
++   }
++   a = swe_radnorm(a);
++   P = tan(ph);
++   N = skv * sin(az) + sin(a);
++   D = cos(e) * (skv * cos(az) + cos(a)) + sin(e) * P * sin(az - a);
++   dN = dskv * sin(az) + skv * cos(az) + cos(a) * da;
++   dD = cos(e) * (dskv * cos(az) - skv * sin(az) - sin(a) * da)
++      + sin(e) * P * cos(az - a) * (1 - da);
++   if (N * N + D * D < VERY_SMALL_DENOM)	/* atan2() has no direction */
++     return 0;
++   return (dN * D - N * dD) / (N * N + D * D) * ARMCS;
++}
++
+ static double apc_sector(int n, double ph, double e, double az)
+ {
+    int k, is_below_hor = 0;
+@@ -1295,6 +1402,9 @@ static int CalcH(
+       hsp->ac = swe_degnorm(hsp->ac + 180);
+     }
+     break;
++  /* Sunshine houses, invented by Bob Makransky and published in 1988 in
++   * "Primary Directions: A Primer of Calculation". Two solutions of the same
++   * definition: Treindl for 'I', Makransky for 'i'. */
+   case 'I': /* Sunshine houses, solution Treindl */
+   case 'i': /* Sunshine houses, solution Makranski */
+     acmc = swe_difdeg2n(hsp->ac, hsp->mc);
+@@ -1309,7 +1419,30 @@ static int CalcH(
+     }
+     hsp->cusp[4] = swe_degnorm(hsp->cusp[10] + 180);
+     hsp->cusp[7] = swe_degnorm(hsp->cusp[1] + 180);
++    /* Cusps 1 and 10 are the Ascendant and the MC and already have their
++     * speeds from before the switch; 4 and 7 are their opposites and share
++     * them. The sunshine solution below fills in the other eight, skipping
++     * exactly these four. */
++    if (hsp->do_hspeed) {
++      hsp->cusp_speed[4] = hsp->cusp_speed[10];
++      hsp->cusp_speed[7] = hsp->cusp_speed[1];
++    }
+     if (hsy == 'I') {
++      /* Sunshine, invented by Bob Makransky and published in 1988 in
++       * "Primary Directions: A Primer of Calculation", divides the Sun's
++       * diurnal and nocturnal arcs into six each and projects the division
++       * points with house circles. Cusp 1 is therefore the Ascendant and
++       * cusp 10 the MC exactly, which is why they are assigned above rather
++       * than solved for, while cusps 11 12 2 3 are not opposite 5 6 8 9 and
++       * the mirroring below is skipped.
++       * The cusps depend on the Sun's declination as well as on armc, but
++       * this function receives that declination as a bare number in
++       * ascmc[9] with no rate attached, so the speeds below hold it fixed,
++       * exactly as the interpolation they replace did. The omitted term
++       * d(cusp)/d(sundec) * d(sundec)/dt reaches about 0.14 deg/day at
++       * latitude 35, 0.6 at latitude 52, and under half a percent of the
++       * reported speed as far as latitude 70. A caller wanting the total
++       * derivative has to add it. */
+       retc = sunshine_solution_treindl(th, fi, ekl, hsp);
+     } else {
+       retc = sunshine_solution_makransky(th, fi, ekl, hsp);
+@@ -1319,7 +1452,7 @@ static int CalcH(
+       hsy = 'O';
+       goto porphyry;
+     }
+-    hsp->do_interpol = hsp->do_hspeed;
++
+     break;
+   case 'J': /* Savard's supposed Albategnius houses */
+     // house 11: latitude circle at 2/3 fi intersects prime meridian at p11.
+@@ -1470,8 +1603,34 @@ static int CalcH(
+ 	hsp->cusp[2] = swe_degnorm(hsp->ac + 30 + d);
+ 	hsp->cusp[3] = swe_degnorm(hsp->ac + 60 + 3 * d);
+       }
++      /* Every cusp above is the Ascendant or the MC plus a term that depends
++       * on the quadrant size acmc only, so the speeds follow by the chain rule
++       * from ac_speed and mc_speed. dq is the rate at which the 4th quadrant
++       * grows; the 1st quadrant q1 = 180 - acmc grows at -dq.
++       * The zero-width branches have their own derivative and are handled
++       * separately, as their cusps depend on acmc with a different factor.
++       * The switch at 30 degrees is part of the definition, not a numerical
++       * guard: Pullen (astrolog.org/astrolog/astsine.htm) states that below a
++       * 30 degree quadrant the middle house
++       * is pinned at zero width and the quadrant is simply bisected. The
++       * position is continuous there but its slope is not, so the two branches
++       * here must track the two branches above exactly. */
++      if (hsp->do_hspeed) {
++	double dq = hsp->ac_speed - hsp->mc_speed;
++	if (acmc <= 30) {
++	  hsp->cusp_speed[11] = hsp->cusp_speed[12] = hsp->mc_speed + dq / 2;
++	} else {
++	  hsp->cusp_speed[11] = hsp->mc_speed + dq / 4;
++	  hsp->cusp_speed[12] = hsp->mc_speed + dq * 3 / 4;
++	}
++	if (q1 <= 30) {
++	  hsp->cusp_speed[2] = hsp->cusp_speed[3] = hsp->ac_speed - dq / 2;
++	} else {
++	  hsp->cusp_speed[2] = hsp->ac_speed - dq / 4;
++	  hsp->cusp_speed[3] = hsp->ac_speed - dq * 3 / 4;
++	}
++      }
+     }
+-    hsp->do_interpol = hsp->do_hspeed;
+     break;
+   /* Whole signs from 0 Aries: the cusps are the twelve sign boundaries and do
+    * not depend on armc at all, so every speed is zero. The code before this
+@@ -1527,9 +1686,7 @@ porphyry:
+     break;
+   case 'Q':	/* Pullen sinusoidal ratio */
+     {
+-      double q, c, csq, ccr, cqx, two23, third, r, r1, r2, x, xr, xr3, xr4;
+-      third = 1.0 / 3.0;
+-      two23 = pow(2.0 * 2.0, third);        // 2^(2/3)
++      double q, x, xr, xr3, xr4, rr = 0;
+       acmc = swe_difdeg2n(hsp->ac, hsp->mc);
+       if (acmc < 0) {
+       /* within polar circle we swap AC/DC if AC is on wrong side */
+@@ -1539,23 +1696,7 @@ porphyry:
+       }
+       q = acmc;
+       if (q > 90) q = 180 - q;
+-      if (q < 1e-30) {    // degenerate case of quadrant = zer0
+-	// r = INFINITY;
+-	x = xr = xr3 = 0;
+-	xr4 = 180;
+-      } else {
+-	c = (180 - q) / q;
+-	csq = c * c;
+-	ccr = pow(csq - c, third);          // cuberoot(c^2 -c)
+-	cqx = sqrt(two23 * ccr + 1.0);      // sqrt{2^(2/3)*cuberoot(c^2-c) + 1}
+-	r1 = 0.5 * cqx;
+-	r2 = 0.5 * sqrt(-2*(1-2*c) / cqx - two23 * ccr + 2);
+-	r = r1 + r2 - 0.5;
+-	x = q / (2 * r + 1);
+-	xr = r * x;
+-	xr3 = xr * r * r;
+-	xr4 = xr3 * r;
+-      }
++      pullen_sr_sectors(q, &x, &xr, &xr3, &xr4, &rr);
+       if (acmc > 90) {
+ 	hsp->cusp[11] = swe_degnorm(hsp->mc + xr3);	// house 10 and 12 size xr^3
+ 	hsp->cusp[12] = swe_degnorm(hsp->cusp[11] + xr4);	// house 11 size xr^4
+@@ -1567,8 +1708,43 @@ porphyry:
+ 	hsp->cusp[2] = swe_degnorm(hsp->ac + xr3);	// house 1 and 3 size xr^3
+ 	hsp->cusp[3] = swe_degnorm(hsp->cusp[2] + xr4);	// house 2 size xr^4
+       }
++      /* The two branches below repeat the width-to-cusp mapping of the two
++       * branches just above. Keep the pairs in step.
++       * The sector widths depend on the quadrant size q alone, and q on the
++       * Ascendant and MC, so the speeds follow by the chain rule. The widths
++       * are a root of a quartic in q and unpleasant to differentiate as the
++       * radicals above are written, so pullen_sr_slopes() differentiates the
++       * two defining equations implicitly instead. That is exact, and it is
++       * defined at q = 90, where a difference taken in q would have to turn
++       * one-sided. Nothing here differences the cusp positions with respect to
++       * armc, which is what the interpolation this patch replaces did,
++       * straight through the direction in which they can jump. */
++      if (hsp->do_hspeed) {
++	double dq = hsp->ac_speed - hsp->mc_speed;	// rate of growth of acmc
++	double dxdq, dxrdq, dxr3dq, dxr4dq;
++	if (q < 1e-4) {
++	  /* The quadrant is collapsing, as it does at the geographic pole where
++	   * the Ascendant and the MC coincide. r runs away there, so the term is
++	   * dropped and the cusps move with the Ascendant and the MC alone. */
++	  dxdq = dxrdq = dxr3dq = dxr4dq = 0;
++	} else {
++	  pullen_sr_slopes(q, rr, x, xr, xr3, &dxdq, &dxrdq, &dxr3dq, &dxr4dq);
++	}
++	/* q = acmc below 90 degrees, q = 180 - acmc above it */
++	if (acmc > 90) dq = -dq;
++	if (acmc > 90) {
++	  hsp->cusp_speed[11] = hsp->mc_speed + dxr3dq * dq;
++	  hsp->cusp_speed[12] = hsp->cusp_speed[11] + dxr4dq * dq;
++	  hsp->cusp_speed[2] = hsp->ac_speed + dxrdq * dq;
++	  hsp->cusp_speed[3] = hsp->cusp_speed[2] + dxdq * dq;
++	} else {
++	  hsp->cusp_speed[11] = hsp->mc_speed + dxrdq * dq;
++	  hsp->cusp_speed[12] = hsp->cusp_speed[11] + dxdq * dq;
++	  hsp->cusp_speed[2] = hsp->ac_speed + dxr3dq * dq;
++	  hsp->cusp_speed[3] = hsp->cusp_speed[2] + dxr4dq * dq;
++	}
++      }
+     }
+-    hsp->do_interpol = hsp->do_hspeed;
+     break;
+   case 'R':	/* Regiomontanus houses */
+     fh1 = atand (tanfi * 0.5);
+@@ -1618,8 +1794,23 @@ porphyry:
+       hsp->cusp[10] = swe_degnorm(hsp->mc - s1 * 0.5);
+       hsp->cusp[11] = swe_degnorm(hsp->mc + s4 * 0.5);
+       hsp->cusp[12] = swe_degnorm(hsp->mc + s4 * 1.5);
++      /* As with Porphyry above, the cusps are the Ascendant or the MC plus a
++       * multiple of a sector width, and the sector widths depend only on the
++       * quadrant size acmc, which grows at dq = ac_speed - mc_speed.
++       * So s4 grows at dq/3 and s1 at -dq/3, and the speeds follow directly.
++       * Sripati shifts the Porphyry cusps back by half a sector, so cusp 1
++       * is not the Ascendant for this house system, it is
++       * half a sector before it, so it does not have ac_speed. */
++      if (hsp->do_hspeed) {
++	double dq = hsp->ac_speed - hsp->mc_speed;
++	hsp->cusp_speed[1] = hsp->ac_speed - dq / 6;
++	hsp->cusp_speed[2] = hsp->ac_speed - dq / 6;
++	hsp->cusp_speed[3] = hsp->ac_speed - dq / 2;
++	hsp->cusp_speed[10] = hsp->mc_speed + dq / 6;
++	hsp->cusp_speed[11] = hsp->mc_speed + dq / 6;
++	hsp->cusp_speed[12] = hsp->mc_speed + dq / 2;
++      }
+     }
+-    hsp->do_interpol = hsp->do_hspeed;
+     break;
+   case 'T':	/* 'topocentric' houses */
+     fh1 = atand (tanfi / 3.0);
+@@ -1712,11 +1903,26 @@ porphyry:
+       } /*  if */
+ 	  hsp->cusp[j] = swe_degnorm(hsp->cusp[j]);
+     }
++    /* Each cusp is the ecliptic point whose right ascension is armc plus a
++     * fixed multiple of 30 degrees, so that right ascension advances at
++     * exactly the rate of armc. Differentiating tan(lon) = tan(a) / cos(eps)
++     * gives d(lon)/da = (cos^2 lon + cos^2 eps sin^2 lon) / cos(eps), which is
++     * never zero or singular.
++     * Nothing here depends on geographic latitude, and neither do the cusps,
++     * as the definition requires (astro.com/swisseph/sweph_ht_e.htm). Cusp 10 is the MC and takes mc_speed to the
++     * last bit, but cusp 1 is the equatorial ascendant, not the Ascendant, so
++     * it does not take ac_speed; the loop overwrites the value set before the
++     * switch. */
++    if (hsp->do_hspeed) {
++      for (i = 1; i <= 12; i++) {
++	double cl = cosd(hsp->cusp[i]), sl = sind(hsp->cusp[i]);
++	hsp->cusp_speed[i] = ARMCS * (cl * cl + cose * cose * sl * sl) / cose;
++      }
++    }
+     acmc = swe_difdeg2n(hsp->ac, hsp->mc);
+     if (acmc < 0) {
+       hsp->ac = swe_degnorm(hsp->ac + 180);
+     }
+-    hsp->do_interpol = hsp->do_hspeed;
+     break; }
+   case 'M': {
+     /* 
+@@ -1736,11 +1942,28 @@ porphyry:
+       swe_cotrans(x, x, ekl);
+       hsp->cusp[j] = x[0];
+     }
++    /* As with the meridian system above, each cusp comes from a point of the
++     * equator whose right ascension advances with armc, so only the conversion
++     * to the ecliptic has to be differentiated. Here swe_cotrans() carries the
++     * equatorial point into the ecliptic the other way round, giving
++     * tan(lon) = cos(eps) tan(a) and hence
++     * d(lon)/da = (cos^2 eps cos^2 lon + sin^2 lon) / cos(eps).
++     * Morinus projects from the pole of the ecliptic rather than the pole of
++     * the equator (astro.com/swisseph/sweph_ht_e.htm), so neither the cusps
++     * nor these speeds depend on geographic
++     * latitude. Cusp 1 is not the Ascendant and cusp 10 is not quite the MC,
++     * so all twelve are taken from the formula and neither ac_speed nor
++     * mc_speed survives from before the switch. */
++    if (hsp->do_hspeed) {
++      for (i = 1; i <= 12; i++) {
++	double cl = cosd(hsp->cusp[i]), sl = sind(hsp->cusp[i]);
++	hsp->cusp_speed[i] = ARMCS * (cose * cose * cl * cl + sl * sl) / cose;
++      }
++    }
+     acmc = swe_difdeg2n(hsp->ac, hsp->mc);
+     if (acmc < 0) {
+       hsp->ac = swe_degnorm(hsp->ac + 180);
+     }
+-    hsp->do_interpol = hsp->do_hspeed;
+     break; }
+   case 'F': {
+     /* 
+@@ -1780,7 +2003,30 @@ porphyry:
+ 	hsp->cusp[i] = swe_degnorm(hsp->cusp[i]);
+       }
+     }
+-    hsp->do_interpol = hsp->do_hspeed;
++    /* Every cusp is the ecliptic longitude whose right ascension is the
++     * Ascendant's plus a fixed multiple of 30 degrees, so all of them move
++     * because the Ascendant does. With
++     *   dRA/dlon = cos(eps) / (cos^2 lon + cos^2 eps * sin^2 lon)
++     * the chain rule through RA gives
++     *   speed[i] = ac_speed * w(cusp[i]) / w(ac),  w(L) = cos^2 L + cos^2 eps * sin^2 L,
++     * the cos(eps) factors cancelling. w is never zero, so this is safe
++     * everywhere, including where the cusp formula above takes its
++     * ra = 90 or 270 branch.
++     * The loop starts at 2 because cusp 1 is the Ascendant in this system and
++     * already carries ac_speed. Cusp 10 is not the MC
++     * (astro.com/swisseph/sweph_ht_e.htm), and is covered by the loop like
++     * the rest. */
++    if (hsp->do_hspeed) {
++      double wac = cosd(hsp->ac) * cosd(hsp->ac)
++                 + cose * cose * sind(hsp->ac) * sind(hsp->ac);
++      for (i = 2; i <= 12; i++) {
++	if (i <= 3 || i >= 10) {
++	  double wc = cosd(hsp->cusp[i]) * cosd(hsp->cusp[i])
++	            + cose * cose * sind(hsp->cusp[i]) * sind(hsp->cusp[i]);
++	  hsp->cusp_speed[i] = hsp->ac_speed * wc / wac;
++	}
++      }
++    }
+     break; }
+   case 'B': {	/* Alcabitius */
+       // created by Alois 17-sep-2000, followed example in Matrix
+@@ -1821,8 +2067,40 @@ porphyry:
+       hsp->cusp[2] = Asc1(rectasc, 0, sine, cose);
+       rectasc = swe_degnorm(th + 180 -  sn3);	/* cusp 3 */
+       hsp->cusp[3] = Asc1(rectasc, 0, sine, cose);
++      /* Derivative of the four Asc1() calls just above. If the sda, sd3 or
++       * sn3 expressions above change, this block has to change with them.
++       * Alcabitius trisects the diurnal arc of the Ascendant per quadrant and
++       * draws meridian circles through the division points
++       * (astro.com/swisseph/sweph_ht_e.htm), so sda below is
++       * the Ascendant's semidiurnal arc and moves with the Ascendant alone.
++       * The opposite cusps are exactly 180 degrees away, so the mirroring
++       * below applies and their speeds are equal.
++       * Each cusp is Asc1() of an equatorial point that moves with th and, in
++       * addition, with the semidiurnal arc sda, which depends on the
++       * declination of the Ascendant and so on the Ascendant itself.
++       * Differentiating sda = acos(-tan(fi) * tan(dek)) with
++       * dek = asin(sin(ac) * sin(eps)) gives
++       *   d(sda)/dt = tan(fi)*cos(ac)*sin(eps) / (sqrt(1-r^2)*cos(dek)^3) * ac_speed,
++       * the degree conversions cancelling. AscDash() supplies the derivative
++       * of Asc1() with respect to its first argument, already scaled by ARMCS,
++       * so all it needs is the factor by which that argument moves faster than
++       * th itself.
++       * If r was clamped, the arc is at an extreme and no longer responds to
++       * the Ascendant, so the sda term is dropped. */
++      if (hsp->do_hspeed) {
++	double dsda = 0, k;
++	if (fabs(r) < 1) {
++	  double cdek = cosd(dek);
++	  dsda = tanfi * cosd(hsp->ac) * sine
++	       / (sqrt(1 - r * r) * cdek * cdek * cdek) * hsp->ac_speed;
++	}
++	k = dsda / (3 * ARMCS);
++	hsp->cusp_speed[11] = AscDash(swe_degnorm(th + sd3), 0, sine, cose) * (1 + k);
++	hsp->cusp_speed[12] = AscDash(swe_degnorm(th + 2 * sd3), 0, sine, cose) * (1 + 2 * k);
++	hsp->cusp_speed[2] = AscDash(swe_degnorm(th + 180 - 2 * sn3), 0, sine, cose) * (1 + 2 * k);
++	hsp->cusp_speed[3] = AscDash(swe_degnorm(th + 180 - sn3), 0, sine, cose) * (1 + k);
++      }
+     }
+-    hsp->do_interpol = hsp->do_hspeed;
+     break;
+   case 'G': 	/* 36 Gauquelin sectors */
+     for (i = 1; i <= 36; i++) {
+@@ -2070,6 +2348,33 @@ porphyry:
+     /* note the MC provided by apc_sector() near latitude 90 is not accurate */
+     hsp->cusp[10] = hsp->mc;
+     hsp->cusp[4] = swe_degnorm(hsp->mc + 180);
++    if (hsp->do_hspeed) {
++      for (i = 1; i <= 12; i++)
++	hsp->cusp_speed[i] = apc_sector_speed(i, fi * DEGTORAD, ekl * DEGTORAD, th * DEGTORAD);
++      /* cusps 4 and 10 are taken from the generic MC above, not from
++       * apc_sector(), so their speeds come from the MC as well; cusps 1 and 7
++       * are the Ascendant and Descendant and use AscDash(), which is defined
++       * at the horizon tangency where apc_sector() itself is not.
++       * That identity holds to 3e-14 everywhere except within 1e-10 degrees
++       * of the equator, where apc_sector() replaces the declination of the
++       * Ascendant by the constant 90 - VERY_SMALL. The product
++       * tan(dasc) * tan(ph) then sweeps from 0 to about 10 across that band
++       * and the cusps it returns are not the Ascendant and Descendant at all:
++       * just inside 1e-10 degrees of latitude cusp 1 is 48 degrees from the
++       * Ascendant and cusps 1 and 7 are 95 degrees away from opposite, the
++       * clamp applying strictly below 1e-10 and not at it. That is a defect
++       * in apc_sector(), and repairing it would move positions, which this
++       * patch does not do; a companion patch removes it by using sin(kv) in
++       * place of the round trip through dasc. apc_sector_speed() here already
++       * differentiates that corrected form, so with the companion patch
++       * applied APC agrees to 1e-11 at every latitude. Without it, the speeds
++       * in that band are right and the positions they accompany are not. The
++       * band is about a fiftieth of a millimetre wide on the ground. */
++      hsp->cusp_speed[10] = hsp->mc_speed;
++      hsp->cusp_speed[4] = hsp->mc_speed;
++      hsp->cusp_speed[1] = hsp->ac_speed;
++      hsp->cusp_speed[7] = hsp->ac_speed;
++    }
+     /* within polar circle, when mc sinks below horizon and 
+      * ascendant changes to western hemisphere, all cusps
+      * must be added 180 degrees. 
+@@ -2083,7 +2388,6 @@ porphyry:
+ 	  hsp->cusp[i] = swe_degnorm(hsp->cusp[i] + 180);
+       }
+     }
+-    hsp->do_interpol = hsp->do_hspeed;
+     break;
+   default:	/* Placidus houses */
+     if (fabs(fi) >= 90 - ekl) {  /* within polar circle */
+@@ -3390,19 +3694,185 @@ static int sunshine_init(double lat, double dec, double xh[])
+   return OK;
+ }
+ 
++/* The last stage of the Makransky sunshine solution: the cusp as a function of
++ * w, the house circle's position measured from the meridian, with the pole
++ * height held fixed. Factored out of sunshine_solution_makransky() unchanged,
++ * so that it can also be evaluated at neighbouring w when the speeds are
++ * wanted. */
++static double makransky_cusp_from_w(double w, double pole, double ecl, int ih, double lat)
++{
++  double r = 0, cu, z = 0, sinecl = sind(ecl);
++  if (w == 90 || w == 270) {
++    /* Which meridian side w names depends on the hemisphere. Southern charts
++     * have already had rah turned by 180, so the side this frame calls w == 90
++     * is the one a northern chart calls w == 270. The general branch below gets
++     * that right by way of its own 180 shift; these two had their own formulae
++     * and no shift, so a southern chart landing exactly on 90 or 270 came back
++     * on the wrong side of the meridian. */
++    int at90 = (w == 90);
++    if (lat < 0) at90 = !at90;
++    r = atand(sinecl * tand(pole));
++    if (at90) {
++      if (ih <= 3 || ih >= 11) cu = 90 + r; else cu = 90 - r;
++    } else {
++      if (ih <= 3 || ih >= 11) cu = 270 - r; else cu = 270 + r;
++    }
++  } else {
++    double m;
++    m = atand(fabs(tand(pole) / cosd(w)));
++    if (ih <= 3 || ih >= 11) {
++      if (w > 90 && w < 270)
++	z = m - ecl;
++      else
++	z = m + ecl;
++    } else {
++      if (w > 90 && w < 270)
++	z = m + ecl;
++      else
++	z = m - ecl;
++    }
++    if (z == 90) {
++      if (w < 180)
++	cu = 90;
++      else
++	cu = 270;
++    } else {
++      // r is between 0 and 90
++      r = atand(fabs(cosd(m) * tand(w) / cosd(z)));
++      if (w < 90)
++	cu = r;
++      else if (w > 90 && w < 180)
++	cu = 180 - r;
++      else if (w >= 180 && w < 270)
++	cu = 180 + r;
++      else
++	cu = 360 - r;
++    }
++    if (z > 90) {
++      // i am not sure if I understood the remark 'value will fall away from cancer..
++      // on page 146 correctly.
++      if (w < 90)
++	cu = 180 - r;
++      else if (w > 90 && w < 180)
++	cu = + r;
++      else if (w >= 180 && w < 270)
++	cu = 360 - r;
++      else
++	cu = 180 + r;
++    }
++    if (lat < 0)	// Makransky deals with southern latitude this way
++      cu = swe_degnorm(cu + 180);
++  }
++  /* the z > 90 chain returns 360 - r, and r is 0 at w == 180, so without this
++   * a northern chart can be handed a cusp of exactly 360 */
++  return swe_degnorm(cu);
++}
++
++/* Derivative of makransky_cusp_from_w() with respect to w, in degrees per
++ * degree. The cusp is a chain of atand() calls,
++ *   m = atan|tan(pole)/cos(w)|,  z = m -+ ecl,
++ *   r = atan|cos(m) tan(w)/cos(z)|,  cusp = -+r plus a multiple of 180,
++ * and the quadrant of w and the side of z = 90 fix only the sign in front of
++ * r, so one expression with a sign covers all of them.
++ *
++ * Two quantities in that chain must not be evaluated the way the position
++ * code writes them. Near w = 90 and 270, m comes within a fraction of a
++ * degree of 90, and cos(m) formed from m loses almost all of its digits:
++ * m carries about 1e-14 degrees of absolute error, which is a relative error
++ * of 1e-10 in 90 - m. The product cos(m) tan(w) is then a small number times
++ * a large one. Both have exact closed forms. With
++ *   S = sqrt(cos^2 w + tan^2 pole)
++ * the definition of m gives cos(m) = |cos w| / S and sin(m) = |tan pole| / S
++ * directly, so that
++ *   cos(m) tan(w) = sgn(cos w) sin(w) / S,
++ * with no cancellation and no 0 x infinity, and cos(z) follows from cos(m)
++ * and sin(m) by the addition formula without forming m at all. A version
++ * written in terms of m instead was tried first and was wrong by 3e-5 at
++ * w within 2e-4 of 90; this one is right there and needs no step size, so
++ * the differences and the one-sided handling near the bounds are both gone. */
++static double makransky_slope_w(double w, double pole, double ecl, int ih, double lat)
++{
++  double cw = cosd(w), sw = sind(w), tp = tand(pole);
++  double ce = cosd(ecl), se = sind(ecl);
++  double S, cm, sm, cz, sz, dS, sdcz, den, sig, sgn;
++  double sgncw, sgnsw, sgncz;
++  /* lat enters makransky_cusp_from_w() only through the constant 180 degree
++   * shift it applies at southern latitudes, which the derivative does not
++   * see. The parameter is kept so that the two functions take the same
++   * arguments and stay easy to compare. */
++  (void) lat;
++  S = sqrt(cw * cw + tp * tp);
++  if (S == 0)		/* w on 90 or 270 and the pole on the equator */
++    return 0;
++  sgncw = (cw < 0) ? -1 : 1;
++  sgnsw = (w > 180) ? -1 : 1;	/* not from sw; see the note at sgn below */
++  cm = fabs(cw) / S;	/* cos(m) and sin(m) from the definition of m, */
++  sm = fabs(tp) / S;	/* never from m itself */
++  if (ih <= 3 || ih >= 11)
++    sig = (w > 90 && w < 270) ? -1 : 1;
++  else
++    sig = (w > 90 && w < 270) ?  1 : -1;
++  cz = cm * ce - sig * sm * se;		/* cos(z), sin(z), z = m + sig * ecl */
++  sz = sm * ce + sig * cm * se;
++  sgncz = (cz < 0) ? -1 : 1;
++  dS   = -sgncw * cm * sw * DEGTORAD;
++  sdcz = -sgncw * sw * DEGTORAD * sm * sz;	/* S times d(cos z)/dw */
++  /* Writing D = S |cos z|, the slope is
++   *   [ sgn(sin w) cos(w) D - |sin w| (dS |cos z| + sgn(cos z) S dcz) ]
++   *     divided by  D^2 + sin^2 w,
++   * which never needs S, cos(z) or sin(w) in a denominator of its own. Each
++   * of those does reach zero at ordinary configurations, cos(z) whenever m
++   * reaches 90 - ecl and S when the pole meets the equator with w on 90, and
++   * the slope stays finite at all of them; guarding them separately reported
++   * a moving cusp as standing still. Only the sum below can vanish, and only
++   * where the cusp itself is undefined. */
++  den = S * S * cz * cz + sw * sw;
++  if (den < VERY_SMALL_DENOM)
++    return 0;
++  /* The quadrant of w and the side of z = 90 fix only the sign in front of r;
++   * sgn * sgn(cos z) is the same either side of z = 90, so this is continuous
++   * across it.
++   *
++   * Every bound here is <=, so that w landing exactly on 90, 180 or 270 takes
++   * the branch below it rather than the one above. Those three values are
++   * reachable and not rare: w is the house circle's position measured from the
++   * meridian, and on the equator the ascensional difference vanishes, so the
++   * diurnal and nocturnal arcs are exactly 90 degrees and the house circles sit
++   * at exact multiples of 30. Every armc that is a multiple of 30 then lands
++   * three of the twelve cusps on one of them. The slope is continuous through
++   * all three: evaluated a millionth of a degree either side it agrees to the
++   * digits printed, so the boundary value is simply the neighbouring one and
++   * there is no limit to choose. With a strict < it came out negated instead.
++   *
++   * sgnsw is taken from the quadrant rather than from sw for the same reason.
++   * sin(180 degrees) is not zero in double precision but about 1.2e-16, and
++   * positive, so a test on its sign silently uses the convention for w below
++   * 180 while sgn uses the one above, and the two disagree by a factor of -1
++   * at exactly that point. Reading the sign off w instead settles it without
++   * depending on which way a particular libm rounds sin near pi. Everywhere
++   * else the two agree, sw being of the sign the quadrant implies. */
++  if (cz >= 0)
++    sgn = (w <= 90) ? 1 : (w <= 180) ? -1 : (w <= 270) ? 1 : -1;
++  else
++    sgn = (w <= 90) ? -1 : (w <= 180) ? 1 : (w <= 270) ? -1 : 1;
++  return sgn * RADTODEG
++       * (sgnsw * cw * DEGTORAD * S * fabs(cz)
++          - fabs(sw) * (dS * fabs(cz) + sgncz * sdcz)) / den;
++}
++
++
+ static int sunshine_solution_makransky(double ramc, double lat, double ecl, struct houses *hsp)
+ {
+   double xh[13];
+   double md;
+   double zd;	// zenith distance of house circle, along prime vertical
+-  double pole, q, w, a, b, c, f, cu, r = 0, rah;
+-  double sinlat, coslat, tanlat, tandec, sinecl;
++  double pole, q, w, a, b, c, f, cu, rah;
++  double sinlat, coslat, tanlat, tandec;
+   double dec = hsp->sundec;
+   sinlat = sind(lat);
+   coslat = cosd(lat);
+   tanlat = tand(lat);
+   tandec = tand(dec);
+-  sinecl = sind(ecl);
+   int ih;
+   // if (90 - fabs(lat) <= ecl) {
+   //   strcpy(hsp->serr, "Sunshine in polar circle not allowed");
+@@ -3411,7 +3881,6 @@ static int sunshine_solution_makransky(double ramc, double lat, double ecl, stru
+   if (sunshine_init(lat, dec, xh) == ERR)
+     return ERR;
+   for (ih = 1; ih <= 12; ih++) {
+-    double z = 0;
+     if ((ih - 1) % 3 == 0) continue;	// skip 1,4,7,10
+     md = fabs(xh[ih]);
+     if (ih <= 6)
+@@ -3469,65 +3938,15 @@ static int sunshine_solution_makransky(double ramc, double lat, double ecl, stru
+       w = swe_degnorm(rah - q);
+     else
+       w = swe_degnorm(rah + q);
+-    if (w == 90) {
+-      r = atand(sind(ecl) * tand(pole));
+-      if (ih <= 3 || ih >= 11)
+-        cu = 90 + r;
+-      else
+-        cu = 90 - r;
+-    } else if (w == 270) {
+-      r = atand(sinecl * tand(pole));
+-      if (ih <= 3 || ih >= 11)
+-        cu = 270 - r;
+-      else
+-        cu = 270 + r;
+-    } else {
+-      double m;
+-      m = atand(fabs(tand(pole) / cosd(w)));
+-      if (ih <= 3 || ih >= 11) {
+-        if (w > 90 && w < 270)
+-	  z = m - ecl;
+-	else
+-	  z = m + ecl;
+-      } else {
+-        if (w > 90 && w < 270)
+-	  z = m + ecl;
+-	else
+-	  z = m - ecl;
+-      }
+-      if (z == 90) {
+-        if (w < 180)
+-	  cu = 90;
+-	else
+-	  cu = 270;
+-      } else {
+-	// r is between 0 and 90
+-        r = atand(fabs(cosd(m) * tand(w) / cosd(z)));
+-	if (w < 90)
+-	  cu = r;
+-	else if (w > 90 && w < 180)
+-	  cu = 180 - r;
+-	else if (w > 180 && w < 270)
+-	  cu = 180 + r;
+-	else
+-	  cu = 360 - r;
+-      }
+-      if (z > 90) {
+-      	// i am not sure if I understood the remark 'value will fall away from cancer..
+-	// on page 146 correctly.
+-	if (w < 90)
+-	  cu = 180 - r;
+-	else if (w > 90 && w < 180)
+-	  cu = + r;
+-	else if (w > 180 && w < 270)
+-	  cu = 360 - r;
+-	else
+-	  cu = 180 + r;
+-      }
+-      if (lat < 0)	// Makransky deals with southern latitude this way
+-        cu = swe_degnorm(cu + 180);
+-    }
++    cu = makransky_cusp_from_w(w, pole, ecl, ih, lat);
+     hsp->cusp[ih] = cu;
++    /* Of everything above, only rah and therefore w depend on ramc, and they
++     * follow it one for one: xh[], md, zd, pole and q are set by the latitude
++     * and the Sun's declination alone. So the cusp is a function of w only,
++     * d(cusp)/d(ramc) = d(cusp)/dw, and makransky_slope_w() gives that in
++     * closed form. The Sun's declination is held fixed; see case 'I'. */
++    if (hsp->do_hspeed)
++      hsp->cusp_speed[ih] = makransky_slope_w(w, pole, ecl, ih, lat) * ARMCS;
+   } 
+   return OK;
+ }
+@@ -3619,6 +4038,14 @@ static int sunshine_solution_treindl(double ramc, double lat, double ecl, struct
+     // like with many other house systems, to intersect house circle with eclitpic
+     hc = Asc1(a, pole, sinecl, cosecl);
+     hsp->cusp[ih] = hc;
++    /* pole and rax depend on the latitude and the solar declination only, so
++     * as armc advances, a advances with it at the same rate and the pole
++     * height stays put. AscDash() is therefore the exact derivative.
++     * The declination is held fixed here, which is the same convention the
++     * interpolation this replaces already used: it passed the centre value of
++     * sundec to both of its offset samples. */
++    if (hsp->do_hspeed)
++      hsp->cusp_speed[ih] = AscDash(a, pole, sinecl, cosecl);
+   }
+   if (mc_under_horizon && ! SUNSHINE_KEEP_MC_SOUTH) {
+     for (ih = 2; ih <= 12; ih++) {

@@ -1,0 +1,96 @@
+swehouse.c: whole sign and 0 Aries cusps stand still
+
+Their cusps sit on sign boundaries: they do not move between ingresses and then
+jump 30 degrees. The speed reported was the equal house speed the cusps carried
+before the boundaries were imposed on them.
+
+    swetest -b1.1.2000 -ut12:00 -house13.4,52.5,W -speed -sid1
+      house 1  600 43 39.5410  ->  0 0 0.0000
+
+600 is not the worst of it. Over 25,520 dates at random latitudes and longitudes
+the largest speed these cusps report is 12,385 degrees per day; judged on
+absolute error the pristine library returns 12,385.19 for a cusp whose
+derivative is exactly zero, and after this step that reads 0.000e+00.
+
+The sidereal path needs its own line and gets one here: it computes 'W' as equal
+houses and truncates afterwards, so case 'W' in CalcH() never runs from there.
+
+Part of an eight-step series. Applied in order, the eight produce a file
+byte-identical to the single patch "swehouse.c: compute house cusp speeds
+analytically"; take either the series or that patch, not both. Every step
+compiles. Steps 01 to 06 also apply to a clean tree on their own, so any one of
+them can be taken without the rest; 07 needs 01 to 05, not 06; 08 needs all seven to link. Do not
+drop 02 or 04 from the middle: nothing else needs them, so the result still
+builds clean and is quietly wrong.
+
+---
+ swehouse.c | 33 +++++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
+diff --git a/swehouse.c b/swehouse.c
+index 5172eab..5f750e4 100644
+--- a/swehouse.c
++++ b/swehouse.c
+@@ -703,6 +703,17 @@ static int sidereal_houses_trad(double tjde,
+       cusp[i] = (i - 1) * 30;
+     }
+   }
++  /* Whole sign and 0 Aries cusps sit on sign boundaries and stand still
++   * between ingresses. Case 'W' in CalcH() zeroes their speeds, but it is
++   * never reached from here: 'W' is computed as equal houses through ihs2
++   * above and the sign boundaries are imposed afterwards, so without this the
++   * equal house speeds would survive on cusps the truncation has just pinned,
++   * which is the defect this patch removes on the tropical path. 'N' is
++   * already zero and is included so the two cannot drift apart. */
++  if ((ihs == 'W' || ihs == 'N') && cusp_speed != NULL) {
++    for (i = 1; i <= ito; i++)
++      cusp_speed[i] = 0;
++  }
+   for (i = 0; i < SE_NASCMC; i++) {
+     if (i == 2)	/* armc */
+       continue;
+@@ -1425,6 +1436,10 @@ static int CalcH(
+     }
+     hsp->do_interpol = hsp->do_hspeed;
+     break;
++  /* Whole signs from 0 Aries: the cusps are the twelve sign boundaries and do
++   * not depend on armc at all, so every speed is zero. The code before this
++   * patch left ac_speed on cusp 1 and mc_speed on cusp 10, and the mirroring
++   * carried them to 7 and 4, describing a motion these cusps do not have. */
+   case 'N':	/* whole signs, begin at 0° Aries */
+     acmc = swe_difdeg2n(hsp->ac, hsp->mc);
+     if (acmc < 0) {
+@@ -1433,6 +1448,12 @@ static int CalcH(
+     }
+     for (i = 1; i <= 12; i++) 
+       hsp->cusp[i] = (i - 1) * 30.0;
++    /* These cusps are constants, they do not move at all. Without this the
++     * Ascendant and MC speeds set before the switch would be reported for
++     * cusps 1 and 10 (and, through the mirroring below, for 4 and 7). */
++    if (hsp->do_hspeed)
++      for (i = 1; i <= 12; i++)
++	hsp->cusp_speed[i] = 0;
+     break;
+   case 'O':	/* Porphyry houses */
+ porphyry:
+@@ -1605,9 +1626,21 @@ porphyry:
+       hsp->ac = swe_degnorm(hsp->ac + 180);
+       hsp->cusp[1] = hsp->ac;
+     }
++    /* Whole sign houses: the cusps sit on sign boundaries and do not move
++     * between ingresses, so every speed is zero. The derivative does not
++     * exist at an ingress and is zero everywhere else; reporting ac_speed
++     * here, as the code did before, described a motion the cusps do not
++     * have. */
+     hsp->cusp[1] = hsp->ac - fmod(hsp->ac, 30);
+     for (i = 2; i <=12; i++)
+       hsp->cusp[i] = swe_degnorm(hsp->cusp[1] + (i-1) * 30);
++    /* The cusps are the start of the Ascendant's sign and fixed multiples of
++     * 30 degrees from it. They stand still while the Ascendant crosses a sign
++     * and jump when it enters the next one, so the derivative is zero
++     * everywhere it exists. */
++    if (hsp->do_hspeed)
++      for (i = 1; i <= 12; i++)
++	hsp->cusp_speed[i] = 0;
+     break;
+   case 'X': {
+     /*

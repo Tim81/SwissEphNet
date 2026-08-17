@@ -1,0 +1,190 @@
+swehouse.c: fix APC cusps near the equator
+
+apc_sector() forms the declination of the Ascendant only to use it in the
+product tan(dasc) * tan(ph). By the ascensional difference relation
+sin(kv) = tan(ph) * tan(dasc), that product is sin(kv), and kv is already in
+hand. Computing dasc = atan(sin(kv) / tan(ph)) and multiplying by tan(ph)
+again is a round trip that becomes 0/0 on the equator, where sin(kv) and
+tan(ph) vanish together.
+
+The old code broke the tie by substituting the constant 90 - VERY_SMALL for
+dasc whenever |latitude| < 1e-10 degrees. tan() of that constant is about
+5.7e11, so the product came out roughly 2e12 times too large and grew with
+latitude across the band instead of vanishing with it. The cusps it returned
+there were not the APC cusps: just inside the band, at 9.975e-11 degrees of
+latitude, cusp 1 sat up to 48.5 degrees from the Ascendant and cusps 1 and 7
+up to 94.8 degrees from opposite - each figure its own worst armc, they do
+not co-occur at one chart - where the definition requires the Ascendant and
+the Descendant exactly. The test is strict, so at 1e-10 exactly
+the old code was already correct; the damage is confined to what lies below.
+
+Taking sin(kv) directly removes the round trip and the special case together.
+
+Verified: across the former band, from 1e-14 degrees of latitude up, cusps 1
+and 7 oppose to within 1.5e-13 degrees everywhere, and cusp 1 sits within
+1.5e-13 of the Ascendant away from the armc quadrants - a few ULP at the
+demonstration chart, thousands at the worst armc of a full sweep. Within
+about 1e-8 degrees of an exact quadrant the difference grows: about 1e-9 a
+nanodegree off the quadrant, about 6e-9 at the window's edge. That is the generic
+Ascendant's own snap-to-axis clamp showing through, not this function: at
+armc 180 + 1e-9 and the band's floor of 1e-14 latitude, the cusp reads the
+analytically exact 270.00000000091745 while ascmc[0] snaps flat to 270. All
+of it sits far below anything swetest prints.
+Outside the band the two forms agree to within a few units in the last
+place, 3.4e-16 in the product over the samples taken, and cusp positions move
+by at most 2.7e-10 degrees over 24,263,712 samples spanning latitudes -89.5 to
+89.5 and a full armc sweep, always toward the exact value. No non-finite
+result anywhere.
+
+There is a check that needs no separate implementation at all. On the equator
+kv is zero, so sin(kv) is zero and the formula collapses to the ecliptic
+longitudes of right ascensions armc + 90 + 30k: APC at latitude zero is the
+Meridian system, which this file already computes independently as case 'X'.
+The corrected apc_sector() reproduces case 'X' at latitude zero to within
+2e-13 degrees on every cusp - below anything swetest prints, though not to
+the bit; both builds carry that rounding equally - and approaches it linearly
+on the way in, 4e-13 at 1e-12 degrees and 3.7e-9 at 1e-8. The old code was 48
+degrees away from it inside the band.
+Anyone can repeat this with two calls to swe_houses_armc_ex2().
+
+The identity itself was checked against the definition rather than assumed:
+the declination of the Ascendant taken from the standard formula reproduces
+sin(kv) = tan(ph) * tan(dasc) to 1e-40 in 40 digit arithmetic, at every
+latitude and armc, so the substitution is exact as astronomy and not only as
+algebra.
+
+The sign flip of kv inside the polar circle, which the comment above it calls
+out as intentional, is untouched: the identity holds there too. That comment,
+the debug printf beside it and the note on the position circle further down
+all named dasc, and are reworded here, since the variable is gone.
+
+Checked against an independent implementation built from the definition rather
+than from this file: the parallel of declination through the Ascendant divided
+into six parts each side of the horizon, position circles through the north and
+south points of the horizon carried through the division points by cross
+products, intersected with the ecliptic. Below the polar circle that
+construction agrees with apc_sector() cusp by cusp to 1e-13 at every latitude
+tried, and it agrees with the corrected version inside the former clamp band to
+2e-13 where it disagrees with the old one by up to 6.2 degrees.
+
+Above the polar circle the reference and apc_sector() diverge, and the
+reference is the one at fault. Each position circle meets the ecliptic twice,
+and picking the right one of the two becomes ill conditioned there: near the
+degenerate configurations, where the Ascendant and the MC close to within a
+fraction of a degree and all twelve cusps crowd together, the vector
+construction picks the wrong intersection for individual cusps. A test that
+needs no reference at all settles it. The twelve cusps must run round the
+circle once in a single direction; over 973 samples per latitude apc_sector()
+does so at every latitude out to 89 degrees, 973 of 973 each time, while the
+vector construction fails in up to 138 of 973 beyond the polar circle. Its
+disagreement there is therefore not evidence about apc_sector(). The direction
+apc_sector() runs in beyond the polar circle is clockwise, which is what
+swisseph.doc section 6.4 prescribes: the Ascendant is kept in the eastern
+hemisphere and the MC and IC are swapped when the MC falls below the horizon.
+
+The equator clamp is not, however, the only defect this file has in APC. It is
+the one this patch corrects. A second remains, of the same shape and left alone
+here. Where the ecliptic coincides with the horizon, that is geographic
+latitude on a polar circle with armc on 90 or 270 degrees, tan(ph) * tan(e) is
+exactly -1 and the factor 1 + tan(ph) * tan(e) * sin(az) inside kv cancels
+away. Within about 1e-4 degrees of that configuration the cusps apc_sector()
+returns are wrong: by 0.01 degrees at 1e-4 from it, by 1 degree at 1e-5, by 222
+degrees at 1e-6, erratically rather than monotonically, as cancellation is.
+Measured against 50 digit arithmetic.
+
+Inside that band this patch does change the values, and an earlier draft of
+this paragraph wrongly said it did not. The rewritten kv is the same function
+along a different rounding path, and where every digit is being lost a
+different rounding path lands somewhere else: at the Arctic Circle with the
+J2000 obliquity the two libraries differ out to about 3e-3 degrees of armc
+around the coincidence, by up to 180 degrees at its centre. Neither is right
+there. Sampled against 60 digit arithmetic over 48,000 cusp values inside the
+band, the patched value is the closer one in 1,319 and the further one in 829,
+so the change is noise on top of noise rather than a repair or a break; the
+2.7e-10 bound quoted above holds everywhere outside this band and outside the
+equator band this patch is about.
+
+The repair is not the one used here. sin(kv) does not help, because it is kv
+itself that loses its digits rather than a round trip around it, and a
+formulation that is stable there and still agrees with the present one
+elsewhere has not been found; four attempts and their failures are recorded in
+the companion patch's notes.
+
+The remark above case 'Y' that the MC from apc_sector() is inaccurate near
+latitude 90 is not a live defect: CalcH() overwrites cusp 10 with hsp->mc and
+cusp 4 with its opposite immediately afterwards.
+
+apc_sector_speed(), added by the analytic cusp speed patch, already
+differentiates the corrected form, so the two patches agree once both are
+applied and APC speeds reach 1e-11 at every latitude.
+
+This patch is independent of the analytic cusp speed patch and the two may be
+applied in either order, and produce the same file whichever order is used.
+
+---
+ swehouse.c | 32 +++++++++++++++++---------------
+ 1 file changed, 17 insertions(+), 15 deletions(-)
+diff --git a/swehouse.c b/swehouse.c
+index 1c5bbd3..e67955a 100644
+--- a/swehouse.c
++++ b/swehouse.c
+@@ -782,26 +782,28 @@ for (i = 1; i <=12; i++) {
+ static double apc_sector(int n, double ph, double e, double az)
+ {
+    int k, is_below_hor = 0;
+-   double kv, a, dasc, dret;
++   double kv, a, skv, dret;
+    /* kv: ascensional difference of the ascendant */
+-   /* dasc: declination of the ascendant */
+    if (fabs(ph * RADTODEG) > 90 - VERY_SMALL) {
+      kv = 0;
+-     dasc = 0;
+    } else {
+      kv   = atan(tan(ph) * tan(e) * cos(az)/(1 + tan(ph) * tan(e) * sin(az)));
+-     if (fabs(ph * RADTODEG) < VERY_SMALL) {
+-       dasc = (90 - VERY_SMALL) * DEGTORAD;
+-       if (ph < 0)
+-         dasc = -dasc;
+-     } else {
+-       dasc = atan(sin(kv) / tan(ph));
+-     }
+    }
++   /* The declination of the ascendant, dasc, only ever entered this function
++    * as the product tan(dasc) * tan(ph), and the ascensional difference
++    * relation sin(kv) = tan(ph) * tan(dasc) says that product is sin(kv).
++    * Forming dasc = atan(sin(kv) / tan(ph)) and multiplying by tan(ph) again
++    * is a round trip that is 0/0 on the equator, where both sin(kv) and
++    * tan(ph) vanish. The old code broke the tie there with a constant dasc,
++    * which made the product some 2e12 times too large and returned cusps that
++    * were not the ascendant and descendant at all. Taking sin(kv) directly
++    * removes the round trip and the special case together, and agrees with
++    * the old form to a few units in the last place wherever it was defined. */
++   skv = sin(kv);
+    /* note, at polar circles, when the mc sinks below the horizon,
+-    * kv and dasc change sign in the above formulae.
++    * kv, and with it skv, changes sign in the above formula.
+     * this is what we need, because the ascendand jumps by 180 deg */
+-   /* printf("%f, %f\n", kv*RADTODEG, dasc*RADTODEG); */
++   /* printf("%f, %f\n", kv*RADTODEG, skv); */
+    if (n < 8) {
+      is_below_hor = 1;  /* 1 and 7 are included here */
+      k = n - 1;
+@@ -811,15 +813,15 @@ static double apc_sector(int n, double ph, double e, double az)
+    /* az + PI/2 + kv = armc + 90 + asc. diff. = right ascension of ascendant
+     * PI/2 +- kv = semi-diurnal or seminocturnal arc of ascendant 
+     * a = right ascension of house cusp on apc circle (ascendant-parallel
+-    * circle), with declination dasc */
++    * circle), whose declination is the ascendant's */
+    if (is_below_hor) {
+      a = kv + az + PI/2 + k * (PI/2 - kv) / 3;
+    } else {
+      a = kv + az + PI/2 + k * (PI/2 + kv) / 3;
+    }
+    a = swe_radnorm(a);
+-   dret = atan2(tan(dasc) * tan(ph) * sin(az) + sin(a),
+-      cos(e) * (tan(dasc) * tan(ph) * cos(az) + cos(a)) + sin(e) * tan(ph) * sin(az - a));
++   dret = atan2(skv * sin(az) + sin(a),
++      cos(e) * (skv * cos(az) + cos(a)) + sin(e) * tan(ph) * sin(az - a));
+    dret = swe_degnorm(dret * RADTODEG);
+    return dret;
+ }

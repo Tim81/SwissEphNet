@@ -1,0 +1,166 @@
+swehouse.c: Sunshine (Makransky) cusps are wrong where w lands exactly on a
+quadrant boundary
+
+sunshine_solution_makransky() places each cusp from w, the house circle's
+position measured from the meridian. Three of the four boundaries are mishandled
+and each fails differently. Together they put 2,848 of 25,632 exactly-landing
+cusps in the wrong place; after this patch, none.
+
+    hsys 'i', sundec 0, eps 23.4392911, every integer latitude -89..89
+    except 0, armc on each multiple of 30, all twelve cusps, compared with
+    the same cusp a millionth of a degree either side:
+
+      discontinuous by more than 1e-4 degrees   before 2848 of 25632
+                                                after     0 of 25632
+
+These are not obscure inputs. w is rah -+ q, and with the Sun on the equator q
+is 0 exactly, so w is rah and every armc that is a multiple of 30 lands cusps on
+a boundary at any latitude. swe_houses_armc() and swe_houses_armc_ex2() take
+armc straight from the caller.
+
+1. w exactly 180, both quadrant chains.
+
+Every bound is strict:
+
+    if (w < 90)                  cu = r;
+    else if (w > 90 && w < 180)  cu = 180 - r;
+    else if (w > 180 && w < 270) cu = 180 + r;
+    else                         cu = 360 - r;
+
+so 180 matches none of the first three and falls through to the fourth, which is
+meant for the fourth quadrant. r is exactly 0 there because tan(180) is, so the
+branch returns 360 where both neighbours return 180.
+
+    #include "swephexp.h"
+    #include <stdio.h>
+    int main(void) {
+      double c[13], a[10]; char s[256];
+      a[9] = 20;                    /* Sun declination, required by 'i' */
+      swe_houses_armc_ex2(30.0, 0.0, 23.4392911, 'i', c, a, NULL, NULL, s);
+      printf("cusp[3] = %.7f", c[3]);   /* 360.0000000, should be 180 */
+      return 0;
+    }
+
+Neighbouring armc gives 179.9999999 and 180.0000001, and hsys 'I' gives
+180.0000000 at the same input: the two Sunshine variants disagree by 180 degrees,
+which is what makes this confirmable without a reference implementation.
+
+The second chain, taken when z exceeds 90, has the same strict bound and its own
+180 degree error. It is reachable: for houses 5, 6, 8 and 9 the branch is
+z = m + ecl, and at w = 180 m is |pole|, so z passes 90 once |pole| does, above
+about 74 degrees of latitude. Unpatched, sundec 0, geolat 85, armc 330, cusp 5:
+
+      armc 330 - 1e-7      0.0000001
+      armc 330           180.0000000
+      armc 330 + 1e-7    359.9999999
+
+Both chains now let 180 belong to the branch above it, where r vanishes and the
+two agree.
+
+2. An out-of-range cusp.
+
+With 180 admitted to the z > 90 branch, that branch returns 360 - r with r
+exactly 0, so the caller is handed a cusp of exactly 360, outside the [0,360)
+every other cusp respects: 50 of them over integer latitude and integer armc.
+swe_degnorm() on the way out settles it.
+
+3. w exactly 90 or 270, southern latitudes.
+
+Those two values have branches of their own, with their own formulae and no
+180 degree shift, while the general branch ends with one. Which meridian side w
+names depends on the hemisphere: a southern chart has had rah turned by 180
+already, so the side that frame calls w = 90 is the one a northern chart calls
+w = 270. The general branch gets that right through its shift; these two did
+not, and a southern chart landing exactly on 90 or 270 came back on the wrong
+side of the meridian.
+
+    hsys 'i', geolat -35, sundec 0, eps 23.4392911, cusp 5:
+
+      armc 59.999999   262.071792
+      armc 60.000000    97.928207     -> 262.071793
+      armc 60.000001   262.071794
+
+Northern charts are untouched by this one: at geolat +35 the same three armc
+values give 277.928206, 277.928207 and 277.928208 before and after.
+
+Positions at every other input are unchanged, and no cusp speed moves: over
+663,520 random (date, latitude, longitude) configurations spanning 1000 BC to
+4100 AD, nothing differs at all. The defect belongs to exact inputs.
+
+Known, not fixed here: the traditional sidereal path uppercases the house
+letter (sidereal_houses_trad() takes toupper(hsys) and passes it on), so a
+sidereal 'i' silently returns the 'I' solution and this fix never runs there.
+Testing 'i' with -sid1 therefore shows no difference and says nothing about
+this patch; the fix is reachable tropically and through the armc entry points.
+
+This is a position fix and is independent of the cusp speed patches. It cannot
+be combined with "swehouse.c: compute house cusp speeds analytically", which
+moves this chain into a function of its own and carries the same correction
+there; take one or the other.
+---
+ swehouse.c | 31 +++++++++++++++++------------
+ 1 file changed, 17 insertions(+), 14 deletions(-)
+diff --git a/swehouse.c b/swehouse.c
+index 1c5bbd3..82230f0 100644
+--- a/swehouse.c
++++ b/swehouse.c
+@@ -2982,18 +2982,21 @@ static int sunshine_solution_makransky(double ramc, double lat, double ecl, stru
+       w = swe_degnorm(rah - q);
+     else
+       w = swe_degnorm(rah + q);
+-    if (w == 90) {
+-      r = atand(sind(ecl) * tand(pole));
+-      if (ih <= 3 || ih >= 11)
+-        cu = 90 + r;
+-      else
+-        cu = 90 - r;
+-    } else if (w == 270) {
++    if (w == 90 || w == 270) {
++      /* Which meridian side w names depends on the hemisphere. Southern charts
++       * have already had rah turned by 180 above, so the side this frame calls
++       * w == 90 is the one a northern chart calls w == 270. The general branch
++       * below gets that right by way of its own 180 shift; these two had their
++       * own formulae and no shift, so a southern chart landing exactly on 90 or
++       * 270 came back on the wrong side of the meridian. */
++      int at90 = (w == 90);
++      if (lat < 0) at90 = !at90;
+       r = atand(sinecl * tand(pole));
+-      if (ih <= 3 || ih >= 11)
+-        cu = 270 - r;
+-      else
+-        cu = 270 + r;
++      if (at90) {
++        if (ih <= 3 || ih >= 11) cu = 90 + r; else cu = 90 - r;
++      } else {
++        if (ih <= 3 || ih >= 11) cu = 270 - r; else cu = 270 + r;
++      }
+     } else {
+       double m;
+       m = atand(fabs(tand(pole) / cosd(w)));
+@@ -3020,7 +3023,7 @@ static int sunshine_solution_makransky(double ramc, double lat, double ecl, stru
+ 	  cu = r;
+ 	else if (w > 90 && w < 180)
+ 	  cu = 180 - r;
+-	else if (w > 180 && w < 270)
++	else if (w >= 180 && w < 270)
+ 	  cu = 180 + r;
+ 	else
+ 	  cu = 360 - r;
+@@ -3032,7 +3035,7 @@ static int sunshine_solution_makransky(double ramc, double lat, double ecl, stru
+ 	  cu = 180 - r;
+ 	else if (w > 90 && w < 180)
+ 	  cu = + r;
+-	else if (w > 180 && w < 270)
++	else if (w >= 180 && w < 270)
+ 	  cu = 360 - r;
+ 	else
+ 	  cu = 180 + r;
+@@ -3040,7 +3043,7 @@ static int sunshine_solution_makransky(double ramc, double lat, double ecl, stru
+       if (lat < 0)	// Makransky deals with southern latitude this way
+         cu = swe_degnorm(cu + 180);
+     }
+-    hsp->cusp[ih] = cu;
++    hsp->cusp[ih] = swe_degnorm(cu);
+   } 
+   return OK;
+ }

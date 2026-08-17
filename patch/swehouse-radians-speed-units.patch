@@ -1,0 +1,64 @@
+swehouse.c: SEFLG_RADIANS leaves the cusp and ascmc speeds in degrees
+
+swe_houses_ex2() converts the positions to radians under SEFLG_RADIANS and
+leaves both speed arrays in degrees per day, so a caller asking for radians is
+handed the two in different units, a factor of 57.3 apart.
+
+    #include "swephexp.h"
+    #include <stdio.h>
+    int main(void) {
+      double cusp[13], ascmc[10], cs[13], as[10]; char serr[256];
+      swe_houses_ex2(2451545.0, SEFLG_RADIANS, 52.5, 13.4, 'P',
+                     cusp, ascmc, cs, as, serr);
+      printf("%.9f rad, %.9f per day\n", cusp[1], cs[1]);
+      return 0;
+    }
+
+      before   0.900328369 rad, 600.727650279 per day
+      after    0.900328369 rad,  10.484675405 per day
+
+swetest cannot show this one; it has no flag for radians, so the sample above is
+the test.
+
+Caller risk, and it is a large one: a caller that had compensated for
+the old behaviour by dividing gets a result 57.3 times wrong, with no compile
+error and no version gate to catch it. Against that, swephprg documents the
+parameters as cusp_speed /* like cusps */ and ascmc_speed /* like ascmc */, and
+under that flag they were not like them. Whether the correction is worth the
+break is a judgement about the API, not about the arithmetic.
+
+Positions are untouched.
+
+This is one concern lifted out of "swehouse.c: compute house cusp speeds
+analytically" so that it can be taken alone. That patch contains this change and
+rewrites the surrounding code as well, so the two cannot both be applied; it is
+also available as an eight-step series, of which this is one step. Independent of
+every other patch in the set.
+
+---
+ swehouse.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+diff --git a/swehouse.c b/swehouse.c
+index 892c931..5172eab 100644
+--- a/swehouse.c
++++ b/swehouse.c
+@@ -397,6 +397,19 @@ int CALL_CONV swe_houses_ex2(double tjd_ut,
+       cusp[i] *= DEGTORAD;
+     for (i = 0; i < SE_NASCMC; i++)
+       ascmc[i] *= DEGTORAD;
++    /* The speeds are angles per day and belong in the same unit as the angles
++     * they accompany. Without this a SEFLG_RADIANS caller was handed radian
++     * positions beside degree per day speeds, so anything that added a speed
++     * to a position, or compared the two, was out by a factor of 57.3. The
++     * omission predates this patch and mattered less while nine house systems
++     * returned interpolated speeds nobody could rely on; now that every system
++     * returns a real derivative, callers will use it. */
++    if (cusp_speed != NULL)
++      for (i = 1; i <= ito; i++)
++        cusp_speed[i] *= DEGTORAD;
++    if (ascmc_speed != NULL)
++      for (i = 0; i < SE_NASCMC; i++)
++        ascmc_speed[i] *= DEGTORAD;
+   }
+   if (retc_makr < 0)
+     return retc_makr;

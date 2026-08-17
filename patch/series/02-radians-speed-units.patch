@@ -1,0 +1,50 @@
+swehouse.c: SEFLG_RADIANS left the speeds in degrees
+
+The positions are converted and the two speed arrays are not, so a caller asking
+for radians is handed the two in different units, a factor of 57.3 apart.
+
+    swe_houses_ex2(2451545.0, SEFLG_RADIANS, 52.5, 13.4, 'P', ...)
+      cusp[1]        0.900328369   radians
+      cusp_speed[1]  600.727650279 degrees per day, beside it
+      after          10.484675405  radians per day
+
+Conformance rather than a change of contract: swephprg documents the parameters
+as cusp_speed /* like cusps */ and ascmc_speed /* like ascmc */, and under that
+flag they were not like them. It does change what the flag returns, so a caller
+who had compensated for the old behaviour will have to stop.
+
+Part of an eight-step series. Applied in order, the eight produce a file
+byte-identical to the single patch "swehouse.c: compute house cusp speeds
+analytically"; take either the series or that patch, not both. Every step
+compiles. Steps 01 to 06 also apply to a clean tree on their own, so any one of
+them can be taken without the rest; 07 needs 01 to 05, not 06; 08 needs all seven to link. Do not
+drop 02 or 04 from the middle: nothing else needs them, so the result still
+builds clean and is quietly wrong.
+
+---
+ swehouse.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+diff --git a/swehouse.c b/swehouse.c
+index 892c931..5172eab 100644
+--- a/swehouse.c
++++ b/swehouse.c
+@@ -397,6 +397,19 @@ int CALL_CONV swe_houses_ex2(double tjd_ut,
+       cusp[i] *= DEGTORAD;
+     for (i = 0; i < SE_NASCMC; i++)
+       ascmc[i] *= DEGTORAD;
++    /* The speeds are angles per day and belong in the same unit as the angles
++     * they accompany. Without this a SEFLG_RADIANS caller was handed radian
++     * positions beside degree per day speeds, so anything that added a speed
++     * to a position, or compared the two, was out by a factor of 57.3. The
++     * omission predates this patch and mattered less while nine house systems
++     * returned interpolated speeds nobody could rely on; now that every system
++     * returns a real derivative, callers will use it. */
++    if (cusp_speed != NULL)
++      for (i = 1; i <= ito; i++)
++        cusp_speed[i] *= DEGTORAD;
++    if (ascmc_speed != NULL)
++      for (i = 0; i < SE_NASCMC; i++)
++        ascmc_speed[i] *= DEGTORAD;
+   }
+   if (retc_makr < 0)
+     return retc_makr;
