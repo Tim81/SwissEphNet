@@ -244,10 +244,12 @@ namespace SwissEphNet
         }
         #endregion
         #region sprintf
+        // Constant pattern: built once, not per call. Regex is thread-safe for Match/Matches.
+        private static readonly Regex sprintfFormat = new Regex(@"\%(\d*\$)?([\'\#\-\+ ]*)(\d*)(?:\.(\d+))?([hl])?([dioxXucsfeEgGpn%])");
         public static string sprintf(string Format, params object[] Parameters) {
             #region Variables
             StringBuilder f = new StringBuilder();
-            Regex r = new Regex(@"\%(\d*\$)?([\'\#\-\+ ]*)(\d*)(?:\.(\d+))?([hl])?([dioxXucsfeEgGpn%])");
+            Regex r = sprintfFormat;
             //"%[parameter,flags,width,.precision,length]type"
             Match m = null;
             string w = String.Empty;
