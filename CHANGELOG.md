@@ -12,6 +12,12 @@ generated commit list — for anything earlier, see git history.
   went from about 13.6 to 10.7 µs and 16.0 to 6.0 KB per call, and `swe_calc_ut` for the Moon with
   `SEFLG_SIDEREAL | SEFLG_SPEED` from about 37.8 to 32.5 µs and 36.0 to 15.8 KB per call. Output
   is unchanged. Reported by sudhiramidala in #42.
+- `read_const` now takes an ephemeris file's byte order from the file, as `sweph.c:4644-4652`
+  does, instead of from the host (`BitConverter.IsLittleEndian`). The two only differ for a file
+  whose byte order is not the machine's, which no shipped `.se1` file is, so no existing user sees
+  a change; such a file previously failed with `Ephemeris file ... is damaged (4)`. A big-endian
+  regression test was checked against the C reference. Reported by wwlcom-hub in #41, whose own
+  failing case is still under investigation.
 
 ## 2.10.3.1
 
