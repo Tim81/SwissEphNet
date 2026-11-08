@@ -3,7 +3,7 @@
 Project history from the Swiss Ephemeris 2.08 upgrade forward. Entries are prose bullets, not a
 generated commit list — for anything earlier, see git history.
 
-## Unreleased
+## 2.10.3.2
 
 - `C.sprintf` no longer constructs its format-parsing `Regex` on every call; the constant pattern
   is now built once. `fixstar_cut_string` calls `sprintf`, so every `swe_fixstar*` call and every
@@ -18,6 +18,53 @@ generated commit list — for anything earlier, see git history.
   a change; such a file previously failed with `Ephemeris file ... is damaged (4)`. A big-endian
   regression test was checked against the C reference. Reported by wwlcom-hub in #41, whose own
   failing case is still under investigation.
+- `swe_heliacal_ut` threw `IndexOutOfRangeException` from `swe_azalt` for any
+  `SE_HELFLAG_AVKIND_VR`, `SE_HELFLAG_AVKIND_PTO`, `SE_HELFLAG_AVKIND_MIN7` or
+  `SE_HELFLAG_AVKIND_MIN9` flag. `heliacal_ut_arc_vis` declared `xaz` with two elements and
+  `swe_azalt` writes three. In C that is a silent stack overrun; the port had copied the
+  declaration faithfully, so it surfaced as an exception. Upstream fixed it after `v2.10.3bfinal`
+  (`swehel.c:2215`, `double xaz[3]`, commit `94621aba`), and the port now has the same one-token
+  change (`SweHel.cs:2217`). The new `HeliacalArcVisTest` (Venus heliacal rising, Moshier) matches
+  the C at `94621aba` bit for bit on Windows x64, net8.0 and net10.0. Nothing covered these flags
+  before.
+- New public `swe_get_denum()`, plus the constants `SE3_DE_NUMBER` (441), `SE_FNAME_DE441` and
+  `SE_FNAME_DFT3`, all from upstream (`sweph.c:240`, `swephexp.h`). `swe_get_denum` returns the DE
+  number of the open planet file (`sepl*.se1`), or `SE_DE_NUMBER` (431) when none is open; it does
+  not consult a JPL file. Nothing in the port reads the three constants; upstream declares them for
+  its future 3.0. `SE_EPHE_PATH` is unchanged. The public API grows by these four members on every
+  target framework.
+- Behaviour change for callers that never call `swe_set_ephe_path`: on Linux and macOS the default
+  ephemeris path is now `".:/home/ephe/"`, following `swephexp.h:406`, where it was
+  `".:/users/ephe2/:/users/ephe/"`. Such a caller now probes `.` and `/home/ephe/` and no longer
+  probes `/users/ephe2/` or `/users/ephe/`. The Windows default is unchanged. Callers that set a
+  path are not affected.
+- `Programs/SweTest`: ported the `swetest.c` changes made after `v2.10.3bfinal`. New option
+  `-astpos<DDD>[,orb]` lists named asteroids within `orb` of longitude `DDD` and reads
+  `seasnam.txt`. `-pd`, `-pp`, `-ph` and `-pa` now keep a trailing `e` instead of dropping it. A
+  `-p` list of 256 characters or more is cut to 255. `-sidudef` without a comma no longer
+  dereferences NULL in the C; it is a no-op here. The help text is copied verbatim, including
+  upstream's typos. This affects the `SweTest` program, not the library API.
+- Swiss Ephemeris Professional License: Astrodienst has replaced the contract PDF with the
+  "Edition September 2026" (`doc/secont_e_2609.pdf` in the upstream repository,
+  https://github.com/aloistr/swisseph/blob/master/doc/secont_e_2609.pdf). Compared with the June
+  2026 edition, the duration changes from 99 years to 6 years with renewal, a clause on API
+  services for third parties is added, the right to distribute in compiled form is no longer
+  listed, and license transfer is allowed. The price is unchanged. This repository's `LICENSE` is
+  unchanged. If you hold or plan to buy a Professional License, check the current contract with
+  Astrodienst.
+- The upstream pin moves from `v2.10.3bfinal` (`f4dcd18e`) to upstream master at `94621aba`, which
+  is `v2.10.3bfinal` plus 12 commits; no newer tag exists. `SE_VERSION` is still `"2.10.03"`. Of
+  the 12, three changes are ported above (heliacal, `swe_get_denum` with its constants, and
+  `swetest.c`), and the rest need no port: `readme.md` edits, the contract PDF, `swevents.c` (not
+  ported), and 50 `sepl*_*.se3` files for the future 3.0, which 2.10 cannot read.
+  `Tools/CReference/build-c.ps1`
+  needed two changes to build the C reference at the new pin: it substitutes a constant for the
+  variable-length array in `swetest.c`'s new `print_asteroids`, which cl.exe rejects, and its `fp`
+  guard now looks only at file scope.
+- `C.printf`'s `ReplaceMetaChars` now implements `\xhh` hex escapes, capped at two hex digits
+  (#40). Per-call allocations were also removed from `FormatToDegreeMinuteSecond`
+  (`SwissEph.Format.cs`), `Extensions/StringExtensions.cs` and `CPointer.ToArray()`, which now
+  uses `Array.Copy` with `BaseIndex` clamped at both ends. Output is unchanged.
 
 ## 2.10.3.1
 
