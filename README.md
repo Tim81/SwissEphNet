@@ -202,15 +202,31 @@ Swiss Ephemeris, and therefore this library, is dual-licensed. You must choose o
 The package ships all three of these files at its own root, so the authoritative copies travel
 with whatever version you installed: `LICENSE` for the full license conditions, `agpl-3.0.txt`
 for the AGPL text, and `NOTICE` for attribution. To read them in the repository instead:
-[`LICENSE`](https://github.com/Tim81/SwissEphNet/blob/release/2.10.03/LICENSE),
-[`agpl-3.0.txt`](https://github.com/Tim81/SwissEphNet/blob/release/2.10.03/agpl-3.0.txt),
-[`NOTICE`](https://github.com/Tim81/SwissEphNet/blob/release/2.10.03/NOTICE). These links are
-absolute rather than relative because this section also renders on nuget.org's package page,
-where a relative link to a file in this repository does not resolve, and they name
-`release/2.10.03` rather than `main` because `main` is still the state inherited from
-[ygrenier/SwissEphNet](https://github.com/ygrenier/SwissEphNet), before this project's own
-changes: it carries no `NOTICE` and no `agpl-3.0.txt` at all, and its `LICENSE` is the
-1997-2008 pre-relicense text rather than the dual AGPL one this library is offered under.
+[`LICENSE`](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.2/LICENSE),
+[`agpl-3.0.txt`](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.2/agpl-3.0.txt),
+[`NOTICE`](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.2/NOTICE). These links are absolute
+rather than relative because this section also renders on nuget.org's package page, where a
+relative link to a file in this repository does not resolve, and they name the `v2.10.3.2` release
+tag so that they match the installed version.
+
+Astrodienst has issued a new edition of the Professional License contract, dated September 2026
+([`doc/secont_e_2609.pdf`](https://github.com/aloistr/swisseph/blob/94621aba9f3ff9c32cb721eac0380c30dbb153fe/doc/secont_e_2609.pdf)
+in the upstream repository). Compared with the June 2026 edition:
+
+- The duration changes from "valid for 99 years" to "valid for 6 years. It then has to be renewed
+  or the use of Swiss Ephemeris in web services or distributed software has to be terminated."
+- A new clause 3 covers API services. In the contract's own words: "If the licensee provides API
+  services to third parties, i.e. to a business not owned by the licensee, this third party needs
+  to purchase their own Swiss Ephemeris license, before they can legally begin using the API
+  services. The licensee mentions that fact clearly in the documentation of his API service. The
+  licensee obliges himself to inform Astrodienst about the identity and contact of each API
+  service user."
+- The clause granting the right to distribute Swiss Ephemeris in compiled form (for distributed
+  app projects) is no longer present.
+- A new clause allows transferring the license to a third party, with notice to Astrodienst.
+- The price is unchanged (CHF 700).
+
+Read the current contract and confirm the terms with Astrodienst.
 
 ## Project history, and who wrote what
 
@@ -266,8 +282,11 @@ package differing only there cannot be published at all. A prerelease suffix (`2
 
 The assembly's `InformationalVersion` is plain SemVer, and the SDK appends the commit SHA to it as
 build metadata. The upstream version and tag it used to spell out are now `AssemblyMetadata`
-entries, `UpstreamSwissEphemerisVersion` and `UpstreamSwissEphemerisTag`, which is where text that
-does not have to parse as a version belongs.
+entries, `UpstreamSwissEphemerisVersion`, `UpstreamSwissEphemerisTag` and
+`UpstreamSwissEphemerisCommit`, which is where text that does not have to parse as a version
+belongs. `UpstreamSwissEphemerisCommit` is the full SHA of the pinned upstream commit
+(`94621aba9f3ff9c32cb721eac0380c30dbb153fe`), and `UpstreamSwissEphemerisTag` names the nearest
+upstream tag that pin is based on (`v2.10.3bfinal`).
 
 This project is not published or endorsed by Yan Grenier or Astrodienst. See "About this repository"
 above and `NOTICE` for the credit both are owed.
@@ -449,8 +468,8 @@ did not have:
 None of this replaces existing API. It is purely additive.
 
 With those additions the port now covers the C library's whole public surface. `swephexp.h` at
-`v2.10.3bfinal` declares 106 `swe_*` functions, and all 106 are present and public here. The count
-is not an estimate: it comes from parsing the header and diffing it against the committed
+the current pin (`94621aba`) declares 107 `swe_*` functions, and all 107 are present and public here.
+The count is not an estimate: it comes from parsing the header and diffing it against the committed
 public-API list under `Tests/SwissEphNet.Tests/PublicApi/`, which a test regenerates and compares
 on every run, so a member appearing or disappearing fails the build rather than going unnoticed.
 The only public `swe_*` member the C does not declare is `swe_dotnet_version`, which is this
@@ -735,8 +754,9 @@ Source-level and reflection-based consumers can be affected:
   `swe_set_ephe_path` and the library's own initialization previously read the constant,
   chosen at run time rather than compile time because this port ships one assembly for
   Windows, Linux and macOS rather than compiling per platform: upstream's own
-  `\sweph\ephe\` on Windows, `.:/users/ephe2/:/users/ephe/` everywhere else, matching the
-  C's own `#if MSDOS` branch (`swephexp.h:399-408`), which upstream also takes for
+  `\sweph\ephe\` on Windows, `.:/home/ephe/` everywhere else (it was `.:/users/ephe2/:/users/ephe/`
+  until the pin moved to `94621aba`), matching the
+  C's own `#if MSDOS` branch (`swephexp.h:402-411`), which upstream also takes for
   ordinary Win32/Win64 builds, not only legacy MS-DOS ones (`sweodef.h:96-98`). This only
   affects callers who pass `null` or an empty string to `swe_set_ephe_path`, or never
   call it at all: a non-blank argument has always won. On Windows, the resolved value is
@@ -943,8 +963,8 @@ things left to port: 759 of them are a data file this repository does not ship r
 answer, the other 664 sit outside the tolerance Astrodienst's own suite allows, and the four rows
 ever confirmed as port defects were fixed and pruned.
 
-- `external/swisseph`, a git submodule, sparse-checked-out, pinned to tag
-  `v2.10.3bfinal`. It serves two purposes:
+- `external/swisseph`, a git submodule, sparse-checked-out, pinned to upstream
+  master at `94621aba` (`v2.10.3bfinal` plus 12 commits; no newer tag exists). It serves two purposes:
   1. **The reference corpus** for the conformance oracle: `setest/t.exp`
      (expected values) and `setest/t.fix` (tolerances), plus the core `.se1`
      ephemeris files, `sefstars.txt`, `seorbel.txt`, and `seleapsec.txt` that
@@ -1189,7 +1209,7 @@ Astrodienst's own material, which documents the API this port exposes:
 - [Swiss Ephemeris programming interface](http://www.astro.com/swisseph/swephprg.htm), the
   reference for every `swe_*` function here.
 - [`aloistr/swisseph`](https://github.com/aloistr/swisseph), the C source this port tracks. Pinned
-  here at tag `v2.10.3bfinal` under `external/swisseph`.
+  here at master `94621aba` (`v2.10.3bfinal` plus 12 commits) under `external/swisseph`.
 - [`aloistr/swisseph/ephe`](https://github.com/aloistr/swisseph/tree/master/ephe), the ephemeris
   data files, mirrored at [`ephe.scryr.io/ephe`](https://ephe.scryr.io/ephe).
 

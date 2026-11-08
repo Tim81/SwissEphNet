@@ -533,6 +533,46 @@ foreach ($c in $DateFormatCases) {
 }
 
 # ---------------------------------------------------------------------------------------
+# POST_TAG -- the upstream changes the 94621aba pin brought in past v2.10.3bfinal:
+#
+#   HEL_AVKIND_*  swehel.c 94621aba: heliacal_ut_arc_vis's xaz[3]. Each SE_HELFLAG_AVKIND_* bit
+#                 (VR 65536, PTO 131072, MIN7 262144, MIN9 524288) reaches swe_azalt through it;
+#                 the port threw IndexOutOfRangeException on all four before the fix. -emos so the
+#                 rows need no file beyond the required set.
+#   P_*E          swetest.c c69c14ad: -pd/-pp/-ph/-pa followed by an 'e' anywhere in the argument
+#                 (strchr(spno, 'e')) now append 'e' (ecliptic and nutation) to the predefined set
+#                 instead of dropping it with the rest of the argument.
+#   P_OVERLONG    c69c14ad: a -p list of AS_MAXCH (256) or more characters is cut to 255.
+#   SIDUDEF_*     91339e55: -sidudef with no ',' left sp NULL for strstr in the C.
+#   ASTPOS        3fd0f956: -astpos lists named asteroids near a longitude. The required file set
+#                 does not include seasnam.txt, so this row covers ONLY the not-found error path:
+#                 the option parse, swe_get_named_ast_list's open, and the error message. The
+#                 listing itself (seasnam.txt parse, swe_calc per asteroid, print_asteroids) is not
+#                 gated here; it was compared once by hand against the C with the full upstream
+#                 ephe/ present (both read 26,069 named asteroids, byte-identical output), which
+#                 this grid cannot reproduce. A second row with an explicit orb would hit the same
+#                 error before the orb is ever used, so it is deliberately absent.
+# ---------------------------------------------------------------------------------------
+
+$PostTagCases = @(
+    @{ Id = 'HEL_AVKIND_VR'; Args = '-hev1 -p3 -emos -helflag65536 -b1.1.2020 -geopos8.55,47.38,400' }
+    @{ Id = 'HEL_AVKIND_PTO'; Args = '-hev1 -p3 -emos -helflag131072 -b1.1.2020 -geopos8.55,47.38,400' }
+    @{ Id = 'HEL_AVKIND_MIN7'; Args = '-hev1 -p3 -emos -helflag262144 -b1.1.2020 -geopos8.55,47.38,400' }
+    @{ Id = 'HEL_AVKIND_MIN9'; Args = '-hev1 -p3 -emos -helflag524288 -b1.1.2020 -geopos8.55,47.38,400' }
+    @{ Id = 'P_DE'; Args = '-b1.1.2000 -pde -fPl -eswe' }
+    @{ Id = 'P_PE'; Args = '-b1.1.2000 -ppe -fPl -eswe' }
+    @{ Id = 'P_HE'; Args = '-b1.1.2000 -phe -fPl -eswe' }
+    @{ Id = 'P_AE'; Args = '-b1.1.2000 -pae -fPl -eswe' }
+    @{ Id = 'P_OVERLONG'; Args = "-b1.1.2000 -p$('0' * 300) -fPl -eswe" }
+    @{ Id = 'SIDUDEF_NO_COMMA'; Args = '-b1.1.2000 -p0 -sidudef2452163.8333333 -fPl -eswe' }
+    @{ Id = 'SIDUDEF_JDISUT'; Args = '-b1.1.2000 -p0 -sidudef2452163.8333333,25.0,jdisut -fPl -eswe' }
+    @{ Id = 'ASTPOS'; Args = '-b1.1.2000 -astpos123.4,0.3 -eswe' }
+)
+foreach ($c in $PostTagCases) {
+    Add-Row -CaseId "POST_TAG|$($c.Id)" -Category 'POST_TAG' -ArgsText $c.Args
+}
+
+# ---------------------------------------------------------------------------------------
 # HEADER_BLOCK -- deliberately omits -head, so the version-banner difference (2.08 vs 2.10.03,
 # baked into the same line as delta-t) is on record as an expected PORT-VERSION difference instead
 # of silently unreachable because every other category suppresses it.

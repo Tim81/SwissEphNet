@@ -11,7 +11,7 @@ namespace SwissEphNet.Tests
     /// <remarks>
     /// <para>
     /// <c>swephexp.h:399-408</c> gives the default as <c>"\\sweph\\ephe\\"</c> under
-    /// <c>#if MSDOS</c> and <c>".:/users/ephe2/:/users/ephe/"</c> otherwise;
+    /// <c>#if MSDOS</c> and <c>".:/home/ephe/"</c> otherwise (<c>".:/users/ephe2/:/users/ephe/"</c> before upstream 4daf766a);
     /// <c>sweodef.h:305/:311</c> gives the cut-list as <c>";:"</c> under <c>#if UNIX_FS</c>
     /// and <c>";"</c> otherwise. Each pair is self-consistent in the C, because the C is
     /// compiled per platform. This port is not, so both are chosen at run time, and the pairing
@@ -50,7 +50,7 @@ namespace SwissEphNet.Tests
 
             var expected = isWindows
                 ? new[] { "\\sweph\\ephe\\" }
-                : new[] { ".", "/users/ephe2/", "/users/ephe/" };
+                : new[] { ".", "/home/ephe/" };
 
             Assert.Equal(expected, parts);
             Assert.Equal(expected.Length, n);

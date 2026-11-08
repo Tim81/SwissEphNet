@@ -2214,7 +2214,7 @@ namespace SwissEphNet.CPort
         Int32 heliacal_ut_arc_vis(double JDNDaysUTStart, double[] dgeo, double[] datm, double[] dobs, string ObjectName, Int32 TypeEventIn, Int32 helflag, double[] dret, ref string serr_ret) {
             double[] x = new double[6];
             double[] xin = new double[2];
-            double[] xaz = new double[2];
+            double[] xaz = new double[3];
             double[] dang = new double[3];
             double objectmagn = 0, maxlength, DayStep;
             double JDNDaysUT, JDNDaysUTfinal, JDNDaysUTstep, JDNDaysUTstepoud, JDNarcvisUT, tjd_tt, tret = 0, OudeDatum, JDNDaysUTinp = JDNDaysUTStart, JDNDaysUTtijd;

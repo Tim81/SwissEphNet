@@ -190,8 +190,9 @@ namespace SwissEphNet
         // their platform and every other Swiss Ephemeris binding uses.
         //
         // It also removes the reason the non-Windows SE_EPHE_PATH default had to be rewritten:
-        // upstream's ".:/users/ephe2/:/users/ephe/" now splits into the three components it
-        // names, so that literal is carried verbatim again (see SwissEph.swephexp.h.cs).
+        // upstream's default now splits into the components it names, so that literal is
+        // carried verbatim again (see SwissEph.swephexp.h.cs). At v2.10.3bfinal it was
+        // ".:/users/ephe2/:/users/ephe/"; it is ".:/home/ephe/" since upstream 4daf766a.
         //
         // Mutable and public because the C's is a macro that callers are free to work around;
         // the initializer is what the C compiles to on the host platform.

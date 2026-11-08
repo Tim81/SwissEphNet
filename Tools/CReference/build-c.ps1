@@ -279,9 +279,11 @@ function Get-ArchBaseline {
 # gethostname block in `#ifndef _WINDOWS`, with sweodef.h now defining _WINDOWS under
 # `#ifdef _WIN32` to match. Reported upstream by this fork; the report and Astrodienst's
 # replies are drafted outside the tracked tree and sent by hand, so there is no in-repo path
-# to follow. external/swisseph is now pinned to v2.10.3bfinal (f4dcd18e).
+# to follow. external/swisseph was pinned to v2.10.3bfinal (f4dcd18e) when this comment was
+# written; it is now pinned to upstream master 94621aba (v2.10.3bfinal plus 12 commits).
 #
-# THE THIRD DEFECT, surfaced by that same sweodef.h change, still open as of f4dcd18e:
+# THE THIRD DEFECT, surfaced by that same sweodef.h change, still open at 94621aba (the
+# current pin; swetest.c:3991 there, :3956-3963 at f4dcd18e):
 #
 # do_printf (swetest.c:3956-3963, called by every line swetest prints) reads:
 #
@@ -298,9 +300,10 @@ function Get-ArchBaseline {
 # stream change. This fork's prior report to Astrodienst, in its closing note,
 # told them this branch was "fine on master, where the
 # rest of the tree expects _WINDOWS" -- that was wrong, and unstated at the time because
-# fp had never actually been compiled against. master and v2.10.3bfinal are the same
-# commit (git ls-remote origin master resolves to f4dcd18e), so there is no further fix to
-# pull; this is reported back as a follow-up, unresolved as of this commit.
+# fp had never actually been compiled against. At f4dcd18e master and v2.10.3bfinal were the
+# same commit, so there was no further fix to pull. Master has since moved to 94621aba and the
+# defect is still there, so there is still no upstream fix to pull; this is reported back as a
+# follow-up, unresolved as of this commit.
 #
 # The patch below makes the _WINDOWS branch behave exactly as the #else branch always has
 # -- fputs(info, stdout) -- rather than guessing at what `fp` was meant to be. This
@@ -333,12 +336,45 @@ function New-PatchedSwetestSource {
     # the four-line block itself, present or not, regardless of what fp resolves to). This scans
     # the whole file separately so a future release that adds a real `fp` declaration is caught
     # even though the four-line block above it would still match unchanged.
-    $fpDeclPattern = '(?m)^\s*(static\s+)?FILE\s*\*\s*fp\b|^\s*extern\s+FILE\s*\*\s*fp\b'
+    #
+    # Two places can declare an fp that do_printf sees, so both are checked: file scope
+    # (column 0), and do_printf's own body (indented, so a column-0 check alone misses it --
+    # `  FILE *fp = stdout;` inside do_printf is the most likely shape of an upstream fix, and
+    # patching over it would silently replace that fix). Locals in any OTHER function are not
+    # visible to do_printf and must not trip this: since 3fd0f956 (-astpos),
+    # swe_get_named_ast_list declares its own `  FILE *fp = swi_fopen(...)`, and an earlier
+    # whole-file `^\s*` form of this check matched it and failed the build at 94621aba although
+    # do_printf's fp was still undeclared there.
+    $fpDeclPattern = '(?m)^(static\s+)?FILE\s*\*\s*fp\b|^extern\s+FILE\s*\*\s*fp\b'
     if ($text -match $fpDeclPattern) {
-        Fail 'swetest.c: fp now appears to be declared somewhere. The do_printf compile defect this patch exists for may no longer apply -- check, and drop this patch if so instead of applying it on top.'
+        Fail 'swetest.c: fp now appears to be declared at file scope. The do_printf compile defect this patch exists for may no longer apply -- check, and drop this patch if so instead of applying it on top.'
+    }
+    $doPrintfBodyPattern = "(?ms)^static void do_printf\(char \*info\)\s*\{(.*?)^\}"
+    $doPrintfBodies = [regex]::Matches($text, $doPrintfBodyPattern)
+    if ($doPrintfBodies.Count -ne 1) {
+        Fail "swetest.c: expected exactly one 'static void do_printf(char *info)' definition, found $($doPrintfBodies.Count). Its signature or layout changed upstream; check whether fp is now declared or passed in before patching."
+    }
+    if ($doPrintfBodies[0].Groups[1].Value -match '\bFILE\s*\*\s*fp\b') {
+        Fail 'swetest.c: do_printf now declares its own fp. The compile defect this patch exists for may no longer apply -- check, and drop this patch if so instead of applying it on top.'
     }
 
     $text = [regex]::Replace($text, $doPrintfPattern, "#ifdef _WINDOWS`n  fputs(info,stdout);`n#else`n  fputs(info,stdout);`n#endif")
+
+    # print_asteroids (new in 3fd0f956, -astpos) declares `int i, rc, nast, amax = 30000;`
+    # then `int arr[amax];` -- a variable-length array, since amax is a variable, not a
+    # constant expression. gcc and clang accept it; MSVC's C compiler has no VLA support and
+    # rejects it (measured at 94621aba: C2057 "expected constant expression", C2466, C2133 at
+    # swetest.c:4176). Substituting the literal amax is initialized to on the line above gives
+    # the identical array size, so nothing reachable through swetest changes.
+    $vlaPattern = '(?m)^(\s*)int arr\[amax\];'
+    $vlaCount = ([regex]::Matches($text, $vlaPattern)).Count
+    if ($vlaCount -ne 1) {
+        Fail "swetest.c: expected exactly one 'int arr[amax];' VLA in print_asteroids to patch, found $vlaCount. If upstream has fixed this, drop this patch instead of applying it on top."
+    }
+    if ($text -notmatch '(?m)^\s*int i, rc, nast, amax = 30000;') {
+        Fail "swetest.c: print_asteroids no longer initializes amax to 30000 on the line this patch assumes; the literal substituted for the VLA below would be wrong. Re-check before patching."
+    }
+    $text = [regex]::Replace($text, $vlaPattern, '${1}int arr[30000];')
 
     [System.IO.File]::WriteAllText($DestinationPath, $text)
 }
@@ -732,7 +768,7 @@ try {
         "env__CL_                  $(if ($envClUnderscoreOriginal) { $envClUnderscoreOriginal } else { 'not set' })"
         "pyswisseph_2_08_manifest  $manifest208Sha256 (scripts/pyswisseph-2.08.manifest.tsv)"
         "swisseph_commit           $submoduleHead"
-        "swetest_patches           do_printf's fp undeclared under _WINDOWS (fputs substituted; v2.10.3final's spmoon/gethostname defects are fixed upstream as of v2.10.3bfinal and no longer patched here -- see this script's own comment above the swetest build step)"
+        "swetest_patches           do_printf's fp undeclared under _WINDOWS (fputs substituted); print_asteroids' int arr[amax] VLA, rejected by MSVC (int arr[30000] substituted, the value amax is initialized to) (v2.10.3final's spmoon/gethostname defects are fixed upstream as of v2.10.3bfinal and no longer patched here -- see this script's own comment above the swetest build step)"
         "swetest_patched_sha256    $patchedSha256"
         "libswe_2_10_03_sha256     $lib210Sha256"
         "libswe_2_08_sha256        $lib208Sha256"

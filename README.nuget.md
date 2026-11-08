@@ -25,6 +25,23 @@ condition that catches people out. You must choose one:
 This is not a choice this package makes for you, and it follows Astrodienst's own relicensing of
 Swiss Ephemeris. `LICENSE`, `agpl-3.0.txt` and `NOTICE` ship at the root of this package.
 
+Astrodienst has issued a new edition of the Professional License contract, dated September 2026
+([`secont_e_2609.pdf`](https://github.com/aloistr/swisseph/blob/94621aba9f3ff9c32cb721eac0380c30dbb153fe/doc/secont_e_2609.pdf)).
+Compared with the June 2026 edition:
+
+- The duration changes from "valid for 99 years" to "valid for 6 years", after which it has to be
+  renewed or the use of Swiss Ephemeris in web services or distributed software has to end.
+- A new clause 3 covers API services: "If the licensee provides API services to third parties,
+  i.e. to a business not owned by the licensee, this third party needs to purchase their own Swiss
+  Ephemeris license, before they can legally begin using the API services. The licensee mentions
+  that fact clearly in the documentation of his API service. The licensee obliges himself to
+  inform Astrodienst about the identity and contact of each API service user."
+- The clause granting the right to distribute Swiss Ephemeris in compiled form is no longer
+  present, a new clause allows transferring the license to a third party (with notice to
+  Astrodienst), and the price is unchanged (CHF 700).
+
+Read the current contract and confirm the terms with Astrodienst.
+
 ## Install
 
 ```
@@ -146,7 +163,7 @@ Four things to check, in the order that matters:
 Target frameworks moved too. 2.8.0.2 shipped `net40` and `netstandard1.0`; neither is supported
 here. .NET Framework 4.6.1 and later resolve `netstandard2.0`.
 
-The [full README](https://github.com/Tim81/SwissEphNet/blob/release/2.10.03/README.md) documents
+The [full README](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.2/README.md) documents
 every breaking change with the C source line each one corresponds to.
 
 ## Credits
@@ -162,5 +179,5 @@ This package is not published or endorsed by Yan Grenier or Astrodienst.
 
 - [Repository and full documentation](https://github.com/Tim81/SwissEphNet)
 - [Report an issue](https://github.com/Tim81/SwissEphNet/issues)
-- [How the numbers are verified](https://github.com/Tim81/SwissEphNet/blob/release/2.10.03/docs/compliance-2.10.03.md)
-- [Known issues](https://github.com/Tim81/SwissEphNet/blob/release/2.10.03/docs/known-issues.md)
+- [How the numbers are verified](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.2/docs/compliance-2.10.03.md)
+- [Known issues](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.2/docs/known-issues.md)

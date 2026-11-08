@@ -17,6 +17,9 @@
       that package anyway. Until the release lands, build from source or
       reference the project directly.
 
+      2.10.3.2 tracks upstream master at 94621aba (v2.10.3bfinal plus 12
+      commits; no newer tag exists). SE_VERSION is still "2.10.03".
+
       The "port revision" above is the fourth component, for a port-only
       release made while upstream stays put: 2.10.3, then 2.10.3.1, 2.10.3.2,
       resetting whenever upstream moves. Two things to know before using it.
@@ -47,7 +50,7 @@
       component. Decide it deliberately at the point of making one; do not
       discover it from a consumer's FileLoadException.
     -->
-    <Version>2.10.3.1</Version>
+    <Version>2.10.3.2</Version>
     <!--
       Plain SemVer, with no descriptive text. The SDK appends +<commit sha> to
       whatever is here, so anything with spaces or parentheses in the core
@@ -57,7 +60,7 @@
       used to carry now lives in the AssemblyMetadata items below, which is
       where arbitrary text belongs.
     -->
-    <InformationalVersion>2.10.3.1</InformationalVersion>
+    <InformationalVersion>2.10.3.2</InformationalVersion>
     <Authors>Yan Grenier, Timothy van der Ham</Authors>
     <!--
       Company is the publisher field, distinct from Authors above: NuGet shows it separately, and
@@ -89,7 +92,70 @@
       an API this library no longer has.
     -->
     <PackageReadmeFile>README.nuget.md</PackageReadmeFile>
-    <PackageReleaseNotes>2.10.3.1:
+    <PackageReleaseNotes>2.10.3.2:
+- swe_heliacal_ut threw IndexOutOfRangeException from swe_azalt for any SE_HELFLAG_AVKIND_VR,
+  SE_HELFLAG_AVKIND_PTO, SE_HELFLAG_AVKIND_MIN7 or SE_HELFLAG_AVKIND_MIN9 flag.
+  heliacal_ut_arc_vis declared xaz with two elements and swe_azalt writes three. In C that is a
+  silent stack overrun; the port had copied the declaration faithfully, so it surfaced as an
+  exception. Upstream fixed it after v2.10.3bfinal (swehel.c:2215, double xaz[3], commit
+  94621aba), and the port now has the same one-token change (SweHel.cs:2217). The new
+  HeliacalArcVisTest (Venus heliacal rising, Moshier) matches the C at 94621aba bit for bit on
+  Windows x64, net8.0 and net10.0. Nothing covered these flags before.
+- New public swe_get_denum(), plus the constants SE3_DE_NUMBER (441), SE_FNAME_DE441 and
+  SE_FNAME_DFT3, all from upstream (sweph.c:240, swephexp.h). swe_get_denum returns the DE number
+  of the open planet file (sepl*.se1), or SE_DE_NUMBER (431) when none is open; it does not
+  consult a JPL file. Nothing in the port reads the three constants; upstream declares them for
+  its future 3.0. SE_EPHE_PATH is unchanged. The public API grows by these four members on every
+  target framework.
+- Behaviour change for callers that never call swe_set_ephe_path: on Linux and macOS the default
+  ephemeris path is now ".:/home/ephe/", following swephexp.h:406, where it was
+  ".:/users/ephe2/:/users/ephe/". Such a caller now probes . and /home/ephe/ and no longer
+  probes /users/ephe2/ or /users/ephe/. The Windows default is unchanged. The same default is
+  also used when swe_set_ephe_path is given null, "", or a path longer than 242 characters
+  (AS_MAXCH - 1 - 13); a non-empty SE_EPHE_PATH environment variable of 242 characters or fewer
+  still takes precedence over both. On Linux and macOS, an IEphemerisFileProvider in those cases
+  now receives paths built from the new default components (. and /home/ephe/). Callers that set
+  a usable path are not affected.
+- Programs/SweTest: ported the swetest.c changes made after v2.10.3bfinal. New option
+  -astpos&lt;DDD&gt;[,orb] lists named asteroids within orb of longitude DDD and reads
+  seasnam.txt. -pd, -pp, -ph and -pa now append e when the argument contains an e anywhere (the C uses
+  strchr(spno, 'e')), instead of dropping it. A -p list of
+  256 characters or more is cut to 255. -sidudef without a comma no longer dereferences NULL in
+  the C; it is a no-op here. The help text is copied verbatim, including upstream's typos. This
+  affects the SweTest program, not the library API.
+- Swiss Ephemeris Professional License: Astrodienst has replaced the contract PDF with the
+  "Edition September 2026" (doc/secont_e_2609.pdf in the upstream repository,
+  https://github.com/aloistr/swisseph/blob/94621aba9f3ff9c32cb721eac0380c30dbb153fe/doc/secont_e_2609.pdf). Compared with the June
+  2026 edition, the duration changes from 99 years to 6 years with renewal, a clause on API
+  services for third parties is added (a licensee who provides an API service must state in its
+  documentation that each third-party user needs their own license, and must inform Astrodienst of
+  the identity and contact of each API service user), the right to distribute in compiled form is
+  no longer listed, and license transfer is allowed. The price is unchanged. This repository's LICENSE is
+  unchanged. If you hold or plan to buy a Professional License, check the current contract with
+  Astrodienst.
+- The upstream pin moves from v2.10.3bfinal (f4dcd18e) to upstream master at 94621aba, which is
+  v2.10.3bfinal plus 12 commits; no newer tag exists. SE_VERSION is still "2.10.03". Of the 12,
+  three changes are ported above (heliacal, swe_get_denum with its constants, and swetest.c), and
+  the rest need no port: readme.md edits, the contract PDF, swevents.c (not ported), and 51
+  sepl*.se3 files for the future 3.0, which 2.10 cannot read.
+- C.printf's ReplaceMetaChars now implements \xhh hex escapes, capped at two hex digits (#40).
+  This is a behaviour change of a public method (SwissEphNet.C is public API):
+  C.ReplaceMetaChars(@"\x41") used to return "x41" and now returns "A". Nothing inside the
+  library calls it. Per-call allocations were also removed from FormatToDegreeMinuteSecond
+  (SwissEph.Format.cs), Extensions/StringExtensions.cs and CPointer.ToArray(), which now uses
+  Array.Copy with BaseIndex clamped at both ends. Output is unchanged for these allocation
+  changes.
+- C.sprintf no longer constructs its format-parsing Regex on every call; the constant pattern is
+  now built once. fixstar_cut_string calls sprintf, so every swe_fixstar* call and every sidereal
+  calculation under a star-based ayanamsa (for example SE_SIDM_TRUE_CITRA) paid for a fresh Regex
+  each time. Output is unchanged (#43).
+- read_const now takes an ephemeris file's byte order from the file, as sweph.c:4650-4658 does,
+  instead of from the host. The two only differ for a file whose byte order is not the
+  machine's, which no shipped .se1 file is, so no existing user sees a change (#44).
+- No breaking changes other than the default-path and ReplaceMetaChars behaviour changes above. See
+  docs/known-issues.md for the verification detail behind this release.
+
+2.10.3.1:
 - Full XML documentation (&lt;summary&gt;, &lt;param&gt;, &lt;returns&gt;) added for all 116
   public swe_* methods in SwissEphNet/SwissEph.swephexp.h.cs, plus the SEFLG_*/SE_*/SEMOD_*
   constants they reference. Purely additive: no signature or behavior changed, and
@@ -197,6 +263,7 @@ https://github.com/Tim81/SwissEphNet/blob/main/CHANGELOG.md.
   <ItemGroup>
     <AssemblyMetadata Include="UpstreamSwissEphemerisVersion" Value="2.10.03" />
     <AssemblyMetadata Include="UpstreamSwissEphemerisTag" Value="v2.10.3bfinal" />
+    <AssemblyMetadata Include="UpstreamSwissEphemerisCommit" Value="94621aba9f3ff9c32cb721eac0380c30dbb153fe" />
   </ItemGroup>
 
   <!--

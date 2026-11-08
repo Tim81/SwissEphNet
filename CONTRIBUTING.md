@@ -121,10 +121,16 @@ can check the C# against the exact hunk without having to reconstruct the diff
 themselves. `.github/pull_request_template.md` has a required field for this.
 A PR that changes a frozen file with no hunk citation should not be merged.
 
+Existing citations of the upstream C (in port comments, docs and the freeze log) refer to
+`v2.10.3bfinal` (`f4dcd18e`) unless they name another version; they were not renumbered when the
+pin moved to `94621aba`. Cite new hunks against the current pin and say so if it is not obvious.
+`docs/known-issues.md` ("C file:line citations were written against `v2.10.3bfinal`") has the exact
+line offsets for mapping an old citation to the current pin.
+
 ### The upstream C is vendored at `external/swisseph`
 
 `external/swisseph` is a git submodule of `https://github.com/aloistr/swisseph`,
-pinned to tag `v2.10.3bfinal` -- the upstream C this port is being upgraded to.
+pinned to upstream master at `94621aba` (`v2.10.3bfinal` plus 12 commits; no newer tag exists) -- the upstream C this port tracks.
 It is sparse-checked-out to keep it small: only `*.c`, `*.h`, `Makefile`,
 `LICENSE`, `setest/` (the reference test corpus `Tests/SwissEphNet.Conformance.Tests`
 is built against) and eight specific `ephe/` files the conformance oracle needs to run
@@ -152,7 +158,7 @@ git sparse-checkout set --no-cone /*.c /*.h /Makefile /LICENSE /setest/* /seleap
     /ephe/seas_12.se1 /ephe/semo_12.se1 /ephe/sepl_12.se1 `
     /ephe/seas_18.se1 /ephe/semo_18.se1 /ephe/sepl_18.se1 `
     /ephe/sefstars.txt /ephe/seorbel.txt
-git checkout v2.10.3bfinal
+git checkout 94621aba9f3ff9c32cb721eac0380c30dbb153fe
 cd ../..
 git submodule absorbgitdirs external/swisseph
 ```

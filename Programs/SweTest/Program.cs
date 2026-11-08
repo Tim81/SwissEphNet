@@ -106,6 +106,7 @@ namespace SweTest
   Version:                                                                                   " + "\n";
         static string infocmd1 = @"
   Command line options:
+  Note: spaces have to be observed carefully, as given
      help commands:
         -?, -h  display whole info
         -hcmd   display commands
@@ -115,7 +116,7 @@ namespace SweTest
         -hexamp  display examples
         -glp  report file location of library
      input time formats:
-        -bDATE  begin date; e.g. -b1.1.1992 if
+        -bDATE  begin date; e.g. -b31.1.1992 for 31 January 1991
                 Note: the date format is day month year (European style).
         -bj...  begin date as an absolute Julian day number; e.g. -bj2415020.5
         -j...   same as -bj
@@ -322,6 +323,11 @@ namespace SweTest
 	-ep		  use extra precision in output for some data
 	-dms              use dms instead of fractions, at some places
 	-lim		  print ephemeris file range
+	-astposDDD	  list named asteroids within orb of 0.5° of position DDD
+	-astposDDD,orb	  list named asteroids within orb of position DDD
+			  DDD is must be decimal between 0.00° and 359.99999°
+			  orb must be deciaml between 0.01° and 1.0°
+			  
      observer position:
         -hel    compute heliocentric positions
         -bary   compute barycentric positions (bar. earth instead of node) 
@@ -779,6 +785,7 @@ namespace SweTest
         //static int32 call_swe_fixstar(char *star, double te, int32 iflag, double *x, char *serr);
         //static void jd_to_time_string(double jut, char* stimeout);
         //static char* our_strcpy(char* to, char* from);
+        //static int print_asteroids(double tjd, double dref, double orb);
 
         /* globals shared between main() and print_line() */
         static string fmt = "PLBRS";
@@ -906,9 +913,7 @@ namespace SweTest
             string sp; int spi, sp2i, sp2;
             string spno;
             string plsel = PLSEL_D;
-            //#if HPUNIX
             //  char hostname[80];
-            //#endif
             int i, j, n, iflag_f = -1, iflgt;
             int line_count, line_limit = 36525; // days in a century
             double daya;
@@ -936,6 +941,8 @@ namespace SweTest
             double t2, thour = 0;
             double delt;
             double tid_acc = 0;
+            double orb = 0.5;
+            double astpos = -1;
             datm[0] = 1013.25; datm[1] = 15; datm[2] = 40; datm[3] = 0;
             dobs[0] = 0; dobs[1] = 0;
             dobs[2] = 0; dobs[3] = 0; dobs[4] = 0; dobs[5] = 0;
@@ -1038,7 +1045,7 @@ namespace SweTest
                             sp = s1.Substring(spi + 1);
                             aya_val0 = C.atof(sp);
                         }
-                        if ((spi = C.strstr(sp, "jdisut")) >= 0)
+                        if (sp != null && (spi = C.strstr(sp, "jdisut")) >= 0)
                         {
                             sid_mode |= SwissEph.SE_SIDBIT_USER_UT;
                         }
@@ -1353,6 +1360,16 @@ namespace SweTest
                         if (sp.StartsWith("[", StringComparison.Ordinal)) sp = sp.Substring(1);
                         C.sscanf(sp, "%lf,%lf,%lf,%lf,%lf,%lf", ref (dobs[0]), ref (dobs[1]), ref (dobs[2]), ref (dobs[3]), ref (dobs[4]), ref (dobs[5]));
                     }
+                    else if (argv[i].StartsWith("-astpos", StringComparison.Ordinal))
+                    {
+                        double x1 = 0, x2 = 0;
+                        sp = argv[i].Substring(7);
+                        j = C.sscanf(sp, "%lf,%lf", ref x1, ref x2);
+                        if (j > 0 && x1 >= 0 && x1 < 360)
+                            astpos = x1;
+                        if (j > 1 && x2 >= 0 && x2 <= 1)
+                            orb = x2;
+                    }
                     else if (argv[i].StartsWith("-orbel", StringComparison.Ordinal))
                     {
                         do_orbital_elements = true;
@@ -1369,7 +1386,7 @@ namespace SweTest
                     }
                     else if (argv[i].StartsWith("-p", StringComparison.Ordinal))
                     {
-                        // swetest.c:1120-1131: spno is `char *`, set to the whole remainder of
+                        // swetest.c:1136-1161: spno is `char *`, set to the whole remainder of
                         // the argument (argv[i]+2) and switched on *spno (its first character,
                         // '\0' for an empty remainder); the default branch assigns that whole
                         // remainder to plsel. This narrowed spno to a single char
@@ -1380,16 +1397,27 @@ namespace SweTest
                         spno = argv[i].Substring(2);
                         switch (spno.Length > 0 ? spno[0] : '\0')
                         {
-                            case 'd':
-                                /*
-                                case '\0':
-                                case ' ':
-                                */
-                                plsel = PLSEL_D; break;
-                            case 'p': plsel = PLSEL_P; break;
-                            case 'h': plsel = PLSEL_H; break;
-                            case 'a': plsel = PLSEL_A; break;
-                            default: plsel = spno; break;
+                            case 'd': plsel = PLSEL_D;
+                                if (C.strchr(spno, 'e') >= 0)
+                                    plsel += "e";  // re-append e for predefinded set
+                                break;
+                            case 'p': plsel = PLSEL_P;
+                                if (C.strchr(spno, 'e') >= 0)
+                                    plsel += "e";  // re-append e for predefinded set
+                                break;
+                            case 'h': plsel = PLSEL_H;
+                                if (C.strchr(spno, 'e') >= 0)
+                                    plsel += "e";  // re-append e for predefinded set
+                                break;
+                            case 'a': plsel = PLSEL_A;
+                                if (C.strchr(spno, 'e') >= 0)
+                                    plsel += "e";  // re-append e for predefinded set
+                                break;
+                            default:
+                                if (spno.Length >= SwissEph.AS_MAXCH)
+                                    spno = spno.Substring(0, SwissEph.AS_MAXCH - 1);  // cut off overlength planet list
+                                plsel = spno;
+                                break;
                         }
                     }
                     else if (argv[i].StartsWith("-xs", StringComparison.Ordinal))
@@ -1971,6 +1999,12 @@ namespace SweTest
                         }
                         if (with_header && !with_header_always)
                             with_header = false;
+                        if (astpos >= 0)
+                        {
+                            print_asteroids(tjd, astpos, orb);
+                            //swe_close();
+                            return SwissEph.OK;
+                        }
                         if (do_ayanamsa)
                         {
                             if (sweph.swe_get_ayanamsa_ex(te, iflag, out daya, ref serr) == SwissEph.ERR)
@@ -5048,6 +5082,71 @@ namespace SweTest
             //}
             return to;
         }
+
+        //#if TRUE
+        // this function should move to swephlib.c in next release
+        static int swe_get_named_ast_list(int amax, int[] iarr, ref string serr)
+        {
+            string si; char sp;
+            int nast = 0;
+            using (CFile fp = sweph.Sweph.swi_fopen(-1, SwissEph.SE_ASTNAMFILE, sweph.Sweph.swed.ephepath, ref serr))
+            {
+                if (fp == null) return SwissEph.ERR;
+                while ((si = fp.ReadLine()) != null)
+                {
+                    sp = si.Length > 8 ? si[8] : '\0';
+                    if (!(sp >= '0' && sp <= '9'))
+                    {    // named asteroids do not start with digit
+                        iarr[nast] = C.atoi(si);
+                        nast++;
+                    }
+                    if (nast == amax) break;
+                }
+                //fclose(fp);
+            }
+            return nast;
+        }
+
+        static int print_asteroids(double tjd, double dref, double orb)
+        {
+            int i, rc, nast, amax = 30000;
+            int[] arr = new int[amax];
+            string serr = String.Empty;
+            string si;
+            nast = swe_get_named_ast_list(amax, arr, ref serr);
+            if (nast == SwissEph.ERR)
+            {
+                printf(" error in swe_get_named_ast_list(): %s\n", serr);
+                return SwissEph.ERR;
+            }
+            si = dms(dref, BIT_ZODIAC | BIT_ROUND_SEC);
+            printf("\nAsteroids near %.6lf° (%s) within orb %.3lf°\n\t(out of %d named asteroids)\n\n", dref, si, orb, nast);
+            for (i = 0; i < nast; i++)
+            {
+                int ipl = arr[i] + SwissEph.SE_AST_OFFSET;
+                double[] xx = new double[6];
+                rc = sweph.swe_calc(tjd, ipl, 0, xx, ref serr);
+                if (rc >= 0 && dref >= 0)
+                {
+                    double d = sweph.swe_difdeg2n(dref, xx[0]);
+                    string pname;
+                    if (Math.Abs(d) <= orb)
+                    {
+                        char m = ' ';
+                        if (d < 0)
+                        {
+                            d = -d;
+                            m = '-';
+                        }
+                        pname = sweph.swe_get_planet_name(ipl);
+                        // put orb in front for easy sorting
+                        printf("%.3f%c\t%d\t%-20s\n", d, m, arr[i], pname);
+                    }
+                }
+            }
+            return SwissEph.OK;
+        }
+        //#endif
 
         static void printf(String format, params object[] args)
         {
