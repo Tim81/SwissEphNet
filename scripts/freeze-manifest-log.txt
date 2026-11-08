@@ -609,7 +609,7 @@ b"} where the C gives {"a", ""}); that one is fixed
     swetest.c's LEN_SOUT bound".
     Not a re-transliteration: no other line in Programs/SweTest/Program.cs moved.
     Programs/SweTest/Program.cs: 5052 -> 5074 lines, sha256 7E4312E1... -> C16707D6....
-27. PR #TBD 2026-11-08: One fidelity fix. read_const decided the file's byte order from the
+27. PR #44 2026-11-08: One fidelity fix. read_const decided the file's byte order from the
     host's: Sweph.cs (just above the fdp.iflg assignment) tested BitConverter.IsLittleEndian
     where sweph.c:4644-4652 tests the first byte of testendian, `c = (char *) &testendian;
     c2 = SEI_FILE_TEST_ENDIAN / 16777216L; if (*c == c2) fendian = SEI_FILE_BIGENDIAN;`.
