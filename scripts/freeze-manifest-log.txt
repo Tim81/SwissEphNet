@@ -609,3 +609,19 @@ b"} where the C gives {"a", ""}); that one is fixed
     swetest.c's LEN_SOUT bound".
     Not a re-transliteration: no other line in Programs/SweTest/Program.cs moved.
     Programs/SweTest/Program.cs: 5052 -> 5074 lines, sha256 7E4312E1... -> C16707D6....
+27. PR #TBD 2026-11-08: One fidelity fix. read_const decided the file's byte order from the
+    host's: Sweph.cs (just above the fdp.iflg assignment) tested BitConverter.IsLittleEndian
+    where sweph.c:4644-4652 tests the first byte of testendian, `c = (char *) &testendian;
+    c2 = SEI_FILE_TEST_ENDIAN / 16777216L; if (*c == c2) fendian = SEI_FILE_BIGENDIAN;`.
+    testendian is read raw with fread, so its first byte is the first byte of the file's field
+    and fendian is the FILE's byte order. The port's host test gives the same answer whenever
+    the file and the host share a byte order (every .se1 in this repo and upstream is little-
+    endian, so no test saw it) but the wrong one otherwise, and do_fread (sweph.c:4946) then
+    places the bytes of every size != corrsize read wrongly (the 3-byte segment pointers, the
+    1-byte iflg/ncoe fields). The condition now reads
+    BitConverter.GetBytes(testendian)[0] == (byte)(SEI_FILE_TEST_ENDIAN / 16777216L); the
+    commented C lines above it are unchanged. Full writeup: docs/known-issues.md, "Ephemeris
+    file byte order was taken from the host, not the file".
+    Fidelity fix, not a re-transliteration: no other line in SwissEphNet/CPort moved.
+    SwissEphNet/CPort: 48564 -> 48567 lines, sha256 C8666981... -> 4275E1E7.... kr_braces
+    (1205) and trailing_ws (1258) are unchanged.

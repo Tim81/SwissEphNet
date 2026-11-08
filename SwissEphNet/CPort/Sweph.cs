@@ -5436,7 +5436,10 @@ namespace SwissEphNet.CPort
             //    fendian = SEI_FILE_BIGENDIAN;
             //else
             //    fendian = SEI_FILE_LITENDIAN;
-            if (!BitConverter.IsLittleEndian)
+            // sweph.c:4646-4652: testendian was read raw (host byte order), so its first byte is the
+            // first byte of the file's field, and fendian is the FILE's byte order, not the host's.
+            // BitConverter.IsLittleEndian here tested the host, wrong for any file of the other order.
+            if (BitConverter.GetBytes(testendian)[0] == (byte)(SEI_FILE_TEST_ENDIAN / 16777216L))
                 fendian = SEI_FILE_BIGENDIAN;
             else
                 fendian = SEI_FILE_LITENDIAN;

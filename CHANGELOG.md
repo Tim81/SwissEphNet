@@ -3,6 +3,15 @@
 Project history from the Swiss Ephemeris 2.08 upgrade forward. Entries are prose bullets, not a
 generated commit list — for anything earlier, see git history.
 
+## Unreleased
+
+- `read_const` now takes an ephemeris file's byte order from the file, as `sweph.c:4644-4652`
+  does, instead of from the host (`BitConverter.IsLittleEndian`). The two only differ for a file
+  whose byte order is not the machine's, which no shipped `.se1` file is, so no existing user sees
+  a change; such a file previously failed with `Ephemeris file ... is damaged (4)`. A big-endian
+  regression test was checked against the C reference. Reported by wwlcom-hub in #41, whose own
+  failing case is still under investigation.
+
 ## 2.10.3.1
 
 - Full XML documentation (`<summary>`, `<param>`, `<returns>`) added for all 116 public `swe_*`

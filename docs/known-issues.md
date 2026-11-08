@@ -82,6 +82,7 @@ Read the status line first and the body for how it got there.
 | `SwissEph.DefaultFileProvider` widened to a property | record |
 | Eight live buffer-vs-unbounded-string sites | won't fix |
 | What `known-fail.tsv`'s 1,423 rows actually are | record |
+| Ephemeris file byte order taken from the host, not the file | closed |
 
 ## Eight live sites transliterate a C fixed-size buffer as an unbounded C# string
 
@@ -3068,3 +3069,71 @@ exists to avoid repeating in the other direction.
 build of the real, pinned C, only 4 of 668 checked rows were confirmed port defects, and those are
 already fixed. The list's size (1,423) measures divergence from a 2023 snapshot file, not a live
 count of things wrong with the port today.
+
+## Ephemeris file byte order was taken from the host, not the file
+
+**Status: closed.** `read_const` now derives `fendian` from the file, as `sweph.c` does. Fidelity
+fix, entry 27 in `scripts/freeze-manifest-log.txt`.
+
+The C (`sweph.c:4644-4652`, in `read_const`):
+
+```c
+/* is file bigendian or littlendian?
+ * test first byte of test integer, which is highest if bigendian */
+c = (char *) &testendian;
+c2 = SEI_FILE_TEST_ENDIAN / 16777216L;
+if (*c == c2) { fendian = SEI_FILE_BIGENDIAN; } else { fendian = SEI_FILE_LITENDIAN; }
+```
+
+`testendian` is read with a raw `fread`, so it sits in memory exactly as the file stores it and
+`*c` is the first byte of the file's field. `c2` is `0x616263 / 16777216`, which is 0. So `fendian`
+is the byte order of the FILE. The port (introduced by the original 2014 port) had commented that
+block out and replaced it with `if (!BitConverter.IsLittleEndian)`, which is the byte order of the
+HOST. The two agree whenever file and host share a byte order and disagree otherwise. The condition
+is now `BitConverter.GetBytes(testendian)[0] == (byte)(SEI_FILE_TEST_ENDIAN / 16777216L)`;
+`CFile.Read(ref Int32)` reads host-order bytes exactly as `fread` does, so that is the same first
+byte `*c` is.
+
+**Mechanism.** `fendian` goes into `fdp.iflg`, and `do_fread` (port `Sweph.cs`, from `sweph.c:4946`)
+uses it to decide whether to reverse bytes when a field's stored size (`size`) differs from its
+in-memory size (`corrsize`). With the wrong flag, every such read places its bytes wrongly: the
+3-byte segment pointers in `get_new_segment` (`sweph.c:4390`) and the 1-byte `iflg` and `ncoe`
+reads in `read_const`. The visible result is a segment read from the wrong offset, reported as
+`Ephemeris file ... is damaged (4).`
+
+**Why no gate saw it.** Every `.se1` file in this repository and upstream is little-endian, and the
+only hosts the port is built and tested on are little-endian, so host and file always agreed. The
+characterization baseline never loads an ephemeris file. The conformance oracle uses the files
+upstream ships. A mismatch needs a big-endian file on a little-endian host, or the reverse.
+
+**Test.** `Tests/SwissEphNet.Tests/BigEndianSe1Test.cs` converts each embedded fixture
+(`seas_18.se1`, `se00005s.se1`) to big-endian by reversing every multi-byte field in place, then
+compares `swe_calc_ut` on the original and the converted copy bit for bit. Before the fix the
+converted copies fail with `Ephemeris file ... is damaged (4).`; after it all values are equal.
+Neither fixture has an ellipse-type body (`iflg & 4`), so that branch of the converter is written
+from the C but not exercised.
+
+**Cross-check against the C.** So that the converter cannot vouch for itself, the same converter
+wrote big-endian copies of both fixtures and the reference `swetest` (built from the pinned C) read
+them:
+
+```
+swetest -edir<le> -pD -b1.1.1900 -n200 -s20 -fTPlbrs -head
+swetest -edir<be> -pD -b1.1.1900 -n200 -s20 -fTPlbrs -head
+swetest -edir<le> -ps -xs5 -b16.8.1974 -n200 -s5 -fTPlbrs -head
+swetest -edir<be> -ps -xs5 -b16.8.1974 -n200 -s5 -fTPlbrs -head
+```
+
+Each pair produced identical output rows (200 each, nonzero, for example Chiron 258.8960995 at
+1.1.1900 and Astraea 130.7526862 at 16.8.1974) and no "damaged" message. The only difference is the
+path echoed in a Sun `sepl_18.se1` Moshier-fallback warning, because the `sepl` files were not in
+those directories.
+
+**What this does not explain.** GitHub issue #41 reported this divergence and attributed an
+`Ephemeris file ... is damaged (4)` failure for Eros (`SE_AST_OFFSET + 433`) on Windows x64 to it.
+The divergence is real, but the reporter's own file (`se00433s.se1` from the `ast0` directory of
+the `ephe.scryr.io` mirror) is little-endian, and it loads correctly in the current port on Windows
+x64 (return 258, longitude 243.084 degrees at 2026-10-06 12:00 UT). A little-endian file on a
+little-endian host gives the same `fendian` before and after this change. The failure reported in
+#41 therefore has a different cause, which is still being investigated; this fix does not address
+it.
