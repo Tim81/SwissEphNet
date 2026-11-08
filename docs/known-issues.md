@@ -67,6 +67,7 @@ Read the status line first and the body for how it got there.
 | `eclipse_how`'s 100-to-1 change | record |
 | Three file-layer divergences | closed / won't fix |
 | swetest.c `spmoon` / `gethostname` / `do_printf` / `-astpos` VLA | open upstream |
+| swetest `-astpos` evaluates at UT under `-ut`/`-utc` | open upstream |
 | `swe_set_jpl_file`'s AS_MAXCH clamps | won't fix |
 | swetest.c's zodiac field | closed |
 | `swe_solcross(SEFLG_HELCTR)` upstream hang | won't fix |
@@ -2227,6 +2228,51 @@ no in-repo path to follow here.
   `swe_get_named_ast_list`'s new function-local `FILE *fp` and failed the build, although
   `do_printf`'s `fp` is still undeclared and still needs the patch. The guard now looks only at
   file scope.
+
+## swetest `-astpos` evaluates asteroid positions at UT when `-ut` or `-utc` is given
+
+**Status: open upstream.** Present at `94621aba` (`3fd0f956` added `-astpos`). A report is drafted
+outside the tracked tree (`docs/upstream/swetest-astpos-ut-time.txt`, with a one-line patch) and
+has not been sent. The port keeps the C's behaviour on purpose.
+
+**Symptom.** Under `-ut` or `-utc`, `-astpos` computes every asteroid position one delta-T too
+early (69.36 s at 2020-01-01), while the header correctly reports the requested UT and the
+corresponding TT. Without `-ut`/`-utc` the listing is correct.
+
+**Cause.** `swetest.c:1613` calls `print_asteroids(tjd, astpos, orb);`, and `print_asteroids`
+passes that value to `swe_calc`, which expects TT. `tjd` holds Universal Time under `-ut`/`-utc`:
+`:1466` sets `tjd = tret[1]` from `swe_utc_to_jd` for `-utc`, and the `-ut` path uses the date as
+UT. The same `main()` computes TT separately as `te = t + delt` (`:1554`, `tut = t` at `:1555`)
+and uses `te` for everything else, for example `swe_get_ayanamsa_ex(te, ...)` at `:1618`.
+
+**Reproduction.** MSVC build of `swetest.c` at `94621aba`, ephemeris directory holding
+`seas_18.se1` and `seasnam.txt` from the upstream repository (asteroid 1 resolves to Ceres from
+`seas_18.se1`). Ceres at 2020-01-01 12:00 UT is 288.10578618 deg, speed 0.3994 deg/day; delta-T is
+69.361280 s, so evaluating at UT-as-TT puts Ceres 0.000321 deg behind.
+
+- `swetest -b1.1.2020 -ut12:00 -astpos288.115686,0.01`: header `UT: 2458850.000000000 delta t:
+  69.361280 sec / TT: 2458850.000802793`, "Asteroids near 288.115686 deg ... within orb 0.010 deg
+  (out of 26069 named asteroids)", and no asteroid listed.
+- `swetest -bj2458850.000802793 -astpos288.115686,0.01`, the same instant given as TT, with the
+  same header: lists `0.010 	1	Ceres`.
+- `-utc12:00` behaves like `-ut12:00`: nothing listed.
+- With the patch below applied, `-ut12:00`, `-utc12:00` and the TT form all list Ceres.
+
+**Magnitude.** Small: fractions of an arcsecond to about an arcsecond per delta-T for typical
+asteroids. It changes membership only near the orb boundary and the last printed digit of the
+distance, but it is a wrong answer from a valid, documented invocation.
+
+**Why the port keeps `tjd`.** `Programs/SweTest/Program.cs:2004` passes `tjd` too, because SweTest
+is a line-by-line transliteration of `swetest.c` and the swetest-diff gate compares it with the C.
+Changing it here would diverge from the C, not correct a divergence. It will pick up the fix when
+upstream makes it and the pin moves.
+
+**Upstream fix.** One token:
+
+```diff
+-	print_asteroids(tjd, astpos, orb);
++	print_asteroids(te, astpos, orb);
+```
 
 ## swe_set_jpl_file: the C's AS_MAXCH clamps are not reproduced, and the comments were 2.08's
 
