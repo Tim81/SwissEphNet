@@ -85,6 +85,8 @@ Read the status line first and the body for how it got there.
 | Ephemeris file byte order taken from the host, not the file | closed |
 | `heliacal_ut_arc_vis` sized `xaz` for two values, `swe_azalt` writes three | closed |
 | `verify-swetest-diff.ps1` digests depend on the console code page | open |
+| C citations were written against `v2.10.3bfinal`, not the current pin | open |
+| Oracle-grid `sid_mode` is not pinned by `case_id` | open |
 
 ## Eight live sites transliterate a C fixed-size buffer as an unbounded C# string
 
@@ -2147,7 +2149,7 @@ one character on Windows, and that text mismatch is already visible in 11 rows o
 breaking change for any `IEphemerisFileProvider` consumer that matches on the separator in a file
 name it receives -- the same consumers called out in "DIR_GLUE fixed" above -- so it belongs with that
 entry's deferred release-stage work, not with this file-layer note. It has landed there:
-`README.md`'s `# Breaking changes` / `## V:2.10.3` section (`README.md:678-693`) carries this
+`README.md`'s `# Breaking changes` / `## V:2.10.3` section (`README.md:697-712`) carries this
 divergence, in the bullet directly after `OnLoadFile`'s.
 
 **`swi_fopen` never checked `AS_MAXCH`. Closed:** it now does, at the same site the C does. What
@@ -2545,32 +2547,34 @@ harness's no-files rule, which is itself the behavior worth freezing here. Regen
 SCOPE-OK, 0 changed/removed anywhere, only the new case ids listed above added; `scripts/verify-baseline.ps1`
 is 100% EXACT on both TFMs afterward.
 
-**107 here vs. 108 elsewhere in this repository is not a typo; the two count different
+**108 here vs. 109 elsewhere in this repository is not a typo; the two count different
 populations, measured and reconciled below.** `Tools/OracleGrid/gen-grid-files.ps1`'s own header
 comment (and `docs/compliance-2.10.03.md`'s "The last two 2.10.03-only entry points" section) cite
-108 as the count of distinct `swe_*` names declared in the current, 2.10.03
+109 as the count of distinct `swe_*` names declared in the current, 2.10.03
 `external/swisseph/swephexp.h` (`grep -oE '\bswe_[A-Za-z0-9_]+\s*\(' external/swisseph/swephexp.h
 | sed -E 's/\s*\($//' | sort -u | wc -l`; the 2.08 header, `external/pyswisseph-2.08/swephexp.h`,
-gives 96 by the identical measure). The 107 immediately above is a different count entirely: the
+gives 96 by the identical measure). The port's count (107 when the entry above was measured, 108 now) is a different count entirely: the
 port's own public `swe_*` API surface (every `public` method named `swe_*` across
 `SwissEphNet/SwissEph*.cs`), which is what `Tools/BaselineMatrix`'s coverage question is actually
 asked against -- a matrix gap has to be a method that exists to have no coverage.
 
 The two are close but not the same population, and the 1-off gap is fully accounted for by three
 names, not by rounding or an approximation: comparing the two name lists directly
-(`comm -23`/`comm -13` between the header's 108 and the port's 107, both sorted) finds `swe_rise_transit`
+(`comm -23`/`comm -13` between the header's 109 and the port's 108, both sorted) finds `swe_rise_transit`
 and `swe_set_timeout` in the 2.10.03 header with no same-named public method anywhere in the port
 at all (not merely missing from `Tools/BaselineMatrix` -- absent from the port's public surface
 entirely, a porting gap wider than a matrix-coverage one), and `swe_dotnet_version` in the port's
 public surface with no counterpart in Astrodienst's header at all (a port-only addition, this
-project's own informational sibling to `swe_version`). 108 header names minus those 2, plus that 1,
-is 107 -- the port's own count, exactly. Whether `swe_rise_transit`/`swe_set_timeout` themselves
+project's own informational sibling to `swe_version`). 109 header names minus those 2, plus that 1,
+is 108 -- the port's own count, exactly. Whether `swe_rise_transit`/`swe_set_timeout` themselves
 belong on some future work queue is a separate question this section does not answer; the point
-here is only that "107" and "108" are two different, correctly-computed numbers, not one stale and
+here is only that "108" and "109" are two different, correctly-computed numbers, not one stale and
 one current.
 
 **Added since:** `swe_get_denum` (new upstream at `94621aba`, `sweph.c:240`) is a new public
-`swe_*` method, so the port's public count is one higher than the 107 measured above. It is
+`swe_*` method, so the figures in this section moved by one at that pin: the header now has 109
+distinct `swe_*` names (108 at `f4dcd18e`) and the port's public count is 108 (107 when measured
+above); the two names missing from the port and the one port-only name are unchanged. It is
 covered by `Tests/SwissEphNet.Tests/GetDenumTest.cs`, not by
 `Tools/BaselineMatrix/`. The matrix is Moshier-only and opens no `sepl*.se1`, so a matrix row for
 it would be the constant 431 (`SE_DE_NUMBER`) and would prove nothing. This entry's "closed" status
@@ -3196,7 +3200,9 @@ which is why `scripts/freeze-manifest-log.txt` records it as such and not as a c
 **Test.** `Tests/SwissEphNet.Tests/HeliacalArcVisTest.cs`: Venus heliacal rising, Moshier, geopos
 8.55 / 47.38 / 400 m, searched from 2020-01-01. It failed with `IndexOutOfRangeException` on all
 four flags before the change. After it, the results match the C at `94621aba` (MSVC-built libswe)
-bit for bit on Windows x64, net8.0 and net10.0:
+bit for bit on Windows x64, net8.0 and net10.0. The test therefore asserts the Julian day
+exactly on Windows x64, where the port is bit-identical to the C, and keeps a 1e-8-day tolerance
+elsewhere as a starting point, not a measurement:
 
 | Flag | return code | JD (UT) |
 |---|---|---|
@@ -3221,3 +3227,38 @@ Under `chcp 437` the same tree passes. Until the script pins the encoding, run i
 lines: tabs rendered as spaces, `\'` escapes, and the encoding of `°` in the help path. No row of
 `Tools/SwetestDiff/args-grid.tsv` runs `-h`, so nothing compares it. The help text added for
 `-astpos` in 2.10.3.2 was copied verbatim, but that is not a check on the rest of the help path.
+
+## C file:line citations were written against `v2.10.3bfinal`, not the current pin
+
+**Status: open.** Documentation only; no behaviour is affected.
+
+File:line citations to the upstream C throughout port comments, docs and the freeze log were
+written against `v2.10.3bfinal` (`f4dcd18e`) and were not renumbered when the pin moved to
+`94621aba` (about 260 `sweph.c` citations alone). A citation refers to `v2.10.3bfinal` unless it
+names another version. To map one to `94621aba`, these are the exact offsets, from
+`git -C external/swisseph diff -U0 f4dcd18e 94621aba`:
+
+- `sweph.c`: lines 1-239 are unchanged; lines 240 and later are +6 (`swe_get_denum` is inserted at
+  240-245).
+- `swehel.c`: no line moved (one line changed in place, 2215).
+- `swephexp.h`: lines up to 377 are unchanged; 378-383 are +1; 384 is +2; 385-693 are +3; 694 and
+  later are +4.
+- `swetest.c`: many small insertions (`-astpos`, the `-p` rewrite). Use
+  `git -C external/swisseph diff -U0 f4dcd18e 94621aba -- swetest.c` rather than a fixed offset.
+- Citations to 2.08 (`pyswisseph`) sources are unaffected.
+
+Citations written for this release, such as freeze-log entries 28-30 and the heliacal entry above,
+already use `94621aba` numbering.
+
+## Oracle-grid `sid_mode` is not pinned by `case_id`
+
+**Status: open.** Tooling only; the bit-exact gate is unaffected.
+
+`Get-NextSidMode` in `Tools/OracleGrid/gen-grid-analytic.ps1` hands out `sid_mode` values from one
+global rotating counter, so inserting rows earlier in the grid shifts the `sid_mode` of every
+later `SIDEREAL` row. The regeneration in PR #40 therefore changed the inputs of rows whose
+`case_id` did not change: 79 analytic and 15 files rows, all `HOUSESEX|<hsys>|...|SIDEREAL`,
+changed version classification. For example, `HOUSESEX|K|0|0|2600000|SIDEREAL` had `sid_mode` 39
+at `v2.10.3.1` and 12 at `HEAD`. Both oracle known-diff files are empty, so the bit-exact gate is
+unaffected, but a `case_id` does not pin its input across regenerations. Options are to note the
+shift in each regeneration log, or to put `sid_mode` into the `case_id`.

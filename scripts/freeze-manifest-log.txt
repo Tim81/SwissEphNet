@@ -656,14 +656,16 @@ b"} where the C gives {"a", ""}); that one is fixed
     3fd0f956 adds the -astpos<DDD>[,orb] option (locals at swetest.c:863-864, the parse at
     :1120-1127, the early return at :1612-1616, swe_get_named_ast_list at :4155, which reads
     seasnam.txt, and print_asteroids at :4173) plus help text at :76, :86 and :293-297.
-    c69c14ad makes -pd, -pp, -ph and -pa keep a trailing 'e' instead of dropping it, cuts a -p
+    c69c14ad makes -pd, -pp, -ph and -pa append 'e' when the argument contains an 'e' anywhere
+    (the C uses strchr(spno, 'e')) instead of dropping it, cuts a -p
     list of 256 or more characters to 255 (:1136-1161), and declares hostname unconditionally
     (:834). 91339e55 guards -sidudef against a missing comma, where the C passed NULL to strstr
     (:926); a no-op in C#, where sp starts as string.Empty. The help text is copied verbatim,
     including upstream's typos. The Tools/SwetestDiff grid gained
-    a POST_TAG category of 13 rows: 11 identical to the C, and 2 -astpos rows that differ only by
-    the documented DIR_GLUE `\` vs `/` (seasnam.txt is not in the required file set), recorded
-    in Tests/swetest/known-diff.tsv (15 -> 17 rows). With the full ephe/ directory present,
+    a POST_TAG category of 12 rows: 11 identical to the C, and 1 -astpos row that differs only by
+    the documented DIR_GLUE `\` vs `/` (seasnam.txt is not in the required file set, so the row
+    covers only the not-found error path), recorded in Tests/swetest/known-diff.tsv (15 -> 16
+    rows). With the full ephe/ directory present,
     -astpos was compared by hand against the C: both read 26,069 named asteroids and the output
     is byte-identical.
     Programs/SweTest/Program.cs: 5074 -> 5173 lines, trailing_ws 68 -> 69, sha256 C16707D6... ->

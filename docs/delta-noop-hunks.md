@@ -1,6 +1,6 @@
 # The 2.10.03 delta's no-op hunks
 
-`scripts/gen-delta-hunk-counts.tsv` pins 405 filtered hunks across 24 files for the 2.08-to-2.10.03
+`scripts/gen-delta-hunk-counts.tsv` pins 412 filtered hunks across 24 files for the 2.08-to-2.10.03
 delta. Of those, 33 hunks across eight files carry no semantic content for the C# port: `void`
 added to empty C parameter lists, dead local variables, comment and license-header churn,
 formatting-only reindentation, and a Windows-only header with no C# counterpart. Four further
@@ -10,15 +10,19 @@ hunk actually contains, checked against `pwsh scripts/gen-delta.ps1 -File <name>
 C at the cited lines, so a future porter can retire them without re-deriving the analysis.
 
 Regenerate any of these with `pwsh scripts/gen-delta.ps1 -File <name>` -- the citations below are
-`file:line` ranges into `external/swisseph` at the pinned `v2.10.3bfinal` tag (unchanged from
-`v2.10.3final` for every file cited here: the two tags differ only in `sweodef.h`, `swetest.c` and
-`ephe/`, none of which any hunk below touches).
+`file:line` ranges into `external/swisseph`. The analysis below was done against the
+`v2.10.3bfinal` tag (unchanged from `v2.10.3final` for every file cited here: the two tags differ
+only in `sweodef.h`, `swetest.c` and `ephe/`, none of which any hunk below touches). The pin has
+since moved to upstream master at `94621aba`, which adds one hunk each to `swehel.c` and `sweph.c`,
+two to `swephexp.h` and three to `swetest.c` (the totals above are the current ones); none of
+those is a no-op hunk, and no `swehel.c` line number cited below moved.
 
-## `swehel.c` -- 22 raw hunks (18 filtered, 4 license-noise); 14 confirmed no-op, 4 not
+## `swehel.c` -- 23 raw hunks (19 filtered, 4 license-noise); 14 confirmed no-op, 4 not, 1 new
 
-`gen-delta.ps1 -File swehel.c` reports `raw=22 filtered=18 license-noise=4`. Of the 18 filtered
-hunks, 14 are confirmed no-op; the remaining 4 (the `DEBUG`-to-`SWEHEL_DEBUG` rename) are not,
-for a reason specific to this port -- see below the table.
+`gen-delta.ps1 -File swehel.c` reports `raw=23 filtered=19 license-noise=4`. Of the 19 filtered
+hunks, 14 are confirmed no-op; 4 (the `DEBUG`-to-`SWEHEL_DEBUG` rename) are not, for a reason
+specific to this port -- see below the table; and the 19th, added by the move to `94621aba`, is
+the `double xaz[3]` fix at `swehel.c:2215`, a real change that the port has taken (`SweHel.cs:2217`).
 
 | hunks | change |
 |---|---|

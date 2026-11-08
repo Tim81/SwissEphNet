@@ -17,7 +17,7 @@
     external/.c-reference/swetest.exe (Astrodienst's own C, MSVC-built by Tools/CReference/build-
     c.ps1, linked against 2.10.03) and Programs/SweTest (this port, built here), and diffs their
     combined stdout+stderr line by line. Differences are expected, not a failure by themselves --
-    Tests/swetest/known-diff.tsv currently carries 17 rows, every one the same documented DIR_GLUE
+    Tests/swetest/known-diff.tsv currently carries 16 rows, every one the same documented DIR_GLUE
     `\` vs `/` path-separator choice (docs/known-issues.md), not a version gap: this port now
     tracks the same pinned C commit (94621aba) swetest.exe is built from, and the PORT-VERSION
     diff category has zero rows here (see Tools/OracleVerify/DiffCategory.cs). What gates is
@@ -562,7 +562,7 @@ function Get-FirstDiffSummary {
 function Get-OutputDigest {
     # First 12 hex characters of the SHA-256 over the joined lines. Short enough to sit in a reason
     # string a human reads, long enough that a collision is not a practical concern for a set this
-    # size (17 rows).
+    # size (16 rows).
     param([string[]] $Lines)
     $bytes = [System.Text.Encoding]::UTF8.GetBytes(($Lines -join "`n"))
     $sha = [System.Security.Cryptography.SHA256]::Create()

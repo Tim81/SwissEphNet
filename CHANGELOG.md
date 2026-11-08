@@ -12,7 +12,7 @@ generated commit list — for anything earlier, see git history.
   went from about 13.6 to 10.7 µs and 16.0 to 6.0 KB per call, and `swe_calc_ut` for the Moon with
   `SEFLG_SIDEREAL | SEFLG_SPEED` from about 37.8 to 32.5 µs and 36.0 to 15.8 KB per call. Output
   is unchanged. Reported by sudhiramidala in #42.
-- `read_const` now takes an ephemeris file's byte order from the file, as `sweph.c:4644-4652`
+- `read_const` now takes an ephemeris file's byte order from the file, as `sweph.c:4650-4658`
   does, instead of from the host (`BitConverter.IsLittleEndian`). The two only differ for a file
   whose byte order is not the machine's, which no shipped `.se1` file is, so no existing user sees
   a change; such a file previously failed with `Ephemeris file ... is damaged (4)`. A big-endian
@@ -36,35 +36,45 @@ generated commit list — for anything earlier, see git history.
 - Behaviour change for callers that never call `swe_set_ephe_path`: on Linux and macOS the default
   ephemeris path is now `".:/home/ephe/"`, following `swephexp.h:406`, where it was
   `".:/users/ephe2/:/users/ephe/"`. Such a caller now probes `.` and `/home/ephe/` and no longer
-  probes `/users/ephe2/` or `/users/ephe/`. The Windows default is unchanged. Callers that set a
-  path are not affected.
+  probes `/users/ephe2/` or `/users/ephe/`. The Windows default is unchanged. The same default
+  is also used when `swe_set_ephe_path` is given null, `""`, or a path longer than 242 characters
+  (`AS_MAXCH - 1 - 13`); a non-empty `SE_EPHE_PATH` environment variable of 242 characters or
+  fewer still takes precedence over both. On Linux and macOS, an `IEphemerisFileProvider` in those
+  cases now receives paths built from the new default components (`.`, `/home/ephe/`). Callers
+  that set a usable path are not affected.
 - `Programs/SweTest`: ported the `swetest.c` changes made after `v2.10.3bfinal`. New option
   `-astpos<DDD>[,orb]` lists named asteroids within `orb` of longitude `DDD` and reads
-  `seasnam.txt`. `-pd`, `-pp`, `-ph` and `-pa` now keep a trailing `e` instead of dropping it. A
+  `seasnam.txt`. `-pd`, `-pp`, `-ph` and `-pa` now append `e` when the argument contains an `e` anywhere
+  (the C uses `strchr(spno, 'e')`), instead of dropping it. A
   `-p` list of 256 characters or more is cut to 255. `-sidudef` without a comma no longer
   dereferences NULL in the C; it is a no-op here. The help text is copied verbatim, including
   upstream's typos. This affects the `SweTest` program, not the library API.
 - Swiss Ephemeris Professional License: Astrodienst has replaced the contract PDF with the
   "Edition September 2026" (`doc/secont_e_2609.pdf` in the upstream repository,
-  https://github.com/aloistr/swisseph/blob/master/doc/secont_e_2609.pdf). Compared with the June
+  https://github.com/aloistr/swisseph/blob/94621aba9f3ff9c32cb721eac0380c30dbb153fe/doc/secont_e_2609.pdf). Compared with the June
   2026 edition, the duration changes from 99 years to 6 years with renewal, a clause on API
-  services for third parties is added, the right to distribute in compiled form is no longer
-  listed, and license transfer is allowed. The price is unchanged. This repository's `LICENSE` is
+  services for third parties is added (a licensee who provides an API service must state in its
+  documentation that each third-party user needs their own license, and must inform Astrodienst of
+  the identity and contact of each API service user), the right to distribute in compiled form is
+  no longer listed, and license transfer is allowed. The price is unchanged. This repository's `LICENSE` is
   unchanged. If you hold or plan to buy a Professional License, check the current contract with
   Astrodienst.
 - The upstream pin moves from `v2.10.3bfinal` (`f4dcd18e`) to upstream master at `94621aba`, which
   is `v2.10.3bfinal` plus 12 commits; no newer tag exists. `SE_VERSION` is still `"2.10.03"`. Of
   the 12, three changes are ported above (heliacal, `swe_get_denum` with its constants, and
   `swetest.c`), and the rest need no port: `readme.md` edits, the contract PDF, `swevents.c` (not
-  ported), and 50 `sepl*_*.se3` files for the future 3.0, which 2.10 cannot read.
+  ported), and 51 `sepl*.se3` files for the future 3.0, which 2.10 cannot read.
   `Tools/CReference/build-c.ps1`
   needed two changes to build the C reference at the new pin: it substitutes a constant for the
   variable-length array in `swetest.c`'s new `print_asteroids`, which cl.exe rejects, and its `fp`
   guard now looks only at file scope.
 - `C.printf`'s `ReplaceMetaChars` now implements `\xhh` hex escapes, capped at two hex digits
-  (#40). Per-call allocations were also removed from `FormatToDegreeMinuteSecond`
+  (#40). This is a behaviour change of a public method (`SwissEphNet.C` is public API):
+  `C.ReplaceMetaChars(@"\x41")` used to return `"x41"` and now returns `"A"`. Nothing inside the
+  library calls it. Per-call allocations were also removed from `FormatToDegreeMinuteSecond`
   (`SwissEph.Format.cs`), `Extensions/StringExtensions.cs` and `CPointer.ToArray()`, which now
-  uses `Array.Copy` with `BaseIndex` clamped at both ends. Output is unchanged.
+  uses `Array.Copy` with `BaseIndex` clamped at both ends. Output is unchanged for these
+  allocation changes.
 
 ## 2.10.3.1
 

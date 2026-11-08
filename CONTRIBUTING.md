@@ -121,6 +121,12 @@ can check the C# against the exact hunk without having to reconstruct the diff
 themselves. `.github/pull_request_template.md` has a required field for this.
 A PR that changes a frozen file with no hunk citation should not be merged.
 
+Existing citations of the upstream C (in port comments, docs and the freeze log) refer to
+`v2.10.3bfinal` (`f4dcd18e`) unless they name another version; they were not renumbered when the
+pin moved to `94621aba`. Cite new hunks against the current pin and say so if it is not obvious.
+`docs/known-issues.md` ("C file:line citations were written against `v2.10.3bfinal`") has the exact
+line offsets for mapping an old citation to the current pin.
+
 ### The upstream C is vendored at `external/swisseph`
 
 `external/swisseph` is a git submodule of `https://github.com/aloistr/swisseph`,
