@@ -50,7 +50,7 @@ namespace SwissEphNet.Tests
 
         private static void Compare(byte[] le, string name, bool ast, int[] bodies, double[] tjds)
         {
-            byte[] be = ToBigEndian(le, ast);
+            byte[] be = ToBigEndian(le, ast, out _);
             Assert.NotEqual(le, be);
             using (var a = Open(le, name))
             using (var b = Open(be, name))
@@ -83,20 +83,20 @@ namespace SwissEphNet.Tests
         public void Test_Converter_ProducesExpectedLayout()
         {
             byte[] le1 = Resource("seas_18.se1");
-            byte[] be1 = ToBigEndian(le1, false);
-            Assert.Equal(116, TestEndianOffset);
-            Assert.Equal(6, Planets);
-            Assert.Equal(742, Lndx0[0]);
-            Assert.Equal(221, Nndx[0]);
+            byte[] be1 = ToBigEndian(le1, false, out Se1Layout l1);
+            Assert.Equal(116, l1.TestEndianOffset);
+            Assert.Equal(6, l1.Planets);
+            Assert.Equal(742, l1.Lndx0[0]);
+            Assert.Equal(221, l1.Nndx[0]);
             Assert.Equal(new byte[] { 0x00, 0x61, 0x62, 0x63 }, new[] { be1[116], be1[117], be1[118], be1[119] });
             Assert.NotEqual(le1, be1);
 
             byte[] le2 = Resource("se00005s.se1");
-            byte[] be2 = ToBigEndian(le2, true);
-            Assert.Equal(410, TestEndianOffset);
-            Assert.Equal(1, Planets);
-            Assert.Equal(606, Lndx0[0]);
-            Assert.Equal(220, Nndx[0]);
+            byte[] be2 = ToBigEndian(le2, true, out Se1Layout l2);
+            Assert.Equal(410, l2.TestEndianOffset);
+            Assert.Equal(1, l2.Planets);
+            Assert.Equal(606, l2.Lndx0[0]);
+            Assert.Equal(220, l2.Nndx[0]);
             Assert.Equal(new byte[] { 0x00, 0x61, 0x62, 0x63 }, new[] { be2[410], be2[411], be2[412], be2[413] });
             Assert.NotEqual(le2, be2);
         }
@@ -131,16 +131,17 @@ namespace SwissEphNet.Tests
         // name, single-byte fields, the packed 1-byte and nibble blocks) are left as they are.
         // Neither fixture exercises SEI_FLG_ELLIPSE (iflg & 4); that branch is written from the C
         // but is not covered by a fixture.
-        internal static byte[] ToBigEndian(byte[] le, bool asteroidFile)
+        internal static byte[] ToBigEndian(byte[] le, bool asteroidFile, out Se1Layout layout)
         {
             byte[] o = (byte[])le.Clone();
+            layout = new Se1Layout();
             int p = 0;
             for (int line = 0; line < (asteroidFile ? 4 : 3); line++)
             {
                 while (p < o.Length && o[p] != (byte)'\n') p++;
                 p++;
             }
-            TestEndianOffset = p;
+            layout.TestEndianOffset = p;
             Rev(o, p, 4); p += 4;          // testendian
             Rev(o, p, 4); p += 4;          // file length
             Rev(o, p, 4); p += 4;          // DE number
@@ -174,7 +175,7 @@ namespace SwissEphNet.Tests
                 if ((iflg & 4) != 0)
                     for (int k = 0; k < 2 * ncoe; k++) { Rev(o, p, 8); p += 8; }
             }
-            Planets = npl; Lndx0 = lndx0; Nndx = nndx;
+            layout.Planets = npl; layout.Lndx0 = lndx0; layout.Nndx = nndx;
             var seen = new HashSet<int>();
             for (int i = 0; i < npl; i++)
             {
@@ -215,8 +216,13 @@ namespace SwissEphNet.Tests
             return o;
         }
 
-        internal static int TestEndianOffset, Planets;
-        internal static int[] Lndx0, Nndx;
+        // What ToBigEndian found while walking the file, returned rather than kept in static state
+        // so concurrent callers cannot see each other's values.
+        internal sealed class Se1Layout
+        {
+            public int TestEndianOffset, Planets;
+            public int[] Lndx0, Nndx;
+        }
 
         private static ReadOnlySpan<byte> Span(byte[] b, int off, int len)
         {

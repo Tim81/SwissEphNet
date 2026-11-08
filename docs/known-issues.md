@@ -3102,7 +3102,12 @@ reads in `read_const`. The visible result is a segment read from the wrong offse
 `Ephemeris file ... is damaged (4).`
 
 **Why no gate saw it.** Every `.se1` file in this repository and upstream is little-endian, and the
-only hosts the port is built and tested on are little-endian, so host and file always agreed. The
+only hosts the port is built and tested on are little-endian, so host and file always agreed. That
+was measured, not assumed (2026-11-08): all 753 `SWISSEPH`-format `.se1` blobs anywhere in
+`aloistr/swisseph`'s full git history are little-endian (the other 178 historical `.se1` blobs are
+not in that format at all), as are all 237 top-level and `sat/` files on the `ephe.scryr.io` mirror
+and a sample of its asteroid files. No real big-endian `.se1` file turned up, which is why the test
+below synthesizes one. The
 characterization baseline never loads an ephemeris file. The conformance oracle uses the files
 upstream ships. A mismatch needs a big-endian file on a little-endian host, or the reverse.
 
