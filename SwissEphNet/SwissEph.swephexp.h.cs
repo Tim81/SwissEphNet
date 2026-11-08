@@ -633,18 +633,21 @@ namespace SwissEphNet
         // than special-casing the trailing-separator check for one platform's string,
         // consistent with DIR_GLUE's own existing "one value for every platform" choice.
         //
-        // The non-Windows string carries upstream's three components in upstream's order,
-        // joined with ':' exactly as swephexp.h:403 writes it -- not a typo and not a
-        // second guess at the C. This is deliberately the literal, not a port-specific
+        // The non-Windows string carries upstream's two components in upstream's order,
+        // joined with ':' exactly as swephexp.h:406 writes it (".:/home/ephe/") -- not a
+        // typo and not a second guess at the C. At v2.10.3bfinal the literal had three
+        // components, ".:/users/ephe2/:/users/ephe/" (swephexp.h:403); upstream commit
+        // 4daf766a replaced it with the two-component form, and this follows. This is deliberately the literal, not a port-specific
         // rewrite: PATH_SEPARATOR (SwissEph.sweodef.h.cs) is per-platform, matching the
         // C's own two cut-lists rather than using one value everywhere -- { ';', ':' } off
         // Windows (sweodef.h:307, "semicolon or colon may be used" under #if UNIX_FS) and
         // { ';' } on Windows (sweodef.h:313, the #else branch, where a bare ':' would split
         // a drive letter). swi_fopen splits swed.ephepath on exactly that cut-list (Sweph.cs,
-        // sweph.c:2377), so this colon-joined literal correctly splits into its three
+        // sweph.c:2377), so this colon-joined literal correctly splits into its two
         // components off Windows, including the "." component -- the current directory,
-        // which sweph.c:2381 maps to the empty prefix and which is the only one of the
-        // three that exists on a machine that is not Astrodienst's.
+        // which sweph.c:2381 maps to the empty prefix and which is the one of the two
+        // most likely to exist on a machine that is not Astrodienst's. The other,
+        // /home/ephe/, is a conventional location that exists only where someone made it.
         //
         // This was briefly wrong. An earlier revision kept PATH_SEPARATOR at { ';' } on
         // every platform and rewrote this default to a ';'-joined string to match, reasoning

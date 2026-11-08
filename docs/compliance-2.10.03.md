@@ -2,7 +2,7 @@
 
 This records what has actually been measured about this port's agreement with Astrodienst's
 own Swiss Ephemeris C library, version 2.10.03 (upstream tag `v2.10.3bfinal`), rather than
-asserting it. Every number below comes from a gate in this repository or from a measurement run
+asserting it. The submodule is now pinned to master `94621aba`, 12 commits past that tag. Every number below comes from a gate in this repository or from a measurement run
 during the version-bump work that closed the 2.10.03 port (see `docs/known-issues.md`'s
 `SE_VERSION` entry). Where something has not been measured, that is stated rather than estimated.
 
@@ -738,8 +738,8 @@ does not match, checked by category so a listed row whose difference has changed
 fails the gate.
 
 **This is the one instrument in this document that is not currently clean**, though it is closer
-than it was. `Tests/swetest/known-diff.tsv` carries 15<!--doccount:swetest-known-diff--> rows, all category `OUTPUT-DIFFERS`, so 241
-of 256 argument strings (94.1%) produce output that matches Astrodienst's C exactly. All 15 are
+than it was. `Tests/swetest/known-diff.tsv` carries 17<!--doccount:swetest-known-diff--> rows, all category `OUTPUT-DIFFERS`, so 252
+of 269 argument strings (93.7%) produce output that matches Astrodienst's C exactly. All 17 are
 path-separator or placeholder cosmetics rather than computational divergence: most print an
 ephemeris-file-not-found message that embeds the search path, where the C reports it with `\`
 (`'<ephe-dir>\'`) and the port with `/` (`'<ephe-dir>/'`), or the C reports a literal directory
@@ -751,7 +751,10 @@ not-found diagnostic, and every number on that line agrees. Those three exist be
 selects one of four files by body (`swetest.c:1661-1671`), so `LIM_PLANET`, `LIM_MOON` and
 `LIM_AST` pin `sepl_18.se1`, `semo_18.se1` and `seas_18.se1` where `LIM` pins the not-found shape
 of `se00433s.se1`. One further row (`FMT_MULTI|6`) differs only in how not-a-number prints: C's
-`-nan(ind)` against the port's `NaN`.
+`-nan(ind)` against the port's `NaN`. The two newest rows are the `POST_TAG` category's `-astpos`
+rows (the option arrived after `v2.10.3bfinal`): they read `seasnam.txt`, which is not in the
+required file set, and differ only by the same `\`-vs-`/` DIR_GLUE choice. The other 11 `POST_TAG`
+rows match the C.
 
 The three `PLSEL_TRUNCATION` rows that used to sit here were the one real output-shape gap in
 this list, and they are gone. `Programs/SweTest` read `-p<seq>`'s body as a single `char` where

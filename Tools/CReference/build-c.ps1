@@ -279,9 +279,11 @@ function Get-ArchBaseline {
 # gethostname block in `#ifndef _WINDOWS`, with sweodef.h now defining _WINDOWS under
 # `#ifdef _WIN32` to match. Reported upstream by this fork; the report and Astrodienst's
 # replies are drafted outside the tracked tree and sent by hand, so there is no in-repo path
-# to follow. external/swisseph is now pinned to v2.10.3bfinal (f4dcd18e).
+# to follow. external/swisseph was pinned to v2.10.3bfinal (f4dcd18e) when this comment was
+# written; it is now pinned to upstream master 94621aba (v2.10.3bfinal plus 12 commits).
 #
-# THE THIRD DEFECT, surfaced by that same sweodef.h change, still open as of f4dcd18e:
+# THE THIRD DEFECT, surfaced by that same sweodef.h change, still open at 94621aba (the
+# current pin; swetest.c:3991 there, :3956-3963 at f4dcd18e):
 #
 # do_printf (swetest.c:3956-3963, called by every line swetest prints) reads:
 #
@@ -298,9 +300,10 @@ function Get-ArchBaseline {
 # stream change. This fork's prior report to Astrodienst, in its closing note,
 # told them this branch was "fine on master, where the
 # rest of the tree expects _WINDOWS" -- that was wrong, and unstated at the time because
-# fp had never actually been compiled against. master and v2.10.3bfinal are the same
-# commit (git ls-remote origin master resolves to f4dcd18e), so there is no further fix to
-# pull; this is reported back as a follow-up, unresolved as of this commit.
+# fp had never actually been compiled against. At f4dcd18e master and v2.10.3bfinal were the
+# same commit, so there was no further fix to pull. Master has since moved to 94621aba and the
+# defect is still there, so there is still no upstream fix to pull; this is reported back as a
+# follow-up, unresolved as of this commit.
 #
 # The patch below makes the _WINDOWS branch behave exactly as the #else branch always has
 # -- fputs(info, stdout) -- rather than guessing at what `fp` was meant to be. This

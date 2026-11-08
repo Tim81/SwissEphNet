@@ -66,7 +66,7 @@ Read the status line first and the body for how it got there.
 | What local-mode regenerations have no check on | open, narrowed |
 | `eclipse_how`'s 100-to-1 change | record |
 | Three file-layer divergences | closed / won't fix |
-| swetest.c `spmoon` / `gethostname` / `do_printf` | open upstream |
+| swetest.c `spmoon` / `gethostname` / `do_printf` / `-astpos` VLA | open upstream |
 | `swe_set_jpl_file`'s AS_MAXCH clamps | won't fix |
 | swetest.c's zodiac field | closed |
 | `swe_solcross(SEFLG_HELCTR)` upstream hang | won't fix |
@@ -83,6 +83,8 @@ Read the status line first and the body for how it got there.
 | Eight live buffer-vs-unbounded-string sites | won't fix |
 | What `known-fail.tsv`'s 1,423 rows actually are | record |
 | Ephemeris file byte order taken from the host, not the file | closed |
+| `heliacal_ut_arc_vis` sized `xaz` for two values, `swe_azalt` writes three | closed |
+| `verify-swetest-diff.ps1` digests depend on the console code page | open |
 
 ## Eight live sites transliterate a C fixed-size buffer as an unbounded C# string
 
@@ -1859,7 +1861,7 @@ independent things changed:
 `Tools/OracleGrid/gen-grid-analytic.ps1`'s `$HouseLetters` excluded `'J'` with a comment claiming
 the port did not implement it yet -- stale by the time this correction landed:
 `SwissEphNet/CPort/SweHouse.cs:1378`/`:2737` (cusp computation) and `:1018` (house name) already
-had real `case 'J':` blocks, and the pinned C (`v2.10.3bfinal`) implements it too. `'J'` is now in
+had real `case 'J':` blocks, and the pinned C (`v2.10.3bfinal`, and `94621aba` after it) implements it too. `'J'` is now in
 `$HouseLetters` itself, alongside every other letter, not carried only by the separate
 `$HouseNameLetters` list -- so it also now runs through `HOUSES`/`HOUSES_ARMC`/`HOUSES_EX`/
 `HOUSES_EX2`/`HOUSES_ARMC_EX2`, not just `HOUSE_NAME`. "Twenty-five house letters" above is now
@@ -2175,9 +2177,10 @@ replaced by `SE.OpenBinary` -- see "OnLoadFile superseded" above.)
 
 ## swetest.c's missing `spmoon` declaration and unguarded `gethostname`: fixed in v2.10.3bfinal; a third defect surfaced by the same fix
 
-**Status: open upstream.** Two of the three are fixed in `v2.10.3bfinal`, the tag this
-port pins. The third, `do_printf`'s undeclared `fp`, is still present upstream and is
-patched narrowly by `Tools/CReference/build-c.ps1`.
+**Status: open upstream.** Two of the three are fixed in `v2.10.3bfinal`. The third,
+`do_printf`'s undeclared `fp`, is still present upstream at `94621aba` (`swetest.c:3991`), the
+commit this port now pins, and is patched narrowly by `Tools/CReference/build-c.ps1`. A fourth
+MSVC build defect, in `-astpos`, arrived with that pin; see the end of this entry.
 
 Resolved. `swetest.c` used `spmoon` at `:1139`, `:1140` and `:1621` (reading `-xv`, then `atoi`-ing
 it for the `v` planetary-moon selector) without declaring it, and called `gethostname()`
@@ -2196,16 +2199,32 @@ times 100, so 95xx is a Jupiter moon and Io is the first one, `9501`, not `9001`
 of its own assertions ("spmoon is already declared", "the gethostname call is already inside a
 preprocessor conditional") fired against `f4dcd18e` before removal, exactly as designed.
 
-The same `sweodef.h` change surfaces a third defect, still open as of `f4dcd18e`: `do_printf`
+The same `sweodef.h` change surfaces a third defect, still open as of `f4dcd18e` and still open
+at `94621aba`: `do_printf`
 (`swetest.c:3956-3963`, called by every line `swetest` prints) reads `fprintf(fp, info)` under
 `#ifdef _WINDOWS`, and `fp` is declared nowhere in `swetest.c`. Dead code under `v2.10.3final`
 (`_WINDOWS` was never defined there, so the branch never compiled); a hard `C2065` on any MSVC
-build now that it activates on every Windows build (`_WIN32` is always defined by MSVC). `master`
-and `v2.10.3bfinal` are the same commit, so there is no newer upstream fix to pull.
+build now that it activates on every Windows build (`_WIN32` is always defined by MSVC). When
+this entry was written, `master` and `v2.10.3bfinal` were the same commit, so there was no newer
+upstream fix to pull. `master` has since moved to `94621aba` (twelve commits) and the defect is
+still there, at `swetest.c:3991`, so there is still none.
 `build-c.ps1` patches this one narrowly (`fputs(info, stdout)` substituted for both branches of
 the `#ifdef`, matching the `#else` branch's existing behaviour exactly), and the defect was reported
 to Astrodienst. The report itself is drafted outside the tracked tree and sent by hand, so there is
 no in-repo path to follow here.
+
+**Two more build-script changes at `94621aba`, measured when the pin moved.**
+
+- `print_asteroids` (new in `3fd0f956`, the `-astpos` option) declares `int arr[amax];` where
+  `amax` is a variable initialised to 30000, a variable-length array. `cl.exe` 19.51 rejects it
+  at `swetest.c:4176` (C2057, C2466, C2133). gcc and clang accept it. `build-c.ps1` now
+  substitutes `int arr[30000];`, the value `amax` is initialised to, and fails the build if the
+  line is not found exactly once or `amax` is no longer initialised to 30000. This is an upstream
+  MSVC build defect like `fp`. Nothing has been reported upstream about it.
+- `build-c.ps1`'s guard that fails the build when `fp` is "declared somewhere" matched
+  `swe_get_named_ast_list`'s new function-local `FILE *fp` and failed the build, although
+  `do_printf`'s `fp` is still undeclared and still needs the patch. The guard now looks only at
+  file scope.
 
 ## swe_set_jpl_file: the C's AS_MAXCH clamps are not reproduced, and the comments were 2.08's
 
@@ -2549,6 +2568,14 @@ is 107 -- the port's own count, exactly. Whether `swe_rise_transit`/`swe_set_tim
 belong on some future work queue is a separate question this section does not answer; the point
 here is only that "107" and "108" are two different, correctly-computed numbers, not one stale and
 one current.
+
+**Added since:** `swe_get_denum` (new upstream at `94621aba`, `sweph.c:240`) is a new public
+`swe_*` method, so the port's public count is one higher than the 107 measured above. It is
+covered by `Tests/SwissEphNet.Tests/GetDenumTest.cs`, not by
+`Tools/BaselineMatrix/`. The matrix is Moshier-only and opens no `sepl*.se1`, so a matrix row for
+it would be the constant 431 (`SE_DE_NUMBER`) and would prove nothing. This entry's "closed" status
+never claimed full matrix coverage (24 names stay uncovered, listed above; `swe_get_denum` makes
+25), and still does not.
 
 ## SweJPL rejected a DE file whose constant-name block is not plain ASCII; fixed
 
@@ -3022,8 +3049,10 @@ found stale while explaining it. `known-fail.tsv` currently has 1,423 rows: 759 
 Tests/conformance/known-fail.tsv | sort | uniq -c`).
 
 **The stale framing.** Several checked-in comments describe this list as reflecting "the port is
-at 2.08, the C reference is 2.10.03" -- true when first written, not true now. The port pins
-`external/swisseph` at `v2.10.3bfinal` (`f4dcd18e`), the same tag the C reference is built from;
+at 2.08, the C reference is 2.10.03" -- true when first written, not true now. When this
+entry was written the port pinned `external/swisseph` at `v2.10.3bfinal` (`f4dcd18e`), the same
+tag the C reference is built from; it now pins master `94621aba` (`v2.10.3bfinal` plus 12
+commits), which the C reference is also built from;
 `Tools/OracleVerify`'s `PORT-VERSION` diff category (the same "port lags the C" concept, for the
 bit-exact oracle and the swetest text diff rather than this conformance suite) has zero rows in
 every known-diff file in this repository (`Tests/oracle/known-diff*.tsv`,
@@ -3038,7 +3067,7 @@ gate that tracks this. `Tests/SwissEphNet.Conformance.Tests/ConformanceReport.cs
 `scripts/regenerate-known-fail.ps1` compares the port's output to `t.exp` directly, with no C
 build anywhere in that loop. `t.exp` itself is a fixed historical snapshot: `docs/compliance-
 2.10.03.md:579` dates it "user `alois`, 14.12.2023." A row diverging from that snapshot says
-nothing on its own about whether the *current* vendored C (`v2.10.3bfinal`) would also diverge
+nothing on its own about whether the *current* vendored C (`94621aba`, `v2.10.3bfinal` plus 12 commits) would also diverge
 from it.
 
 **The one place this was actually checked.** `Tests/conformance/value-mismatch-triage.tsv` (669
@@ -3142,3 +3171,53 @@ x64 (return 258, longitude 243.084 degrees at 2026-10-06 12:00 UT). A little-end
 little-endian host gives the same `fendian` before and after this change. The failure reported in
 #41 therefore has a different cause, which is still being investigated; this fix does not address
 it.
+
+## `heliacal_ut_arc_vis` sized `xaz` for two values, and `swe_azalt` writes three
+
+**Status: closed.** `swe_heliacal_ut` with `SE_HELFLAG_AVKIND_VR`, `_PTO`, `_MIN7` or `_MIN9`
+threw `IndexOutOfRangeException`. Fixed by adopting upstream's `94621aba`; entry 28 in
+`scripts/freeze-manifest-log.txt`.
+
+**Symptom.** `swe_heliacal_ut` called with any of the four `SE_HELFLAG_AVKIND_*` kinds that go
+through `heliacal_ut_arc_vis` threw `IndexOutOfRangeException` out of `swe_azalt` (`SweCL.cs`).
+`SE_HELFLAG_AVKIND_MIN9` reaches the same code as the other three, so it was affected too. Nothing
+covered these flags before: no unit test, no oracle grid row and no entry in this file.
+
+**Cause.** `heliacal_ut_arc_vis` declared `double xaz[2]`, and `swe_azalt` writes three values into
+its output array. In C that is a silent stack overrun that happens to go unnoticed. The port had
+copied the declaration faithfully as `new double[2]` (`SweHel.cs:2217`), and a C# array does not
+overrun quietly. `v2.10.3bfinal` has the `[2]`, so this was not a transliteration error.
+
+**Fix.** Upstream changed it to `double xaz[3]` after `v2.10.3bfinal` (`swehel.c:2215`, commit
+`94621aba`, the commit `external/swisseph` is now pinned to). The port has the same one-token
+change, commit `4d90137`: `new double[3]`. This is the adoption of a post-release upstream fix,
+which is why `scripts/freeze-manifest-log.txt` records it as such and not as a correction.
+
+**Test.** `Tests/SwissEphNet.Tests/HeliacalArcVisTest.cs`: Venus heliacal rising, Moshier, geopos
+8.55 / 47.38 / 400 m, searched from 2020-01-01. It failed with `IndexOutOfRangeException` on all
+four flags before the change. After it, the results match the C at `94621aba` (MSVC-built libswe)
+bit for bit on Windows x64, net8.0 and net10.0:
+
+| Flag | return code | JD (UT) |
+|---|---|---|
+| `SE_HELFLAG_AVKIND_VR` | 0 | 2459017.6245663292 |
+| `SE_HELFLAG_AVKIND_PTO` | 36436 | 2459017.6081972825 |
+| `SE_HELFLAG_AVKIND_MIN7` | 0 | 2459018.6109788935 |
+| `SE_HELFLAG_AVKIND_MIN9` | 0 | 2459019.5987293785 |
+
+## `verify-swetest-diff.ps1` digests the port's output under the console code page
+
+**Status: open.** Not fixed in 2.10.3.2. It affects running the gate on a Windows machine whose
+OEM code page is not 437, not the library.
+
+`scripts/verify-swetest-diff.ps1` digests the port's stdout (the `[net-output ...]` lines in a
+known-diff reason string) as decoded under the console code page, and the script does not pin it.
+On a Windows machine whose OEM code page is 850 (for example a Dutch locale) rather than CI's 437,
+the 11 known-diff rows whose output contains `°` report "divergence moved" with no code change.
+Under `chcp 437` the same tree passes. Until the script pins the encoding, run it under
+`chcp 437` on a non-en-US Windows machine.
+
+**Also pre-existing, and not gated.** `SweTest -h` differs from the C's help text on about 256
+lines: tabs rendered as spaces, `\'` escapes, and the encoding of `°` in the help path. No row of
+`Tools/SwetestDiff/args-grid.tsv` runs `-h`, so nothing compares it. The help text added for
+`-astpos` in 2.10.3.2 was copied verbatim, but that is not a check on the rest of the help path.

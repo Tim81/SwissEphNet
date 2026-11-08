@@ -212,6 +212,13 @@ where a relative link to a file in this repository does not resolve, and they na
 changes: it carries no `NOTICE` and no `agpl-3.0.txt` at all, and its `LICENSE` is the
 1997-2008 pre-relicense text rather than the dual AGPL one this library is offered under.
 
+Astrodienst has issued a new edition of the Professional License contract, dated September 2026
+([`doc/secont_e_2609.pdf`](https://github.com/aloistr/swisseph/blob/master/doc/secont_e_2609.pdf)
+in the upstream repository). Compared with the June 2026 edition, it has a 6-year term that must
+be renewed, and a licensee that offers an API service to a business it does not own must tell
+that business to buy its own license first. This repository does not interpret the contract; read
+the current edition and check the terms with Astrodienst before relying on any summary here.
+
 ## Project history, and who wrote what
 
 This repository, https://github.com/Tim81/SwissEphNet, continues the C# port of Swiss Ephemeris
@@ -449,8 +456,8 @@ did not have:
 None of this replaces existing API. It is purely additive.
 
 With those additions the port now covers the C library's whole public surface. `swephexp.h` at
-`v2.10.3bfinal` declares 106 `swe_*` functions, and all 106 are present and public here. The count
-is not an estimate: it comes from parsing the header and diffing it against the committed
+the current pin (`94621aba`) declares 107 `swe_*` functions, and all 107 are present and public here.
+The count is not an estimate: it comes from parsing the header and diffing it against the committed
 public-API list under `Tests/SwissEphNet.Tests/PublicApi/`, which a test regenerates and compares
 on every run, so a member appearing or disappearing fails the build rather than going unnoticed.
 The only public `swe_*` member the C does not declare is `swe_dotnet_version`, which is this
@@ -735,7 +742,8 @@ Source-level and reflection-based consumers can be affected:
   `swe_set_ephe_path` and the library's own initialization previously read the constant,
   chosen at run time rather than compile time because this port ships one assembly for
   Windows, Linux and macOS rather than compiling per platform: upstream's own
-  `\sweph\ephe\` on Windows, `.:/users/ephe2/:/users/ephe/` everywhere else, matching the
+  `\sweph\ephe\` on Windows, `.:/home/ephe/` everywhere else (it was `.:/users/ephe2/:/users/ephe/`
+  until the pin moved to `94621aba`), matching the
   C's own `#if MSDOS` branch (`swephexp.h:399-408`), which upstream also takes for
   ordinary Win32/Win64 builds, not only legacy MS-DOS ones (`sweodef.h:96-98`). This only
   affects callers who pass `null` or an empty string to `swe_set_ephe_path`, or never
@@ -943,8 +951,8 @@ things left to port: 759 of them are a data file this repository does not ship r
 answer, the other 664 sit outside the tolerance Astrodienst's own suite allows, and the four rows
 ever confirmed as port defects were fixed and pruned.
 
-- `external/swisseph`, a git submodule, sparse-checked-out, pinned to tag
-  `v2.10.3bfinal`. It serves two purposes:
+- `external/swisseph`, a git submodule, sparse-checked-out, pinned to upstream
+  master at `94621aba` (`v2.10.3bfinal` plus 12 commits; no newer tag exists). It serves two purposes:
   1. **The reference corpus** for the conformance oracle: `setest/t.exp`
      (expected values) and `setest/t.fix` (tolerances), plus the core `.se1`
      ephemeris files, `sefstars.txt`, `seorbel.txt`, and `seleapsec.txt` that
@@ -1189,7 +1197,7 @@ Astrodienst's own material, which documents the API this port exposes:
 - [Swiss Ephemeris programming interface](http://www.astro.com/swisseph/swephprg.htm), the
   reference for every `swe_*` function here.
 - [`aloistr/swisseph`](https://github.com/aloistr/swisseph), the C source this port tracks. Pinned
-  here at tag `v2.10.3bfinal` under `external/swisseph`.
+  here at master `94621aba` (`v2.10.3bfinal` plus 12 commits) under `external/swisseph`.
 - [`aloistr/swisseph/ephe`](https://github.com/aloistr/swisseph/tree/master/ephe), the ephemeris
   data files, mirrored at [`ephe.scryr.io/ephe`](https://ephe.scryr.io/ephe).
 

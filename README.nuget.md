@@ -25,6 +25,13 @@ condition that catches people out. You must choose one:
 This is not a choice this package makes for you, and it follows Astrodienst's own relicensing of
 Swiss Ephemeris. `LICENSE`, `agpl-3.0.txt` and `NOTICE` ship at the root of this package.
 
+Astrodienst has issued a new edition of the Professional License contract, dated September 2026
+([`secont_e_2609.pdf`](https://github.com/aloistr/swisseph/blob/master/doc/secont_e_2609.pdf)).
+Compared with the June 2026 edition, it has a 6-year term that must be renewed, and a licensee
+that offers an API service to a business it does not own must tell that business to buy its own
+license first. Read the current edition and check the terms with Astrodienst before relying on
+this summary.
+
 ## Install
 
 ```
