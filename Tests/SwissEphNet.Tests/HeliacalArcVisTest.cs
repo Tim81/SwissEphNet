@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using Xunit;
 
 namespace SwissEphNet.Tests
@@ -13,9 +14,11 @@ namespace SwissEphNet.Tests
     {
         // Reference values: Astrodienst's C at 94621aba (external/swisseph), libswe built by
         // Tools/CReference/build-c.ps1 (MSVC, /O2 /fp:precise /MD), called with exactly these
-        // inputs and printed with %.17g. The port matches all four bit-for-bit on Windows x64
-        // (net8.0 and net10.0); the 1e-8-day tolerance (under a millisecond) is for the
-        // Linux/macOS legs, where this repo measures last-ulp drift elsewhere.
+        // inputs and printed with %.17g. On Windows x64, the platform the reference was built on,
+        // the port matches all four bit-for-bit (net8.0 and net10.0), so it is asserted exactly
+        // there. Elsewhere libm differs in the last ulp; the 1e-8-day tolerance (under a
+        // millisecond) is a starting point, not a measurement. PTO is an iterative step search,
+        // so a flipped comparison would move it by a whole step and fail loudly rather than drift.
         [Theory]
         [InlineData(SwissEph.SE_HELFLAG_AVKIND_VR, 0, 2459017.6245663292)]
         [InlineData(SwissEph.SE_HELFLAG_AVKIND_PTO, 36436, 2459017.6081972825)]
@@ -36,7 +39,11 @@ namespace SwissEphNet.Tests
                     avkind | SwissEph.SEFLG_MOSEPH, dret, ref serr);
 
                 Assert.Equal(expectedRc, rc);
-                Assert.Equal(expectedJd, dret[0], 1e-8);
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    && RuntimeInformation.ProcessArchitecture == Architecture.X64)
+                    Assert.Equal(expectedJd, dret[0]);
+                else
+                    Assert.Equal(expectedJd, dret[0], 1e-8);
             }
         }
     }

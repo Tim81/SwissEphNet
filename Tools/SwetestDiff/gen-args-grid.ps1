@@ -539,13 +539,19 @@ foreach ($c in $DateFormatCases) {
 #                 (VR 65536, PTO 131072, MIN7 262144, MIN9 524288) reaches swe_azalt through it;
 #                 the port threw IndexOutOfRangeException on all four before the fix. -emos so the
 #                 rows need no file beyond the required set.
-#   P_*E          swetest.c c69c14ad: -pd/-pp/-ph/-pa now keep a trailing 'e' (print ecliptic and
-#                 nutation) instead of dropping it with the rest of the argument.
+#   P_*E          swetest.c c69c14ad: -pd/-pp/-ph/-pa followed by an 'e' anywhere in the argument
+#                 (strchr(spno, 'e')) now append 'e' (ecliptic and nutation) to the predefined set
+#                 instead of dropping it with the rest of the argument.
 #   P_OVERLONG    c69c14ad: a -p list of AS_MAXCH (256) or more characters is cut to 255.
 #   SIDUDEF_*     91339e55: -sidudef with no ',' left sp NULL for strstr in the C.
-#   ASTPOS_*      3fd0f956: -astpos lists named asteroids near a longitude. The required file set
-#                 does not include seasnam.txt, so in this grid both rows pin the not-found error
-#                 path; with seasnam.txt present the C and the port were also compared by hand.
+#   ASTPOS        3fd0f956: -astpos lists named asteroids near a longitude. The required file set
+#                 does not include seasnam.txt, so this row covers ONLY the not-found error path:
+#                 the option parse, swe_get_named_ast_list's open, and the error message. The
+#                 listing itself (seasnam.txt parse, swe_calc per asteroid, print_asteroids) is not
+#                 gated here; it was compared once by hand against the C with the full upstream
+#                 ephe/ present (both read 26,069 named asteroids, byte-identical output), which
+#                 this grid cannot reproduce. A second row with an explicit orb would hit the same
+#                 error before the orb is ever used, so it is deliberately absent.
 # ---------------------------------------------------------------------------------------
 
 $PostTagCases = @(
@@ -560,8 +566,7 @@ $PostTagCases = @(
     @{ Id = 'P_OVERLONG'; Args = "-b1.1.2000 -p$('0' * 300) -fPl -eswe" }
     @{ Id = 'SIDUDEF_NO_COMMA'; Args = '-b1.1.2000 -p0 -sidudef2452163.8333333 -fPl -eswe' }
     @{ Id = 'SIDUDEF_JDISUT'; Args = '-b1.1.2000 -p0 -sidudef2452163.8333333,25.0,jdisut -fPl -eswe' }
-    @{ Id = 'ASTPOS_DEFAULT_ORB'; Args = '-b1.1.2000 -astpos123.4 -eswe' }
-    @{ Id = 'ASTPOS_ORB'; Args = '-b1.1.2000 -astpos123.4,0.3 -eswe' }
+    @{ Id = 'ASTPOS'; Args = '-b1.1.2000 -astpos123.4,0.3 -eswe' }
 )
 foreach ($c in $PostTagCases) {
     Add-Row -CaseId "POST_TAG|$($c.Id)" -Category 'POST_TAG' -ArgsText $c.Args

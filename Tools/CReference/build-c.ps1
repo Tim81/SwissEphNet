@@ -337,14 +337,25 @@ function New-PatchedSwetestSource {
     # the whole file separately so a future release that adds a real `fp` declaration is caught
     # even though the four-line block above it would still match unchanged.
     #
-    # File scope only (column 0, no leading whitespace): only a file-scope fp could be visible
-    # inside do_printf. Since 3fd0f956 (-astpos), swe_get_named_ast_list declares its own
-    # function-local `  FILE *fp = swi_fopen(...)`, indented, which do_printf cannot see; an
-    # earlier `^\s*` form of this pattern matched that local and failed the build at 94621aba
-    # even though do_printf's fp was still undeclared there.
+    # Two places can declare an fp that do_printf sees, so both are checked: file scope
+    # (column 0), and do_printf's own body (indented, so a column-0 check alone misses it --
+    # `  FILE *fp = stdout;` inside do_printf is the most likely shape of an upstream fix, and
+    # patching over it would silently replace that fix). Locals in any OTHER function are not
+    # visible to do_printf and must not trip this: since 3fd0f956 (-astpos),
+    # swe_get_named_ast_list declares its own `  FILE *fp = swi_fopen(...)`, and an earlier
+    # whole-file `^\s*` form of this check matched it and failed the build at 94621aba although
+    # do_printf's fp was still undeclared there.
     $fpDeclPattern = '(?m)^(static\s+)?FILE\s*\*\s*fp\b|^extern\s+FILE\s*\*\s*fp\b'
     if ($text -match $fpDeclPattern) {
-        Fail 'swetest.c: fp now appears to be declared somewhere. The do_printf compile defect this patch exists for may no longer apply -- check, and drop this patch if so instead of applying it on top.'
+        Fail 'swetest.c: fp now appears to be declared at file scope. The do_printf compile defect this patch exists for may no longer apply -- check, and drop this patch if so instead of applying it on top.'
+    }
+    $doPrintfBodyPattern = "(?ms)^static void do_printf\(char \*info\)\s*\{(.*?)^\}"
+    $doPrintfBodies = [regex]::Matches($text, $doPrintfBodyPattern)
+    if ($doPrintfBodies.Count -ne 1) {
+        Fail "swetest.c: expected exactly one 'static void do_printf(char *info)' definition, found $($doPrintfBodies.Count). Its signature or layout changed upstream; check whether fp is now declared or passed in before patching."
+    }
+    if ($doPrintfBodies[0].Groups[1].Value -match '\bFILE\s*\*\s*fp\b') {
+        Fail 'swetest.c: do_printf now declares its own fp. The compile defect this patch exists for may no longer apply -- check, and drop this patch if so instead of applying it on top.'
     }
 
     $text = [regex]::Replace($text, $doPrintfPattern, "#ifdef _WINDOWS`n  fputs(info,stdout);`n#else`n  fputs(info,stdout);`n#endif")
