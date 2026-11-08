@@ -311,6 +311,12 @@ namespace SwissEphNet.CPort
             return SE_VERSION;
         }
 
+        public Int32 swe_get_denum()
+        {
+            return swi_get_denum(SEI_SUN, 0);
+        }
+
+
 #if !NO_SWE_GLP    // -DNO_SWE_GLP to suppress this function
         //#if MSDOS
         //HANDLE dllhandle = NULL;        // global used in swe_version

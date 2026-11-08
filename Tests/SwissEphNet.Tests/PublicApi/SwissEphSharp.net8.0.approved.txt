@@ -134,6 +134,7 @@ FIELD public const System.Int32 SwissEphNet.SwissEph.DEG90 = 32400000
 FIELD public const System.Int32 SwissEphNet.SwissEph.ERR = -1
 FIELD public const System.Int32 SwissEphNet.SwissEph.NSE_MODELS = 8
 FIELD public const System.Int32 SwissEphNet.SwissEph.OK = 0
+FIELD public const System.Int32 SwissEphNet.SwissEph.SE3_DE_NUMBER = 441
 FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_ASTROMETRIC = 1536
 FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_BARYCTR = 16384
 FIELD public const System.Int32 SwissEphNet.SwissEph.SEFLG_CENTER_BODY = 1048576
@@ -434,8 +435,10 @@ FIELD public const System.String SwissEphNet.SwissEph.SE_FNAME_DE404 = "de404.ep
 FIELD public const System.String SwissEphNet.SwissEph.SE_FNAME_DE405 = "de405.eph"
 FIELD public const System.String SwissEphNet.SwissEph.SE_FNAME_DE406 = "de406.eph"
 FIELD public const System.String SwissEphNet.SwissEph.SE_FNAME_DE431 = "de431.eph"
+FIELD public const System.String SwissEphNet.SwissEph.SE_FNAME_DE441 = "de441.eph"
 FIELD public const System.String SwissEphNet.SwissEph.SE_FNAME_DFT = "de431.eph"
 FIELD public const System.String SwissEphNet.SwissEph.SE_FNAME_DFT2 = "de406.eph"
+FIELD public const System.String SwissEphNet.SwissEph.SE_FNAME_DFT3 = "de441.eph"
 FIELD public const System.String SwissEphNet.SwissEph.SE_STARFILE = "sefstars.txt"
 FIELD public const System.String SwissEphNet.SwissEph.SE_STARFILE_OLD = "fixstars.cat"
 FIELD public static System.Char SwissEphNet.SwissEph.DIR_GLUE
@@ -491,6 +494,7 @@ METHOD public System.Int32 SwissEphNet.SwissEph.swe_fixstar_ut(ref System.String
 METHOD public System.Int32 SwissEphNet.SwissEph.swe_gauquelin_sector(System.Double t_ut, System.Int32 ipl, System.String starname, System.Int32 iflag, System.Int32 imeth, System.Double[] geopos, System.Double atpress, System.Double attemp, ref System.Double dgsect, ref System.String serr)
 METHOD public System.Int32 SwissEphNet.SwissEph.swe_get_ayanamsa_ex(System.Double tjd_et, System.Int32 iflag, out System.Double daya, ref System.String serr)
 METHOD public System.Int32 SwissEphNet.SwissEph.swe_get_ayanamsa_ex_ut(System.Double tjd_ut, System.Int32 iflag, out System.Double daya, ref System.String serr)
+METHOD public System.Int32 SwissEphNet.SwissEph.swe_get_denum()
 METHOD public System.Int32 SwissEphNet.SwissEph.swe_get_orbital_elements(System.Double tjd_et, System.Int32 ipl, System.Int32 iflag, System.Double[] dret, ref System.String serr)
 METHOD public System.Int32 SwissEphNet.SwissEph.swe_heliacal_angle(System.Double tjdut, System.Double[] dgeo, System.Double[] datm, System.Double[] dobs, System.Int32 helflag, System.Double mag, System.Double azi_obj, System.Double azi_sun, System.Double azi_moon, System.Double alt_moon, System.Double[] dret, ref System.String serr)
 METHOD public System.Int32 SwissEphNet.SwissEph.swe_heliacal_pheno_ut(System.Double tjd_ut, System.Double[] geopos, System.Double[] datm, System.Double[] dobs, System.String ObjectName, System.Int32 TypeEvent, System.Int32 helflag, System.Double[] darr, ref System.String serr)

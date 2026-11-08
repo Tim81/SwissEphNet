@@ -556,6 +556,9 @@ namespace SwissEphNet
          */
         /// <summary>JPL DE ephemeris number matching <see cref="SE_FNAME_DFT"/>, the current default JPL file.</summary>
         public const int SE_DE_NUMBER = 431;
+        /// <summary>JPL DE ephemeris number matching <see cref="SE_FNAME_DFT3"/>, the default JPL file
+        /// upstream declares for its future Swiss Ephemeris 3.0. Nothing in this library reads it.</summary>
+        public const int SE3_DE_NUMBER = 441;
         /// <summary>JPL ephemeris file name for DE200.</summary>
         public const string SE_FNAME_DE200 = "de200.eph";
         /// <summary>JPL ephemeris file name for DE403.</summary>
@@ -568,8 +571,13 @@ namespace SwissEphNet
         public const string SE_FNAME_DE406 = "de406.eph";
         /// <summary>JPL ephemeris file name for DE431.</summary>
         public const string SE_FNAME_DE431 = "de431.eph";
+        /// <summary>JPL ephemeris file name for DE441.</summary>
+        public const string SE_FNAME_DE441 = "de441.eph";
         /// <summary>Default JPL ephemeris file name; alias for <see cref="SE_FNAME_DE431"/>.</summary>
         public const string SE_FNAME_DFT = SE_FNAME_DE431;
+        /// <summary>Default JPL ephemeris file name upstream declares for its future Swiss Ephemeris 3.0;
+        /// alias for <see cref="SE_FNAME_DE441"/>. Nothing in this library reads it.</summary>
+        public const string SE_FNAME_DFT3 = SE_FNAME_DE441;
         /// <summary>Secondary/fallback default JPL ephemeris file name; alias for <see cref="SE_FNAME_DE406"/>.</summary>
         public const string SE_FNAME_DFT2 = SE_FNAME_DE406;
         /// <summary>Legacy fixed-star data file name, superseded by <see cref="SE_STARFILE"/> (see <see cref="swe_set_ephe_path"/>).</summary>
@@ -659,7 +667,7 @@ namespace SwissEphNet
         {
             return isWindows
                 ? "\\sweph\\ephe\\"
-                : ".:/users/ephe2/:/users/ephe/";
+                : ".:/home/ephe/";
         }
 
         internal static string DefaultEphePath
@@ -850,7 +858,7 @@ namespace SwissEphNet
         /// <summary>Tidal acceleration preset for <see cref="swe_set_tid_acc"/>: the value implicit
         /// in JPL ephemeris DE441 (unpublished value, from email by Jon Giorgini to Dieter Koch, 11
         /// Apr 2021).</summary>
-        public const double SE_TIDAL_DE441 = (-25.936);   /* unpublished value, from email by Jon Giorgini to DK on 11 Apr 2021 */
+        public const double SE_TIDAL_DE441 = (-25.936);   /* from an email by Jon Giorgini to DK on 11 Apr 2021 */
         /// <summary>Tidal acceleration preset for <see cref="swe_set_tid_acc"/>: a round -26.0
         /// arcsec/century^2 value.</summary>
         public const double SE_TIDAL_26 = (-26.0);
@@ -1312,6 +1320,15 @@ namespace SwissEphNet
         /// </summary>
         /// <returns>The version string, e.g. <c>"2.10.03"</c>.</returns>
         public string swe_version() { return Sweph.swe_version(); }
+
+        /// <summary>
+        /// Returns the JPL DE number the open Swiss Ephemeris planet file (<c>sepl*.se1</c>) was
+        /// built from, or <see cref="SE_DE_NUMBER"/> when no planet file is open. Implemented
+        /// upstream as <c>swi_get_denum(SEI_SUN, 0)</c>: the flags are 0, so a JPL file opened
+        /// via <see cref="SEFLG_JPLEPH"/> is not consulted.
+        /// </summary>
+        /// <returns>The DE number, e.g. <c>431</c>.</returns>
+        public int swe_get_denum() { return Sweph.swe_get_denum(); }
         /// <summary>
         /// Returns the file-system path of the currently loaded/running library assembly.
         /// Informational only -- this is not the ephemeris data path (see
