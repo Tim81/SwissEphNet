@@ -625,7 +625,7 @@ b"} where the C gives {"a", ""}); that one is fixed
     Fidelity fix, not a re-transliteration: no other line in SwissEphNet/CPort moved.
     SwissEphNet/CPort: 48564 -> 48567 lines, sha256 C8666981... -> 4275E1E7.... kr_braces
     (1205) and trailing_ws (1258) are unchanged.
-28. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-08: One-token
+28. PR #46 2026-11-08: One-token
     change, an adoption of a post-release upstream fix at the bumped pin (external/swisseph moved
     from v2.10.3bfinal f4dcd18e to master 94621aba). It is not the correction of a
     transliteration error: the port matched v2.10.3bfinal exactly. swehel.c:2215 in
@@ -640,7 +640,7 @@ b"} where the C gives {"a", ""}); that one is fixed
     net10.0. Full writeup: docs/known-issues.md, "heliacal_ut_arc_vis sized xaz for two values,
     swe_azalt writes three".
     SwissEphNet/CPort: 48567 -> 48567 lines, sha256 4275E1E7... -> C30B32F2....
-29. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-08: An addition
+29. PR #46 2026-11-08: An addition
     that adopts a post-release upstream function at the bumped pin (9a8b7592, 4daf766a). Sweph.cs
     gains swe_get_denum, placed after swe_version as in sweph.c: `return swi_get_denum(SEI_SUN,
     0);` (sweph.c:240). It returns the DE number of the open planet file (sepl*.se1), or
@@ -651,7 +651,7 @@ b"} where the C gives {"a", ""}); that one is fixed
     path and is not counted here. Test: Tests/SwissEphNet.Tests/GetDenumTest.cs.
     SwissEphNet/CPort: 48567 -> 48573 lines, sha256 C30B32F2... -> 233D7F09.... kr_braces
     (1205) and trailing_ws (1258) are unchanged.
-30. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-08: Re-transliteration
+30. PR #46 2026-11-08: Re-transliteration
     of three swetest.c commits made after v2.10.3bfinal, ported into Programs/SweTest/Program.cs.
     3fd0f956 adds the -astpos<DDD>[,orb] option (locals at swetest.c:863-864, the parse at
     :1120-1127, the early return at :1612-1616, swe_get_named_ast_list at :4155, which reads
