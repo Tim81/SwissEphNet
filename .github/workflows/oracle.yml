@@ -753,9 +753,9 @@ jobs:
   # (gcc, glibc) by linux-exactness below, and macOS arm64 (clang, libSystem) here.
   #
   # -ffp-contract=off is not optional here, and this is the one place it bites. Base x86-64 has
-  # no FMA3, so the Linux x64 build cannot contract even at plain -O2 and needs no flag --
-  # linux-exactness below confirms this by disassembly rather than assuming it, the same way this
-  # job does for arm64. arm64 has fmadd in the base instruction set and clang contracts by default,
+  # no FMA3, so the Linux x64 build (which pins -march=x86-64; see linux-exactness for why the
+  # pin is needed) cannot contract at -O2 and needs no -ffp-contract=off -- linux-exactness below
+  # confirms this by disassembly rather than assuming it, the same way this job does for arm64. arm64 has fmadd in the base instruction set and clang contracts by default,
   # which changes results:
   # measured on aarch64/gcc 13.3.0, `a*b - p` where p is the rounded product of a and b gives
   # 2.3978347948343523e-17 contracted and exactly 0 with contraction off. This port never
@@ -1124,13 +1124,18 @@ jobs:
   # unchanged, and this job answers each on its own evidence rather than assuming the macOS
   # answer:
   #
-  # FMA contraction: not a risk here, and confirmed rather than assumed. Base x86-64 (the ISA
-  # GitHub's ubuntu-latest runners provide, and the one gcc targets with no -march given) has no
-  # FMA3 encoding at all, unlike arm64 where fmadd is in the base instruction set -- see
-  # macos-exactness's own comment for the aarch64 measurement that flag protects against. Assert
-  # no FMA contraction below disassembles the gate build with objdump and finds zero
-  # vfmadd/vfmsub/vfnmadd/vfnmsub instructions at plain -O2, with no -ffp-contract=off in the
-  # command line at all -- there is no contraction for that flag to turn off.
+  # FMA contraction: not a risk here, and confirmed rather than assumed. Base x86-64 has no FMA3
+  # encoding at all, unlike arm64 where fmadd is in the base instruction set -- see
+  # macos-exactness's own comment for the aarch64 measurement that flag protects against. The
+  # build pins -march=x86-64 explicitly. It used to be gcc's default, and plain -O2 was enough,
+  # but that stopped holding when ubuntu-latest moved to ubuntu-26.04 (2026-11): that image's gcc
+  # 15.2 targets x86-64-v3 (AVX2 + FMA) when no -march is given, and plain -O2 then contracted
+  # 1,580 multiply-adds into vfmadd/vfmsub. Reproduced locally with the same gcc package:
+  # -march=x86-64-v3 gives exactly 1,580, -march=x86-64-v2 and -march=x86-64 give 0. Assert no
+  # FMA contraction below disassembles the gate build with objdump and requires zero
+  # vfmadd/vfmsub/vfnmadd/vfnmsub instructions, with no -ffp-contract=off in the command line at
+  # all -- on the base ISA there is no contraction for that flag to turn off. The build step
+  # prints gcc's effective -march, so a future image that changes it is visible in the log.
   #
   # Builtin substitution: measured, and confirmed harmless here rather than assumed harmless.
   # gcc does substitute glibc's sincos() for an adjacent sin()/cos() pair on the same argument
@@ -1140,8 +1145,8 @@ jobs:
   # bit-identically to calling sin() and cos() separately. glibc's sincos() does: replaying both
   # grids through a plain -O2 build and through a second build adding -ffp-contract=off
   # -fno-builtin produced byte-identical output against the port in both cases, 17,064 of 17,064
-  # rows either way. The gate below builds with plain -O2, matching the recipe README.md and
-  # docs/compliance-2.10.03.md already quote; the second build is kept as a diagnostic, the same
+  # rows either way (both measured when -march=x86-64 was still gcc's default). The gate below
+  # builds with -O2 -march=x86-64 and no other flags; the second build is kept as a diagnostic, the same
   # way macos-exactness keeps its builtins-on build, in case a future glibc version starts
   # disagreeing with the port the way Apple's libSystem already does.
   linux-exactness:
@@ -1193,16 +1198,18 @@ jobs:
       # scripts/run-oracle-dump.ps1 defines for the 2.10.03 build -- see that job's own comment
       # above for which four functions each macro guards.
       #
-      # No -ffp-contract=off, no -fno-builtin: see the job comment above for what was measured
-      # about each on this platform. gcc --version is printed for the same reason clang --version
-      # is in macos-exactness -- a future ubuntu-latest image can change the installed version
-      # without this file changing, and that is worth seeing in the log.
-      - name: Build the C reference with gcc (plain -O2; see job comment for why no extra flags)
+      # -march=x86-64, but no -ffp-contract=off and no -fno-builtin: see the job comment above for
+      # what was measured about each on this platform. gcc --version and the effective -march are
+      # printed for the same reason clang --version is in macos-exactness -- a future ubuntu-latest
+      # image can change the installed compiler or its default target without this file changing,
+      # and that is worth seeing in the log.
+      - name: Build the C reference with gcc (-O2 -march=x86-64; see job comment for why)
         shell: bash
         run: |
           gcc --version | head -1
+          echo "gcc default target on this image (overridden below): $(gcc -Q --help=target | grep -E '^\s+-march=' | tr -s '[:space:]' ' ' || true)"
           E=external/swisseph
-          gcc -O2 -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -DSWISSEPH_HAS_CALC_PCTR=1 -DSWISSEPH_HAS_GET_CURRENT_FILE_DATA=1 -I "$E" -o sedump \
+          gcc -O2 -march=x86-64 -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -DSWISSEPH_HAS_CALC_PCTR=1 -DSWISSEPH_HAS_GET_CURRENT_FILE_DATA=1 -I "$E" -o sedump \
             Tools/CReference/sedump.c \
             "$E/sweph.c" "$E/swephlib.c" "$E/swemmoon.c" "$E/swemplan.c" "$E/swejpl.c" \
             "$E/swedate.c" "$E/swehouse.c" "$E/swecl.c" "$E/swehel.c" -lm
@@ -1245,7 +1252,7 @@ jobs:
         shell: bash
         run: |
           E=external/swisseph
-          gcc -O2 -ffp-contract=off -fno-builtin -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -DSWISSEPH_HAS_CALC_PCTR=1 -DSWISSEPH_HAS_GET_CURRENT_FILE_DATA=1 -I "$E" -o sedump-strict \
+          gcc -O2 -march=x86-64 -ffp-contract=off -fno-builtin -DSWISSEPH_HAS_CROSSING=1 -DSWISSEPH_HAS_HOUSES_EX2=1 -DSWISSEPH_HAS_CALC_PCTR=1 -DSWISSEPH_HAS_GET_CURRENT_FILE_DATA=1 -I "$E" -o sedump-strict \
             Tools/CReference/sedump.c \
             "$E/sweph.c" "$E/swephlib.c" "$E/swemmoon.c" "$E/swemplan.c" "$E/swejpl.c" \
             "$E/swedate.c" "$E/swehouse.c" "$E/swecl.c" "$E/swehel.c" -lm
@@ -1367,7 +1374,7 @@ jobs:
           "$BIN" Tools/OracleGrid/grid-analytic.tsv aot-analytic.tsv
           "$BIN" Tools/OracleGrid/grid-files.tsv aot-files.tsv external/swisseph/ephe
 
-      # Against c-analytic.tsv/c-files.tsv, the same gcc C reference (plain -O2, further up this
+      # Against c-analytic.tsv/c-files.tsv, the same gcc C reference (-O2 -march=x86-64, further up this
       # job) the JIT comparison above already compares against -- never against Windows-produced
       # dump-net.tsv or dump-net-files.tsv, for the same platform-specificity reason macos-
       # exactness's own copy of this comment gives.
