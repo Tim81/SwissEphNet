@@ -1,6 +1,6 @@
 # The 2.10.03 delta's no-op hunks
 
-`scripts/gen-delta-hunk-counts.tsv` pins 412 filtered hunks across 24 files for the 2.08-to-2.10.03
+`scripts/gen-delta-hunk-counts.tsv` pins 428 filtered hunks across 24 files for the 2.08-to-2.10.03
 delta. Of those, 33 hunks across eight files carry no semantic content for the C# port: `void`
 added to empty C parameter lists, dead local variables, comment and license-header churn,
 formatting-only reindentation, and a Windows-only header with no C# counterpart. Four further
@@ -14,8 +14,9 @@ Regenerate any of these with `pwsh scripts/gen-delta.ps1 -File <name>` -- the ci
 `v2.10.3bfinal` tag (unchanged from `v2.10.3final` for every file cited here: the two tags differ
 only in `sweodef.h`, `swetest.c` and `ephe/`, none of which any hunk below touches). The pin has
 since moved to upstream master at `94621aba`, which adds one hunk each to `swehel.c` and `sweph.c`,
-two to `swephexp.h` and three to `swetest.c` (the totals above are the current ones); none of
-those is a no-op hunk, and no `swehel.c` line number cited below moved.
+two to `swephexp.h` and three to `swetest.c`; the pin then moved on to `6c989727`, which adds 13
+hunks to `swehouse.c` and 3 to `sweph.c` (the totals above are the current ones). None of those is a
+no-op hunk, and no line cited in this file moved.
 
 ## `swehel.c` -- 23 raw hunks (19 filtered, 4 license-noise); 14 confirmed no-op, 4 not, 1 new
 

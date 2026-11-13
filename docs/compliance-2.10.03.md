@@ -2,7 +2,7 @@
 
 This records what has actually been measured about this port's agreement with Astrodienst's
 own Swiss Ephemeris C library, version 2.10.03 (upstream tag `v2.10.3bfinal`), rather than
-asserting it. The submodule is now pinned to master `94621aba`, 12 commits past that tag. Every number below comes from a gate in this repository or from a measurement run
+asserting it. The submodule is now pinned to master `6c989727`, 21 commits past that tag. Every number below comes from a gate in this repository or from a measurement run
 during the version-bump work that closed the 2.10.03 port (see `docs/known-issues.md`'s
 `SE_VERSION` entry). Where something has not been measured, that is stated rather than estimated.
 
@@ -517,20 +517,29 @@ across 10 functional areas, checked against `external/swisseph/setest/t.exp` wit
 tolerances `setest/t.fix` itself ships. `Tests/conformance/known-fail.tsv` is the work queue: one
 row per iteration the port does not currently match.
 
-As of this record, `known-fail.tsv` carries 1,423<!--doccount:known-fail-total--> rows, so 11,334 of 12,757 iterations pass
-(88.8%). That is down from 3,291 rows when the oracle landed (commit `7013ed7`) -- the 2.10.03
-port has closed 1,868 of the iterations it started behind on. An earlier revision of this
+As of this record, `known-fail.tsv` carries 2,395<!--doccount:known-fail-total--> rows, so 10,362 of 12,757 iterations pass
+(81.2%). That is down from 3,291 rows when the oracle landed (commit `7013ed7`) -- the 2.10.03
+port has closed a net 896 of the iterations it started behind on, after the 972 rows the
+`6c989727` sync added (described below). An earlier revision of this
 paragraph cited a development commit that never reached this branch's history, and its 4,382-row
 figure with it; both are unreachable for anyone reading from a clone.
 
-The 1,423<!--doccount:known-fail-total--> remaining rows split into two categories, with 0<!--doccount:known-fail-error--> in
+The 2,395<!--doccount:known-fail-total--> remaining rows split into two categories, with 0<!--doccount:known-fail-error--> in
 `ERROR`, 0<!--doccount:known-fail-unreproducible--> in `UNREPRODUCIBLE`, and 0<!--doccount:known-fail-not-implemented--> in
 `NOT-IMPLEMENTED` at present:
 
 | Category | Rows | What it means |
 |---|---|---|
-| `VALUE-MISMATCH` | 664<!--doccount:known-fail-value-mismatch--> | The port ran and produced an answer outside `t.fix` tolerance -- the actual porting work queue. |
+| `VALUE-MISMATCH` | 1,636<!--doccount:known-fail-value-mismatch--> | The port ran and produced an answer outside `t.fix` tolerance -- the actual porting work queue. |
 | `DATA-MISSING` | 759<!--doccount:known-fail-data-missing--> | A required data file (a JPL DE ephemeris, a pre-1200/post-2399 era `.se1` file, `ephe/sat/`, or a per-asteroid file) is not shipped by this repo, so the iteration was not run at all. |
+
+972 of the 1,636 `VALUE-MISMATCH` rows are setest 6.8 (`swe_houses_ex2`) and 6.9 (`swe_houses_armc_ex2`)
+house-speed rows that the `6c989727` sync moved: positions are unchanged on all 1,080 iterations, and only
+the speed fields differ from `t.exp` by more than its 1e-3 tolerance. This is `t.exp` drift from an
+intentional upstream change, not a port defect. Per-row evidence, from the MSVC-built C at `6c989727`, is in
+`Tests/conformance/house-speed-drift-6c989727.tsv`: 970 `CORRECTION` (the C's speed is the numerical
+derivative of its own positions, `t.exp`'s is not), 2 `STEP` (6.8.285 and 6.8.645, a whole sign cusp at a
+sign ingress) and 0 `UNEXPLAINED`. The other 664 are the rows triaged in section 3a.
 
 **157 of the 759 `DATA-MISSING` rows are `SEFLG_SWIEPH` calls for a date outside the era this
 repo's shipped core ephemeris files cover** (the `sepl`/`semo`/`seas_N.se1` and their BCE `_N.se1`
@@ -676,9 +685,10 @@ measurement.
 
 ## 3a. VALUE-MISMATCH triage against Astrodienst's own C
 
-This triage ran against 668 `VALUE-MISMATCH` rows, the count at the time. The table above says 664
-because the four defects the triage found have since been fixed and pruned; the numbers below are
-the triage's own, and are left as it measured them.
+This triage ran against 668 `VALUE-MISMATCH` rows, the count at the time. The 664 rows that remained after the four defects the
+triage found were fixed and pruned are the table's other VALUE-MISMATCH rows (the table now says 1,636,
+including the 972 house-speed rows above); the numbers below are the triage's own, and are left as it
+measured them.
 
 Those rows are the porting work queue in name, but a queue entry is only
 actionable if the port is actually wrong. `Tests/conformance/value-mismatch-triage.tsv` checks
