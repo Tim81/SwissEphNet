@@ -70,7 +70,7 @@ Read the status line first and the body for how it got there.
 | swetest `-astpos` evaluates at UT under `-ut`/`-utc` | open upstream |
 | `swe_set_jpl_file`'s AS_MAXCH clamps | won't fix |
 | swetest.c's zodiac field | closed |
-| `swe_solcross(SEFLG_HELCTR)` upstream hang | won't fix |
+| `swe_solcross(SEFLG_HELCTR)` and the NaN-jd hang | open upstream |
 | `insert_gap_string_for_tabs` drops LEN_SOUT | closed |
 | The 5% waiver caps divide by the whole area | record |
 | `DivergenceReport`'s field-compared count | closed |
@@ -88,6 +88,9 @@ Read the status line first and the body for how it got there.
 | `verify-swetest-diff.ps1` digests depend on the console code page | open |
 | C citations were written against `v2.10.3bfinal`, not the current pin | open |
 | Oracle-grid `sid_mode` is not pinned by `case_id` | open |
+| `split_deg_nakshatra`: `SE_SIDM_USER` collides with the Sheoran offset | open upstream |
+| swetest `-sidudef` crash; C# definite assignment immunises the port | closed upstream, not at the pin |
+| swetest `-astpos` under `-ut`/`-utc`: UT passed as TT | closed upstream; port has no -astpos |
 
 ## Eight live sites transliterate a C fixed-size buffer as an unbounded C# string
 
@@ -140,10 +143,61 @@ a C limitation with no demonstrated trigger.
 cancellation inside `apc_sector`, inherent to the formula and shared with the C.
 Two things this entry previously said turned out to be wrong when checked
 directly against the current tree and a live Linux run -- see "Corrections"
-below. Report drafted for Astrodienst, not yet sent -- scheduled for the week
-of 2026-08-10: `docs/upstream/swe_houses_armc-apc-polar-discontinuity.md`,
-which supersedes this entry's account with a deeper one -- see "What the
-upstream report adds" below.
+below. `docs/upstream/swe_houses_armc-apc-polar-discontinuity.md` supersedes
+this entry's account with a deeper one -- see "What the upstream report adds"
+below.
+
+**Sent 12 August 2026** to the swisseph mailing list (groups.io topic
+120714355, messages #13516-#13521), and the first patch was rejected. Alois
+Treindl asked for a swetest command line; josh harper supplied one in #13518;
+Treindl ran it against `docs/upstream/swe_houses_armc-speed-guard.patch` and
+reported that it does not resolve the case, adding that he has no time to work
+on the code himself but will apply working patches. He is right, and the reason
+is that the command line harper chose sits 0.0039 degrees off the singular
+locus rather than on it: the two interpolation samples differ by at most 71.14
+degrees there, so a 90 degree test is correctly silent. That patch is
+superseded, not defended.
+
+A replacement set of eleven patches, the largest of them also offered as an
+eight-step series so it can be reviewed a step at a time, together with a
+regression harness and self-verification tooling (`verify-claims.sh`,
+`claim-samples.c`, `claims.tsv` — seventeen machine-recorded before/after
+claims), lives in `patch/`; the message is
+`docs/upstream/swe_houses-patch-set-cover.txt` (earlier drafts in that
+directory carry SUPERSEDED banners). Building them found several further
+defects in the shipped library that this entry did not know about, among
+them: a Sunshine (Makransky) cusp returned 180 degrees wrong when the house
+circle lands exactly on w = 180; Gauquelin sectors leave `cusp[13..36]` and
+`cusp_speed[13..36]` untouched when they fall back to Porphyry, so a caller
+that sized the array as swephprg requires reads its own stack; and the
+Sunshine declination check `sprintf`s into a NULL `serr` — plain
+`swe_houses()` at dates before about 2800 BC segfaults, because the true
+obliquity then exceeded the check's ±24° bound.
+
+**Sent 17 August 2026**, message #13529, all eleven patches attached
+individually because the list rejects archives. Alois Treindl replied the same
+day in #13530: he applied the ten small patches with `quilt push -a`, every hunk
+succeeded, and every swetest number he checked matched the cover letter. The
+eleventh failed to apply, which was expected rather than a defect — it contains
+six of the ten outright, so applying those first guarantees a conflict. A rebase
+went back in #13531, and in #13532 he reported that he had rebased the eleventh
+himself, had now applied it, and would test it a while before releasing it to
+GitHub.
+
+**None of it has been released.** Checked 6 September 2026, twenty days later:
+`swehouse.c` is byte-identical between the pinned `v2.10.3bfinal` (`f4dcd18e`)
+and upstream `master` (`91339e55`), as are `sweph.c`, `swecl.c`, `swemmoon.c`,
+`swemplan.c`, `swephlib.c` and `swephexp.h`. Both commits since the pin touch
+`swetest.c` and nothing else. So all eleven patches are applied in Treindl's own
+tree and none is public, and this port keeps the C's behaviour meanwhile. The
+polar case that opened the thread is separately settled: it was left unfixed by
+agreement, since the ~2.89 million deg/day is the true Ascendant speed there and
+no patch can make it small without a magnitude convention that is Astrodienst's
+call.
+
+Note for anything sent to this thread: in #13517 Treindl asked that no
+machine-generated posts be submitted. Treat that as standing, whatever he says
+about his own tooling elsewhere in the thread.
 
 `swe_houses_armc(armc=270, geolat=50, eps=40, hsys='Y', ...)`:
 
@@ -258,10 +312,15 @@ because the same jump shows up in the generic Ascendant calculation shared by
 nearly every house system (Placidus, Koch, Equal, and others all jump too),
 and independently in `swe_house_pos`'s own, textually distinct formula for
 `'Y'` houses (a fixed sky point changes house by ~70 degrees for a
-one-millionth-of-a-degree ARMC change). Placidus and Koch are unaffected in
-practice only because they're not among the nine house systems that compute
-`cusp_speed` by the finite-difference path `'Y'` uses unconditionally; their
-`cusp[1]` jumps too, just silently, with no speed consequence. I tried the fix
+one-millionth-of-a-degree ARMC change). Placidus and Koch are unaffected
+**at the exact point only**, and this entry previously said so without that
+qualification. There `AscDash()` returns 0 through its own `d > VERY_SMALL`
+branch, so their `cusp_speed[1]` is 0 while `'Y'`'s blows up. Move 0.0039
+degrees off the locus and 22 of the 26 house letters report about 2.89 million
+degrees per day on cusp 1 in the unpatched library, Placidus and Koch among
+them, because cusp 1 tracks the Ascendant and the Ascendant genuinely moves
+that fast there. Their `cusp[1]` jumps too, just silently, with no speed
+consequence at the point itself. I tried the fix
 that finding suggests -- reuse `ac` for `cusp[1]`/`cusp[7]`, mirroring the
 existing (and working) `cusp[10] = hsp->mc` treatment for the MC axis two
 lines above it in the same function -- built it, compiled it, and it does not
@@ -273,16 +332,33 @@ finite-difference house systems' code, found a defense against
 `sin(armc)=+-1` in six of them, and concluded `'Y'` was the outlier. Wrong --
 running all nine at the identical singular input (not reading their code and
 guessing) found seven of nine actually blow up there: `I`, `L`, `Q`, `S`, `F`,
-`B`, and `Y`. Only `X` (Meridian, its own explicit `armc=90/270` special case)
-and `M` (Morinus, rotation-based, no comparable ratio) are immune. The six
+`B`, and `Y`. That count is one system short in each half: `'i'` (Makransky
+Sunshine) shares `'I'`'s case block and its exact failure, so it is **eight of
+ten**, `I i L Q S F B Y` broken, and only `X` (Meridian, its own explicit
+`armc=90/270` special case) and `M` (Morinus, rotation-based, no comparable
+ratio) immune. The six
 other systems' own defenses are real but answer a different question --
 they protect each system's *additional* formula work from failure modes
 specific to that construction, none of them were ever positioned to catch a
 problem in the shared, generic `ac` itself, computed once before any
 case-specific code runs.
 
-The speed blow-up is now fixed and verified for all seven, not just
-partially mitigated for one. The first guard attempt (extending the existing
+**An earlier version of this entry said the speed blow-up was "now fixed and
+verified for all seven, not just partially mitigated for one". That claim was
+wrong and is withdrawn.** What the paragraphs below describe is the raw-sample
+guard, which Astrodienst applied on 12 August 2026 and reported as not
+resolving the case. It is correct for the exact
+discontinuity and fires nowhere near the command line it was tested on. What
+replaces it is `patch/swehouse-analytic-cusp-speeds.patch`, which removes the
+finite-difference path rather than guarding it: no case block sets
+`do_interpol` any more, and the runtime fallback that can still raise it on a
+non-finite value was measured at 0 firings over 663,520 calls. At the singular
+point that takes all eight affected letters from up to 15,551,878 degrees per
+day to at most 665; the largest value any letter shows there afterwards is
+1,578, on Gauquelin, which is not one of the eight and rises from 331. The account below is kept because the reasoning in it is
+still sound; only its conclusion was premature.
+
+The first guard attempt (extending the existing
 `ac`-only `>90` check to every `cusp[i]`, comparing each offset sample to the
 center) rescued 4 of 6 affected cusps at the `'Y'` locus; tracing why the
 other two still failed found the existing `ac` guard runs first and mutates
@@ -293,9 +369,10 @@ them -- and that revealed the problem was undercounted: 6 of 12 cusps
 genuinely straddle the jump at this input, not 2, with the other two "fixed"
 cusps in the first attempt only looking plausible by accident. The corrected
 patch resolves all 6 to a documented `0` and leaves the other 6 untouched,
-fixes all seven broken house systems at the same locus (confirmed both
+fixes seven of the eight broken house systems at the same locus (confirmed both
 hemispheres and through the real `swe_houses_ex2` entry point, tropical and
-sidereal), and is verified with zero regressions across 432 ordinary points
+sidereal; `'i'` was never in that verification run), and is verified with zero
+regressions across 432 ordinary points
 plus a 25,272-row adversarial sweep targeting every system's own edge cases
 (every one of the ~2,700 changed fields traces to `armc` within 0.001
 degrees of 90/270 or to the literal geographic pole, a separate pre-existing
@@ -799,6 +876,12 @@ confirmed directly against the generated data (`cut -d'|' -f2` on every `-0` row
 These are analytically-zero quantities where the sign bit is roundoff, not a bug;
 noted here precisely so the record stays accurate -- ipl 11 is the true node, not
 the mean node (`ipl = 10`), which does not show this pattern in this data.
+
+**Superseded in scope, not in fact.** That "not mean node" attribution describes this grid, not the
+library. Sampling 200 dates 37 days apart from J2000 under `SEFLG_MOSEPH | SEFLG_SIDEREAL` shows the
+mean node returning a not-exactly-zero latitude on 78 of them and a negative sign bit on 35, against
+36 and 103 for the true node. See `docs/sidereal-and-vedic.md`, "Rahu and Ketu", for the table. The
+18 fields counted here are real; they are simply the subset this grid's dates and flags reach.
 
 ## hsys 'I' (Sunshine houses): smaller, more numerous divergences near tolerance
 
@@ -2214,8 +2297,9 @@ upstream fix to pull. `master` has since moved to `94621aba` (twelve commits) an
 still there, at `swetest.c:3991`, so there is still none.
 `build-c.ps1` patches this one narrowly (`fputs(info, stdout)` substituted for both branches of
 the `#ifdef`, matching the `#else` branch's existing behaviour exactly), and the defect was reported
-to Astrodienst. The report itself is drafted outside the tracked tree and sent by hand, so there is
-no in-repo path to follow here.
+to Astrodienst in the swetest build-defects thread (groups.io topic 120532421, "gethostname does not
+work on Windows - swetest.c", opened 31 July 2026, nine messages). The report itself is drafted
+outside the tracked tree and sent by hand, so there is no in-repo path to follow here.
 
 **Two more build-script changes at `94621aba`, measured when the pin moved.**
 
@@ -2315,6 +2399,10 @@ often not the function the change lands in, and the slice work lists were built 
 **Status: closed.** The port matches `dms()`'s format exactly and guards the
 sign-insertion site. Astrodienst reviewed the report and declined it, correctly.
 
+Sent 31 July 2026 to the swisseph mailing list (groups.io topic 120532660), subject "dms() drops the
+minus sign for negative zodiac values of 10 degrees or more - swetest.c"; three messages, closed the
+same day.
+
 `dms()` (`swetest.c:2642-2731`) formats a degree value with `sprintf`, then patches a minus sign
 into the result by hand: `sp = strpbrk(s, "0123456789"); *(sp - 1) = '-';` (`:2723-2725`). That
 overwrites the character immediately before the first digit -- it assumes there always is one.
@@ -2357,14 +2445,16 @@ This is recorded here, not filed upstream. Astrodienst's own reporting channel i
 repository's control, so "reported upstream" should never be written into a code comment as a
 statement of fact without a tracked issue behind it.
 
-## swe_solcross(SEFLG_HELCTR): an upstream libswe hang, not a grid problem
+## swe_solcross(SEFLG_HELCTR) and the NaN-jd hang: an upstream libswe defect, not a grid problem
 
-**Status: won't fix.** An upstream `libswe` defect that the port reproduces faithfully,
-confirmed by measurement on both sides. Guarding it is a design decision separate from
-porting 2.10.03.
+**Status: open upstream.** An upstream `libswe` defect that the port reproduces faithfully,
+confirmed by measurement on both sides. Reported to Astrodienst and unanswered; a tested patch
+set exists in `patch/cross/`. The port stays faithful to the C until Astrodienst ships a fix -- see
+"Do not fix the port" below.
 
 Found while building `Tools/OracleGrid/gen-grid-analytic.ps1`'s crossing-function coverage. Every
-one of `swe_solcross`'s three documented flag bits (`external/swisseph/sweph.c:8312-8315`) was
+one of the three flag bits `swe_solcross`'s own source comment documents
+(`external/swisseph/sweph.c:8312-8315` -- not the same three the manual lists, see below) was
 meant to get its own grid row, `SEFLG_HELCTR` included, until a `SOLCROSS|90|1200000|HELCTR`-shaped
 row made `sedump.exe` spin forever with zero output.
 
@@ -2388,16 +2478,19 @@ For `x2cross` values whose initial distance estimate does not already land withi
 `CROSS_PRECISION` on the very first pass (every value tried except `x2cross` at exactly 0.0/360.0,
 where `dist` starts at 0 and the loop exits on its first iteration before the division), `dist /
 x[3]` divides a nonzero `dist` by that zero speed. IEEE 754 gives `+Infinity`, not a fault, so `jd`
-becomes `+Infinity` and the next `swe_calc(Infinity, SE_SUN, ...)` call inside `libswe` itself never
-returns -- confirmed by isolating exactly that one row (`SOLCROSS|90|1200000|HELCTR`, x2cross=90,
+becomes `+Infinity`. The loop then spins in `swe_solcross` itself, not inside `swe_calc`:
+measured, `swe_calc(Infinity, SE_SUN, MOSEPH|HELCTR)` returns immediately with `rc=1804` and
+`x` all zeros, because the heliocentric Sun short-circuits to the origin before any date-range
+check runs. That is why the loop never ends -- `swe_calc` keeps succeeding, with zero speed,
+forever. Confirmed by isolating exactly that one row (`SOLCROSS|90|1200000|HELCTR`, x2cross=90,
 via a purpose-built repro grid, not guessed from reading the loop) against the built `sedump.exe`
 and observing unbounded CPU time (measured past 370 seconds and still climbing) with no output.
 Killing the process and re-running the same row alone, with `x2cross` at exactly 0.0, completes
 immediately and returns `NaN` -- the `0/0` form of the same division, not `Infinity`, and a `for(;;)`
 that happens to exit on its first pass regardless (`fabs(NaN) < CROSS_PRECISION` is a false
 comparison, but the loop's own body already ran once, so the corrupted `jd` propagates out rather
-than looping). Both are the same defect; only the second one hangs, because it needs more than one
-iteration to reach the division that produces `Infinity` instead of `NaN`.
+than looping). Both are the same defect; only the first one hangs, because only it needs more than one
+iteration to reach the division that produces `Infinity` rather than `NaN`.
 
 This hangs Astrodienst's own C, built with the MSVC toolchain this repository's oracle is locked
 to (`Tools/CReference/build-c.ps1`) -- it is an upstream `libswe` defect, not a mistranslation, and
@@ -2429,12 +2522,168 @@ than a prediction. The runs were one-off probes against the shipped assembly, de
 added to any test project -- a test that hangs on failure is worse than no test, and pinning this
 behaviour would pin a defect this port hopes upstream will fix.
 
+**The hazard is far wider than the HELCTR case.** `swe_calc` accepts a NaN `jd` for every body and
+every flag set tried, and returns success -- `rc=260` geocentric, `rc=1804` heliocentric -- with
+every output field NaN and `serr` left empty. The backend range checks are all written the same
+shape, e.g. `swemplan.c:299`'s `if (tjd < MOSHPLEPH_START - 0.3 || tjd > MOSHPLEPH_END + 0.3)`: an
+ordinary IEEE-754 comparison against a NaN operand is always false, so neither arm of the check ever
+fires and the guard silently passes a date that was never in range to begin with. `-Infinity` is
+rejected properly by the same check (an infinite operand compares normally); `NaN` is not.
+
+**Two bodies do worse than return NaN: they crash.** `SE_MEAN_NODE` and `SE_MEAN_APOG` are analytic,
+so no missing-file accident catches the NaN on the way down, and each reaches a table lookup indexed
+by `(int) floor(dJ / dayscty)` — `corr_mean_node` at `swemmoon.c:1470` and a second independent copy
+in `corr_mean_apog` at `:1540`, indexing `mean_apsis_corr` at `:1552`. `(int) floor(NaN)` is
+undefined; measured, it produced `i = -2147483648`. The segfault follows, on `iflag` 0,
+`SEFLG_JPLEPH`, `SEFLG_SWIEPH` and `SEFLG_MOSEPH` alike.
+
+**Reported upstream, unanswered.** Sent 27 August 2026 to the swisseph mailing list (groups.io
+topic 120953022), subject "swe_calc segfaults on a NaN Julian day (SE_MEAN_NODE, SE_MEAN_APOG)",
+with a nine-line patch attached that touches only `sweph.c` and adds no `#include`; it turns the
+crash into `rc=-1` with `serr` reading "swe_calc: tjd is not a number (NaN)". Draft and patch:
+`docs/upstream/swe_calc-nan-segfault.txt`. One message, no reply. This went as its own thread rather
+than into topic 120573642 below, since a crash on two named bodies is a narrower claim than the
+unbounded-loop argument and should not wait on it.
+
+Consequence: the crossing entry points hang on a NaN start date under plain `SEFLG_MOSEPH` -- no
+`SEFLG_HELCTR` or any other exotic flag needed, because the hang lives in each function's own
+unbounded refinement loop reading a NaN `x[0]`/`dist` every pass, not in the heliocentric-Sun
+special case above. Measured twice independently, against pyswisseph 2.10.3.2 and against
+purpose-built gcc 13.3.0, clang 18.1.3 and MSVC 19.51 builds of the pinned `v2.10.3bfinal` sources,
+each run killed at 10-12 seconds:
+
+```
+swe_solcross(90, NaN, SEFLG_MOSEPH)                 hang
+swe_solcross_ut(90, NaN, SEFLG_MOSEPH)              hang
+swe_mooncross(90, NaN, SEFLG_MOSEPH)                hang
+swe_mooncross_ut(90, NaN, SEFLG_MOSEPH)             hang
+swe_mooncross_node(NaN, SEFLG_MOSEPH)               hang
+swe_helio_cross(SE_MARS, 90, NaN, SEFLG_MOSEPH, 1)  hang
+swe_solcross(90, 2451545.0, SEFLG_MOSEPH)           2451716.575531276  (fine)
+```
+
+And the two defects chain, measured end to end: `swe_solcross(0, jd, SEFLG_MOSEPH|SEFLG_HELCTR)`
+returns `NaN` with `serr` empty (the `x2cross`-at-0 row in the port table above), and feeding that
+returned value back in as the next call's `jd` hangs on plain `SEFLG_MOSEPH`, `SEFLG_HELCTR` no
+longer even in play. A caller can reach the hang without ever having constructed a NaN by hand --
+the library hands one back and then hangs on it.
+
+**Documented vs undocumented -- the source comment and the manual disagree.** This bears directly
+on how strong the "your own documentation says HELCTR" argument actually is. Astrodienst's
+published manual (`swephprg.htm`, section 4) and the source comments immediately above each
+function list *different* flag sets:
+
+| function | source comment | `swephprg.htm` section 4 |
+|---|---|---|
+| `swe_solcross` (`sweph.c:8313`) | HELCTR, TRUEPOS, NONUT | TRUEPOS, NONUT, EQUATORIAL |
+| `swe_solcross_ut` (`:8347`) | HELCTR, TRUEPOS, NONUT | TRUEPOS, NONUT, EQUATORIAL |
+| `swe_mooncross` (`:8380`) | TRUEPOS, NONUT | TRUEPOS, NONUT, EQUATORIAL |
+| `swe_mooncross_ut` (`:8416`) | TRUEPOS, NONUT, SIDEREAL | TRUEPOS, NONUT, EQUATORIAL |
+
+`SEFLG_HELCTR` is documented only in the source comment; `SEFLG_EQUATORIAL` only in the manual.
+Neither document is a superset of the other.
+
+Every flag the manual documents was then exercised against a pristine build -- `TRUEPOS`, `NONUT`,
+`EQUATORIAL`, `TRUEPOS|NONUT`, `EQUATORIAL|TRUEPOS`, at targets 90, 0 and 271.3. All return correct
+values, round-trip error around 1e-10 degrees against a `CROSS_PRECISION` of 2.78e-7. No
+combination of manual-documented flags hangs. Stated plainly because it cuts against this entry's
+own earlier framing: the "your own doc comment names HELCTR" argument is weaker than it looks, since
+the manual Astrodienst actually publishes to callers does not name it at all. The load-bearing
+argument for a fix is not that comment -- it is the unbounded loop itself, plus the self-inflicted
+NaN chain above, both of which are reachable independently of which document a caller trusts.
+
+**Reported upstream, unanswered.** Sent 3 August 2026 to the swisseph mailing list (groups.io
+topic 120573642, message #13499), subject "swe_solcross and swe_solcross_ut never return when
+SEFLG_HELCTR is set". Checked in a browser on 2026-08-23: one message, no reply, no action.
+
+**Upstream `master` has moved but has not fixed it.** `master` is now `91339e55` (6 September 2026,
+"fixed -sidudef bug"), reached in two commits from the pin: `3fd0f956` (8 August 2026, "with
+-astorb") and that one. All eight crossing functions -- `swe_solcross`, `swe_solcross_ut`,
+`swe_mooncross`, `swe_mooncross_ut`, `swe_mooncross_node`, `swe_mooncross_node_ut`,
+`swe_helio_cross`, `swe_helio_cross_ut` -- were hashed function-by-function against the pinned
+`v2.10.3bfinal` (`f4dcd18e`) and are byte-identical.
+
+**Correction to the paragraph above as first written**, which said `sweph.c` "has changed
+substantially elsewhere on `master`" while the crossing region had not. The first half was wrong.
+Both commits since the pin touch `swetest.c` and nothing else, 84 insertions and 6 deletions
+between them. Re-measured 6 September 2026 by blob hash at `f4dcd18e` against `91339e55`: `sweph.c`,
+`swecl.c`, `swehouse.c`, `swemmoon.c`, `swemplan.c`, `swephlib.c` and `swephexp.h` are every one of
+them identical. No library source has moved upstream since the pinned tag, so the `swe_calc` NaN
+segfault reported on 27 August is also still unfixed on `master`, not only at the pin.
+
+**A tested patch set exists.** `patch/cross/` holds two patches against the pinned C, plus
+three held back in `patch/cross/held-back/`; see that directory rather than this entry for the
+patches themselves.
+
+- `01-swecalc-nan-date.patch` fixes the defect at its source. `swe_calc` returns success with
+  `serr` empty for a NaN `tjd`, so eleven lines at its entry (`tjd != tjd`) close the hang in all
+  eight crossing functions without touching any of them. The test is NaN-only on purpose:
+  measured against this tree, the existing range checks already reject `+inf`, `-inf` and
+  finite-but-out-of-range dates with better messages than a generic guard could give, and a
+  bound test such as `!(tjd > -1e15 && tjd < 1e15)` would swallow all four and call `1e16` "not
+  finite" when it is finite.
+- `02-cross-iteration-cap.patch` bounds the ten `for(;;)` refinement loops with a step counter.
+  `CROSS_MAXITER` is 300000, sized against the worst *legitimate* convergence observed anywhere
+  (20,206 iterations, under `SEFLG_TOPOCTR`), not against the 1,354 that a narrower sweep
+  suggested. At that cap the worst genuine hang measured, `swe_helio_cross(SE_PALLAS, 75.0,
+  1275000.0, SEFLG_SWIEPH, 1, ...)`, gives up in 5.9 seconds instead of never returning.
+- Held back pending a maintainer reply: the two `SEFLG_HELCTR` answers for `swe_solcross`
+  (substitute `SE_EARTH`, or refuse the flag) and the result guards. All three survived
+  adversarial review intact. Note they no longer apply over the cap patch, which declares
+  `int niter;` in the same declaration block as `int ipl = SE_SUN;`.
+
+Verification, re-derived from clean builds: 378,130 dump records byte-identical pristine vs
+patched; the iteration census reports zero reimplementation mismatches; `verify-claims.sh` passes
+all fourteen recorded cases; zero compiler warnings on gcc 13.3.0 and clang 18.1.3, both trees.
+`setest` suite 10 with the complete data set (all 161 `.se1` from the pinned commit plus NASA
+DE431) is byte-identical before and after, 198 failures on both sides, all pre-existing.
+
+**An earlier draft of this patch set was wrong, and the way it passed is worth recording.** It
+bounded the search *distance* rather than the step count, with a span of `1500.0/fabs(xlp)`. It
+was green on every gate then available -- 78,244 bit-identical rows on three compilers, a clean
+`setest` run, twenty-four patch orderings producing one hash -- and it was broken in both
+directions. It rejected correct answers (`swe_helio_cross(SE_PHOLUS, 30.0, 2449000.0,
+SEFLG_SWIEPH, 1, ...)` returns the true nearest crossing in pristine and an error under the
+patch; 182 round-trip-valid forward crossings lost in total, 223 of 960 `mooncross|HELCTR` cells)
+and it failed to stop the hangs it existed to stop (`swe_helio_cross(SE_PALLAS, 75.0, 1275000.0,
+SEFLG_SWIEPH, 1, ...)` still spins). Two causes, both methodological: the constant was calibrated
+on *converged* results while the check fires on every *intermediate* iterate, and it was fitted
+over `SE_MERCURY..SE_PLUTO` when the function accepts Chiron through Vesta and the fictitious
+bodies -- Pholus alone reaches K = 64,674 against a 1500 budget.
+
+The gates did not lie about what they measured; they measured the wrong domain. `harness/dump.c`
+sampled four flag sets (`MOSEPH`, `+TRUEPOS`, `+NONUT`, `SWIEPH`) and Mercury-Pluto at one target,
+and every cell the patch broke lay outside that sample. Three earlier statements in this entry
+followed from it and were wrong:
+
+- "78,244 dump rows byte-identical ... so the fix changes nothing that already works" -- the row
+  count was real (and was a `wc -l`; the record count is 78,000) but the conclusion did not
+  follow from it. `dump.c` now covers `SIDEREAL`, `EQUATORIAL`, `TOPOCTR`, `JPLEPH` and the
+  asteroids, at 378,130 records.
+- "verified ... against an independent reference" for the Earth-vs-Sun+180 check -- it is not
+  independent. The identity holds by construction inside `swe_calc`, both vectors carrying the
+  same light-time and aberration treatment, and its own floor is 3.09e-08 days against a reported
+  agreement of 3.7e-08. Put `SEFLG_TRUEPOS` on the heliocentric side only and the gap jumps to
+  20.88 arcsec. It confirms the heliocentric path lands on the corresponding crossing; it cannot
+  see anything that moves both paths.
+- "worst observed iterations ... helio_cross 7" -- true only on a single-target Mercury-Pluto
+  grid. Pholus needs 76 and Comet Halley 1,881.
+
+Two candidate designs were falsified by measurement and dropped; both remain worth recording.
+Seeding the search from the measured speed `x[3]` (the way `swe_helio_cross` already does) moves
+18,082 of 28,748 converged values. And a blanket `jd < jd_et` contract check would have broken
+`swe_helio_cross` with `dir = -1`, which returns an earlier time 7,961 times *by design* -- its
+documentation says "the previous crossing, if dir < 0".
+
 **Do not fix the port.** `SwissEphNet/CPort/Sweph.cs` is a transliteration-frozen path
 (`CONTRIBUTING.md`), and even setting that aside, this is a design decision (how the port should
 guard against or recover from a hang its own upstream source has) separate from porting 2.10.03,
-not a divergence-from-the-C correction the freeze's one exception covers -- the port is faithful to
-the C here, which is exactly the problem. Recorded so a future porter (or anyone routing a caller-
-supplied `x2cross` into `swe_solcross` with `SEFLG_HELCTR` set) knows this before hitting it in
+not a divergence-from-the-C correction the freeze's one exception covers -- `Sweph.cs:9861` and
+`:9898` hardcode `SE_SUN` faithfully, matching `sweph.c`, and the patches in `patch/cross/` are not
+upstream-accepted C: mirroring them into the port now would *create* a divergence from the C this
+port tracks, not correct one. The decision, confirmed by the maintainer of this fork, is to fix the
+port when Astrodienst actually releases a fix, not before. Recorded so a future porter (or anyone
+routing a caller-supplied `x2cross`/`jd` into a crossing function) knows this before hitting it in
 production rather than during an oracle run.
 
 ## insert_gap_string_for_tabs drops swetest.c's LEN_SOUT bound
@@ -3338,3 +3587,295 @@ changed version classification. For example, `HOUSESEX|K|0|0|2600000|SIDEREAL` h
 at `v2.10.3.1` and 12 at `HEAD`. Both oracle known-diff files are empty, so the bit-exact gate is
 unaffected, but a `case_id` does not pin its input across regenerations. Options are to note the
 shift in each regeneration log, or to put `sid_mode` into the `case_id`.
+
+## split_deg_nakshatra: SE_SIDM_USER collides with the Sheoran ayanamsha offset, reproduced deliberately
+
+**Status: open upstream.** A real `libswe` defect, reproduced and measured on both sides, whose fix
+belongs in Astrodienst's source rather than here. `docs/upstream/swe_split_deg-nakshatra-sidm-user.md`
+carries the report and `docs/upstream/swe_split_deg-nakshatra.patch` the one-line fix; both are
+drafted and not yet sent. The port keeps the C's behaviour until upstream resolves it — that is the
+freeze working, not a permanent divergence, which is why this is filed `open upstream` rather than
+`won't fix`.
+
+`split_deg_nakshatra` (`external/swisseph/swephlib.c:3941-3986`) applies a 3°20' offset for Sunil
+Sheoran's "Vedic" ayanamsha, guarded at `:3952`:
+
+```c
+// Sheoran "Vedic" ayanamsha: 0 Aries = 3°20 Ashvini
+if ((swed.sidd.sid_mode & SE_SIDM_TRUE_SHEORAN) == SE_SIDM_TRUE_SHEORAN)
+  ddeg = swe_degnorm(ddeg + 3.33333333333333);
+```
+
+This is a bitwise-AND equality test on a value that is a mode number, not an independent bitmask.
+`SE_SIDM_TRUE_SHEORAN` is 39 (`0b00100111`); `SE_SIDM_USER` is 255 (`0b11111111`); and
+`(255 & 39) == 39`. The parentheses are this file's, not the C's — the guard itself is correctly
+parenthesised; they are written here only because `==` binds tighter than `&`, so the bare form
+`255 & 39 == 39` is a different expression on the page.
+
+Every other site in the library that compares a stored `sid_mode` to a named **mode** constant does
+so by equality. Three strip the caller's modifier bits first with `sid_mode %= SE_SIDBITS`
+(`sweph.c:2869`, `:2967`, `:3015`). Two compare directly: the Sheoran computation itself at
+`sweph.c:3072` (`if (sid_mode == SE_SIDM_TRUE_SHEORAN)`, the stripped local), and the
+ephemeris-path guard at `:3031-3044`, where eleven of the twelve modes test the stripped local while
+Sheoran alone tests the unstripped member, `sip->sid_mode == SE_SIDM_TRUE_SHEORAN` (`:3035`) — which
+is correct there, because `swe_set_sid_mode` stores mode 39 with its bits already stripped
+(`:2880-2894`).
+
+The library does test `sid_mode` with `&` in roughly two dozen other places, but every one of those
+is against a `SE_SIDBIT_*` flag, which is what `&` is for. `swephlib.c:3952` is the only place in the
+library that applies bit inclusion to a mode number; `swetest.c:1321` does the same outside it.
+
+**`sweph.c:3072` is what makes this a contradiction rather than an ambiguity.** Under
+`SE_SIDM_USER`, 255 != 39, so that branch does not run and `swe_calc` correctly returns longitudes in
+the caller's own ayanamsha — and then `split_deg_nakshatra` applies Sheoran's nakshatra offset to
+them anyway. Two halves of one feature disagree about which ayanamsha was selected.
+
+The result: any caller who selects a custom
+ayanamsha with `swe_set_sid_mode(SE_SIDM_USER, ...)` and then formats a longitude with
+`SE_SPLIT_DEG_NAKSHATRA` silently gets Sheoran's offset applied to their own ayanamsha, with no
+error return and no `serr`.
+
+**Measured against `v2.10.3bfinal` (`f4dcd18e`), MSVC 19.51, `/O2 /fp:precise /MD`.** Probe
+longitude 10.0°, `SE_SPLIT_DEG_NAKSHATRA`:
+
+```
+SE_SIDM_TRUE_SHEORAN (39)              -> nak=1  0d 00' 00"   (intended)
+SE_SIDM_USER (255)                     -> nak=1  0d 00' 00"   (the bug)
+SE_SIDM_USER|SE_SIDBIT_USER_UT (1279)  -> nak=1  0d 00' 00"   (the bug)
+SE_SIDM_USER|SE_SIDBIT_ECL_T0 (511)    -> nak=1  0d 00' 00"   (the bug)
+```
+
+An exhaustive sweep of the 47 predefined modes (0-46) found no other collision: only mode 39 shifts
+the result, and it does so by design. `SE_SIDM_USER` is not the *only* colliding value — 255 OR'd
+with any subset of the six `SE_SIDBIT_*` constants collides too, 64 values in all, of which three
+were measured (255, 511, 1279). What matters is that every one of them is `SE_SIDM_USER` with
+modifier bits, and `SE_SIDM_USER` is precisely the mode a caller sets to use a custom ayanamsha (a
+Lahiri variant with its own `t0`, for instance), so this is not a corner a caller has to go looking
+for. `swe_set_sid_mode` guarantees nothing else can reach the guard: negatives clamp to 0
+(`sweph.c:2865-2866`), any stripped value at or above `SE_NSIDM_PREDEF` other than `SE_SIDM_USER`
+becomes Fagan/Bradley (`:2897-2898`), and the modifier bits all sit at 256 and above, so they can
+never contribute bits 0, 1, 2 or 5.
+
+**The port reproduces this exactly.** `SwissEphNet/CPort/SwephLib.cs:4202` is a line-by-line
+transliteration of the same guard:
+
+```csharp
+if ((swed.sidd.sid_mode & SwissEph.SE_SIDM_TRUE_SHEORAN) == SwissEph.SE_SIDM_TRUE_SHEORAN)
+    ddeg = swe_degnorm(ddeg + 3.33333333333333);
+```
+
+`SwissEphNet/CPort/` is transliteration-frozen (`CONTRIBUTING.md`): only a correction that makes
+the port *more* faithful to the C is a permitted exception, and this guard is faithful to the C as
+it stands today. Fixing it locally would diverge from upstream, not converge on it, so the port
+keeps the bug until Astrodienst fixes `swephlib.c:3952` and the fix can be ported across in the
+usual way. A proposed one-line fix has been drafted (`sid_mode % SE_SIDBITS ==
+SE_SIDM_TRUE_SHEORAN`, matching the idiom at `sweph.c:2869`/`:2967`/`:3015`) for the upstream
+report, not yet sent.
+
+Two related behaviours of `split_deg_nakshatra` and `swe_split_deg`, confirmed by the same probe
+and recorded here as documentation observations rather than defects: the nakshatra index is
+0-based (0..26, `swephlib.c:3969-3970`) despite the function's own header comment calling it a
+"nakshatra number"; and a negative `ddeg` never reaches the nakshatra path at all, because
+`swe_split_deg` (`swephlib.c:4017` onward) tests `if (ddeg < 0)` before its `else if
+(roundflag & SE_SPLIT_DEG_NAKSHATRA)` branch (`:4021-4027`), which also makes
+`split_deg_nakshatra`'s own `if (ddeg < 0)` block (`:3947-3950`) unreachable through
+`swe_split_deg`.
+
+
+## swetest -sidudef crashes in the C; C#'s definite-assignment rule makes the port immune
+
+**Status: closed upstream; still present at the pin.** A crash in Astrodienst's `swetest.c` that
+this port cannot reproduce, because the C# language forbids the construct that causes it. Fixed on
+upstream `master`, which this repository does not track: `external/swisseph` stays pinned at
+`v2.10.3bfinal` (`f4dcd18e`), so the crash is still reachable in the reference binary built here.
+Nothing in the port changes. Report and patch:
+`docs/upstream/swetest-sidudef-null-strstr.txt` and `.patch`.
+
+**Fixed upstream in `91339e55`**, "fixed -sidudef bug", Alois Treindl, 6 September 2026 00:10 +0200.
+One file, one line, and it is the patch's recommended form character for character:
+
+```c
+-      if (strstr(sp, "jdisut") != NULL) {
++      if (sp != NULL && strstr(sp, "jdisut") != NULL) {
+```
+
+Not the `strstr(s1, ...)` alternative the report offered and argued against, which would have
+honoured a `jdisut` token appearing without a comma and so changed behaviour beyond the crash. The
+report's recommendation was taken as given.
+
+**Thread history.** Sent 18 August 2026 to the swisseph mailing list (groups.io topic 120803098,
+message #13533), subject "swetest v2.10.3bfinal: -sidudef with no argument segfaults (patch
+attached)", patch attached; no reply for eighteen days. Independently confirmed 5 September 2026
+21:21 in message #13536 by another list member, a screenshot of an Ubuntu apport dialog over a
+terminal running the identical command line twice, each answering `Segmentation fault (core
+dumped)`, with no accompanying text. The fix commit is timestamped under three hours later. Answered
+6 September 2026 10:00 in message #13537 with the comma workaround and the one-line fix; text at
+`docs/upstream/swetest-sidudef-null-strstr-reply-1.txt`, which also records two drafted paragraphs
+cut before sending. Alois Treindl replied at 13:14 in message #13538: fixed, "even when rather
+irrelevant", because "the users of test program swetest are expected to enter any of the complex
+parameters correctly", "if that is not done, all kinds of unexpected and undocumented behaviour
+might arise", and "swetest must not be used in production applications, only for testing".
+
+**That framing is worth recording, because it prices the two remaining swetest reports.** The fix
+landed, so the argument carried on the merits; but the maintainer's stated position is that
+`swetest` is a test harness whose users are expected to supply well-formed arguments, and that
+malformed input producing undefined behaviour there is not a defect worth much. Both still-unsent
+`-sidudef` reports below argue from malformed or over-long arguments to that same parser, and both
+should expect that reception. Neither is invalidated by it. The `strcpy` one in particular is not a
+crash-on-garbage claim at all: its payload is that a long *well-formed* argument silently changes
+the answer, which is exactly the "unexpected and undocumented behaviour" the reply waves through.
+
+`swetest.c:918` calls `strstr(sp, "jdisut")` with no NULL test. The line three above it,
+`:915`'s `if ((sp = strchr(s1, ',')) != NULL)`, does test — but the *assignment* sits inside that
+condition expression, so it executes on every path through the branch. With no comma in the argument
+`strchr` returns NULL, `:915`'s guard correctly skips the `atof` beneath it, and `:918` then hands
+that same NULL straight to `strstr`.
+
+So `sp` is reliably NULL there, not indeterminate and not stale. The distinction is worth stating
+because staleness is the obvious first hypothesis: `sp` is a plain automatic declared at `:824` and
+never initialised, and eight other branches of the same argv loop assign it (`:963`, `:978`, `:983`,
+`:1088`, `:1095`, `:1105`, `:1109`, `:1192`), so an earlier argument such as `-topo` really does
+leave a live pointer in it. `:915`'s unconditional assignment is what overwrites that and makes the
+fault deterministic. The sanitizer evidence below only makes sense on the NULL reading.
+
+Measured at `v2.10.3bfinal`. The bare option name, alone with nothing after it, is enough:
+
+```
+swetest -b1.1.2000 -ut12:00 -p0 -sidudef
+swetest -b1.1.2000 -ut12:00 -p0 -sidudefjdisut
+swetest -b1.1.2000 -ut12:00 -p0 -sidudef2451545
+
+  gcc 13.3.0 -O2, Ubuntu 24.04 : SIGSEGV, core dumped, exit 139, no output
+  MSVC 19.51 /O2 /fp:precise   : access violation 0xC0000005, no output
+```
+
+One comma is the whole difference, and both surviving forms return on the *unpatched* binary
+(re-measured 6 September 2026 against `external/.c-reference/swetest.exe`, MSVC, Moshier fallback):
+`-sidudef2451545,25.0` prints an ayanamsha of 24°59'46.0686, and with `,jdisut` appended
+24°59'46.0685, so the sub-option is doing its job. A bare `-sidudef,` also returns, but leaves the
+reference epoch at zero and prints a meaningless 92°30'27.1031.
+
+valgrind puts the read at address zero; `-fsanitize=undefined` reports `swetest.c:918:11: runtime
+error: null pointer passed as argument 1, which is declared to never be null`.
+
+**The port diverges here, and the divergence is forced rather than chosen.**
+`Programs/SweTest/Program.cs:1035` assigns `sp = string.Empty;` before the `strchr` test, so the
+later scan runs against an empty string and finds nothing instead of dereferencing garbage. That is
+not a deliberate fix applied on top of the C: C# rejects reading an unassigned local outright
+(CS0165), so a literal transliteration of `:824`'s bare `char *sp;` will not compile. The port had
+no option that both compiles and reproduces the defect.
+
+This is worth recording precisely because it is the opposite of the usual case. The transliteration
+freeze normally means the port carries the C's defects rather than diverging (see
+"split_deg_nakshatra: SE_SIDM_USER collides with the Sheoran ayanamsha offset" above for the normal
+shape). Here the C's defect is *unrepresentable* in the target language, so the port is strictly
+safer than its source at this one site. `CONTRIBUTING.md` does not need to be invoked to justify it:
+the freeze is about never reformatting and never restructuring, and nothing here is edited away from
+the C by choice.
+
+Three further upstream defects surfaced in the same parsing block. Each is drafted as its own
+report rather than bundled with the crash, so a one-line NULL check is not held hostage to an
+API-contract discussion. That separation paid off: the NULL check went in on its own eighteen days
+after it was sent, untouched by any of the arguments below. All three are still unsent, and all
+three still reproduce on upstream `master` at `91339e55` — checked directly, `strcpy(s1, argv[i] + 8)`
+is unchanged and `eclt0`/`ssyplane` still appear only in the usage text at `swetest.c:209-210` with
+no parser reading them:
+
+`docs/upstream/swe_get_ayanamsa_name-negative-index.txt` — **`swe_get_ayanamsa_name` reads outside
+its array for any negative argument**, and this one is a library defect, not a harness one.
+`isidmode %= SE_SIDBITS` truncates toward zero, so `-1 % 256` is `-1`, the bound check tests only the
+upper end (`sweph.c:7129-7130`), and the function returns `ayanamsa_name[-1]`. Reachable as
+`swetest -sid-5`: `atol` accepts the sign (`swetest.c:926`) and `:1548` passes it unclamped, even
+though `swe_set_sid_mode` clamps negatives internally (`sweph.c:2865-2866`) — so the *value* printed
+is Fagan/Bradley's and only the *name* lookup sees `-5`. Measured: access violation `0xC0000005`
+under MSVC; under gcc the read is equally out of bounds but happens not to fault, which is the worse
+outcome. UBSan: `sweph.c:7131:25: runtime error: index -5 out of bounds for type 'char *[47]'`; ASan
+reports a global-buffer-overflow at the same line. Patch drafted and verified. The port is exposed
+here too, since `swe_get_ayanamsa_name` is a transliterated public method, but nothing in this
+repository calls it with a negative argument.
+
+`docs/upstream/swetest-sidudef-eclt0-ssyplane-unparsed.txt` — the `-sidudef` sub-options `eclt0` and
+`ssyplane` are documented at `swetest.c:208-209` and never parsed. Demonstrating it needs a `t0` far
+from the chart date, because projecting onto the ecliptic of `t0` is nearly a no-op when they
+coincide: with `t0` at JD 1721057.5 and the chart at 2000, `,eclt0` gives output byte-identical to
+omitting it, while `-sidbit256` moves the Sun and takes its latitude from 0.84″ to 15′37″ (both
+measured with `-emos`; this machine has no `.se1` files, so swetest would otherwise fall back to
+Moshier silently and print different digits). A patch is written,
+`docs/upstream/swetest-sidudef-eclt0-ssyplane.patch`, against `s1` rather than `sp` so it composes
+with the crash fix; drafted, not sent. The two touch lines three apart, so plain `git apply` refuses
+whichever goes second, though `patch -p1` takes it and `git apply --3way` works once the first is
+committed.
+
+`docs/upstream/swetest-sidudef-strcpy-overflow.txt` — **the `-sidudef` argument is copied into a
+fixed buffer with an unbounded `strcpy`**. `swetest.c:913` does `strcpy(s1, argv[i] + 8)` into
+`char s1[AS_MAXCH]` (`:823`, `AS_MAXCH` is 256 at `sweodef.h:261`), with nothing checking the length
+of what arrives. On Ubuntu the overflow is usually caught: glibc's `_FORTIFY_SOURCE` aborts at 256
+characters with "buffer overflow detected", exit 134. That is a diagnostic and not a defence — it
+does nothing at `-O0`, and upstream's own Makefile uses `CFLAGS = -g -Wall -fPIC` with no `-O`, so
+the shipped build is the quiet one. With fortification off, the copy runs past `s2`, `ephepath`,
+`fname` and `sdate` and at 1280 characters reaches `stimein` (`:844`), the buffer `-ut12:00` filled
+moments earlier at `:876`. The run then answers for 0:00:00 UT instead of 12:00:00 UT, half a day
+off, and still exits 0: the ayanamsha reads 24°59'46.0002 where every shorter spelling of the same
+argument reads 24°59'46.0686. The threshold is sharp at 1279 versus 1280 characters, and option
+order decides it — put `-sidudef` before `-ut`, or drop `-ut` for `-bj2451545`, and the same 3000
+characters change nothing. AddressSanitizer names `strcpy` at the line. The patch is
+`strncpy(s1, argv[i] + 8, AS_MAXCH - 1)` with an explicit terminator. Drafted, not sent.
+
+The port is not exposed to this one either, and again not by choice. `s1` is declared at
+`Programs/SweTest/Program.cs:905` as a plain `string`, and `:1033` assigns
+`s1 = argv[i].Substring(8)` into it, so there is no fixed buffer to run past and no adjacent
+variable to corrupt. It is the same buffer-vs-unbounded-string shape catalogued for the library in
+"Eight live sites transliterate a C fixed-size buffer as an unbounded C# string" above — that
+section covers `SwissEphNet/CPort/` only and does not include this site — and here the divergence
+happens to fall on the safe side.
+
+
+## swetest -astpos under -ut/-utc: UT passed as TT
+
+**Status: closed upstream; port has no `-astpos`; still present at the pin.** In `swetest.c` the
+`-astpos` listing is computed 69 seconds early whenever the time is given as `-ut` or `-utc`. Fixed
+on upstream `master` after the pin: `external/swisseph` is pinned at `94621aba`, which contains
+`-astpos` and still has the bug, and the pin is deliberately not being bumped for this fix alone.
+The reference `swetest.exe` built by `Tools/CReference/build-c.ps1` therefore still reproduces the
+defect. Nothing in the port changes. Report and patch: `docs/upstream/swetest-astpos-ut-time.txt`
+and `.patch`.
+
+**Fixed upstream in `509f9335`**, "fixed but in call to print_asteroids()" (sic: "but" for "bug"),
+Alois Treindl, 9 November 2026 13:33 +0100. One file, one line, byte-identical to the attached
+patch:
+
+```c
+-	print_asteroids(tjd, astpos, orb);
++	print_asteroids(te, astpos, orb);
+```
+
+**The defect.** `swetest.c:1613` passes `tjd` to `print_asteroids`, which hands it to `swe_calc`,
+and `swe_calc` expects TT. Under `-utc`, `tjd` holds UT (`:1466`, `tjd = tret[1]` from
+`swe_utc_to_jd`); under `-ut` it is the date itself read as UT (`:1468`). `main()` computes TT
+separately as `te = t + delt` (`:1554`) and uses `te` everywhere else, for example
+`swe_get_ayanamsa_ex(te, ...)` at `:1618`. Without `-ut`/`-utc`, `tjd` is already TT, so the
+listing was correct there. `-astpos` was added in `3fd0f956` ("with -astorb", 2026-08-08), which is
+not an ancestor of `v2.10.3bfinal` (`f4dcd18e`) but is an ancestor of `94621aba`.
+
+Measured with an MSVC build of `swetest.c` at `94621aba`, `seas_18.se1` and `seasnam.txt` from the
+repository. `swetest -b1.1.2020 -ut12:00 -astpos288.115686,0.01` listed nothing, while the same
+instant given as TT, `swetest -bj2458850.000802793 -astpos288.115686,0.01`, listed
+`0.010 1 Ceres`. The header showed the correct UT and TT both times. The positions were computed
+69.36 s early (delta t 69.361280 s), which put Ceres 0.000321 degrees behind and outside the
+0.010 degree orb. Ceres at 2020-01-01 12:00 UT is at 288.10578618, speed 0.3994 degrees/day.
+`-utc12:00` behaves like `-ut12:00`.
+
+**Thread history.** Sent 9 November 2026 12:58 to the swisseph mailing list (groups.io topic
+122172258, message #13594), subject "swetest asteroid bug and fix", patch attached. Alois Treindl
+replied at 13:45 the same day in message #13595: fixed. He called `print_asteroids()` "a very recent
+and untested addition to swetest" and said he was not surprised it had such an error. His reply
+showed both the `-ut12:00` form and the TT form now listing `0.010 1 Ceres` and `0.002 2213 Meeus`,
+with the header reading "version 2.10.04".
+
+This report led with a well-formed invocation that gives a wrong answer, the framing the
+`-sidudef` section above records the maintainer as valuing. It was fixed within the hour.
+
+**What it means for the port.** `Programs/SweTest/Program.cs` has no `-astpos` at all, because its
+swetest transliteration predates `3fd0f956`, so there is nothing to correct. Whoever later
+transliterates `-astpos` must port the post-`509f9335` line, with `te`. The freeze allows that,
+since it is the C as it now stands.
