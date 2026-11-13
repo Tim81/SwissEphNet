@@ -17,7 +17,7 @@
       that package anyway. Until the release lands, build from source or
       reference the project directly.
 
-      2.10.3.2 tracks upstream master at 94621aba (v2.10.3bfinal plus 12
+      2.10.3.3 tracks upstream master at 6c989727 (v2.10.3bfinal plus 21
       commits; no newer tag exists). SE_VERSION is still "2.10.03".
 
       The "port revision" above is the fourth component, for a port-only
@@ -50,7 +50,7 @@
       component. Decide it deliberately at the point of making one; do not
       discover it from a consumer's FileLoadException.
     -->
-    <Version>2.10.3.2</Version>
+    <Version>2.10.3.3</Version>
     <!--
       Plain SemVer, with no descriptive text. The SDK appends +<commit sha> to
       whatever is here, so anything with spaces or parentheses in the core
@@ -60,7 +60,7 @@
       used to carry now lives in the AssemblyMetadata items below, which is
       where arbitrary text belongs.
     -->
-    <InformationalVersion>2.10.3.2</InformationalVersion>
+    <InformationalVersion>2.10.3.3</InformationalVersion>
     <Authors>Yan Grenier, Timothy van der Ham</Authors>
     <!--
       Company is the publisher field, distinct from Authors above: NuGet shows it separately, and
