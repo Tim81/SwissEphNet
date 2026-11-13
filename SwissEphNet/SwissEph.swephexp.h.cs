@@ -362,56 +362,105 @@ namespace SwissEphNet
         public const int SE_SIDBIT_PREC_ORIG = 8192;
 
         /* sidereal modes (ayanamsas) */
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Fagan/Bradley ayanamsha, Cyril Fagan and Donald Bradley's empirical "synetic vernal point" of 24.042044444° fixed at epoch B1950.0.</summary>
         public const int SE_SIDM_FAGAN_BRADLEY = 0;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Lahiri ayanamsha, the Indian Calendar Reform Committee's 21 March 1956 decree (23.245524743°, Wahr-1980 nutation subtracted), the value given in Indian Astronomical Ephemeris 1989 p. 556 — the standard Lahiri value, distinct from the pre-revision decree preserved in <see cref="SE_SIDM_LAHIRI_ICRC"/>.</summary>
         public const int SE_SIDM_LAHIRI = 1;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the De Luce ayanamsha, zero offset fixed at epoch 1 January 1 BCE (year 0, Julian calendar), UT.</summary>
         public const int SE_SIDM_DELUCE = 2;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Raman ayanamsha, an offset of 21.01444° fixed at epoch J1900, which Astrodienst notes is apparently not based on a valid precession theory.</summary>
         public const int SE_SIDM_RAMAN = 3;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Usha/Shashi ayanamsha, an offset of 18.66096° fixed at epoch J1900, for which Astrodienst records no source for its defining method.</summary>
         public const int SE_SIDM_USHASHASHI = 4;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Krishnamurti ayanamsha, an offset of 22.363889° fixed at epoch J1900, for which Astrodienst notes the author gives no precise information on the method to derive the value.</summary>
         public const int SE_SIDM_KRISHNAMURTI = 5;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Djwhal Khul ayanamsha, a theosophical ("channeled") offset of 26.9630976° fixed at epoch J1900, tied to a predicted Aquarius-ingress date of 1 July 2117.</summary>
         public const int SE_SIDM_DJWHAL_KHUL = 6;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Yukteshwar ayanamsha, an offset of 21.082222° fixed at epoch J1900, which Astrodienst states "seems to be wrong".</summary>
         public const int SE_SIDM_YUKTESHWAR = 7;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the J.N. Bhasin ayanamsha, an offset of 21.365556° fixed at epoch J1900, for which Astrodienst records no source for its defining method.</summary>
         public const int SE_SIDM_JN_BHASIN = 8;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: Babylonian/Kugler cluster 1, an offset of −5.66667° fixed at epoch year −100, UT; Astrodienst does not record Kugler's original bibliographic source for this cluster.</summary>
         public const int SE_SIDM_BABYL_KUGLER1 = 9;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: Babylonian/Kugler cluster 2, an offset of −4.26667° fixed at epoch year −100, UT; Astrodienst does not record Kugler's original bibliographic source for this cluster.</summary>
         public const int SE_SIDM_BABYL_KUGLER2 = 10;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: Babylonian/Kugler cluster 3, an offset of −3.41667° fixed at epoch year −100, UT; Astrodienst does not record Kugler's original bibliographic source for this cluster.</summary>
         public const int SE_SIDM_BABYL_KUGLER3 = 11;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Babylonian/Huber ayanamsha, an offset of −4.46667° fixed at epoch year −100, UT, per Peter Huber, Centaurus 5 (1958) 192-208.</summary>
         public const int SE_SIDM_BABYL_HUBER = 12;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Babylonian/Eta Piscium ayanamsha, an offset of −5.079167° fixed at JD 1673941, UT, with eta Piscium culminating with the zero point (per Mercier).</summary>
         public const int SE_SIDM_BABYL_ETPSC = 13;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Babylonian/Aldebaran = 15 Tau ayanamsha, an offset of −4.44138598° fixed at epoch year −100, UT, holding Aldebaran at 15° Taurus — Astrodienst's own construction from a remark by Cyril Fagan.</summary>
         public const int SE_SIDM_ALDEBARAN_15TAU = 14;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Hipparchos ayanamsha, an offset of −9.33333° fixed at JD 1674484.0, UT, Mercier's proposed date for Hipparchus/Ptolemy.</summary>
         public const int SE_SIDM_HIPPARCHOS = 15;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Sassanian ayanamsha, zero offset fixed at JD 1927135.8747793, UT, an epoch Astrodienst associates with the Zij al-Shah revision under Khusrau Anushirwan.</summary>
         public const int SE_SIDM_SASSANIAN = 16;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Galactic Center held exactly at 0° Sagittarius, Astrodienst's own construction (D. Koch, 1999) with no claimed astrological background, recomputed at call time.</summary>
         public const int SE_SIDM_GALCENT_0SAG = 17;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the J2000.0 (2000 Jan 1.5, TT) precession reference frame with zero offset, not an astrological ayanamsha; <see cref="swe_set_sid_mode"/> forces <see cref="SE_SIDBIT_ECL_T0"/> for it.</summary>
         public const int SE_SIDM_J2000 = 18;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the J1900 (1900 Jan 0.5, TT) precession reference frame with zero offset, not an astrological ayanamsha; <see cref="swe_set_sid_mode"/> forces <see cref="SE_SIDBIT_ECL_T0"/> for it.</summary>
         public const int SE_SIDM_J1900 = 19;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the B1950 (1950 Jan 0.923, TT) precession reference frame with zero offset, not an astrological ayanamsha; <see cref="swe_set_sid_mode"/> forces <see cref="SE_SIDBIT_ECL_T0"/> for it.</summary>
         public const int SE_SIDM_B1950 = 20;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Suryasiddhanta ayanamsha, zero offset fixed at the mean-Sun Aries ingress of 21 March 499 CE, 07:30:31.57 UT, at Ujjain, Astrodienst's own derivation from the text via Simon et al. (1994).</summary>
         public const int SE_SIDM_SURYASIDDHANTA = 21;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Suryasiddhanta, mean Sun ayanamsha, the same 499 CE Ujjain epoch as <see cref="SE_SIDM_SURYASIDDHANTA"/> but with the ingress taken at the true position of the mean Sun (offset −0.21463395°).</summary>
         public const int SE_SIDM_SURYASIDDHANTA_MSUN = 22;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Aryabhata ayanamsha, zero offset fixed at 21 March 499 CE, 06:56:55.57 UT, at Ujjain, analogous to <see cref="SE_SIDM_SURYASIDDHANTA"/>.</summary>
         public const int SE_SIDM_ARYABHATA = 23;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Aryabhata, mean Sun ayanamsha, the same 499 CE Ujjain epoch as <see cref="SE_SIDM_ARYABHATA"/> with the mean-Sun variant analogous to <see cref="SE_SIDM_SURYASIDDHANTA_MSUN"/> (offset −0.23763238°).</summary>
         public const int SE_SIDM_ARYABHATA_MSUN = 24;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the SS Revati ayanamsha, the Suryasiddhanta's stated Revati/zeta Piscium polar longitude of 359°50', frozen at the same 499 CE Ujjain epoch as <see cref="SE_SIDM_SURYASIDDHANTA"/> rather than recomputed from the star at call time.</summary>
         public const int SE_SIDM_SS_REVATI = 25;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the SS Citra ayanamsha, the Suryasiddhanta's stated Citra/Spica polar longitude of 180°, frozen at the same 499 CE Ujjain epoch as <see cref="SE_SIDM_SURYASIDDHANTA"/> rather than recomputed from the star at call time.</summary>
         public const int SE_SIDM_SS_CITRA = 26;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: Spica held exactly at 0° Libra (180° true ecliptic longitude), recomputed from the star's position at call time.</summary>
         public const int SE_SIDM_TRUE_CITRA = 27;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: zeta Piscium held exactly at 29°50' Pisces, recomputed from the star's position at call time.</summary>
         public const int SE_SIDM_TRUE_REVATI = 28;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: delta Cancri held exactly at 16° Cancer, recomputed from the star's position at call time, per P.V.R. Narasimha Rao (author of Jagannatha Hora).</summary>
         public const int SE_SIDM_TRUE_PUSHYA = 29;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Galactic Center held at the golden section between 0° Scorpio and 0° Aquarius (244.377°), recomputed at call time, per Rafael Gil Brand.</summary>
         public const int SE_SIDM_GALCENT_RGILBRAND = 30;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the galactic/ecliptic intersection node computed at call time using the IAU 1958 galactic pole, which Astrodienst considers outdated.</summary>
         public const int SE_SIDM_GALEQU_IAU1958 = 31;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the galactic/ecliptic intersection node computed at call time using the Liu/Zhu/Zhang (2010) galactic pole (Astronomy &amp; Astrophysics, Oct. 2010).</summary>
         public const int SE_SIDM_GALEQU_TRUE = 32;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the galactic/ecliptic intersection node, on the 2010 galactic pole, placed at the middle of the lunar mansion Mula per Ernst Wilhelm (2004), recomputed at call time.</summary>
         public const int SE_SIDM_GALEQU_MULA = 33;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the autumn equinox of 1998 (JD 2451079.734892, TT) aligned with the Galactic Equator/Pole per Raymond Mardyks, giving an ayanamsha of exactly 30° at that epoch; <see cref="swe_set_sid_mode"/> forces <see cref="SE_SIDBIT_ECL_T0"/> for it, and despite the name it is a stored epoch-plus-offset entry rather than a runtime galactic mode.</summary>
         public const int SE_SIDM_GALALIGN_MARDYKS = 34;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: lambda Scorpii held exactly at 0° Sagittarius, recomputed from the star's position at call time, per K. Chandra Hari.</summary>
         public const int SE_SIDM_TRUE_MULA = 35;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Galactic Center projected through the celestial north pole (dhruva) to the middle of the lunar mansion Mula (246°40'), recomputed at call time, per Ernst Wilhelm (2004).</summary>
         public const int SE_SIDM_GALCENT_MULA_WILHELM = 36;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: zero offset fixed at Kali 3623 (522 CE), UT, at Ujjain, using Kali midnight and the Suryasiddhanta year length.</summary>
         public const int SE_SIDM_ARYABHATA_522 = 37;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Babylonian/Britton ayanamsha, an offset of −3.2° fixed at epoch 1 January 1 BCE (year 0, Julian calendar), UT, per John P. Britton, Archive for History of Exact Sciences 64 (2010) 617-663.</summary>
         public const int SE_SIDM_BABYL_BRITTON = 38;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the "Vedic"/Sheoran ayanamsha, recomputed at call time per Sunil Sheoran's The Science of Time and Timeline of World History (2017); Astrodienst publishes a rebuttal of its philological basis.</summary>
         public const int SE_SIDM_TRUE_SHEORAN = 39;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Galactic Center held exactly at 0° Capricorn, recomputed at call time per David Cochrane (2017); its value wraps past 360° rather than sitting near 24°, reading about 356.8° at J2000.</summary>
         public const int SE_SIDM_GALCENT_COCHRANE = 40;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: an ayanamsha of exactly 25° fixed at epoch 1 January 2000, 00:00 UT (JD 2451544.5), placing the Galactic Equator node per Nick Anthony Fiorenza's The Star Chart (2001); despite the name, a stored epoch-plus-offset entry rather than a runtime galactic mode.</summary>
         public const int SE_SIDM_GALEQU_FIORENZA = 41;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Vettius Valens ayanamsha, an offset of −2.9422° fixed at epoch 1 January 150 CE (Julian calendar), UT, derived by James H. Holden (AFA Journal of Research 7:2, 1995) from Valens' recorded lunar positions.</summary>
         public const int SE_SIDM_VALENS_MOON = 42;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Lahiri 1940 ayanamsha, Lahiri's earlier value from Panchanga Darpan (1940), an offset of 22.44597222° fixed at epoch J1900, predating the value in <see cref="SE_SIDM_LAHIRI"/>.</summary>
         public const int SE_SIDM_LAHIRI_1940 = 43;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Lahiri VP285 ayanamsha, zero offset fixed at the epoch where Simon et al. (1994) place the mean Sun at 0° in 285 CE, corrected for Vondrák precession, from Lahiri's Tables of the Sun (1972) p. IX; a value Lahiri later abandoned in favor of <see cref="SE_SIDM_LAHIRI_ICRC"/>.</summary>
         public const int SE_SIDM_LAHIRI_VP285 = 44;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Krishnamurti-Senthilathiban ayanamsha, zero offset fixed at the mean equinox of 291 CE, D. Senthilathiban's 2019 reconstruction (Study of KP Ayanamsa with Modern Precession Theories) — not the "KP New Ayanamsa" commonly meant by that name in Krishnamurti Paddhati practice.</summary>
         public const int SE_SIDM_KRISHNAMURTI_VP291 = 45;
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: the Lahiri ICRC ayanamsha, the original 1956 Indian Calendar Reform Committee decree (23.24535793°, Woolard-1953 nutation subtracted), fixed at the same 21 March 1956 epoch as <see cref="SE_SIDM_LAHIRI"/> but before the 1985 revision that <see cref="SE_SIDM_LAHIRI"/> applies.</summary>
         public const int SE_SIDM_LAHIRI_ICRC = 46;
         ////#define SE_SIDM_MANJULA         43
+        /// <summary>Sidereal mode for sid_mode in <see cref="swe_set_sid_mode"/>: a user-defined ayanamsha whose t0 is TT, configured via the t0 and ayan_t0 parameters of <see cref="swe_set_sid_mode"/>; combine with <see cref="SE_SIDBIT_USER_UT"/> to use a UT-based t0 instead.</summary>
         public const int SE_SIDM_USER = 255; /* user-defined ayanamsha, t0 is TT */
 
+        /// <summary>The number of predefined sidereal modes (indices 0 through 46) recognised by <see cref="swe_set_sid_mode"/>, not counting <see cref="SE_SIDM_USER"/>.</summary>
         public const int SE_NSIDM_PREDEF = 47;
 
         /* used for swe_nod_aps(): */

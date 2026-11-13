@@ -162,6 +162,21 @@ see "What the oracle grids do not cover in the house code" in `docs/known-issues
 
 There is no `2` variant of `swe_calc`, which is why the example above uses `swe_calc_ut`.
 
+## Sidereal and Vedic (Jyotish) work
+
+Everything above computes tropical positions. For sidereal work — Jyotish, or Western sidereal —
+the zodiac origin is shifted by an ayanamsha you must choose explicitly: call `swe_set_sid_mode`,
+then pass `SEFLG_SIDEREAL` to `swe_calc_ut` and `swe_houses_ex`. There are 47 predefined ayanamshas
+plus a user-defined mode, and the choice materially changes the answer, so the library gives you no
+default worth relying on.
+
+`docs/sidereal-and-vedic.md` covers this in full: the workflow with a runnable sample, the 47-mode
+catalogue with measured values, sidereal house behaviour, nakshatras, and the traps — most
+importantly when subtracting an ayanamsha from a tropical longitude yourself is safe: it
+reproduces `SEFLG_SIDEREAL` in the traditional modes only if both calls use the same nutation
+setting, and it cannot reproduce the `SE_SIDBIT_ECL_T0` or `SE_SIDBIT_SSY_PLANE` projections at
+all. Passing `SEFLG_SIDEREAL` avoids both traps.
+
 ## Threads and async
 
 Create one `SwissEph` instance per thread. A single instance is not safe to share across threads:
