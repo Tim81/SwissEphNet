@@ -8231,6 +8231,63 @@ namespace SwissEphNet.CPort
             return retc;
         }
 
+        /* catalog number at the start of a seasnam.txt line, or -1 for comment
+         * and empty lines (the number may be in brackets) */
+        // sweph.c:6954
+        static int seasnam_line_number(string s)
+        {
+            int sp = 0;
+            while (sp < s.Length && (s[sp] == ' ' || s[sp] == '\t' || s[sp] == '(' || s[sp] == '[' || s[sp] == '{'))
+                sp++;
+            // isdigit() in the C locale: ASCII '0'-'9' only (Char.IsDigit also accepts
+            // other Unicode decimal digits).
+            if (sp >= s.Length || s[sp] < '0' || s[sp] > '9')
+                return -1;
+            return C.atoi(s.Substring(sp));
+        }
+
+        /* seasnam.txt is normally sorted by catalog number (mpc2seasnam.pl writes
+         * it in MPCORB order, 895910 lines in 2026). Binary search over the file
+         * positions; afterwards fp is at the start of a line not later than the
+         * line of asteroid ipli, in a sorted file within a few kB of it. */
+        // sweph.c:6968. fseek -> CFile.Seek, ftell -> CFile.Position, fgets -> CFile.ReadLine.
+        // CFile.ReadLine reads byte by byte to the end of the line, so Position after it is
+        // the byte offset ftell gives after fgets for every line shorter than AS_MAXCH (fgets
+        // stops at AS_MAXCH - 1 characters; the longest seasnam.txt line at the pinned
+        // upstream commit is 25 characters).
+        static void seasnam_seek(CFile fp, int ipli)
+        {
+            string si;
+            long lo = 0, hi, mid, pos;
+            int n;
+            if (fp.Seek(0L, SeekOrigin.End) != 0 || (hi = fp.Position) <= 0) {
+                fp.Seek(0L, SeekOrigin.Begin);
+                return;
+            }
+            /* the line of ipli starts in [lo, hi]; lo is always a line start */
+            while (hi - lo > 4096) {
+                mid = lo + (hi - lo) / 2;
+                fp.Seek(mid, SeekOrigin.Begin);
+                n = -1;
+                pos = hi;
+                if (fp.ReadLine() != null) {	/* skip rest of a line */
+                    pos = fp.Position;
+                    while (pos < hi && (si = fp.ReadLine()) != null) {
+                        if ((n = seasnam_line_number(si)) >= 0)
+                            break;
+                        pos = fp.Position;
+                    }
+                }
+                if (n < 0 || pos >= hi)
+                    hi = mid;
+                else if (n < ipli)
+                    lo = pos;
+                else
+                    hi = pos;
+            }
+            fp.Seek(lo, SeekOrigin.Begin);
+        }
+
         public string swe_get_planet_name(int ipl, ref string s)
         {
             //int i;
@@ -8385,29 +8442,42 @@ namespace SwissEphNet.CPort
                             //char si[AS_MAXCH], *sp, *sp2;
                             if ((fp = swi_fopen(-1, SwissEph.SE_ASTNAMFILE, swed.ephepath, ref sdummy)) != null)
                             {
-                                while (ipli != iplf && ((sp = fp.ReadLine()) != null))
-                                {
-                                    sp = sp.TrimStart(' ', '\t', '(', '[', '{');
-                                    // sweph.c:7087 tests *sp == '#', a single-byte comparison;
-                                    // StartsWith without StringComparison is culture-sensitive,
-                                    // so make it ordinal.
-                                    if (String.IsNullOrWhiteSpace(sp) || sp.StartsWith("#", StringComparison.Ordinal))
-                                        continue;
-                                    /* catalog number of body of current line */
-                                    int spi = sp.IndexOfFirstNot('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
-                                    if (spi < 0) continue;
-                                    // sweph.c:7090 is `iplf = atoi(sp);`; when the line
-                                    // does not start with a digit, spi is 0 and the
-                                    // substring is empty, which int.Parse throws on where
-                                    // atoi silently returns 0.
-                                    iplf = C.atoi(sp.Substring(0, spi));
-                                    if (ipli != iplf)
-                                        continue;
-                                    sp = sp.Substring(spi);
-                                    /* set pointer after catalog number */
-                                    spi = sp.IndexOfAny(new char[] { ' ', '\t' });
-                                    if (spi < 0) continue;
-                                    s = sp.Substring(spi).TrimStart(' ', '\t');
+                                /* pass 0: binary search (sorted file); pass 1, only if the
+                                 * number was not found: whole file, as before (unsorted file) */
+                                int pass; bool found = false;
+                                for (pass = 0; pass < 2 && !found; pass++) {
+                                    if (pass == 0)
+                                        seasnam_seek(fp, ipli);
+                                    else
+                                        fp.Seek(0L, SeekOrigin.Begin);
+                                    iplf = 0;
+                                    while (ipli != iplf && ((sp = fp.ReadLine()) != null))
+                                    {
+                                        sp = sp.TrimStart(' ', '\t', '(', '[', '{');
+                                        // sweph.c:7087 tests *sp == '#', a single-byte comparison;
+                                        // StartsWith without StringComparison is culture-sensitive,
+                                        // so make it ordinal.
+                                        if (String.IsNullOrWhiteSpace(sp) || sp.StartsWith("#", StringComparison.Ordinal))
+                                            continue;
+                                        /* catalog number of body of current line */
+                                        int spi = sp.IndexOfFirstNot('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+                                        if (spi < 0) continue;
+                                        // sweph.c:7090 is `iplf = atoi(sp);`; when the line
+                                        // does not start with a digit, spi is 0 and the
+                                        // substring is empty, which int.Parse throws on where
+                                        // atoi silently returns 0.
+                                        iplf = C.atoi(sp.Substring(0, spi));
+                                        if (pass == 0 && iplf > ipli)
+                                            break;	/* sorted file: ipli is not in it */
+                                        if (ipli != iplf)
+                                            continue;
+                                        found = true;
+                                        sp = sp.Substring(spi);
+                                        /* set pointer after catalog number */
+                                        spi = sp.IndexOfAny(new char[] { ' ', '\t' });
+                                        if (spi < 0) continue;
+                                        s = sp.Substring(spi).TrimStart(' ', '\t');
+                                    }
                                 }
                                 fp.Dispose();
                             }
