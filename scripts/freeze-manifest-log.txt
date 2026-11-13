@@ -670,3 +670,32 @@ b"} where the C gives {"a", ""}); that one is fixed
     is byte-identical.
     Programs/SweTest/Program.cs: 5074 -> 5173 lines, trailing_ws 68 -> 69, sha256 C16707D6... ->
     99C9E77C....
+31. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-13: Re-transliteration
+    of swehouse.c at upstream 6c989727, ported into SwissEphNet/CPort/SweHouse.cs. This adopts an
+    upstream release; it is not a correction of a divergence. 6c989727 (2026-11-13) carries the
+    eleven-patch house cusp-speed set reported to the swisseph list in August 2026 (groups.io topic
+    120714355) plus sidereal_frame_speeds() for the ECL_T0 and SSY_PLANE sidereal modes: swehouse.c
+    grows from 3143 to 4253 lines, in 106 -U0 hunks against 94621aba, and every hunk was
+    re-transliterated line by line. swe_house_pos has no hunk and is unchanged. Result against the
+    MSVC-built C at 6c989727: bit-exact on the oracle grids (27,437 analytic rows and 3,376 file
+    rows, dump SHA-256 identical, known-diff files empty). Tools/CReference/build-c.ps1 needed no
+    change.
+    SwissEphNet/CPort: 48573 -> 49673 lines, kr_braces 1205 -> 1252, trailing_ws (1258) unchanged,
+    sha256 233D7F09... -> 57754209....
+32. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-13: Re-transliteration
+    of one sweph.c commit made after v2.10.3bfinal (be4aa5dd), ported into Sweph.cs.
+    swe_get_planet_name now looks a numbered asteroid up in seasnam.txt by binary search
+    (seasnam_line_number at sweph.c:6954, seasnam_seek at sweph.c:6968), with a full-scan fallback
+    for an unsorted file, instead of reading the file from the top. fseek, ftell and fgets map to
+    the existing CFile.Seek, Position and ReadLine. Test:
+    Tests/SwissEphNet.Tests/SeasnamLookupTest.cs (19 cases; it fails with "Wrong" on the
+    pre-port Sweph.cs).
+    SwissEphNet/CPort: 49673 -> 49743 lines, kr_braces 1252 -> 1257, trailing_ws (1258) unchanged,
+    sha256 57754209... -> 8C1A1B63....
+33. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-13: Re-transliteration
+    of two swetest.c commits made after v2.10.3bfinal, ported into Programs/SweTest/Program.cs.
+    509f9335 passes te, not tjd, to print_asteroids for -astpos (swetest.c:1613); the port had
+    carried the tjd form since 2.10.3.2. 7821165a calls swe_get_planet_name only when the name is
+    printed (swetest.c:1689 and :1701: format P or Q, horizontal lists, difference modes).
+    Programs/SweTest/Program.cs: 5173 -> 5185 lines, kr_braces (64) and trailing_ws (69) unchanged,
+    sha256 99C9E77C... -> EF0CE63B....
