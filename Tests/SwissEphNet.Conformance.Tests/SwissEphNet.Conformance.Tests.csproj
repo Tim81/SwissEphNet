@@ -49,6 +49,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>conformance\value-mismatch-triage.tsv</Link>
     </None>
+    <None Include="..\conformance\house-speed-drift-6c989727.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>conformance\house-speed-drift-6c989727.tsv</Link>
+    </None>
   </ItemGroup>
 
 </Project>
