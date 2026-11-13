@@ -89,8 +89,8 @@ Read the status line first and the body for how it got there.
 | C citations were written against `v2.10.3bfinal`, not the current pin | open |
 | Oracle-grid `sid_mode` is not pinned by `case_id` | open |
 | `split_deg_nakshatra`: `SE_SIDM_USER` collides with the Sheoran offset | open upstream |
-| swetest `-sidudef` crash; C# definite assignment immunises the port | closed upstream, not at the pin |
-| swetest `-astpos` under `-ut`/`-utc`: UT passed as TT | closed upstream; port has no -astpos |
+| swetest `-sidudef` crash; C# definite assignment immunises the port | fixed upstream in `91339e55`, at the pin; ported |
+| swetest `-astpos` under `-ut`/`-utc`: UT passed as TT | fixed upstream in `509f9335`, after the pin; present in the port at 2.10.3.2 |
 
 ## Eight live sites transliterate a C fixed-size buffer as an unbounded C# string
 
@@ -184,12 +184,15 @@ went back in #13531, and in #13532 he reported that he had rebased the eleventh
 himself, had now applied it, and would test it a while before releasing it to
 GitHub.
 
-**None of it has been released.** Checked 6 September 2026, twenty days later:
-`swehouse.c` is byte-identical between the pinned `v2.10.3bfinal` (`f4dcd18e`)
-and upstream `master` (`91339e55`), as are `sweph.c`, `swecl.c`, `swemmoon.c`,
-`swemplan.c`, `swephlib.c` and `swephexp.h`. Both commits since the pin touch
-`swetest.c` and nothing else. So all eleven patches are applied in Treindl's own
-tree and none is public, and this port keeps the C's behaviour meanwhile. The
+**None of it had been released as of 6 September 2026.** Checked that day, twenty days
+later: `swehouse.c` was byte-identical between `v2.10.3bfinal` (`f4dcd18e`, then the pin)
+and upstream `master` (`91339e55`), as were `sweph.c`, `swecl.c`, `swemmoon.c`,
+`swemplan.c`, `swephlib.c` and `swephexp.h`. Both commits after that tag touched
+`swetest.c` and nothing else. So all eleven patches were applied in Treindl's own
+tree and none was public. `swehouse.c` is also byte-identical at the current pin
+`94621aba`. Treindl released the set upstream on 13 November 2026 as commit `6c989727`
+(announced in #13597); this port has not synced to it and keeps the C's pre-patch
+behaviour until it does. The
 polar case that opened the thread is separately settled: it was left unfixed by
 agreement, since the ~2.89 million deg/day is the true Ascendant speed there and
 no patch can make it small without a magnitude convention that is Astrodienst's
@@ -3684,11 +3687,13 @@ and recorded here as documentation observations rather than defects: the nakshat
 
 ## swetest -sidudef crashes in the C; C#'s definite-assignment rule makes the port immune
 
-**Status: closed upstream; still present at the pin.** A crash in Astrodienst's `swetest.c` that
-this port cannot reproduce, because the C# language forbids the construct that causes it. Fixed on
-upstream `master`, which this repository does not track: `external/swisseph` stays pinned at
-`v2.10.3bfinal` (`f4dcd18e`), so the crash is still reachable in the reference binary built here.
-Nothing in the port changes. Report and patch:
+**Status: fixed upstream in `91339e55`, which is at the pin; ported.** A crash in Astrodienst's
+`swetest.c` that this port could not reproduce, because the C# language forbids the construct that
+causes it. `91339e55` is an ancestor of the pinned `94621aba`, so the reference `swetest` built from
+the pin no longer crashes, and #46 re-transliterated the guard
+(`Programs/SweTest/Program.cs:1048`, `if (sp != null && (spi = C.strstr(sp, "jdisut")) >= 0)`).
+The analysis below was written when the pin was `v2.10.3bfinal` (`f4dcd18e`), which still had the
+crash. Report and patch:
 `docs/upstream/swetest-sidudef-null-strstr.txt` and `.patch`.
 
 **Fixed upstream in `91339e55`**, "fixed -sidudef bug", Alois Treindl, 6 September 2026 00:10 +0200.
@@ -3759,7 +3764,7 @@ valgrind puts the read at address zero; `-fsanitize=undefined` reports `swetest.
 error: null pointer passed as argument 1, which is declared to never be null`.
 
 **The port diverges here, and the divergence is forced rather than chosen.**
-`Programs/SweTest/Program.cs:1035` assigns `sp = string.Empty;` before the `strchr` test, so the
+`Programs/SweTest/Program.cs:1042` assigns `sp = string.Empty;` before the `strchr` test, so the
 later scan runs against an empty string and finds nothing instead of dereferencing garbage. That is
 not a deliberate fix applied on top of the C: C# rejects reading an unassigned local outright
 (CS0165), so a literal transliteration of `:824`'s bare `char *sp;` will not compile. The port had
@@ -3779,7 +3784,7 @@ API-contract discussion. That separation paid off: the NULL check went in on its
 after it was sent, untouched by any of the arguments below. All three are still unsent, and all
 three still reproduce on upstream `master` at `91339e55` — checked directly, `strcpy(s1, argv[i] + 8)`
 is unchanged and `eclt0`/`ssyplane` still appear only in the usage text at `swetest.c:209-210` with
-no parser reading them:
+no parser reading them — and at the current pin `94621aba` (`swetest.c:918-930`):
 
 `docs/upstream/swe_get_ayanamsa_name-negative-index.txt` — **`swe_get_ayanamsa_name` reads outside
 its array for any negative argument**, and this one is a library defect, not a harness one.
@@ -3832,12 +3837,13 @@ happens to fall on the safe side.
 
 ## swetest -astpos under -ut/-utc: UT passed as TT
 
-**Status: closed upstream; port has no `-astpos`; still present at the pin.** In `swetest.c` the
-`-astpos` listing is computed 69 seconds early whenever the time is given as `-ut` or `-utc`. Fixed
-on upstream `master` after the pin: `external/swisseph` is pinned at `94621aba`, which contains
-`-astpos` and still has the bug, and the pin is deliberately not being bumped for this fix alone.
-The reference `swetest.exe` built by `Tools/CReference/build-c.ps1` therefore still reproduces the
-defect. Nothing in the port changes. Report and patch: `docs/upstream/swetest-astpos-ut-time.txt`
+**Status: fixed upstream in `509f9335`, after the pin; present in the port at 2.10.3.2.** In
+`swetest.c` the `-astpos` listing is computed 69 seconds early whenever the time is given as `-ut`
+or `-utc`. Fixed on upstream `master` after the pin: `external/swisseph` is pinned at `94621aba`,
+which contains `-astpos` and still has the bug. The reference `swetest.exe` built by
+`Tools/CReference/build-c.ps1` therefore still reproduces the defect, and so does the port, which
+carries `-astpos` from #46. The one-token fix will be taken with the next upstream sync. Report and
+patch: `docs/upstream/swetest-astpos-ut-time.txt`
 and `.patch`.
 
 **Fixed upstream in `509f9335`**, "fixed but in call to print_asteroids()" (sic: "but" for "bug"),
@@ -3875,7 +3881,9 @@ with the header reading "version 2.10.04".
 This report led with a well-formed invocation that gives a wrong answer, the framing the
 `-sidudef` section above records the maintainer as valuing. It was fixed within the hour.
 
-**What it means for the port.** `Programs/SweTest/Program.cs` has no `-astpos` at all, because its
-swetest transliteration predates `3fd0f956`, so there is nothing to correct. Whoever later
-transliterates `-astpos` must port the post-`509f9335` line, with `te`. The freeze allows that,
-since it is the C as it now stands.
+**What it means for the port.** PR #46 transliterated `3fd0f956`'s `-astpos` into
+`Programs/SweTest/Program.cs` (help text near line 326, option parsing near 1363, `print_asteroids`
+near 5110), and the call at `Programs/SweTest/Program.cs:2004` is `print_asteroids(tjd, astpos,
+orb);`. The port therefore reproduces the upstream bug faithfully at 2.10.3.2. The fix, `tjd` to
+`te`, will be ported when the pin moves past `509f9335`, which is the next upstream sync. The freeze
+allows that, since it is the C as it now stands.

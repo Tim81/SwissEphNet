@@ -4,7 +4,7 @@ Swiss Ephemeris was written for tropical Western astrology, with sidereal calcul
 option layered on top of that core. This file covers what changes when that option is turned on:
 the sidereal calculation workflow, the ayanamsha catalogue and its pitfalls, sidereal house
 behaviour (including a documented, unpatched defect this port has not fixed because the fix belongs
-upstream), nakshatras, rāśi ingresses, and which pieces of a full Jyotish stack this library does
+upstream; it was released there in `6c989727` and is not yet synced into the port), nakshatras, rāśi ingresses, and which pieces of a full Jyotish stack this library does
 and does not provide. It is written for callers building Vedic or other sidereal astrology software
 on top of this port who already know `swe_calc_ut` and `swe_houses_ex` from the tropical case and
 need to know what is different, not the same ground `README.md` already covers.
@@ -449,9 +449,12 @@ own header tabulates 4.0212e-05°/day at J2000, 8.6572e-05 at JD 2415020, and **
 tropical one. Do not read the single J2000 figure above as a fixed offset.
 
 **This patch is not applied to this port's shipped build**, and neither is the whole-sign one named
-further down; both are local measurements of what a fix would look like, drafted for Astrodienst upstream and, as of this writing, not yet sent.
-Treat the tropical-speed behaviour above as the current, standing state of `v2.10.3bfinal`, not as
-settled or permanent upstream design.
+further down; both are local measurements of what a fix would look like. The house patch set was sent to
+Astrodienst on 17 August 2026 (groups.io topic 120714355, message #13529) and released upstream on
+13 November 2026 as commit `6c989727`; this port has not synced to that commit and still returns the
+unpatched behaviour. The tropical-speed behaviour above describes the port as of 2.10.3.2 (pinned
+upstream `94621aba`, whose `swehouse.c` is identical to `v2.10.3bfinal`'s); upstream changed it in
+`6c989727`, so it is not settled or permanent design.
 
 **Whole sign is the prominent case**, because whole sign is the default house convention for most
 Vedic charts. `swetest -b1.1.2000 -ut12:00 -house13.4,52.5,W -speed -sid1 -p0`:
