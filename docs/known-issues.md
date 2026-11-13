@@ -67,7 +67,7 @@ Read the status line first and the body for how it got there.
 | `eclipse_how`'s 100-to-1 change | record |
 | Three file-layer divergences | closed / won't fix |
 | swetest.c `spmoon` / `gethostname` / `do_printf` / `-astpos` VLA | open upstream |
-| swetest `-astpos` evaluates at UT under `-ut`/`-utc` | open upstream |
+| swetest `-astpos` evaluates at UT under `-ut`/`-utc` | fixed upstream in `509f9335`, after the pin; present in the port at 2.10.3.2 |
 | `swe_set_jpl_file`'s AS_MAXCH clamps | won't fix |
 | swetest.c's zodiac field | closed |
 | `swe_solcross(SEFLG_HELCTR)` and the NaN-jd hang | open upstream |
@@ -90,7 +90,6 @@ Read the status line first and the body for how it got there.
 | Oracle-grid `sid_mode` is not pinned by `case_id` | open |
 | `split_deg_nakshatra`: `SE_SIDM_USER` collides with the Sheoran offset | open upstream |
 | swetest `-sidudef` crash; C# definite assignment immunises the port | fixed upstream in `91339e55`, at the pin; ported |
-| swetest `-astpos` under `-ut`/`-utc`: UT passed as TT | fixed upstream in `509f9335`, after the pin; present in the port at 2.10.3.2 |
 
 ## Eight live sites transliterate a C fixed-size buffer as an unbounded C# string
 
@@ -2319,9 +2318,11 @@ outside the tracked tree and sent by hand, so there is no in-repo path to follow
 
 ## swetest `-astpos` evaluates asteroid positions at UT when `-ut` or `-utc` is given
 
-**Status: open upstream.** Present at `94621aba` (`3fd0f956` added `-astpos`). A report is drafted
-outside the tracked tree (`docs/upstream/swetest-astpos-ut-time.txt`, with a one-line patch) and
-has not been sent. The port keeps the C's behaviour on purpose.
+**Status: fixed upstream in `509f9335`, after the pin; present in the port at 2.10.3.2.** Reported
+9 November 2026 and fixed the same day. `external/swisseph` is pinned at `94621aba`, which contains
+`-astpos` (`3fd0f956`) and still has the bug, so the reference `swetest.exe` built by
+`Tools/CReference/build-c.ps1` reproduces it, and so does the port, which carries `-astpos` from
+#46. The one-token fix will be taken with the next upstream sync.
 
 **Symptom.** Under `-ut` or `-utc`, `-astpos` computes every asteroid position one delta-T too
 early (69.36 s at 2020-01-01), while the header correctly reports the requested UT and the
@@ -2332,6 +2333,8 @@ passes that value to `swe_calc`, which expects TT. `tjd` holds Universal Time un
 `:1466` sets `tjd = tret[1]` from `swe_utc_to_jd` for `-utc`, and the `-ut` path uses the date as
 UT. The same `main()` computes TT separately as `te = t + delt` (`:1554`, `tut = t` at `:1555`)
 and uses `te` for everything else, for example `swe_get_ayanamsa_ex(te, ...)` at `:1618`.
+`-astpos` was added in `3fd0f956` ("with -astorb", 2026-08-08), which is not an ancestor of
+`v2.10.3bfinal` (`f4dcd18e`) but is an ancestor of `94621aba`.
 
 **Reproduction.** MSVC build of `swetest.c` at `94621aba`, ephemeris directory holding
 `seas_18.se1` and `seasnam.txt` from the upstream repository (asteroid 1 resolves to Ceres from
@@ -2344,23 +2347,35 @@ and uses `te` for everything else, for example `swe_get_ayanamsa_ex(te, ...)` at
 - `swetest -bj2458850.000802793 -astpos288.115686,0.01`, the same instant given as TT, with the
   same header: lists `0.010 	1	Ceres`.
 - `-utc12:00` behaves like `-ut12:00`: nothing listed.
-- With the patch below applied, `-ut12:00`, `-utc12:00` and the TT form all list Ceres.
+- With the fix applied, `-ut12:00`, `-utc12:00` and the TT form all list Ceres.
 
 **Magnitude.** Small: fractions of an arcsecond to about an arcsecond per delta-T for typical
 asteroids. It changes membership only near the orb boundary and the last printed digit of the
 distance, but it is a wrong answer from a valid, documented invocation.
 
-**Why the port keeps `tjd`.** `Programs/SweTest/Program.cs:2004` passes `tjd` too, because SweTest
-is a line-by-line transliteration of `swetest.c` and the swetest-diff gate compares it with the C.
-Changing it here would diverge from the C, not correct a divergence. It will pick up the fix when
-upstream makes it and the pin moves.
-
-**Upstream fix.** One token:
+**Upstream fix.** `509f9335`, "fixed but in call to print_asteroids()" (sic: "but" for "bug"),
+Alois Treindl, 9 November 2026 13:33 +0100. One file, one line, byte-identical to the patch sent
+(`docs/upstream/swetest-astpos-ut-time.txt` and `.patch`, outside the tracked tree):
 
 ```diff
 -	print_asteroids(tjd, astpos, orb);
 +	print_asteroids(te, astpos, orb);
 ```
+
+**Thread history.** Sent 9 November 2026 12:58 to the swisseph mailing list (groups.io topic
+122172258, message #13594), subject "swetest asteroid bug and fix", patch attached. Alois Treindl
+replied at 13:45 the same day in message #13595: fixed. He called `print_asteroids()` "a very recent
+and untested addition to swetest" and said he was not surprised it had such an error. His reply
+showed both the `-ut12:00` form and the TT form now listing `0.010 1 Ceres` and `0.002 2213 Meeus`,
+with the header reading "version 2.10.04". The report led with a well-formed invocation that gives
+a wrong answer, the framing the `-sidudef` section below records the maintainer as valuing.
+
+**What it means for the port.** PR #46 transliterated `3fd0f956`'s `-astpos` into
+`Programs/SweTest/Program.cs` (help text near line 326, option parsing near 1363, `print_asteroids`
+near 5110), and the call at `Programs/SweTest/Program.cs:2004` is `print_asteroids(tjd, astpos,
+orb);`. SweTest is a line-by-line transliteration of `swetest.c` and the swetest-diff gate compares
+it with the C, so the port reproduces the bug at 2.10.3.2 on purpose. The fix, `tjd` to `te`, will
+be ported when the pin moves past `509f9335`, which is the next upstream sync.
 
 ## swe_set_jpl_file: the C's AS_MAXCH clamps are not reproduced, and the comments were 2.08's
 
@@ -3833,57 +3848,3 @@ variable to corrupt. It is the same buffer-vs-unbounded-string shape catalogued 
 "Eight live sites transliterate a C fixed-size buffer as an unbounded C# string" above — that
 section covers `SwissEphNet/CPort/` only and does not include this site — and here the divergence
 happens to fall on the safe side.
-
-
-## swetest -astpos under -ut/-utc: UT passed as TT
-
-**Status: fixed upstream in `509f9335`, after the pin; present in the port at 2.10.3.2.** In
-`swetest.c` the `-astpos` listing is computed 69 seconds early whenever the time is given as `-ut`
-or `-utc`. Fixed on upstream `master` after the pin: `external/swisseph` is pinned at `94621aba`,
-which contains `-astpos` and still has the bug. The reference `swetest.exe` built by
-`Tools/CReference/build-c.ps1` therefore still reproduces the defect, and so does the port, which
-carries `-astpos` from #46. The one-token fix will be taken with the next upstream sync. Report and
-patch: `docs/upstream/swetest-astpos-ut-time.txt`
-and `.patch`.
-
-**Fixed upstream in `509f9335`**, "fixed but in call to print_asteroids()" (sic: "but" for "bug"),
-Alois Treindl, 9 November 2026 13:33 +0100. One file, one line, byte-identical to the attached
-patch:
-
-```c
--	print_asteroids(tjd, astpos, orb);
-+	print_asteroids(te, astpos, orb);
-```
-
-**The defect.** `swetest.c:1613` passes `tjd` to `print_asteroids`, which hands it to `swe_calc`,
-and `swe_calc` expects TT. Under `-utc`, `tjd` holds UT (`:1466`, `tjd = tret[1]` from
-`swe_utc_to_jd`); under `-ut` it is the date itself read as UT (`:1468`). `main()` computes TT
-separately as `te = t + delt` (`:1554`) and uses `te` everywhere else, for example
-`swe_get_ayanamsa_ex(te, ...)` at `:1618`. Without `-ut`/`-utc`, `tjd` is already TT, so the
-listing was correct there. `-astpos` was added in `3fd0f956` ("with -astorb", 2026-08-08), which is
-not an ancestor of `v2.10.3bfinal` (`f4dcd18e`) but is an ancestor of `94621aba`.
-
-Measured with an MSVC build of `swetest.c` at `94621aba`, `seas_18.se1` and `seasnam.txt` from the
-repository. `swetest -b1.1.2020 -ut12:00 -astpos288.115686,0.01` listed nothing, while the same
-instant given as TT, `swetest -bj2458850.000802793 -astpos288.115686,0.01`, listed
-`0.010 1 Ceres`. The header showed the correct UT and TT both times. The positions were computed
-69.36 s early (delta t 69.361280 s), which put Ceres 0.000321 degrees behind and outside the
-0.010 degree orb. Ceres at 2020-01-01 12:00 UT is at 288.10578618, speed 0.3994 degrees/day.
-`-utc12:00` behaves like `-ut12:00`.
-
-**Thread history.** Sent 9 November 2026 12:58 to the swisseph mailing list (groups.io topic
-122172258, message #13594), subject "swetest asteroid bug and fix", patch attached. Alois Treindl
-replied at 13:45 the same day in message #13595: fixed. He called `print_asteroids()` "a very recent
-and untested addition to swetest" and said he was not surprised it had such an error. His reply
-showed both the `-ut12:00` form and the TT form now listing `0.010 1 Ceres` and `0.002 2213 Meeus`,
-with the header reading "version 2.10.04".
-
-This report led with a well-formed invocation that gives a wrong answer, the framing the
-`-sidudef` section above records the maintainer as valuing. It was fixed within the hour.
-
-**What it means for the port.** PR #46 transliterated `3fd0f956`'s `-astpos` into
-`Programs/SweTest/Program.cs` (help text near line 326, option parsing near 1363, `print_asteroids`
-near 5110), and the call at `Programs/SweTest/Program.cs:2004` is `print_asteroids(tjd, astpos,
-orb);`. The port therefore reproduces the upstream bug faithfully at 2.10.3.2. The fix, `tjd` to
-`te`, will be ported when the pin moves past `509f9335`, which is the next upstream sync. The freeze
-allows that, since it is the C as it now stands.

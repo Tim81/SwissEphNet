@@ -696,7 +696,9 @@ Swiss Ephemeris entry point. The whole stack rests on roughly five functions: `s
 `swe_calc_ut`, `swe_houses_ex`, `swe_rise_trans` (for sunrise/sunset-anchored timings), and
 `swe_get_ayanamsa_ex_ut` (for display, per the trap section above).
 
-Three of the five panchanga elements interact with the ayanamsha, and they do so differently:
+Three of the five panchanga elements interact with the ayanamsha, and they do so differently. The
+arithmetic below holds for the traditional sidereal modes, which subtract one common angle from
+every body; the projection modes are covered after it.
 
 - **Tithi and karana are both Moon − Sun angular *differences*.** Because the ayanamsha is a single
   offset subtracted equally from both bodies' tropical longitudes, it cancels exactly out of a
@@ -708,6 +710,13 @@ Three of the five panchanga elements interact with the ayanamsha, and they do so
   from tropical longitudes and forgetting this factor of two is a specific, easy arithmetic mistake
   to make once tithi's cancellation has established the (wrong, for this one case) expectation that
   ayanamsha does not matter for lunisolar angle arithmetic in general.
+- **The projection modes do not cancel.** `SE_SIDBIT_ECL_T0` and `SE_SIDBIT_SSY_PLANE` project
+  each body onto another plane instead of subtracting one angle, so the Moon − Sun difference
+  is not the tropical one. Measured with Lahiri at 2020-01-01 12:00 UT (Moshier): tropical and
+  traditional sidereal both give 71.565192°, `SE_SIDBIT_ECL_T0` gives 71.564453° (−0.0007°) and
+  `SE_SIDBIT_SSY_PLANE` 71.614599° (+0.049°), against a tithi of 12°. If a chart uses a
+  projection mode, compute tithi, karana and yoga from that mode's own sidereal longitudes rather
+  than from tropical ones.
 
 **There is no `SE_KETU` constant.** Rahu (the north lunar node, `SE_MEAN_NODE` or `SE_TRUE_NODE`
 depending on which convention you choose — see "Contested conventions" below) is a real body this

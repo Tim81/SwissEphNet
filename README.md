@@ -172,9 +172,10 @@ default worth relying on.
 
 `docs/sidereal-and-vedic.md` covers this in full: the workflow with a runnable sample, the 47-mode
 catalogue with measured values, sidereal house behaviour, nakshatras, and the traps — most
-importantly that you should not compute sidereal positions by subtracting an ayanamsha from a
-tropical one yourself, because `swe_calc` and `swe_get_ayanamsa_ex` do not use the same nutation
-convention.
+importantly when subtracting an ayanamsha from a tropical longitude yourself is safe: it
+reproduces `SEFLG_SIDEREAL` in the traditional modes only if both calls use the same nutation
+setting, and it cannot reproduce the `SE_SIDBIT_ECL_T0` or `SE_SIDBIT_SSY_PLANE` projections at
+all. Passing `SEFLG_SIDEREAL` avoids both traps.
 
 ## Threads and async
 
