@@ -300,7 +300,7 @@ build metadata. The upstream version and tag it used to spell out are now `Assem
 entries, `UpstreamSwissEphemerisVersion`, `UpstreamSwissEphemerisTag` and
 `UpstreamSwissEphemerisCommit`, which is where text that does not have to parse as a version
 belongs. `UpstreamSwissEphemerisCommit` is the full SHA of the pinned upstream commit
-(`94621aba9f3ff9c32cb721eac0380c30dbb153fe`), and `UpstreamSwissEphemerisTag` names the nearest
+(`6c9897279736b76e81f0b0039d05283a9ba59dc5`), and `UpstreamSwissEphemerisTag` names the nearest
 upstream tag that pin is based on (`v2.10.3bfinal`).
 
 This project is not published or endorsed by Yan Grenier or Astrodienst. See "About this repository"

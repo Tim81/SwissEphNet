@@ -158,7 +158,7 @@ git sparse-checkout set --no-cone /*.c /*.h /Makefile /LICENSE /setest/* /seleap
     /ephe/seas_12.se1 /ephe/semo_12.se1 /ephe/sepl_12.se1 `
     /ephe/seas_18.se1 /ephe/semo_18.se1 /ephe/sepl_18.se1 `
     /ephe/sefstars.txt /ephe/seorbel.txt
-git checkout 94621aba9f3ff9c32cb721eac0380c30dbb153fe
+git checkout 6c9897279736b76e81f0b0039d05283a9ba59dc5
 cd ../..
 git submodule absorbgitdirs external/swisseph
 ```
