@@ -659,7 +659,7 @@ namespace SwissEphNet.CPort
             sgn = x[5] / Math.Abs(x[5]);
             for (j = 0; j <= 2; j++)
                 xvpx[j] = (x[j] - fac * x[j + 3]) * sgn;      /* 1b */
-            /* distance of the auxiliary vernal point from
+            /* distance of the auxiliary vernal point from 
              * the zero point at tjd_et (a section on the equator): */
             SE.SwephLib.swi_cartpol(xvpx, x2);
             dvpx = x2[0] * SwissEph.RADTODEG;                      /* 2 */
@@ -672,12 +672,12 @@ namespace SwissEphNet.CPort
 
         /*
          * Be t the birth date and t0 the epoch at which ayanamsa = 0.
-         * 1. Compute the angle between the solar system rotation plane and
+         * 1. Compute the angle between the solar system rotation plane and 
          *    the true equator at t.
-         *    The intersection point of these two circles we call the
-         *    "auxiliary vernal point", and the angle between them the
+         *    The intersection point of these two circles we call the 
+         *    "auxiliary vernal point", and the angle between them the 
          *    "auxiliary obliquity".
-         * 2. Compute the distance of the auxiliary vernal point from the
+         * 2. Compute the distance of the auxiliary vernal point from the 
          *    zero point at t. (this is a section on the equator)
          * 3. subtract this value from the armc of t = aux. armc.
          * 4. Compute the axes and houses for this aux. armc and aux. obliquity.
@@ -685,7 +685,7 @@ namespace SwissEphNet.CPort
          *    and the zero point of the solar system plane J2000
          *    (a section measured on the solar system plane)
          * 6. subtract this distance from all house cusps.
-         * 7. compute the ayanamsa of J2000 on the solar system plane,
+         * 7. compute the ayanamsa of J2000 on the solar system plane, 
          *    referred to t0
          * 8. subtract ayanamsa_t0 from all house cusps.
          * 9. subtract ayanamsa_2000 from all house cusps.
@@ -815,7 +815,7 @@ namespace SwissEphNet.CPort
             sgn = x[5] / Math.Abs(x[5]);
             for (j = 0; j <= 2; j++)
                 xvpx[j] = (x[j] - fac * x[j + 3]) * sgn;      /* 1b */
-            /* distance of the auxiliary vernal point from
+            /* distance of the auxiliary vernal point from 
              * mean vernal point at tjd_et (a section on the equator): */
             SE.SwephLib.swi_cartpol(xvpx, x2);
             dvpx = x2[0] * SwissEph.RADTODEG;                      /* 2 */
@@ -2789,9 +2789,9 @@ namespace SwissEphNet.CPort
                         hsp.cusp_speed[1] = hsp.ac_speed;
                         hsp.cusp_speed[7] = hsp.ac_speed;
                     }
-                    /* within polar circle, when mc sinks below horizon and
+                    /* within polar circle, when mc sinks below horizon and 
                      * ascendant changes to western hemisphere, all cusps
-                     * must be added 180 degrees.
+                     * must be added 180 degrees. 
                      * houses will be in clockwise direction */
                     if (Math.Abs(fi) >= 90 - ekl) {  /* within polar circle */
                         acmc = SE.swe_difdeg2n(hsp.ac, hsp.mc);
