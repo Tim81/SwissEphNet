@@ -5381,7 +5381,7 @@ namespace SwissEphNet.CPort
             if (ifno == SEI_FILE_ANY_AST)
             {
                 s = fp.ReadLine();
-                if (String.IsNullOrEmpty(s))
+                if (String.IsNullOrEmpty(s) || !fp.LastLineEndedCrLf || s.Length + 2 > SwissEph.AS_MAXCH * 2 - 1)
                 {
                     smsg = "d";
                     goto file_damage;
@@ -5394,15 +5394,15 @@ namespace SwissEphNet.CPort
                 while (spi < s.Length && s[spi] >= '0' && s[spi] <= '9') spi++;
                 spi++;
                 i = spi;
-                sastnam = s.Substring(0, lastnam + i);	// fixed 19-nov-19
+                sastnam = s.Substring(0, Math.Min(s.Length, lastnam + i));	// fixed 19-nov-19
                 /* save elements, they are required for swe_plan_pheno() */
                 swed.astelem = s;
                 /* required for magnitude */
-                swed.ast_H = C.atof(s.Substring(35 + i));
-                swed.ast_G = C.atof(s.Substring(42 + i));
+                swed.ast_H = C.atof(s.Length > 35 + i ? s.Substring(35 + i) : "");
+                swed.ast_G = C.atof(s.Length > 42 + i ? s.Substring(42 + i) : "");
                 if (swed.ast_G == 0) swed.ast_G = 0.15;
                 /* diameter in kilometers, not always given: */
-                s2 = s.Substring(51 + i, 7).Trim();
+                s2 = (s.Length > 51 + i ? s.Substring(51 + i, Math.Min(7, s.Length - 51 - i)) : "").Trim();
                 //*(s2 + 7) = '\0';
                 if (String.IsNullOrEmpty(s2))
                     swed.ast_diam = 0;

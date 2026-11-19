@@ -205,9 +205,17 @@ namespace SwissEphNet
         }
 
         /// <summary>
+        /// True when the line last returned by <see cref="ReadLine"/> was terminated by "\r\n".
+        /// ReadLine strips the terminator, so this is the only way to tell what C's
+        /// <c>strstr(sp, "\r\n")</c> after fgets would have found.
+        /// </summary>
+        internal bool LastLineEndedCrLf { get; private set; }
+
+        /// <summary>
         /// Read a line of text
         /// </summary>
         public string ReadLine() {
+            LastLineEndedCrLf = false;
             if (EOF) return null;
             List<byte> buff = new List<byte>();
             int rb, read = 0;
@@ -227,6 +235,7 @@ namespace SwissEphNet
                     }
                 }
                 if (c == '\n') {
+                    LastLineEndedCrLf = endOfLine; // true only when the '\n' directly followed a '\r'
                     endOfLine = true;
                 } else if (endOfLine) {
                     _Stream.Seek(-1, SeekOrigin.Current);
