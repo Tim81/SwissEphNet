@@ -130,7 +130,7 @@ line offsets for mapping an old citation to the current pin.
 ### The upstream C is vendored at `external/swisseph`
 
 `external/swisseph` is a git submodule of `https://github.com/aloistr/swisseph`,
-pinned to upstream master at `94621aba` (`v2.10.3bfinal` plus 12 commits; no newer tag exists) -- the upstream C this port tracks.
+pinned to upstream master at `43c9fe54` (`v2.10.3bfinal` plus 25 commits; no newer tag exists) -- the upstream C this port tracks.
 It is sparse-checked-out to keep it small: only `*.c`, `*.h`, `Makefile`,
 `LICENSE`, `setest/` (the reference test corpus `Tests/SwissEphNet.Conformance.Tests`
 is built against) and eight specific `ephe/` files the conformance oracle needs to run
@@ -158,7 +158,7 @@ git sparse-checkout set --no-cone /*.c /*.h /Makefile /LICENSE /setest/* /seleap
     /ephe/seas_12.se1 /ephe/semo_12.se1 /ephe/sepl_12.se1 `
     /ephe/seas_18.se1 /ephe/semo_18.se1 /ephe/sepl_18.se1 `
     /ephe/sefstars.txt /ephe/seorbel.txt
-git checkout 94621aba9f3ff9c32cb721eac0380c30dbb153fe
+git checkout 43c9fe54fc1255a6a83dcb5f4364218ab4034e39
 cd ../..
 git submodule absorbgitdirs external/swisseph
 ```
@@ -461,8 +461,8 @@ both run the library against a reference and report PASS/FAIL. Their
 *expected* results are opposites. The baseline expects **zero** diffs --
 anything else means a change altered something it should not have. This
 oracle expects **some iterations to still fail** -- the 2.10.03 delta has
-landed file by file, but `known-fail.tsv` still lists 1,423<!--doccount:known-fail-total--> of 12,757
-iterations (88.8% passing), and closing the rest is incremental porting
+landed file by file, but `known-fail.tsv` still lists 2,395<!--doccount:known-fail-total--> of 12,757
+iterations (81.2% passing), and closing the rest is incremental porting
 work, not something a single PR finishes. A red oracle run is not evidence
 anything is broken; a green one (all 12,757 passing with an empty
 `known-fail.tsv`) would mean the port is at full parity with 2.10.03, which

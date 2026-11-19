@@ -2001,7 +2001,7 @@ namespace SweTest
                             with_header = false;
                         if (astpos >= 0)
                         {
-                            print_asteroids(tjd, astpos, orb);
+                            print_asteroids(te, astpos, orb);
                             //swe_close();
                             return SwissEph.OK;
                         }
@@ -2095,7 +2095,13 @@ namespace SweTest
                             else if (do_planeto_centric)
                             {
                                 iflgret = sweph.swe_calc_pctr(te, ipl, iplctr, iflag, x, ref serr);
-                                se_pname = sweph.swe_get_planet_name(ipl);
+                                /* the name is printed only with format P or Q, in horizontal lists and
+                                 * in difference modes; for an asteroid file with a provisional
+                                 * designation, swe_get_planet_name() searches seasnam.txt */
+                                if (fmt.IndexOfAny("PQ".ToCharArray()) >= 0 || list_hor || diff_mode != 0)
+                                    se_pname = sweph.swe_get_planet_name(ipl);
+                                else
+                                    se_pname = "";
                             }
                             else
                             {
@@ -2103,7 +2109,13 @@ namespace SweTest
                                 /* phase, magnitude, etc. */
                                 if (iflgret != SwissEph.ERR && fmt.IndexOfAny("+-*/=".ToCharArray()) >= 0)
                                     iflgret = sweph.swe_pheno(te, ipl, iflag, attr, ref serr);
-                                se_pname = sweph.swe_get_planet_name(ipl);
+                                /* the name is printed only with format P or Q, in horizontal lists and
+                                 * in difference modes; for an asteroid file with a provisional
+                                 * designation, swe_get_planet_name() searches seasnam.txt */
+                                if (fmt.IndexOfAny("PQ".ToCharArray()) >= 0 || list_hor || diff_mode != 0)
+                                    se_pname = sweph.swe_get_planet_name(ipl);
+                                else
+                                    se_pname = "";
                                 if (show_file_limit) //  && ipl > SwissEph.SE_AST_OFFSET)
                                 {
                                     string sbeg, send;

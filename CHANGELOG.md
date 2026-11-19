@@ -3,6 +3,126 @@
 Project history from the Swiss Ephemeris 2.08 upgrade forward. Entries are prose bullets, not a
 generated commit list — for anything earlier, see git history.
 
+## 2.10.3.3
+
+- House cusp speeds are now analytic for every house system. `swe_houses_ex2` and
+  `swe_houses_armc_ex2` (and the older entry points that forward to them) previously used a
+  finite-difference interpolation that returned values in the millions of degrees per day near the
+  Ascendant's horizon tangency (ARMC 90 and 270). That interpolation now runs only as a fallback
+  when an analytic result is not finite. This is the eleven-patch house cusp-speed set that Timothy
+  van der Ham reported to the Swiss Ephemeris mailing list in August 2026 and that Astrodienst
+  applied upstream in commit `6c989727`; the port adopts it by re-transliterating every hunk of
+  `swehouse.c`. Behaviour change for callers that read cusp or `ascmc` speeds. By system: `P` and
+  `G` use the implicit function theorem; `K` uses the chain rule through the MC (the old value was
+  up to 39% high at latitude 60); `O` takes cusps 11 and 12 from the MC speed instead of the
+  Ascendant speed (a 34-38% shift); `L`, `S` and `Q` use the chain rule through the quadrant; `X`
+  and `M` use a closed form, as do `F`, `B`, `U` and `Y`; `I` and `i` use a closed form with the
+  Sun's declination held fixed (the omitted declination term reaches about 0.14 degrees per day at
+  latitude 35 and 0.6 at latitude 52, and up to 18 degrees per day near the polar circle on a cusp
+  moving about 6000 degrees per day); `W` and `N` speeds are 0, since those cusps stand still
+  between sign ingresses.
+- Sidereal house speeds now account for the ayanamsa's rate. In the traditional sidereal mode the
+  ayanamsa rate is subtracted from cusp and `ascmc` speeds (not from the ARMC, `ascmc[2]`, and not
+  from `W` and `N` cusps), where before the speeds were the tropical ones. Measured with
+  `swetest -b1.1.2000 -ut12:00 -house13.4,52.5,P -speed -sid1 -p0`: the Ascendant is at
+  27°43'54.4557 and moves at 600°43'39.3962 per day, against 600°43'39.5410 tropical, 0.1448"
+  less; house 2 moves at 375°05'39.2577 per day. With whole-sign houses (`-house13.4,52.5,W`) every cusp
+  speed is 0°0'0.0000 and the Ascendant still moves at 600°43'39.3962. The `SE_SIDBIT_ECL_T0` and
+  `SE_SIDBIT_SSY_PLANE` modes subtract their auxiliary frame's rates instead (about 4e-5 degrees
+  per day). The port's output equals the MSVC-built `swetest` on every house, Ascendant and MC
+  line of these commands.
+- `SEFLG_RADIANS`: house speeds are now converted to radians per day as well. They were left in
+  degrees per day beside positions in radians.
+- Three house position fixes, each with a narrow scope. `Y` (APC) now uses `sin(kv)` instead of
+  the `dasc` round trip: within 1e-10 degrees of the equator, cusps 1 and 7 are now the Ascendant
+  and Descendant (for example latitude 5e-11, ARMC 242: cusp 1 was 303.139 and is now 329.906);
+  elsewhere only last digits change. `i` (Makransky Sunshine): `w == 180` exactly, and southern
+  `w == 90` or `270`, are fixed, and no cusp of exactly 360 is returned. `G` (Gauquelin) in the
+  polar Porphyry fallback: cusps 13 to 36 and their speeds are now 0 (the C left them
+  uninitialised, and in sidereal mode the ayanamsa was subtracted from them). `swe_house_pos` is
+  unchanged.
+- `I` (Sunshine) declination error path: it now returns `ERR` with all output arrays zeroed. It
+  left them untouched before, and through `swe_houses` at ancient dates the C dereferenced a NULL
+  `serr`.
+- ECL_T0 sidereal modes near the mode's epoch: the frame rate added above is taken on `tjde`'s side
+  of the epoch `t0` when a central difference would straddle it (upstream `0c3eb56e`). In the
+  `ECL_T0` modes (`SE_SIDBIT_ECL_T0`, and `SE_SIDM_J2000`, `SE_SIDM_J1900`, `SE_SIDM_B1950` and
+  `SE_SIDM_GALALIGN_MARDYKS`, which force it) the cusps jump at `t0` by twice the nutation in
+  longitude, as in every earlier release, and the first version of the frame-rate code
+  (`6c989727`) differenced across that jump, putting every cusp and `ascmc` speed within 0.1 day
+  of `t0` off by up to 0.04 degrees per day. That version was never part of a SwissEphNet release.
+  Measured, for `-b1.1.2000 -ut12:00 -house13.4,52.5,P -speed -sid18` the Ascendant's speed is
+  600°43'39.6898 against 600°43'39.5410 tropical (it would have been 600°41'20.2289 at
+  `6c989727`): the 0.149" difference is the frame term and nothing else. The position jump at
+  `t0` itself is unchanged. `SE_SIDBIT_SSY_PLANE` is not affected. The port equals the
+  MSVC-built `swetest` at `43c9fe54` on this command.
+- `swe_calc` on an asteroid (or other) ephemeris file at exactly the file's last date returned
+  garbage. At `tjd == tfend`, which the range check allows, `get_new_segment()` took the index
+  entry after the last segment, so the coefficients were wrong. It now uses the last segment
+  (upstream `43c9fe54`). The port had the identical bug: Astraea (`se00005s.se1`, file range
+  JD 2268932.5 to 2488932.5) at exactly JD 2488932.5 came out at longitude 126.0072799, latitude
+  -22.1761351 and distance 3.648274082 au instead of 66.9437422, -3.5490403 and 3.288141871 (0.0001
+  day earlier: 66.9436936). It shows only when `tfend` is the first date evaluated, because an
+  earlier date in the last segment caches that segment. The new `AsteroidFileUpperLimitTest` (3
+  cases) matches the MSVC-built C at `43c9fe54` bit for bit and fails on the previous `Sweph.cs`.
+- `swe_houses_armc_ex2` no longer raises `SwissEph.OnTrace` messages. Upstream removed the three
+  `#ifdef TRACE` blocks from `swehouse.c` (`6318ad4c`); the C emits them only when built with
+  `-DTRACE`, but `TRACE` is defined by default in the .NET build, so the port's
+  `swe_houses_armc_ex2` raised them. Other `OnTrace` sources are unchanged.
+- `swe_get_planet_name` now looks numbered asteroids up in `seasnam.txt` by binary search
+  (`seasnam_line_number`, `sweph.c:6954`; `seasnam_seek`, `sweph.c:6968`; upstream `be4aa5dd`),
+  which is faster than the previous scan. For a sorted file the results are the same; for an
+  unsorted file it falls back to the full scan. The new `SeasnamLookupTest` (19 cases) includes one, a
+  misplaced line ahead of the sorted entries, that fails on the previous `Sweph.cs`.
+- `Programs/SweTest`: `-astpos` now passes the ephemeris time `te` to `print_asteroids` (`swetest.c:1613`,
+  upstream `509f9335`, the fix of a defect reported by this project); the port had passed `tjd`
+  since 2.10.3.2. `swe_get_planet_name` is now called only when the name is printed (formats `P`
+  and `Q`, horizontal lists, difference modes; `swetest.c:1689` and `:1701`, upstream
+  `7821165a`). This affects the `SweTest` program, not the library API.
+- Swiss Ephemeris Professional License: the contract PDF was updated on 9 November 2026 and now
+  reads "Edition September 2026 update 9 Nov 2026"
+  (https://github.com/aloistr/swisseph/blob/6c9897279736b76e81f0b0039d05283a9ba59dc5/doc/secont_e_2609.pdf).
+  The one substantive change is a new clause 13, "Use of language bindings and ports": every
+  binding or port must honour the dual licensing (available under the AGPL and under Astrodienst's
+  professional license), authors of bindings and ports may charge no extra fees, and Astrodienst
+  lists the bindings it knows meet this (php-sweph, pysweph, pyswisseph, swe-jni-lib and the node
+  `swisseph` package). SwissEphNet is not in that list. The former clauses 13 to 15 (payment,
+  transfer, place of court) are renumbered 14 to 16. Nothing else changed: the price (CHF 700),
+  the 6-year duration and the API-services clause 3 are as in the September edition. SwissEphNet is
+  already offered under both the AGPL-3.0 and the Swiss Ephemeris Professional License, as the
+  README says, and this repository's `LICENSE` is unchanged. If you hold or plan to buy a
+  Professional License, check the current contract with Astrodienst.
+- The upstream pin moves from `94621aba` to `43c9fe54` (upstream master, 2026-11-16), which is
+  `v2.10.3bfinal` (`f4dcd18e`) plus 25 commits; no newer tag exists. `SE_VERSION` is still
+  `"2.10.03"`. `94621aba..43c9fe54` touches `swehouse.c`, `sweph.c`, `swetest.c`,
+  `ephe/seasnam.txt`, `ephe/seorbel.txt`, `ephe/astlistn.md`, the contract PDF and `bin/swetest`
+  (a prebuilt binary, nothing to port). The first three are ported above; the rest need no port.
+  `Tools/CReference/build-c.ps1` needed no change to build the C reference at the new pin.
+- Verification. Against the MSVC-built C at `43c9fe54` the port is bit-exact: the oracle grids
+  (27,437 analytic rows and 3,376 file rows) produce dumps with identical SHA-256, the known-diff
+  files are empty, and the `swetest` diff gate still shows only its 16 known `DIR_GLUE` rows. The
+  characterization baseline was regenerated deliberately (entry 26 in the sidecar log,
+  attributed to the upstream patches): houses changed in 11,333 of 25,200 case ids and
+  houses-armc in 33,674 of 109,944; every other area is unchanged, including house-pos (31,528
+  rows). Each of the 2,004 position-changed rows is reproduced by exactly one upstream patch alone
+  (APC 420, Makransky 1,296, Gauquelin Porphyry fallback 288). `known-fail.tsv` grows from 1,423
+  to 2,395 rows (`VALUE-MISMATCH` 664 to 1,636; `DATA-MISSING` 759 unchanged). The 972 new rows
+  are all `setest` 6.8 (`swe_houses_ex2`) and 6.9 (`swe_houses_armc_ex2`): positions are unchanged
+  on all 1,080 iterations and only speed fields differ from `t.exp` beyond its 1e-3 tolerance
+  (9,120 fields). Per-row evidence is in `Tests/conformance/house-speed-drift-6c989727.tsv`,
+  produced by `Tools/CReference/house-speed-texp-check.c` against the MSVC-built library: 970 rows
+  are a correction (the C speed is the numerical derivative of its own positions, and `t.exp`'s is
+  not), 2 are a step (6.8.285 and 6.8.645, whole-sign cusps at a sign ingress), and 0 are
+  unexplained; `HouseSpeedDriftTests` ties the file one to one to `known-fail.tsv`. These are
+  `t.exp` drift from an intentional upstream change, not port defects. 10,362 of 12,757
+  iterations now pass (11,334 before). The oracle version classification moves 37 analytic cases
+  from `AGREES-BOTH` to `TRACKS-2.10.03`. The commits after `6c989727` (`0c3eb56e`, `6318ad4c`,
+  `43c9fe54`) needed no further baseline regeneration and left `known-fail.tsv` and the evidence
+  file unchanged; the evidence reproduces byte for byte against the C at `43c9fe54`. The unit
+  tests pass 354 of 354. `swe_dotnet_version()` returns `"2.10.03-net-0003"`. No API change.
+- Documentation and test data from #47, with no code change: a `DATA-MISSING` triage file, XML
+  documentation for the `SE_SIDM_*` constants, and `docs/sidereal-and-vedic.md`.
+
 ## 2.10.3.2
 
 - `C.sprintf` no longer constructs its format-parsing `Regex` on every call; the constant pattern

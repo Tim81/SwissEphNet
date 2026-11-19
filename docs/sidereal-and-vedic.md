@@ -3,9 +3,8 @@
 Swiss Ephemeris was written for tropical Western astrology, with sidereal calculation added as an
 option layered on top of that core. This file covers what changes when that option is turned on:
 the sidereal calculation workflow, the ayanamsha catalogue and its pitfalls, sidereal house
-behaviour (including a documented, unpatched defect this port has not fixed because the fix belongs
-upstream; it was released there in `6c989727` and is not yet synced into the port), nakshatras, rāśi ingresses, and which pieces of a full Jyotish stack this library does
-and does not provide. It is written for callers building Vedic or other sidereal astrology software
+behaviour (including cusp speeds, which subtract the ayanamsha's rate since 2.10.3.3), nakshatras,
+rāśi ingresses, and which pieces of a full Jyotish stack this library does and does not provide. It is written for callers building Vedic or other sidereal astrology software
 on top of this port who already know `swe_calc_ut` and `swe_houses_ex` from the tropical case and
 need to know what is different, not the same ground `README.md` already covers.
 
@@ -396,9 +395,8 @@ Whole-sign cusps are computed as the equal-house ('E'-style) ascendant and then 
 remaining eleven cusps step by exactly 30° from there (`swehouse.c:1482-1483`).
 
 That is the tropical path. The sidereal one never reaches it: `sidereal_houses_trad` rewrites `'W'`
-to `'E'` before computing and floors afterwards (`swehouse.c:562-563` and `:571-572`), which is what
-gives sidereal whole sign its cusp speeds. "Cusp speeds are tropical" below has the measurements and
-the difference between the two routes.
+to `'E'` before computing and floors afterwards (`swehouse.c:562-563` and `:571-572`, line numbers
+at `v2.10.3bfinal`). "Sidereal cusp speeds" below has the speed behaviour and the measurements.
 
 **The Jyotish→house-system mapping.** Four house-system letters correspond to distinct
 Jyotish/Vedic conventions, and they are not interchangeable:
@@ -420,81 +418,69 @@ are not interchangeable outputs for the same underlying chart, and picking the w
 produces a chart with every cusp off by roughly half a house-width from what the intended
 convention expects.
 
-## Cusp speeds are tropical (as of v2.10.3bfinal)
+## Sidereal cusp speeds
 
-Astrodienst's newer speed-bearing entry points (`swe_houses_ex2`, `swe_houses_armc_ex2`) can return
-a per-cusp rate of change alongside each cusp's position. Measured directly against the pinned C
-build (`v2.10.3bfinal`, MSVC 19.51.36248, `/O2 /fp:precise`), **the sidereal cusp speed this library
-currently returns is the tropical speed, unmodified** — not the true rate of change of the sidereal
-cusp. This is upstream C behaviour, faithfully reproduced by the port; it is not something this
-port introduced or can fix locally without diverging from the reference.
+Astrodienst's speed-bearing entry points (`swe_houses_ex2`, `swe_houses_armc_ex2`) return a
+per-cusp rate of change alongside each cusp's position. Since 2.10.3.3 (upstream `6c989727`) the
+sidereal speed is the speed of the sidereal cusp, not the tropical one:
 
-`swetest -b1.1.2000 -ut12:00 -house13.4,52.5,P -speed -sid1 -p0`:
+- **Traditional mode** (no `SE_SIDBIT_ECL_T0` or `SE_SIDBIT_SSY_PLANE`, the common case) subtracts
+  the ayanamsha's rate of change from the cusp and `ascmc` speeds. `armc` is excepted, and so are
+  the `'W'` and `'N'` cusps.
+- **`SE_SIDBIT_ECL_T0` and `SE_SIDBIT_SSY_PLANE`** subtract the rates of the auxiliary frame
+  instead (about 4e-5 degrees per day).
+- **Whole sign (`'W'`) and 0 Aries (`'N'`)** cusp speeds are 0: those cusps stand still between
+  sign ingresses.
+
+The port's output equals the MSVC-built `swetest` on every house, Ascendant and MC line of the
+commands below. `swetest -b1.1.2000 -ut12:00 -house13.4,52.5,P -speed -sid1 -p0`:
 
 | | cusp 1 position | cusp 1 speed |
 |---|---|---|
 | tropical | 51°35'06.0567" | 600°43'39.5410" |
-| sidereal, unpatched | 27°43'54.4557" | 600°43'39.5410" — identical to tropical |
+| sidereal | 27°43'54.4557" | 600°43'39.3962" |
 
-The position correctly differs from tropical by the ayanamsha (23°51'11.6" at this instant); the
-speed does not differ at all. A locally built reference with `swehouse.c` recompiled against
-`patch/swehouse-sidereal-ayanamsa-rate.patch` shows what a corrected speed looks like:
-600°43'39.3962", a delta of 0.1448"/day (4.0e-5°/day) from the tropical value — the rate the
-ayanamsha itself is changing at.
+The position differs from tropical by the ayanamsha (23°51'11.6" at this instant) and the speed
+by 0.1448"/day (4.0e-5°/day), the rate the ayanamsha itself is changing at.
 
 That delta is **not a constant, and not always negative.** The rate is the derivative of the
-nutation-included ayanamsha, so nutation dominates its variation rather than precession: the patch's
-own header tabulates 4.0212e-05°/day at J2000, 8.6572e-05 at JD 2415020, and **−1.6104e-06** at JD
-2460013. On some dates a corrected sidereal cusp speed therefore comes out *higher* than the
-tropical one. Do not read the single J2000 figure above as a fixed offset.
+nutation-included ayanamsha, so nutation dominates its variation rather than precession: the
+upstream patch's own header tabulated 4.0212e-05°/day at J2000, 8.6572e-05 at JD 2415020, and
+**−1.6104e-06** at JD 2460013. On some dates a sidereal cusp speed therefore comes out *higher*
+than the tropical one. Do not read the single J2000 figure above as a fixed offset.
 
-**This patch is not applied to this port's shipped build**, and neither is the whole-sign one named
-further down; both are local measurements of what a fix would look like. The house patch set was sent to
-Astrodienst on 17 August 2026 (groups.io topic 120714355, message #13529) and released upstream on
-13 November 2026 as commit `6c989727`; this port has not synced to that commit and still returns the
-unpatched behaviour. The tropical-speed behaviour above describes the port as of 2.10.3.2 (pinned
-upstream `94621aba`, whose `swehouse.c` is identical to `v2.10.3bfinal`'s); upstream changed it in
-`6c989727`, so it is not settled or permanent design.
+**Whole sign** is the prominent case, because it is the default house convention for most Vedic
+charts. `swetest -b1.1.2000 -ut12:00 -house13.4,52.5,W -speed -sid1 -p0`:
 
-**Whole sign is the prominent case**, because whole sign is the default house convention for most
-Vedic charts. `swetest -b1.1.2000 -ut12:00 -house13.4,52.5,W -speed -sid1 -p0`:
+| cusp | position | speed |
+|---|---|---|
+| 1 | 0°00'00" | 0°00'00.0000" |
+| 2 | 30°00'00" | 0°00'00.0000" |
+| 3 | 60°00'00" | 0°00'00.0000" |
+| 4 | 90°00'00" | 0°00'00.0000" |
 
-| cusp | position | speed, unpatched | speed, with the whole-sign patch |
-|---|---|---|---|
-| 1 | 0°00'00" | 600°43'39.5410" | 0°00'00" |
-| 2 | 30°00'00" | 600°43'39.5410" | 0°00'00" |
-| 3 | 60°00'00" | 600°43'39.5410" | 0°00'00" |
-| 4 | 90°00'00" | 600°43'39.5410" | 0°00'00" |
+Every cusp speed is 0°00'00.0000", while the Ascendant (in `ascmc`, not a cusp) still moves at
+600°43'39.3962"/day. A whole-sign cusp stands still until the Ascendant changes sign, so "how fast
+is this cusp moving" is 0 on every day without an ingress.
 
-The zeros in that last column come from a **different** patch than the 600°43'39.3962" above:
-`patch/swehouse-whole-sign-zero-speeds.patch`, not the ayanamsha-rate one. The rate patch adjusts a
-moving cusp's speed by d(ayanamsha)/dt; it deliberately excludes `'W'` and `'N'`, whose cusps do not
-move in the sidereal frame at all, so applying it alone leaves these twelve speeds at
-600°43'39.5410". Two separate fixes, two separate results. Note also that the whole-sign patch is
-mutually exclusive with `patch/swehouse-analytic-cusp-speeds.patch`, which contains the same change
-among others.
+**History.** Before 2.10.3.3 the port returned the *tropical* speed for sidereal cusps, unmodified
+(`v2.10.3bfinal` and `94621aba` both behaved so): 600°43'39.5410" for the Placidus example above,
+and for whole sign the equal-house rate on all twelve cusps, because the sidereal path remapped
+`'W'` to `'E'` before computing. That was upstream C behaviour, reproduced faithfully. The fix was
+sent to Astrodienst on 17 August 2026 (groups.io topic 120714355, message #13529) and released
+upstream on 13 November 2026 as commit `6c989727`, together with the maintainer's own frame-rate
+correction for the `SE_SIDBIT_ECL_T0` and `SE_SIDBIT_SSY_PLANE` modes. The port took it in 2.10.3.3.
 
-Whole-sign cusps sit fixed on sidereal sign boundaries and do not move at all between one rāśi
-ingress and the next, so the true derivative is exactly zero for every cusp, every day the Moon (or
-whatever body defines the chart's ascendant sign) does not ingress. The unpatched build instead
-reports a large, misleading nonzero number for a value that should read as static.
-
-Where that number comes from is specific to the sidereal path, and worth stating precisely because
-the tropical path behaves differently. `CalcH`'s `case 'W'` (`swehouse.c:1474-1484`) writes cusp
-*positions* only and sets no speeds, so a tropical whole-sign call leaves most speeds at the
-pre-switch zeros — measured, `-house13.4,52.5,W -speed` with no `-sid` gives 600°43'39.5410" on
-cusps 1 and 7, 340°00'04.2645" on cusps 4 and 10, and exactly zero on the other eight. The sidereal
-route never reaches that code: `sidereal_houses_trad` remaps `'W'` to `'E'` before computing
-(`swehouse.c:562-563`, *"whole sign houses: treat as 'E' and fix later"*), so all twelve speeds are
-filled with the equal-house rate, and the ayanamsha subtraction and 30° flooring that follow
-(`:570-573`) touch positions only. That is why sidereal whole sign reports the same large number on
-all twelve cusps while tropical whole sign reports a nonzero speed on only four:
-600°43'39.5410" on cusps 1 and 7, 340°00'04.2645" on cusps 4 and 10.
-
-The tropical state is itself internally inconsistent — four cusps with speeds and eight without —
-which is its own argument that nothing is relying on these values today. A caller reading cusp speed
-for a whole-sign sidereal chart and expecting "how fast is this cusp moving" should treat the current
-answer as wrong until a fix lands upstream, not as a subtlety to work around locally.
+**Caveat, fixed: ECL_T0 modes within 0.1 day of the epoch.** In the `SE_SIDBIT_ECL_T0` modes
+(`SE_SIDM_J2000`, `SE_SIDM_J1900`, `SE_SIDM_B1950`, `SE_SIDM_GALALIGN_MARDYKS` and any mode with
+the bit set) the cusps already jump at the mode's epoch `t0`, and the frame-rate code as first
+released at `6c989727` differenced the frame across that jump, so within 0.1 day of `t0` every cusp
+and `ascmc` speed was off by about 0.04 degrees per day. That is fixed upstream in `0c3eb56e` and
+in the port since 2.10.3.3 at `43c9fe54`: `swetest -b1.1.2000 -ut12:00 -house13.4,52.5,P -speed
+-sid18 -p0` now gives an Ascendant speed of 600°43'39.6898", +0.149" from the tropical value (the
+frame term only), where `6c989727` gave 600°41'20.2289". The position jump at `t0` itself is
+unchanged. See `docs/known-issues.md`, "ECL_T0 sidereal house speeds within 0.1 day of the
+sidereal epoch".
 
 ## `swe_house_pos` — do not use it for sidereal work
 

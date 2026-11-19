@@ -40,6 +40,14 @@ Compared with the June 2026 edition:
   present, a new clause allows transferring the license to a third party (with notice to
   Astrodienst), and the price is unchanged (CHF 700).
 
+The contract PDF was updated on 9 November 2026
+([`secont_e_2609.pdf`](https://github.com/aloistr/swisseph/blob/6c9897279736b76e81f0b0039d05283a9ba59dc5/doc/secont_e_2609.pdf)).
+The one substantive change is a new clause 13, "Use of language bindings and ports": every binding
+or port must honour the dual licensing (AGPL and Astrodienst's professional license), authors of
+bindings and ports may charge no extra fees, and Astrodienst lists the bindings it knows meet
+this. SwissEphNet (published as SwissEphSharp) is not in that list. It is already offered under both the AGPL-3.0 and the
+Professional License, and its `LICENSE` is unchanged.
+
 Read the current contract and confirm the terms with Astrodienst.
 
 ## Install
@@ -163,7 +171,7 @@ Four things to check, in the order that matters:
 Target frameworks moved too. 2.8.0.2 shipped `net40` and `netstandard1.0`; neither is supported
 here. .NET Framework 4.6.1 and later resolve `netstandard2.0`.
 
-The [full README](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.2/README.md) documents
+The [full README](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.3/README.md) documents
 every breaking change with the C source line each one corresponds to.
 
 ## Credits
@@ -179,5 +187,5 @@ This package is not published or endorsed by Yan Grenier or Astrodienst.
 
 - [Repository and full documentation](https://github.com/Tim81/SwissEphNet)
 - [Report an issue](https://github.com/Tim81/SwissEphNet/issues)
-- [How the numbers are verified](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.2/docs/compliance-2.10.03.md)
-- [Known issues](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.2/docs/known-issues.md)
+- [How the numbers are verified](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.3/docs/compliance-2.10.03.md)
+- [Known issues](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.3/docs/known-issues.md)

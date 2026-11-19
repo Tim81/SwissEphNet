@@ -217,11 +217,11 @@ Swiss Ephemeris, and therefore this library, is dual-licensed. You must choose o
 The package ships all three of these files at its own root, so the authoritative copies travel
 with whatever version you installed: `LICENSE` for the full license conditions, `agpl-3.0.txt`
 for the AGPL text, and `NOTICE` for attribution. To read them in the repository instead:
-[`LICENSE`](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.2/LICENSE),
-[`agpl-3.0.txt`](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.2/agpl-3.0.txt),
-[`NOTICE`](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.2/NOTICE). These links are absolute
+[`LICENSE`](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.3/LICENSE),
+[`agpl-3.0.txt`](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.3/agpl-3.0.txt),
+[`NOTICE`](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.3/NOTICE). These links are absolute
 rather than relative because this section also renders on nuget.org's package page, where a
-relative link to a file in this repository does not resolve, and they name the `v2.10.3.2` release
+relative link to a file in this repository does not resolve, and they name the `v2.10.3.3` release
 tag so that they match the installed version.
 
 Astrodienst has issued a new edition of the Professional License contract, dated September 2026
@@ -240,6 +240,17 @@ in the upstream repository). Compared with the June 2026 edition:
   app projects) is no longer present.
 - A new clause allows transferring the license to a third party, with notice to Astrodienst.
 - The price is unchanged (CHF 700).
+
+On 9 November 2026 the contract PDF was updated ("Edition September 2026 update 9 Nov 2026",
+[`doc/secont_e_2609.pdf`](https://github.com/aloistr/swisseph/blob/6c9897279736b76e81f0b0039d05283a9ba59dc5/doc/secont_e_2609.pdf)
+at the upstream commit this repository now pins). The one substantive change is a new clause 13,
+"Use of language bindings and ports": every binding or port must honour the dual licensing
+(available under the AGPL and under Astrodienst's professional license), authors of bindings and
+ports may charge no extra fees, and Astrodienst lists the bindings it knows meet this (php-sweph,
+pysweph, pyswisseph, swe-jni-lib and the node `swisseph` package). SwissEphNet is not in that
+list. The former clauses 13 to 15 (payment, transfer, place of court) are renumbered 14 to 16;
+nothing else changed. SwissEphNet is already offered under both the AGPL-3.0 and the Professional
+License, as described above, and this repository's `LICENSE` is unchanged.
 
 Read the current contract and confirm the terms with Astrodienst.
 
@@ -300,7 +311,7 @@ build metadata. The upstream version and tag it used to spell out are now `Assem
 entries, `UpstreamSwissEphemerisVersion`, `UpstreamSwissEphemerisTag` and
 `UpstreamSwissEphemerisCommit`, which is where text that does not have to parse as a version
 belongs. `UpstreamSwissEphemerisCommit` is the full SHA of the pinned upstream commit
-(`94621aba9f3ff9c32cb721eac0380c30dbb153fe`), and `UpstreamSwissEphemerisTag` names the nearest
+(`43c9fe54fc1255a6a83dcb5f4364218ab4034e39`), and `UpstreamSwissEphemerisTag` names the nearest
 upstream tag that pin is based on (`v2.10.3bfinal`).
 
 This project is not published or endorsed by Yan Grenier or Astrodienst. See "About this repository"
@@ -483,7 +494,7 @@ did not have:
 None of this replaces existing API. It is purely additive.
 
 With those additions the port now covers the C library's whole public surface. `swephexp.h` at
-the current pin (`94621aba`) declares 107 `swe_*` functions, and all 107 are present and public here.
+the current pin (`43c9fe54`) declares 107 `swe_*` functions, and all 107 are present and public here.
 The count is not an estimate: it comes from parsing the header and diffing it against the committed
 public-API list under `Tests/SwissEphNet.Tests/PublicApi/`, which a test regenerates and compares
 on every run, so a member appearing or disappearing fails the build rather than going unnoticed.
@@ -552,18 +563,22 @@ divergence is each platform's own math library disagreeing with itself in the la
 same thing two independently built C programs would show; it is not evidence against the port.
 
 Separately, the port's output is checked against Astrodienst's own 2.10.03 test suite (`setest`),
-12,757 iterations across ten functional areas. 1,423 of those still fail: 664 because the answer
+12,757 iterations across ten functional areas. 2,395 of those still fail: 1,636 because the answer
 is outside the tolerance Astrodienst's own suite allows, and 759 because a required data file (a
 JPL ephemeris, a per-asteroid or `ephe/sat/` file, or an ephemeris era this repository does not
 ship, roughly years 1200 to 2399) is not present, not because the answer is wrong.
 `Tests/conformance/value-mismatch-triage.tsv` drove Astrodienst's own MSVC-built 2.10.03 C through
 the identical inputs for all 668 `VALUE-MISMATCH` rows at the time it ran, and found 4 confirmed
 port defects, all a missing JD-range guard on interpolated lunar perigee (`docs/compliance-2.10.03.md`
-section 3a). That guard is fixed now and the four rows are pruned, so of the 664 remaining, none
+section 3a). That guard is fixed now and the four rows are pruned, so of the 664 remaining at the time, none
 is a port defect anyone has demonstrated: each reproduces the port's own output rather than the
 reference corpus's, i.e. drift between this build's toolchain/environment and whatever produced
 `setest`'s reference values, not a wrong answer. So the port matches everything it has been
 checked against and is not yet at full parity with Astrodienst's own reference corpus.
+The other 972 of the 1,636 are the house-speed rows (`setest` 6.8 and 6.9) that the sync to upstream
+`6c989727` moves: positions are unchanged and only speed fields differ from `t.exp`, which predates
+the analytic cusp speeds. `Tests/conformance/house-speed-drift-6c989727.tsv` carries per-row
+evidence from the MSVC-built C: 970 are a correction, 2 are a sign-ingress step, none is unexplained.
 
 # Breaking changes
 
@@ -970,16 +985,17 @@ Astrodienst's own reference values, not against the port's own prior output.
 The reference corpus is Swiss Ephemeris **2.10.03**'s `setest` test suite
 (12,757 iterations, ~334K asserted values across 10 functional areas). Even though the port has
 now landed the whole 2.10.03 delta file by file, it is not at full parity: `known-fail.tsv` still
-lists 1,423 failing iterations (11,334 passing, 88.8%). Each
+lists 2,395 failing iterations (10,362 passing, 81.2%). Each
 porting PR should remove entries from it; any entry that reappears is a regression.
 
-Read that 1,423 with the split under "Numerical compatibility" above, because it is not 1,423
+Read that 2,395 with the split under "Numerical compatibility" above, because it is not 2,395
 things left to port: 759 of them are a data file this repository does not ship rather than a wrong
-answer, the other 664 sit outside the tolerance Astrodienst's own suite allows, and the four rows
+answer, the other 1,636 sit outside the tolerance Astrodienst's own suite allows (972 of them are
+house-speed rows where `t.exp` predates the upstream analytic cusp speeds), and the four rows
 ever confirmed as port defects were fixed and pruned.
 
 - `external/swisseph`, a git submodule, sparse-checked-out, pinned to upstream
-  master at `94621aba` (`v2.10.3bfinal` plus 12 commits; no newer tag exists). It serves two purposes:
+  master at `43c9fe54` (`v2.10.3bfinal` plus 25 commits; no newer tag exists). It serves two purposes:
   1. **The reference corpus** for the conformance oracle: `setest/t.exp`
      (expected values) and `setest/t.fix` (tolerances), plus the core `.se1`
      ephemeris files, `sefstars.txt`, `seorbel.txt`, and `seleapsec.txt` that
@@ -1224,7 +1240,7 @@ Astrodienst's own material, which documents the API this port exposes:
 - [Swiss Ephemeris programming interface](http://www.astro.com/swisseph/swephprg.htm), the
   reference for every `swe_*` function here.
 - [`aloistr/swisseph`](https://github.com/aloistr/swisseph), the C source this port tracks. Pinned
-  here at master `94621aba` (`v2.10.3bfinal` plus 12 commits) under `external/swisseph`.
+  here at master `43c9fe54` (`v2.10.3bfinal` plus 25 commits) under `external/swisseph`.
 - [`aloistr/swisseph/ephe`](https://github.com/aloistr/swisseph/tree/master/ephe), the ephemeris
   data files, mirrored at [`ephe.scryr.io/ephe`](https://ephe.scryr.io/ephe).
 
