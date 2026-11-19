@@ -249,6 +249,37 @@ namespace SwissEphNet
         public static void fclose(CFile file)
             => file?.Dispose();
 
+        /// <summary>
+        /// C's <c>(int)</c> conversion of a double, with the MSVC x64 (<c>cvttsd2si</c>) result for
+        /// values that do not fit: NaN, infinities and anything outside the int range give
+        /// <see cref="int.MinValue"/> (0x80000000), the "integer indefinite" value.
+        /// </summary>
+        /// <remarks>
+        /// For a value that is in range (truncating toward zero lands within [int.MinValue,
+        /// int.MaxValue]) the result is bit-identical to a plain C# <c>(int)</c> cast on every runtime.
+        /// Only out-of-range input differs: .NET 9 made floating point to integer conversions
+        /// saturating on x86/x64 (NaN gives 0, large values give int.MaxValue or int.MinValue; see
+        /// the .NET 9 breaking change "Floating point-to-integer conversions are saturating on
+        /// x86/x64"), while .NET 8 and the C reference give int.MinValue. Calling this helper makes
+        /// every target framework behave like the C.
+        /// </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ToInt32(double d)
+            => (d > -2147483649.0 && d < 2147483648.0) ? (int)d : int.MinValue;
+
+        /// <summary>
+        /// C's <c>(long)</c> / <c>(int64)</c> conversion of a double, with the MSVC x64 result for
+        /// values that do not fit: NaN, infinities and anything outside the long range give
+        /// <see cref="long.MinValue"/> (0x8000000000000000).
+        /// </summary>
+        /// <remarks>
+        /// Bit-identical to a plain C# <c>(long)</c> cast for in-range values on every runtime; see
+        /// <see cref="ToInt32(double)"/> for the .NET 9 saturating-conversion background.
+        /// </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long ToInt64(double d)
+            => (d >= -9223372036854775808.0 && d < 9223372036854775808.0) ? (long)d : long.MinValue;
+
     }
 
 }
