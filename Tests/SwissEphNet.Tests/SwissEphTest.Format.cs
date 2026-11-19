@@ -321,5 +321,34 @@ namespace SwissEphNet.Tests
 
         }
 
+        [Fact]
+        public void TestFormatToDegreeMinuteSecond_RoundsSecondsOnceAndCarries() {
+            // Seconds and their decimals come from one rounding: 12.996" must not show as 13.9960.
+            Assert.Equal("  10°20'12.9960", SwissEph.FormatToDegreeMinuteSecond(10 + 20 / 60.0 + 12.996 / 3600.0, "D1"));
+            Assert.Equal("[12|12.9960]", SwissEph.FormatToDegreeMinuteSecond(10 + 20 / 60.0 + 12.996 / 3600.0, "[s|ss.pppp]"));
+            // A carry out of the seconds reaches the minutes, the degrees and the zodiac sign.
+            Assert.Equal("  11° 0' 0.0000", SwissEph.FormatToDegreeMinuteSecond(10 + 59 / 60.0 + 59.99996 / 3600.0, "D1"));
+            Assert.Equal("  10° 1' 0.0000", SwissEph.FormatToDegreeMinuteSecond(10 + 0 / 60.0 + 59.99996 / 3600.0, "D1"));
+            Assert.Equal("  11° 0' 0\"", SwissEph.FormatToDegreeMinuteSecond(10 + 59 / 60.0 + 59.9999999 / 3600.0, "D2"));
+            Assert.Equal(" 0 ta  0' 0\"", SwissEph.FormatToDegreeMinuteSecond(29.99999999, "Z2"));
+            Assert.Equal(" 0 ta  0' 0.0000", SwissEph.FormatToDegreeMinuteSecond(29.99999999, "Z1"));
+            Assert.Equal(" 0 ar  0' 0.0000", SwissEph.FormatToDegreeMinuteSecond(359.99999999, "Z1"));
+            Assert.Equal("[ta|1|0| 0]", SwissEph.FormatToDegreeMinuteSecond(29.99999999, "[zz|n|g|ss]"));
+            Assert.Equal(" -11° 0' 0\"", SwissEph.FormatToDegreeMinuteSecond(-10.99999999, "D2"));
+            // A narrower p run is rounded to its own width, never carried past the seconds field.
+            Assert.Equal("[59|9|99|999]", SwissEph.FormatToDegreeMinuteSecond(59.9994 / 3600.0, "[ss|p|pp|ppp]"));
+            // Without an 's' or 'p' run nothing is rounded and nothing carries.
+            Assert.Equal("10°59", SwissEph.FormatToDegreeMinuteSecond(10 + 59 / 60.0 + 59.99996 / 3600.0, "d°mm"));
+        }
+
+        [Fact]
+        public void TestFormatToDegreeMinuteSecond_KeepsSignBetweenMinusOneAndZero() {
+            Assert.Equal("  -0°30' 0.0000", SwissEph.FormatToDegreeMinuteSecond(-0.5, "D1"));
+            Assert.Equal("[-0|-0| -0|  -0]", SwissEph.FormatToDegreeMinuteSecond(-0.5, "[d|dd|ddd|dddd]"));
+            Assert.Equal("[-0|-0|-00|-000]", SwissEph.FormatToDegreeMinuteSecond(-0.5, "[D|DD|DDD|DDDD]"));
+            Assert.Equal("   0°30' 0.0000", SwissEph.FormatToDegreeMinuteSecond(0.5, "D1"));
+            Assert.Equal("   0° 0' 0.0000", SwissEph.FormatToDegreeMinuteSecond(-0.0, "D1"));
+        }
+
     }
 }
