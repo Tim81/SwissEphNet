@@ -1824,7 +1824,7 @@ namespace SwissEphNet.CPort
             sin = sin ?? String.Empty;
             int limit = Math.Min(sin.Length, 30);
             /* note, star name may begin with comma, such as ",zePsc" */
-            while (i < limit && (Char.IsLetterOrDigit(sin[i]) || sin[i] == ' ' || sin[i] == '-' || sin[i] == ','))
+            while (i < limit && ((sin[i] >= '0' && sin[i] <= '9' || sin[i] >= 'A' && sin[i] <= 'Z' || sin[i] >= 'a' && sin[i] <= 'z') || sin[i] == ' ' || sin[i] == '-' || sin[i] == ','))
                 i++;
             sout = sin.Substring(0, i);
         }

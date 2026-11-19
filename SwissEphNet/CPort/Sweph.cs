@@ -7924,7 +7924,7 @@ namespace SwissEphNet.CPort
             {
                 is_bayer = true;
             }
-            else if (sstar.Length > 0 && Char.IsDigit(sstar[0]))
+            else if (sstar.Length > 0 && (sstar[0] >= '0' && sstar[0] <= '9'))
             {
                 star_nr = atoi(sstar);
             }
@@ -8447,7 +8447,7 @@ namespace SwissEphNet.CPort
                          * 2. asteroid name
                          * The asteroid number may or may not be in brackets
                          */
-                        if (ipl > SwissEph.SE_AST_OFFSET && (s[0] == '?' || Char.IsDigit(s[1])))
+                        if (ipl > SwissEph.SE_AST_OFFSET && (s[0] == '?' || (s[1] >= '0' && s[1] <= '9')))
                         {
                             int ipli = (int)(ipl - SwissEph.SE_AST_OFFSET), iplf = 0;
                             CFile fp;
@@ -8890,7 +8890,7 @@ namespace SwissEphNet.CPort
                 is_bayer = true;
                 // search name star number in sefstars.txt
             }
-            else if (char.IsDigit(sstar[0]))
+            else if ((sstar[0] >= '0' && sstar[0] <= '9'))
             {
                 star_nr = atoi(sstar);
                 // traditional name: cut off Bayer designation
@@ -9413,7 +9413,7 @@ namespace SwissEphNet.CPort
             {
                 ; // is Bayer designation
             }
-            else if (sstar.Length > 0 && char.IsDigit(sstar[0]))
+            else if (sstar.Length > 0 && (sstar[0] >= '0' && sstar[0] <= '9'))
             {
                 ; // is a sequential star number
             }
@@ -9521,7 +9521,7 @@ namespace SwissEphNet.CPort
             {
                 ; // is Bayer designation
             }
-            else if (sstar.Length > 0 && char.IsDigit(sstar[0]))
+            else if (sstar.Length > 0 && (sstar[0] >= '0' && sstar[0] <= '9'))
             {
                 ; // is a sequential star number
             }
