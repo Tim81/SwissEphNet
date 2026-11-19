@@ -5381,7 +5381,7 @@ namespace SwissEphNet.CPort
             if (ifno == SEI_FILE_ANY_AST)
             {
                 s = fp.ReadLine();
-                if (String.IsNullOrEmpty(s) || !fp.LastLineEndedCrLf || s.Length + 2 > SwissEph.AS_MAXCH * 2 - 1)
+                if (s == null || !fp.LastLineEndedCrLf || s.Length + 2 > SwissEph.AS_MAXCH * 2 - 1)
                 {
                     smsg = "d";
                     goto file_damage;
@@ -5394,7 +5394,7 @@ namespace SwissEphNet.CPort
                 while (spi < s.Length && s[spi] >= '0' && s[spi] <= '9') spi++;
                 spi++;
                 i = spi;
-                sastnam = s.Substring(0, Math.Min(s.Length, lastnam + i));	// fixed 19-nov-19
+                sastnam = (s + "\r\n").Substring(0, Math.Min(s.Length + 2, Math.Min(lastnam + i, 40))).PadRight(41, '\0');	// fixed 19-nov-19; strncpy(sastnam, s, lastnam+i) copies the fgets line with its \r\n and zero-pads, in a char sastnam[41]
                 /* save elements, they are required for swe_plan_pheno() */
                 swed.astelem = s;
                 /* required for magnitude */
@@ -8447,7 +8447,7 @@ namespace SwissEphNet.CPort
                          * 2. asteroid name
                          * The asteroid number may or may not be in brackets
                          */
-                        if (ipl > SwissEph.SE_AST_OFFSET && (s[0] == '?' || (s[1] >= '0' && s[1] <= '9')))
+                        if (ipl > SwissEph.SE_AST_OFFSET && ((s.Length > 0 && s[0] == '?') || (s.Length > 1 && s[1] >= '0' && s[1] <= '9')))	/* sweph.c:7139 reads s[0], s[1] of a char buffer; past the string they are '\0' here */
                         {
                             int ipli = (int)(ipl - SwissEph.SE_AST_OFFSET), iplf = 0;
                             CFile fp;

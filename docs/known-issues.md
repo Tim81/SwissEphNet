@@ -4106,7 +4106,13 @@ file damage `(0d)` unless the line contains `\r\n`. The port rejected only an em
 `swe_calc(2451545, SE_MARS, 0x32003E)` (and `iflag` -1), which opens a planet file as an asteroid
 file, threw `ArgumentOutOfRangeException`. It now returns -1 with `...sepl_18.se1 is damaged (0d)`,
 as the C does. The reads at `s+35`, `s+42` and `s+51+i` and the `sastnam` copy are bounds-safe. The
-internal `CFile.LastLineEndedCrLf` is new; the public API is unchanged.
+internal `CFile.LastLineEndedCrLf` is new; the public API is unchanged. The later name reads now
+follow the C's NUL-padded `sastnam[41]` too (`strncpy(sastnam, s, lastnam+i)` keeps the line's
+`\r\n` and zero-pads, `sweph.c:4616`), so a short but `\r\n`-terminated elements line with a readable
+header no longer throws at `sastnam[j]`, at the `astnam` substring or at the `s[0]`/`s[1]` test in
+`swe_get_planet_name` (`sweph.c:7139`); an empty `\r\n` line is accepted as the C does. Where the
+C reads past the end of a short string into uninitialised memory (`atof(s+35+i)`, `s[1]` of an empty
+name) the port reads an empty string or `'\0'`.
 
 **Test.** `Tests/SwissEphNet.Tests/AsteroidHeaderDamageTest.cs`.
 

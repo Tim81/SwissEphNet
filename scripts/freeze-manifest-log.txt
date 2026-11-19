@@ -800,3 +800,15 @@ b"} where the C gives {"a", ""}); that one is fixed
     required" where the C returns rc 4. Test: Tests/SwissEphNet.Tests/ElementsLineCutstrTest.cs.
     SwissEphNet/CPort: 49695 -> 49695 lines, kr_braces (1253) and trailing_ws (1258) unchanged,
     sha256 17FC08AF... -> E3A59F84....
+45. PR #49 2026-11-19: Correction of a divergence from the C: Sweph.cs read_const asteroid branch and
+    swe_get_planet_name. sweph.c:4616-4617 strncpy(sastnam, s, lastnam+i) copies the fgets line with
+    its "\r\n" and zero-pads into a char sastnam[41]; the port's sastnam was the bare string, so a
+    short "\r\n"-terminated elements line with a readable header threw at sastnam[j] and at
+    sastnam.Substring(j+1, lastnam) (sweph.c:4725-4740). sastnam is now that padded 41-char buffer
+    (copy capped at 40). An empty "\r\n" line no longer reports damage (0d) (sweph.c:4609 tests only
+    fgets == NULL and the "\r\n"). swe_get_planet_name (sweph.c:7139) reads s[0] and s[1] of an empty
+    name as '\0' instead of throwing. Measured against the C: rc -1, "is damaged (2).", name ""
+    for "5" and "5 abcd", "j\r\n" for "5 abcdefghij", "? Astraea" for "" and "7 x". Test:
+    Tests/SwissEphNet.Tests/AsteroidHeaderDamageTest.cs.
+    SwissEphNet/CPort: 49695 -> 49695 lines, kr_braces (1253) and trailing_ws (1258) unchanged,
+    sha256 E3A59F84... -> 0D47E6CB....
