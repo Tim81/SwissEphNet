@@ -114,7 +114,7 @@ namespace SwissEphNet.CPort
          * denominator is only unusable when dividing by it would overflow, so the
          * derivative code below tests against this instead. Guards that protect the
          * domain of asin() or sqrt() keep VERY_SMALL, where a real tolerance belongs. */
-        // swehouse.c:82
+        // swehouse.c:82 (43c9fe54)
         const double VERY_SMALL_DENOM = 1e-200;
 
         /* Units used by the cusp speed code below.
@@ -332,23 +332,6 @@ namespace SwissEphNet.CPort
                 }
                 ascmc[9] = xp[1];	// declination in ascmc[9];
             }
-#if TRACE
-            //swi_open_trace(NULL);
-            //if (swi_trace_count <= TRACE_COUNT_MAX) {
-            //    if (swi_fp_trace_c != NULL) {
-            //        fputs("\n/*SWE_HOUSES*/\n", swi_fp_trace_c);
-            //        fprintf(swi_fp_trace_c, "#if 0\n");
-            //        fprintf(swi_fp_trace_c, "  tjd = %.9f;", tjd_ut);
-            //        fprintf(swi_fp_trace_c, " geolon = %.9f;", geolon);
-            //        fprintf(swi_fp_trace_c, " geolat = %.9f;", geolat);
-            //        fprintf(swi_fp_trace_c, " hsys = %d;\n", hsys);
-            //        fprintf(swi_fp_trace_c, "  retc = swe_houses(tjd, geolat, geolon, hsys, cusp, ascmc);\n");
-            //        fprintf(swi_fp_trace_c, "  /* swe_houses calls swe_houses_armc as follows: */\n");
-            //        fprintf(swi_fp_trace_c, "#endif\n");
-            //        fflush(swi_fp_trace_c);
-            //    }
-            //}
-#endif
             retc = swe_houses_armc_ex2(armc, geolat, eps + nutlo[1], hsys, cusp, ascmc, null, null, ref sdummy);
             return retc;
         }
@@ -458,24 +441,6 @@ namespace SwissEphNet.CPort
                 for (i = 0; i < 2; i++)
                     nutlo[i] = 0;
             }
-#if TRACE
-            //swi_open_trace(NULL);
-            //if (swi_trace_count <= TRACE_COUNT_MAX) {
-            //    if (swi_fp_trace_c != NULL) {
-            //        fputs("\n/*SWE_HOUSES_EX*/\n", swi_fp_trace_c);
-            //        fprintf(swi_fp_trace_c, "#if 0\n");
-            //        fprintf(swi_fp_trace_c, "  tjd = %.9f;", tjd_ut);
-            //        fprintf(swi_fp_trace_c, " iflag = %d;\n", iflag);
-            //        fprintf(swi_fp_trace_c, " geolon = %.9f;", geolon);
-            //        fprintf(swi_fp_trace_c, " geolat = %.9f;", geolat);
-            //        fprintf(swi_fp_trace_c, " hsys = %d;\n", hsys);
-            //        fprintf(swi_fp_trace_c, "  retc = swe_houses_ex(tjd, iflag, geolat, geolon, hsys, cusp, ascmc);\n");
-            //        fprintf(swi_fp_trace_c, "  /* swe_houses calls swe_houses_armc as follows: */\n");
-            //        fprintf(swi_fp_trace_c, "#endif\n");
-            //        fflush(swi_fp_trace_c);
-            //    }
-            //}
-#endif
             /*houses_to_sidereal(tjde, geolat, hsys, eps, cusp, ascmc, iflag);*/
             armc = SE.swe_degnorm(SE.swe_sidtime0(tjd_ut, eps_mean + nutlo[1], nutlo[0]) * 15 + geolon);
             //fprintf(stderr, "armc=%f, iflag=%d\n", armc, iflag);
@@ -616,7 +581,7 @@ namespace SwissEphNet.CPort
          * dvpxe of the auxiliary vernal point from the vernal point of t0, on the
          * ecliptic of t0. eps is the true obliquity and nutlo the nutation of tjde,
          * in degrees. */
-        // swehouse.c:517
+        // swehouse.c:482 (43c9fe54)
         void ecl_t0_frame(double tjde, double eps, double[] nutlo, ref double dvpx, ref double epsx, ref double dvpxe) {
             int j;
             double[] x = new double[6], xvpx = new double[6], x2 = new double[6], xnorm = new double[6]; double epst0;
@@ -770,7 +735,7 @@ namespace SwissEphNet.CPort
          * distance dvpxe of the auxiliary vernal point from the sidereal zero point
          * of 2000, on the solar system plane. eps is the true obliquity and nutlo
          * the nutation of tjde, in degrees. */
-        // swehouse.c:669
+        // swehouse.c:634 (43c9fe54)
         void ssypl_frame(double tjde, double eps, double[] nutlo, ref double dvpx, ref double epsx, ref double dvpxe) {
             int j;
             double[] x = new double[6], xvpx = new double[6], x2 = new double[6], xnorm = new double[6];
@@ -838,17 +803,32 @@ namespace SwissEphNet.CPort
          * wrong here, because these modes compute the houses on another plane and
          * their cusps are not the tropical ones shifted by the ayanamsa.
          * The rates are central differences over 0.2 day, with obliquity and
-         * nutation of the neighbouring dates computed as in swe_houses_ex2(). armc
-         * (ascmc[2]) is armcx in these modes and gets ARMCS - d(dvpx)/dt; 0 Aries
-         * cusps ('N') stand still. Before 2026-11-13 these modes returned the
+         * nutation of the neighbouring dates computed as in swe_houses_ex2(). In the
+         * ECL_T0 mode dvpxe changes sign at t0 (see ecl_t0_frame()), and with
+         * nutation the cusps jump there (by about 25 arcsec for SE_SIDM_J2000 at
+         * lat 47.4); within 0.1 day of t0 the difference is therefore taken on the
+         * side of tjde, the side whose positions sidereal_houses_ecl_t0() returns.
+         * armc (ascmc[2]) is armcx in these modes and gets ARMCS - d(dvpx)/dt;
+         * 0 Aries cusps ('N') stand still. Before 2026-11-13 these modes returned the
          * speeds without the frame terms, about 4e-5 degrees per day too large. */
-        // swehouse.c:741
+        // swehouse.c:710 (43c9fe54)
         void sidereal_frame_speeds(int ssypl, double tjde, Int32 iflag, int hsys, int ito, CPointer<double> cusp_speed, CPointer<double> ascmc_speed) {
             int i, k;
-            double t, epsm, epsx = 0, ddvpx, ddvpxe, fac;
+            double t, t1 = tjde - 0.1, t2 = tjde + 0.1;
+            double epsm, epsx = 0, ddvpx, ddvpxe, fac;
             double[] nut = new double[2], dvpx = new double[2], dvpxe = new double[2];
+            Sweph.sid_data sip = swed.sidd;
+            if (ssypl == 0) {
+                if (tjde >= sip.t0 && t1 < sip.t0) {
+                    t1 = tjde;
+                    t2 = tjde + 0.2;
+                } else if (tjde < sip.t0 && t2 >= sip.t0) {
+                    t1 = tjde - 0.2;
+                    t2 = tjde;
+                }
+            }
             for (k = 0; k < 2; k++) {
-                t = tjde + ((k == 0) ? -0.1 : 0.1);
+                t = (k == 0) ? t1 : t2;
                 epsm = SE.SwephLib.swi_epsiln(t, 0) * SwissEph.RADTODEG;
                 SE.SwephLib.swi_nutation(t, 0, nut);
                 for (i = 0; i < 2; i++)
@@ -860,8 +840,8 @@ namespace SwissEphNet.CPort
                 else
                     ecl_t0_frame(t, epsm + nut[1], nut, ref dvpx[k], ref epsx, ref dvpxe[k]);
             }
-            ddvpx = SE.swe_difdeg2n(dvpx[1], dvpx[0]) / 0.2;	/* degrees per day */
-            ddvpxe = SE.swe_difdeg2n(dvpxe[1], dvpxe[0]) / 0.2;
+            ddvpx = SE.swe_difdeg2n(dvpx[1], dvpx[0]) / (t2 - t1);	/* degrees per day */
+            ddvpxe = SE.swe_difdeg2n(dvpxe[1], dvpxe[0]) / (t2 - t1);
             fac = 1 - ddvpx / ARMCS;
             if (!cusp_speed.IsNull && hsys != 'N')
                 for (i = 1; i <= ito; i++)
@@ -1238,48 +1218,6 @@ namespace SwissEphNet.CPort
                     }
                 }
             }
-#if TRACE
-            //swi_open_trace(NULL);
-            //if (swi_trace_count <= TRACE_COUNT_MAX) {
-            //  if (swi_fp_trace_c != NULL) {
-            //    fputs("\n/*SWE_HOUSES_ARMC_EX2*/\n", swi_fp_trace_c);
-            //    fprintf(swi_fp_trace_c, "  armc = %.9f;", armc);
-            //    fprintf(swi_fp_trace_c, " geolat = %.9f;", geolat);
-            //    fprintf(swi_fp_trace_c, " eps = %.9f;", eps);
-            //    fprintf(swi_fp_trace_c, " hsys = %d;\n", hsys);
-            //    fprintf(swi_fp_trace_c, "  retc = swe_houses_armc_ex2(armc, geolat, eps, hsys, cusp, ascmc, cusp_speed, ascmc_speed, serr);\n");
-            //    fputs("  printf(\"swe_houses_armc_ex2: %f\\t%f\\t%f\\t%c\\t\\n\", ", swi_fp_trace_c);
-            //    fputs("  armc, geolat, eps, hsys);\n", swi_fp_trace_c);
-            //    fputs("  printf(\"retc = %d\\n\", retc);\n", swi_fp_trace_c);
-            //    fputs("  printf(\"cusp:\\n\");\n", swi_fp_trace_c);
-            //    fputs("  for (i = 1; i <= 12; i++)\n", swi_fp_trace_c);
-            //    fputs("    printf(\"  %d\\t%f\\n\", i, cusp[i]);\n", swi_fp_trace_c);
-            //    fputs("  printf(\"ascmc:\\n\");\n", swi_fp_trace_c);
-            //    fputs("  for (i = 0; i < 10; i++)\n", swi_fp_trace_c);
-            //    fputs("    printf(\"  %d\\t%f\\n\", i, ascmc[i]);\n", swi_fp_trace_c);
-            //    fputs("  printf(\"cusp_speed:\\n\");\n", swi_fp_trace_c);
-            //    fputs("  for (i = 1; i <= 12; i++)\n", swi_fp_trace_c);
-            //    fputs("    printf(\"  %d\\t%f\\n\", i, cusp_speed[i]);\n", swi_fp_trace_c);
-            //    fputs("  printf(\"ascmc_speed:\\n\");\n", swi_fp_trace_c);
-            //    fputs("  for (i = 0; i < 10; i++)\n", swi_fp_trace_c);
-            //    fputs("    printf(\"  %d\\t%f\\n\", i, ascmc_speed[i]);\n", swi_fp_trace_c);
-            //    fflush(swi_fp_trace_c);
-            //  }
-            //  if (swi_fp_trace_out != NULL) {
-            // trace() routes through C.sprintf, which throws on an out-of-range hsys under
-            // %c (see comment at the swe_house_pos %c sites above); narrow here too.
-            trace("swe_houses_armc_ex2: %f\t%f\t%f\t%c\t\n", armc, geolat, eps, (char)(hsys & 0xFF));
-            trace("retc = %d\n", retc);
-            trace("cusp:\n");
-            for (i = 1; i <= 12; i++)
-                trace("  %d\t%f\n", i, cusp[i]);
-            trace("ascmc:\n");
-            for (i = 0; i < 10; i++)
-                trace("  %d\t%f\n", i, ascmc[i]);
-            //    fflush(swi_fp_trace_out);
-            //  }
-            //}
-#endif
             //#if 0
             ///* for test of swe_house_pos().
             // * 1st house will be 0, second 30, etc. */
@@ -1316,7 +1254,7 @@ namespace SwissEphNet.CPort
          * atan2.
          * Being analytic, this stays correct where the Ascendant turns arbitrarily
          * fast, which is exactly where differencing the position fails. */
-        // swehouse.c:1161
+        // swehouse.c:1101 (43c9fe54)
         double apc_sector_speed(int n, double ph, double e, double az) {
             int k, is_below_hor = 0;
             double kv, dkv = 0, T, den, a, da, skv, dskv, P, N, D, dN, dD;
@@ -3128,7 +3066,7 @@ namespace SwissEphNet.CPort
          * *ok is a separate flag rather than a magic return value because 0 is also a
          * perfectly good pole height: on the equator tanfi is 0 and every cusp has
          * pole 0, which is not a degeneracy but the correct answer. */
-        // swehouse.c:2906
+        // swehouse.c:2846 (43c9fe54)
         static double plac_pole(double cusp, double tanfi, double fac, double sine, ref int ok)
         {
             double tant = tand(asind(sine * sind(cusp)));
@@ -4189,7 +4127,7 @@ namespace SwissEphNet.CPort
          * the released code it has three fixes, each commented below: southern charts
          * at exactly w == 90 or 270, w == 180 exactly (w >= 180 instead of w > 180),
          * and the result normalised to 0 .. 360 (no cusp of exactly 360). */
-        // swehouse.c:3898
+        // swehouse.c:3838 (43c9fe54)
         double makransky_cusp_from_w(double w, double pole, double ecl, int ih, double lat)
         {
             double r = 0, cu, z = 0, sinecl = sind(ecl);
