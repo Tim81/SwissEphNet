@@ -147,34 +147,6 @@ namespace SwissEphNet
                 array[i] = list[i];
         }
 
-        class BComparer<TKey, TVal> : IComparer<TVal>
-        {
-            public BComparer(TKey key, Func<TKey, TVal, int> compare)
-            {
-                Key = key;
-                Comparer = compare;
-            }
-            public int Compare(TVal x, TVal y)
-            {
-                bool xIsDefault = x == null || x.Equals(default(TVal));
-                bool yIsDefault = y == null || y.Equals(default(TVal));
-                if (yIsDefault && !xIsDefault)
-                {
-                    int c = Comparer(Key, x);
-                    if (c != 0) return -c;
-                    return c;
-                }
-                else if (xIsDefault && !yIsDefault)
-                {
-                    return Comparer(Key, y);
-                }
-                else
-                    return -1;
-            }
-            public TKey Key { get; }
-            public Func<TKey, TVal, int> Comparer { get; }
-        }
-
         public static CPointer<TVal> bsearch<TKey, TVal>(TKey key, CPointer<TVal> array, int n, Func<TKey, TVal, int> compare)
         {
             // The real C bsearch(3) returns NULL immediately when nmemb (n) is 0, without ever
@@ -186,11 +158,21 @@ namespace SwissEphNet
             // SwissEph with no OnLoadFile handler attached (the default), where no star data is ever
             // loaded and n is 0.
             if (n <= 0) return new CPointer<TVal>();
-            var arr = array.ToArray();
-            if (arr == null) return new CPointer<TVal>();
-            var list = new List<TVal>(arr.Take(n));
-            var idx = list.BinarySearch(default(TVal), new BComparer<TKey, TVal>(key, compare));
-            return idx >= 0 ? array + idx : new CPointer<TVal>();
+            if (array.IsNull) return new CPointer<TVal>();
+            // In-place binary search probing the same indices, in the same order, as
+            // List<T>.BinarySearch did (lo = 0, hi = n - 1, mid = lo + ((hi - lo) >> 1)), so
+            // duplicate keys resolve to the same element as before. Like the old Take(n), never
+            // look past the end of the backing array.
+            if (n > array.Length) n = array.Length;
+            int lo = 0, hi = n - 1;
+            while (lo <= hi)
+            {
+                int mid = lo + ((hi - lo) >> 1);
+                int order = -compare(key, array[mid]);
+                if (order == 0) return array + mid;
+                if (order < 0) lo = mid + 1; else hi = mid - 1;
+            }
+            return new CPointer<TVal>();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -266,6 +248,37 @@ namespace SwissEphNet
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void fclose(CFile file)
             => file?.Dispose();
+
+        /// <summary>
+        /// C's <c>(int)</c> conversion of a double, with the MSVC x64 (<c>cvttsd2si</c>) result for
+        /// values that do not fit: NaN, infinities and anything outside the int range give
+        /// <see cref="int.MinValue"/> (0x80000000), the "integer indefinite" value.
+        /// </summary>
+        /// <remarks>
+        /// For a value that is in range (truncating toward zero lands within [int.MinValue,
+        /// int.MaxValue]) the result is bit-identical to a plain C# <c>(int)</c> cast on every runtime.
+        /// Only out-of-range input differs: .NET 9 made floating point to integer conversions
+        /// saturating on x86/x64 (NaN gives 0, large values give int.MaxValue or int.MinValue; see
+        /// the .NET 9 breaking change "Floating point-to-integer conversions are saturating on
+        /// x86/x64"), while .NET 8 and the C reference give int.MinValue. Calling this helper makes
+        /// every target framework behave like the C.
+        /// </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ToInt32(double d)
+            => (d > -2147483649.0 && d < 2147483648.0) ? (int)d : int.MinValue;
+
+        /// <summary>
+        /// C's <c>(long)</c> / <c>(int64)</c> conversion of a double, with the MSVC x64 result for
+        /// values that do not fit: NaN, infinities and anything outside the long range give
+        /// <see cref="long.MinValue"/> (0x8000000000000000).
+        /// </summary>
+        /// <remarks>
+        /// Bit-identical to a plain C# <c>(long)</c> cast for in-range values on every runtime; see
+        /// <see cref="ToInt32(double)"/> for the .NET 9 saturating-conversion background.
+        /// </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long ToInt64(double d)
+            => (d >= -9223372036854775808.0 && d < 9223372036854775808.0) ? (long)d : long.MinValue;
 
     }
 

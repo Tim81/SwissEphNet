@@ -179,14 +179,22 @@ all. Passing `SEFLG_SIDEREAL` avoids both traps.
 
 ## Threads and async
 
-Create one `SwissEph` instance per thread. A single instance is not safe to share across threads:
-it holds the calculation state that the C library keeps in its own globals, and nothing
-synchronises it. Separate instances are independent and can run concurrently.
+Create one `SwissEph` instance per request or operation, and never use one instance from two
+threads at once. It holds the calculation state that the C library keeps in its own globals, and
+nothing synchronises it. Separate instances are independent and can run concurrently. "One instance
+per thread" is the wrong rule under async, because a request can resume on a different thread.
 
 There is no async API, and nothing here blocks on I/O long enough to want one. File reads happen
 inside `swe_calc` and friends, which are synchronous by nature; `IEphemerisFileProvider.Open`
 returns a `Stream` directly for the same reason. Calling from an async method is fine, and wrapping
 a long sweep in `Task.Run` is the usual way to keep it off a UI thread.
+
+### Calling from a server
+
+If requests supply the arguments, validate them first: some inputs (NaN, certain flag and body
+combinations) make a call run without returning, and `serr` can contain server paths. Use one
+instance per request, an allow-list for bodies and flags, and `try`/`catch` around calls. See
+[docs/server-usage.md](docs/server-usage.md).
 
 ## Examples in this repository
 

@@ -690,7 +690,7 @@ namespace SwissEphNet.CPort
             Int32 retval = OK;
             String sdummy = null;
             Int32 epheflag = 0;
-            iflag = plaus_iflag(iflag, ipl, tjd_ut, out serr);
+            iflag = plaus_iflag(iflag, ipl, tjd_ut, ref serr);
             epheflag = iflag & SwissEph.SEFLG_EPHMASK;
             if (epheflag == 0)
             {
@@ -729,7 +729,7 @@ namespace SwissEphNet.CPort
             /****************************************** 
              * iflag plausible?                       * 
              ******************************************/
-            iflag = plaus_iflag(iflag, ipl, tjd, out serr);
+            iflag = plaus_iflag(iflag, ipl, tjd, ref serr);
             /****************************************** 
              * which ephemeris is wanted, which is used?
              * Three ephemerides are possible: MOSEPH, SWIEPH, JPLEPH.
@@ -3590,7 +3590,7 @@ namespace SwissEphNet.CPort
             string star = string.Empty; //string sdummy = null;
             Int32 epheflag, otherflag, retflag, iflag_true, iflag_galequ;
             int sid_mode = sip.sid_mode;
-            iflag = plaus_iflag(iflag, -1, tjd_et, out serr);
+            iflag = plaus_iflag(iflag, -1, tjd_et, ref serr);
             epheflag = iflag & SwissEph.SEFLG_EPHMASK;
             otherflag = iflag & ~SwissEph.SEFLG_EPHMASK;
             daya = 0.0;
@@ -5137,7 +5137,7 @@ namespace SwissEphNet.CPort
             int fendian = (int)fdp.iflg & SEI_FILE_LITENDIAN;
             UInt32[] longs = new UInt32[MAXORD + 1];
             /* compute segment number */
-            iseg = (Int32)((tjd - pdp.tfstart) / pdp.dseg);
+            iseg = C.ToInt32((tjd - pdp.tfstart) / pdp.dseg);
             /*if (tjd - pdp.tfstart < 0)
                 return(NOT_AVAILABLE);*/
             /* tjd == tfend passes the range check, but gives iseg == nndx, i.e. the
@@ -5381,7 +5381,7 @@ namespace SwissEphNet.CPort
             if (ifno == SEI_FILE_ANY_AST)
             {
                 s = fp.ReadLine();
-                if (String.IsNullOrEmpty(s))
+                if (s == null || !fp.LastLineEndedCrLf || s.Length + 2 > SwissEph.AS_MAXCH * 2 - 1)
                 {
                     smsg = "d";
                     goto file_damage;
@@ -5390,17 +5390,19 @@ namespace SwissEphNet.CPort
                 /* MPC number and name; will be analyzed below:
                  * search "asteroid name" */
                 //sp = s.TrimStart();
-                spi = s.IndexOfFirstNot(" 0123456789".ToCharArray());
+                while (spi < s.Length && s[spi] == ' ') spi++;
+                while (spi < s.Length && s[spi] >= '0' && s[spi] <= '9') spi++;
+                spi++;
                 i = spi;
-                sastnam = s.Substring(0, lastnam + i);	// fixed 19-nov-19
+                sastnam = (s + "\r\n").Substring(0, Math.Min(s.Length + 2, Math.Min(lastnam + i, 40))).PadRight(41, '\0');	// fixed 19-nov-19; strncpy(sastnam, s, lastnam+i) copies the fgets line with its \r\n and zero-pads, in a char sastnam[41]
                 /* save elements, they are required for swe_plan_pheno() */
                 swed.astelem = s;
                 /* required for magnitude */
-                swed.ast_H = C.atof(s.Substring(35 + i));
-                swed.ast_G = C.atof(s.Substring(42 + i));
+                swed.ast_H = C.atof(s.Length > 35 + i ? s.Substring(35 + i) : "");
+                swed.ast_G = C.atof(s.Length > 42 + i ? s.Substring(42 + i) : "");
                 if (swed.ast_G == 0) swed.ast_G = 0.15;
                 /* diameter in kilometers, not always given: */
-                s2 = s.Substring(51 + i, 7).Trim();
+                s2 = (s.Length > 51 + i ? s.Substring(51 + i, Math.Min(7, s.Length - 51 - i)) : "").Trim();
                 //*(s2 + 7) = '\0';
                 if (String.IsNullOrEmpty(s2))
                     swed.ast_diam = 0;
@@ -5671,7 +5673,7 @@ namespace SwissEphNet.CPort
                 pdp.tfstart = doubles[0];
                 pdp.tfend = doubles[1];
                 pdp.dseg = doubles[2];
-                pdp.nndx = (Int32)((doubles[1] - doubles[0] + 0.1) / doubles[2]);
+                pdp.nndx = C.ToInt32((doubles[1] - doubles[0] + 0.1) / doubles[2]);
                 pdp.telem = doubles[3];
                 pdp.prot = doubles[4];
                 pdp.dprot = doubles[5];
@@ -5900,7 +5902,7 @@ namespace SwissEphNet.CPort
             if (ipli == SEI_MOON)
             {
                 dn = pdp.prot + tdiff * pdp.dprot;
-                i = (int)(dn / TWOPI);
+                i = C.ToInt32(dn / TWOPI);
                 dn -= i * TWOPI;
                 qav = (pdp.qrot + tdiff * pdp.dqrot) * Math.Cos(dn);
                 pav = (pdp.qrot + tdiff * pdp.dqrot) * Math.Sin(dn);
@@ -5922,7 +5924,7 @@ namespace SwissEphNet.CPort
                 refepx = pdp.refep;
                 refepy = refepx + nco;
                 omtild = pdp.peri + tdiff * pdp.dperi;
-                i = (int)(omtild / TWOPI);
+                i = C.ToInt32(omtild / TWOPI);
                 omtild -= i * TWOPI;
                 com = Math.Cos(omtild);
                 som = Math.Sin(omtild);
@@ -7182,10 +7184,9 @@ namespace SwissEphNet.CPort
          * - corrects nonsensical iflags
          * - completes incomplete iflags
          */
-        Int32 plaus_iflag(Int32 iflag, Int32 ipl, double tjd, out string serr)
+        Int32 plaus_iflag(Int32 iflag, Int32 ipl, double tjd, ref string serr)
         {
             Int32 epheflag = 0;
-            serr = null;
             int jplhor_model = swed.astro_models[SwissEph.SE_MODEL_JPLHOR_MODE];
             int jplhora_model = swed.astro_models[SwissEph.SE_MODEL_JPLHORA_MODE];
             if (jplhor_model == 0) jplhor_model = SwissEph.SEMOD_JPLHOR_DEFAULT;
@@ -7321,10 +7322,15 @@ namespace SwissEphNet.CPort
             //  if (serr != NULL) strcpy(serr, serr_alloc);
             //  return ERR;
             //}
-            var newfstars = new fixed_star[nrecs];
-            if (swed.fixed_stars != null)
-                swed.fixed_stars.CopyTo(newfstars, 0);
-            swed.fixed_stars = newfstars;
+            // Grow geometrically (realloc is amortised in C) instead of copying the whole array for
+            // every record; readers use nrecs / n_fixstars_*, never fixed_stars.Length.
+            if (swed.fixed_stars == null || swed.fixed_stars.Length < nrecs)
+            {
+                var newfstars = new fixed_star[Math.Max(nrecs, swed.fixed_stars == null ? 0 : swed.fixed_stars.Length * 2)];
+                if (swed.fixed_stars != null)
+                    swed.fixed_stars.CopyTo(newfstars, 0);
+                swed.fixed_stars = newfstars;
+            }
             //ftarget = swed.fixed_stars + (nrecs - 1);
             //memcpy((void *) ftarget, (void *) fstp, sizestru);
             swed.fixed_stars[nrecs - 1] = fstp;
@@ -7598,7 +7604,8 @@ namespace SwissEphNet.CPort
             iflag |= SwissEph.SEFLG_SPEED; /* we need this in order to work correctly */
             //if (serr != NULL)
             //  *serr = '\0';
-            iflag = plaus_iflag(iflag, -1, tjd, out serr);
+            serr = null;
+            iflag = plaus_iflag(iflag, -1, tjd, ref serr);
             epheflag = iflag & SwissEph.SEFLG_EPHMASK;
             if (swi_init_swed_if_start() == 1 && 0 == (epheflag & SwissEph.SEFLG_MOSEPH) /*&& serr != NULL*/)
             {
@@ -7917,7 +7924,7 @@ namespace SwissEphNet.CPort
             {
                 is_bayer = true;
             }
-            else if (sstar.Length > 0 && Char.IsDigit(sstar[0]))
+            else if (sstar.Length > 0 && (sstar[0] >= '0' && sstar[0] <= '9'))
             {
                 star_nr = atoi(sstar);
             }
@@ -8168,7 +8175,7 @@ namespace SwissEphNet.CPort
             double deltat;
             Int32 retflag;
             Int32 epheflag = 0;
-            iflag = plaus_iflag(iflag, -1, tjd_ut, out serr);
+            iflag = plaus_iflag(iflag, -1, tjd_ut, ref serr);
             epheflag = iflag & SwissEph.SEFLG_EPHMASK;
             if (epheflag == 0)
             {
@@ -8440,7 +8447,7 @@ namespace SwissEphNet.CPort
                          * 2. asteroid name
                          * The asteroid number may or may not be in brackets
                          */
-                        if (ipl > SwissEph.SE_AST_OFFSET && (s[0] == '?' || Char.IsDigit(s[1])))
+                        if (ipl > SwissEph.SE_AST_OFFSET && ((s.Length > 0 && s[0] == '?') || (s.Length > 1 && s[1] >= '0' && s[1] <= '9')))	/* sweph.c:7139 reads s[0], s[1] of a char buffer; past the string they are '\0' here */
                         {
                             int ipli = (int)(ipl - SwissEph.SE_AST_OFFSET), iplf = 0;
                             CFile fp;
@@ -8766,7 +8773,7 @@ namespace SwissEphNet.CPort
             double t, dt; double[] x = new double[6];
             double sidt = SE.swe_sidtime(tjd_ut);
             Int32 iflag = SwissEph.SEFLG_EQUATORIAL;
-            iflag = plaus_iflag(iflag, -1, tjd_ut, out serr);
+            iflag = plaus_iflag(iflag, -1, tjd_ut, ref serr);
             if (swi_init_swed_if_start() == 1 && 0 == (iflag & SwissEph.SEFLG_MOSEPH))
             {
                 serr = "Please call swe_set_ephe_path() or swe_set_jplfile() before calling swe_time_equ(), swe_lmt_to_lat() or swe_lat_to_lmt()";
@@ -8883,7 +8890,7 @@ namespace SwissEphNet.CPort
                 is_bayer = true;
                 // search name star number in sefstars.txt
             }
-            else if (char.IsDigit(sstar[0]))
+            else if ((sstar[0] >= '0' && sstar[0] <= '9'))
             {
                 star_nr = atoi(sstar);
                 // traditional name: cut off Bayer designation
@@ -9057,7 +9064,8 @@ namespace SwissEphNet.CPort
             iflag |= SwissEph.SEFLG_SPEED; /* we need this in order to work correctly */
             //if (serr != NULL)
             //  *serr = '\0';
-            iflag = plaus_iflag(iflag, -1, tjd, out serr);
+            serr = null;
+            iflag = plaus_iflag(iflag, -1, tjd, ref serr);
             epheflag = iflag & SwissEph.SEFLG_EPHMASK;
             if (swi_init_swed_if_start() == 1 && (epheflag & SwissEph.SEFLG_MOSEPH) == 0)
             {
@@ -9405,7 +9413,7 @@ namespace SwissEphNet.CPort
             {
                 ; // is Bayer designation
             }
-            else if (sstar.Length > 0 && char.IsDigit(sstar[0]))
+            else if (sstar.Length > 0 && (sstar[0] >= '0' && sstar[0] <= '9'))
             {
                 ; // is a sequential star number
             }
@@ -9459,7 +9467,7 @@ namespace SwissEphNet.CPort
             Int32 retflag;
             string sdummy = null;
             Int32 epheflag = 0;
-            iflag = plaus_iflag(iflag, -1, tjd_ut, out serr);
+            iflag = plaus_iflag(iflag, -1, tjd_ut, ref serr);
             epheflag = iflag & SwissEph.SEFLG_EPHMASK;
             if (epheflag == 0)
             {
@@ -9513,7 +9521,7 @@ namespace SwissEphNet.CPort
             {
                 ; // is Bayer designation
             }
-            else if (sstar.Length > 0 && char.IsDigit(sstar[0]))
+            else if (sstar.Length > 0 && (sstar[0] >= '0' && sstar[0] <= '9'))
             {
                 ; // is a sequential star number
             }
@@ -9642,7 +9650,7 @@ namespace SwissEphNet.CPort
                 serr = C.sprintf("ipl and iplctr (= %d) must not be identical\n", ipl);
                 return ERR;
             }
-            iflag = plaus_iflag(iflag, ipl, tjd, out serr);
+            iflag = plaus_iflag(iflag, ipl, tjd, ref serr);
             epheflag = iflag & SwissEph.SEFLG_EPHMASK;
             // this fills in obliquity and nutation values in swed
             swe_calc(tjd + SE.swe_deltat_ex(tjd, epheflag, ref serr), SwissEph.SE_ECL_NUT, iflag, xx, ref serr);

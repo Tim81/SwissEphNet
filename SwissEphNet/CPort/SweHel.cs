@@ -302,7 +302,7 @@ namespace SwissEphNet.CPort
             Fa = Math.Pow((Pst / OpticDia), 2);
             Fr = (1 + 0.03 * Math.Pow((OpticMag * ObjectSize / CVA(Bback, SNi, helflag)), 2)) / Math.Pow(SNi, 2);
             Fm = Math.Pow(OpticMag, 2);
-#if DEBUG
+#if SWEHEL_DEBUG
             trace("Pst=%f\n", Pst);
             trace("Fb =%f\n", Fb);
             trace("Fe =%f\n", Fe);
@@ -441,7 +441,7 @@ namespace SwissEphNet.CPort
             double[] xs = new double[6], xx = new double[6], xaz = new double[6], xaz2 = new double[6];
             double rdi, rh;
             double tjd0 = tjd_start, tjdrise;
-            double tjdnoon = (int)tjd0 - dgeo[0] / 15.0 / 24.0;
+            double tjdnoon = C.ToInt32(tjd0) - dgeo[0] / 15.0 / 24.0;
             Int32 iflag = helflag & (SwissEph.SEFLG_JPLEPH | SwissEph.SEFLG_SWIEPH | SwissEph.SEFLG_MOSEPH);
             Int32 epheflag = iflag;
             iflag |= SwissEph.SEFLG_EQUATORIAL;
@@ -1414,7 +1414,7 @@ namespace SwissEphNet.CPort
             /*Bsk = Bsk / CorrFactor1;*/
             Bsk = Bsk * CorrFactor1;
             Th = C1 * Math.Pow(1 + Math.Sqrt(C2 * Bsk), 2) * CorrFactor2;
-#if DEBUG
+#if SWEHEL_DEBUG
             trace("Bsk=%f, ", Bsk);
             trace("kX =%f, ", kX);
             trace("Th =%f, ", Th);
@@ -1516,18 +1516,18 @@ namespace SwissEphNet.CPort
                 if (ObjectLoc(tjdut, dgeo, datm, "moon", 1, helflag, ref AziM, ref serr) == SwissEph.ERR)
                     return SwissEph.ERR;
             }
-#if DEBUG
+#if SWEHEL_DEBUG
             {
                 int ii;
-                for (ii = 0; i < 6; ii++)
+                for (ii = 0; ii < 6; ii++)
                     trace("dobs[%d] = %f\n", ii, dobs[ii]);
                 trace("AltO = %.10f, AziO = %.10f\n", AltO, AziO);
                 trace("AltM = %.10f, AziM = %.10f\n", AltM, AziM);
                 trace("AltS = %.10f, AziS = %.10f\n", AltS, AziS);
                 trace("JD = %.10f\n", tjdut);
                 trace("lat = %f, eyeh = %f\n", dgeo[1], dgeo[2]);
-                for (ii = 0; i < 4; ii++)
-                    trace("datm[%d] = %f\n", i, datm[ii]);
+                for (ii = 0; ii < 4; ii++)
+                    trace("datm[%d] = %f\n", ii, datm[ii]);
                 trace("helflag = %d\n", helflag);
             }
 #endif
@@ -1824,7 +1824,7 @@ namespace SwissEphNet.CPort
             sin = sin ?? String.Empty;
             int limit = Math.Min(sin.Length, 30);
             /* note, star name may begin with comma, such as ",zePsc" */
-            while (i < limit && (Char.IsLetterOrDigit(sin[i]) || sin[i] == ' ' || sin[i] == '-' || sin[i] == ','))
+            while (i < limit && ((sin[i] >= '0' && sin[i] <= '9' || sin[i] >= 'A' && sin[i] <= 'Z' || sin[i] >= 'a' && sin[i] <= 'z') || sin[i] == ' ' || sin[i] == '-' || sin[i] == ','))
                 i++;
             sout = sin.Substring(0, i);
         }
@@ -2363,7 +2363,7 @@ namespace SwissEphNet.CPort
                     if (doneoneday == 0 && (JDNDaysUTfinal - JDNDaysUTstep) * Sgn(DayStep) > 0) {
                         /* go back to date before heliacal altitude */
                         ArcusVisDelta = ArcusVisDeltaoud;
-                        DayStep = ((int)(Math.Abs(DayStep) / 2.0)) * Sgn(DayStep);
+                        DayStep = (C.ToInt32(Math.Abs(DayStep) / 2.0)) * Sgn(DayStep);
                         JDNDaysUTstep = JDNDaysUTstepoud;
                     }
                 } while (doneoneday == 0 && (JDNDaysUTfinal - JDNDaysUTstep) * Sgn(DayStep) > 0);

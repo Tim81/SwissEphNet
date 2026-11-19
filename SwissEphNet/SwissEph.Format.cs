@@ -274,14 +274,45 @@ namespace SwissEphNet
             // Elements calculation
             var sgn = Math.Sign(value);
             double avalue = Math.Abs(value);
-            int deg = (int)value;
             int adeg = (int)avalue;
-            int znum = (int)((avalue % 360.0) / 30);
-            int zdeg = (int)((avalue % 360.0) % 30.0);
             avalue -= adeg; avalue *= 60.0;
             int min = (int)avalue;
-            avalue -= min; 
+            avalue -= min;
             double dsec = (avalue * 60.0);
+            // Longest 's' and 'p' runs in the format. Seconds are rounded once, here, so that
+            // the 's' and 'p' fields agree and a carry (59.99996" -> 60") reaches the minutes,
+            // degrees and zodiac sign. A format with neither run is left untouched.
+            int maxS = 0, maxP = 0;
+            for (int i = 0, fmtLen = format.Length; i < fmtLen; i++) {
+                char fc = format[i];
+                if (fc == 's' || fc == 'S' || fc == 'p' || fc == 'P') {
+                    bool isP = fc == 'p' || fc == 'P';
+                    int run = 1;
+                    while (i + 1 < fmtLen && (isP ? (format[i + 1] == 'p' || format[i + 1] == 'P') : (format[i + 1] == 's' || format[i + 1] == 'S'))) { i++; run++; }
+                    if (isP) { if (run > maxP) maxP = run; }
+                    else if (run > maxS) maxS = run;
+                }
+            }
+            int roundDigits = Math.Min(maxP, MaxRoundingDigits);
+            long fracInt = 0;
+            long fracScale = 1;
+            if (maxP > 0) {
+                dsec = Math.Round(dsec, roundDigits);
+                for (int k = 0; k < roundDigits; k++) fracScale *= 10;
+            } else if (maxS > 0) {
+                dsec = Math.Round(dsec, Math.Min(maxS, MaxRoundingDigits));
+            }
+            if (maxP > 0 || maxS > 0) {
+                if (dsec >= 60.0) { dsec -= 60.0; min++; }
+                if (min >= 60) { min -= 60; adeg++; }
+            }
+            if (maxP > 0) {
+                fracInt = (long)Math.Round((dsec - Math.Floor(dsec)) * fracScale);
+                if (fracInt >= fracScale) fracInt = fracScale - 1;
+            }
+            int znum = (adeg % 360) / 30;
+            int zdeg = (adeg % 360) % 30;
+            bool negative = sgn < 0;
             StringBuilder result = new StringBuilder();
             for (int i = 0, fmtLen = format.Length; i < fmtLen; i++) {
                 char c = format[i];
@@ -311,8 +342,8 @@ namespace SwissEphNet
                 }
                 // Format
                 switch (c) {
-                    case 'd': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0,{0}}}", l), deg); break;
-                    case 'D': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", sgn < 0 ? l - 1 : l), deg); break;
+                    case 'd': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0,{0}}}", l), (negative ? "-" : "") + adeg.ToString(CultureInfo.InvariantCulture)); break;
+                    case 'D': result.Append(negative ? "-" : "").AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", negative ? l - 1 : l), adeg); break;
                     case 'a': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0,{0}}}", l), adeg); break;
                     case 'A': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", l), adeg); break;
                     case 'n': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0,{0}}}", l), znum); break;
@@ -321,14 +352,23 @@ namespace SwissEphNet
                     case 'G': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", l), zdeg); break;
                     case 'm': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0,{0}}}", l), min); break;
                     case 'M': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", l), min); break;
-                    case 's': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0,{0}}}", l), (int)Math.Round(dsec, Math.Min(l, MaxRoundingDigits))); break;
-                    case 'S': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", l), (int)Math.Round(dsec, Math.Min(l, MaxRoundingDigits))); break;
+                    case 's': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0,{0}}}", l), (int)dsec); break;
+                    case 'S': result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", l), (int)dsec); break;
                     case 'p':
                     case 'P':
-                        var t = Math.Round(dsec, Math.Min(l, MaxRoundingDigits));
-                        var prec = t - (int)t;
-                        prec = Math.Round(prec * Math.Pow(10, l));
-                        result.AppendFormat(CultureInfo.InvariantCulture, String.Format(CultureInfo.InvariantCulture, "{{0:D{0}}}", l), (int)prec);
+                        // First l digits of the roundDigits-digit fraction: a run narrower than
+                        // the longest is rounded to its own width (clamped below 10^l, since the
+                        // carry was already taken above); a wider one is padded with zeros.
+                        if (l <= roundDigits) {
+                            long divisor = 1;
+                            for (int k = roundDigits; k > l; k--) divisor *= 10;
+                            long narrow = (fracInt + divisor / 2) / divisor;
+                            long limit = fracScale / divisor;
+                            if (narrow >= limit) narrow = limit - 1;
+                            result.Append(narrow.ToString("D" + l.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture));
+                        } else {
+                            result.Append(fracInt.ToString("D" + roundDigits.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture)).Append('0', l - roundDigits);
+                        }
                         break;
                     case 'z':
                     case 'Z':

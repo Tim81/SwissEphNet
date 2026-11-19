@@ -779,7 +779,7 @@ namespace SwissEphNet.CPort
                     int ip = C.strchr(s, '#');
                     if (ip >= 0) s = s.Substring(0, ip);
                     //    ncpos = swi_cutstr(s, ",", cpos, 20);
-                    cpos = s.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    ncpos = SwephLib.swi_cutstr(s, new char[] { ',' }, out cpos, 20);
                     ncpos = cpos.Length;
                     serri = C.sprintf("error in file %s, line %7.0f:", SwissEph.SE_FICTFILE, (double)iline);
                     if (ncpos < 9) {

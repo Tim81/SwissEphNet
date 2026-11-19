@@ -957,5 +957,66 @@ namespace SwissEphNet.Tests
         public void PrecisionOnStringIsAMaximumNotAMinimum(string format, string arg, string expected) {
             Assert.Equal(expected, C.sprintf(format, arg));
         }
+
+        // The sign of a floating-point value is its IEEE sign bit, as in C: -0.0 prints "-0.00".
+        [Theory]
+        [InlineData("%.2f", -0.0, "-0.00")]
+        [InlineData("%+.2f", -0.0, "-0.00")]
+        [InlineData("%+.2f", 0.0, "+0.00")]
+        [InlineData("%08.3f", -0.0, "-000.000")]
+        [InlineData("%08.3f", 0.0, "0000.000")]
+        [InlineData("%+08.3f", 1.5, "+001.500")]
+        [InlineData("%08.3f", -1.5, "-001.500")]
+        [InlineData("% .1f", -0.0, "-0.0")]
+        [InlineData("% .1f", 0.0, " 0.0")]
+        [InlineData("%.2f", -0.001, "-0.00")]
+        [InlineData("%8.2f", -0.001, "   -0.00")]
+        [InlineData("%-8.2f|", -0.001, "-0.00   |")]
+        [InlineData("%-+8.2f|", 2.5, "+2.50   |")]
+        [InlineData("%8.2f", 2.5, "    2.50")]
+        public void FloatSignComesFromTheSignBit(string format, double arg, string expected) {
+            Assert.Equal(expected, C.sprintf(format, arg));
+        }
+
+        // C prints nan/inf, pads them with spaces even under the '0' flag, honours '+' and ' ',
+        // and uses NAN/INF for the uppercase conversions. NaN never gets a '-'.
+        [Theory]
+        [InlineData("%f", double.NaN, "nan")]
+        [InlineData("%f", double.PositiveInfinity, "inf")]
+        [InlineData("%f", double.NegativeInfinity, "-inf")]
+        [InlineData("%8.2f", double.PositiveInfinity, "     inf")]
+        [InlineData("%08.2f", double.NegativeInfinity, "    -inf")]
+        [InlineData("%-8.2f|", double.PositiveInfinity, "inf     |")]
+        [InlineData("%+f", double.PositiveInfinity, "+inf")]
+        [InlineData("% f", double.PositiveInfinity, " inf")]
+        [InlineData("%+f", double.NaN, "+nan")]
+        [InlineData("%e", double.PositiveInfinity, "inf")]
+        [InlineData("%E", double.PositiveInfinity, "INF")]
+        [InlineData("%G", double.NaN, "NAN")]
+        [InlineData("%g", double.NegativeInfinity, "-inf")]
+        [InlineData("%E", double.NegativeInfinity, "-INF")]
+        public void NonFiniteFloatsPrintLikeC(string format, double arg, string expected) {
+            Assert.Equal(expected, C.sprintf(format, arg));
+        }
+
+        [Fact]
+        public void NegativeNaNHasNoMinusSign() {
+            double negNan = BitConverter.Int64BitsToDouble(unchecked((long)0xFFF8000000000000UL));
+            Assert.Equal("nan", C.sprintf("%f", negNan));
+        }
+
+        // %s of a non-string argument must not depend on the host culture.
+        [Fact]
+        public void StringConversionOfANumberIsCultureInvariant() {
+            var saved = System.Globalization.CultureInfo.CurrentCulture;
+            try {
+                System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("nl-NL");
+                Assert.Equal("1.5", C.sprintf("%s", 1.5));
+                Assert.Equal("[   1.5]", C.sprintf("[%6s]", 1.5));
+                Assert.Equal("1.50", C.sprintf("%.2f", 1.5));
+            } finally {
+                System.Globalization.CultureInfo.CurrentCulture = saved;
+            }
+        }
 }
 }

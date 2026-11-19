@@ -1496,7 +1496,7 @@ namespace SwissEphNet.CPort
             if (J > Sweph.JPL_DE431_END) return 0;
             /*if (J > CORR_MNODE_JD_T1GREG && J < CORR_MNODE_JD_T2GREG) return 0;*/
             dJ = J - J0;
-            i = (int)Math.Floor(dJ / dayscty); /* centuries = index of lower correction value */
+            i = C.ToInt32(Math.Floor(dJ / dayscty)); /* centuries = index of lower correction value */
             dfrac = (dJ - i * dayscty) / dayscty;
             dcor0 = mean_node_corr[i];
             dcor1 = mean_node_corr[i + 1];
@@ -1561,7 +1561,7 @@ namespace SwissEphNet.CPort
             if (J > Sweph.JPL_DE431_END) return 0;
             /*if (J > CORR_MAPOG_JD_T1GREG && J < CORR_MAPOG_JD_T2GREG) return 0;*/
             dJ = J - J0;
-            i = (int)Math.Floor(dJ / dayscty); /* centuries = index of lower correction value */
+            i = C.ToInt32(Math.Floor(dJ / dayscty)); /* centuries = index of lower correction value */
             dfrac = (dJ - i * dayscty) / dayscty;
             dcor0 = mean_apsis_corr[i];
             dcor1 = mean_apsis_corr[i + 1];

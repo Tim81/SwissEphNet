@@ -147,9 +147,12 @@ When your data is not a file on disk, an embedded resource being the usual case,
 
 ## Threads
 
-Create one `SwissEph` instance per thread. A single instance is not safe to share across threads.
+Create one `SwissEph` instance per request or operation, never used concurrently.
 Separate instances are independent and can run concurrently. There is no async API; the calls are
 synchronous, so wrap a long sweep in `Task.Run` to keep it off a UI thread.
+
+Calling from a server? Validate input and keep instances per request: see
+[Using SwissEph in a server](https://github.com/Tim81/SwissEphNet/blob/main/docs/server-usage.md).
 
 ## Upgrading from SwissEphNet 2.8.0.2
 

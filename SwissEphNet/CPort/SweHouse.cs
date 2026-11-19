@@ -2986,7 +2986,7 @@ namespace SwissEphNet.CPort
             int n;
             double ass;
             x1 = SE.swe_degnorm(x1);
-            n = (int)((x1 / 90) + 1);	// n is quadrant 1..4
+            n = C.ToInt32((x1 / 90) + 1);	// n is quadrant 1..4
             if (Math.Abs(90 - f) < VERY_SMALL)
             { // near north pole
                 return 180;

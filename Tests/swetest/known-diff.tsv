@@ -1,7 +1,7 @@
 case_id	category	reason
 DATE_FORMATS|NEGATIVE_YEAR	OUTPUT-DIFFERS	line 3: c="warning: SwissEph file 'seplm06.se1' not found in PATH '<ephe-dir>\' " net="warning: SwissEph file 'seplm06.se1' not found in PATH '<ephe-dir>/' " [net-output 9348c62c89be]
 DATE_FORMATS|OUT_OF_RANGE_PAST	OUTPUT-DIFFERS	line 1: c="error: SwissEph file 'seplm42.se1' not found in PATH '<ephe-dir>\'" net="error: SwissEph file 'seplm42.se1' not found in PATH '<ephe-dir>/'" [net-output 1e1a39cf93f1]
-FMT_MULTI|6	OUTPUT-DIFFERS	line 15: c="intp. Apogee      -nan(ind)         nan " net="intp. Apogee            NaN         NaN " [net-output e570712ab454]
+FMT_MULTI|6	OUTPUT-DIFFERS	line 15: c="intp. Apogee      -nan(ind)         nan " net="intp. Apogee            nan         nan " [net-output f6b192217b83]
 NEW_2_10_FLAGS|LIM	OUTPUT-DIFFERS	line 1: c="range <ephe-dir>\se00433s.se1: 0.0 = 24.11.-4713 to 0.0 = 24.11.-4713 de=0" net="range <ephe-dir>/se00433s.se1: 0.0 = 24.11.-4713 to 0.0 = 24.11.-4713 de=0" [net-output 6cbebf574357]
 NEW_2_10_FLAGS|LIM_AST	OUTPUT-DIFFERS	line 1: c="range <ephe-dir>\seas_18.se1: 2378496.5 = 1.01.1800 to 2597996.5 = 21.12.2400 de=441" net="range <ephe-dir>/seas_18.se1: 2378496.5 = 1.01.1800 to 2597996.5 = 21.12.2400 de=441" [net-output 942d9bf4ada8]
 NEW_2_10_FLAGS|LIM_MOON	OUTPUT-DIFFERS	line 1: c="range <ephe-dir>\semo_18.se1: 2378487.6 = 23.12.1799 to 2597656.5 = 15.01.2400 de=441" net="range <ephe-dir>/semo_18.se1: 2378487.6 = 23.12.1799 to 2597656.5 = 15.01.2400 de=441" [net-output 67ba132f0372]
