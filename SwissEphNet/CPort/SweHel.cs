@@ -302,7 +302,7 @@ namespace SwissEphNet.CPort
             Fa = Math.Pow((Pst / OpticDia), 2);
             Fr = (1 + 0.03 * Math.Pow((OpticMag * ObjectSize / CVA(Bback, SNi, helflag)), 2)) / Math.Pow(SNi, 2);
             Fm = Math.Pow(OpticMag, 2);
-#if DEBUG
+#if SWEHEL_DEBUG
             trace("Pst=%f\n", Pst);
             trace("Fb =%f\n", Fb);
             trace("Fe =%f\n", Fe);
@@ -1414,7 +1414,7 @@ namespace SwissEphNet.CPort
             /*Bsk = Bsk / CorrFactor1;*/
             Bsk = Bsk * CorrFactor1;
             Th = C1 * Math.Pow(1 + Math.Sqrt(C2 * Bsk), 2) * CorrFactor2;
-#if DEBUG
+#if SWEHEL_DEBUG
             trace("Bsk=%f, ", Bsk);
             trace("kX =%f, ", kX);
             trace("Th =%f, ", Th);
@@ -1516,18 +1516,18 @@ namespace SwissEphNet.CPort
                 if (ObjectLoc(tjdut, dgeo, datm, "moon", 1, helflag, ref AziM, ref serr) == SwissEph.ERR)
                     return SwissEph.ERR;
             }
-#if DEBUG
+#if SWEHEL_DEBUG
             {
                 int ii;
-                for (ii = 0; i < 6; ii++)
+                for (ii = 0; ii < 6; ii++)
                     trace("dobs[%d] = %f\n", ii, dobs[ii]);
                 trace("AltO = %.10f, AziO = %.10f\n", AltO, AziO);
                 trace("AltM = %.10f, AziM = %.10f\n", AltM, AziM);
                 trace("AltS = %.10f, AziS = %.10f\n", AltS, AziS);
                 trace("JD = %.10f\n", tjdut);
                 trace("lat = %f, eyeh = %f\n", dgeo[1], dgeo[2]);
-                for (ii = 0; i < 4; ii++)
-                    trace("datm[%d] = %f\n", i, datm[ii]);
+                for (ii = 0; ii < 4; ii++)
+                    trace("datm[%d] = %f\n", ii, datm[ii]);
                 trace("helflag = %d\n", helflag);
             }
 #endif
