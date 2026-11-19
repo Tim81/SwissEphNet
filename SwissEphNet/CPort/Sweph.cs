@@ -690,7 +690,7 @@ namespace SwissEphNet.CPort
             Int32 retval = OK;
             String sdummy = null;
             Int32 epheflag = 0;
-            iflag = plaus_iflag(iflag, ipl, tjd_ut, out serr);
+            iflag = plaus_iflag(iflag, ipl, tjd_ut, ref serr);
             epheflag = iflag & SwissEph.SEFLG_EPHMASK;
             if (epheflag == 0)
             {
@@ -729,7 +729,7 @@ namespace SwissEphNet.CPort
             /****************************************** 
              * iflag plausible?                       * 
              ******************************************/
-            iflag = plaus_iflag(iflag, ipl, tjd, out serr);
+            iflag = plaus_iflag(iflag, ipl, tjd, ref serr);
             /****************************************** 
              * which ephemeris is wanted, which is used?
              * Three ephemerides are possible: MOSEPH, SWIEPH, JPLEPH.
@@ -3590,7 +3590,7 @@ namespace SwissEphNet.CPort
             string star = string.Empty; //string sdummy = null;
             Int32 epheflag, otherflag, retflag, iflag_true, iflag_galequ;
             int sid_mode = sip.sid_mode;
-            iflag = plaus_iflag(iflag, -1, tjd_et, out serr);
+            iflag = plaus_iflag(iflag, -1, tjd_et, ref serr);
             epheflag = iflag & SwissEph.SEFLG_EPHMASK;
             otherflag = iflag & ~SwissEph.SEFLG_EPHMASK;
             daya = 0.0;
@@ -7184,10 +7184,9 @@ namespace SwissEphNet.CPort
          * - corrects nonsensical iflags
          * - completes incomplete iflags
          */
-        Int32 plaus_iflag(Int32 iflag, Int32 ipl, double tjd, out string serr)
+        Int32 plaus_iflag(Int32 iflag, Int32 ipl, double tjd, ref string serr)
         {
             Int32 epheflag = 0;
-            serr = null;
             int jplhor_model = swed.astro_models[SwissEph.SE_MODEL_JPLHOR_MODE];
             int jplhora_model = swed.astro_models[SwissEph.SE_MODEL_JPLHORA_MODE];
             if (jplhor_model == 0) jplhor_model = SwissEph.SEMOD_JPLHOR_DEFAULT;
@@ -7605,7 +7604,8 @@ namespace SwissEphNet.CPort
             iflag |= SwissEph.SEFLG_SPEED; /* we need this in order to work correctly */
             //if (serr != NULL)
             //  *serr = '\0';
-            iflag = plaus_iflag(iflag, -1, tjd, out serr);
+            serr = null;
+            iflag = plaus_iflag(iflag, -1, tjd, ref serr);
             epheflag = iflag & SwissEph.SEFLG_EPHMASK;
             if (swi_init_swed_if_start() == 1 && 0 == (epheflag & SwissEph.SEFLG_MOSEPH) /*&& serr != NULL*/)
             {
@@ -8175,7 +8175,7 @@ namespace SwissEphNet.CPort
             double deltat;
             Int32 retflag;
             Int32 epheflag = 0;
-            iflag = plaus_iflag(iflag, -1, tjd_ut, out serr);
+            iflag = plaus_iflag(iflag, -1, tjd_ut, ref serr);
             epheflag = iflag & SwissEph.SEFLG_EPHMASK;
             if (epheflag == 0)
             {
@@ -8773,7 +8773,7 @@ namespace SwissEphNet.CPort
             double t, dt; double[] x = new double[6];
             double sidt = SE.swe_sidtime(tjd_ut);
             Int32 iflag = SwissEph.SEFLG_EQUATORIAL;
-            iflag = plaus_iflag(iflag, -1, tjd_ut, out serr);
+            iflag = plaus_iflag(iflag, -1, tjd_ut, ref serr);
             if (swi_init_swed_if_start() == 1 && 0 == (iflag & SwissEph.SEFLG_MOSEPH))
             {
                 serr = "Please call swe_set_ephe_path() or swe_set_jplfile() before calling swe_time_equ(), swe_lmt_to_lat() or swe_lat_to_lmt()";
@@ -9064,7 +9064,8 @@ namespace SwissEphNet.CPort
             iflag |= SwissEph.SEFLG_SPEED; /* we need this in order to work correctly */
             //if (serr != NULL)
             //  *serr = '\0';
-            iflag = plaus_iflag(iflag, -1, tjd, out serr);
+            serr = null;
+            iflag = plaus_iflag(iflag, -1, tjd, ref serr);
             epheflag = iflag & SwissEph.SEFLG_EPHMASK;
             if (swi_init_swed_if_start() == 1 && (epheflag & SwissEph.SEFLG_MOSEPH) == 0)
             {
@@ -9466,7 +9467,7 @@ namespace SwissEphNet.CPort
             Int32 retflag;
             string sdummy = null;
             Int32 epheflag = 0;
-            iflag = plaus_iflag(iflag, -1, tjd_ut, out serr);
+            iflag = plaus_iflag(iflag, -1, tjd_ut, ref serr);
             epheflag = iflag & SwissEph.SEFLG_EPHMASK;
             if (epheflag == 0)
             {
@@ -9649,7 +9650,7 @@ namespace SwissEphNet.CPort
                 serr = C.sprintf("ipl and iplctr (= %d) must not be identical\n", ipl);
                 return ERR;
             }
-            iflag = plaus_iflag(iflag, ipl, tjd, out serr);
+            iflag = plaus_iflag(iflag, ipl, tjd, ref serr);
             epheflag = iflag & SwissEph.SEFLG_EPHMASK;
             // this fills in obliquity and nutation values in swed
             swe_calc(tjd + SE.swe_deltat_ex(tjd, epheflag, ref serr), SwissEph.SE_ECL_NUT, iflag, xx, ref serr);
