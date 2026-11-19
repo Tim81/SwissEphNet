@@ -44,19 +44,31 @@ generated commit list — for anything earlier, see git history.
 - `I` (Sunshine) declination error path: it now returns `ERR` with all output arrays zeroed. It
   left them untouched before, and through `swe_houses` at ancient dates the C dereferenced a NULL
   `serr`.
-- Known caveat, reproduced faithfully from upstream: in the `ECL_T0` sidereal modes
-  (`SE_SIDBIT_ECL_T0`, and `SE_SIDM_J2000`, `SE_SIDM_J1900`, `SE_SIDM_B1950` and
-  `SE_SIDM_GALALIGN_MARDYKS`, which force it) cusps already jump by exactly `2*dpsi(t0)` at the
-  mode's epoch `t0`, in every release. New in `6c989727`, `sidereal_frame_speeds` differences
-  `t +/- 0.1` day, so within 0.1 day of `t0` every cusp and `ascmc` speed is off by
-  `2*dpsi/0.2`: -0.0387 degrees per day for `SE_SIDM_J2000` around 2000-01-01 12:00 TT, and
-  -0.0466 for Lahiri with `ECL_T0` around 1956-03-21. `SE_SIDBIT_SSY_PLANE` is unaffected.
-  Measured, the port equals the MSVC-built `swetest` for
-  `-b1.1.2000 -ut12:00 -house13.4,52.5,P -speed -sid18`: Ascendant 600°41'20.2289 against
-  600°43'39.5410 tropical (2'19", or 0.0387 degrees per day, less). One day later the difference
-  from the `94621aba` value is only the intended 0.18" frame term. A report to Astrodienst, with a patch
-  that moves the 0.2-day interval to `tjde`'s side of `t0` within 0.1 day of `t0` and changes no
-  position, is drafted and has not been sent.
+- ECL_T0 sidereal modes near the mode's epoch: the frame rate added above is taken on `tjde`'s side
+  of the epoch `t0` when a central difference would straddle it (upstream `0c3eb56e`). In the
+  `ECL_T0` modes (`SE_SIDBIT_ECL_T0`, and `SE_SIDM_J2000`, `SE_SIDM_J1900`, `SE_SIDM_B1950` and
+  `SE_SIDM_GALALIGN_MARDYKS`, which force it) the cusps jump at `t0` by twice the nutation in
+  longitude, as in every earlier release, and the first version of the frame-rate code
+  (`6c989727`) differenced across that jump, putting every cusp and `ascmc` speed within 0.1 day
+  of `t0` off by up to 0.04 degrees per day. That version was never part of a SwissEphNet release.
+  Measured, for `-b1.1.2000 -ut12:00 -house13.4,52.5,P -speed -sid18` the Ascendant's speed is
+  600°43'39.6898 against 600°43'39.5410 tropical (it would have been 600°41'20.2289 at
+  `6c989727`): the 0.149" difference is the frame term and nothing else. The position jump at
+  `t0` itself is unchanged. `SE_SIDBIT_SSY_PLANE` is not affected. The port equals the
+  MSVC-built `swetest` at `43c9fe54` on this command.
+- `swe_calc` on an asteroid (or other) ephemeris file at exactly the file's last date returned
+  garbage. At `tjd == tfend`, which the range check allows, `get_new_segment()` took the index
+  entry after the last segment, so the coefficients were wrong. It now uses the last segment
+  (upstream `43c9fe54`). The port had the identical bug: Astraea (`se00005s.se1`, file range
+  JD 2268932.5 to 2488932.5) at exactly JD 2488932.5 came out at longitude 126.0072799, latitude
+  -22.1761351 and distance 3.648274082 au instead of 66.9437422, -3.5490403 and 3.288141871 (0.0001
+  day earlier: 66.9436936). It shows only when `tfend` is the first date evaluated, because an
+  earlier date in the last segment caches that segment. The new `AsteroidFileUpperLimitTest` (3
+  cases) matches the MSVC-built C at `43c9fe54` bit for bit and fails on the previous `Sweph.cs`.
+- `swe_houses_armc_ex2` no longer raises `SwissEph.OnTrace` messages. Upstream removed the three
+  `#ifdef TRACE` blocks from `swehouse.c` (`6318ad4c`); the C emits them only when built with
+  `-DTRACE`, but `TRACE` is defined by default in the .NET build, so the port's
+  `swe_houses_armc_ex2` raised them. Other `OnTrace` sources are unchanged.
 - `swe_get_planet_name` now looks numbered asteroids up in `seasnam.txt` by binary search
   (`seasnam_line_number`, `sweph.c:6954`; `seasnam_seek`, `sweph.c:6968`; upstream `be4aa5dd`),
   which is faster than the previous scan. For a sorted file the results are the same; for an
@@ -80,13 +92,13 @@ generated commit list — for anything earlier, see git history.
   already offered under both the AGPL-3.0 and the Swiss Ephemeris Professional License, as the
   README says, and this repository's `LICENSE` is unchanged. If you hold or plan to buy a
   Professional License, check the current contract with Astrodienst.
-- The upstream pin moves from `94621aba` to `6c989727` (upstream master, 2026-11-13), which is
-  `v2.10.3bfinal` (`f4dcd18e`) plus 21 commits; no newer tag exists. `SE_VERSION` is still
-  `"2.10.03"`. `94621aba..6c989727` touches 7 files: `swehouse.c`, `sweph.c`, `swetest.c`,
-  `ephe/seasnam.txt`, `ephe/seorbel.txt`, `ephe/astlistn.md` and the contract PDF. The first three
-  are ported above; the rest need no port. `Tools/CReference/build-c.ps1` needed no change to
-  build the C reference at the new pin.
-- Verification. Against the MSVC-built C at `6c989727` the port is bit-exact: the oracle grids
+- The upstream pin moves from `94621aba` to `43c9fe54` (upstream master, 2026-11-16), which is
+  `v2.10.3bfinal` (`f4dcd18e`) plus 25 commits; no newer tag exists. `SE_VERSION` is still
+  `"2.10.03"`. `94621aba..43c9fe54` touches `swehouse.c`, `sweph.c`, `swetest.c`,
+  `ephe/seasnam.txt`, `ephe/seorbel.txt`, `ephe/astlistn.md`, the contract PDF and `bin/swetest`
+  (a prebuilt binary, nothing to port). The first three are ported above; the rest need no port.
+  `Tools/CReference/build-c.ps1` needed no change to build the C reference at the new pin.
+- Verification. Against the MSVC-built C at `43c9fe54` the port is bit-exact: the oracle grids
   (27,437 analytic rows and 3,376 file rows) produce dumps with identical SHA-256, the known-diff
   files are empty, and the `swetest` diff gate still shows only its 16 known `DIR_GLUE` rows. The
   characterization baseline was regenerated deliberately (entry 26 in the sidecar log,
@@ -104,8 +116,10 @@ generated commit list — for anything earlier, see git history.
   unexplained; `HouseSpeedDriftTests` ties the file one to one to `known-fail.tsv`. These are
   `t.exp` drift from an intentional upstream change, not port defects. 10,362 of 12,757
   iterations now pass (11,334 before). The oracle version classification moves 37 analytic cases
-  from `AGREES-BOTH` to `TRACKS-2.10.03`. `swe_dotnet_version()` returns `"2.10.03-net-0003"`.
-  No API change.
+  from `AGREES-BOTH` to `TRACKS-2.10.03`. The commits after `6c989727` (`0c3eb56e`, `6318ad4c`,
+  `43c9fe54`) needed no further baseline regeneration and left `known-fail.tsv` and the evidence
+  file unchanged; the evidence reproduces byte for byte against the C at `43c9fe54`. The unit
+  tests pass 354 of 354. `swe_dotnet_version()` returns `"2.10.03-net-0003"`. No API change.
 - Documentation and test data from #47, with no code change: a `DATA-MISSING` triage file, XML
   documentation for the `SE_SIDM_*` constants, and `docs/sidereal-and-vedic.md`.
 

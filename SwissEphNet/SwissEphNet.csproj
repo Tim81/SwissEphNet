@@ -17,7 +17,7 @@
       that package anyway. Until the release lands, build from source or
       reference the project directly.
 
-      2.10.3.3 tracks upstream master at 6c989727 (v2.10.3bfinal plus 21
+      2.10.3.3 tracks upstream master at 43c9fe54 (v2.10.3bfinal plus 25
       commits; no newer tag exists). SE_VERSION is still "2.10.03".
 
       The "port revision" above is the fourth component, for a port-only
@@ -119,12 +119,24 @@
   w == 90 or 270, and returns no cusp of exactly 360; G (Gauquelin) in the polar Porphyry
   fallback returns 0 for cusps 13 to 36 and their speeds (uninitialised in the C). I (Sunshine)
   declination error path returns ERR with all output arrays zeroed. swe_house_pos is unchanged.
-- Known caveat, reproduced faithfully from upstream: in the ECL_T0 sidereal modes (SE_SIDBIT_ECL_T0,
-  and SE_SIDM_J2000, J1900, B1950 and GALALIGN_MARDYKS, which force it) cusps already jump by
-  2*dpsi(t0) at the mode's epoch, and within 0.1 day of it every cusp and ascmc speed is now off
-  by 2*dpsi/0.2: -0.0387 degrees per day for SE_SIDM_J2000 around 2000-01-01 12:00 TT, -0.0466 for
-  Lahiri with ECL_T0 around 1956-03-21. SE_SIDBIT_SSY_PLANE is unaffected. A report and patch for
-  Astrodienst are drafted and have not been sent.
+- ECL_T0 sidereal modes near the mode's epoch t0: the frame rate is taken on tjde's side of t0
+  when a central difference would straddle it (upstream 0c3eb56e). The cusps jump at t0 by twice
+  the nutation in longitude, as in every earlier release; the first version of the frame-rate
+  code (6c989727, never part of a SwissEphNet release) differenced across that jump and was off
+  by up to 0.04 degrees per day within 0.1 day of t0. Measured for swetest -b1.1.2000 -ut12:00
+  -house13.4,52.5,P -speed -sid18, the Ascendant's speed is 600°43'39.6898 against 600°43'39.5410
+  tropical: the 0.149" difference is the frame term. The position jump at t0 is unchanged;
+  SE_SIDBIT_SSY_PLANE is not affected.
+- swe_calc on an asteroid (or other) ephemeris file at exactly the file's last date returned
+  garbage: get_new_segment() took the index entry after the last segment. It now uses the last
+  segment (upstream 43c9fe54; the port had the identical bug). Astraea (se00005s.se1) at exactly
+  JD 2488932.5 came out at longitude 126.0072799, distance 3.648274082 au instead of 66.9437422
+  and 3.288141871. It shows only when the last date is the first one evaluated, because an
+  earlier date in the last segment caches that segment. New test AsteroidFileUpperLimitTest
+  matches the MSVC-built C at 43c9fe54 bit for bit.
+- swe_houses_armc_ex2 no longer raises SwissEph.OnTrace messages. Upstream removed the TRACE
+  blocks from swehouse.c (6318ad4c); TRACE is defined by default in the .NET build, so the port's
+  swe_houses_armc_ex2 raised them. Other OnTrace sources are unchanged.
 - swe_get_planet_name now looks numbered asteroids up in seasnam.txt by binary search, which is
   faster; results are the same for a sorted file, and an unsorted file falls back to the full
   scan (sweph.c:6954, :6968).
@@ -141,14 +153,17 @@
   the AGPL-3.0 and the Professional License, as the README says, and this repository's LICENSE is
   unchanged. If you hold or plan to buy a Professional License, check the current contract with
   Astrodienst.
-- The upstream pin moves from 94621aba to 6c989727 (upstream master), which is v2.10.3bfinal plus
-  21 commits; no newer tag exists. SE_VERSION is still "2.10.03".
-- Verification: the port is bit-exact against the MSVC-built C at 6c989727 on the oracle grids
+- The upstream pin moves from 94621aba to 43c9fe54 (upstream master), which is v2.10.3bfinal plus
+  25 commits; no newer tag exists. SE_VERSION is still "2.10.03". 94621aba..43c9fe54 touches
+  swehouse.c, sweph.c, swetest.c, ephe/seasnam.txt, ephe/seorbel.txt, ephe/astlistn.md, the
+  contract PDF and bin/swetest (a prebuilt binary, nothing to port); the first three are ported
+  above.
+- Verification: the port is bit-exact against the MSVC-built C at 43c9fe54 on the oracle grids
   (27,437 analytic and 3,376 file rows). The characterization baseline was regenerated
-  deliberately and attributed to the upstream patches. known-fail.tsv grows from 1,423 to 2,395
-  rows; the 972 new rows are setest 6.8 and 6.9 speed fields where t.exp's own values differ from
-  the C's (positions unchanged), each with per-row evidence in docs and tests, not port defects.
-  No API change. See docs/known-issues.md for the detail.
+  deliberately for the house-speed set, and passes unchanged at 43c9fe54. known-fail.tsv grows from 1,423 to 2,395
+  rows, unchanged at 43c9fe54; the 972 new rows are setest 6.8 and 6.9 speed fields where t.exp's
+  own values differ from the C's (positions unchanged), each with per-row evidence in docs and
+  tests, not port defects. Unit tests: 354 of 354. No API change. See docs/known-issues.md for the detail.
 - #47 added a DATA-MISSING triage file, XML documentation for the SE_SIDM_* constants, and
   docs/sidereal-and-vedic.md; no code change.
 
