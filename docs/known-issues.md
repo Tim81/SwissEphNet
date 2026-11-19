@@ -93,6 +93,17 @@ Read the status line first and the body for how it got there.
 | ECL_T0 sidereal house speeds within 0.1 day of the sidereal epoch | closed: fixed upstream in `0c3eb56e`, ported (2.10.3.3); the `t0` position jump stays open upstream, not reported |
 | `swe_calc` at a data file's last date (`tfend`) read garbage coefficients | closed: fixed upstream in `43c9fe54`, ported (2.10.3.3) |
 | setest 6.8/6.9 house speeds: 972 known-fail rows from the `6c989727` sync | record |
+| `read_const` skipped every leading space or digit of an asteroid's name | closed |
+| `plaus_iflag` erased the sidereal Moshier-fallback warning in `serr` | closed |
+| A planet file opened as an asteroid file threw `ArgumentOutOfRangeException` | closed, one residual |
+| `read_elements_file` rejected a trailing comma that `swi_cutstr` accepts | closed |
+| `Char.IsDigit` and `Char.IsLetterOrDigit` where the C uses `isdigit` and `isalnum` | closed, one residual |
+| swetest `strcat` slips: `-lunecl -local` and global `-solecl` | closed |
+| `SweHel` trace blocks guarded by `#if DEBUG`, not `SWEHEL_DEBUG` | closed |
+| `FormatToDegreeMinuteSecond` rounding, carry and sign | closed |
+| `C.sprintf` float signs, non-finite values and `%s` culture | closed |
+| A non-seekable `FileProvider` stream broke SWIEPH and `fixstar2` | closed |
+| Double-to-int casts saturate on .NET 9 and later | closed |
 
 ## Eight live sites transliterate a C fixed-size buffer as an unbounded C# string
 
@@ -2590,6 +2601,9 @@ in `corr_mean_apog` at `:1540`, indexing `mean_apsis_corr` at `:1552`. `(int) fl
 undefined; measured, it produced `i = -2147483648`. The segfault follows, on `iflag` 0,
 `SEFLG_JPLEPH`, `SEFLG_SWIEPH` and `SEFLG_MOSEPH` alike.
 
+See also "Double-to-int casts saturate on .NET 9 and later" below, which covers how a NaN
+reaches an `(int)` cast on each runtime.
+
 **Reported upstream, unanswered.** Sent 27 August 2026 to the swisseph mailing list (groups.io
 topic 120953022), subject "swe_calc segfaults on a NaN Julian day (SE_MEAN_NODE, SE_MEAN_APOG)",
 with a nine-line patch attached that touches only `sweph.c` and adds no `#include`; it turns the
@@ -4044,3 +4058,190 @@ cases from `AGREES-BOTH` to `TRACKS-2.10.03` (18,497 to 18,460, and 8,940 to 8,9
 is unchanged (690 and 2,686).
 
 **PR.** #48
+
+## `read_const` skipped every leading space or digit of an asteroid's name
+
+**Status: closed.** Fixed in the port; the C was right.
+
+**Mechanism.** `read_const` (`sweph.c:4614-4617`) skips spaces, then digits, then exactly one
+character, to reach the name proper. The port skipped every leading space or digit, so a name such
+as `1999 AB1` also lost `1999 `, and `ast_H`, `ast_G` and the diameter, which are read at offsets
+from the name's end, were read five columns too far.
+
+**Measured.** The magnitude for `se00005s.se1` renamed to `1999 AB1` was 4.329m in the port and
+11.707m in the MSVC-built C at `43c9fe54`. It is now identical.
+
+**Test.** `Tests/SwissEphNet.Tests/AsteroidDigitNameTest.cs` (resource
+`se00005s_digitname.se1`).
+
+**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+
+## `plaus_iflag` erased the sidereal Moshier-fallback warning in `serr`
+
+**Status: closed.**
+
+**Mechanism.** `plaus_iflag` (`sweph.c:6078`) writes `serr` only in its `JPLHOR` and `eop`
+branches. The port declared `out string serr` and began with `serr = null;`, so under
+`SEFLG_SIDEREAL` (which reaches it through `swi_get_ayanamsa_ex`, `sweph.c:3021`) the `SwissEph
+file ... not found ... using Moshier eph.` warning set earlier in the same call was discarded. The
+parameter is now `ref`. The C's explicit `*serr = '\0'` before the call in
+`fixstar_calc_from_struct` (`sweph.c:6433-6435`) and `swi_fixstar_calc_from_record`
+(`sweph.c:7703-7705`) is restored.
+
+**Measured.** `swetest -b1.1.2000 -p0 -sid1 -fPl -head -edirnowhere` now prints the warning, as the
+C does. In the baseline, 120 `CDEF`/`CUDEF|SIDEREAL` rows change in `serr` only, and were
+regenerated with a deviation note (baseline entry 28).
+
+**Test.** `Tests/SwissEphNet.Tests/SiderealKeepsWarningTest.cs`.
+
+**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+
+## A planet file opened as an asteroid file threw `ArgumentOutOfRangeException`
+
+**Status: closed, one residual.** The elements-line check is fixed; the copyright-line check
+(the `c` check in `read_const`) is still more lenient than the C's and stays open.
+
+**Mechanism.** `read_const` (`sweph.c:4605-4612`) reads the elements line with `fgets` and reports
+file damage `(0d)` unless the line contains `\r\n`. The port rejected only an empty line, so
+`swe_calc(2451545, SE_MARS, 0x32003E)` (and `iflag` -1), which opens a planet file as an asteroid
+file, threw `ArgumentOutOfRangeException`. It now returns -1 with `...sepl_18.se1 is damaged (0d)`,
+as the C does. The reads at `s+35`, `s+42` and `s+51+i` and the `sastnam` copy are bounds-safe. The
+internal `CFile.LastLineEndedCrLf` is new; the public API is unchanged.
+
+**Test.** `Tests/SwissEphNet.Tests/AsteroidHeaderDamageTest.cs`.
+
+**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+
+## `read_elements_file` rejected a trailing comma that `swi_cutstr` accepts
+
+**Status: closed.**
+
+**Mechanism.** `read_elements_file` (`swemplan.c:755`) splits an `seorbel.txt` line with
+`swi_cutstr(s, ",", cpos, 20)`. The port used `Split(',', RemoveEmptyEntries)`, so a line with a
+trailing comma (`J2000,J2000,10.0,2.5,0.1,20,30,5,`) gave `nine elements required` where the C
+returns rc 4. The port now calls `swi_cutstr`.
+
+**Test.** `Tests/SwissEphNet.Tests/ElementsLineCutstrTest.cs`.
+
+**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+
+## `Char.IsDigit` and `Char.IsLetterOrDigit` where the C uses `isdigit` and `isalnum`
+
+**Status: closed, one residual.** The six call sites are fixed; `read_const`'s version-line regex
+(`sweph.c:4554`) still uses `\d`, which matches any Unicode digit in .NET, and stays open.
+
+**Mechanism.** The C's `isdigit` and `isalnum` act on bytes and accept ASCII only. The port called
+`Char.IsDigit` at `Sweph.cs` 7933, 8456, 8899, 9422 and 9530 (`sweph.c:6696`, `7139`, `7571`,
+`7990`, `8080`) and `Char.IsLetterOrDigit` in `strcpy_VBsafe`, `SweHel.cs:1827`
+(`swehel.c:1819`), which accept any Unicode digit or letter. They are now ASCII range tests.
+
+**Test.** `Tests/SwissEphNet.Tests/AsciiCtypeTest.cs`.
+
+**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+
+## swetest `strcat` slips: `-lunecl -local` and global `-solecl`
+
+**Status: closed.** Two sites in `Programs/SweTest/Program.cs` where the C appends and the port
+assigned.
+
+- Line 3908 used `sout =` where `swetest.c:3149` uses `strcat`, so `-lunecl -local` printed `lunar
+  eclipse` without the `total   `, `penumb. ` or `partial ` prefix. `-b1.1.2000 -lunecl -local
+  -geopos8,47,0 -n1` now prints `total   lunar eclipse`, as the C does.
+- Line 4267 did the same at `swetest.c:3458-3459`, so global `-solecl` printed ` non-central
+  solar` for non-central total and annular eclipses. `-b1.1.2043 -solecl -n2` now prints `total
+  non-central solar` and `annular non-central solar`, as the C does.
+
+**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+
+## `SweHel` trace blocks guarded by `#if DEBUG`, not `SWEHEL_DEBUG`
+
+**Status: closed.**
+
+**Mechanism.** The three trace blocks at `SweHel.cs` 305, 1417 and 1519 were wrapped in `#if
+DEBUG`. The C wraps them in `#if SWEHEL_DEBUG` (`swehel.c:284`, `1429`, `1512`), which upstream
+never defines, so a Debug build of the port compiled trace code the C never builds. They now use
+`SWEHEL_DEBUG`. The third block's loops also used `i` where the C's block-local variable `ii` is
+meant (`ii < 6`, `ii < 4`, `ii, datm[ii]`; `swehel.c:1515-1523`).
+
+**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+
+## `FormatToDegreeMinuteSecond` rounding, carry and sign
+
+**Status: closed.** `SwissEph.Format.cs`, outside the transliterated files.
+
+**Mechanism.** Seconds were rounded after the minutes were split off, so rounding up could produce
+60 seconds. Seconds are now rounded once, to the longest `p` run (else the `s` run), and carried
+into minutes, degrees and the zodiac sign. For `d` and `D` the sign is kept for values between -1
+and 0.
+
+| Input | Before | Now |
+|---|---|---|
+| 10 + 20/60 + 12.996/3600 | `10°20'13.9960` | `  10°20'12.9960` |
+| 10°59'59.99996" | `10°59'60.0000` | `  11° 0' 0.0000` |
+| 29.99999999 with `Z2` | `29 ar 59'60"` | ` 0 ta  0' 0"` |
+| -0.5 | `   0°30' 0.0000` | `  -0°30' 0.0000` |
+
+`D2` still truncates seconds (98.7654321 gives `55"`).
+
+**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+
+## `C.sprintf` float signs, non-finite values and `%s` culture
+
+**Status: closed.** `Tools/C.printf.cs`, outside the transliterated files.
+
+- The sign of a float comes from the IEEE sign bit. `%+.2f` of -0.0 gave `+-0.00` and now gives
+  `-0.00`; `%08.3f` gave `0000.000` and now gives `-000.000`.
+- Non-finite values print as `nan`, `inf` and `-inf` (`NAN` and `INF` for `E` and `G`),
+  space-padded and honouring `+` and space, where the port printed `NaN` and `Infinity`. The
+  swetest diff gate's `FMT_MULTI|6` row moved with this: interpolated-apogee NaN fields print `nan`
+  (the C prints `-nan(ind) nan`), and the row was regenerated.
+- `%s` of a non-string argument is formatted with the invariant culture; `1.5` printed `1,5`
+  under nl-NL.
+
+**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+
+## A non-seekable `FileProvider` stream broke SWIEPH and `fixstar2`
+
+**Status: closed.** `SwissEph.cs`, `OpenBinary`, outside the transliterated files.
+
+**Mechanism.** A `FileProvider` that returns a non-seekable stream (a `GZipStream`, say) made
+`swe_calc_ut` with `SEFLG_SWIEPH` and `swe_fixstar2_ut` throw `NotSupportedException`, because the
+file layer seeks. Such streams are now copied into a `MemoryStream` first.
+
+**Test.** `Tests/SwissEphNet.Tests/NonSeekableProviderTest.cs`: results are bit-identical to a
+plain provider.
+
+**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+
+## Double-to-int casts saturate on .NET 9 and later
+
+**Status: closed.** `C.ToInt32` and `C.ToInt64` give the C's conversion on every runtime.
+
+**Mechanism.** The C converts a double to int by truncation. On MSVC x64 (`cvttsd2si`) NaN,
+infinities and out-of-range values give `INT_MIN`, and .NET 8 on x64 did the same. .NET 9 made the
+conversion saturating (NaN to 0, large values to `int.MaxValue`), so on net10.0 the port diverged
+from both the C and net8.0.
+
+**Measured.**
+- `swe_lun_occult_when_glob(NaN, SE_MARS, ...)` hung on net10.0; net8.0 and the C return an error.
+- `swe_sol_eclipse_when_glob(NaN)` returned rc 18 and the eclipse of 5 February 2000 (JD
+  2451580.034); `swe_lun_eclipse_when(NaN)` returned rc 4. net8.0 and the C return an error.
+- `swe_revjul(1e12)` gave year 2147483647; the C and net8.0 give -2147483648.
+
+**Fix.** `C.ToInt32` and `C.ToInt64` in `Tools/C.cs` apply the MSVC x64 behaviour and equal a plain
+cast for in-range values. Both are public and are on the API approval lists. Every explicit cast
+with a floating-point operand in the transliterated files uses them: 90 lines, one token each
+(`SweCL` 5, `SweDate` 11, `SweHel` 2, `SweHouse` 1, `SweJPL` 3, `SwemMoon` 2, `Sweph` 4,
+`SwephLib` 29, `SweTest/Program.cs` 33; `SweMini` has none). A probe of 475 cases agrees between
+net8.0 and net10.0. The maintainer chose this over a guard in the public layer or documenting the
+difference. Valid inputs are unaffected.
+
+**Not changed.** `swe_calc(NaN, SE_MEAN_NODE, MOSEPH)` throws `IndexOutOfRangeException` on every
+runtime; the C segfaults (see the NaN-`jd` entry above). C `long` is 32-bit on MSVC and
+`C.ToInt64` keeps the port's 64-bit width. Hangs and silent garbage the port shares with the C
+remain as recorded under "Do not fix the port".
+
+**Test.** `Tests/SwissEphNet.Tests/FloatToIntConversionTest.cs` (34 cases; 5 failed on net10.0
+before the fix).
+
+**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
