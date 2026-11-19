@@ -147,34 +147,6 @@ namespace SwissEphNet
                 array[i] = list[i];
         }
 
-        class BComparer<TKey, TVal> : IComparer<TVal>
-        {
-            public BComparer(TKey key, Func<TKey, TVal, int> compare)
-            {
-                Key = key;
-                Comparer = compare;
-            }
-            public int Compare(TVal x, TVal y)
-            {
-                bool xIsDefault = x == null || x.Equals(default(TVal));
-                bool yIsDefault = y == null || y.Equals(default(TVal));
-                if (yIsDefault && !xIsDefault)
-                {
-                    int c = Comparer(Key, x);
-                    if (c != 0) return -c;
-                    return c;
-                }
-                else if (xIsDefault && !yIsDefault)
-                {
-                    return Comparer(Key, y);
-                }
-                else
-                    return -1;
-            }
-            public TKey Key { get; }
-            public Func<TKey, TVal, int> Comparer { get; }
-        }
-
         public static CPointer<TVal> bsearch<TKey, TVal>(TKey key, CPointer<TVal> array, int n, Func<TKey, TVal, int> compare)
         {
             // The real C bsearch(3) returns NULL immediately when nmemb (n) is 0, without ever
@@ -186,11 +158,21 @@ namespace SwissEphNet
             // SwissEph with no OnLoadFile handler attached (the default), where no star data is ever
             // loaded and n is 0.
             if (n <= 0) return new CPointer<TVal>();
-            var arr = array.ToArray();
-            if (arr == null) return new CPointer<TVal>();
-            var list = new List<TVal>(arr.Take(n));
-            var idx = list.BinarySearch(default(TVal), new BComparer<TKey, TVal>(key, compare));
-            return idx >= 0 ? array + idx : new CPointer<TVal>();
+            if (array.IsNull) return new CPointer<TVal>();
+            // In-place binary search probing the same indices, in the same order, as
+            // List<T>.BinarySearch did (lo = 0, hi = n - 1, mid = lo + ((hi - lo) >> 1)), so
+            // duplicate keys resolve to the same element as before. Like the old Take(n), never
+            // look past the end of the backing array.
+            if (n > array.Length) n = array.Length;
+            int lo = 0, hi = n - 1;
+            while (lo <= hi)
+            {
+                int mid = lo + ((hi - lo) >> 1);
+                int order = -compare(key, array[mid]);
+                if (order == 0) return array + mid;
+                if (order < 0) lo = mid + 1; else hi = mid - 1;
+            }
+            return new CPointer<TVal>();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
