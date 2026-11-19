@@ -699,3 +699,23 @@ b"} where the C gives {"a", ""}); that one is fixed
     printed (swetest.c:1689 and :1701: format P or Q, horizontal lists, difference modes).
     Programs/SweTest/Program.cs: 5173 -> 5185 lines, kr_braces (64) and trailing_ws (69) unchanged,
     sha256 99C9E77C... -> EF0CE63B....
+34. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-19: Re-transliteration
+    of two swehouse.c commits after 6c989727, ported into SwissEphNet/CPort/SweHouse.cs; an adoption
+    of upstream changes, not a correction. 0c3eb56e: sidereal_frame_speeds() takes the ECL_T0 frame
+    rate on tjd's side of the mode's epoch t0 when the central 0.2-day interval would straddle it
+    (swehouse.c:710 at 43c9fe54); positions are unchanged, speeds change only within 0.1 day of an
+    ECL_T0 epoch. 6318ad4c: the three #if TRACE blocks (swe_houses, swe_houses_ex2,
+    swe_houses_armc_ex2) are removed; TRACE is defined by default in the port, so the one live block
+    no longer raises SwissEph.OnTrace from swe_houses_armc_ex2. The swehouse.c line markers on
+    functions new since 6c989727 now name 43c9fe54. Bit-exact against the MSVC-built C at 43c9fe54 on
+    the oracle grids (27,437 analytic and 3,376 file rows, dumps SHA-256 identical).
+    SwissEphNet/CPort: 49743 -> 49681 lines, kr_braces 1257 -> 1253, trailing_ws (1258) unchanged,
+    sha256 8C1A1B63... -> E19A38E2....
+35. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-19: Re-transliteration
+    of sweph.c 43c9fe54 into Sweph.cs: get_new_segment() uses the last segment at tjd == tfend
+    instead of the index entry after it (sweph.c:4389 at 43c9fe54). The port had the same code and the
+    same garbage at a file's last date (Astraea from se00005s.se1 at JD 2488932.5: longitude 126.007
+    instead of 66.944). Test: Tests/SwissEphNet.Tests/AsteroidFileUpperLimitTest.cs, bit for bit
+    against the C on Windows x64; it fails on the previous Sweph.cs.
+    SwissEphNet/CPort: 49681 -> 49687 lines, kr_braces (1253) and trailing_ws (1258) unchanged,
+    sha256 E19A38E2... -> 853A6866....
