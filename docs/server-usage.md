@@ -27,16 +27,18 @@ instances and what error text discloses.
      into `serr` in full (a 10 MB name peaked near 108 MB); `swe_fixstar2` truncates it.
 2. **Bound the work.** .NET cannot abort a running thread, so a `CancellationToken` or a `Task`
    timeout leaves a spinning call holding a core. Run long searches (eclipse and occultation
-   location, heliacal events, crossings) in a worker process you can kill, or use
-   `SE_ECL_ONE_TRY`, which the Swiss Ephemeris manual documents for eclipse and occultation
-   searches, and drive the loop yourself. Limit concurrency.
+   location, heliacal events, crossings) in a worker process you can kill. For
+   `swe_lun_occult_when_glob` and `swe_lun_occult_when_loc` only, passing `SE_ECL_ONE_TRY` in the
+   integer `backward` argument limits the search to one conjunction, so you can drive the loop
+   yourself; the eclipse search functions do not read that flag. Limit concurrency.
 3. **Instances.** Use one `SwissEph` instance per request and never share one between concurrent
    requests. Two threads on one instance returned wrong results silently, with no exception, in
    1,986 of 20,000 calls; separate instances returned none. In an async server a request can move
    between threads, so "one instance per thread" is the wrong rule. An instance costs about 1.3 ms
-   and 118 KB to create. Do not pool instances and rely on `swe_close()` to reset them: sidereal
-   mode, topocentric position, `delta_t_userdef`, astro models, the ephemeris path and the JPL file
-   persist, and `swe_close()` does not clear `delta_t_userdef`.
+   and 118 KB to create. Do not pool instances: settings persist from call to call, and
+   `swe_close()` does not reset all of them. It clears the sidereal mode, the topocentric position
+   and the astro models, and returns the tidal acceleration to automatic; `delta_t_userdef`, the
+   ephemeris path and the JPL file survive it.
 4. **Errors.** Wrap calls in `try`/`catch` and map exceptions to a 4xx response. Check return
    codes. Never return `serr` verbatim: it can contain server paths, such as
    `SwissEph file 'se00433s.se1' not found in PATH '...'`.
