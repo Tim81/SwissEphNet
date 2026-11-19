@@ -670,7 +670,7 @@ b"} where the C gives {"a", ""}); that one is fixed
     is byte-identical.
     Programs/SweTest/Program.cs: 5074 -> 5173 lines, trailing_ws 68 -> 69, sha256 C16707D6... ->
     99C9E77C....
-31. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-13: Re-transliteration
+31. PR #48 2026-11-13: Re-transliteration
     of swehouse.c at upstream 6c989727, ported into SwissEphNet/CPort/SweHouse.cs. This adopts an
     upstream release; it is not a correction of a divergence. 6c989727 (2026-11-13) carries the
     eleven-patch house cusp-speed set reported to the swisseph list in August 2026 (groups.io topic
@@ -682,7 +682,7 @@ b"} where the C gives {"a", ""}); that one is fixed
     change.
     SwissEphNet/CPort: 48573 -> 49673 lines, kr_braces 1205 -> 1252, trailing_ws (1258) unchanged,
     sha256 233D7F09... -> 57754209....
-32. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-13: Re-transliteration
+32. PR #48 2026-11-13: Re-transliteration
     of one sweph.c commit made after v2.10.3bfinal (be4aa5dd), ported into Sweph.cs.
     swe_get_planet_name now looks a numbered asteroid up in seasnam.txt by binary search
     (seasnam_line_number at sweph.c:6954, seasnam_seek at sweph.c:6968), with a full-scan fallback
@@ -692,14 +692,14 @@ b"} where the C gives {"a", ""}); that one is fixed
     pre-port Sweph.cs).
     SwissEphNet/CPort: 49673 -> 49743 lines, kr_braces 1252 -> 1257, trailing_ws (1258) unchanged,
     sha256 57754209... -> 8C1A1B63....
-33. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-13: Re-transliteration
+33. PR #48 2026-11-13: Re-transliteration
     of two swetest.c commits made after v2.10.3bfinal, ported into Programs/SweTest/Program.cs.
     509f9335 passes te, not tjd, to print_asteroids for -astpos (swetest.c:1613); the port had
     carried the tjd form since 2.10.3.2. 7821165a calls swe_get_planet_name only when the name is
     printed (swetest.c:1689 and :1701: format P or Q, horizontal lists, difference modes).
     Programs/SweTest/Program.cs: 5173 -> 5185 lines, kr_braces (64) and trailing_ws (69) unchanged,
     sha256 99C9E77C... -> EF0CE63B....
-34. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-19: Re-transliteration
+34. PR #48 2026-11-19: Re-transliteration
     of two swehouse.c commits after 6c989727, ported into SwissEphNet/CPort/SweHouse.cs; an adoption
     of upstream changes, not a correction. 0c3eb56e: sidereal_frame_speeds() takes the ECL_T0 frame
     rate on tjd's side of the mode's epoch t0 when the central 0.2-day interval would straddle it
@@ -711,7 +711,7 @@ b"} where the C gives {"a", ""}); that one is fixed
     the oracle grids (27,437 analytic and 3,376 file rows, dumps SHA-256 identical).
     SwissEphNet/CPort: 49743 -> 49681 lines, kr_braces 1257 -> 1253, trailing_ws (1258) unchanged,
     sha256 8C1A1B63... -> E19A38E2....
-35. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-19: Re-transliteration
+35. PR #48 2026-11-19: Re-transliteration
     of sweph.c 43c9fe54 into Sweph.cs: get_new_segment() uses the last segment at tjd == tfend
     instead of the index entry after it (sweph.c:4389 at 43c9fe54). The port had the same code and the
     same garbage at a file's last date (Astraea from se00005s.se1 at JD 2488932.5: longitude 126.007
