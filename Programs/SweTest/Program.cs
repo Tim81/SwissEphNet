@@ -4264,7 +4264,7 @@ namespace SweTest
                         ecl_type = ECL_SOL_PARTIAL;
                     }
                     if ((eclflag & SwissEph.SE_ECL_NONCENTRAL) != 0 && 0 == (eclflag & SwissEph.SE_ECL_PARTIAL))
-                        sout = " non-central";
+                        sout += " non-central";
                     sout += C.sprintf(" solar\t");
                     sweph.swe_sol_eclipse_where(t_ut, whicheph, geopos_max, attr, ref serr);
                     if ((time_flag & (BIT_TIME_LMT | BIT_TIME_LAT)) != 0)
