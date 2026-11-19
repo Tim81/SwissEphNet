@@ -468,7 +468,7 @@ namespace SwissEphNet
                     #endregion
                     #region s - string
                     case 's':   // string
-                        w = (o ?? String.Empty).ToString();
+                        w = Convert.ToString(o, CultureInfo.InvariantCulture) ?? String.Empty;
                         if (fieldPrecision >= 0)
                             // C's precision on %s is a MAXIMUM field width, never a minimum: printf("%.8s", "Sun-Moo")
                             // prints Sun-Moo. Substring(0, fieldPrecision) throws when the argument is shorter,
@@ -659,7 +659,45 @@ namespace SwissEphNet
                                             FieldPrecision.ToString(CultureInfo.InvariantCulture) :
                                             "0") + "}";
 
-            if (IsNumericType(Value)) {
+            if (Value is double || Value is float) {
+                // The sign comes from the IEEE sign bit, as in C: -0.0 prints "-0.00", and a
+                // negative value that rounds to zero keeps its '-' on every runtime (.NET
+                // Framework drops it). Non-finite values print "nan"/"inf" ("NAN"/"INF" for
+                // the uppercase conversions), never zero-padded.
+                double d = Convert.ToDouble(Value, CultureInfo.InvariantCulture);
+                bool negative = BitConverter.DoubleToInt64Bits(d) < 0 && !double.IsNaN(d);
+                bool upper = NativeFormat == "E" || NativeFormat == "G";
+                bool finite = !(double.IsNaN(d) || double.IsInfinity(d));
+                if (!finite) {
+                    w = double.IsNaN(d) ? "nan" : "inf";
+                    if (upper) w = w.ToUpperInvariant();
+                } else {
+                    w = String.Format(CultureInfo.InvariantCulture, numberFormat, Value);
+                    w = w.TrimStart('-');
+                    if (NativeFormat == "e" || NativeFormat == "E") {
+                        w = Regex.Replace(w, "([eE][+-])0*([0-9][0-9]+)", m => {
+                            var digits = m.Groups[2].Value.TrimStart('0');
+                            if (digits.Length < 2)
+                                digits = digits.PadLeft(2, '0');
+                            return m.Groups[1].Value + digits;
+                        });
+                    }
+                }
+                string sign = negative ? "-" : (PositiveSign ? "+" : (PositiveSpace ? " " : String.Empty));
+                if (FieldLength != int.MinValue) {
+                    int pad = FieldLength - sign.Length - w.Length;
+                    if (pad > 0) {
+                        if (Left2Right)
+                            w = sign + w + new string(' ', pad);
+                        else if (Padding == ' ' || !finite)
+                            w = new string(' ', pad) + sign + w;
+                        else
+                            w = sign + new string(Padding, pad) + w;
+                    } else
+                        w = sign + w;
+                } else
+                    w = sign + w;
+            } else if (IsNumericType(Value)) {
                 w = String.Format(CultureInfo.InvariantCulture, numberFormat, Value);
 
                 if (NativeFormat == "e" || NativeFormat == "E") {
