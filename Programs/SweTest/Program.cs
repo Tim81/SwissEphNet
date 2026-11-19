@@ -3905,7 +3905,7 @@ namespace SweTest
                         sout = "partial ";
                         ecl_type = ECL_LUN_PARTIAL;
                     }
-                    sout = "lunar eclipse\t";
+                    sout += "lunar eclipse\t";
                     sweph.swe_revjul(t_ut, gregflag, ref jyear, ref jmon, ref jday, ref jut);
                     sgj = get_gregjul(gregflag, jyear);
                     /*if ((eclflag = swe_lun_eclipse_how(t_ut, whicheph, geopos, attr, serr)) == ERR) {
