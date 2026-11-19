@@ -471,14 +471,16 @@ sent to Astrodienst on 17 August 2026 (groups.io topic 120714355, message #13529
 upstream on 13 November 2026 as commit `6c989727`, together with the maintainer's own frame-rate
 correction for the `SE_SIDBIT_ECL_T0` and `SE_SIDBIT_SSY_PLANE` modes. The port took it in 2.10.3.3.
 
-**Caveat: ECL_T0 modes within 0.1 day of the epoch.** In the `SE_SIDBIT_ECL_T0` modes
+**Caveat, fixed: ECL_T0 modes within 0.1 day of the epoch.** In the `SE_SIDBIT_ECL_T0` modes
 (`SE_SIDM_J2000`, `SE_SIDM_J1900`, `SE_SIDM_B1950`, `SE_SIDM_GALALIGN_MARDYKS` and any mode with
-the bit set) the cusps already jump at the mode's epoch `t0`, and the new frame-rate code
-differences the frame at `t +/- 0.1 day`, so within 0.1 day of `t0` every cusp and `ascmc` speed is
-off by about 0.04 degrees per day. Measured, `swetest -b1.1.2000 -ut12:00 -house13.4,52.5,P -speed
--sid18 -p0`: Ascendant speed 600°41'20.2289", 2'19" below the tropical value. Away from `t0`, and
-for `SE_SIDBIT_SSY_PLANE`, the speeds are as described above. The port reproduces upstream here;
-see `docs/known-issues.md`, "ECL_T0 sidereal house speeds within 0.1 day of the sidereal epoch".
+the bit set) the cusps already jump at the mode's epoch `t0`, and the frame-rate code as first
+released at `6c989727` differenced the frame across that jump, so within 0.1 day of `t0` every cusp
+and `ascmc` speed was off by about 0.04 degrees per day. That is fixed upstream in `0c3eb56e` and
+in the port since 2.10.3.3 at `43c9fe54`: `swetest -b1.1.2000 -ut12:00 -house13.4,52.5,P -speed
+-sid18 -p0` now gives an Ascendant speed of 600°43'39.6898", +0.149" from the tropical value (the
+frame term only), where `6c989727` gave 600°41'20.2289". The position jump at `t0` itself is
+unchanged. See `docs/known-issues.md`, "ECL_T0 sidereal house speeds within 0.1 day of the
+sidereal epoch".
 
 ## `swe_house_pos` — do not use it for sidereal work
 

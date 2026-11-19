@@ -15,8 +15,10 @@ Regenerate any of these with `pwsh scripts/gen-delta.ps1 -File <name>` -- the ci
 only in `sweodef.h`, `swetest.c` and `ephe/`, none of which any hunk below touches). The pin has
 since moved to upstream master at `94621aba`, which adds one hunk each to `swehel.c` and `sweph.c`,
 two to `swephexp.h` and three to `swetest.c`; the pin then moved on to `6c989727`, which adds 13
-hunks to `swehouse.c` and 3 to `sweph.c` (the totals above are the current ones). None of those is a
-no-op hunk, and no line cited in this file moved.
+hunks to `swehouse.c` and 3 to `sweph.c`, and then to `43c9fe54`, where removing the `TRACE` blocks
+takes one hunk out of `swehouse.c` (now 68) and `get_new_segment()` adds one to `sweph.c` (now 130);
+the 428 total is unchanged and the totals above are the current ones. None of those is a no-op hunk,
+and no line cited in this file moved.
 
 ## `swehel.c` -- 23 raw hunks (19 filtered, 4 license-noise); 14 confirmed no-op, 4 not, 1 new
 

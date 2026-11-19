@@ -2,7 +2,7 @@
 
 This records what has actually been measured about this port's agreement with Astrodienst's
 own Swiss Ephemeris C library, version 2.10.03 (upstream tag `v2.10.3bfinal`), rather than
-asserting it. The submodule is now pinned to master `6c989727`, 21 commits past that tag. Every number below comes from a gate in this repository or from a measurement run
+asserting it. The submodule is now pinned to master `43c9fe54`, 25 commits past that tag. Every number below comes from a gate in this repository or from a measurement run
 during the version-bump work that closed the 2.10.03 port (see `docs/known-issues.md`'s
 `SE_VERSION` entry). Where something has not been measured, that is stated rather than estimated.
 

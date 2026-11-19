@@ -280,9 +280,9 @@ function Get-ArchBaseline {
 # `#ifdef _WIN32` to match. Reported upstream by this fork; the report and Astrodienst's
 # replies are drafted outside the tracked tree and sent by hand, so there is no in-repo path
 # to follow. external/swisseph was pinned to v2.10.3bfinal (f4dcd18e) when this comment was
-# written; it is now pinned to upstream master 6c989727 (v2.10.3bfinal plus 21 commits).
+# written; it is now pinned to upstream master 43c9fe54 (v2.10.3bfinal plus 25 commits).
 #
-# THE THIRD DEFECT, surfaced by that same sweodef.h change, still open at 6c989727 (the
+# THE THIRD DEFECT, surfaced by that same sweodef.h change, still open at 43c9fe54 (the
 # current pin; swetest.c:4003 there, :3991 at 94621aba, :3956-3963 at f4dcd18e):
 #
 # do_printf (swetest.c:3956-3963, called by every line swetest prints) reads:
@@ -302,7 +302,7 @@ function Get-ArchBaseline {
 # rest of the tree expects _WINDOWS" -- that was wrong, and unstated at the time because
 # fp had never actually been compiled against. At f4dcd18e master and v2.10.3bfinal were the
 # same commit, so there was no further fix to pull. Master has since moved to 94621aba and then
-# to 6c989727 (measured: all the guards below still match) and the defect is still there, so there is still no upstream fix to pull; this is reported back as a
+# to 6c989727 and then 43c9fe54 (measured: all the guards below still match) and the defect is still there, so there is still no upstream fix to pull; this is reported back as a
 # follow-up, unresolved as of this commit.
 #
 # The patch below makes the _WINDOWS branch behave exactly as the #else branch always has

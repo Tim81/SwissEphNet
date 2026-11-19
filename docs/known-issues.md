@@ -90,7 +90,8 @@ Read the status line first and the body for how it got there.
 | Oracle-grid `sid_mode` is not pinned by `case_id` | open |
 | `split_deg_nakshatra`: `SE_SIDM_USER` collides with the Sheoran offset | open upstream |
 | swetest `-sidudef` crash; C# definite assignment immunises the port | fixed upstream in `91339e55`, at the pin; ported |
-| ECL_T0 sidereal house speeds within 0.1 day of the sidereal epoch | open upstream |
+| ECL_T0 sidereal house speeds within 0.1 day of the sidereal epoch | closed: fixed upstream in `0c3eb56e`, ported (2.10.3.3); the `t0` position jump stays open upstream, not reported |
+| `swe_calc` at a data file's last date (`tfend`) read garbage coefficients | closed: fixed upstream in `43c9fe54`, ported (2.10.3.3) |
 | setest 6.8/6.9 house speeds: 972 known-fail rows from the `6c989727` sync | record |
 
 ## Eight live sites transliterate a C fixed-size buffer as an unbounded C# string
@@ -2297,7 +2298,7 @@ replaced by `SE.OpenBinary` -- see "OnLoadFile superseded" above.)
 ## swetest.c's missing `spmoon` declaration and unguarded `gethostname`: fixed in v2.10.3bfinal; a third defect surfaced by the same fix
 
 **Status: open upstream.** Two of the three are fixed in `v2.10.3bfinal`. The third,
-`do_printf`'s undeclared `fp`, is still present upstream at `6c989727` (`swetest.c:4003`; it was
+`do_printf`'s undeclared `fp`, is still present upstream at `43c9fe54` (`swetest.c:4003`, unchanged since `6c989727`; it was
 `:3991` at `94621aba`), the commit this port now pins, and is patched narrowly by
 `Tools/CReference/build-c.ps1`. A fourth MSVC build defect, in `-astpos`, arrived with the
 `94621aba` pin and is still there; see the end of this entry.
@@ -2327,8 +2328,8 @@ at `94621aba`: `do_printf`
 build now that it activates on every Windows build (`_WIN32` is always defined by MSVC). When
 this entry was written, `master` and `v2.10.3bfinal` were the same commit, so there was no newer
 upstream fix to pull. `master` has since moved to `94621aba` (twelve commits) and the defect is
-still there, at `swetest.c:3991`, so there is still none. It is still there at `6c989727`
-(`swetest.c:4003`).
+still there, at `swetest.c:3991`, so there is still none. It is still there at `6c989727` and
+at `43c9fe54` (`swetest.c:4003` in both).
 `build-c.ps1` patches this one narrowly (`fputs(info, stdout)` substituted for both branches of
 the `#ifdef`, matching the `#else` branch's existing behaviour exactly), and the defect was reported
 to Astrodienst in the swetest build-defects thread (groups.io topic 120532421, "gethostname does not
@@ -3407,7 +3408,7 @@ the 972 are in "setest 6.8/6.9 house speeds" at the end of this file.
 at 2.08, the C reference is 2.10.03" -- true when first written, not true now. When this
 entry was written the port pinned `external/swisseph` at `v2.10.3bfinal` (`f4dcd18e`), the same
 tag the C reference is built from; it then pinned master `94621aba` (`v2.10.3bfinal` plus 12
-commits) and now pins `6c989727` (plus 21 commits), which the C reference is also built from;
+commits), then pinned `6c989727`, and now pins `43c9fe54` (plus 25 commits), which the C reference is also built from;
 `Tools/OracleVerify`'s `PORT-VERSION` diff category (the same "port lags the C" concept, for the
 bit-exact oracle and the swetest text diff rather than this conformance suite) has zero rows in
 every known-diff file in this repository (`Tests/oracle/known-diff*.tsv`,
@@ -3422,7 +3423,7 @@ gate that tracks this. `Tests/SwissEphNet.Conformance.Tests/ConformanceReport.cs
 `scripts/regenerate-known-fail.ps1` compares the port's output to `t.exp` directly, with no C
 build anywhere in that loop. `t.exp` itself is a fixed historical snapshot: `docs/compliance-
 2.10.03.md:579` dates it "user `alois`, 14.12.2023." A row diverging from that snapshot says
-nothing on its own about whether the *current* vendored C (`6c989727`, `v2.10.3bfinal` plus 21 commits) would also diverge
+nothing on its own about whether the *current* vendored C (`43c9fe54`, `v2.10.3bfinal` plus 25 commits) would also diverge
 from it. The 972 rows added by the `6c989727` sync are exactly that case, and the answer there is
 yes, deliberately: see the last section of this file.
 
@@ -3653,6 +3654,53 @@ To map a `v2.10.3bfinal` line number to `6c989727`, apply the first table and th
 `swehouse.c` and `swetest.c`, use the diff). Citations written for the 2.10.3.3 release use
 `6c989727` numbering and say so.
 
+
+
+
+
+**The pin has since moved again, to `43c9fe54`** (2026-11-16). To map a `6c989727` line number to
+
+
+`43c9fe54`, from `git -C external/swisseph diff -U0 6c989727 43c9fe54`:
+
+
+
+
+
+- `sweph.c`: lines up to 4391 are unchanged; 4392 and later are +6 (the `get_new_segment()` fix).
+
+
+- `swetest.c`: unchanged.
+
+
+- `swehouse.c`: several hunks (the `TRACE` blocks removed, -17, -18 and -40 lines, and
+
+
+  `sidereal_frame_speeds` +15), so there is no fixed offset. Use
+
+
+  `git -C external/swisseph diff -U0 6c989727 43c9fe54 -- swehouse.c`.
+
+
+- Every other C source file is unchanged between the two commits (the prebuilt `bin/swetest` also
+
+
+  differs; it is a binary with nothing to cite).
+
+
+
+
+
+To map a `94621aba` or `v2.10.3bfinal` line number to `43c9fe54`, apply the earlier tables and then
+
+
+this one. Citations written for 2.10.3.3 before this move use `6c989727` numbering; the ones in the
+
+
+two entries about `0c3eb56e` and `43c9fe54` use `43c9fe54`.
+
+
+
 ## Oracle-grid `sid_mode` is not pinned by `case_id`
 
 **Status: open.** Tooling only; the bit-exact gate is unaffected.
@@ -3764,7 +3812,7 @@ and recorded here as documentation observations rather than defects: the nakshat
 
 **Status: fixed upstream in `91339e55`, which is at the pin; ported.** A crash in Astrodienst's
 `swetest.c` that this port could not reproduce, because the C# language forbids the construct that
-causes it. `91339e55` is an ancestor of the pinned `6c989727` (and of `94621aba`, the pin before it), so the
+causes it. `91339e55` is an ancestor of the pinned `43c9fe54` (and of `6c989727` and `94621aba`, the pins before it), so the
 reference `swetest` built from the pin no longer crashes, and #46 re-transliterated the guard
 (`Programs/SweTest/Program.cs:1048`, `if (sp != null && (spi = C.strstr(sp, "jdisut")) >= 0)`).
 The analysis below was written when the pin was `v2.10.3bfinal` (`f4dcd18e`), which still had the
@@ -3859,8 +3907,8 @@ API-contract discussion. That separation paid off: the NULL check went in on its
 after it was sent, untouched by any of the arguments below. All three are still unsent, and all
 three still reproduce on upstream `master` at `91339e55` — checked directly, `strcpy(s1, argv[i] + 8)`
 is unchanged and `eclt0`/`ssyplane` still appear only in the usage text at `swetest.c:209-210` with
-no parser reading them — and at the current pin `6c989727` (`swetest.c:918-930`; the block
-did not change between `94621aba` and `6c989727`):
+no parser reading them — and at the current pin `43c9fe54` (`swetest.c:918-930`; the block
+did not change between `94621aba` and `43c9fe54`):
 
 `docs/upstream/swe_get_ayanamsa_name-negative-index.txt` — **`swe_get_ayanamsa_name` reads outside
 its array for any negative argument**, and this one is a library defect, not a harness one.
@@ -3912,33 +3960,65 @@ happens to fall on the safe side.
 
 ## ECL_T0 sidereal house speeds within 0.1 day of the sidereal epoch
 
-**Status: open upstream.** Present in `6c989727`, the pin. The port reproduces it faithfully, so
-it matches the MSVC-built `swetest` on these commands; that is the freeze working, not a fix. A
-report is drafted and not sent: `docs/upstream/swehouse-ecl-t0-epoch-speed.txt`, with a patch,
-`docs/upstream/swehouse-ecl-t0-epoch-speed.patch`, that moves the 0.2-day interval to `tjde`'s
-side of `t0` when within 0.1 day of `t0` and changes no position.
+**Status: closed.** Fixed upstream in `0c3eb56e` (2026-11-15, "ECL_T0 frame rate no longer taken
+across t0") and ported in 2.10.3.3 with the pin move to `43c9fe54`. `sidereal_frame_speeds` now
+takes the 0.2-day difference on `tjde`'s side of `t0` when the central interval would straddle
+`t0`. Positions are unchanged; speeds change only within 0.1 day of an ECL_T0 epoch. The rest of
+this entry is the history of the defect as it stood at `6c989727`, kept as written. The one thing
+that is still open is the position jump at `t0` itself (below): open upstream, not reported.
+
+A report and patch were drafted (`docs/upstream/swehouse-ecl-t0-epoch-speed.txt` and
+`docs/upstream/swehouse-ecl-t0-epoch-speed.patch`) but never sent, because upstream fixed it
+independently first.
 
 **Affected modes.** The ECL_T0 sidereal modes: `SE_SIDBIT_ECL_T0`, and `SE_SIDM_J2000`,
 `SE_SIDM_J1900`, `SE_SIDM_B1950` and `SE_SIDM_GALALIGN_MARDYKS`, which force it.
-`SE_SIDBIT_SSY_PLANE` is unaffected.
+`SE_SIDBIT_SSY_PLANE` was unaffected.
 
 **Cause.** In these modes cusps already jump by exactly 2*dpsi(t0) at the mode's epoch `t0`.
 That predates `6c989727` and is in every release: `ecl_t0_frame` takes `|dvpxe|` from `acos` and
 the sign from `tjde < t0`, and with nutation in `x` the distance does not pass through zero at
-`t0`. What is new in `6c989727` is `sidereal_frame_speeds`, which differences the frame at
-`t +/- 0.1 day`. Within 0.1 day of `t0` that interval straddles the jump, so every cusp and
-`ascmc` speed is off by 2*dpsi/0.2: -0.0387 deg/day for `SE_SIDM_J2000` around 2000-01-01 12:00
+`t0`. What was new in `6c989727` was `sidereal_frame_speeds`, which differenced the frame at
+`t +/- 0.1 day`. Within 0.1 day of `t0` that interval straddled the jump, so every cusp and
+`ascmc` speed was off by 2*dpsi/0.2: -0.0387 deg/day for `SE_SIDM_J2000` around 2000-01-01 12:00
 TT, and -0.0466 for Lahiri with `SE_SIDBIT_ECL_T0` around 1956-03-21.
 
-**Measured**, port and MSVC-built `swetest` agreeing. `swetest -b1.1.2000 -ut12:00
--house13.4,52.5,P -speed -sid18 -p0`: Ascendant speed 600°41'20.2289", against 600°43'39.5410"
-tropical, so 2'19" (0.0387 deg/day) less. One day later (`-b2.1.2000`) the difference from the
-`94621aba` value is only the intended +0.18" frame term, so the new code is correct away from
-`t0`.
+**Measured at `6c989727`**, port and MSVC-built `swetest` agreeing. `swetest -b1.1.2000
+-ut12:00 -house13.4,52.5,P -speed -sid18 -p0`: Ascendant speed 600°41'20.2289", against
+600°43'39.5410" tropical, so 2'19" (0.0387 deg/day) less. One day later (`-b2.1.2000`) the
+difference from the `94621aba` value was only the intended +0.18" frame term, so the new code was
+correct away from `t0`.
 
-**What it means for callers.** Sidereal cusp speeds in an ECL_T0 mode are wrong by that amount
-for charts within 0.1 day of the mode's epoch. The position jump at `t0` is older and is not
-changed by the sync.
+**Measured after the fix**, port equal to the MSVC-built `swetest` at `43c9fe54`, same command:
+Ascendant 51°34'52.1253" at 600°43'39.6898"/day, against 600°43'39.5410" tropical, a difference
+of +0.149", which is the intended frame term only. The sidereal minus tropical Ascendant speed
+(arcsec/day, UT on 1.1.2000) steps through 6:00 -0.13, 9:30 -0.15, 9:40 -0.14, 11:00 -0.14,
+12:00 0.15, 13:00 0.15, 14:15 0.15, 14:30 0.15, 18:00 0.15; at `6c989727` the 9:40 to 14:15 values
+were about -139.2 to -139.5.
+
+**What it means for callers.** At `6c989727`, sidereal cusp speeds in an ECL_T0 mode were wrong by
+that amount for charts within 0.1 day of the mode's epoch. At `43c9fe54` they are not. The position
+jump at `t0` itself (2*dpsi) is older, is not changed by `0c3eb56e`, and stays exactly as before.
+
+## `swe_calc` at a data file's last date (`tfend`) read garbage coefficients
+
+**Status: closed.** Fixed upstream in `43c9fe54` (2026-11-16, `sweph.c` `get_new_segment()`) and
+ported in 2.10.3.3. The port had the identical defect.
+
+**Mechanism.** The range check allows `tjd == tfend`, the file's last date. There the segment
+index computed in `get_new_segment()` equals `nndx`, the number of segments, which is the index
+entry after the last segment, so the coefficients read came from past the data and were garbage.
+The fix uses the last segment in that case.
+
+**Measured.** Astraea (`se00005s.se1`, file range JD 2268932.5 to 2488932.5) at exactly
+JD 2488932.5 came out at longitude 126.0072799, latitude -22.1761351, distance 3.648274082 au
+instead of 66.9437422, -3.5490403, 3.288141871 au. 0.0001 day earlier the longitude is 66.9436936.
+
+**Caching.** It only shows when `tfend` is the first date evaluated. An earlier date in the last
+segment loads that segment and caches it, and the later call at `tfend` then reuses the cache.
+
+**Test.** `Tests/SwissEphNet.Tests/AsteroidFileUpperLimitTest.cs` (3 cases), bit for bit against
+the MSVC-built C at `43c9fe54` on Windows x64; it fails on the previous `Sweph.cs`.
 
 ## setest 6.8/6.9 house speeds: 972 known-fail rows from the 6c989727 sync
 
