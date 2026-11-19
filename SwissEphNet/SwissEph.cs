@@ -229,6 +229,20 @@ namespace SwissEphNet
                 }
             }
             if (stream == null) return null;
+            if (!stream.CanSeek) {
+                // CFile needs Seek/Position (fseek/ftell); a forward-only stream (GZipStream,
+                // network stream) would throw NotSupportedException on first use. Buffer it.
+                try {
+                    var buffer = new MemoryStream();
+                    stream.CopyTo(buffer);
+                    buffer.Position = 0;
+                    stream.Dispose();
+                    stream = buffer;
+                } catch {
+                    stream.Dispose();
+                    throw;
+                }
+            }
             return new CFile(stream, DefaultEncoding);
         }
 
