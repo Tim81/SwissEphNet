@@ -12,7 +12,7 @@ swedate.c	1
 swedate.h	1
 swedll.h	5
 swehel.c	19
-swehouse.c	69
+swehouse.c	68
 swehouse.h	1
 swejpl.c	2
 swejpl.h	0
@@ -22,7 +22,7 @@ swemplan.c	0
 swemptab.h	0
 swenut2000a.h	0
 sweodef.h	6
-sweph.c	129
+sweph.c	130
 sweph.h	4
 swephexp.h	16
 swephlib.c	29
