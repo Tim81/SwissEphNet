@@ -3,6 +3,65 @@
 Project history from the Swiss Ephemeris 2.08 upgrade forward. Entries are prose bullets, not a
 generated commit list — for anything earlier, see git history.
 
+## Unreleased
+
+### Fixed
+
+- `read_const` no longer drops leading digits from an asteroid's name beyond the C's prefix scan
+  (`sweph.c:4614-4617`: spaces, then digits, then exactly one character). A name such as
+  `1999 AB1` lost `1999 ` as well, so `ast_H`, `ast_G` and the diameter were read five columns
+  too far; the magnitude for `se00005s.se1` renamed to that was 4.329m against the C's 11.707m,
+  and is now identical.
+- Under `SEFLG_SIDEREAL`, the `SwissEph file ... not found ... using Moshier eph.` warning in
+  `serr` is no longer erased by `plaus_iflag` (`sweph.c:6078`). `swetest -b1.1.2000 -p0 -sid1
+  -fPl -head -edirnowhere` prints the warning, as the C does.
+- A planet file opened as an asteroid file (`swe_calc(2451545, SE_MARS, 0x32003E)`) now returns an
+  error, `...sepl_18.se1 is damaged (0d)`, as the C does, instead of throwing
+  `ArgumentOutOfRangeException`. The copyright-line check in `read_const` is still more lenient
+  than the C's.
+- A `seorbel.txt` elements line with a trailing comma is now accepted as the C accepts it
+  (`swi_cutstr`, `swemplan.c:755`); it gave `nine elements required`.
+- Digit and alphanumeric tests that the C makes with `isdigit` and `isalnum` on bytes are now
+  ASCII-only. .NET had accepted any Unicode digit or letter. `read_const`'s version-line regex
+  (`sweph.c:4554`) still uses `\d`.
+- `SweHel`'s trace blocks are guarded by `SWEHEL_DEBUG`, as `swehel.c` does, instead of `#if
+  DEBUG`, so a Debug build no longer compiles trace code the C never builds. Their loop
+  variables now match the C's (`swehel.c:1515-1523`).
+- Two `strcat` slips in `swetest`: `-lunecl -local` printed `lunar eclipse` without the `total`,
+  `penumb.` or `partial` prefix, and global `-solecl` printed ` non-central solar` instead of
+  `total non-central solar` or `annular non-central solar` (`swetest.c:3149`, `:3458-3459`).
+- `FormatToDegreeMinuteSecond` rounds seconds once and carries into minutes, degrees and zodiac
+  sign. It printed `10°20'13.9960` for 10 + 20/60 + 12.996/3600 (now `  10°20'12.9960`),
+  `10°59'60.0000` for 10°59'59.99996" (now `  11° 0' 0.0000`) and `29 ar 59'60"` for 29.99999999
+  in `Z2` (now ` 0 ta  0' 0"`), and dropped the sign of -0.5 (now `  -0°30' 0.0000`).
+- `C.sprintf` takes a float's sign from the IEEE sign bit (`%+.2f` of -0.0 gave `+-0.00`; `%08.3f`
+  gave `0000.000`, now `-000.000`), prints non-finite values as the C does (`nan`, `inf`, `-inf`,
+  and `NAN`, `INF` for `E` and `G`, space-padded, honouring `+` and space; they were `NaN` and
+  `Infinity`), and formats a non-string `%s` argument with the invariant culture (`1.5` printed
+  `1,5` under nl-NL). The interpolated-apogee NaN fields in `swetest` output now read `nan`.
+- A `FileProvider` that returns a non-seekable stream (a `GZipStream`, say) no longer makes
+  `swe_calc_ut` with `SEFLG_SWIEPH` or `swe_fixstar2_ut` throw `NotSupportedException`; such
+  streams are copied into a `MemoryStream` first.
+- Double-to-int conversions match the C on every runtime. The C truncates, and on MSVC x64 NaN,
+  infinities and out-of-range values give `INT_MIN`; .NET 8 did the same, but .NET 9 made the
+  cast saturating, so on net10.0 `swe_lun_occult_when_glob(NaN, ...)` hung,
+  `swe_sol_eclipse_when_glob(NaN)` and `swe_lun_eclipse_when(NaN)` returned an eclipse instead of
+  an error, and `swe_revjul(1e12)` gave year 2147483647. The new public `C.ToInt32` and
+  `C.ToInt64` apply the MSVC x64 behaviour, and every floating-point cast in the transliterated
+  files uses them. Valid inputs are unaffected: the result is identical to a plain cast whenever
+  the value is in range.
+
+### Performance
+
+- The first `swe_fixstar2` call of an instance no longer copies the fixed-star array once per
+  record: 180,016,736 B allocated and 50.7-63 ms before, 4,860,851 B and 11.0-17.7 ms now. The
+  array grows geometrically in `save_star_in_struct`, where the C calls `realloc`. Results are
+  bit-identical.
+- `C.bsearch` searches in place with the same probe sequence, where it copied the array and boxed
+  every comparison. `swe_fixstar2_ut` with 12 rotating names went from 173,206 to 6,018 B and
+  from 61-67 to 24 µs per call; `swe_fixstar2_mag` from 182,000 to 2,193 B and from 39-47 to
+  1.5 µs. Results are bit-identical.
+
 ## 2.10.3.3
 
 - House cusp speeds are now analytic for every house system. `swe_houses_ex2` and
