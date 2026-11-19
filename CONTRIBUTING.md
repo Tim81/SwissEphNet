@@ -115,6 +115,15 @@ source" apart from "deliberate platform difference" (a parallel site
 transliterated correctly elsewhere in the same file is strong evidence of the
 former).
 
+One further, narrow exception exists, and only one use of it so far: a frozen
+line may change to give a C library call its C cost profile in .NET, when the
+output is proven byte-identical. C's `realloc` grows a block in place, so the
+per-record `realloc` in `save_star_in_struct` (`sweph.c:6195`) is cheap; .NET
+has no `realloc`, and the line-for-line `new` plus `CopyTo` per record made
+loading the fixed-star file O(n^2) (180 MB allocated for the first
+`swe_fixstar2` call). Growing the array geometrically restores the cost the C
+already has. It is not a general licence to optimize frozen code.
+
 **Every porting PR must cite the C hunk range it implements** (e.g.
 `sweph.c:2310-2358`), against the upstream C described below, so a reviewer
 can check the C# against the exact hunk without having to reconstruct the diff

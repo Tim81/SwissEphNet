@@ -719,3 +719,84 @@ b"} where the C gives {"a", ""}); that one is fixed
     against the C on Windows x64; it fails on the previous Sweph.cs.
     SwissEphNet/CPort: 49681 -> 49687 lines, kr_braces (1253) and trailing_ws (1258) unchanged,
     sha256 E19A38E2... -> 853A6866....
+36. PR (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-19: Narrow exception, not a correction of a divergence and not a re-transliteration: Sweph.cs
+    save_star_in_struct (sweph.c:6195) grew swed.fixed_stars with a new array and a copy per record.
+    In C, realloc grows the block in place (glibc uses mremap above 128 KB); measured over 200 cold
+    fixed-star loads, 9.6-9.7 ms against 9.3-9.9 ms on Linux gcc 13.3 and 3.4-3.6 ms against 3.0 ms on
+    MSVC, with identical results. .NET has no realloc, so the line-for-line new plus CopyTo made the
+    load O(n^2): 180,016,736 B allocated by the first swe_fixstar2 call of an instance. The array now
+    grows geometrically: 4,860,851 B and 11.0-17.7 ms instead of 50.7-63 ms. No data, order or result
+    changes; output was byte-identical over 93,895 lines (every double as hex bits, sha256 f08831ca...
+    before and after). The only use so far of the exception CONTRIBUTING.md now describes. Not
+    proposed upstream, since the C gains nothing measurable.
+    SwissEphNet/CPort: 49687 -> 49692 lines, kr_braces (1253) and trailing_ws (1258) unchanged,
+    sha256 853A6866... -> CD94DC8F....
+37. PR (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-19: Correction toward the C's double-to-int conversion, across the frozen files. The C converts
+    double to int by truncation; on MSVC x64 (cvttsd2si) NaN, infinities and out-of-range values give
+    INT_MIN, and .NET 8 x64 did the same, but .NET 9 made the cast saturating (NaN -> 0, large ->
+    int.MaxValue), so on net10.0 swe_lun_occult_when_glob(NaN, ...) hung, swe_sol_eclipse_when_glob(NaN)
+    and swe_lun_eclipse_when(NaN) returned an eclipse instead of an error, and swe_revjul(1e12) gave
+    year 2147483647. Every explicit cast with a floating-point operand now goes through C.ToInt32 or
+    C.ToInt64 (Tools/C.cs; identical to a plain cast for in-range values): 90 lines, one token each
+    (SweCL 5, SweDate 11, SweHel 2, SweHouse 1, SweJPL 3, SwemMoon 2, Sweph 4, SwephLib 29, SweTest
+    Program.cs 33; SweMini has none). C long is 32-bit on MSVC; ToInt64 keeps the port's 64-bit width.
+    Test: Tests/SwissEphNet.Tests/FloatToIntConversionTest.cs (34 cases; 5 failed on net10.0 before).
+    SwissEphNet/CPort: 49692 -> 49692 lines, kr_braces (1253) and trailing_ws (1258) unchanged,
+    sha256 CD94DC8F... -> 90007FF2.... Programs/SweTest/Program.cs: 5185 -> 5185 lines, kr_braces (64)
+    and trailing_ws (69) unchanged, sha256 EF0CE63B... -> 6A91A57B....
+38. PR (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-19: Correction of a divergence from the C: Sweph.cs read_const asteroid name prefix
+    (sweph.c:4614-4617). The C skips spaces, then digits, then exactly one character; the port skipped
+    every leading space or digit, so a name such as "1999 AB1" also lost "1999 " and ast_H, ast_G and
+    the diameter were read 5 columns too far (magnitude 4.329m against the C's 11.707m on
+    se00005s.se1 renamed to "1999 AB1"; now identical). Test:
+    Tests/SwissEphNet.Tests/AsteroidDigitNameTest.cs.
+    SwissEphNet/CPort: 49692 -> 49694 lines, kr_braces (1253) and trailing_ws (1258) unchanged,
+    sha256 90007FF2... -> A4CF14E0....
+39. PR (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-19: Correction of a divergence from the C: Sweph.cs plaus_iflag takes serr by reference
+    (sweph.c:6078). The C writes serr only in the JPLHOR and eop branches; the port had out string
+    serr with serr = null, so under SEFLG_SIDEREAL (via swi_get_ayanamsa_ex, sweph.c:3021) the
+    "SwissEph file ... not found ... using Moshier eph." warning set earlier in the same call was
+    erased. The C's explicit *serr = '\0' before plaus_iflag in fixstar_calc_from_struct
+    (sweph.c:6433-6435) and swi_fixstar_calc_from_record (sweph.c:7703-7705) is restored. Test:
+    Tests/SwissEphNet.Tests/SiderealKeepsWarningTest.cs. The 120 CDEF/CUDEF|SIDEREAL baseline rows
+    change in serr only (baseline entry 28).
+    SwissEphNet/CPort: 49694 -> 49695 lines, kr_braces (1253) and trailing_ws (1258) unchanged,
+    sha256 A4CF14E0... -> 9E0D0387....
+40. PR (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-19: Correction of a divergence from the C: two swetest strcat slips in
+    Programs/SweTest/Program.cs. Line 3908 assigned (sout =) where swetest.c:3149 appends, so -lunecl
+    -local printed "lunar eclipse" without "total   ", "penumb. " or "partial "; line 4267 did the same
+    where swetest.c:3458-3459 appends " non-central", so global -solecl printed " non-central solar"
+    for non-central total and annular eclipses. Both now match the C (checked with -lunecl -local
+    -geopos8,47,0 and -solecl -n2).
+    Programs/SweTest/Program.cs: 5185 -> 5185 lines, kr_braces (64) and trailing_ws (69) unchanged,
+    sha256 6A91A57B... -> 0D3F0D21....
+41. PR (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-19: Correction of a divergence from the C: SweHel.cs trace blocks at 305, 1417 and 1519 were
+    guarded by #if DEBUG where swehel.c:284, 1429 and 1512 use #if SWEHEL_DEBUG, which upstream never
+    defines, so a Debug build compiled trace code the C never builds. The third block's loops also used
+    i where the C's block-local loop variable ii is meant (swehel.c:1515-1523).
+    SwissEphNet/CPort: 49695 -> 49695 lines, kr_braces (1253) and trailing_ws (1258) unchanged,
+    sha256 9E0D0387... -> F4505F28....
+42. PR (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-19: Correction of a divergence from the C: ASCII character tests where the C calls isdigit and
+    isalnum on bytes. Char.IsDigit at Sweph.cs 7933, 8456, 8899, 9422 and 9530 (sweph.c:6696, 7139,
+    7571, 7990, 8080) and Char.IsLetterOrDigit in strcpy_VBsafe, SweHel.cs:1827 (swehel.c:1819), are
+    now ASCII range tests; .NET accepted any Unicode digit or letter. Test:
+    Tests/SwissEphNet.Tests/AsciiCtypeTest.cs. Not changed: read_const's version-line regex \d
+    (sweph.c:4554).
+    SwissEphNet/CPort: 49695 -> 49695 lines, kr_braces (1253) and trailing_ws (1258) unchanged,
+    sha256 F4505F28... -> 6E9E173A....
+43. PR (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-19: Correction of a divergence from the C: Sweph.cs read_const elements line (sweph.c:4605-4612).
+    The C reads the line with fgets and reports file damage "(0d)" unless it contains "\r\n"; the port
+    rejected only an empty line, so swe_calc(2451545, SE_MARS, 0x32003E), which opens a planet file as
+    an asteroid file, threw ArgumentOutOfRangeException. It now returns -1 with "...sepl_18.se1 is
+    damaged (0d)" as the C does; the reads at s+35, s+42 and s+51+i and the sastnam copy are
+    bounds-safe. New internal CFile.LastLineEndedCrLf; the public API is unchanged. Test:
+    Tests/SwissEphNet.Tests/AsteroidHeaderDamageTest.cs. Not changed: the copyright-line check
+    remains lenient.
+    SwissEphNet/CPort: 49695 -> 49695 lines, kr_braces (1253) and trailing_ws (1258) unchanged,
+    sha256 6E9E173A... -> 17FC08AF....
+44. PR (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-19: Correction of a divergence from the C: SwemPlan.cs read_elements_file (swemplan.c:755) now
+    calls swi_cutstr(s, ",", cpos, 20) as the C does, instead of Split(',', RemoveEmptyEntries); a
+    seorbel.txt line with a trailing comma (J2000,J2000,10.0,2.5,0.1,20,30,5,) gave "nine elements
+    required" where the C returns rc 4. Test: Tests/SwissEphNet.Tests/ElementsLineCutstrTest.cs.
+    SwissEphNet/CPort: 49695 -> 49695 lines, kr_braces (1253) and trailing_ws (1258) unchanged,
+    sha256 17FC08AF... -> E3A59F84....
