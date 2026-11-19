@@ -7321,10 +7321,15 @@ namespace SwissEphNet.CPort
             //  if (serr != NULL) strcpy(serr, serr_alloc);
             //  return ERR;
             //}
-            var newfstars = new fixed_star[nrecs];
-            if (swed.fixed_stars != null)
-                swed.fixed_stars.CopyTo(newfstars, 0);
-            swed.fixed_stars = newfstars;
+            // Grow geometrically (realloc is amortised in C) instead of copying the whole array for
+            // every record; readers use nrecs / n_fixstars_*, never fixed_stars.Length.
+            if (swed.fixed_stars == null || swed.fixed_stars.Length < nrecs)
+            {
+                var newfstars = new fixed_star[Math.Max(nrecs, swed.fixed_stars == null ? 0 : swed.fixed_stars.Length * 2)];
+                if (swed.fixed_stars != null)
+                    swed.fixed_stars.CopyTo(newfstars, 0);
+                swed.fixed_stars = newfstars;
+            }
             //ftarget = swed.fixed_stars + (nrecs - 1);
             //memcpy((void *) ftarget, (void *) fstp, sizestru);
             swed.fixed_stars[nrecs - 1] = fstp;
