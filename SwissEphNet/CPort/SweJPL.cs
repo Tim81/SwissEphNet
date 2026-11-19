@@ -571,7 +571,7 @@ namespace SwissEphNet.CPort
             else
                 dt1 = -Math.Floor(-t);
             temp = na * t;
-            ni = (int)(temp - dt1);
+            ni = C.ToInt32(temp - dt1);
             /* tc is the normalized chebyshev time (-1 <= tc <= 1) */
             tc = ((temp % 1.0) + dt1) * 2.0 - 1.0;
             /*
@@ -844,7 +844,7 @@ namespace SwissEphNet.CPort
                 //flen = FTELL(js.jplfptr);
                 flen = js.jplfptr.Position;
                 /* # of segments in file */
-                nseg = (Int32)((js.eh_ss[1] - js.eh_ss[0]) / js.eh_ss[2]);
+                nseg = C.ToInt32((js.eh_ss[1] - js.eh_ss[0]) / js.eh_ss[2]);
                 /* sum of all cheby coeffs of all planets and segments */
                 for (i = 0, nb = 0; i < 13; i++) {
                     k = 3;
@@ -901,7 +901,7 @@ namespace SwissEphNet.CPort
                 return Sweph.BEYOND_EPH_LIMITS;
             }
             /*       calculate record # and relative time in interval */
-            nr = (Int32)((et_mn - js.eh_ss[0]) / js.eh_ss[2]) + 2;
+            nr = C.ToInt32((et_mn - js.eh_ss[0]) / js.eh_ss[2]) + 2;
             if (et_mn == js.eh_ss[1])
                 --nr;	/* end point of ephemeris, use last record */
             t = (et_mn - ((nr - 2) * js.eh_ss[2] + js.eh_ss[0]) + et_fr) / js.eh_ss[2];

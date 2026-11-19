@@ -235,10 +235,10 @@ namespace SwissEphNet.CPort
             u2 = Math.Floor(u0 + 123.0);
             u3 = Math.Floor((u2 - 122.2) / 365.25);
             u4 = Math.Floor((u2 - Math.Floor(365.25 * u3)) / 30.6001);
-            jmon = (int)(u4 - 1.0);
+            jmon = C.ToInt32(u4 - 1.0);
             if (jmon > 12) jmon -= 12;
-            jday = (int)(u2 - Math.Floor(365.25 * u3) - Math.Floor(30.6001 * u4));
-            jyear = (int)(u3 + Math.Floor((u4 - 2.0) / 12.0) - 4800);
+            jday = C.ToInt32(u2 - Math.Floor(365.25 * u3) - Math.Floor(30.6001 * u4));
+            jyear = C.ToInt32(u3 + Math.Floor((u4 - 2.0) / 12.0) - 4800);
             jut = (jd - Math.Floor(jd + 0.5) + 0.5) * 24.0;
         }
 
@@ -282,9 +282,9 @@ namespace SwissEphNet.CPort
                 dhour -= 24.0;
             }
             swe_revjul(tjd + 0.001, SwissEph.SE_GREG_CAL, ref iyear_out, ref imonth_out, ref iday_out, ref d);
-            ihour_out = (int)dhour;
+            ihour_out = C.ToInt32(dhour);
             d = (dhour - (double)ihour_out) * 60;
-            imin_out = (int)d;
+            imin_out = C.ToInt32(d);
             dsec_out = (d - (double)imin_out) * 60;
             if (have_leapsec)
                 dsec_out += 1.0;
@@ -523,10 +523,10 @@ namespace SwissEphNet.CPort
             if (tjd_et < tjd_et_1972)
             {
                 swe_revjul(tjd_ut, gregflag, ref iyear, ref imonth, ref iday, ref d);
-                ihour = (Int32)d;
+                ihour = C.ToInt32(d);
                 d -= (double)ihour;
                 d *= 60;
-                imin = (Int32)d;
+                imin = C.ToInt32(d);
                 dsec = (d - (double)imin) * 60.0;
                 return;
             }
@@ -564,10 +564,10 @@ namespace SwissEphNet.CPort
              */
             tjd = J1972 + (tjd_et - tjd_et_1972) - ((double)nleap + second_60) / 86400.0;
             swe_revjul(tjd, SwissEph.SE_GREG_CAL, ref iyear, ref imonth, ref iday, ref d);
-            ihour = (Int32)d;
+            ihour = C.ToInt32(d);
             d -= (double)ihour;
             d *= 60;
-            imin = (Int32)d;
+            imin = C.ToInt32(d);
             dsec = (d - (double)imin) * 60.0 + second_60;
             /*
              * For input dates > today:
@@ -579,10 +579,10 @@ namespace SwissEphNet.CPort
             d = SE.SwephLib.swe_deltat_ex(tjd_et - d, -1, ref sdummy);
             if (d * 86400.0 - (double)(nleap + NLEAP_INIT) - 32.184 >= 1.0) {
                 swe_revjul(tjd_et - d, SwissEph.SE_GREG_CAL, ref iyear, ref imonth, ref iday, ref d);
-                ihour = (Int32)d;
+                ihour = C.ToInt32(d);
                 d -= (double)ihour;
                 d *= 60;
-                imin = (Int32)d;
+                imin = C.ToInt32(d);
                 dsec = (d - (double)imin) * 60.0;
             }
             if (gregflag == SwissEph.SE_JUL_CAL) {

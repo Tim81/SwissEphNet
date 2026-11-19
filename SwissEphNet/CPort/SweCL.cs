@@ -1152,7 +1152,7 @@ namespace SwissEphNet.CPort
                     d = (tjd_ut - saros_data_solar[i].tstart) / SAROS_CYCLE;
                     if (d < 0 && d * SAROS_CYCLE > -2) d = 0.0000001;
                     if (d < 0) continue;
-                    j = (int)d;
+                    j = C.ToInt32(d);
                     if ((d - j) * SAROS_CYCLE < 2) {
                         attr[9] = (double)saros_data_solar[i].series_no;
                         attr[10] = (double)j + 1;
@@ -1245,7 +1245,7 @@ namespace SwissEphNet.CPort
                 ifltype |= SwissEph.SE_ECL_NONCENTRAL;
             if (backward)
                 direction = -1;
-            K = (int)((tjd_start - Sweph.J2000) / 365.2425 * 12.3685);
+            K = C.ToInt32((tjd_start - Sweph.J2000) / 365.2425 * 12.3685);
             K -= direction;
         next_try:
             retflag = 0;
@@ -2155,7 +2155,7 @@ namespace SwissEphNet.CPort
             Int32 iflag = SwissEph.SEFLG_EQUATORIAL | SwissEph.SEFLG_TOPOCTR | ifl;
             Int32 iflagcart = iflag | SwissEph.SEFLG_XYZ;
             SE.swe_set_topo(geopos[0], geopos[1], geopos[2]);
-            K = (int)((tjd_start - Sweph.J2000) / 365.2425 * 12.3685);
+            K = C.ToInt32((tjd_start - Sweph.J2000) / 365.2425 * 12.3685);
             if (backward)
                 K++;
             else
@@ -3419,7 +3419,7 @@ namespace SwissEphNet.CPort
                 d = (tjd_ut - saros_data_lunar[i].tstart) / SAROS_CYCLE;
                 if (d < 0 && d * SAROS_CYCLE > -2) d = 0.0000001;
                 if (d < 0) continue;
-                j = (int)d;
+                j = C.ToInt32(d);
                 if ((d - j) * SAROS_CYCLE < 2) {
                     attr[9] = (double)saros_data_lunar[i].series_no;
                     attr[10] = (double)j + 1;
@@ -3489,7 +3489,7 @@ namespace SwissEphNet.CPort
                 ifltype = SwissEph.SE_ECL_TOTAL | SwissEph.SE_ECL_PENUMBRAL | SwissEph.SE_ECL_PARTIAL;
             if (backward)
                 direction = -1;
-            K = (int)((tjd_start - Sweph.J2000) / 365.2425 * 12.3685);
+            K = C.ToInt32((tjd_start - Sweph.J2000) / 365.2425 * 12.3685);
             K -= direction;
         next_try:
             retflag = 0;

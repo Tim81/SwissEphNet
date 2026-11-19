@@ -441,7 +441,7 @@ namespace SwissEphNet.CPort
             double[] xs = new double[6], xx = new double[6], xaz = new double[6], xaz2 = new double[6];
             double rdi, rh;
             double tjd0 = tjd_start, tjdrise;
-            double tjdnoon = (int)tjd0 - dgeo[0] / 15.0 / 24.0;
+            double tjdnoon = C.ToInt32(tjd0) - dgeo[0] / 15.0 / 24.0;
             Int32 iflag = helflag & (SwissEph.SEFLG_JPLEPH | SwissEph.SEFLG_SWIEPH | SwissEph.SEFLG_MOSEPH);
             Int32 epheflag = iflag;
             iflag |= SwissEph.SEFLG_EQUATORIAL;
@@ -2363,7 +2363,7 @@ namespace SwissEphNet.CPort
                     if (doneoneday == 0 && (JDNDaysUTfinal - JDNDaysUTstep) * Sgn(DayStep) > 0) {
                         /* go back to date before heliacal altitude */
                         ArcusVisDelta = ArcusVisDeltaoud;
-                        DayStep = ((int)(Math.Abs(DayStep) / 2.0)) * Sgn(DayStep);
+                        DayStep = (C.ToInt32(Math.Abs(DayStep) / 2.0)) * Sgn(DayStep);
                         JDNDaysUTstep = JDNDaysUTstepoud;
                     }
                 } while (doneoneday == 0 && (JDNDaysUTfinal - JDNDaysUTstep) * Sgn(DayStep) > 0);

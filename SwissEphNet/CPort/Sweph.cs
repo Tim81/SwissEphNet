@@ -5137,7 +5137,7 @@ namespace SwissEphNet.CPort
             int fendian = (int)fdp.iflg & SEI_FILE_LITENDIAN;
             UInt32[] longs = new UInt32[MAXORD + 1];
             /* compute segment number */
-            iseg = (Int32)((tjd - pdp.tfstart) / pdp.dseg);
+            iseg = C.ToInt32((tjd - pdp.tfstart) / pdp.dseg);
             /*if (tjd - pdp.tfstart < 0)
                 return(NOT_AVAILABLE);*/
             /* tjd == tfend passes the range check, but gives iseg == nndx, i.e. the
@@ -5671,7 +5671,7 @@ namespace SwissEphNet.CPort
                 pdp.tfstart = doubles[0];
                 pdp.tfend = doubles[1];
                 pdp.dseg = doubles[2];
-                pdp.nndx = (Int32)((doubles[1] - doubles[0] + 0.1) / doubles[2]);
+                pdp.nndx = C.ToInt32((doubles[1] - doubles[0] + 0.1) / doubles[2]);
                 pdp.telem = doubles[3];
                 pdp.prot = doubles[4];
                 pdp.dprot = doubles[5];
@@ -5900,7 +5900,7 @@ namespace SwissEphNet.CPort
             if (ipli == SEI_MOON)
             {
                 dn = pdp.prot + tdiff * pdp.dprot;
-                i = (int)(dn / TWOPI);
+                i = C.ToInt32(dn / TWOPI);
                 dn -= i * TWOPI;
                 qav = (pdp.qrot + tdiff * pdp.dqrot) * Math.Cos(dn);
                 pav = (pdp.qrot + tdiff * pdp.dqrot) * Math.Sin(dn);
@@ -5922,7 +5922,7 @@ namespace SwissEphNet.CPort
                 refepx = pdp.refep;
                 refepy = refepx + nco;
                 omtild = pdp.peri + tdiff * pdp.dperi;
-                i = (int)(omtild / TWOPI);
+                i = C.ToInt32(omtild / TWOPI);
                 omtild -= i * TWOPI;
                 com = Math.Cos(omtild);
                 som = Math.Sin(omtild);

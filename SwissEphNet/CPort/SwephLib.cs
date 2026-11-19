@@ -974,10 +974,10 @@ namespace SwissEphNet.CPort
                         tofs = NDCOR_EPS_JPL;
                         dofs = dcor_eps_jpl[NDCOR_EPS_JPL - 1];
                     } else {
-                        t0 = (int)tofs;
+                        t0 = C.ToInt32(tofs);
                         t1 = t0 + 1;
-                        dofs = dcor_eps_jpl[(int)t0];
-                        dofs = (tofs - t0) * (dcor_eps_jpl[(int)t0] - dcor_eps_jpl[(int)t1]) + dcor_eps_jpl[(int)t0];
+                        dofs = dcor_eps_jpl[C.ToInt32(t0)];
+                        dofs = (tofs - t0) * (dcor_eps_jpl[C.ToInt32(t0)] - dcor_eps_jpl[C.ToInt32(t1)]) + dcor_eps_jpl[C.ToInt32(t0)];
                     }
                     dofs /= (1000.0 * 3600.0);
                     eps += dofs * SwissEph.DEGTORAD;
@@ -2015,19 +2015,19 @@ namespace SwissEphNet.CPort
             t = mjd / 36525.0;
             t2 = t * t;
             a = 100.0021358 * t;
-            b = 360.0 * (a - (long) a);
+            b = 360.0 * (a - C.ToInt64(a));
             ls = 279.697 + .000303 * t2 + b;
             a = 1336.855231 * t;
-            b = 360.0 * (a - (long) a);
+            b = 360.0 * (a - C.ToInt64(a));
             ld = 270.434 - .001133 * t2 + b;
             a = 99.99736056000026 * t;
-            b = 360.0 * (a - (long) a);
+            b = 360.0 * (a - C.ToInt64(a));
             ms = 358.476 - .00015 * t2 + b;
             a = 13255523.59 * t;
-            b = 360.0 * (a - (long) a);
+            b = 360.0 * (a - C.ToInt64(a));
             md = 296.105 + .009192 * t2 + b;
             a = 5.372616667 * t;
-            b = 360.0 * (a - (long) a);
+            b = 360.0 * (a - C.ToInt64(a));
             nm = 259.183 + .002078 * t2 - b;
             /* convert to radian forms for use with trig functions.
              */
@@ -2069,7 +2069,7 @@ namespace SwissEphNet.CPort
                 goto done;
             }
             p = Math.Floor(t);
-            iy = (int)t;
+            iy = C.ToInt32(t);
             /* Zeroth order estimate is value at start of year */
             ans = v[iy];
             k = iy + 1;
@@ -2139,7 +2139,7 @@ namespace SwissEphNet.CPort
             if (is_jplhor) {
                 calc_nutation_iau1980(J, nutlo);
                 if ((iflag & SwissEph.SEFLG_JPLHOR) != 0) {
-                    n = (int)(swed.eop_tjd_end - swed.eop_tjd_beg + 0.000001);
+                    n = C.ToInt32(swed.eop_tjd_end - swed.eop_tjd_beg + 0.000001);
                     J2 = J;
                     if (J < swed.eop_tjd_beg_horizons)
                         J2 = swed.eop_tjd_beg_horizons;
@@ -2255,10 +2255,10 @@ namespace SwissEphNet.CPort
                 t = NDCOR_RA_JPL;
                 dofs = dcor_ra_jpl[NDCOR_RA_JPL - 1];
             } else {
-                t0 = (int)t;
+                t0 = C.ToInt32(t);
                 t1 = t0 + 1;
-                dofs = dcor_ra_jpl[(int)t0];
-                dofs = (t - t0) * (dcor_ra_jpl[(int)t0] - dcor_ra_jpl[(int)t1]) + dcor_ra_jpl[(int)t0];
+                dofs = dcor_ra_jpl[C.ToInt32(t0)];
+                dofs = (t - t0) * (dcor_ra_jpl[C.ToInt32(t0)] - dcor_ra_jpl[C.ToInt32(t1)]) + dcor_ra_jpl[C.ToInt32(t0)];
             }
             dofs /= (1000.0 * 3600.0);
             swi_cartpol(x, x);
@@ -2838,7 +2838,7 @@ namespace SwissEphNet.CPort
                 /* Index into the table.
                  */
                 p = Math.Floor(Y);
-                iy = (int)(p - TABSTART);
+                iy = C.ToInt32(p - TABSTART);
                 /* Zeroth order estimate is value at start of year */
                 ans = dt[iy];
                 k = iy + 1;
@@ -2975,7 +2975,7 @@ namespace SwissEphNet.CPort
             if (Y >= TAB97_START && Y < TAB2_END)
             {
                 p = Math.Floor(Y);
-                iy = (int)((p - TAB97_START) / 50.0);
+                iy = C.ToInt32((p - TAB97_START) / 50.0);
                 dd = (Y - (TAB97_START + 50 * iy)) / 50.0;
                 ans = dt97[iy] + (dt97[iy + 1] - dt97[iy]) * dd;
                 /* correction for tidal acceleration used by our ephemeris */
@@ -3022,7 +3022,7 @@ namespace SwissEphNet.CPort
             if (Y >= TAB2_START && Y < TAB2_END) {
                 double Yjul = 2000 + (tjd - 2451557.5) / 365.25;
                 p = Math.Floor(Yjul);
-                iy = (int)((p - TAB2_START) / TAB2_STEP);
+                iy = C.ToInt32((p - TAB2_START) / TAB2_STEP);
                 dd = (Yjul - (TAB2_START + TAB2_STEP * iy)) / TAB2_STEP;
                 ans = dt2[iy] + (dt2[iy + 1] - dt2[iy]) * dd;
                 /* correction for tidal acceleration used by our ephemeris */
@@ -4072,16 +4072,16 @@ namespace SwissEphNet.CPort
         *************************************/
         public static Int32 swe_d2l(double x) {
             if (x >= 0)
-                return ((Int32)(x + 0.5));
+                return (C.ToInt32(x + 0.5));
             else
-                return (-(Int32)(0.5 - x));
+                return (-C.ToInt32(0.5 - x));
         }
 
         /*
          * monday = 0, ... sunday = 6
          */
         public int swe_day_of_week(double jd) {
-            return (((int)Math.Floor(jd - 2433282 - 1.5) % 7) + 7) % 7;
+            return ((C.ToInt32(Math.Floor(jd - 2433282 - 1.5)) % 7) + 7) % 7;
         }
 
         public string swe_cs2timestr(int t, char sep, bool suppressZero)
@@ -4209,21 +4209,21 @@ namespace SwissEphNet.CPort
                 dadd = 0.5 / 3600;
             }
             if ((roundflag & SwissEph.SE_SPLIT_DEG_KEEP_DEG) != 0) {
-                if ((Int32)(ddeghelp + dadd) - (Int32)ddeghelp > 0)
+                if (C.ToInt32(ddeghelp + dadd) - C.ToInt32(ddeghelp) > 0)
                     dadd = 0;
             } else if ((roundflag & SwissEph.SE_SPLIT_DEG_KEEP_SIGN) != 0) {
                 if (ddeghelp + dadd >= dnakshsize)
                     dadd = 0;
             }
             ddeg += dadd;
-            inak = (Int32)(ddeg / dnakshsize);
+            inak = C.ToInt32(ddeg / dnakshsize);
             if (inak == 27) inak = 0; // with rounding up from 359.9999
             ddeg = C.fmod(ddeg, dnakshsize);
-            ideg = (Int32)ddeg;
+            ideg = C.ToInt32(ddeg);
             ddeg -= ideg;
-            imin = (Int32)(ddeg * 60);
+            imin = C.ToInt32(ddeg * 60);
             ddeg -= imin / 60.0;
-            isec = (Int32)(ddeg * 3600);
+            isec = C.ToInt32(ddeg * 3600);
             if (0 == (roundflag & (SwissEph.SE_SPLIT_DEG_ROUND_DEG | SwissEph.SE_SPLIT_DEG_ROUND_MIN | SwissEph.SE_SPLIT_DEG_ROUND_SEC)))
             {
                 dsecfr = ddeg * 3600 - isec;
@@ -4285,7 +4285,7 @@ namespace SwissEphNet.CPort
                 dadd = 0.5 / 3600.0;
             }
             if ((roundflag & SwissEph.SE_SPLIT_DEG_KEEP_DEG) != 0) {
-                if ((Int32)(ddeg + dadd) - (Int32)ddeg > 0)
+                if (C.ToInt32(ddeg + dadd) - C.ToInt32(ddeg) > 0)
                     dadd = 0;
             } else if ((roundflag & SwissEph.SE_SPLIT_DEG_KEEP_SIGN) != 0) {
                 if ((ddeg % 30.0) + dadd >= 30)
@@ -4293,16 +4293,16 @@ namespace SwissEphNet.CPort
             }
             ddeg += dadd;
             if ((roundflag & SwissEph.SE_SPLIT_DEG_ZODIACAL) != 0) {
-                isgn = (Int32)(ddeg / 30);
+                isgn = C.ToInt32(ddeg / 30);
                 if (isgn == 12) // 360° = 0°
                     isgn = 0;
                 ddeg = (ddeg % 30.0);
             }
-            ideg = (Int32)ddeg;
+            ideg = C.ToInt32(ddeg);
             ddeg -= ideg;
-            imin = (Int32)(ddeg * 60);
+            imin = C.ToInt32(ddeg * 60);
             ddeg -= imin / 60.0;
-            isec = (Int32)(ddeg * 3600);
+            isec = C.ToInt32(ddeg * 3600);
             if (0 == (roundflag & (SwissEph.SE_SPLIT_DEG_ROUND_DEG | SwissEph.SE_SPLIT_DEG_ROUND_MIN | SwissEph.SE_SPLIT_DEG_ROUND_SEC))) {
                 dsecfr = ddeg * 3600 - isec;
             } else {

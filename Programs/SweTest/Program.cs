@@ -1842,11 +1842,11 @@ namespace SweTest
                             t = tjd + (istep - 1) * tstep / 86400;
                         if (step_in_years)
                         {
-                            t = sweph.swe_julday(year_start + (istep - 1) * (int)tstep, mon_start, day_start, jut, gregflag);
+                            t = sweph.swe_julday(year_start + (istep - 1) * C.ToInt32(tstep), mon_start, day_start, jut, gregflag);
                         }
                         if (step_in_months)
                         {
-                            jmon = mon_start + (istep - 1) * (int)tstep;
+                            jmon = mon_start + (istep - 1) * C.ToInt32(tstep);
                             jyear = year_start + (int)((jmon - 1) / 12);
                             jmon = ((jmon - 1) % 12) + 1;
                             t = sweph.swe_julday(jyear, jmon, day_start, jut, gregflag);
@@ -1861,11 +1861,11 @@ namespace SweTest
                         // must repeat because gregflag may have changed
                         if (step_in_years)
                         {
-                            t = sweph.swe_julday(year_start + (istep - 1) * (int)tstep, mon_start, day_start, jut, gregflag);
+                            t = sweph.swe_julday(year_start + (istep - 1) * C.ToInt32(tstep), mon_start, day_start, jut, gregflag);
                         }
                         if (step_in_months)
                         {
-                            jmon = mon_start + (istep - 1) * (int)tstep;
+                            jmon = mon_start + (istep - 1) * C.ToInt32(tstep);
                             jyear = year_start + (int)((jmon - 1) / 12);
                             jmon = ((jmon - 1) % 12) + 1;
                             t = sweph.swe_julday(jyear, jmon, day_start, jut, gregflag);
@@ -2623,7 +2623,7 @@ namespace SweTest
                 ar = (1 - (dtrue - dmin) / (dmax - dmin)) * 1000.0;
                 ar += 0.5; // rounding
             }
-            return (Int32)ar;
+            return C.ToInt32(ar);
         }
 
         /*
@@ -3284,8 +3284,8 @@ namespace SweTest
                             if (is_label) { printf("hds"); break; }
                             if (is_house) break;
                             xhds = sweph.swe_degnorm(x[0] - 223.25);
-                            ihex = (int)Math.Floor(xhds / 5.625);
-                            iline = ((int)(Math.Floor(xhds / 0.9375))) % 6 + 1;
+                            ihex = C.ToInt32(Math.Floor(xhds / 5.625));
+                            iline = (C.ToInt32(Math.Floor(xhds / 0.9375))) % 6 + 1;
                             igate = hexa[ihex];
                             printf("%2d.%d", igate, iline);
                             if (sp == 'V')
@@ -3365,10 +3365,10 @@ namespace SweTest
             }
             if ((iflg & BIT_ZODIAC) != 0)
             {
-                izod = (int)(xv / 30);
+                izod = C.ToInt32(xv / 30);
                 if (izod == 12) izod = 0;
                 xv = (xv % 30.0);
-                kdeg = (Int32)xv;
+                kdeg = C.ToInt32(xv);
                 // swetest.c:2700: sprintf(s, "%2d %s ", kdeg, zod_nam[izod]); -- no leading space.
                 // A prior fix here kept a leading space to dodge a sign-loss bug in the C (see the
                 // sign-insertion guard below, at return_dms), but that made every zodiac field diverge
@@ -3385,12 +3385,12 @@ namespace SweTest
                 // which made every degree-bearing field a column narrow and, once kdeg reached 100,
                 // put a digit at index 0 so the sign path below called Substring(0, -1) and threw.
                 // swetest -p0 -d1 -b1.1.2020 -fPL -n12 -emos crashed where the C prints -121 degrees.
-                kdeg = (Int32)xv;
+                kdeg = C.ToInt32(xv);
                 s = C.sprintf(" %3d%s", kdeg, c);
             }
             xv -= kdeg;
             xv *= 60;
-            kmin = (Int32)xv;
+            kmin = C.ToInt32(xv);
             if ((iflg & BIT_ZODIAC) != 0 && (iflg & BIT_ROUND_MIN) != 0)
             {
                 s1 = C.sprintf("%2d", kmin);
@@ -3404,7 +3404,7 @@ namespace SweTest
                 goto return_dms;
             xv -= kmin;
             xv *= 60;
-            ksec = (Int32)xv;
+            ksec = C.ToInt32(xv);
             if ((iflg & BIT_ROUND_SEC) != 0)
             {
                 s1 = C.sprintf("%2d\"", ksec);
@@ -3419,12 +3419,12 @@ namespace SweTest
             xv -= ksec;
             if (output_extra_prec)
             {
-                k = (Int32)(xv * 100000000);
+                k = C.ToInt32(xv * 100000000);
                 s1 = C.sprintf(".%08d", k);
             }
             else
             {
-                k = (Int32)(xv * 10000);
+                k = C.ToInt32(xv * 10000);
                 s1 = C.sprintf(".%04d", k);
             }
             s += s1;
@@ -3913,10 +3913,10 @@ namespace SweTest
                       return ERR;
                     }*/
                     dt = (tret[3] - tret[2]) * 24 * 60;
-                    s1 = C.sprintf("%d min %4.2f sec", (int)dt, (dt % 1.0) * 60);
+                    s1 = C.sprintf("%d min %4.2f sec", C.ToInt32(dt), (dt % 1.0) * 60);
                     /* short output: 
                      * date, time of day, umbral magnitude, umbral duration, saros series, member number */
-                    saros = C.sprintf("%d/%d", (int)attr[9], (int)attr[10]);
+                    saros = C.sprintf("%d/%d", C.ToInt32(attr[9]), C.ToInt32(attr[10]));
                     sout_short = C.sprintf("%s\t%2d.%2d.%4d%s\t%s\t%.3f\t%s\t%s\n", sout, jday, jmon, jyear, sgj, hms(jut, 0), attr[8], s1, saros);
                     sout += C.sprintf("%2d.%02d.%04d%s\t%s\t%.4f/%.4f\tsaros %s\t%.6f\n", jday, jmon, jyear, sgj, hms(jut, BIT_LZEROES), attr[0], attr[1], saros, t_ut);
                     /* second line:
@@ -4014,10 +4014,10 @@ namespace SweTest
                     geopos_max[1] = xx[1];
                     sgj = get_gregjul(gregflag, jyear);
                     dt = (tret[3] - tret[2]) * 24 * 60;
-                    s1 = C.sprintf("%d min %4.2f sec", (int)dt, (dt % 1.0) * 60);
+                    s1 = C.sprintf("%d min %4.2f sec", C.ToInt32(dt), (dt % 1.0) * 60);
                     /* short output: 
                      * date, time of day, umbral magnitude, umbral duration, saros series, member number */
-                    saros = C.sprintf("%d/%d", (int)attr[9], (int)attr[10]);
+                    saros = C.sprintf("%d/%d", C.ToInt32(attr[9]), C.ToInt32(attr[10]));
                     sout_short = C.sprintf("%s\t%2d.%2d.%4d%s\t%s\t%.3f\t%s\t%s\n", sout, jday, jmon, jyear, sgj, hms(jut, 0), attr[8], s1, saros);
                     //sout += C.sprintf("%2d.%02d.%04d%s\t%s\t%.4f/%.4f\tsaros %s\t%.6f\tdt=%.2f\n", jday, jmon, jyear, sgj, hms(jut, BIT_LZEROES), attr[0], attr[1], saros, t_ut, sweph.swe_deltat_ex(t_ut, whicheph, ref serr) * 86400);
                     sout += C.sprintf("%2d.%02d.%04d%s\t%s\t%.4f/%.4f\tsaros %s\t%.6f\n", jday, jmon, jyear, sgj, hms(jut, BIT_LZEROES), attr[0], attr[1], saros, t_ut);
@@ -4175,9 +4175,9 @@ namespace SweTest
                             sweph.swe_revjul(t_ut, gregflag, ref jyear, ref jmon, ref jday, ref jut);
                             dt = (tret[3] - tret[2]) * 24 * 60;
                             sgj = get_gregjul(gregflag, jyear);
-                            saros = C.sprintf("%d/%d", (int)attr[9], (int)attr[10]);
+                            saros = C.sprintf("%d/%d", C.ToInt32(attr[9]), C.ToInt32(attr[10]));
                             sout += C.sprintf("%2d.%02d.%04d%s\t%s\t%.4f/%.4f/%.4f\tsaros %s\t%.6f\n", jday, jmon, jyear, sgj, hms(jut, BIT_LZEROES), attr[8], attr[0], attr[2], saros, t_ut);
-                            sout += C.sprintf("\t%d min %4.2f sec\t", (int)dt, C.fmod(dt, 1) * 60);
+                            sout += C.sprintf("\t%d min %4.2f sec\t", C.ToInt32(dt), C.fmod(dt, 1) * 60);
                             if ((eclflag & SwissEph.SE_ECL_1ST_VISIBLE) != 0)
                             {
                                 sout += C.sprintf("%s ", hms_from_tjd(tret[1]));
@@ -4284,7 +4284,7 @@ namespace SweTest
                     }
                     sweph.swe_revjul(tret[0], gregflag, ref jyear, ref jmon, ref jday, ref jut);
                     sgj = get_gregjul(gregflag, jyear);
-                    saros = C.sprintf("%d/%d", (int)attr[9], (int)attr[10]);
+                    saros = C.sprintf("%d/%d", C.ToInt32(attr[9]), C.ToInt32(attr[10]));
                     sout_short = C.sprintf("%s\t%2d.%2d.%4d%s\t%s\t%.3f", sout, jday, jmon, jyear, sgj, hms(jut, 0), attr[8]);
                     sout += C.sprintf("%2d.%02d.%04d%s\t%s\t%f km\t%.4f/%.4f/%.4f\tsaros %s\t%.6f\n", jday, jmon, jyear, sgj, hms(jut, 0), attr[3], attr[8], attr[0], attr[2], saros, tret[0]);
                     sout += C.sprintf("\t%s ", hms_from_tjd(tret[2]));
@@ -4326,11 +4326,11 @@ namespace SweTest
                             do_printf("when_loc returns wrong date\n");
                         }
                         dt = (tret[3] - tret[2]) * 24 * 60;
-                        s1 = C.sprintf("%d min %4.2f sec", (int)dt, (dt % 1.0) * 60);
+                        s1 = C.sprintf("%d min %4.2f sec", C.ToInt32(dt), (dt % 1.0) * 60);
                         sout += (s1);
                         sout_short += (s1);
                     }
-                    sout_short += C.sprintf("\t%d\t%d", (int)attr[9], (int)attr[10]);
+                    sout_short += C.sprintf("\t%d\t%d", C.ToInt32(attr[9]), C.ToInt32(attr[10]));
                     sout += ("\n");
                     sout_short += ("\n");
                     if ((special_mode & SP_MODE_HOCAL) != 0)
@@ -4487,7 +4487,7 @@ namespace SweTest
                             sweph.swe_revjul(tret[0], gregflag, ref jyear, ref jmon, ref jday, ref jut);
                             dt = (tret[3] - tret[2]) * 24 * 60;
                             sout += C.sprintf("%2d.%02d.%04d\t%s\t%f\t%.6f\n", jday, jmon, jyear, hms(jut, BIT_LZEROES), attr[0], tret[0]);
-                            sout += C.sprintf("\t%d min %4.2f sec\t", (int)dt, (dt % 1.0) * 60);
+                            sout += C.sprintf("\t%d min %4.2f sec\t", C.ToInt32(dt), (dt % 1.0) * 60);
                             if ((eclflag & SwissEph.SE_ECL_1ST_VISIBLE) != 0)
                                 sout += C.sprintf("%s ", hms_from_tjd(tret[1]));
                             else
@@ -4612,7 +4612,7 @@ namespace SweTest
                         if (Math.Abs(tret[0] - t_ut) > 2)
                             do_printf("when_loc returns wrong date\n");
                         dt = (tret[3] - tret[2]) * 24 * 60;
-                        sout += C.sprintf("\t%d min %4.2f sec", (int)dt, C.fmod(dt, 1) * 60);
+                        sout += C.sprintf("\t%d min %4.2f sec", C.ToInt32(dt), C.fmod(dt, 1) * 60);
                     }
                     sout += ("\n");
                     if (have_gap_parameter) insert_gap_string_for_tabs(ref sout, gap);
@@ -5021,15 +5021,15 @@ namespace SweTest
             double t2;
             //t2 = jut + 0.5 / 3600000.0; // rounding to millisec
             t2 = jut + 0.5 / 3600000.0; // rounding to millisec
-            stimeout = C.sprintf("  % 2d:", (int)t2); // hour
-            t2 = (t2 - (Int32)t2) * 60;
-            stimeout += C.sprintf("%02d:", (int)t2);  // min
-            t2 = (t2 - (Int32)t2) * 60;
-            stimeout += C.sprintf("%02d", (int)t2); // sec
-            t2 = (t2 - (Int32)t2) * 1000;
-            if ((Int32)t2 > 0)
+            stimeout = C.sprintf("  % 2d:", C.ToInt32(t2)); // hour
+            t2 = (t2 - C.ToInt32(t2)) * 60;
+            stimeout += C.sprintf("%02d:", C.ToInt32(t2));  // min
+            t2 = (t2 - C.ToInt32(t2)) * 60;
+            stimeout += C.sprintf("%02d", C.ToInt32(t2)); // sec
+            t2 = (t2 - C.ToInt32(t2)) * 1000;
+            if (C.ToInt32(t2) > 0)
             {
-                stimeout += C.sprintf(".%03d", (int)t2); // millisec, if > 0
+                stimeout += C.sprintf(".%03d", C.ToInt32(t2)); // millisec, if > 0
             }
         }
 
