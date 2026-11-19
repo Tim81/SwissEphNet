@@ -5390,7 +5390,9 @@ namespace SwissEphNet.CPort
                 /* MPC number and name; will be analyzed below:
                  * search "asteroid name" */
                 //sp = s.TrimStart();
-                spi = s.IndexOfFirstNot(" 0123456789".ToCharArray());
+                while (spi < s.Length && s[spi] == ' ') spi++;
+                while (spi < s.Length && s[spi] >= '0' && s[spi] <= '9') spi++;
+                spi++;
                 i = spi;
                 sastnam = s.Substring(0, lastnam + i);	// fixed 19-nov-19
                 /* save elements, they are required for swe_plan_pheno() */
