@@ -104,6 +104,7 @@ Read the status line first and the body for how it got there.
 | `C.sprintf` float signs, non-finite values and `%s` culture | closed |
 | A non-seekable `FileProvider` stream broke SWIEPH and `fixstar2` | closed |
 | Double-to-int casts saturate on .NET 9 and later | closed |
+| `ifltype != 0 & (mask) != 0` where the C tests `ifltype & (mask)` | closed |
 
 ## Eight live sites transliterate a C fixed-size buffer as an unbounded C# string
 
@@ -4249,5 +4250,13 @@ remain as recorded under "Do not fix the port".
 
 **Test.** `Tests/SwissEphNet.Tests/FloatToIntConversionTest.cs` (34 cases; 5 failed on net10.0
 before the fix).
+
+**PR.** #49
+
+## `ifltype != 0 & (mask) != 0` where the C tests `ifltype & (mask)`
+
+**Status: closed.** `SweCL.cs` 1655 (`swe_lun_occult_when_glob`) and 3479 (`swe_lun_eclipse_when`) wrote `ifltype != 0 & (mask) != 0`, which C# parses as `(ifltype != 0) & (mask != 0)`, true for any non-zero `ifltype`. The C tests the bits (`swecl.c:1629`, `3404`); both are now `(ifltype & (mask)) != 0`.
+
+**Effect.** At 1655 a filter of `SE_ECL_PARTIAL` alone also got `SE_ECL_CENTRAL` added. No difference was observable: 153 rows over six filters, four planets and stars from 2020 are identical before and after and match the C, so no test was added.
 
 **PR.** #49

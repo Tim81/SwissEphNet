@@ -812,3 +812,12 @@ b"} where the C gives {"a", ""}); that one is fixed
     Tests/SwissEphNet.Tests/AsteroidHeaderDamageTest.cs.
     SwissEphNet/CPort: 49695 -> 49695 lines, kr_braces (1253) and trailing_ws (1258) unchanged,
     sha256 E3A59F84... -> 0D47E6CB....
+46. PR #49 2026-11-19: Correction of a divergence from the C: SweCL.cs swe_lun_occult_when_glob (1655) and
+    swe_lun_eclipse_when (3479). C# precedence made `ifltype != 0 & (mask) != 0` mean
+    `(ifltype != 0) & (mask != 0)`, true for any non-zero ifltype; both are now the C's bitwise test
+    `(ifltype & (mask)) != 0` (swecl.c:1629 and 3404). A filter of SE_ECL_PARTIAL alone had
+    SE_ECL_NONCENTRAL | SE_ECL_CENTRAL added at 1655, where the C adds only SE_ECL_NONCENTRAL. No
+    observable difference found: 153 rows of swe_lun_occult_when_glob over six filters, four
+    planets and stars, from 2020, are identical before and after and match the C. No test added.
+    SwissEphNet/CPort: 49695 -> 49695 lines, kr_braces (1253) and trailing_ws (1258) unchanged,
+    sha256 0D47E6CB... -> 80319BF4....

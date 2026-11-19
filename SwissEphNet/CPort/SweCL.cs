@@ -1652,7 +1652,7 @@ namespace SwissEphNet.CPort
                 if (ipl == SwissEph.SE_SUN)
                     ifltype |= (SwissEph.SE_ECL_ANNULAR | SwissEph.SE_ECL_ANNULAR_TOTAL);
             }
-            if (ifltype != 0 & (SwissEph.SE_ECL_TOTAL | SwissEph.SE_ECL_ANNULAR | SwissEph.SE_ECL_ANNULAR_TOTAL) != 0)
+            if ((ifltype & (SwissEph.SE_ECL_TOTAL | SwissEph.SE_ECL_ANNULAR | SwissEph.SE_ECL_ANNULAR_TOTAL)) != 0)
                 ifltype |= (SwissEph.SE_ECL_NONCENTRAL | SwissEph.SE_ECL_CENTRAL);
             if ((ifltype & SwissEph.SE_ECL_PARTIAL)!=0)
                 ifltype |= SwissEph.SE_ECL_NONCENTRAL;
@@ -3476,7 +3476,7 @@ namespace SwissEphNet.CPort
             iflag = SwissEph.SEFLG_EQUATORIAL | ifl;
             iflagcart = iflag | SwissEph.SEFLG_XYZ;
             ifltype &= ~(SwissEph.SE_ECL_CENTRAL | SwissEph.SE_ECL_NONCENTRAL);
-            if (ifltype!=0 & (SwissEph.SE_ECL_ANNULAR | SwissEph.SE_ECL_ANNULAR_TOTAL)!=0)
+            if ((ifltype & (SwissEph.SE_ECL_ANNULAR | SwissEph.SE_ECL_ANNULAR_TOTAL))!=0)
             {
                 ifltype &= ~(SwissEph.SE_ECL_ANNULAR | SwissEph.SE_ECL_ANNULAR_TOTAL);
                 if (ifltype == 0)
