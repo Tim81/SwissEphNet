@@ -4074,7 +4074,7 @@ from the name's end, were read five columns too far.
 **Test.** `Tests/SwissEphNet.Tests/AsteroidDigitNameTest.cs` (resource
 `se00005s_digitname.se1`).
 
-**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+**PR.** #49
 
 ## `plaus_iflag` erased the sidereal Moshier-fallback warning in `serr`
 
@@ -4094,7 +4094,7 @@ regenerated with a deviation note (baseline entry 28).
 
 **Test.** `Tests/SwissEphNet.Tests/SiderealKeepsWarningTest.cs`.
 
-**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+**PR.** #49
 
 ## A planet file opened as an asteroid file threw `ArgumentOutOfRangeException`
 
@@ -4110,7 +4110,7 @@ internal `CFile.LastLineEndedCrLf` is new; the public API is unchanged.
 
 **Test.** `Tests/SwissEphNet.Tests/AsteroidHeaderDamageTest.cs`.
 
-**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+**PR.** #49
 
 ## `read_elements_file` rejected a trailing comma that `swi_cutstr` accepts
 
@@ -4123,7 +4123,7 @@ returns rc 4. The port now calls `swi_cutstr`.
 
 **Test.** `Tests/SwissEphNet.Tests/ElementsLineCutstrTest.cs`.
 
-**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+**PR.** #49
 
 ## `Char.IsDigit` and `Char.IsLetterOrDigit` where the C uses `isdigit` and `isalnum`
 
@@ -4137,7 +4137,7 @@ returns rc 4. The port now calls `swi_cutstr`.
 
 **Test.** `Tests/SwissEphNet.Tests/AsciiCtypeTest.cs`.
 
-**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+**PR.** #49
 
 ## swetest `strcat` slips: `-lunecl -local` and global `-solecl`
 
@@ -4151,7 +4151,7 @@ assigned.
   solar` for non-central total and annular eclipses. `-b1.1.2043 -solecl -n2` now prints `total
   non-central solar` and `annular non-central solar`, as the C does.
 
-**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+**PR.** #49
 
 ## `SweHel` trace blocks guarded by `#if DEBUG`, not `SWEHEL_DEBUG`
 
@@ -4163,7 +4163,7 @@ never defines, so a Debug build of the port compiled trace code the C never buil
 `SWEHEL_DEBUG`. The third block's loops also used `i` where the C's block-local variable `ii` is
 meant (`ii < 6`, `ii < 4`, `ii, datm[ii]`; `swehel.c:1515-1523`).
 
-**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+**PR.** #49
 
 ## `FormatToDegreeMinuteSecond` rounding, carry and sign
 
@@ -4183,7 +4183,7 @@ and 0.
 
 `D2` still truncates seconds (98.7654321 gives `55"`).
 
-**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+**PR.** #49
 
 ## `C.sprintf` float signs, non-finite values and `%s` culture
 
@@ -4198,7 +4198,7 @@ and 0.
 - `%s` of a non-string argument is formatted with the invariant culture; `1.5` printed `1,5`
   under nl-NL.
 
-**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+**PR.** #49
 
 ## A non-seekable `FileProvider` stream broke SWIEPH and `fixstar2`
 
@@ -4211,7 +4211,7 @@ file layer seeks. Such streams are now copied into a `MemoryStream` first.
 **Test.** `Tests/SwissEphNet.Tests/NonSeekableProviderTest.cs`: results are bit-identical to a
 plain provider.
 
-**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+**PR.** #49
 
 ## Double-to-int casts saturate on .NET 9 and later
 
@@ -4244,4 +4244,4 @@ remain as recorded under "Do not fix the port".
 **Test.** `Tests/SwissEphNet.Tests/FloatToIntConversionTest.cs` (34 cases; 5 failed on net10.0
 before the fix).
 
-**PR.** (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md)
+**PR.** #49
