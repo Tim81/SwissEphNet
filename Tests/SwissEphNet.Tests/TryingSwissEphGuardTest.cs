@@ -18,6 +18,9 @@ namespace SwissEphNet.Tests
     /// swe_fixstar2_ut("Aldebaran", 2451546, SEFLG_JPLEPH, ...), rc 1, the same serr, issued by main_planet_bary),
     /// and with P = "C:\" + 150 x 'q' + ";" + the ephe directory: serr is the same file-not-found text, cut at 255
     /// characters, with no suffix.
+    /// The lunar_osc_elem route (sweph.c:5559-5560; SE_TRUE_NODE and SE_OSCU_APOG with SEFLG_JPLEPH) gives the
+    /// same: rc 2, 133 characters ending in the suffix with the ephe directory alone, and with the long path
+    /// (P = "C:/" + 150 x 'q' + ";" + the ephe directory) rc 2, 255 characters, no suffix.
     /// </summary>
     public class TryingSwissEphGuardTest
     {
@@ -59,6 +62,8 @@ namespace SwissEphNet.Tests
             { SwissEph.SE_MOON, SwissEph.SEFLG_JPLEPH },                                   // sweph.c:709
             { SwissEph.SE_MERCURY, SwissEph.SEFLG_JPLEPH },                                // sweph.c:1708
             { SwissEph.SE_MERCURY, SwissEph.SEFLG_JPLEPH | SwissEph.SEFLG_HELCTR },        // sweph.c:1708
+            { SwissEph.SE_TRUE_NODE, SwissEph.SEFLG_JPLEPH },                              // sweph.c:5559, lunar_osc_elem
+            { SwissEph.SE_OSCU_APOG, SwissEph.SEFLG_JPLEPH },                              // sweph.c:5559, lunar_osc_elem
         };
 
         [EpheTheory]

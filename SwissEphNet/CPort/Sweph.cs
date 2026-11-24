@@ -6564,7 +6564,8 @@ namespace SwissEphNet.CPort
                             iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_SWIEPH;
                             epheflag = SwissEph.SEFLG_SWIEPH;
                             //if (serr != NULL && strlen(serr) + 30 < AS_MAXCH)
-                            serr += " \ntrying Swiss Eph; ";
+                            if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                serr += " \ntrying Swiss Eph; ";
                             break;
                         }
                         else if (retc == BEYOND_EPH_LIMITS)

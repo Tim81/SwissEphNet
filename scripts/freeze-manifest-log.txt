@@ -930,18 +930,18 @@ b"} where the C gives {"a", ""}); that one is fixed
     of divergences from the C (e308765d), all in Sweph.cs, found in review. Only serr text and
     object identity change; numeric results are identical.
     (a) The " \ntrying Swiss Eph; " suffix was appended to serr unconditionally. The C appends it
-    only under "serr != NULL && strlen(serr) + 30 < AS_MAXCH": sweph.c:709-710 (Sweph.cs:843, the
-    Moon), :803-804 (barycentric Sun, see (c)), :1708-1709 (:2032), :1732-1733 (:2062) and
-    :1836-1837 (:2183, main_planet_bary). The port now uses the same idiom as its " \nusing Moshier
+    only under "serr != NULL && strlen(serr) + 30 < AS_MAXCH": sweph.c:709-710 (Sweph.cs:845, the
+    Moon), :803-804 (barycentric Sun, see (c)), :1708-1709 (:2055), :1732-1733 (:2087) and
+    :1836-1837 (:2210, main_planet_bary). The port now uses the same idiom as its " \nusing Moshier
     Eph; " sites, "(serr == null ? 0 : serr.Length) + 30 < 256" (AS_MAXCH is 256, a null serr counts
     as length 0). MSVC-built C, swe_set_ephe_path("C:\" + 150 x 'q' + ";" + <submodule ephe>),
     swe_set_jpl_file("missing.eph"), second swe_calc(2451546, ipl, SEFLG_JPLEPH, ...) with ipl SE_MOON,
     SE_SUN, SE_MERCURY (also with SEFLG_HELCTR) and swe_fixstar2_ut("Aldebaran", 2451546,
     SEFLG_JPLEPH, ...): serr is the file-not-found text cut at 255 characters with no suffix; the port
     appended the suffix to it. With the short path (<submodule ephe>) both give "...' \ntrying Swiss
-    Eph; ". Tests: TryingSwissEphGuardTest; with the guard removed, the sites at :843, :2032 and :2183
-    each fail it. The sites at :2062 (sweph.c:1732, app_pos_etc_plan returning NOT_AVAILABLE after
-    jplplan succeeded) and :963 (sweph.c:803) have no input that reaches them and are not tested.
+    Eph; ". Tests: TryingSwissEphGuardTest; with the guard removed, the sites at :845, :2055 and :2210
+    each fail it. The sites at :2087 (sweph.c:1732, app_pos_etc_plan returning NOT_AVAILABLE after
+    jplplan succeeded) and :967 (sweph.c:803) have no input that reaches them and are not tested.
     (b) do_asteroid (sweph.c:1115-1118, 1140-1143; Sweph.cs:1337, :1365). The C copies serr to serr2
     and clears serr whenever serr != NULL; the port copied only when serr was not blank, so a second
     pass through do_asteroid (sweph.c:1135) could keep the first pass's serr2. Now the copy is
@@ -950,7 +950,7 @@ b"} where the C gives {"a", ""}); that one is fixed
     serr2), which cuts serr2 to 251 characters; the port had no such cut and now does. Not tested:
     the first change shows only when serr is blank but not empty at the second pass, and no test
     for the cut was added.
-    (c) Barycentric Sun, jpl NOT_AVAILABLE (sweph.c:801-806; Sweph.cs:963): the port wrote
+    (c) Barycentric Sun, jpl NOT_AVAILABLE (sweph.c:801-806; Sweph.cs:967): the port wrote
     "serr = (serr ?? "") + serr", repeating serr; the C appends " \ntrying Swiss Eph; " under the
     length check of (a). Mirrored; not tested (no input found that reaches it).
     (d) swe_close (sweph.c:1315-1319, 1336-1337) clears swed.oec, oec2000, nut, nut2000, nutv, topd
@@ -962,3 +962,18 @@ b"} where the C gives {"a", ""}); that one is fixed
     with each of the three replaced again (the five epsilon/nut objects, topd, sidd) it fails.
     SwissEphNet/CPort: 50273 -> 50300 lines, kr_braces (1261) and trailing_ws (1280) unchanged,
     sha256 152ECAB6... -> E8B45D48....
+53. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-24: A sixth
+    " \ntrying Swiss Eph; " append site, missed by entry 52's sweep, now carries the C's length
+    guard. lunar_osc_elem's JPL "retc == NOT_AVAILABLE" branch (sweph.c:5559-5560, Sweph.cs:6567;
+    reached by SE_TRUE_NODE and SE_OSCU_APOG with SEFLG_JPLEPH) appended the suffix to serr
+    unconditionally; the C appends it only under "serr != NULL && strlen(serr) + 30 < AS_MAXCH".
+    The port now uses the same idiom as the five sites of entry 52 (a), "(serr == null ? 0 :
+    serr.Length) + 30 < 256". Only serr text changes; numeric results are identical. MSVC-built C,
+    swe_set_ephe_path("C:/" + 150 x 'q' + ";" + <submodule ephe>), swe_set_jpl_file("missing.eph"),
+    second swe_calc(2451546, SE_TRUE_NODE or SE_OSCU_APOG, SEFLG_JPLEPH, ...): rc 2, serr length 255,
+    no suffix; the port appended it (about 275 characters). With the short path (<submodule ephe>)
+    both give rc 2, 133 characters, ending in " \ntrying Swiss Eph; ". Tests:
+    TryingSwissEphGuardTest (SE_TRUE_NODE and SE_OSCU_APOG added to the short- and long-path
+    theories); with the guard removed, both long-path cases fail.
+    SwissEphNet/CPort: 50300 -> 50301 lines, kr_braces (1261) and trailing_ws (1280) unchanged,
+    sha256 E8B45D48... -> 44FAE1FA....

@@ -609,8 +609,8 @@ queue shows (magnitudes ranging from roughly 1.2e-11 relative for the bulk of th
 seconds of crossing-time error, up to 0.42% relative for one delta-T iteration). So the 157 era
 rows are correctly filed as `DATA-MISSING`: the data genuinely is not shipped, and having it would
 not have made them pass regardless. The probe's own env-var opt-ins
-(`SWISSEPH_CONFORMANCE_INCLUDE_JPL`, `SWISSEPH_CONFORMANCE_INCLUDE_MOONS`) are real, standing
-features of `Tests/SwissEphNet.Conformance.Tests`; the era-file opt-in it used
+(`SWISSEPH_CONFORMANCE_INCLUDE_JPL`, `SWISSEPH_CONFORMANCE_INCLUDE_MOONS`) were real features
+of `Tests/SwissEphNet.Conformance.Tests` until the skips were lifted at v2.10.04, when they were removed; the era-file opt-in it used
 (`SWISSEPH_CONFORMANCE_INCLUDE_ERA`) was a temporary, reverted probe, not a shipped feature.
 
 **46 rows moved from `VALUE-MISMATCH` to `DATA-MISSING` in the triage described in section 3a

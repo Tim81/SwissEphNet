@@ -336,7 +336,7 @@ public sealed class ConformanceReport
     /// and <see cref="TestCaseSummary"/> -- instead of by the 18,919 individual iteration
     /// rows <see cref="FormatSummary"/> lists (up to the first 50 per section). Splits
     /// actionable testcases (at least one VALUE-MISMATCH/ERROR: real porting work) from
-    /// parked ones (every non-passing iteration is NOT-IMPLEMENTED/DATA-MISSING/UNREPRODUCIBLE:
+    /// parked ones (every non-passing iteration is NOT-IMPLEMENTED/UNREPRODUCIBLE:
     /// blocked on something other than the port's logic) so a red oracle run is legible
     /// rather than alarming.
     /// </summary>
