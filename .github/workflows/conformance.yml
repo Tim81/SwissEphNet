@@ -155,6 +155,26 @@ jobs:
           --blame-hang-timeout 15min
           --blame-hang-dump-type mini
 
+      # Tests/SwissEphNet.Tests' ephemeris-file tests (FileBoundaryHistoryTest,
+      # HeliocentricLightTimeTest, CalcMessagesTest) skip when external/swisseph/ephe is absent, which
+      # is the case in ci.yml and release.yml (no submodule there), so this is the only job that runs
+      # them. SWISSEPH_REQUIRE_EPHE=1 turns their skip into a failure: a wrong ephe path must not
+      # report green with the tests skipped. Bit-exact on Windows x64, within a tolerance elsewhere
+      # (V21004TestSupport.cs, CReference).
+      - name: Run ephemeris-file unit tests (files required)
+        shell: pwsh
+        env:
+          SWISSEPH_REQUIRE_EPHE: "1"
+          SWISSEPH_CONFORMANCE_EPHE: ${{ github.workspace }}/external/swisseph/ephe
+        run: >
+          dotnet test Tests/SwissEphNet.Tests/SwissEphNet.Tests.csproj -p:TestTfmsInParallel=false
+          -c Release
+          --filter "FullyQualifiedName~FileBoundaryHistoryTest|FullyQualifiedName~HeliocentricLightTimeTest|FullyQualifiedName~CalcMessagesTest"
+          --logger "console;verbosity=detailed"
+          --blame-hang
+          --blame-hang-timeout 5min
+          --blame-hang-dump-type mini
+
       - name: Upload conformance report
         uses: actions/upload-artifact@v7
         if: always()
@@ -251,6 +271,27 @@ jobs:
           --results-directory TestResults
           --blame-hang
           --blame-hang-timeout 15min
+          --blame-hang-dump-type mini
+
+      # Tests/SwissEphNet.Tests' ephemeris-file tests (FileBoundaryHistoryTest,
+      # HeliocentricLightTimeTest, CalcMessagesTest) skip when external/swisseph/ephe is absent, which
+      # is the case in ci.yml and release.yml (no submodule there), so this is the only job that runs
+      # them. SWISSEPH_REQUIRE_EPHE=1 turns their skip into a failure: a wrong ephe path must not
+      # report green with the tests skipped. Bit-exact on Windows x64, within a tolerance elsewhere
+      # (V21004TestSupport.cs, CReference).
+      - name: Run ephemeris-file unit tests (files required; never fails the job, as above)
+        shell: pwsh
+        continue-on-error: true
+        env:
+          SWISSEPH_REQUIRE_EPHE: "1"
+          SWISSEPH_CONFORMANCE_EPHE: ${{ github.workspace }}/external/swisseph/ephe
+        run: >
+          dotnet test Tests/SwissEphNet.Tests/SwissEphNet.Tests.csproj -p:TestTfmsInParallel=false
+          -c Release
+          --filter "FullyQualifiedName~FileBoundaryHistoryTest|FullyQualifiedName~HeliocentricLightTimeTest|FullyQualifiedName~CalcMessagesTest"
+          --logger "console;verbosity=detailed"
+          --blame-hang
+          --blame-hang-timeout 5min
           --blame-hang-dump-type mini
 
       - name: Upload conformance report

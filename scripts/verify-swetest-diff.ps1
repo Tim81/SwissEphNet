@@ -17,8 +17,9 @@
     external/.c-reference/swetest.exe (Astrodienst's own C, MSVC-built by Tools/CReference/build-
     c.ps1, linked against 2.10.03) and Programs/SweTest (this port, built here), and diffs their
     combined stdout+stderr line by line. Differences are expected, not a failure by themselves --
-    Tests/swetest/known-diff.tsv currently carries 16 rows, every one the same documented DIR_GLUE
-    `\` vs `/` path-separator choice (docs/known-issues.md), not a version gap: this port now
+    Tests/swetest/known-diff.tsv currently carries 17 rows: 16 are the same documented DIR_GLUE
+    `\` vs `/` path-separator choice (docs/known-issues.md), and one (FMT_MULTI|6) is the MSVC CRT
+    printing a NaN as `-nan(ind)` where this port prints `nan`. None is a version gap: this port now
     tracks the same pinned C commit (v2.10.04, e308765d) swetest.exe is built from, and the PORT-VERSION
     diff category has zero rows here (see Tools/OracleVerify/DiffCategory.cs). What gates is
     Tests/swetest/known-diff.tsv

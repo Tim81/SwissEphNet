@@ -24,7 +24,9 @@ namespace SwissEphNet.Tests
 
         private static FieldInfo[] Fields(Type t) => t.GetFields(AllInstance);
 
-        // Reference types with no parameterless constructor are left as they are; the test names them.
+        // Reference types with no parameterless constructor (CFile) are dirtied with an uninitialised
+        // instance, so a field of such a type that ClearInPlace forgets to null is still caught; the test
+        // names them.
         private static readonly List<string> NotDirtied = new List<string>();
 
         private static object Dirty(object value, Type type, string path)
@@ -65,7 +67,7 @@ namespace SwissEphNet.Tests
                 if (type.GetConstructor(Type.EmptyTypes) == null)
                 {
                     NotDirtied.Add(path);
-                    return null;
+                    return System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(type);
                 }
                 value = Activator.CreateInstance(type);
             }
@@ -138,6 +140,11 @@ namespace SwissEphNet.Tests
             foreach (var f in Fields(type))
                 f.SetValue(dirty, Dirty(f.GetValue(dirty), f.FieldType, f.Name));
 
+            // fixfp and fidat[].fptr are CFile references: they must be non-null now, and null after the clear.
+            Assert.NotNull(type.GetField("fixfp").GetValue(dirty));
+            foreach (var fd in (Array)type.GetProperty("fidat").GetValue(dirty))
+                Assert.NotNull(fd.GetType().GetField("fptr").GetValue(fd));
+
             // The dirtying must really have changed things, or the comparison below proves nothing.
             Assert.ThrowsAny<Exception>(() => AssertSame(fresh, dirty, "swe_data", 0));
 
@@ -157,6 +164,9 @@ namespace SwissEphNet.Tests
             clear.Invoke(dirty, null);
 
             AssertSame(fresh, dirty, "swe_data", 0);
+            Assert.Null(type.GetField("fixfp").GetValue(dirty));
+            foreach (var fd in (Array)type.GetProperty("fidat").GetValue(dirty))
+                Assert.Null(fd.GetType().GetField("fptr").GetValue(fd));
 
             var after = new List<(string, object)>();
             Identities(dirty, "swed", after, 0);
@@ -168,7 +178,7 @@ namespace SwissEphNet.Tests
                 Assert.True(ReferenceEquals(before[i].Item2, after[i].Item2), before[i].Item1 + " was replaced");
             }
 
-            // Whatever could not be dirtied (no parameterless constructor) is named here, so a new field
+            // Whatever needed an uninitialised instance (no parameterless constructor) is named here, so a new field
             // of such a type shows up as a failure instead of going unguarded.
             var distinct = new SortedSet<string>(NotDirtied, StringComparer.Ordinal);
             Assert.Equal(new[] { "<fidat>k__BackingField[].fptr", "fixfp" }, new List<string>(distinct).ToArray());

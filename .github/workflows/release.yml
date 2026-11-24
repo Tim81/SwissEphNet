@@ -35,8 +35,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # No submodule fetch: nothing in this job reads external/swisseph.
-      # Tests/SwissEphNet.Tests uses embedded fixtures for exactly that reason
-      # (see PlaDiamCoverageTest.cs), and the library itself vendors no C.
+      # Most of Tests/SwissEphNet.Tests uses embedded fixtures for exactly that reason (see
+      # PlaDiamCoverageTest.cs); the ephemeris-file tests (FileBoundaryHistoryTest,
+      # HeliocentricLightTimeTest, CalcMessagesTest.JplHorWithSwissEphemeris) skip here for want of
+      # the files, and conformance.yml runs them with the files fetched and SWISSEPH_REQUIRE_EPHE=1.
+      # The library itself vendors no C.
       - uses: actions/checkout@v7
 
       - uses: actions/setup-dotnet@v6

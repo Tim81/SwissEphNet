@@ -20,11 +20,33 @@ namespace SwissEphNet.Tests
         /// <summary>The ephe directory, or null if the submodule is not checked out.</summary>
         public static string Dir { get; } = Locate();
 
+        /// <summary>
+        /// True when SWISSEPH_REQUIRE_EPHE is 1/true: the Ephe* attributes then never skip, so a missing
+        /// ephemeris directory fails the test instead of silently skipping it (conformance.yml sets this).
+        /// </summary>
+        public static bool Required
+        {
+            get
+            {
+                string v = Environment.GetEnvironmentVariable("SWISSEPH_REQUIRE_EPHE");
+                return v == "1" || string.Equals(v, "true", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
         public static string SkipReason =>
-            Dir == null
+            Dir == null && !Required
                 ? "external/swisseph/ephe (sepl_12/18, semo_12/18, seas_18, seorbel.txt) not found; " +
                   "run 'git submodule update --init external/swisseph' or set SWISSEPH_CONFORMANCE_EPHE"
                 : null;
+
+        /// <summary>Called by the tests' ephemeris users: fails loudly when the files are required but absent.</summary>
+        public static void EnsureAvailable()
+        {
+            if (Dir == null && Required)
+                throw new InvalidOperationException(
+                    "SWISSEPH_REQUIRE_EPHE is set but the ephemeris files were not found " +
+                    "(external/swisseph/ephe or SWISSEPH_CONFORMANCE_EPHE): sepl_12/18, semo_12/18, seas_18, seorbel.txt");
+        }
 
         private static string Locate()
         {
@@ -53,6 +75,7 @@ namespace SwissEphNet.Tests
         /// <summary>A SwissEph reading the ephemeris files straight from <see cref="Dir"/>.</summary>
         public static SwissEph Open()
         {
+            EnsureAvailable();
             var swe = new SwissEph();
             swe.FileProvider = new DelegateFileProvider(path =>
                 File.Exists(path) ? new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read) : null);
