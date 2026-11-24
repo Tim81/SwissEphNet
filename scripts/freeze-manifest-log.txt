@@ -869,3 +869,23 @@ b"} where the C gives {"a", ""}); that one is fixed
     #ifdef USE_DLL hunk (ephepath_dll, the swe_get_named_ast_list() search).
     Programs/SweTest/Program.cs: 5185 -> 5210 lines, kr_braces (64) and trailing_ws (69) unchanged,
     sha256 0D3F0D21... -> 7A36212A....
+50. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-24: Correction of a
+    divergence from the C: swed was replaced, where the C clears it in place. sweph.c:1257 (at
+    e308765d) does memset(&swed, 0, sizeof(struct swe_data)) in swi_init_swed_if_start, and :1285
+    does memset(&swed.astro_models, 0, SEI_NMODELS * sizeof(int32)) in swi_close_keep_topo_etc; the
+    port assigned a new swe_data (Sweph.cs:1501) and a new int[] (Sweph.cs:1530). Anything holding
+    swed.astro_models across the first initialisation was left pointing at the discarded array:
+    swe_get_astro_models("SE2.06", ..., SEFLG_MOSEPH) on a fresh instance (it takes the array at
+    swephlib.c:4413 before swe_set_astro_models initialises swed) printed the default models, "-amod0,..."
+    and model 6's Delta T text, where the MSVC-built C prints "-amod5,0,0,0,0,0,0,0," and
+    "Stephenson/Morrison/Hohenkerk 2016 (before 1955)"; the second call on the same instance was
+    right. New swe_data.ClearInPlace() (Sweph.h.cs, after Reset) returns the object to the state of
+    a new swe_data without replacing any array or nested object (Clear() on each fidat, pldat,
+    nddat and savedat element, Array.Clear on astro_models, field-wise zeroing of oec, oec2000, nut,
+    nut2000, nutv and topd); the init now calls it, and swi_close_keep_topo_etc clears astro_models
+    with Array.Clear. The other reallocations in swi_close_keep_topo_etc (oec, nut, ...) are left:
+    no code holds them across a close. Tests: AstroModelsStringTest.GetAstroModels_MatchesTheC
+    (SE2.06), AstroModelsStringTest.Se206_OnAFreshInstance_AndAgainOnTheSameInstance_MatchTheC,
+    SweDataClearInPlaceTest.
+    SwissEphNet/CPort: 50168 -> 50239 lines, kr_braces (1261) and trailing_ws (1280) unchanged,
+    sha256 F4E85840... -> EEFA9FBA....

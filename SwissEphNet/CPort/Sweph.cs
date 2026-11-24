@@ -1498,7 +1498,10 @@ namespace SwissEphNet.CPort
             /* initialisation of swed, when called first time from */
             if (!swed.swed_is_initialised)
             {
-                swed = new swe_data();
+                //memset((void *) &swed, 0, sizeof(struct swe_data));
+                // sweph.c:1257 (e308765d) clears swed in place; replacing the object left
+                // swe_get_astro_models' pmodel on the discarded copy on a fresh instance.
+                swed.ClearInPlace();
                 swed.ephepath = SwissEph.DefaultEphePath;
                 swed.jplfnam = SwissEph.SE_FNAME_DFT;
                 SE.swe_set_tid_acc(SwissEph.SE_TIDAL_AUTOMATIC);
@@ -1527,7 +1530,9 @@ namespace SwissEphNet.CPort
             swed.nut = new nut();
             swed.nut2000 = new nut();
             swed.nutv = new nut();
-            swed.astro_models = new Int32[SEI_NMODELS];
+            //memset((void *) &swed.astro_models, 0, SEI_NMODELS * sizeof(int32));
+            // sweph.c:1285 (e308765d) clears astro_models in place.
+            Array.Clear(swed.astro_models, 0, SEI_NMODELS);
             /* close JPL file */
             SE.SweJPL.swi_close_jpl_file();
             swed.jpl_file_is_open = false;

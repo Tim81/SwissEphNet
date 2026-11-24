@@ -870,6 +870,72 @@ namespace SwissEphNet.CPort
                 nut2000 = new nut();
                 nutv = new nut();
             }
+            /// <summary>
+            /// The port's counterpart of sweph.c:1257 (e308765d),
+            /// <c>memset((void *) &amp;swed, 0, sizeof(struct swe_data))</c>: brings every field back to the
+            /// state <c>new swe_data()</c> produces, clearing arrays and nested objects in place instead of
+            /// replacing them, so a reference taken before the clear (swe_get_astro_models' pmodel) stays
+            /// valid, as a pointer into the C struct does.
+            /// </summary>
+            public void ClearInPlace()
+            {
+                ephe_path_is_set = false;
+                jpl_file_is_open = false;
+                fixfp = null;
+                ephepath = String.Empty;
+                jplfnam = String.Empty;
+                jpldenum = 0;
+                last_epheflag = 0;
+                geopos_is_set = false;
+                ayana_is_set = false;
+                is_old_starfile = false;
+                eop_tjd_beg = 0;
+                eop_tjd_beg_horizons = 0;
+                eop_tjd_end = 0;
+                eop_tjd_end_add = 0;
+                eop_dpsi_loaded = 0;
+                tid_acc = 0;
+                is_tid_acc_manual = false;
+                init_dt_done = false;
+                swed_is_initialised = false;
+                delta_t_userdef_is_set = false;
+                delta_t_userdef = 0;
+                ast_G = 0;
+                ast_H = 0;
+                ast_diam = 0;
+                astelem = null;
+                i_saved_planet_name = 0;
+                saved_planet_name = null;
+                dpsi = default(CPointer<double>);
+                deps = default(CPointer<double>);
+                timeout = 0;
+                Array.Clear(astro_models, 0, astro_models.Length);
+                do_interpolate_nut = false;
+                interpol = default(interpol);
+                foreach (var fd in fidat) fd.Clear();
+                gcdat = default(gen_const);
+                foreach (var pd in pldat) pd.Clear();
+                foreach (var pd in nddat) pd.Clear();
+                foreach (var sp in savedat) sp.Clear();
+                foreach (var e in new[] { oec, oec2000 })
+                {
+                    e.teps = 0; e.eps = 0; e.seps = 0; e.ceps = 0;
+                }
+                foreach (var n in new[] { nut, nut2000, nutv })
+                {
+                    n.tnut = 0; n.snut = 0; n.cnut = 0;
+                    Array.Clear(n.nutlo, 0, n.nutlo.Length);
+                    Array.Clear(n.matrix, 0, n.matrix.Length);
+                }
+                topd.geolon = 0; topd.geolat = 0; topd.geoalt = 0;
+                topd.teval = 0; topd.tjd_ut = 0;
+                Array.Clear(topd.xobs, 0, topd.xobs.Length);
+                sidd = default(sid_data);
+                n_fixstars_real = 0;
+                n_fixstars_named = 0;
+                n_fixstars_records = 0;
+                fixed_stars = null;
+            }
             public bool ephe_path_is_set;
             public bool /*short*/ jpl_file_is_open;
             public CFile fixfp;/* fixed stars file pointer */
