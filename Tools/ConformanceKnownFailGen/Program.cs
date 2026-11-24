@@ -6,6 +6,7 @@ using SwissEphNet.Conformance.Tests.KnownFail;
 
 // Never invoke this directly -- see scripts/regenerate-known-fail.ps1.
 var outputPath = args.Length > 0 ? args[0] : "known-fail.tsv";
+var pinsPath = args.Length > 1 ? args[1] : "known-fail-pins.tsv";
 
 Console.WriteLine("Running the full conformance corpus (this dispatches all 18,919 iterations)...");
 var startedAt = DateTime.UtcNow;
@@ -46,7 +47,8 @@ foreach (var r in results)
 }
 
 KnownFailList.Save(outputPath, entries);
-Console.WriteLine($"Wrote {entries.Count} known-fail entries to {outputPath}");
+PinList.Save(pinsPath, PinList.FromResults(results, RepoLocator.EpheDir));
+Console.WriteLine($"Wrote {entries.Count} known-fail entries to {outputPath} and their VALUE-MISMATCH field pins to {pinsPath}");
 
 Console.WriteLine();
 Console.WriteLine("By suite / category:");

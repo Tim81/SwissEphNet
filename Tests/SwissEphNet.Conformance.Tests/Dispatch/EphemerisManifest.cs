@@ -14,7 +14,7 @@ namespace SwissEphNet.Conformance.Tests.Dispatch;
 /// Exists because "no fewer" alone is not enough: a plain, non-sparse
 /// <c>git submodule update --init external/swisseph</c> pulls every era file this
 /// upstream ships (378 MB, not the declared ~4.2 MB core set), and several iterations
-/// (suite 5 testcase 3 among them -- see <see cref="EphemerisFileResolver.NeedsEraFileWeDoNotShip"/>)
+/// (suite 5 testcase 3 iteration 6 among them: its date needs an era file only the full tree has)
 /// only pass because a file the manifest does not declare happens to be present. Running
 /// the oracle, or worse, regenerating <c>known-fail.tsv</c>, against that tree produces a
 /// list that looks right locally and is wrong for CI and every other contributor -- exactly

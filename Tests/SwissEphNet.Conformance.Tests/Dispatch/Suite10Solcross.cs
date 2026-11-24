@@ -22,19 +22,10 @@ internal sealed class Suite10Solcross
         var iephe = f.GetInt("iephe");
         var jd = f.GetDouble("jd");
 
-        // Every testcase in this suite loops swe_calc(_ut) on dates that walk arbitrarily
-        // far from the starting jd while searching for a crossing, so the era-file gap
-        // documented in EphemerisFileResolver.NeedsEraFileWeDoNotShip (years outside
-        // 1200-2399 need an era file this repo's 8-file core set does not ship) applies to
-        // the whole suite, not just the corpus's own starting jd.
-        if (iephe == SwissEph.SEFLG_SWIEPH && EphemerisFileResolver.NeedsEraFileWeDoNotShip(swe, jd))
-        {
-            return DispatchOutcome.DataMissing(
-                "iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files " +
-                "(sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to " +
-                "Moshier internally and reports \"using Moshier eph.\" in serr, which the reference run " +
-                "(built against the full file set) does not.");
-        }
+        // No era-file skip: every testcase in this suite loops swe_calc(_ut) on dates that walk
+        // arbitrarily far from the starting jd, and for an SEFLG_SWIEPH request outside the declared
+        // files' 1200-2399 the library falls back to Moshier exactly as it does under upstream
+        // setest on the same 8 files, which skips nothing here either.
 
         switch (testCaseId)
         {

@@ -82,7 +82,7 @@ Read the status line first and the body for how it got there.
 | `C.atoi` saturation; `C.atof`'s remaining gaps | closed / won't fix |
 | `SwissEph.DefaultFileProvider` widened to a property | record |
 | Eight live buffer-vs-unbounded-string sites | won't fix |
-| What `known-fail.tsv`'s 1,423 rows actually are (2,395 at `6c989727`, 1,635 at `v2.10.04`) | record |
+| What `known-fail.tsv`'s 1,423 rows actually are (2,395 at `6c989727`, 1,634 at `v2.10.04`) | record |
 | Ephemeris file byte order taken from the host, not the file | closed |
 | `heliacal_ut_arc_vis` sized `xaz` for two values, `swe_azalt` writes three | closed |
 | `verify-swetest-diff.ps1` digests depend on the console code page | open |
@@ -3423,7 +3423,7 @@ found stale while explaining it. `known-fail.tsv` had 1,423 rows when this entry
 759 `DATA-MISSING`, 664 `VALUE-MISMATCH`, 0 `NOT-IMPLEMENTED` (confirmed directly, `awk -F'\t'
 'NR>1{print $4}' Tests/conformance/known-fail.tsv | sort | uniq -c`). **It had 2,395 rows**
 after the `6c989727` sync added 972 (759 `DATA-MISSING` and 1,636 `VALUE-MISMATCH`, 664 plus the 972),
-and **has 1,635 since `v2.10.04`** (see the update at the end of this entry). Everything below is the analysis of the original 1,423 and is kept as written;
+and **has 1,634 since `v2.10.04`** (see the update at the end of this entry). Everything below is the analysis of the original 1,423 and is kept as written;
 the 972 are in "setest 6.8/6.9 house speeds" at the end of this file.
 
 **The stale framing.** Several checked-in comments describe this list as reflecting "the port is
@@ -3528,6 +3528,31 @@ version of this update, at 1,591 rows, did neither. Mirroring suite 1's `static 
 pass, and the stricter tolerances added 45 rows (32 `DATA-ENV`, 13 `LIBM-PLATFORM`).
 The `DATA-MISSING` rows were not cross-checked against real C this way. The size of the list
 still measures divergence from a `t.exp` snapshot, not a count of port defects.
+
+**Update 2026-11-24 (later): 1,634 rows, era rows run, accepted rows pinned.** Two harness changes, no
+port change. (1) The harness had skipped every `SEFLG_SWIEPH` iteration dated outside 1200-2399 as
+`DATA-MISSING` (`EphemerisFileResolver.NeedsEraFileWeDoNotShip`, used by suites 5.3 and 10), but
+upstream's `setest` on the same 8 files runs them: the C falls back to Moshier and writes the
+"not found in PATH ... using Moshier eph." text to `serr`. The skip is removed. Of the 157 rows it
+parked, 5.3.6 now passes and 156 (suite 10: 10.1 to 10.4 six each, 10.5 and 10.6 two each, 10.7 and
+10.8 64 each) are `VALUE-MISMATCH` against the official `t.exp`, which was made with every era file.
+`known-fail.tsv` therefore has 1,634 rows: 1,101 `DATA-MISSING` (1,037 JPL, 30 `SEFLG_CENTER_BODY`,
+16 numbered-asteroid, 18 planetary-moon) and 533 `VALUE-MISMATCH`. Triaged with the same method (the C-generated
+`t.exp` from upstream's `setest` at `e308765d` on the 8 files, and the MSVC-built C): 139 `SERR-PATH`
+(the C-generated corpus matches the port except for the directory in `serr`) and 17 `LIBM-PLATFORM`
+(`helio_cross` `jx` off by 1.4e-14 to 4.5e-12 relative against gcc; the MSVC-built C equals the port bit
+for bit), so none is a port defect. 14 of the 139 also fail a runtime self-check that `t.exp` does not
+store (`CHECK_EQUALS_D` of `xcross` against the position at `jx`, or of `xx[1]` against 0, in suite 10.1 to
+10.6); the MSVC-built C
+returns the same `jx`, `rc` and position and fails the same check. The rest of
+the corpus is unchanged. The ledger `value-mismatch-triage.tsv` now has 533 rows: 260 `DATA-ENV`, 230
+`SERR-PATH`, 43 `LIBM-PLATFORM`. Measured against the official `t.exp`, 155 of the 230 `SERR-PATH` rows
+differ in a return code and 75 do not (6 differ only in `serr`), which corrects the 2026-11-24 wording
+above that the return code and every value differ. (2) `Tests/conformance/known-fail-pins.tsv` records the
+port's value for every mismatching field of every `VALUE-MISMATCH` row, and the gate compares each
+against it within `setest`'s own tolerance for that field; before this the gate compared only the
+category and the decade of the worst field, so another field could change unseen. The
+`DATA-MISSING` rows were not cross-checked against real C this way.
 
 ## Ephemeris file byte order was taken from the host, not the file
 

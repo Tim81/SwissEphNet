@@ -1,4 +1,6 @@
+using System;
 using System.IO;
+using System.Linq;
 using SwissEphNet.Conformance.Tests.Corpus;
 using SwissEphNet.Conformance.Tests.KnownFail;
 using Xunit;
@@ -59,7 +61,9 @@ public class ConformanceSuiteTests
         var knownFailPath = Path.Combine(RepoLocator.ConformanceDataDir, "known-fail.tsv");
         var knownFail = KnownFailList.Load(knownFailPath);
 
-        var report = ConformanceReport.Build(results, knownFail);
+        var pins = PinList.Load(Path.Combine(RepoLocator.ConformanceDataDir, "known-fail-pins.tsv"));
+
+        var report = ConformanceReport.Build(results, knownFail, pins, RepoLocator.EpheDir);
 
         var summary = report.FormatSummary();
         System.Console.WriteLine(summary);
@@ -68,6 +72,14 @@ public class ConformanceSuiteTests
             report.Regressions.Count == 0,
             $"{report.Regressions.Count} iteration(s) fail that are not on the known-fail list, or are on it under a " +
             $"different category (a regression either way). See stdout for details, or run the conformance report locally.\n{summary}");
+
+        Assert.True(
+            report.PinViolations.Count == 0,
+            $"{report.PinViolations.Count} accepted VALUE-MISMATCH row(s) no longer reproduce their pinned fields " +
+            $"(known-fail-pins.tsv): a field joined or left the mismatch set, or a value moved beyond setest's tolerance. " +
+            "A real change of behaviour: fix the port, or if it is deliberate, regenerate with scripts/regenerate-known-fail.ps1 -Reason." +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, report.PinViolations.Take(20).Select(v => v.Message)));
 
         Assert.True(
             report.NewlyPassing.Count == 0,

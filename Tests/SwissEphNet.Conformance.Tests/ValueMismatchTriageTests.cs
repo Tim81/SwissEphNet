@@ -29,20 +29,28 @@ namespace SwissEphNet.Conformance.Tests;
 /// values differ from the C-generated corpus beyond the setest tolerance were replayed through the
 /// MSVC-built C at e308765d.
 ///
-/// Result. Every one of the 377 rows is DRIFT: no row is a port defect. 260 rows
+/// Result. Every one of the 533 rows is DRIFT: no row is a port defect. 260 rows
 /// (note DATA-ENV) pass against the C-generated corpus, so the C on the declared data set
 /// reproduces the port and the official t.exp's value comes from a different data environment
-/// (it was generated with de441.eph, the EOP files and the full ephemeris set). 91 rows
+/// (it was generated with de441.eph, the EOP files and the full ephemeris set). 230 rows
 /// (SERR-PATH) are iterations whose era ephemeris file (seplm36, sepl_30, sepl_00, seasm36, ...)
-/// is not among the 8 files: against the official t.exp the return code and every value differ,
-/// because the reference found the file and the port, like the C on this data set, did not. They match the C-generated corpus except for the ephemeris directory
-/// embedded in the serr text of a "not found in PATH '...'" message, which CheckS compares raw.
-/// That is why they have their own tag, rather than being folded into DATA-ENV, which means
-/// "passes against the C-generated corpus outright". 26 rows (LIBM-PLATFORM) differ numerically
-/// from the C-generated corpus, and the MSVC-built C equals the port exactly (54 of 54 compared
-/// fields), so the Linux-generated value differs only through glibc libm against the Windows CRT.
-/// Unlike known-fail.tsv, this file is not regenerated from a live run: it is a snapshot, kept
-/// as the evidence.
+/// is not among the 8 files: the reference found the file and the port, like the C on this data
+/// set, did not. They match the C-generated corpus except for the ephemeris directory embedded in
+/// the serr text of a "not found in PATH '...'" message, which CheckS compares raw. Measured against
+/// the official t.exp, 155 of the 230 differ in a return code (rc, or rc_aya_ex in suite 4.2) and 75
+/// do not; of those 75, 6 differ in serr only and 69 also differ in values (xx, daya_ex, jx, ...).
+/// So "the return code and every value differ" is not a description of the group. That is why they
+/// have their own tag, rather than being folded into DATA-ENV, which means "passes against the
+/// C-generated corpus outright". 43 rows (LIBM-PLATFORM) differ numerically from the C-generated
+/// corpus, and the MSVC-built C equals the port exactly (71 of 71 compared fields), so the
+/// Linux-generated value differs only through glibc libm against the Windows CRT. 156 of the 533 rows
+/// are suite-10 iterations dated outside the 1200-2399 the declared files cover, which the harness
+/// used to park as DATA-MISSING and now dispatches as setest does (139 SERR-PATH, 17 LIBM-PLATFORM
+/// helio_cross jx). 14 of those 156 also fail a runtime self-check (CHECK_EQUALS_D of xcross
+/// against the position at jx, or of xx[1] against 0), which is not stored in t.exp and fails
+/// identically in the MSVC-built C (probed at all 14). Unlike known-fail.tsv, this file is not
+/// regenerated from a live run: it is a snapshot, kept as the evidence. known-fail-pins.tsv is the
+/// live counterpart: the port's own values for every field of these rows, checked by PinGate.
 ///
 /// The classification column is DRIFT or PORT-DEFECT. The earlier ledger had four PORT-DEFECT
 /// rows (1.1.377, 379, 383, 385: the missing JD-range guard on SE_INTP_PERG). That guard is
@@ -58,7 +66,7 @@ public class ValueMismatchTriageTests
 {
     private const string FileName = "value-mismatch-triage.tsv";
     private static readonly string[] Header =
-        ["suite", "testcase", "iteration", "magnitude_key", "classification", "note", "fields (texp=official setest/t.exp at e308765d, port=SwissEphNet output, c=C-generated setest corpus: upstream setest at e308765d built with gcc 13.3 on Ubuntu 24.04 and run with -g against the 8 files in required-ephemeris-files.tsv, after widening dobs[5] to dobs[6] and xxtret[10] to xxtret[50] in suite_09_rise.c, msvc=MSVC-built C at e308765d for the LIBM-PLATFORM rows only, AGREES-PORT = c is within the setest tolerance (tolerances.c) of port, measured 2026-11-24)"];
+        ["suite", "testcase", "iteration", "magnitude_key", "classification", "note", "fields (texp=official setest/t.exp at e308765d, port=SwissEphNet output, c=C-generated setest corpus: upstream setest at e308765d built with gcc 13.3 on Ubuntu 24.04 and run with -g against the 8 files in required-ephemeris-files.tsv, after widening dobs[5] to dobs[6] and xxtret[10] to xxtret[50] in suite_09_rise.c, msvc=MSVC-built C at e308765d for the LIBM-PLATFORM rows only, AGREES-PORT = c is within the setest tolerance (tolerances.c) of port, SELF-CHECK-AGREES-MSVC = a runtime self-check of suite 10 (CHECK_EQUALS_D, not stored in t.exp) that fails identically in the MSVC-built C, measured 2026-11-24)"];
 
     private static readonly HashSet<string> AllowedClassifications = new(StringComparer.Ordinal) { "DRIFT", "PORT-DEFECT" };
 

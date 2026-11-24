@@ -1,8 +1,9 @@
 #Requires -Version 7
 <#
 .SYNOPSIS
-    Fails if Tests/conformance/known-fail.tsv changed between -BaseRef and HEAD without
-    Tests/conformance/regenerations.log gaining at least one new entry.
+    Fails if Tests/conformance/known-fail.tsv or Tests/conformance/known-fail-pins.tsv changed
+    between -BaseRef and HEAD without Tests/conformance/regenerations.log gaining at least one
+    new entry.
 
 .DESCRIPTION
     scripts/regenerate-known-fail.ps1 is the only script that writes known-fail.tsv, and its
@@ -69,6 +70,9 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $manifestRelPath = 'Tests/conformance/known-fail.tsv'
+# The value-level pins of known-fail.tsv's VALUE-MISMATCH rows. Written by the same script in the
+# same run, so a change to them needs the same log entry as a change to known-fail.tsv.
+$pinsRelPath = 'Tests/conformance/known-fail-pins.tsv'
 $sidecarRelPath = 'Tests/conformance/regenerations.log'
 $sidecarFullPath = Join-Path $RepoRoot 'Tests/conformance/regenerations.log'
 
@@ -128,6 +132,8 @@ if ($SelfTest) {
 
     $BaseKnownFail = "suite`ttestcase`titeration`tcategory`n1`t1`t377`tVALUE-MISMATCH`n1`t1`t379`tVALUE-MISMATCH`n"
     $ChangedKnownFail = "suite`ttestcase`titeration`tcategory`n1`t1`t377`tVALUE-MISMATCH`n"
+    $BasePins = "suite`ttestcase`titeration`tfield`tkind`tport_value`n1`t1`t377`txx[0]`tDouble`t1.5`n"
+    $ChangedPins = "suite`ttestcase`titeration`tfield`tkind`tport_value`n1`t1`t377`txx[0]`tDouble`t1.6`n"
 
     function New-LogText {
         param([string[]] $Entries)
@@ -160,8 +166,9 @@ if ($SelfTest) {
         # blob instead of both being normalized to LF on the way in and the case proving nothing.
         git -C $dir config core.autocrlf false
         Set-LabFile (Join-Path $dir 'Tests/conformance/known-fail.tsv') $BaseKnownFail
+        Set-LabFile (Join-Path $dir 'Tests/conformance/known-fail-pins.tsv') $BasePins
         Set-LabFile (Join-Path $dir 'Tests/conformance/regenerations.log') (New-LogText $Entries)
-        git -C $dir add Tests/conformance/known-fail.tsv Tests/conformance/regenerations.log
+        git -C $dir add Tests/conformance/known-fail.tsv Tests/conformance/known-fail-pins.tsv Tests/conformance/regenerations.log
         git -C $dir commit -q -m 'fixture base'
         return [pscustomobject]@{ Path = $dir; BaseSha = (git -C $dir rev-parse HEAD).Trim() }
     }
@@ -173,6 +180,7 @@ if ($SelfTest) {
             [pscustomobject] $Lab,
             [string] $LogText,
             [switch] $ChangeKnownFail,
+            [switch] $ChangePins,
             [switch] $Crlf
         )
         if ($ChangeKnownFail) {
@@ -183,10 +191,13 @@ if ($SelfTest) {
         # "write an empty log" -- which makes the known-fail-changed-without-an-entry case below
         # fail for the wrong reason (the append-only check catching an emptied log) and never
         # exercise the count check it exists for at all.
+        if ($ChangePins) {
+            Set-LabFile (Join-Path $Lab.Path 'Tests/conformance/known-fail-pins.tsv') $ChangedPins
+        }
         if (-not [string]::IsNullOrEmpty($LogText)) {
             Set-LabFile (Join-Path $Lab.Path 'Tests/conformance/regenerations.log') $LogText -Crlf:$Crlf
         }
-        git -C $Lab.Path add Tests/conformance/known-fail.tsv Tests/conformance/regenerations.log
+        git -C $Lab.Path add Tests/conformance/known-fail.tsv Tests/conformance/known-fail-pins.tsv Tests/conformance/regenerations.log
         git -C $Lab.Path commit -q -m 'case head'
     }
 
@@ -285,6 +296,17 @@ if ($SelfTest) {
     $lab = New-Lab 'known-fail-without-entry'
     Set-LabHead $lab $null -ChangeKnownFail
     Assert-GateRefuses 'known-fail.tsv changed with no new log entry' $lab $CountRefusal
+
+    # 2b. The value-level pins moved and the log did not: a pinned value edited by hand, which
+    #     would loosen the gate on an accepted row without any recorded reason.
+    $lab = New-Lab 'pins-without-entry'
+    Set-LabHead $lab $null -ChangePins
+    Assert-GateRefuses 'known-fail-pins.tsv changed with no new log entry' $lab $CountRefusal
+
+    # 2c. The same pins change with a real appended entry (what regenerate-known-fail.ps1 produces).
+    $lab = New-Lab 'pins-with-entry'
+    Set-LabHead $lab (New-LogText ($BaseEntries + $NewEntry4)) -ChangePins
+    Assert-GateAccepts 'a known-fail-pins.tsv change with one real appended entry is accepted' $lab
 
     # 3. An existing entry rewritten in place, with a valid entry appended alongside it. The
     #    append makes the count rise, so a count-only check reports progress while history is
@@ -439,7 +461,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-$changed = git -C $RepoRoot diff --name-only "$BaseRef" HEAD -- $manifestRelPath
+$changed = git -C $RepoRoot diff --name-only "$BaseRef" HEAD -- $manifestRelPath $pinsRelPath
 if ($LASTEXITCODE -ne 0) {
     Write-Error "git diff between '$BaseRef' and HEAD failed."
     exit 1
@@ -462,7 +484,7 @@ if (-not $changed -and -not $changedSidecar) {
 }
 
 if ($changed) {
-    Write-Host "$manifestRelPath changed between $BaseRef and HEAD."
+    Write-Host "$manifestRelPath or $pinsRelPath changed between $BaseRef and HEAD."
     Write-Host ""
 }
 
@@ -555,10 +577,11 @@ $headCount = $headEntries.Count
 # check) does not by itself require a fresh entry.
 if ($changed -and $headCount -le $baseCount) {
     Write-Error @"
-$manifestRelPath changed between $BaseRef and HEAD, but $sidecarRelPath did not gain a new entry
+$manifestRelPath or $pinsRelPath changed between $BaseRef and HEAD, but $sidecarRelPath did not gain a new entry
 ($baseCount -> $headCount).
 
-known-fail.tsv is the port's own work queue: every committed change to it needs a record a
+known-fail.tsv and known-fail-pins.tsv are the port's own work queue and the values its accepted
+rows are pinned to: every committed change to either needs a record a
 reviewer can read without re-deriving it from the diff. If this was a deliberate regeneration, run
 scripts/regenerate-known-fail.ps1 (-Reason '...' in default mode; -PruneOnly needs none) -- it
 appends the required entry automatically. If known-fail.tsv was hand-edited instead of regenerated,

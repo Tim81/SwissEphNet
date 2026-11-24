@@ -21,6 +21,13 @@
     ephemeris files were present, for the same reason the PR-number convention exists: a
     future reader needs to know what this list was generated against, not just when.
 
+    It writes two files together: known-fail.tsv and known-fail-pins.tsv (for every VALUE-MISMATCH
+    row, the port-produced value of each field that mismatches t.exp). The conformance gate
+    (PinGate) fails when an accepted row's mismatching field set changes or a pinned value moves
+    beyond setest's own tolerance, so a pin can only change through this script and its
+    regenerations.log entry. -PruneOnly removes the pins of removed rows and refuses if a
+    surviving row's pins differ from the live run.
+
     Two modes:
 
     Default (full regenerate): overwrites known-fail.tsv wholesale with
@@ -92,7 +99,8 @@
 
 .PARAMETER SelfTest
     Exercises this script's own pure functions (Read-KnownFailTable, Get-SurvivingLines,
-    Get-KnownFailPruneOnlyRefusal) against synthetic fixtures, plus one real child-process
+    Get-KnownFailPruneOnlyRefusal, and the pin helpers Read-PinBlocks, Get-PinPruneOnlyChanges,
+    Get-PrunedPinText) against synthetic fixtures, plus one real child-process
     invocation asserting -Reason is required outside -PruneOnly. Never builds
     Tools/ConformanceKnownFailGen, never dispatches the conformance corpus, and never touches
     Tests/conformance/known-fail.tsv.
@@ -155,6 +163,11 @@ $genProject = Join-Path $repoRoot 'Tools/ConformanceKnownFailGen/ConformanceKnow
 $conformanceDir = Join-Path $repoRoot 'Tests/conformance'
 $knownFailPath = Join-Path $conformanceDir 'known-fail.tsv'
 $logPath = Join-Path $conformanceDir 'regenerations.log'
+# The value-level pins of every VALUE-MISMATCH row (port-produced value of each mismatching field,
+# gated by Tests/SwissEphNet.Conformance.Tests/KnownFail/PinGate.cs). Written together with
+# known-fail.tsv by the generator and changed only through this script, so a pin cannot move
+# without the logged regeneration.
+$pinsPath = Join-Path $conformanceDir 'known-fail-pins.tsv'
 
 # Below this ratio, -PruneOnly refuses rather than writing the prune -- HIGH 4's own fix. The prior
 # floor only fired at exactly $fresh.Count -eq 0 (see Get-KnownFailPruneOnlyRefusal below), which a
@@ -223,8 +236,8 @@ function Test-IterationCountOk {
 # call sites below. Still written back to the host explicitly, so a contributor watching the run
 # sees the same console output as before, just no longer streamed live line-by-line.
 function Invoke-ConformanceGenerator {
-    param([string]$OutputPath)
-    $output = & dotnet run --project $genProject -c Release --no-build -- $OutputPath 2>&1
+    param([string]$OutputPath, [string]$PinsOutputPath)
+    $output = & dotnet run --project $genProject -c Release --no-build -- $OutputPath $PinsOutputPath 2>&1
     $output | Write-Host
     $exitCode = $LASTEXITCODE
     $text = (@($output) -join "`n")
@@ -360,6 +373,65 @@ function Invoke-PruneOnlyWrite {
         SurvivingLines = $survivingLines
         OutputText     = $outputText
     }
+}
+
+# Pins (known-fail-pins.tsv: suite, testcase, iteration, field, kind, port_value). One block per
+# iteration key: the key's data lines joined with "`n", in file order. Compared as text, which is
+# stricter than the gate's own tolerance comparison -- deliberately: -PruneOnly may not change a
+# surviving row's pins at all.
+function Read-PinBlocks {
+    param([string]$Path)
+    $blocks = [System.Collections.Generic.Dictionary[string, string]]::new([System.StringComparer]::Ordinal)
+    if (-not (Test-Path $Path)) { return $blocks }
+    $lines = @(Get-Content -LiteralPath $Path)
+    for ($i = 1; $i -lt $lines.Count; $i++) {
+        $line = $lines[$i]
+        if ([string]::IsNullOrEmpty($line)) { continue }
+        $cols = $line -split "`t"
+        if ($cols.Count -ne 6) {
+            throw "$Path`:$($i + 1): expected 6 tab-separated columns (suite, testcase, iteration, field, kind, port_value), got $($cols.Count): '$line'"
+        }
+        $key = "$($cols[0])`t$($cols[1])`t$($cols[2])"
+        if ($blocks.ContainsKey($key)) { $blocks[$key] += "`n$line" } else { $blocks[$key] = $line }
+    }
+    return $blocks
+}
+
+# Pure: the keys a -PruneOnly run would silently change the pins of. A surviving VALUE-MISMATCH row
+# (present in $Fresh known-fail with that category) whose current and fresh pin blocks differ, or
+# that has no pin block on either side. $CurrentBlocks/$FreshBlocks are Read-PinBlocks results.
+function Get-PinPruneOnlyChanges {
+    param(
+        [System.Collections.Generic.Dictionary[string, string]]$FreshKnownFail,
+        [System.Collections.Generic.Dictionary[string, string]]$CurrentBlocks,
+        [System.Collections.Generic.Dictionary[string, string]]$FreshBlocks
+    )
+    $changed = [System.Collections.Generic.List[string]]::new()
+    foreach ($key in $FreshKnownFail.Keys) {
+        if (-not $FreshKnownFail[$key].StartsWith("VALUE-MISMATCH`t", [System.StringComparison]::Ordinal)) { continue }
+        $cur = if ($CurrentBlocks.ContainsKey($key)) { $CurrentBlocks[$key] } else { $null }
+        $new = if ($FreshBlocks.ContainsKey($key)) { $FreshBlocks[$key] } else { $null }
+        if ($null -eq $cur -or $null -eq $new -or $cur -cne $new) { [void]$changed.Add($key) }
+    }
+    return , @($changed.ToArray())
+}
+
+# The pin file a -PruneOnly run writes: the current header and the current pin lines of every key
+# that is still a VALUE-MISMATCH row in $FreshKnownFail, verbatim and in file order.
+function Get-PrunedPinText {
+    param([string]$PinsPath, [System.Collections.Generic.Dictionary[string, string]]$FreshKnownFail)
+    $raw = @(Get-Content -LiteralPath $PinsPath)
+    $out = [System.Collections.Generic.List[string]]::new()
+    [void]$out.Add($raw[0])
+    for ($i = 1; $i -lt $raw.Count; $i++) {
+        if ([string]::IsNullOrEmpty($raw[$i])) { continue }
+        $cols = $raw[$i] -split "`t"
+        $key = "$($cols[0])`t$($cols[1])`t$($cols[2])"
+        if ($FreshKnownFail.ContainsKey($key) -and $FreshKnownFail[$key].StartsWith("VALUE-MISMATCH`t", [System.StringComparison]::Ordinal)) {
+            [void]$out.Add($raw[$i])
+        }
+    }
+    return ($out -join "`n") + "`n"
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -653,6 +725,63 @@ if ($SelfTest) {
         $verdictMatch = Test-IterationCountOk -Actual 18919 -Expected 18919
         Assert-True 'a matching iteration count is ok' ($verdictMatch.Ok)
 
+        # 16. Pins (known-fail-pins.tsv). A prune may remove the pins of rows that left the list and
+        #     must otherwise leave every surviving row's pins byte for byte; a changed, missing or
+        #     extra pin block on a surviving VALUE-MISMATCH row is a change this mode must refuse.
+        $pinHeader = "suite`ttestcase`titeration`tfield`tkind`tport_value"
+        $currentPinsPath = Join-Path $lab 'pins-current.tsv'
+        [System.IO.File]::WriteAllText($currentPinsPath, (@(
+            $pinHeader
+            "1`t1`t1`txx[0]`tDouble`t1.5"
+            "1`t1`t1`tserr`tString`tfile not found in PATH '<ephe>'"
+            "1`t1`t2`txx[0]`tDouble`t2.5"
+            "4`t2`t3`trc`tInt`t-1"
+        ) -join "`n") + "`n", (New-Object System.Text.UTF8Encoding($false)))
+        $currentBlocks = Read-PinBlocks -Path $currentPinsPath
+        Assert-True 'Read-PinBlocks groups a row''s pin lines under one key' `
+            ($currentBlocks.Count -eq 3 -and $currentBlocks["1`t1`t1"].Split("`n").Count -eq 2) "got $($currentBlocks.Count) block(s)"
+
+        $freshKf = New-FreshTable @{
+            "1`t1`t1" = "VALUE-MISMATCH`t-4"
+            "1`t1`t2" = "VALUE-MISMATCH`t-4"
+            "4`t2`t3" = "DATA-MISSING`tn/a"
+        }
+        $sameBlocks = Read-PinBlocks -Path $currentPinsPath
+        Assert-True 'identical fresh pins on every surviving VALUE-MISMATCH row are no change (a non-VALUE-MISMATCH key is ignored)' `
+            ((Get-PinPruneOnlyChanges -FreshKnownFail $freshKf -CurrentBlocks $currentBlocks -FreshBlocks $sameBlocks).Count -eq 0)
+
+        $movedPinsPath = Join-Path $lab 'pins-moved.tsv'
+        [System.IO.File]::WriteAllText($movedPinsPath, (@(
+            $pinHeader
+            "1`t1`t1`txx[0]`tDouble`t1.5"
+            "1`t1`t1`tserr`tString`tfile not found in PATH '<ephe>'"
+            "1`t1`t2`txx[0]`tDouble`t2.6"
+        ) -join "`n") + "`n", (New-Object System.Text.UTF8Encoding($false)))
+        $movedChanges = Get-PinPruneOnlyChanges -FreshKnownFail $freshKf -CurrentBlocks $currentBlocks -FreshBlocks (Read-PinBlocks -Path $movedPinsPath)
+        Assert-True 'a pinned value that moved on a surviving row is reported, and only that row' `
+            ($movedChanges.Count -eq 1 -and $movedChanges[0] -eq "1`t1`t2") "got: $($movedChanges -join ',')"
+
+        $lostPinsPath = Join-Path $lab 'pins-lost-field.tsv'
+        [System.IO.File]::WriteAllText($lostPinsPath, (@(
+            $pinHeader
+            "1`t1`t1`txx[0]`tDouble`t1.5"
+            "1`t1`t2`txx[0]`tDouble`t2.5"
+        ) -join "`n") + "`n", (New-Object System.Text.UTF8Encoding($false)))
+        $lostChanges = Get-PinPruneOnlyChanges -FreshKnownFail $freshKf -CurrentBlocks $currentBlocks -FreshBlocks (Read-PinBlocks -Path $lostPinsPath)
+        Assert-True 'a field that left the mismatch set (pin line gone) on a surviving row is reported' `
+            ($lostChanges.Count -eq 1 -and $lostChanges[0] -eq "1`t1`t1") "got: $($lostChanges -join ',')"
+
+        $prunedKf = New-FreshTable @{ "1`t1`t2" = "VALUE-MISMATCH`t-4"; "4`t2`t3" = "DATA-MISSING`tn/a" }
+        $prunedText = Get-PrunedPinText -PinsPath $currentPinsPath -FreshKnownFail $prunedKf
+        Assert-True 'Get-PrunedPinText drops the pins of rows that left the list and of rows that are no longer VALUE-MISMATCH, keeping the rest verbatim' `
+            ($prunedText -ceq "$pinHeader`n1`t1`t2`txx[0]`tDouble`t2.5`n") "got: '$prunedText'"
+
+        $truncatedPinsPath = Join-Path $lab 'pins-truncated.tsv'
+        [System.IO.File]::WriteAllText($truncatedPinsPath, "$pinHeader`n1`t1`t1`txx[0]`n", (New-Object System.Text.UTF8Encoding($false)))
+        $threwOnTruncatedPin = $false
+        try { Read-PinBlocks -Path $truncatedPinsPath | Out-Null } catch { $threwOnTruncatedPin = $true }
+        Assert-True 'a truncated pin row throws' $threwOnTruncatedPin
+
         Write-Host ''
         if ($failures -gt 0) {
             Write-Host "FAIL: $failures self-test case(s) did not behave as required." -ForegroundColor Red
@@ -676,9 +805,10 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 if ($PruneOnly) {
     $tempPath = [System.IO.Path]::GetTempFileName()
+    $tempPinsPath = [System.IO.Path]::GetTempFileName()
     try {
         Write-Host "Running the conformance oracle against the current build (dispatches all 18,919 iterations; expect a few minutes)..."
-        $genResult = Invoke-ConformanceGenerator -OutputPath $tempPath
+        $genResult = Invoke-ConformanceGenerator -OutputPath $tempPath -PinsOutputPath $tempPinsPath
         if ($genResult.ExitCode -ne 0) { exit $genResult.ExitCode }
         Assert-IterationCount -Actual $genResult.Iterations
 
@@ -725,6 +855,21 @@ if ($PruneOnly) {
             exit 1
         }
 
+        # The pins of every surviving VALUE-MISMATCH row must be exactly what the live run produces:
+        # a prune removes rows, it never moves a pinned value or a field, because that is a change
+        # in what an accepted row does and needs the full, reasoned regeneration.
+        $pinChanges = Get-PinPruneOnlyChanges -FreshKnownFail $fresh -CurrentBlocks (Read-PinBlocks -Path $pinsPath) -FreshBlocks (Read-PinBlocks -Path $tempPinsPath)
+        if ($pinChanges.Count -gt 0) {
+            Write-Host ""
+            Write-Host "-PruneOnly refuses: the pinned field values of $($pinChanges.Count) surviving VALUE-MISMATCH row(s) differ from known-fail-pins.tsv (a value moved, or a field joined or left the mismatch set), and this mode can only remove rows." -ForegroundColor Red
+            foreach ($key in $pinChanges | Select-Object -First 50) {
+                Write-Host "  $($key -replace "`t", '.')"
+            }
+            Write-Host ""
+            Write-Host "known-fail.tsv and known-fail-pins.tsv were NOT modified. Run the full regenerate (scripts/regenerate-known-fail.ps1 -Reason `"...`") once you have understood the change."
+            exit 1
+        }
+
         # Every surviving row is written back exactly as it already reads in $knownFailPath, not
         # from $tempPath: $fresh (the live run) is consulted only for its key set above, never for
         # its own reason or magnitude_key text. ConformanceKnownFailGen regenerates reason text
@@ -751,6 +896,7 @@ if ($PruneOnly) {
         $afterCount = $writeResult.SurvivingLines.Count
         $removed = $beforeCount - $afterCount
         [System.IO.File]::WriteAllText($knownFailPath, $writeResult.OutputText)
+        [System.IO.File]::WriteAllText($pinsPath, (Get-PrunedPinText -PinsPath $pinsPath -FreshKnownFail $fresh))
 
         $date = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
         $prCitation = if ($PR) { "PR #$PR" } else { "(no PR yet -- fill in `"PR #N`" before merging, per CONTRIBUTING.md)" }
@@ -765,6 +911,7 @@ if ($PruneOnly) {
     }
     finally {
         Remove-Item -Path $tempPath -ErrorAction SilentlyContinue
+        Remove-Item -Path $tempPinsPath -ErrorAction SilentlyContinue
     }
 
     exit 0
@@ -782,10 +929,11 @@ $beforeCount = Get-RowCount -Path $knownFailPath
 # already been overwritten in place. Generating into a temp path first means a failed run leaves
 # $knownFailPath completely untouched, exactly like -PruneOnly already guarantees.
 $tempKnownFailPath = [System.IO.Path]::GetTempFileName()
+$tempPinsFullPath = [System.IO.Path]::GetTempFileName()
 try {
     Write-Host "Running the conformance oracle against the current build (this dispatches all 18,919 iterations; expect a few minutes)..."
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    $genResult = Invoke-ConformanceGenerator -OutputPath $tempKnownFailPath
+    $genResult = Invoke-ConformanceGenerator -OutputPath $tempKnownFailPath -PinsOutputPath $tempPinsFullPath
     $stopwatch.Stop()
     if ($genResult.ExitCode -ne 0) { exit $genResult.ExitCode }
     Assert-IterationCount -Actual $genResult.Iterations
@@ -805,6 +953,7 @@ try {
     # Only now, with a complete and exit-0 generator run sitting safely in a temp file, does
     # anything under Tests/conformance/ get touched.
     Copy-Item -LiteralPath $tempKnownFailPath -Destination $knownFailPath -Force
+    Copy-Item -LiteralPath $tempPinsFullPath -Destination $pinsPath -Force
 
     $logEntry = "$date $prCitation ($beforeCount -> $afterCount, $deltaDescription) [$epheDescription]: $Reason"
     Add-Content -Path $logPath -Value $logEntry -Encoding utf8NoBOM
@@ -823,4 +972,5 @@ try {
 }
 finally {
     Remove-Item -Path $tempKnownFailPath -ErrorAction SilentlyContinue
+    Remove-Item -Path $tempPinsFullPath -ErrorAction SilentlyContinue
 }

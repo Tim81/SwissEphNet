@@ -573,13 +573,17 @@ divergence is each platform's own math library disagreeing with itself in the la
 same thing two independently built C programs would show; it is not evidence against the port.
 
 Separately, the port's output is checked against Astrodienst's own 2.10.04 test suite (`setest`),
-18,919 iterations across 11 suites. 1,635 of those still fail: 377 because the answer
-is outside the tolerance Astrodienst's own suite allows (the per-quantity tolerances of `setest`'s `tolerances.c`), and 1,258 because a required data file (a
-JPL ephemeris, a per-asteroid or `ephe/sat/` file, or an ephemeris era this repository does not
-ship, roughly years 1200 to 2399) is not present. The earlier DATA-MISSING rows were checked
-against the C and found to be a missing file, not a wrong answer; the rows added at v2.10.04 were
-not cross-checked.
-`Tests/conformance/value-mismatch-triage.tsv` was re-measured on 2026-11-24 against upstream v2.10.04 (`e308765d`) and covers all 377 `VALUE-MISMATCH` rows: upstream's own `setest`, built with gcc on Linux and run on the same 8 ephemeris files this repository ships, reproduces the port on 260 of them (the official `t.exp` was made in a different data environment), 91 are iterations whose era ephemeris file is not among those 8 (the official run found it, the port and the C on this data set do not, and apart from the ephemeris directory embedded in the error string the two agree), and 26 differ only through glibc against the Windows C runtime (the MSVC-built C equals the port exactly); none is a port defect. The four port defects the earlier (2026-08-02, 668-row) triage found, a missing JD-range guard on
+18,919 iterations across 11 suites. 1,634 of those still fail: 533 because the answer
+is outside the tolerance Astrodienst's own suite allows (the per-quantity tolerances of `setest`'s `tolerances.c`), and 1,101 because a required data file (a
+JPL ephemeris, a per-asteroid or `ephe/sat/` file) is not present. Iterations dated outside the roughly
+years 1200 to 2399 that the shipped ephemeris files cover are not skipped: the harness runs them
+as `setest` does, the library falls back to Moshier, and the 156 of them that differ from the
+official `t.exp` (made with every era file) are among the 533. Of the 759 DATA-MISSING rows at
+the 2.10.3.x pins, 735 were checked against the C and found to be a missing file, not a wrong
+answer; 24 stayed unchecked (`docs/known-issues.md`, update of 2026-11-13). The 157 era rows among
+those 759 are no longer DATA-MISSING, and the 499 DATA-MISSING rows that the regenerated `t.exp` added at v2.10.04 were not
+cross-checked against the C.
+`Tests/conformance/value-mismatch-triage.tsv` was re-measured on 2026-11-24 against upstream v2.10.04 (`e308765d`) and covers all 533 `VALUE-MISMATCH` rows: upstream's own `setest`, built with gcc on Linux and run on the same 8 ephemeris files this repository ships, reproduces the port on 260 of them (the official `t.exp` was made in a different data environment), 230 are iterations whose era ephemeris file is not among those 8 (the official run found it, the port and the C on this data set do not; apart from the ephemeris directory embedded in the error string the two agree, and 155 of the 230 also differ from the official `t.exp` in a return code), and 43 differ only through glibc against the Windows C runtime (the MSVC-built C equals the port exactly); none is a port defect. The conformance test also pins, for every one of these 533 rows, the value the port produces for each mismatching field (`Tests/conformance/known-fail-pins.tsv`), so an accepted row cannot change unnoticed. The four port defects the earlier (2026-08-02, 668-row) triage found, a missing JD-range guard on
 interpolated lunar perigee (`docs/compliance-2.10.04.md` section 3a), are fixed and their rows pruned. So the port matches everything it has been
 checked against and is not yet at full parity with Astrodienst's own reference corpus.
 At the 2.10.3.x pins the figures were different, and not comparable, because the corpus changed:
@@ -1011,20 +1015,21 @@ The reference corpus is Swiss Ephemeris **2.10.04**'s `setest` test suite
 (18,919 iterations across 11 suites and 68 testcases; the number of asserted values has not been
 re-counted for this corpus). The port has
 landed the whole 2.10.03 delta and the v2.10.04 changes, but `known-fail.tsv` still
-lists 1,635 failing iterations (17,284 passing, 91.4%). Each
+lists 1,634 failing iterations (17,285 passing, 91.4%). Each
 porting PR should remove entries from it; any entry that reappears is a regression.
 
-Read that 1,635 with the split under "Numerical compatibility" above, because it is not 1,635
-things left to port: 1,258 of them are a data file this repository does not ship rather than a wrong
-answer, the other 377 sit outside the tolerance Astrodienst's own suite allows and are all triaged
-as drift (260 data environment, 91 missing era file, 26 libm platform),
+Read that 1,634 with the split under "Numerical compatibility" above, because it is not 1,634
+things left to port: 1,101 of them are a data file this repository does not ship rather than a wrong
+answer, the other 533 sit outside the tolerance Astrodienst's own suite allows and are all triaged
+as drift (260 data environment, 230 missing era file, 43 libm platform),
 and the four rows ever confirmed as port defects were fixed and pruned. At the 2.10.3.x pins the
 figures were 12,757 iterations and 2,395 failing, and are not comparable.
 
 - `external/swisseph`, a git submodule, sparse-checked-out, pinned to the upstream
   tag `v2.10.04` (`e308765d`). It serves two purposes:
   1. **The reference corpus** for the conformance oracle: `setest/t.exp`
-     (expected values) and `setest/t.fix` (tolerances), plus the core `.se1`
+     (expected values) and `setest/tolerances.c` (per-quantity tolerances; `setest/t.fix`
+     supplies only a fallback precision), plus the core `.se1`
      ephemeris files, `sefstars.txt`, `seorbel.txt`, and `seleapsec.txt` that
      the SWIEPH/analytic iterations need to run.
   2. **The C source to diff the port against**, file by file, as porting work
@@ -1055,7 +1060,7 @@ figures were 12,757 iterations and 2,395 failing, and are not comparable.
     `DATA-MISSING`: a required data file (a JPL DE ephemeris, `ephe/sat/`)
     isn't shipped by this repo. `ERROR`: the dispatch threw. `VALUE-MISMATCH`:
     the port ran and produced an answer that doesn't match the reference
-    within `t.fix` tolerance. This and `ERROR` are the actionable
+    within `setest`'s tolerance for that quantity (`tolerances.c`). This and `ERROR` are the actionable
     categories, the actual porting work queue. `UNREPRODUCIBLE`: a structural
     C-vs-C# representational gap makes the reference call impossible to
     construct at all, as opposed to constructible but wrong, distinct from

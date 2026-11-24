@@ -248,7 +248,8 @@ public static class ConformanceRunner
                         testCase.Description,
                         outcome.Kind,
                         outcome.Reason,
-                        outcome.Mismatches));
+                        outcome.Mismatches,
+                        new PinContext(iteration.Fields.PeekInt("iflag") ?? 0, precision)));
 
                     // TEARDOWN: several suites re-initialize the library between
                     // iterations when the iteration's own "initialize" flag says

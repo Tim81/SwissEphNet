@@ -147,11 +147,16 @@ Each of these is an adoption of an upstream change, not a correction of the port
   bit-identical to the C.
 - Conformance. The corpus is now 11 suites, 68 testcases and 18,919 iterations (it was 10, 60 and
   12,757); suite 11 (`swe_pheno`, `swe_azalt`, `swe_refrac`, `swe_cotrans`) is new, and 8.9 calls
-  `swe_lun_eclipse_when_loc`. `known-fail.tsv` has 1,635 rows, 1,258 `DATA-MISSING` and 377
+  `swe_lun_eclipse_when_loc`. `known-fail.tsv` has 1,634 rows, 1,101 `DATA-MISSING` and 533
   `VALUE-MISMATCH`, where it had 2,395 (759 and 1,636). The number measures divergence from
-  `t.exp`, a static Astrodienst snapshot, not port defects: all 377 rows are triaged against the C
-  in `Tests/conformance/value-mismatch-triage.tsv` as drift, 260 `DATA-ENV`, 91 `SERR-PATH` (an era
-  ephemeris file outside the 8 declared) and 26 `LIBM-PLATFORM`. The harness uses `setest`'s v2.10.04
+  `t.exp`, a static Astrodienst snapshot, not port defects: all 533 rows are triaged against the C
+  in `Tests/conformance/value-mismatch-triage.tsv` as drift, 260 `DATA-ENV`, 230 `SERR-PATH` (an era
+  ephemeris file outside the 8 declared) and 43 `LIBM-PLATFORM`. The harness no longer skips
+  `SEFLG_SWIEPH` iterations dated outside the years the shipped era files cover (157 rows, filed as
+  `DATA-MISSING` before): it runs them as `setest` does, with the Moshier fallback. Each accepted
+  `VALUE-MISMATCH` row is also pinned in `Tests/conformance/known-fail-pins.tsv`, the port's value for
+  every mismatching field, so a field joining or leaving the row or a value moving fails the gate
+  even when the row's `magnitude_key` does not change. The harness uses `setest`'s v2.10.04
   comparison rules (per-quantity tolerances from `tolerances.c`, precision reset per testcase) and
   mirrors the file-scope statics of its suite files. The 972 house-speed rows of the `6c989727` sync pass
   against the regenerated `t.exp`, so their drift ledger and its test are retired (in git history).

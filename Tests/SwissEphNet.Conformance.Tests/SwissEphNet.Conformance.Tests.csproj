@@ -41,6 +41,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>conformance\known-fail.tsv</Link>
     </None>
+    <None Include="..\conformance\known-fail-pins.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>conformance\known-fail-pins.tsv</Link>
+    </None>
     <None Include="..\conformance\required-ephemeris-files.tsv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>conformance\required-ephemeris-files.tsv</Link>

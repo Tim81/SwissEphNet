@@ -387,12 +387,26 @@ silent by design: once it is in the file, a matching failure never shows up
 again as a gate failure, so nothing else will catch a bad addition. This is
 why `/Tests/conformance/` has a `CODEOWNERS` entry.
 
-The only supported way to touch `known-fail.tsv` is `scripts/regenerate-known-fail.ps1`,
-in one of two modes:
+`Tests/conformance/known-fail-pins.tsv` is the value-level half of the same gate.
+The category and `magnitude_key` comparison only sees the worst field of a
+`VALUE-MISMATCH` row, in decades, so any other field of the row could regress
+unseen (and a row whose key is `0` or `n/a` could not change visibly at all).
+For every `VALUE-MISMATCH` row the pins file records each mismatching field's
+name and the value the port produces. The gate (`PinGate`) then requires, per
+row, that the set of mismatching fields is exactly the pinned set, that each
+double is within `setest`'s own tolerance for that field (`tolerances.c`, with
+the `t.fix` precision as fallback, as `CheckContext` does) of its pinned value,
+that ints are equal, and that strings are equal after the ephemeris directory
+is replaced by a placeholder. A failure names the row, the field, and the
+pinned and actual values. The pins are generated on Windows x64, the platform
+the conformance job gates on, and they change only through the script below.
+
+The only supported way to touch `known-fail.tsv` and `known-fail-pins.tsv` is
+`scripts/regenerate-known-fail.ps1`, in one of two modes:
 
 - `-PruneOnly`: removes rows that now pass; refuses to run at all (non-zero
-  exit, no file changes) if the current run would add a row or change an
-  existing row's category. This is the mode to reach for after a porting PR --
+  exit, no file changes) if the current run would add a row, change an
+  existing row's category, or change any pinned field value of a surviving row. This is the mode to reach for after a porting PR --
   it mechanically cannot smuggle in an unreviewed new failure, so it needs no
   `-Reason`.
 - Default (full regenerate, `-Reason "..."` required): overwrites the file
@@ -469,10 +483,10 @@ correctness oracle look, from a CI notification, like the same kind of thing:
 both run the library against a reference and report PASS/FAIL. Their
 *expected* results are opposites. The baseline expects **zero** diffs --
 anything else means a change altered something it should not have. This
-oracle expects **some iterations to still fail**: `known-fail.tsv` lists 1,635<!--doccount:known-fail-total--> of 18,919
+oracle expects **some iterations to still fail**: `known-fail.tsv` lists 1,634<!--doccount:known-fail-total--> of 18,919
 iterations (91.4% passing) at v2.10.04. That count is divergence from `t.exp`, a static
-snapshot made by Astrodienst, not a count of port defects: all 377 `VALUE-MISMATCH` rows are
-triaged against the C and none is a port defect, and the other 1,258 are `DATA-MISSING`. A red
+snapshot made by Astrodienst, not a count of port defects: all 533 `VALUE-MISMATCH` rows are
+triaged against the C and none is a port defect, and the other 1,101 are `DATA-MISSING`. A red
 oracle run is not evidence anything is broken; a green one (all 18,919 passing with an empty
 `known-fail.tsv`) would mean every iteration matches `t.exp`, which needs the full data set the official run used, so it is
 not today's state. See "Reporting by testcase" below for how to read a run
@@ -491,12 +505,13 @@ on something other than the port's logic: a 2.10-only API (currently none;
 the category is empty), a data file this repo doesn't ship, or a structural
 gap). A testcase with zero failing iterations appears in neither list; it is
 not "parked", it is done. Of the 68, 29 have at least one row in
-`known-fail.tsv`; splitting those by `FormatByTestCase()`'s rule gives 16
-actionable and 13 genuinely parked, and the remaining 39 have no row in
+`known-fail.tsv`; splitting those by `FormatByTestCase()`'s rule gives 22
+actionable and 7 genuinely parked, and the remaining 39 have no row in
 `known-fail.tsv` at all -- they pass completely. Conflating "parked" with
 "everything not actionable" overstates how much of the 68 is blocked on
-something other than the port's own logic: it is 13, not 55. ("Actionable"
-is the rule's name, not a verdict: at v2.10.04 all 377 `VALUE-MISMATCH` rows
+something other than the port's own logic: it is 7, not 46 (68 minus the 22
+actionable). ("Actionable"
+is the rule's name, not a verdict: at v2.10.04 all 533 `VALUE-MISMATCH` rows
 are triaged as drift, none a port defect.) Measured at v2.10.04; at
 2.10.3.x the figures were 60 testcases, 31 actionable and 8 parked. A porting PR
 should be shrinking the actionable list's mismatch/error counts, or moving a

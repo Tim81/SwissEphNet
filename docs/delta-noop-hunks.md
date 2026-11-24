@@ -20,7 +20,8 @@ takes one hunk out of `swehouse.c` (68) and `get_new_segment()` adds one to `swe
 the 428 total was unchanged there. The pin then moved to the tag `v2.10.04` (`e308765d`), which
 re-pins `swejpl.h` 0 to 1, `sweph.c` 130 to 145, `sweph.h` 4 to 6, `swephexp.h` 16 to 17, `swephlib.c`
 29 to 37, `swephlib.h` 3 to 4 and `swetest.c` 103 to 105: 30 more hunks, 458 in all, and those are the
-current totals. The analysis in this file was not extended to those 30 hunks, and the "33 hunks across
+current totals. The analysis in this file was not extended to those 30 hunks, except the three
+comment-and-whitespace hunks recorded in the last section below, and the "33 hunks across
 eight files" above is the figure for the earlier pins. None of the hunks added at the earlier
 moves is a no-op hunk; and no line cited in this file was re-checked at `e308765d`, so treat the
 `file:line` citations as written against the earlier pins.
@@ -149,3 +150,19 @@ any build, and this port has no `fprintf(stderr)` equivalent to call, so writing
 add unreachable code for no gain -- and `CPort/.editorconfig` keeps CS0162 enabled. The parallel
 case at hunk 22, `if (0)` becoming `if ((0))`, genuinely was a no-op because the port already had
 `if (false)` there.
+
+## Hunks added at `e308765d`: three comment or whitespace hunks
+
+`git -C external/swisseph diff 43c9fe54 e308765d -- swecl.c swejpl.h` shows three hunks that change
+no code. The port does not carry them. Its comment text follows the earlier C.
+
+- **`swecl.c:769`** -- `D0 / 2) {` becomes `D0 / 2 ) {`, a space before the closing paren. The port
+  keeps `D0 / 2) {` at `SweCL.cs:794`.
+- **`swecl.c:780`** -- `/*return retc;*/` becomes `// return retc; `, a comment in a different
+  style. The port keeps `/*return retc;*/` at `SweCL.cs:804`. Both forms are comments, so neither
+  compiles to anything.
+- **`swejpl.h:68-69`** -- the `/* ... */` comments after `J_MERCURY` and `J_VENUS` become `//`
+  comments with a trailing space, and the second one is reworded. The macro values are unchanged.
+  The port keeps the `/* ... */` form at `SweJPL.h.cs:89`.
+
+The `swejpl.h` hunk is the one the intro counts as 0 to 1 at `e308765d`.

@@ -24,7 +24,19 @@ public enum OutcomeKind
     Unreproducible,
 }
 
-public sealed record FieldMismatch(string Name, string Expected, string Actual, double? Diff);
+/// <summary>
+/// How a compared field was checked: CheckD/CheckDD/CheckEqualsD (a double, within a tolerance),
+/// CheckI/CheckEqualsI (an int, exactly) or CheckS (a string, exactly). Recorded so the pin gate
+/// (<see cref="KnownFail.PinGate"/>) knows how to compare a field's value without guessing from its text.
+/// </summary>
+public enum FieldKind
+{
+    Double,
+    Int,
+    String,
+}
+
+public sealed record FieldMismatch(string Name, string Expected, string Actual, double? Diff, FieldKind Kind = FieldKind.Double);
 
 public sealed class DispatchOutcome
 {

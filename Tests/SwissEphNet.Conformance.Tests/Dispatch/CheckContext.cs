@@ -79,7 +79,7 @@ public sealed class CheckContext(ExpFields expected, TestCaseScope scope)
         var exp = expected.GetIntCompared(name);
         if (actual != exp)
         {
-            _mismatches.Add(new FieldMismatch(name, exp.ToString(CultureInfo.InvariantCulture), actual.ToString(CultureInfo.InvariantCulture), null));
+            _mismatches.Add(new FieldMismatch(name, exp.ToString(CultureInfo.InvariantCulture), actual.ToString(CultureInfo.InvariantCulture), null, FieldKind.Int));
         }
     }
 
@@ -89,7 +89,7 @@ public sealed class CheckContext(ExpFields expected, TestCaseScope scope)
         _comparisonCount++;
         if (actual != expectedLiteral)
         {
-            _mismatches.Add(new FieldMismatch(name, expectedLiteral.ToString(CultureInfo.InvariantCulture), actual.ToString(CultureInfo.InvariantCulture), null));
+            _mismatches.Add(new FieldMismatch(name, expectedLiteral.ToString(CultureInfo.InvariantCulture), actual.ToString(CultureInfo.InvariantCulture), null, FieldKind.Int));
         }
     }
 
@@ -121,7 +121,7 @@ public sealed class CheckContext(ExpFields expected, TestCaseScope scope)
         var escapedActual = EscapeNewlines(actual ?? "");
         if (!string.Equals(exp, escapedActual, StringComparison.Ordinal))
         {
-            _mismatches.Add(new FieldMismatch(name, exp, escapedActual, null));
+            _mismatches.Add(new FieldMismatch(name, exp, escapedActual, null, FieldKind.String));
         }
     }
 

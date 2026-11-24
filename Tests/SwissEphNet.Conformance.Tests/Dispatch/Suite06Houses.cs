@@ -38,13 +38,12 @@ internal sealed class Suite06Houses
         // How many of those 37 slots t.exp actually recorded (and so how many
         // this run compares) is derived from the data itself -- whether
         // "cusps[13]" is present -- rather than assumed from ihsy. Verified
-        // against the full corpus: "cusps[13]" never appears in t.exp (the
-        // highest recorded index across every iteration, every house system
-        // including Gauquelin 'G', is cusps[12], 13 values total), so this
-        // always resolves to 13 today. The check is kept data-driven rather
-        // than hardcoded to 13 so that a future corpus revision recording
-        // more cusps for some house system is picked up automatically instead
-        // of silently under-comparing.
+        // against the full corpus (e308765d's t.exp): "cusps[13]" appears 552 times,
+        // in the Gauquelin 'G' iterations, which record 37 cusps (cusps[1]..cusps[36]);
+        // every other house system records cusps[1]..cusps[12] (13 values with the
+        // unused slot 0). Deriving the count from the data, rather than from ihsy,
+        // means a corpus revision recording more cusps for another house system is
+        // picked up automatically instead of silently under-comparing.
         var cuspCount = f.Contains("cusps[13]") ? 37 : 13;
 
         switch (testCaseId)

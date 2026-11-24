@@ -15,7 +15,7 @@
 
     This runs every row of Tools/SwetestDiff/args-grid.tsv through both
     external/.c-reference/swetest.exe (Astrodienst's own C, MSVC-built by Tools/CReference/build-
-    c.ps1, linked against 2.10.03) and Programs/SweTest (this port, built here), and diffs their
+    c.ps1, built from the pinned v2.10.04 commit) and Programs/SweTest (this port, built here), and diffs their
     combined stdout+stderr line by line. Differences are expected, not a failure by themselves --
     Tests/swetest/known-diff.tsv currently carries 17 rows: 16 are the same documented DIR_GLUE
     `\` vs `/` path-separator choice (docs/known-issues.md), and one (FMT_MULTI|6) is the MSVC CRT
