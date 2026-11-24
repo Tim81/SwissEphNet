@@ -19,7 +19,7 @@
     combined stdout+stderr line by line. Differences are expected, not a failure by themselves --
     Tests/swetest/known-diff.tsv currently carries 16 rows, every one the same documented DIR_GLUE
     `\` vs `/` path-separator choice (docs/known-issues.md), not a version gap: this port now
-    tracks the same pinned C commit (43c9fe54) swetest.exe is built from, and the PORT-VERSION
+    tracks the same pinned C commit (v2.10.04, e308765d) swetest.exe is built from, and the PORT-VERSION
     diff category has zero rows here (see Tools/OracleVerify/DiffCategory.cs). What gates is
     Tests/swetest/known-diff.tsv
     -- every case_id that differs must be listed there under a category that still matches; an
@@ -33,7 +33,7 @@
 
     A missing or wrong -edir does not fail swe_calc -- it falls back to Moshier and both binaries
     print a plausible-looking value that differs from the real-ephemeris one only in the last
-    printed digit (Tools/CReference/build-c.ps1's own Invoke-SwetestSmoke measured this: 280.3681656
+    printed digit (Tools/CReference/build-c.ps1's own Invoke-SwetestSmoke measured this: 280.3681654 (280.3681656 before v2.10.04)
     real vs 280.3681666 Moshier-fallback at JD 2451545.0). This script asserts the eight-file set
     Tests/conformance/required-ephemeris-files.tsv declares is present in external/swisseph/ephe --
     the same manifest scripts/run-oracle-dump.ps1 and Tools/CReference/build-c.ps1 check -- before

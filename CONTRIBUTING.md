@@ -139,7 +139,7 @@ line offsets for mapping an old citation to the current pin.
 ### The upstream C is vendored at `external/swisseph`
 
 `external/swisseph` is a git submodule of `https://github.com/aloistr/swisseph`,
-pinned to upstream master at `43c9fe54` (`v2.10.3bfinal` plus 25 commits; no newer tag exists) -- the upstream C this port tracks.
+pinned to the upstream tag `v2.10.04` (`e308765d`) -- the upstream C this port tracks.
 It is sparse-checked-out to keep it small: only `*.c`, `*.h`, `Makefile`,
 `LICENSE`, `setest/` (the reference test corpus `Tests/SwissEphNet.Conformance.Tests`
 is built against) and eight specific `ephe/` files the conformance oracle needs to run
@@ -167,7 +167,7 @@ git sparse-checkout set --no-cone /*.c /*.h /Makefile /LICENSE /setest/* /seleap
     /ephe/seas_12.se1 /ephe/semo_12.se1 /ephe/sepl_12.se1 `
     /ephe/seas_18.se1 /ephe/semo_18.se1 /ephe/sepl_18.se1 `
     /ephe/sefstars.txt /ephe/seorbel.txt
-git checkout 43c9fe54fc1255a6a83dcb5f4364218ab4034e39
+git checkout e308765d10b9463ab0ed53b102ad454820ee0b43
 cd ../..
 git submodule absorbgitdirs external/swisseph
 ```

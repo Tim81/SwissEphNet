@@ -274,8 +274,8 @@ https://github.com/Tim81/SwissEphNet/blob/main/CHANGELOG.md.
   -->
   <ItemGroup>
     <AssemblyMetadata Include="UpstreamSwissEphemerisVersion" Value="2.10.03" />
-    <AssemblyMetadata Include="UpstreamSwissEphemerisTag" Value="v2.10.3bfinal" />
-    <AssemblyMetadata Include="UpstreamSwissEphemerisCommit" Value="43c9fe54fc1255a6a83dcb5f4364218ab4034e39" />
+    <AssemblyMetadata Include="UpstreamSwissEphemerisTag" Value="v2.10.04" />
+    <AssemblyMetadata Include="UpstreamSwissEphemerisCommit" Value="e308765d10b9463ab0ed53b102ad454820ee0b43" />
   </ItemGroup>
 
   <!--

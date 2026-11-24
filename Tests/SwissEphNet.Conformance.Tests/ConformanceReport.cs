@@ -61,7 +61,7 @@ public sealed record CategoryDrift(IterationResult Result, FailureCategory Recor
 /// iterations to fail) and grouping by testcase, split into <see cref="IsActionable"/> and
 /// parked, is what makes a red oracle run legible instead of alarming: most testcases are
 /// expected to be parked on NOT-IMPLEMENTED/DATA-MISSING, a handful carry the actual porting
-/// work queue. The port now tracks the same pinned commit (43c9fe54, v2.10.3bfinal plus 25) the C reference is built
+/// work queue. The port now tracks the same pinned commit (v2.10.04, e308765d) the C reference is built
 /// from, so most failures are not a version gap: t.exp is Astrodienst's own expected-output
 /// file, dated to a specific historical run (14.12.2023), and Tests/conformance/value-mismatch-
 /// triage.tsv found the overwhelming majority of VALUE-MISMATCH rows reproduce against a fresh

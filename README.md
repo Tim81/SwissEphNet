@@ -319,8 +319,8 @@ build metadata. The upstream version and tag it used to spell out are now `Assem
 entries, `UpstreamSwissEphemerisVersion`, `UpstreamSwissEphemerisTag` and
 `UpstreamSwissEphemerisCommit`, which is where text that does not have to parse as a version
 belongs. `UpstreamSwissEphemerisCommit` is the full SHA of the pinned upstream commit
-(`43c9fe54fc1255a6a83dcb5f4364218ab4034e39`), and `UpstreamSwissEphemerisTag` names the nearest
-upstream tag that pin is based on (`v2.10.3bfinal`).
+(`e308765d10b9463ab0ed53b102ad454820ee0b43`), and `UpstreamSwissEphemerisTag` names the upstream
+tag that pin is (`v2.10.04`).
 
 This project is not published or endorsed by Yan Grenier or Astrodienst. See "About this repository"
 above and `NOTICE` for the credit both are owed.
@@ -502,7 +502,7 @@ did not have:
 None of this replaces existing API. It is purely additive.
 
 With those additions the port now covers the C library's whole public surface. `swephexp.h` at
-the current pin (`43c9fe54`) declares 107 `swe_*` functions, and all 107 are present and public here.
+the current pin (`e308765d`, `v2.10.04`) declares 107 `swe_*` functions, and all 107 are present and public here.
 The count is not an estimate: it comes from parsing the header and diffing it against the committed
 public-API list under `Tests/SwissEphNet.Tests/PublicApi/`, which a test regenerates and compares
 on every run, so a member appearing or disappearing fails the build rather than going unnoticed.
@@ -1002,8 +1002,8 @@ answer, the other 1,636 sit outside the tolerance Astrodienst's own suite allows
 house-speed rows where `t.exp` predates the upstream analytic cusp speeds), and the four rows
 ever confirmed as port defects were fixed and pruned.
 
-- `external/swisseph`, a git submodule, sparse-checked-out, pinned to upstream
-  master at `43c9fe54` (`v2.10.3bfinal` plus 25 commits; no newer tag exists). It serves two purposes:
+- `external/swisseph`, a git submodule, sparse-checked-out, pinned to the upstream
+  tag `v2.10.04` (`e308765d`). It serves two purposes:
   1. **The reference corpus** for the conformance oracle: `setest/t.exp`
      (expected values) and `setest/t.fix` (tolerances), plus the core `.se1`
      ephemeris files, `sefstars.txt`, `seorbel.txt`, and `seleapsec.txt` that
@@ -1248,7 +1248,7 @@ Astrodienst's own material, which documents the API this port exposes:
 - [Swiss Ephemeris programming interface](http://www.astro.com/swisseph/swephprg.htm), the
   reference for every `swe_*` function here.
 - [`aloistr/swisseph`](https://github.com/aloistr/swisseph), the C source this port tracks. Pinned
-  here at master `43c9fe54` (`v2.10.3bfinal` plus 25 commits) under `external/swisseph`.
+  here at tag `v2.10.04` (`e308765d`) under `external/swisseph`.
 - [`aloistr/swisseph/ephe`](https://github.com/aloistr/swisseph/tree/master/ephe), the ephemeris
   data files, mirrored at [`ephe.scryr.io/ephe`](https://ephe.scryr.io/ephe).
 
