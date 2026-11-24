@@ -539,7 +539,7 @@ the speed fields differ from `t.exp` by more than its 1e-3 tolerance. This is `t
 intentional upstream change, not a port defect. Per-row evidence, from the MSVC-built C at `6c989727`, is in
 `house-speed-drift-6c989727.tsv` (retired at v2.10.04, in git history): 970 `CORRECTION` (the C's speed is the numerical
 derivative of its own positions, `t.exp`'s is not), 2 `STEP` (6.8.285 and 6.8.645, a whole sign cusp at a
-sign ingress) and 0 `UNEXPLAINED`. The other 664 are the rows triaged in section 3a.
+sign ingress) and 0 `UNEXPLAINED`. The other `VALUE-MISMATCH` rows are triaged in section 3a; `Tests/conformance/value-mismatch-triage.tsv` was re-measured on 2026-11-24 and holds 333 rows, all `DRIFT`, none `PORT-DEFECT`.
 
 **157 of the 759 `DATA-MISSING` rows are `SEFLG_SWIEPH` calls for a date outside the era this
 repo's shipped core ephemeris files cover** (the `sepl`/`semo`/`seas_N.se1` and their BCE `_N.se1`
@@ -685,7 +685,7 @@ measurement.
 
 ## 3a. VALUE-MISMATCH triage against Astrodienst's own C
 
-This triage ran against 668 `VALUE-MISMATCH` rows, the count at the time. The 664 rows that remained after the four defects the
+This section is the 2026-08-02 triage of 668 `VALUE-MISMATCH` rows, kept as measured; `Tests/conformance/value-mismatch-triage.tsv` was replaced on 2026-11-24 by a triage of the current 333 rows (all `DRIFT`, no `PORT-DEFECT`). The 664 rows that remained after the four defects the
 triage found were fixed and pruned are the table's other VALUE-MISMATCH rows (the table now says 1,636,
 including the 972 house-speed rows above); the numbers below are the triage's own, and are left as it
 measured them.

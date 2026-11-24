@@ -575,13 +575,8 @@ Separately, the port's output is checked against Astrodienst's own 2.10.03 test 
 is outside the tolerance Astrodienst's own suite allows, and 759 because a required data file (a
 JPL ephemeris, a per-asteroid or `ephe/sat/` file, or an ephemeris era this repository does not
 ship, roughly years 1200 to 2399) is not present, not because the answer is wrong.
-`Tests/conformance/value-mismatch-triage.tsv` drove Astrodienst's own MSVC-built 2.10.03 C through
-the identical inputs for all 668 `VALUE-MISMATCH` rows at the time it ran, and found 4 confirmed
-port defects, all a missing JD-range guard on interpolated lunar perigee (`docs/compliance-2.10.03.md`
-section 3a). That guard is fixed now and the four rows are pruned, so of the 664 remaining at the time, none
-is a port defect anyone has demonstrated: each reproduces the port's own output rather than the
-reference corpus's, i.e. drift between this build's toolchain/environment and whatever produced
-`setest`'s reference values, not a wrong answer. So the port matches everything it has been
+`Tests/conformance/value-mismatch-triage.tsv` was re-measured on 2026-11-24 against upstream v2.10.04 (`e308765d`) and covers all 333 current `VALUE-MISMATCH` rows: upstream's own `setest`, built with gcc on Linux and run on the same 8 ephemeris files this repository ships, reproduces the port on 228 of them (the official `t.exp` was made in a different data environment), 91 differ only in the ephemeris directory embedded in an error string, 13 differ only through glibc against the Windows C runtime (the MSVC-built C equals the port exactly), and 1 is stale `xx[]` that `setest` records after an error return; none is a port defect. The four port defects the earlier (2026-08-02, 668-row) triage found, a missing JD-range guard on
+interpolated lunar perigee (`docs/compliance-2.10.03.md` section 3a), are fixed and their rows pruned. So the port matches everything it has been
 checked against and is not yet at full parity with Astrodienst's own reference corpus.
 The other 972 of the 1,636 are the house-speed rows (`setest` 6.8 and 6.9) that the sync to upstream
 `6c989727` moves: positions are unchanged and only speed fields differ from `t.exp`, which predates

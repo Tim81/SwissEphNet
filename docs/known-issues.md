@@ -3442,7 +3442,7 @@ nothing on its own about whether the *current* vendored C (`43c9fe54`, `v2.10.3b
 from it. The 972 rows added by the `6c989727` sync are exactly that case, and the answer there is
 yes, deliberately: see the last section of this file.
 
-**The one place this was actually checked.** `Tests/conformance/value-mismatch-triage.tsv` (669
+**The one place this was actually checked.** (Superseded on 2026-11-24: `Tests/conformance/value-mismatch-triage.tsv` now holds 333 rows, all `DRIFT` and none `PORT-DEFECT`, measured against upstream v2.10.04; the text below is the 2026-08-02 triage as it was written.) `Tests/conformance/value-mismatch-triage.tsv` (669
 lines) drove all 668 `VALUE-MISMATCH` rows that were on `known-fail.tsv` as of 2026-08-02 through
 Astrodienst's own C, built fresh from the same pinned commit (`external/.c-reference/build-
 2.10.03/libswe-2.10.03.lib`, MSVC), via a scratch driver replaying the same dispatch sequence as
