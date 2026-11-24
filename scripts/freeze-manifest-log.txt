@@ -821,3 +821,51 @@ b"} where the C gives {"a", ""}); that one is fixed
     planets and stars, from 2020, are identical before and after and match the C. No test added.
     SwissEphNet/CPort: 49695 -> 49695 lines, kr_braces (1253) and trailing_ws (1258) unchanged,
     sha256 0D47E6CB... -> 80319BF4....
+47. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-24: Re-transliteration
+    of upstream v2.10.04 (e308765d) into SwephLib.cs, SwephLib.h.cs, Sweph.h.cs, SwissEph.swephexp.h.cs
+    and the open_jpl_file() hunk of Sweph.cs (commit 4a2b156); an adoption of upstream changes, not a
+    correction. swephexp.h: SE_DE_NUMBER 441, SE_FNAME_DFT de441.eph, SE_FNAME_DFT2 removed (a breaking
+    change of the public API, as in the C), SE_TIDAL_STEPHENSON_2020 (-25.82), SE_TIDAL_DEFAULT is
+    SE_TIDAL_DE441, SEMOD_NDELTAT 6 and SEMOD_DELTAT_STEPHENSON_ETC_2020 as the new default. sweph.h:
+    SE_VERSION "2.10.04", SE3_FILE_SUFFIX. swephlib.c: deltat_stephenson_etc_2020() and its dtcf20
+    spline table (swephlib.c:2964-3091), used before 1 Jan 1962 by calc_deltat(); dt[] runs to TABEND
+    2033 with the C's values as written, including 69.2093 for 2023; adjust_for_tidacc() uses 1955.5
+    and 0.000091072 (the 2.10.03 version stays as a comment, as in the C's #if 0); AMODELS_SE_2_1004,
+    and an empty model string now selects the current version (swephlib.c:4381-4395). sweph.c
+    open_jpl_file(): the DE406 fallback is removed with SE_FNAME_DFT2. Tests: the 1960 and 2030
+    swe_utc_to_jd / swe_jdet_to_utc expectations move with the new Delta T and are taken from the
+    MSVC-built C at e308765d.
+    SwissEphNet/CPort: 49695 -> 49879 lines, kr_braces (1253) unchanged, trailing_ws 1258 -> 1277,
+    sha256 80319BF4... -> B5427269....
+48. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-24: Re-transliteration
+    of sweph.c v2.10.04 (e308765d) into Sweph.cs and Sweph.h.cs (commit 0882f78); an adoption of
+    upstream changes, not a correction. swe_calc() is a wrapper that records the date of the call
+    (tjd_calc) around swecalc_1(), the former body (sweph.c:308-340; 79d3553f, 85eb3a5d, 49fbf676).
+    sweph() chooses the ephemeris file by the call date for evaluations within one day of it, applies
+    the first-day rule, records the file's nominal range in the new file_data.tnom0/tnom1
+    (gen_filename_range(), sweph.c:1206-1230) and reselects by tjd when the chosen file does not
+    contain it (sweph.c:2277-2500); read_const() frees the segment of every body of a new file
+    (sweph.c:5113-5120). app_pos_etc_plan() with SEFLG_HELCTR uses the heliocentric distance for the
+    second light-time pass, and app_pos_etc_plan_osc() likewise (8178d0ac). app_pos_etc_moon() returns
+    the error when the light-time point is outside the JPL file, and swecalc() then falls back to
+    Moshier (sweph.c:750-765); C# cannot jump from after the switch into its moshier_moon: case
+    label, so the fallback re-enters the switch with epheflag set to SEFLG_MOSEPH. jd_and_date() in
+    the Chiron, Pholus, interpolated-apsides and file-limit messages. swe_set_ephe_path(): the #if 1
+    body of the C (Moon test call, files closed again, DE number kept for the tidal acceleration), the
+    former body kept as a comment as in the C's #else. swe_close() resets eop_dpsi_loaded;
+    load_dpsi_deps() reads dpsi at s + 167 and s + 98 (sweph.c:1571, 1575); plaus_iflag() warns when
+    JPLHOR is dropped; get_new_segment()'s inactive #else and swe_get_library_path()'s commented C
+    follow the new source.
+    SwissEphNet/CPort: 49879 -> 50168 lines, kr_braces 1253 -> 1261, trailing_ws 1277 -> 1280,
+    sha256 B5427269... -> F4E85840....
+49. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-24: Re-transliteration
+    of swetest.c v2.10.04 (e308765d; 34959cf5, 0219d926, 280e4ce1) into Programs/SweTest/Program.cs; an
+    adoption of upstream changes, not a correction. New jd_and_date() helper (swetest.c:833-858, the
+    twin of the one in sweph.c, with gflag because swetest has a global gregflag) and its prototype
+    (swetest.c:739); the -lim output prints "range %s: %s to %s de=%d" with jd_and_date() for both
+    limits, sbeg and send being 80 chars (swetest.c:1744-1758); SE_INTP_APOG and SE_INTP_PERG join
+    the conditions that print serr (swetest.c:1802). Not ported, as no-ops for the port: the
+    do_printf() #ifdef _WINDOWS branch removal (the port's do_printf is Console.Write) and every
+    #ifdef USE_DLL hunk (ephepath_dll, the swe_get_named_ast_list() search).
+    Programs/SweTest/Program.cs: 5185 -> 5210 lines, kr_braces (64) and trailing_ws (69) unchanged,
+    sha256 0D3F0D21... -> 7A36212A....
