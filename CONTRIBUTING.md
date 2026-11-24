@@ -132,7 +132,7 @@ A PR that changes a frozen file with no hunk citation should not be merged.
 
 Existing citations of the upstream C (in port comments, docs and the freeze log) refer to
 `v2.10.3bfinal` (`f4dcd18e`) unless they name another version; they were not renumbered when the
-pin moved to `94621aba`. Cite new hunks against the current pin and say so if it is not obvious.
+pin moved (to `94621aba`, then `43c9fe54`, then `e308765d`). Cite new hunks against the current pin and say so if it is not obvious.
 `docs/known-issues.md` ("C file:line citations were written against `v2.10.3bfinal`") has the exact
 line offsets for mapping an old citation to the current pin.
 
@@ -250,7 +250,7 @@ input (the PyPI URL above) and no parameter or code path that can reach the
 ### Generating a per-file delta
 
 `scripts/gen-delta.ps1` diffs a file between the 2.08 baseline (fetched above)
-and the pinned 2.10.03 submodule:
+and the pinned submodule (`v2.10.04` at this writing):
 
 ```powershell
 pwsh scripts/gen-delta.ps1 -File sweph.c
@@ -371,7 +371,7 @@ that many files under `SwissEphNet/CPort/` carry in their header comment.
 ## Correctness oracle known-fail list
 
 `Tests/SwissEphNet.Conformance.Tests` checks the port against Astrodienst's
-own 2.10.03 reference values (`external/swisseph/setest/t.exp`), not against
+own 2.10.04 reference values (`external/swisseph/setest/t.exp`), not against
 the port's own prior output -- see "Correctness oracle" in `README.md`.
 `Tests/conformance/known-fail.tsv` is the work queue: every iteration the port
 is currently known not to match, by category. The gate passes only when the
@@ -469,34 +469,36 @@ correctness oracle look, from a CI notification, like the same kind of thing:
 both run the library against a reference and report PASS/FAIL. Their
 *expected* results are opposites. The baseline expects **zero** diffs --
 anything else means a change altered something it should not have. This
-oracle expects **some iterations to still fail** -- the 2.10.03 delta has
-landed file by file, but `known-fail.tsv` still lists 2,395<!--doccount:known-fail-total--> of 12,757
-iterations (81.2% passing), and closing the rest is incremental porting
-work, not something a single PR finishes. A red oracle run is not evidence
-anything is broken; a green one (all 12,757 passing with an empty
-`known-fail.tsv`) would mean the port is at full parity with 2.10.03, which
-is the multi-PR goal this whole mechanism exists to track progress toward,
+oracle expects **some iterations to still fail**: `known-fail.tsv` lists 1,591<!--doccount:known-fail-total--> of 18,919
+iterations (91.6% passing) at v2.10.04. That count is divergence from `t.exp`, a static
+snapshot made by Astrodienst, not a count of port defects: all 333 `VALUE-MISMATCH` rows are
+triaged against the C and none is a port defect, and the other 1,258 are `DATA-MISSING`. A red
+oracle run is not evidence anything is broken; a green one (all 18,919 passing with an empty
+`known-fail.tsv`) would mean every iteration matches `t.exp`, which needs the full data set the official run used, so it is
 not today's state. See "Reporting by testcase" below for how to read a run
 without it looking alarming.
 
 ### Reporting by testcase
 
-12,757 individual iteration results is not something a contributor can read.
+18,919 individual iteration results is not something a contributor can read.
 `ConformanceReport.FormatByTestCase()` (wired into
 `scripts/regenerate-known-fail.ps1` and `Tools/ConformanceKnownFailGen`)
-groups by the 60 (suite, testcase) pairs instead and splits them into two
+groups by the 68 (suite, testcase) pairs instead and splits them into two
 lists: **actionable** (at least one `VALUE-MISMATCH`/`ERROR` -- the actual
 porting work queue) and **parked** (every non-passing iteration in that
 testcase is `NOT-IMPLEMENTED`, `DATA-MISSING`, or `UNREPRODUCIBLE` -- blocked
 on something other than the port's logic: a 2.10-only API (currently none;
 the category is empty), a data file this repo doesn't ship, or a structural
 gap). A testcase with zero failing iterations appears in neither list; it is
-not "parked", it is done. Of the 60, 39 have at least one row in
-`known-fail.tsv`; splitting those by `FormatByTestCase()`'s rule gives 31
-actionable and 8 genuinely parked, and the remaining 21 have no row in
+not "parked", it is done. Of the 68, 28 have at least one row in
+`known-fail.tsv`; splitting those by `FormatByTestCase()`'s rule gives 14
+actionable and 14 genuinely parked, and the remaining 40 have no row in
 `known-fail.tsv` at all -- they pass completely. Conflating "parked" with
-"everything not actionable" overstates how much of the 60 is blocked on
-something other than the port's own logic: it is 8, not 29. A porting PR
+"everything not actionable" overstates how much of the 68 is blocked on
+something other than the port's own logic: it is 14, not 54. ("Actionable"
+is the rule's name, not a verdict: at v2.10.04 all 333 `VALUE-MISMATCH` rows
+are triaged as drift, none a port defect.) Measured at v2.10.04; at
+2.10.3.x the figures were 60 testcases, 31 actionable and 8 parked. A porting PR
 should be shrinking the actionable list's mismatch/error counts, or moving a
 testcase from actionable to fully passing -- not touching the parked list,
 which changes only when a 2.10 API gets implemented or a data-file constraint

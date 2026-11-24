@@ -413,7 +413,7 @@ jobs:
   # swetest's, and both oracle grids' totals with their per-func breakdown) directly from the
   # files that define them, and fails when a doccount-marker-tagged figure (see
   # scripts/verify-doc-counts.ps1's own header for the exact HTML-comment marker syntax) in
-  # README.md, CONTRIBUTING.md, docs/compliance-2.10.03.md, docs/known-issues.md or the
+  # README.md, CONTRIBUTING.md, docs/compliance-2.10.04.md, docs/known-issues.md or the
   # oracle/conformance/baseline workflow files disagrees -- or when a defined count has no marker
   # left to check at all, or a marker exists somewhere outside that document set. See
   # scripts/verify-doc-counts.ps1's own header for the marker-vs-manifest design choice.

@@ -1,7 +1,7 @@
 # The 2.10.03 delta's no-op hunks
 
-`scripts/gen-delta-hunk-counts.tsv` pins 428 filtered hunks across 24 files for the 2.08-to-2.10.03
-delta. Of those, 33 hunks across eight files carry no semantic content for the C# port: `void`
+`scripts/gen-delta-hunk-counts.tsv` pins 458 filtered hunks across 24 files for the 2.08-to-2.10.04
+delta (428 at `43c9fe54`, as of 2.10.3.x). Of those, 33 hunks across eight files carry no semantic content for the C# port: `void`
 added to empty C parameter lists, dead local variables, comment and license-header churn,
 formatting-only reindentation, and a Windows-only header with no C# counterpart. Four further
 hunks in `swehel.c` rename a preprocessor symbol and are recorded separately below, because they
@@ -16,9 +16,14 @@ only in `sweodef.h`, `swetest.c` and `ephe/`, none of which any hunk below touch
 since moved to upstream master at `94621aba`, which adds one hunk each to `swehel.c` and `sweph.c`,
 two to `swephexp.h` and three to `swetest.c`; the pin then moved on to `6c989727`, which adds 13
 hunks to `swehouse.c` and 3 to `sweph.c`, and then to `43c9fe54`, where removing the `TRACE` blocks
-takes one hunk out of `swehouse.c` (now 68) and `get_new_segment()` adds one to `sweph.c` (now 130);
-the 428 total is unchanged and the totals above are the current ones. None of those is a no-op hunk,
-and no line cited in this file moved.
+takes one hunk out of `swehouse.c` (68) and `get_new_segment()` adds one to `sweph.c` (130);
+the 428 total was unchanged there. The pin then moved to the tag `v2.10.04` (`e308765d`), which
+re-pins `swejpl.h` 0 to 1, `sweph.c` 130 to 145, `sweph.h` 4 to 6, `swephexp.h` 16 to 17, `swephlib.c`
+29 to 37, `swephlib.h` 3 to 4 and `swetest.c` 103 to 105: 30 more hunks, 458 in all, and those are the
+current totals. The analysis in this file was not extended to those 30 hunks, and the "33 hunks across
+eight files" above is the figure for the earlier pins. None of the hunks added at the earlier
+moves is a no-op hunk; and no line cited in this file was re-checked at `e308765d`, so treat the
+`file:line` citations as written against the earlier pins.
 
 ## `swehel.c` -- 23 raw hunks (19 filtered, 4 license-noise); 14 confirmed no-op, 4 not, 1 new
 

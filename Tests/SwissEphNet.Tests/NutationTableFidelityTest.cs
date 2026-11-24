@@ -13,7 +13,7 @@ namespace SwissEphNet.Tests
     /// external/swisseph/swenut2000a.h, the C header they were transliterated from. Before
     /// this test, the tables were only ever length-checked (NLS=678, NLS_2000B=77,
     /// NPL=687 match); no commit or script compared the actual coefficient values.
-    /// See docs/compliance-2.10.03.md, "What this record does not cover".
+    /// See docs/compliance-2.10.04.md, "What this record does not cover".
     ///
     /// Fixture: Tests/SwissEphNet.Tests/files/swenut2000a.h, a byte-identical copy of
     /// external/swisseph/swenut2000a.h at the pinned submodule commit, embedded as a

@@ -170,7 +170,7 @@ jobs:
   # file's own "verify-known-fail-log" job comment style, and oracle.yml's macos-exactness job
   # header, for why job-level would be wrong -- it would also swallow the submodule-checkout and
   # known-fail-generator-build steps, which have nothing to do with cross-platform drift).
-  # macOS was previously unmeasured on this instrument entirely (docs/compliance-2.10.03.md,
+  # macOS was previously unmeasured on this instrument entirely (docs/compliance-2.10.04.md,
   # "What this record does not cover"). continue-on-error stays here, unlike oracle.yml's
   # macos-exactness job (which shed its own initial flag after one clean run, per that job's own
   # header comment), until this leg has actually run clean in CI at least once -- promoting it to

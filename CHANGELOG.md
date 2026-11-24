@@ -3,10 +3,74 @@
 Project history from the Swiss Ephemeris 2.08 upgrade forward. Entries are prose bullets, not a
 generated commit list — for anything earlier, see git history.
 
-## Unreleased
+## 2.10.4.0
+
+The port now tracks upstream tag `v2.10.04` (`e308765d10b9463ab0ed53b102ad454820ee0b43`), the first
+upstream tag since `v2.10.3bfinal` and 43 commits after the previous pin, `43c9fe54`. `SE_VERSION`
+is `"2.10.04"`. NuGet shows the package as `2.10.4`, because it drops a trailing zero. The entries
+that were under "Unreleased" are part of this release and appear under Fixed and Performance.
+
+### Breaking
+
+- `SE_FNAME_DFT2` is removed. Upstream deleted it together with the DE406 fallback in
+  `open_jpl_file`, and the port follows (`swephexp.h`, `sweph.c`), so code that names the constant
+  no longer compiles. The default JPL file name, `SE_FNAME_DFT`, is `de441.eph`, and `SE_DE_NUMBER` is
+  441. A caller that relied on the DE406 fallback no longer gets it.
+- Results move without a code change, from the default Delta T model and the tidal acceleration
+  (next section). UT-input results before 1 January 1962 and after 2020 differ from 2.10.3.3.
+
+### Changed to follow upstream
+
+Each of these is an adoption of an upstream change, not a correction of the port.
+
+- Delta T. The default model is `SEMOD_DELTAT_STEPHENSON_ETC_2020` (new, model 6), the Morrison,
+  Stephenson, Hohenkerk and Zawilski 2021 spline, used before 1 January 1962
+  (`deltat_stephenson_etc_2020()`, `swephlib.c:2964-3091`); the former default was
+  `SEMOD_DELTAT_STEPHENSON_ETC_2016` (model 5). `dt[]` runs to 2033 (`TABEND`), and
+  `adjust_for_tidacc()` changed (it uses 1955.5 and 0.000091072). Measured from the MSVC-built C
+  at `e308765d`, `swe_deltat_ex` at 1000 CE (JD 2086302.5) is 0.018871612655972776 days under
+  model 6 and 0.016726901931961108 days under model 5: 1630.507 s and 1445.204 s, so 185.303 s
+  apart (0.002144710724 days times 86400). `SEMOD_NDELTAT` is 6.
+- Tidal acceleration. `SE_TIDAL_DEFAULT` is `SE_TIDAL_DE441` (-25.936), where it was
+  `SE_TIDAL_DE431`, and the new constant `SE_TIDAL_STEPHENSON_2020` is -25.82.
+- Heliocentric light-time. With `SEFLG_HELCTR` the second light-time pass uses the heliocentric
+  distance (upstream `8178d0ac`, in `app_pos_etc_plan()` and `app_pos_etc_plan_osc()`). Upstream's
+  figures for the change are 21 mas for Mars in 2016 and up to 0.84" for Mercury.
+- File choice. `swe_calc` chooses the ephemeris file by the date of the call (`tjd_calc`), so a
+  result at a file boundary no longer depends on call history (upstream `79d3553f`, `85eb3a5d`,
+  `49fbf676`; `sweph.c:308-340` and `:2277-2500`). Moon and Jupiter on 21 dates around the 1800
+  `sepl`/`semo` `_12`/`_18` boundary now give the same result in ascending order, descending
+  order, a fresh instance per date and after a call on the other side of the boundary.
+- Moon light-time. When the light-time point falls outside the JPL file, the Moon falls back to
+  Moshier (`sweph.c:750-765`).
+- Error messages. The Chiron, Pholus, interpolated-apsides and file-limit messages now give the JD
+  and the calendar date, for example `Chiron not available at JD 1967600.5 = 31.12.0674j;
+  restricted to JD 1967601.5 = 01.01.0675j - JD 3419437.5 = 01.01.4650`. `swetest -lim` prints the
+  JD and `-fT` dates in the same way, and shows the errors of `SE_INTP_APOG` and `SE_INTP_PERG`.
+- `swe_set_astro_models("")` selects the current version's models (`AMODELS_SE_2_1004`).
+- `SEFLG_JPLHOR` without the JPL file now returns a warning in `serr` (`plaus_iflag`).
+- `load_dpsi_deps` reads the EOP `dpsi` column at the corrected offsets (`sweph.c:1571`, `:1575`),
+  and `swe_close` resets the EOP state.
+- `swe_set_ephe_path` follows the C's active body: it makes a test call for the Moon, closes the
+  files again and keeps the DE number for the tidal acceleration.
+- Data files. Upstream's `sepl`, `semo` and `seas` files were regenerated on DE441. Callers who
+  rely on the ephemeris data should take the `v2.10.04` files.
+- The upstream pin moves from `43c9fe54` to the tag `v2.10.04`. In `swetest.c` the `do_printf` and
+  `USE_DLL` hunks (`0219d926`, `280e4ce1`) have no counterpart in the port, and
+  `Tools/CReference/build-c.ps1` no longer patches `do_printf`, because upstream fixed it in
+  `0219d926`; the `-astpos` variable-length-array patch stays.
 
 ### Fixed
 
+- `swed` is cleared in place on first initialisation, as `sweph.c:1257` does
+  (`memset(&swed, 0, sizeof(struct swe_data))`, and `:1285` for `astro_models`). The port replaced
+  the object, so a reference taken before the first initialisation pointed at the discarded copy.
+  This predates the sync. Two symptoms on a fresh `SwissEph`, measured against the MSVC-built C at
+  `e308765d`: `swe_get_astro_models("SE2.06")` listed the default models (`-amod0,...`) where the C
+  gives `-amod5,...`, and `swe_nod_aps` returned wrong apsides for some bodies and dates, for
+  example Sun `MEAN` at JD 1000000 gave perihelion 215.29900167326124 where the C gives
+  302.33849105597147. All 360 `nodaps` calls of the characterization baseline are now bit-identical
+  to the C.
 - `read_const` no longer drops leading digits from an asteroid's name beyond the C's prefix scan
   (`sweph.c:4614-4617`: spaces, then digits, then exactly one character). A name such as
   `1999 AB1` lost `1999 ` as well, so `ast_H`, `ast_G` and the diameter were read five columns
@@ -61,6 +125,41 @@ generated commit list — for anything earlier, see git history.
   every comparison. `swe_fixstar2_ut` with 12 rotating names went from 173,206 to 6,018 B and
   from 61-67 to 24 µs per call; `swe_fixstar2_mag` from 182,000 to 2,193 B and from 39-47 to
   1.5 µs. Results are bit-identical.
+
+### Verification
+
+- Oracle grids. Against the MSVC-built C at `e308765d` the port is bit-identical on 27,437
+  analytic rows and 3,376 file rows, the dumps are SHA-256 identical, and both known-diff lists are
+  empty.
+- `swetest`. 251 of 268 cases are byte-identical to the MSVC-built `swetest`. The other 17 differ
+  only by the directory separator and the CRT's `-nan(ind)`. `DATE_FORMATS|FAR_FUTURE` is newly
+  listed, because it now prints a `sepl_24.se1` not-found warning in both programs.
+- Characterization baseline, regenerated twice, each with a deviation note. For the Delta T and tidal
+  defaults: with only those two changes reverted, exactly 82 case ids change, all Chiron `serr`
+  rows, plus `VER`. For the `swed` fix: 156 rows, scope `NA`/`NAUT` only, and all 360 `nodaps` calls
+  bit-identical to the C.
+- Conformance. The corpus is now 11 suites, 68 testcases and 18,919 iterations (it was 10, 60 and
+  12,757); suite 11 (`swe_pheno`, `swe_azalt`, `swe_refrac`, `swe_cotrans`) is new, and 8.9 calls
+  `swe_lun_eclipse_when_loc`. `known-fail.tsv` has 1,591 rows, 1,258 `DATA-MISSING` and 333
+  `VALUE-MISMATCH`, where it had 2,395 (759 and 1,636). The number measures divergence from
+  `t.exp`, a static Astrodienst snapshot, not port defects: all 333 rows are triaged against the C
+  in `Tests/conformance/value-mismatch-triage.tsv` as drift, 228 `DATA-ENV`, 91 `SERR-PATH`, 13
+  `LIBM-PLATFORM` and 1 `SETEST-STALE-XX`. The 972 house-speed rows of the `6c989727` sync pass
+  against the regenerated `t.exp`, so their drift ledger and its test are retired (in git history).
+- New tests pin the v2.10.04 behaviour with values measured from the C: `FileBoundaryHistoryTest`,
+  `HeliocentricLightTimeTest`, `DeltaTModelsTest`, `CalcMessagesTest`, `AstroModelsStringTest` and
+  `SweDataClearInPlaceTest`. File-backed tests skip when `external/swisseph/ephe` lacks the files.
+
+### Known issues
+
+- Upstream data. `dt[]` in `v2.10.04` has 69.2093 for 2023 where USNO's `deltat.data` has 69.2039,
+  which looks like a transposition, and its 2026.0 entry is the prediction 69.05 where the measured
+  value is 69.1099. The port keeps the C's values, as the transliteration freeze requires. A
+  correction is being prepared for upstream.
+- Upstream test harness, not the library, and the port's harness is unaffected: `suite_09_rise.c`
+  declares `double dobs[5]` where the heliacal functions take `dobs[6]`, and `xxtret[10]`, which
+  `swe_heliacal_pheno_ut` overruns. With gcc's stack protector, `setest` aborts at 9.2.9.
+- See `docs/known-issues.md` for both, and for the closed `swed` entry.
 
 ## 2.10.3.3
 
@@ -277,7 +376,7 @@ generated commit list — for anything earlier, see git history.
   source instead of only checking its length.
 - CI gained macOS legs on the baseline and conformance gates (report-only, since the baseline
   stays locked to Windows; see `Tools/BaselineGen/README.md`).
-- No breaking changes. See `docs/known-issues.md` and `docs/compliance-2.10.03.md` for the
+- No breaking changes. See `docs/known-issues.md` and `docs/compliance-2.10.04.md` for the
   verification detail behind this release.
 
 ## 2.10.3 (the first release published to nuget.org, under the SwissEphSharp package ID; entries from 2.8.0.2 down are the original project's, published under SwissEphNet)
@@ -322,7 +421,7 @@ generated commit list — for anything earlier, see git history.
   fixed between 2.08 and 2.10.03 that this port now also carries: swe_nod_aps/swe_nod_aps_ut
   returning all-zero nodes and apsides, an obliquity read that affected every SEFLG_SWIEPH
   position, eclipse magnitude and obscuration off by a factor of 100, and the swe_house_pos buffer
-  that was one element short for Gauquelin houses. See docs/compliance-2.10.03.md for the
+  that was one element short for Gauquelin houses. See docs/compliance-2.10.04.md for the
   verification numbers behind this release and docs/known-issues.md and the "V:2.10.3" section
   of README.md for the full list.
 - You are also inheriting everything in the 2.8.1.0 entry below, even though no such package was

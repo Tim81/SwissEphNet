@@ -44,7 +44,7 @@ name: Oracle build gates
 # step the same way, added afterwards for the same reason (see Tests/oracle/version-classification*.tsv).
 #
 # swetest-diff is one of three jobs that still exempt one step apiece. It compares the runner's
-# MSVC C against Tests/swetest/known-diff.tsv, which holds 16<!--doccount:swetest-known-diff--> real rows of printed output captured
+# MSVC C against Tests/swetest/known-diff.tsv, which holds 17<!--doccount:swetest-known-diff--> real rows of printed output captured
 # from one specific compiler (external/.c-reference/toolchain.txt records which one) -- a future
 # windows-latest MSVC genuinely can move those without the port changing at all, so that
 # comparison step carries continue-on-error, matching baseline.yml's own verify-baseline-linux job:
@@ -462,7 +462,7 @@ jobs:
   # carried 5 recorded SERR entries, all a single deliberate, platform-portable path-separator
   # choice (DIR_GLUE) rather than a compiler-version-sensitive ULP, and they are gone now, not
   # waived -- the returned file path was scoped down to its basename (see
-  # docs/compliance-2.10.03.md's "The last two 2.10.03-only entry points") -- so every one of the
+  # docs/compliance-2.10.04.md's "The last two 2.10.03-only entry points") -- so every one of the
   # 3,376<!--doccount:grid-files-total--> file-backed rows is required to be bit-identical, full
   # stop, not "bit-identical or one of 5 recorded exceptions".
   #
@@ -608,7 +608,7 @@ jobs:
           Write-Host "PASS: the committed three-way version classification matches this run's dumps." -ForegroundColor Green
 
   # Partly gating, and unlike oracle-dump above the exemption here is still earned:
-  # Tests/swetest/known-diff.tsv holds 16<!--doccount:swetest-known-diff--> real rows of printed output captured from one specific
+  # Tests/swetest/known-diff.tsv holds 17<!--doccount:swetest-known-diff--> real rows of printed output captured from one specific
   # MSVC, so a runner toolset bump genuinely can move them without this port changing. Everything
   # before the comparison step -- the gitlink assertion, the submodule checkout, the 2.08 sdist
   # fetch and build-c.ps1 -- is a hard failure. Not because those steps are toolchain-independent;
@@ -841,7 +841,7 @@ jobs:
       # This build keeps that comparison running so a change in it is noticed -- the 62/10 figures
       # are from the grid's size at that first run and have not been re-measured since (the grid
       # has grown four times since then -- 8f601cf, 6d63999, 5ced3b8, 571092e; see
-      # docs/compliance-2.10.03.md's own "macOS is now measured"
+      # docs/compliance-2.10.04.md's own "macOS is now measured"
       # section for the current row counts and for why they are not re-quoted here). This step's
       # own PASS/FAIL output on every run is the current measurement, not this comment.
       - name: Build a diagnostic C reference with clang's builtins left on
@@ -1114,7 +1114,7 @@ jobs:
   # Gate, and the other non-Windows job (macos-exactness above is the first). It answers the
   # same question that job does, for glibc: does the port reproduce Astrodienst's C on the libm
   # most Linux deployments of this port would actually run against? Until this job existed, the
-  # 17,064-of-17,064 Linux result README.md and docs/compliance-2.10.03.md quoted was measured
+  # 17,064-of-17,064 Linux result README.md and docs/compliance-2.10.04.md quoted was measured
   # once by hand, in a WSL2 Docker container, and nothing re-checked it -- both documents said so
   # in as many words ("measured once, not gated"). This job is that check, run the same way on
   # every push and pull request oracle-dump and macos-exactness already are.
