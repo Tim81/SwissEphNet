@@ -3,7 +3,7 @@
 
 Why this exists: pyswisseph vendors the same Astrodienst libswe 2.10.03 this
 port targets, and can answer "what does the real C do for THIS input" for any
-input, which t.exp cannot (t.exp is a frozen recording of ~12,757 specific
+input, which t.exp cannot (t.exp is a frozen recording of ~18,919 specific
 inputs). That makes it useful for validating this port on inputs t.exp never
 covered. But pyswisseph is C plus a third-party Python binding -- an untested
 trust hop -- so before leaning on it for anything, this script checks it
@@ -56,7 +56,7 @@ from dataclasses import dataclass, field
 # against (external/swisseph/setest/reader.c): a line is a section marker
 # only if it equals "TESTSUITE"/"TESTCASE"/"ITERATION" after trimming;
 # indentation is cosmetic. Only suites/testcases in TARGET_TESTCASES are kept
-# in memory -- the file is ~334,000 value lines and this script only needs a
+# in memory -- the file is ~509,000 value lines and this script only needs a
 # handful of testcases' worth.
 # ---------------------------------------------------------------------------
 

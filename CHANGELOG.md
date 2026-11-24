@@ -168,11 +168,11 @@ generated commit list — for anything earlier, see git history.
   to 2,395 rows (`VALUE-MISMATCH` 664 to 1,636; `DATA-MISSING` 759 unchanged). The 972 new rows
   are all `setest` 6.8 (`swe_houses_ex2`) and 6.9 (`swe_houses_armc_ex2`): positions are unchanged
   on all 1,080 iterations and only speed fields differ from `t.exp` beyond its 1e-3 tolerance
-  (9,120 fields). Per-row evidence is in `Tests/conformance/house-speed-drift-6c989727.tsv`,
-  produced by `Tools/CReference/house-speed-texp-check.c` against the MSVC-built library: 970 rows
+  (9,120 fields). Per-row evidence was in `Tests/conformance/house-speed-drift-6c989727.tsv`
+  (retired at v2.10.04, in git history), produced by `Tools/CReference/house-speed-texp-check.c` against the MSVC-built library: 970 rows
   are a correction (the C speed is the numerical derivative of its own positions, and `t.exp`'s is
   not), 2 are a step (6.8.285 and 6.8.645, whole-sign cusps at a sign ingress), and 0 are
-  unexplained; `HouseSpeedDriftTests` ties the file one to one to `known-fail.tsv`. These are
+  unexplained; `HouseSpeedDriftTests` (retired with it) tied the file one to one to `known-fail.tsv`. These are
   `t.exp` drift from an intentional upstream change, not port defects. 10,362 of 12,757
   iterations now pass (11,334 before). The oracle version classification moves 37 analytic cases
   from `AGREES-BOTH` to `TRACKS-2.10.03`. The commits after `6c989727` (`0c3eb56e`, `6318ad4c`,

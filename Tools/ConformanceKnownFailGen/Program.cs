@@ -7,7 +7,7 @@ using SwissEphNet.Conformance.Tests.KnownFail;
 // Never invoke this directly -- see scripts/regenerate-known-fail.ps1.
 var outputPath = args.Length > 0 ? args[0] : "known-fail.tsv";
 
-Console.WriteLine("Running the full conformance corpus (this dispatches all 12,757 iterations)...");
+Console.WriteLine("Running the full conformance corpus (this dispatches all 18,919 iterations)...");
 var startedAt = DateTime.UtcNow;
 ExpDocument doc;
 System.Collections.Generic.IReadOnlyList<IterationResult> results;
@@ -59,7 +59,7 @@ foreach (var g in entries
 }
 
 // Emit the per-suite pass-rate table too, since a reviewer regenerating the
-// file wants this in the same run, not a second full 12,757-iteration pass.
+// file wants this in the same run, not a second full 18,919-iteration pass.
 Console.WriteLine();
 var knownFailByKey = entries.ToDictionary(e => e.Key);
 var report = ConformanceReport.Build(results, knownFailByKey);

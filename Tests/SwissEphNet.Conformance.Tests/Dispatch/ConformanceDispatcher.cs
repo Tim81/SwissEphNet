@@ -19,6 +19,10 @@ public sealed class ConformanceDispatcher
     // carry-over from a previous testcase's last call.
     private readonly Suite08Eclipses _suite08 = new();
 
+    // Suite 11's working arrays are file-scope statics shared by every testcase too (see
+    // Suite11PhenoAzalt's remarks).
+    private readonly Suite11PhenoAzalt _suite11 = new();
+
     public DispatchOutcome Dispatch(SwissEph swe, ExpTestSuite suite, ExpTestCase testCase, ExpIteration iteration, Precision precision)
     {
         if (TryGetStaticNotImplementedReason(suite.Id, testCase.Id, out var staticReason))
@@ -76,6 +80,7 @@ public sealed class ConformanceDispatcher
             8 => _suite08.Dispatch(swe, testCase.Id, iteration, precision),
             9 => Suite09Rise.Dispatch(swe, testCase.Id, iteration, precision),
             10 => Suite10Solcross.Dispatch(swe, testCase.Id, iteration, precision),
+            11 => _suite11.Dispatch(swe, testCase.Id, iteration, precision),
             _ => DispatchOutcome.Error($"Unknown suite id {suite.Id}."),
         };
     }
@@ -86,7 +91,7 @@ public sealed class ConformanceDispatcher
     /// Testcases whose target function does not exist in SwissEphNet at all --
     /// true regardless of what data the iteration needs, so checked before any
     /// data-availability check. The port now tracks the same pinned C tag
-    /// (v2.10.3bfinal) the conformance corpus targets, so this switch currently
+    /// (v2.10.04) the conformance corpus targets, so this switch currently
     /// has no cases; it stays as the mechanism for the next API gap, not dead code.
     /// </summary>
     private static bool TryGetStaticNotImplementedReason(int suiteId, int testCaseId, out string reason)

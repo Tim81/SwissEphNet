@@ -55,8 +55,9 @@ public static class EphemerisFileResolver
     }
 
     /// <summary>
-    /// The equivalent of setest's suite-scope swe_set_jpl_file("de431.eph"), issued by
-    /// suite_01_calc.c:11 and suite_10_solcross.c:11 immediately after their path reset.
+    /// The equivalent of setest's suite-scope swe_set_jpl_file("de441.eph"), issued by
+    /// suite_01_calc.c and suite_10_solcross.c (their SUITE_INIT blocks) immediately after their
+    /// path reset. Upstream passed "de431.eph" until v2.10.04 (cb67a4a3).
     /// </summary>
     /// <remarks>
     /// Named rather than skipped even when no DE file is available, because the call has a
@@ -70,9 +71,16 @@ public static class EphemerisFileResolver
     public static void SetJplFile(SwissEph swe)
     {
         swe.swe_set_jpl_file(string.IsNullOrEmpty(JplFilePath)
-            ? "de431.eph"
+            ? SetestJplFileName
             : Path.GetFileName(JplFilePath));
     }
+
+    /// <summary>
+    /// The file name setest's SUITE_INIT passes to swe_set_jpl_file: upstream's de441.eph since
+    /// v2.10.04 (cb67a4a3), de431.eph before. ConformanceRunner checks this against the pinned
+    /// suite_01_calc.c and suite_10_solcross.c, so it cannot silently go stale again.
+    /// </summary>
+    public const string SetestJplFileName = "de441.eph";
 
     /// <summary>
     /// The equivalent of setest's swe_set_ephe_path(NULL). Every suite file issues one at

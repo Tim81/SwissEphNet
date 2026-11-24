@@ -12,7 +12,7 @@ name: Conformance oracle
 # most needed to happen. Neither ci.yml nor baseline.yml in this repo filters
 # by paths at all; this workflow now matches that rather than maintaining a
 # second, incomplete allowlist. Whether it belongs on the PR path at all came
-# down to cost, not scope: a full run dispatches all 12,757 iterations
+# down to cost, not scope: a full run dispatches all 18,919 iterations
 # in-process in ~2s (measured locally, Tools/ConformanceKnownFailGen, Release
 # build) and `dotnet test` end-to-end (both TFMs, including host startup) in
 # ~8s -- see README.md's "Correctness oracle" section for the measurement.

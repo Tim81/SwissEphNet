@@ -17,23 +17,85 @@ public class SetestSourceModelTests
     {
         var model = SetestSourceModel.Default;
 
-        // Measured against external/swisseph @ v2.10.3final, still exact at v2.10.3bfinal
-        // (setest/* is byte-identical between the two tags). Asserted exactly,
+        // Measured against external/swisseph @ v2.10.04 (e308765d), which added suite 11 and
+        // widened the house-system and ayanamsa grids. Asserted exactly,
         // not as floors: the floors inside Load exist to catch a parser that
         // stopped matching, this exists to catch one that started matching the
         // wrong thing. If a submodule bump moves these, update them and say so
         // in the commit -- do not relax them into inequalities.
-        Assert.Equal(39, model.InputNames.Count);
-        Assert.Equal(60, model.TestCaseKeys.Count);
-        Assert.Equal(10, model.TestCaseKeys.Select(k => k.Suite).Distinct().Count());
+        Assert.Equal(52, model.InputNames.Count);
+        Assert.Equal(68, model.TestCaseKeys.Count);
+        Assert.Equal(11, model.TestCaseKeys.Select(k => k.Suite).Distinct().Count());
         Assert.Equal(5, model.SharedCheckerNames.Count);
 
-        // 47 literal names; 46 once "xx[0]" (suite_06_houses.c:60, the only
+        // 52 literal names; 51 once "xx[0]" (suite_06_houses.c, the only
         // CHECK_D whose operand carries its own subscript) folds onto "xx".
-        Assert.Equal(47, model.AllCheckedNames.Count);
+        Assert.Equal(52, model.AllCheckedNames.Count);
         Assert.Equal(
-            46,
+            51,
             model.AllCheckedNames.Select(SetestSourceModel.BaseName).Distinct(StringComparer.Ordinal).Count());
+    }
+
+    [Fact]
+    public void SuiteInitBlocksOfThePinnedSubmoduleAreParsed()
+    {
+        var model = SetestSourceModel.Default;
+
+        // suite_01_calc.c and suite_10_solcross.c pass swe_set_jpl_file("de441.eph") since v2.10.04
+        // (cb67a4a3; it was "de431.eph"), suite_06_houses.c closes first, suite_03_misc.c has no
+        // SUITE_INIT at all. ConformanceRunner mirrors exactly this table.
+        Assert.Equal(["swe_set_ephe_path(NULL)", "swe_set_jpl_file(\"de441.eph\")"], model.SuiteInitCalls(1));
+        Assert.Equal(["swe_set_ephe_path(NULL)"], model.SuiteInitCalls(2));
+        Assert.Empty(model.SuiteInitCalls(3));
+        Assert.Equal(["swe_set_ephe_path(NULL)"], model.SuiteInitCalls(4));
+        Assert.Equal(["swe_set_ephe_path(NULL)"], model.SuiteInitCalls(5));
+        Assert.Equal(["swe_close()", "swe_set_ephe_path(NULL)"], model.SuiteInitCalls(6));
+        Assert.Equal(["swe_set_ephe_path(NULL)"], model.SuiteInitCalls(7));
+        Assert.Equal(["swe_set_ephe_path(NULL)"], model.SuiteInitCalls(8));
+        Assert.Equal(["swe_set_ephe_path(NULL)"], model.SuiteInitCalls(9));
+        Assert.Equal(["swe_set_ephe_path(NULL)", "swe_set_jpl_file(\"de441.eph\")"], model.SuiteInitCalls(10));
+        Assert.Equal(["swe_set_ephe_path(NULL)"], model.SuiteInitCalls(11));
+
+        // The per-iteration resets inside testcase bodies: suite 1 testcases 2-4, suite 2 testcases 4-7.
+        var withReset = model.TestCaseKeys
+            .Where(k => model.TestCaseStateCalls(k.Suite, k.TestCase).Count > 0)
+            .OrderBy(k => k.Suite).ThenBy(k => k.TestCase)
+            .ToList();
+        Assert.Equal([(1, 2), (1, 3), (1, 4), (2, 4), (2, 5), (2, 6), (2, 7)], withReset);
+        Assert.All(withReset, k => Assert.Equal(["swe_set_ephe_path(NULL)"], model.TestCaseStateCalls(k.Suite, k.TestCase)));
+
+        // The suites whose TEARDOWN is "if (GET_I(initialize)) swe_close( );".
+        Assert.Equal([1, 6, 7, 8, 9, 10, 11], model.SuitesClosingOnInitialize.OrderBy(s => s));
+    }
+
+    [Fact]
+    public void SuiteInitBlockIsReadThroughNestedBraces()
+    {
+        var model = LoadSynthetic(
+            suiteSource: """
+                TESTSUITE(99,"synthetic")
+                SUITE_INIT {
+                  if (x) { swe_close(); }
+                  swe_set_ephe_path( NULL );
+                  swe_set_jpl_file( "de441.eph" );
+                }
+                TEARDOWN {
+                  if (GET_I(initialize)) swe_close( );
+                }
+                TESTCASE(1,"resets") {
+                  swe_set_ephe_path(NULL);
+                  CHECK_I(rc);
+                }
+                TESTCASE(2,"does not") {
+                  CHECK_I(rc);
+                }
+                END_TESTSUITE
+                """);
+
+        Assert.Equal(["swe_close()", "swe_set_ephe_path(NULL)", "swe_set_jpl_file(\"de441.eph\")"], model.SuiteInitCalls(99));
+        Assert.Equal(["swe_set_ephe_path(NULL)"], model.TestCaseStateCalls(99, 1));
+        Assert.Empty(model.TestCaseStateCalls(99, 2));
+        Assert.Equal([99], model.SuitesClosingOnInitialize);
     }
 
     [Fact]
@@ -176,9 +238,9 @@ public class SetestSourceModelTests
         // nonEmpty at all, because that suite's real names ("rc", "serr", "xx") are also asserted
         // by other suites in this synthetic set -- so the aggregate floors alone cannot see suite
         // 1 go dark. Every other floor is sized to pass: 30 GET_* input names, 46 distinct CHECK_*
-        // names (>= the 40 floor), 59 mapped testcases across 10 suites (5 + 9*6, comfortably
+        // names (>= the 40 floor), 65 mapped testcases across 11 suites (5 + 10*6, comfortably
         // above the 55 floor -- see the exact count asserted just below), 5 shared checkers, all
-        // four CHECK_D/I/S/DD families present, and every testcase in suites 2-10 carries a
+        // four CHECK_D/I/S/DD families present, and every testcase in suites 2-11 carries a
         // non-empty set -- only suite 1's five testcases are empty.
         var inputNames = new HashSet<string>(StringComparer.Ordinal);
         for (var i = 0; i < 30; i++)
@@ -194,7 +256,7 @@ public class SetestSourceModelTests
             checkedNames[(1, tc)] = new HashSet<string>(StringComparer.Ordinal);
         }
 
-        // Suites 2-10: 50 more testcases (55 total, clearing the "testcases mapped" and "suite
+        // Suites 2-11: 60 more testcases (65 total, clearing the "testcases mapped" and "suite
         // count" floors), each asserting names shared with what suite 1 would otherwise have
         // asserted ("rc", "serr", "xx") plus enough distinct names to clear the 40-name floor.
         var distinctNames = new List<string> { "rc", "serr", "xx" };
@@ -212,7 +274,7 @@ public class SetestSourceModelTests
         };
 
         var nameIndex = 0;
-        for (var suite = 2; suite <= 10; suite++)
+        for (var suite = 2; suite <= 11; suite++)
         {
             for (var tc = 1; tc <= 6; tc++)
             {
@@ -223,7 +285,7 @@ public class SetestSourceModelTests
             }
         }
 
-        // 5 (suite 1) + 9*6 (suites 2-10) = 59 mapped testcases, well above the floor of 55.
+        // 5 (suite 1) + 10*6 (suites 2-11) = 65 mapped testcases, well above the floor of 55.
         Assert.True(checkedNames.Count >= 55);
         Assert.Equal(
             46,
@@ -272,7 +334,7 @@ public class SetestSourceModelTests
         };
 
         var nameIndex = 0;
-        for (var suite = 1; suite <= 10; suite++)
+        for (var suite = 1; suite <= 11; suite++)
         {
             for (var tc = 1; tc <= 6; tc++)
             {
@@ -291,7 +353,7 @@ public class SetestSourceModelTests
             }
         }
 
-        // 10*6 = 60 mapped testcases, well above the floor of 55.
+        // 11*6 = 66 mapped testcases, well above the floor of 55.
         Assert.True(checkedNames.Count >= 55);
         Assert.Equal(
             46,
@@ -341,7 +403,7 @@ public class SetestSourceModelTests
         };
 
         var nameIndex = 0;
-        for (var suite = 1; suite <= 10; suite++)
+        for (var suite = 1; suite <= 11; suite++)
         {
             for (var tc = 1; tc <= 6; tc++)
             {

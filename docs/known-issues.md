@@ -4047,12 +4047,12 @@ from `t.exp`, beyond its 1e-3 tolerance (9,120 fields), because `6c989727` repla
 finite-difference cusp speeds with analytic ones (see the hsys `'Y'` entry above). Iterations
 passing went from 11,334 to 10,362 of 12,757 (12,757 less the 2,395 known-fail rows).
 
-**Evidence.** `Tests/conformance/house-speed-drift-6c989727.tsv`, produced by
+**Evidence.** `house-speed-drift-6c989727.tsv` (retired when `t.exp` was regenerated at v2.10.04; it
+and `HouseSpeedDriftTests` are in git history), produced by
 `Tools/CReference/house-speed-texp-check.c` against an MSVC build of libswe at `6c989727`. It
-classifies each row: 970 `CORRECTION` (the C's speed equals the numerical derivative of its own
+classified each row: 970 `CORRECTION` (the C's speed equals the numerical derivative of its own
 positions, and `t.exp`'s does not), 2 `STEP` (6.8.285 and 6.8.645: a whole-sign cusp at a sign
-ingress), 0 `UNEXPLAINED`. The test `HouseSpeedDriftTests` ties the evidence file one to one to
-`known-fail.tsv`.
+ingress), 0 `UNEXPLAINED`.
 
 **Oracle classification.** In the same sync the oracle's version classification moved 37 analytic
 cases from `AGREES-BOTH` to `TRACKS-2.10.03` (18,497 to 18,460, and 8,940 to 8,977); the files grid

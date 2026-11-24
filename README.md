@@ -585,7 +585,7 @@ reference corpus's, i.e. drift between this build's toolchain/environment and wh
 checked against and is not yet at full parity with Astrodienst's own reference corpus.
 The other 972 of the 1,636 are the house-speed rows (`setest` 6.8 and 6.9) that the sync to upstream
 `6c989727` moves: positions are unchanged and only speed fields differ from `t.exp`, which predates
-the analytic cusp speeds. `Tests/conformance/house-speed-drift-6c989727.tsv` carries per-row
+the analytic cusp speeds. `house-speed-drift-6c989727.tsv` (retired at v2.10.04, in git history) carried per-row
 evidence from the MSVC-built C: 970 are a correction, 2 are a sign-ingress step, none is unexplained.
 
 # Breaking changes
@@ -1061,62 +1061,45 @@ ever confirmed as port defects were fixed and pruned.
   (`ipl` 9000-9999) need `ephe/sat/` at ~227 MB (opt in with
   `SWISSEPH_CONFORMANCE_INCLUDE_MOONS=1` and that directory populated).
 
-  **Skipped is not untested.** Both were run once, against real data, and the
-  measurement is recorded in `Tests/conformance/regenerations.log`'s entry of
-  2026-07-31: the full 12,757-iteration corpus with `SWISSEPH_CONFORMANCE_INCLUDE_JPL=1`
-  and `SWISSEPH_CONFORMANCE_JPL_FILE` pointed at `de431.eph`, the file `setest`'s own
-  suites 1 and 10 call `swe_set_jpl_file` with:
+  **Skipped is not untested.** Both were run once, against real data, under the previous
+  corpus, and the measurement is recorded in
+  `Tests/conformance/regenerations.log`'s entry of 2026-07-31: the full
+  12,757-iteration corpus with `SWISSEPH_CONFORMANCE_INCLUDE_JPL=1` and
+  `SWISSEPH_CONFORMANCE_JPL_FILE` pointed at `de431.eph`, which is what `setest`'s
+  suites 1 and 10 then passed to `swe_set_jpl_file`. **500 of the 538 JPL rows pass
+  outright** once the data is present, along with 4 of the 18 `sat` rows, as measured
+  on 2026-07-31, before 30 `SEFLG_CENTER_BODY` rows joined the `sat` category on
+  2026-08-01 (`Tests/conformance/regenerations.log`, "Reclassify 56 rows"). The JPL
+  backend works; what it lacks is a way to keep proving it.
+
+  That run has not been repeated. Upstream regenerated `t.exp` for v2.10.04 against DE441
+  and suites 1 and 10 now call `swe_set_jpl_file("de441.eph")`, so the 18,919-iteration
+  corpus expects upstream's `de441.eph`, and `EphemerisFileResolver` defaults to that
+  name. To run the JPL rows, point `SWISSEPH_CONFORMANCE_JPL_FILE` at that file and set
+  `SWISSEPH_CONFORMANCE_INCLUDE_JPL=1`. No size or checksum for `de441.eph` is recorded
+  here, because none has been measured on this repository's side; when you run it, record
+  the SHA-256 of the file you used next to the result. A checksum from the download
+  location is the right thing to compare it against, and an MD5 alone only shows that a
+  download was not corrupted in transit.
+
+  The smaller DE files are on the same NASA FTP area (see the credits at the end of this
+  file), and are useful for a different job than this one:
 
   ```
-  size    2,788,676,624 bytes
-  sha256  fe3d0323d26ada11f8d8228fda9ca590c7eb00cee8b22dff1839f74f5be71149
-  md5     fad0f432ae18c330f9e14915fbf8960a
-  ```
-
-  **500 of the 538 JPL rows pass outright** once the data is present, along with 4 of
-  the 18 `sat` rows, as measured on 2026-07-31, before 30 `SEFLG_CENTER_BODY` rows joined the
-  `sat` category on 2026-08-01 (`Tests/conformance/regenerations.log`, "Reclassify 56 rows");
-  `known-fail.tsv` carries 48 `sat` rows today, and the 4-of-18 figure has not been re-run
-  against that larger set. The JPL backend works; what it lacks is a way to keep proving it.
-
-  Verify with the SHA-256, not the MD5. Upstream publishes only an MD5, and their
-  `readme.md` lists `fad0f432ae18c330f9e14915fbf8960a  de431.eph` among the md5-keys --
-  and MD5 has had practical chosen-prefix collisions since 2019, so it establishes that
-  a download was not corrupted in transit, not that nobody chose its contents. The
-  SHA-256 above was computed here from the file that produced the result, after
-  confirming its MD5 against upstream's published one. Both are recorded so the chain
-  is checkable in either direction: the MD5 ties this file to Astrodienst, and the
-  SHA-256 is what anyone reproducing the run should actually match.
-
-  Get it from NASA rather than a mirror, because `de431.eph` is not a Swiss Ephemeris
-  format at all: it is JPL's own Linux binary, renamed. Upstream's `readme.md` links
-  straight to it, and the sizes confirm the rename is all that happens --
-  `lnxm13000p17000.431` is 2,788,676,624 bytes, the same count as the file measured
-  above, so nothing is converted in between.
-
-  ```
-  de431.eph  https://ssd.jpl.nasa.gov/ftp/eph/planets/Linux/de431/lnxm13000p17000.431   2.6 GB
   de406.eph  https://ssd.jpl.nasa.gov/ftp/eph/planets/Linux/de406/lnxm3000p3000.406     190 MB
   de200.eph  https://ssd.jpl.nasa.gov/ftp/eph/planets/Linux/de200/lnxm1600p2170.200      41 MB
   ```
 
-  Download, rename to the `.eph` name, check the SHA-256. Astrodienst also list Alois
-  Treindl's Dropbox and `https://ephe.scryr.io/jpl/` (a web space provided by Phillip
-  McCabe) as alternatives, which are useful if NASA's FTP area is slow, but the point
-  of taking JPL's own copy is that the mirror stops being part of the trust chain.
+  Only DE441 is the file the corpus expects. `setest`'s suites hardcode it, so the
+  expected values in `t.exp` are DE441 values, and running the corpus against DE200,
+  DE406 or DE431 produces real differences that look exactly like port defects. The
+  smaller files are useful because `load_dpsi_deps` is reached only when the opened
+  file reports `jpldenum >= 403`, which DE406 clears and DE200 does not.
 
-  Only `de431.eph` reproduces the numbers above. `setest`'s suites hardcode it, so the
-  expected values in `t.exp` are DE431 values, and running the corpus against DE200 or
-  DE406 produces real differences that look exactly like port defects. The smaller
-  files are useful for a different job: `load_dpsi_deps` is reached only when the
-  opened file reports `jpldenum >= 403`, which DE406 clears and DE200 does not.
-
-  Nothing in CI measures that, and the reason is size rather than doubt. `de431.eph`
-  is 2.6 GB, cannot be committed, and no runner will fetch it per job, so the result
-  above is a dated one-time measurement rather than a gate. It is reproducible by
-  anyone holding that file: the MD5 is recorded so a different DE build, which would
-  produce different numbers and look like defects, can be ruled out first. Treat these
-  rows as verified-but-unwatched, not as covered.
+  Nothing in CI measures the JPL rows, and the reason is size rather than doubt. The DE
+  file is several GB, cannot be committed, and no runner will fetch it per job, so the
+  figures above are a dated one-time measurement rather than a gate. Treat these rows as
+  verified-but-unwatched, not as covered.
 
 - **The JPL backend also has a bit-exact grid**, and it is the one that found the
   bug. `Tools/OracleGrid/grid-jpl.tsv` is the third oracle grid: 2,407 rows, 1,200
@@ -1131,8 +1114,8 @@ ever confirmed as port defects were fixed and pruned.
   pwsh scripts/verify-oracle.ps1   -Grid Jpl
   ```
 
-  It runs against DE406 rather than DE431 on purpose. The conformance corpus is
-  locked to DE431 because `setest` hardcodes it, but the oracle compares the port
+  It runs against DE406 rather than DE441 on purpose. The conformance corpus is
+  locked to DE441 because `setest` hardcodes it, but the oracle compares the port
   against the C over the same file on the same machine, so any DE file works and the
   190 MB one is the one a contributor can actually download. `load_dpsi_deps` needs
   `jpldenum >= 403`, which DE406 clears and DE200 does not.

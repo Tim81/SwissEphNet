@@ -153,7 +153,7 @@ public class ValueMismatchTriageTests
         var rows = Load(ResolvePath());
 
         // Parse-only, like ConformanceSuiteTests.CorpusParsesToExpectedTotals -- this does
-        // not need a full 12,757-iteration dispatch run, just the set of iteration keys t.exp
+        // not need a full 18,919-iteration dispatch run, just the set of iteration keys t.exp
         // currently defines.
         var expPath = Path.Combine(RepoLocator.SetestDir, "t.exp");
         var doc = ExpReader.Read(expPath);

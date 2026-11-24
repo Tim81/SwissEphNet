@@ -5,7 +5,7 @@
     correctness oracle (Tests/SwissEphNet.Conformance.Tests).
 
 .DESCRIPTION
-    Runs Tools/ConformanceKnownFailGen, which dispatches all 12,757 iterations
+    Runs Tools/ConformanceKnownFailGen, which dispatches all 18,919 iterations
     in setest/t.exp against the current SwissEphNet build and writes one row
     per non-passing iteration.
 
@@ -122,7 +122,7 @@ param(
     # write step a real -PruneOnly run performs (Invoke-PruneOnlyWrite below) against caller-supplied
     # paths, with no build and no oracle dispatch, so HIGH 1's own fix site (the `@()` wrap that
     # feeds $header, not just Get-SurvivingLines) is reachable from a self-test case without paying
-    # for Tools/ConformanceKnownFailGen or the 12,757-iteration corpus. See the self-test case that
+    # for Tools/ConformanceKnownFailGen or the 18,919-iteration corpus. See the self-test case that
     # uses it for why this exists: the self-test's own hand-built, pre-wrapped array (the original
     # case 1 below) calls Get-SurvivingLines directly and never reaches the `$header =
     # $currentRawLines[0]` line at all, so it could not have caught a deleted `@()` there even though
@@ -184,12 +184,12 @@ function Get-RowCount {
 # and asserting it against the corpus's known total catches a shrunk OR grown t.exp exactly, in
 # both modes, the moment it happens, rather than only when the ratio math happens to notice.
 #
-# 12,757 -- setest/t.exp's total iteration count, matching CONTRIBUTING.md's "Reporting by
+# 18,919 -- setest/t.exp's total iteration count, matching CONTRIBUTING.md's "Reporting by
 # testcase" section and Tests/conformance/known-fail.tsv's own header. A future, legitimate corpus
 # change (an upstream t.exp update) moves this constant and known-fail.tsv together in the same
 # commit, the same way $PruneOnlySurvivalRatioFloor above is a calibrated, hand-updated figure
 # rather than something this script derives on its own.
-$ExpectedIterationCount = 12757
+$ExpectedIterationCount = 18919
 
 # Pure: extracts the iteration count from Tools/ConformanceKnownFailGen's own captured stdout text
 # (Program.cs:30-31's "iterations={doc.TotalIterationCount}" line), or $null if that line is not
@@ -636,21 +636,21 @@ if ($SelfTest) {
         # 14. LOW 6's own fix: the generator's own "iterations={doc.TotalIterationCount}" line
         #     (Tools/ConformanceKnownFailGen/Program.cs:30-31) is parsed out of its captured stdout.
         Assert-True 'Get-IterationCountFromOutput parses the generator''s own iterations= line' `
-            ((Get-IterationCountFromOutput -Text "Done in 42.0s. suites=60 testcases=60 iterations=12757 valueLines=99999") -eq 12757)
+            ((Get-IterationCountFromOutput -Text "Done in 42.0s. suites=11 testcases=68 iterations=18919 valueLines=99999") -eq 18919)
         Assert-True 'Get-IterationCountFromOutput returns $null when the line is absent (the generator stopped printing it)' `
-            ($null -eq (Get-IterationCountFromOutput -Text "Done in 42.0s. suites=60 testcases=60 valueLines=99999"))
+            ($null -eq (Get-IterationCountFromOutput -Text "Done in 42.0s. suites=11 testcases=68 valueLines=99999"))
 
         # 15. Test-IterationCountOk's three verdicts: missing, mismatched, matching.
-        $verdictMissing = Test-IterationCountOk -Actual $null -Expected 12757
+        $verdictMissing = Test-IterationCountOk -Actual $null -Expected 18919
         Assert-True 'a missing iteration count is not ok, and names why' `
             (-not $verdictMissing.Ok -and $verdictMissing.Reason -match "stdout carried no 'iterations=") "got: $($verdictMissing | Out-String)"
 
-        $verdictMismatch = Test-IterationCountOk -Actual 12000 -Expected 12757
+        $verdictMismatch = Test-IterationCountOk -Actual 18000 -Expected 18919
         Assert-True 'a mismatched iteration count is not ok, and names the actual vs expected count' `
-            (-not $verdictMismatch.Ok -and $verdictMismatch.Reason -match '12000 iteration\(s\)' -and $verdictMismatch.Reason -match 'expected exactly 12757') `
+            (-not $verdictMismatch.Ok -and $verdictMismatch.Reason -match '18000 iteration\(s\)' -and $verdictMismatch.Reason -match 'expected exactly 18919') `
             "got: $($verdictMismatch | Out-String)"
 
-        $verdictMatch = Test-IterationCountOk -Actual 12757 -Expected 12757
+        $verdictMatch = Test-IterationCountOk -Actual 18919 -Expected 18919
         Assert-True 'a matching iteration count is ok' ($verdictMatch.Ok)
 
         Write-Host ''
@@ -677,7 +677,7 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 if ($PruneOnly) {
     $tempPath = [System.IO.Path]::GetTempFileName()
     try {
-        Write-Host "Running the conformance oracle against the current build (dispatches all 12,757 iterations; expect a few minutes)..."
+        Write-Host "Running the conformance oracle against the current build (dispatches all 18,919 iterations; expect a few minutes)..."
         $genResult = Invoke-ConformanceGenerator -OutputPath $tempPath
         if ($genResult.ExitCode -ne 0) { exit $genResult.ExitCode }
         Assert-IterationCount -Actual $genResult.Iterations
@@ -783,7 +783,7 @@ $beforeCount = Get-RowCount -Path $knownFailPath
 # $knownFailPath completely untouched, exactly like -PruneOnly already guarantees.
 $tempKnownFailPath = [System.IO.Path]::GetTempFileName()
 try {
-    Write-Host "Running the conformance oracle against the current build (this dispatches all 12,757 iterations; expect a few minutes)..."
+    Write-Host "Running the conformance oracle against the current build (this dispatches all 18,919 iterations; expect a few minutes)..."
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $genResult = Invoke-ConformanceGenerator -OutputPath $tempKnownFailPath
     $stopwatch.Stop()

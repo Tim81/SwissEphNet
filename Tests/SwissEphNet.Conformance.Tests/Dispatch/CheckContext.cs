@@ -88,6 +88,31 @@ public sealed class CheckContext(ExpFields expected, Precision precision)
     }
 
     /// <summary>
+    /// CHECK_EQUALS_D(actual, expected) -- a pure runtime self-consistency check of two computed
+    /// doubles (a round trip), not file-backed. Mirrors external/swisseph/setest/checkpoints.c's
+    /// check_equals_d: |expected - actual| must not exceed the testcase's overall precision, and a NaN
+    /// on either side fails.
+    /// </summary>
+    /// <remarks>
+    /// setest.c since v2.10.04 (f952691) overrides that precision with a per-quantity tolerance from
+    /// tolerances.c when the compared name is one it knows (3e-8 degrees for an angle, 1e-10 AU for a
+    /// distance, 1e-9 per day for a speed). This harness's other comparisons use t.fix's precision, so
+    /// this one does too; suite 11's round trips agree to far better than either (see Suite11PhenoAzalt).
+    /// </remarks>
+    public void CheckEqualsD(string name, double actual, double expectedValue)
+    {
+        _comparisonCount++;
+        if (double.IsNaN(actual) || double.IsNaN(expectedValue) || Math.Abs(expectedValue - actual) > precision.All)
+        {
+            _mismatches.Add(new FieldMismatch(
+                name,
+                expectedValue.ToString("G17", CultureInfo.InvariantCulture),
+                actual.ToString("G17", CultureInfo.InvariantCulture),
+                expectedValue - actual));
+        }
+    }
+
+    /// <summary>
     /// CHECK_S(name). <paramref name="actual"/> may legitimately be null: many
     /// SwissEphNet calls (a mechanical C port) leave a `ref string serr` output
     /// parameter untouched on a success path where the C original never wrote

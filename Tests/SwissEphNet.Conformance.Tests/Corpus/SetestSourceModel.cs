@@ -53,13 +53,23 @@ namespace SwissEphNet.Conformance.Tests.Corpus;
 /// </para>
 /// <para>
 /// The five shared checkers in globals_suite.c (check_swecalc_results and the
-/// four check_swehouses_* variants) are expanded into their call sites: a
+/// four check_swehouses_* variants, whose prototypes globals_suite.h has declared since
+/// v2.10.04) are expanded into their call sites: a
 /// testcase that calls one inherits that helper's CHECK_* names, and without
 /// the expansion suites 1 and 6 would come out very nearly empty. The
 /// "if (ihsy == 'G')" branch inside those helpers is not modelled, and does not
 /// need to be: it selects an array <em>length</em> (cusps[0..36] vs
 /// cusps[0..12]), never a different base name, and this model works at
 /// name level.
+/// </para>
+/// <para>
+/// Since v2.10.04 (fe1a59db) a suite is its own C file and its once-per-suite setup is a
+/// <c>SUITE_INIT { ... }</c> block rather than loose statements after TESTSUITE. The model reads
+/// those blocks, the TEARDOWN blocks, and the ephemeris-state calls inside testcase bodies, so
+/// <c>ConformanceRunner</c> can check that the setup it hardcodes per suite id still is what
+/// setest does (see <see cref="SuiteInitCalls"/>): a suite that gains or loses a
+/// swe_set_ephe_path, swe_close or swe_set_jpl_file would otherwise move every result in it
+/// without anything failing loudly.
 /// </para>
 /// </remarks>
 public sealed class SetestSourceModel
@@ -92,6 +102,24 @@ public sealed class SetestSourceModel
     private static readonly Regex HelperCallRegex =
         new(@"(?<![A-Za-z0-9_])(check_[A-Za-z0-9_]+)\s*\(", RegexOptions.Compiled);
 
+    // globals_suite.h declares each shared checker as "void check_xxx(...);" (v2.10.04, fe1a59db).
+    private static readonly Regex HelperPrototypeRegex =
+        new(@"(?m)^[ \t]*void\s+(check_[A-Za-z0-9_]+)\s*\([^;{]*\)\s*;", RegexOptions.Compiled);
+
+    // "SUITE_INIT {" -- the macro expands to a static function (testsuite.m4), run once per suite.
+    private static readonly Regex SuiteInitRegex =
+        new(@"(?<![A-Za-z0-9_])SUITE_INIT\s*\{", RegexOptions.Compiled);
+
+    private static readonly Regex TeardownRegex =
+        new(@"(?<![A-Za-z0-9_])TEARDOWN\s*\{", RegexOptions.Compiled);
+
+    // The calls that change library state the runner has to reproduce: a reset of the ephemeris
+    // path, swe_close, and swe_set_jpl_file (which closes the files as a side effect, see
+    // EphemerisFileResolver.SetJplFile). The argument is kept, whitespace removed, so
+    // "swe_set_jpl_file("de441.eph")" is distinguishable from the same call with another file.
+    private static readonly Regex StateCallRegex =
+        new(@"(?<![A-Za-z0-9_])(swe_set_ephe_path|swe_close|swe_set_jpl_file)\s*\(([^()]*)\)", RegexOptions.Compiled);
+
     private readonly HashSet<string> _inputNames;
 
     /// <summary>
@@ -108,6 +136,12 @@ public sealed class SetestSourceModel
     }
     private readonly Dictionary<(int Suite, int TestCase), HashSet<string>> _checkedNames;
 
+    // Ephemeris-state facts, per suite id / per (suite, testcase). Empty for a model built
+    // for testing: only Load(string) parses them.
+    private readonly Dictionary<int, IReadOnlyList<string>> _suiteInitCalls = [];
+    private readonly Dictionary<(int Suite, int TestCase), IReadOnlyList<string>> _testCaseStateCalls = [];
+    private readonly HashSet<int> _suitesClosingOnInitialize = [];
+
     private SetestSourceModel(
         HashSet<string> inputNames,
         Dictionary<(int, int), HashSet<string>> checkedNames,
@@ -121,6 +155,27 @@ public sealed class SetestSourceModel
         SharedCheckerNames = sharedCheckerNames;
         SourceDirectory = sourceDirectory;
     }
+
+    /// <summary>
+    /// The ephemeris-state calls of the suite's <c>SUITE_INIT { ... }</c> block, in source order,
+    /// as "name(argument)" with whitespace removed: <c>swe_set_ephe_path(NULL)</c>,
+    /// <c>swe_close()</c>, <c>swe_set_jpl_file("de441.eph")</c>. Empty for a suite with no
+    /// SUITE_INIT (suite 3) and for a suite the model has no file for.
+    /// </summary>
+    public IReadOnlyList<string> SuiteInitCalls(int suiteId) =>
+        _suiteInitCalls.TryGetValue(suiteId, out var calls) ? calls : [];
+
+    /// <summary>
+    /// The ephemeris-state calls (<c>swe_set_ephe_path</c>, <c>swe_close</c>, <c>swe_set_jpl_file</c>)
+    /// inside one testcase's own body, in source order, in the same "name(argument)" form as
+    /// <see cref="SuiteInitCalls"/>. These run once per iteration, because the testcase body is the
+    /// body of the do/while that testsuite.m4 emits per testcase.
+    /// </summary>
+    public IReadOnlyList<string> TestCaseStateCalls(int suiteId, int testCaseId) =>
+        _testCaseStateCalls.TryGetValue((suiteId, testCaseId), out var calls) ? calls : [];
+
+    /// <summary>Suites whose TEARDOWN block calls swe_close when the iteration's "initialize" is set.</summary>
+    public IReadOnlyCollection<int> SuitesClosingOnInitialize => _suitesClosingOnInitialize;
 
     /// <summary>
     /// Builds a model directly from already-parsed name sets, bypassing file parsing entirely.
@@ -244,6 +299,9 @@ public sealed class SetestSourceModel
 
         var inputNames = new HashSet<string>(StringComparer.Ordinal);
         var checkedNames = new Dictionary<(int, int), HashSet<string>>();
+        var suiteInitCalls = new Dictionary<int, IReadOnlyList<string>>();
+        var testCaseStateCalls = new Dictionary<(int, int), IReadOnlyList<string>>();
+        var suitesClosingOnInitialize = new HashSet<int>();
 
         foreach (var file in suiteFiles)
         {
@@ -258,6 +316,23 @@ public sealed class SetestSourceModel
             }
 
             var suiteId = int.Parse(suiteMatch.Groups[1].Value);
+
+            var initMatch = SuiteInitRegex.Match(text);
+            if (initMatch.Success)
+            {
+                suiteInitCalls[suiteId] = StateCalls(BlockBody(text, initMatch.Index + initMatch.Length, file, "SUITE_INIT"));
+            }
+
+            var teardownMatch = TeardownRegex.Match(text);
+            if (teardownMatch.Success)
+            {
+                var teardown = BlockBody(text, teardownMatch.Index + teardownMatch.Length, file, "TEARDOWN");
+                if (teardown.Contains("initialize", StringComparison.Ordinal) &&
+                    StateCalls(teardown).Contains("swe_close()"))
+                {
+                    suitesClosingOnInitialize.Add(suiteId);
+                }
+            }
 
             foreach (Match m in GetRegex.Matches(text))
             {
@@ -279,6 +354,7 @@ public sealed class SetestSourceModel
                 var testCaseId = int.Parse(testCases[i].Groups[1].Value);
 
                 var names = CollectCheckedNames(body, helpers, file, suiteId, testCaseId, checkFamilyCounts);
+                testCaseStateCalls[(suiteId, testCaseId)] = StateCalls(body);
 
                 if (!checkedNames.TryAdd((suiteId, testCaseId), names))
                 {
@@ -290,24 +366,42 @@ public sealed class SetestSourceModel
         }
 
         var model = new SetestSourceModel(inputNames, checkedNames, helpers.Keys.ToList(), setestDirectory, checkFamilyCounts);
+        foreach (var (id, calls) in suiteInitCalls)
+        {
+            model._suiteInitCalls[id] = calls;
+        }
+
+        foreach (var (key, calls) in testCaseStateCalls)
+        {
+            model._testCaseStateCalls[key] = calls;
+        }
+
+        model._suitesClosingOnInitialize.UnionWith(suitesClosingOnInitialize);
         if (applyFloors)
         {
             model.AssertNonTrivial();
+
+            // Since v2.10.04 every suite is its own C file and reaches the shared checkers through
+            // globals_suite.h, so a checker defined in globals_suite.c but not declared there would not
+            // compile upstream, and one declared but not defined would not link. Either way the two
+            // files disagreeing means this parser is reading a layout it was not written for. Only the
+            // corpus itself is held to this; the synthetic sources the unit tests parse carry no header.
+            AssertHeaderDeclaresTheSharedCheckers(Path.Combine(setestDirectory, "globals_suite.h"), helpers.Keys);
         }
 
         return model;
     }
 
     /// <summary>
-    /// Floors, not exact counts. Measured against the pinned submodule
-    /// (v2.10.3final, unchanged in v2.10.3bfinal -- setest/* is byte-identical between the
-    /// two tags): 39 distinct GET_* input names, 46 distinct CHECK_* names
-    /// once an indexed form like "xx[0]" is folded onto its base, 60 testcases
-    /// across 10 suites, 5 shared checkers. The floors sit below those so an
+    /// Floors, not exact counts (the exact measured values are asserted in
+    /// SetestSourceModelTests.PinnedSubmodule_YieldsTheMeasuredNameSets). Measured against the
+    /// pinned submodule (v2.10.04): see the ">= 11 suites" and testcase floors below for what
+    /// they were measured against. The floors sit below the measurement so an
     /// upstream bump that adds or renames a testcase does not trip them, but far
     /// enough above zero that a parser which silently stops matching -- the
     /// failure mode that would turn the guard into a permanent no-op -- cannot
-    /// get past this.
+    /// get past this. The suite count is the one exception: it is a presence check on every
+    /// suite the corpus has, because a suite going dark is the failure it exists to catch.
     /// </summary>
     private void AssertNonTrivial()
     {
@@ -315,13 +409,13 @@ public sealed class SetestSourceModel
 
         if (_inputNames.Count < 30)
         {
-            problems.Add($"only {_inputNames.Count} GET_* input name(s) extracted (expected ~39, floor 30)");
+            problems.Add($"only {_inputNames.Count} GET_* input name(s) extracted (expected ~52, floor 30)");
         }
 
         var distinctChecked = AllCheckedNames.Count;
         if (distinctChecked < 40)
         {
-            problems.Add($"only {distinctChecked} distinct CHECK_* name(s) extracted (expected ~47, floor 40)");
+            problems.Add($"only {distinctChecked} distinct CHECK_* name(s) extracted (expected ~NCHK, floor 40)");
         }
 
         // Per family, because the aggregate floor above cannot see one family stop
@@ -336,8 +430,8 @@ public sealed class SetestSourceModel
         // still matches, and anything higher would have to be revised on an upstream bump
         // that merely moves assertions around. CHECK_II is deliberately absent from this
         // list -- it is a real macro (testsuite.m4:76-89) with zero uses at v2.10.3final
-        // (still zero at v2.10.3bfinal; testsuite.m4 is byte-identical between the two
-        // tags), so requiring it would fail on a correct parse of the pinned source.
+        // (still zero at v2.10.04, where testsuite.m4 only gained the per-suite split;
+        // requiring it would fail on a correct parse of the pinned source).
         foreach (var family in new[] { "D", "I", "S", "DD" })
         {
             _checkFamilyCounts.TryGetValue(family, out var used);
@@ -352,13 +446,13 @@ public sealed class SetestSourceModel
 
         if (_checkedNames.Count < 55)
         {
-            problems.Add($"only {_checkedNames.Count} TESTCASE block(s) mapped (expected 60, floor 55)");
+            problems.Add($"only {_checkedNames.Count} TESTCASE block(s) mapped (expected 68, floor 55)");
         }
 
         var suiteCount = _checkedNames.Keys.Select(k => k.Suite).Distinct().Count();
-        if (suiteCount < 10)
+        if (suiteCount < 11)
         {
-            problems.Add($"only {suiteCount} TESTSUITE(s) mapped (expected 10)");
+            problems.Add($"only {suiteCount} TESTSUITE(s) mapped (expected 11)");
         }
 
         if (SharedCheckerNames.Count < 5)
@@ -380,7 +474,7 @@ public sealed class SetestSourceModel
         // ("rc", "serr", "xx") that other suites also assert, so blinding CollectCheckedNames for
         // one suiteId can leave distinctChecked and nonEmpty both unmoved while every testcase in
         // that suite maps to an empty set. Measured against v2.10.3final (unchanged at
-        // v2.10.3bfinal): every one of the 10 suites has at least one testcase with a non-empty
+        // v2.10.3bfinal; 11 suites at v2.10.04): every one of the suites has at least one testcase with a non-empty
         // CHECK_* set, so the floor here is presence (>=1), not a count that would need revising
         // on an upstream bump.
         var suitesWithACheckedName = _checkedNames
@@ -407,7 +501,7 @@ public sealed class SetestSourceModel
         // testcases, so CollectCheckedNames returning {} for just (6, 3) leaves that suite's
         // "has at least one non-empty testcase" check satisfied by its five siblings while
         // (6, 3)'s own 1,080 iterations go completely unchecked. Measured against the pinned
-        // submodule: 59 of the 60 mapped testcases have a non-empty CHECK_* set; the sole
+        // submodule (v2.10.04): 67 of the 68 mapped testcases have a non-empty CHECK_* set; the sole
         // exception is TESTSUITE(1)/TESTCASE(4), which asserts only through CHECK_EQUALS_I --
         // CheckScalarRegex deliberately does not match that family (see its own comment: its
         // operands compare two computed values, not a t.exp-recorded field, so they are not real
@@ -438,6 +532,58 @@ public sealed class SetestSourceModel
                 "disable the conformance completeness guard rather than fail it: " + string.Join("; ", problems) +
                 ". Either the submodule checkout is incomplete or setest's source layout changed and this parser " +
                 "needs updating -- do not lower these floors to get past it.");
+        }
+    }
+
+    /// <summary>The text between the "{" that ends at <paramref name="afterOpenBrace"/> and its matching "}".</summary>
+    private static string BlockBody(string text, int afterOpenBrace, string file, string what)
+    {
+        var depth = 1;
+        for (var i = afterOpenBrace; i < text.Length; i++)
+        {
+            if (text[i] == '{')
+            {
+                depth++;
+            }
+            else if (text[i] == '}' && --depth == 0)
+            {
+                return text[afterOpenBrace..i];
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"Cannot build the setest source model: the {what} block in '{file}' has no closing brace.");
+    }
+
+    /// <summary>
+    /// swe_set_ephe_path / swe_close / swe_set_jpl_file calls in <paramref name="text"/>, in order, as
+    /// "name(argument)" with whitespace removed.
+    /// </summary>
+    private static List<string> StateCalls(string text) =>
+        StateCallRegex.Matches(text)
+            .Select(m => $"{m.Groups[1].Value}({Regex.Replace(m.Groups[2].Value, @"\s+", "")})")
+            .ToList();
+
+    private static void AssertHeaderDeclaresTheSharedCheckers(string headerPath, IEnumerable<string> definedHelpers)
+    {
+        if (!File.Exists(headerPath))
+        {
+            throw new InvalidOperationException(
+                $"Cannot build the setest source model: '{headerPath}' is missing. Since v2.10.04 the suite files " +
+                "reach globals_suite.c's shared checkers through it; a checkout without it is not the layout this parser reads.");
+        }
+
+        var declared = HelperPrototypeRegex.Matches(File.ReadAllText(headerPath))
+            .Select(m => m.Groups[1].Value)
+            .ToHashSet(StringComparer.Ordinal);
+        var defined = definedHelpers.ToHashSet(StringComparer.Ordinal);
+
+        if (!declared.SetEquals(defined))
+        {
+            throw new InvalidOperationException(
+                $"Cannot build the setest source model: globals_suite.h declares [{string.Join(", ", declared.OrderBy(n => n, StringComparer.Ordinal))}] " +
+                $"but globals_suite.c defines [{string.Join(", ", defined.OrderBy(n => n, StringComparer.Ordinal))}]. " +
+                "A helper in only one of the two files means this parser is not reading the layout upstream builds.");
         }
     }
 

@@ -55,7 +55,7 @@ public sealed record CategoryDrift(IterationResult Result, FailureCategory Recor
 
 /// <summary>
 /// One (suite, testcase) group's outcome breakdown -- see "Reporting by testcase" in
-/// CONTRIBUTING.md. Exists because reporting 12,757 iteration rows is not something a
+/// CONTRIBUTING.md. Exists because reporting 18,919 iteration rows is not something a
 /// contributor can read; 60 testcase-level rows is. Two gates in this repo have opposite
 /// expectations (the characterization baseline expects zero diffs, this oracle expects most
 /// iterations to fail) and grouping by testcase, split into <see cref="IsActionable"/> and
@@ -290,7 +290,7 @@ public sealed class ConformanceReport
 
     /// <summary>
     /// Groups the run by (suite, testcase) -- see "Reporting by testcase" in CONTRIBUTING.md
-    /// and <see cref="TestCaseSummary"/> -- instead of by the 12,757 individual iteration
+    /// and <see cref="TestCaseSummary"/> -- instead of by the 18,919 individual iteration
     /// rows <see cref="FormatSummary"/> lists (up to the first 50 per section). Splits
     /// actionable testcases (at least one VALUE-MISMATCH/ERROR: real porting work) from
     /// parked ones (every non-passing iteration is NOT-IMPLEMENTED/DATA-MISSING/UNREPRODUCIBLE:

@@ -226,7 +226,7 @@ jobs:
       # by a shrunken corpus sliding under the ratio floor -- and its -SelfTestApplyPrune case
       # exercises the real write path (the `@()` wrap feeding $header, not just Get-SurvivingLines)
       # in a real child process, the way scripts/verify-freeze.ps1's own Assert-Gate does, without
-      # building Tools/ConformanceKnownFailGen or dispatching the 12,757-iteration corpus.
+      # building Tools/ConformanceKnownFailGen or dispatching the 18,919-iteration corpus.
       - name: Self-test the known-fail regeneration guard
         shell: pwsh
         run: pwsh scripts/regenerate-known-fail.ps1 -SelfTest

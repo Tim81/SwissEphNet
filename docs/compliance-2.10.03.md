@@ -537,7 +537,7 @@ The 2,395<!--doccount:known-fail-total--> remaining rows split into two categori
 house-speed rows that the `6c989727` sync moved: positions are unchanged on all 1,080 iterations, and only
 the speed fields differ from `t.exp` by more than its 1e-3 tolerance. This is `t.exp` drift from an
 intentional upstream change, not a port defect. Per-row evidence, from the MSVC-built C at `6c989727`, is in
-`Tests/conformance/house-speed-drift-6c989727.tsv`: 970 `CORRECTION` (the C's speed is the numerical
+`house-speed-drift-6c989727.tsv` (retired at v2.10.04, in git history): 970 `CORRECTION` (the C's speed is the numerical
 derivative of its own positions, `t.exp`'s is not), 2 `STEP` (6.8.285 and 6.8.645, a whole sign cusp at a
 sign ingress) and 0 `UNEXPLAINED`. The other 664 are the rows triaged in section 3a.
 

@@ -17,32 +17,34 @@ namespace SwissEphNet.Conformance.Tests;
 ///             actual behavior cannot silently diverge from each other.
 ///
 /// Deliberately NOT part of the fast unit-test run (Tests/SwissEphNet.Tests):
-/// 12,757 iterations is not "fast". See .github/workflows/conformance.yml.
+/// 18,919 iterations is not "fast". See .github/workflows/conformance.yml.
 /// </summary>
 public class ConformanceSuiteTests
 {
     [Fact]
     public void CorpusParsesToExpectedTotals()
     {
-        // Parse-only: this does not need a full 12,757-iteration dispatch
+        // Parse-only: this does not need a full 18,919-iteration dispatch
         // run (which PortMatchesKnownFailList already does), just the reader.
         var expPath = Path.Combine(RepoLocator.SetestDir, "t.exp");
         var doc = ExpReader.Read(expPath);
 
-        // From the task brief / independently verified against the checked-out
-        // submodule: 10 TESTSUITE, 60 TESTCASE, 12,757 ITERATION blocks. If
-        // this ever comes back lower, the reader is silently dropping rows --
+        // Measured by this reader against the checked-out submodule (external/swisseph at
+        // v2.10.04, e308765d, whose t.exp upstream regenerated): 11 TESTSUITE, 68 TESTCASE,
+        // 18,919 ITERATION blocks (v2.10.03 had 10, 60 and 12,757; the new suite 11 is 8
+        // testcases and 1,620 iterations, and suites 4 and 6 grew to cover every ayanamsa and
+        // house system). If this ever comes back lower, the reader is silently dropping rows --
         // investigate, do not loosen this assertion.
-        Assert.Equal(10, doc.TestSuites.Count);
-        Assert.Equal(60, doc.TotalTestCaseCount);
-        Assert.Equal(12_757, doc.TotalIterationCount);
+        Assert.Equal(11, doc.TestSuites.Count);
+        Assert.Equal(68, doc.TotalTestCaseCount);
+        Assert.Equal(18_919, doc.TotalIterationCount);
 
-        // 334,276 physical "name: value" lines across every iteration --
+        // 508,929 physical "name: value" lines across every iteration --
         // includes both inputs and asserted values (t.exp does not separate
         // the two), and counts each of the 60 duplicate-key lines in
         // 9.1.1-9.1.20 (suite_09_rise.c reads atpress/attemp/ipl twice per
         // iteration) as its own line, not deduplicated.
-        Assert.Equal(334_276, doc.TotalValueLineCount);
+        Assert.Equal(508_929, doc.TotalValueLineCount);
     }
 
     // Generous, not tuned to today's actual runtime (a few seconds): this exists to catch a
