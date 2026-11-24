@@ -82,7 +82,7 @@ Read the status line first and the body for how it got there.
 | `C.atoi` saturation; `C.atof`'s remaining gaps | closed / won't fix |
 | `SwissEph.DefaultFileProvider` widened to a property | record |
 | Eight live buffer-vs-unbounded-string sites | won't fix |
-| What `known-fail.tsv`'s 1,423 rows actually are (2,395 at `6c989727`, 1,634 at `v2.10.04`) | record |
+| What `known-fail.tsv`'s 1,423 rows actually are (2,395 at `6c989727`, 1,401 at `v2.10.04`) | record |
 | Ephemeris file byte order taken from the host, not the file | closed |
 | `heliacal_ut_arc_vis` sized `xaz` for two values, `swe_azalt` writes three | closed |
 | `verify-swetest-diff.ps1` digests depend on the console code page | open |
@@ -3423,7 +3423,7 @@ found stale while explaining it. `known-fail.tsv` had 1,423 rows when this entry
 759 `DATA-MISSING`, 664 `VALUE-MISMATCH`, 0 `NOT-IMPLEMENTED` (confirmed directly, `awk -F'\t'
 'NR>1{print $4}' Tests/conformance/known-fail.tsv | sort | uniq -c`). **It had 2,395 rows**
 after the `6c989727` sync added 972 (759 `DATA-MISSING` and 1,636 `VALUE-MISMATCH`, 664 plus the 972),
-and **has 1,634 since `v2.10.04`** (see the update at the end of this entry). Everything below is the analysis of the original 1,423 and is kept as written;
+and **has 1,401 since `v2.10.04`** (see the updates at the end of this entry; it was 1,634 until the `DATA-MISSING` skips were lifted). Everything below is the analysis of the original 1,423 and is kept as written;
 the 972 are in "setest 6.8/6.9 house speeds" at the end of this file.
 
 **The stale framing.** Several checked-in comments describe this list as reflecting "the port is
@@ -3553,6 +3553,40 @@ port's value for every mismatching field of every `VALUE-MISMATCH` row, and the 
 against it within `setest`'s own tolerance for that field; before this the gate compared only the
 category and the decade of the worst field, so another field could change unseen. The
 `DATA-MISSING` rows were not cross-checked against real C this way.
+
+**Update 2026-11-24 (last): 1,401 rows, no skips, `DATA-MISSING` removed.** The harness had parked four
+kinds of iteration as `DATA-MISSING` without running them: `SEFLG_JPLEPH` (1,037), `SEFLG_CENTER_BODY` (30),
+planetary moons (18) and numbered asteroids beyond the four built-in (16), 1,101 in all. Upstream's
+`setest` skips nothing: on the same 8 files each of them runs, `swe_calc` takes its fallback (the Swiss
+ephemeris or Moshier, or the built-in elements) and writes the "not found" text to `serr`, and the result
+is compared with `t.exp`. The four checks (`EphemerisFileResolver.NeedsJplDataWeDoNotHave`,
+`NeedsMoonDataWeDoNotHave`, `NeedsAsteroidFileWeDoNotShip`, `NeedsCenterBodySatFileWeDoNotHave`) and their
+opt-in switches `SWISSEPH_CONFORMANCE_INCLUDE_JPL` and `SWISSEPH_CONFORMANCE_INCLUDE_MOONS` are removed
+(`SWISSEPH_CONFORMANCE_JPL_FILE` stays, for a run against a real DE file). 233 of the 1,101 pass against
+`t.exp`; 868 are `VALUE-MISMATCH`. With nothing left to produce it, the `DATA-MISSING` category is removed
+from the code, the report columns, `scripts/verify-doc-counts.ps1` and the docs, and
+`known-fail.tsv` has 1,401 rows, all `VALUE-MISMATCH`. The 868 were triaged with the established method
+(upstream's `setest` built from `e308765d` with gcc, run with `-g` on the 8 files, and the MSVC-built C at
+the same commit): 363 `DATA-ENV` (the port equals the C-generated corpus, and the official value comes
+from the full data set), 475 `SERR-PATH` (equal to the C-generated corpus except for the directory in
+`serr`) and 30 `LIBM-PLATFORM` (17 suite-10 `helio_cross` `jx` rows, 12 suite-7 apsides rows and the speeds
+of 1.1.273, all equal to the MSVC-built C bit for bit, 50 of 50 fields). Fourteen more suite-10 rows fail
+a runtime self-check (`CHECK_EQUALS_D`, not stored in `t.exp`) identically in the MSVC-built C, and 1.4.3
+fails `CHECK_EQUALS_I(rc, iflag)` the same way: a JPL request is answered from the Swiss ephemeris, so `rc` is
+2 where `iflag` is 1, in the C and in the port. None is a port defect. The ledger now has 1,401 rows: 623
+`DATA-ENV`, 705 `SERR-PATH` (395 differ from the official `t.exp` in a return code and 310 do not, 60 of
+those in `serr` only), 73 `LIBM-PLATFORM`. `known-fail-pins.tsv` has 5,239 field pins over the 1,401 rows.
+
+Two defects in the pin gate, found by review, are fixed in the same change. The pin of a failing runtime
+self-check held only the first operand of the macro. In suite 10, `CHECK_EQUALS_D(xcross, xx[0])` passes the
+`t.exp` input first and the value the port computed second, so the pins of 10.1 to 10.4 (iterations 5, 11 and 17,
+`xcross` = 30, 73.77 and 359) held an input that cannot move, and the computed `xx[0]` was never pinned. Both
+operands are pinned now, the second as `xcross#2`; the sites in suites 10 and 11 were checked against the C
+for which operand is which, and the violation message names them as the first and second operand instead of
+calling the computed one "t.exp". And a trailing separator on `SWISSEPH_CONFORMANCE_EPHE` made `serr` read
+`'<ephe>\/'` where the pin has `'<ephe>/'`, failing the gate on every `serr` pin (283 violations); both
+spellings now give the same pin. The `DATA-MISSING` rows had not been cross-checked against real C before
+this; the 868 that differ now have been, and the other 233 pass.
 
 ## Ephemeris file byte order was taken from the host, not the file
 

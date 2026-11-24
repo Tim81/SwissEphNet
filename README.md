@@ -573,22 +573,21 @@ divergence is each platform's own math library disagreeing with itself in the la
 same thing two independently built C programs would show; it is not evidence against the port.
 
 Separately, the port's output is checked against Astrodienst's own 2.10.04 test suite (`setest`),
-18,919 iterations across 11 suites. 1,634 of those still fail: 533 because the answer
-is outside the tolerance Astrodienst's own suite allows (the per-quantity tolerances of `setest`'s `tolerances.c`), and 1,101 because a required data file (a
-JPL ephemeris, a per-asteroid or `ephe/sat/` file) is not present. Iterations dated outside the roughly
-years 1200 to 2399 that the shipped ephemeris files cover are not skipped: the harness runs them
-as `setest` does, the library falls back to Moshier, and the 156 of them that differ from the
-official `t.exp` (made with every era file) are among the 533. Of the 759 DATA-MISSING rows at
-the 2.10.3.x pins, 735 were checked against the C and found to be a missing file, not a wrong
-answer; 24 stayed unchecked (`docs/known-issues.md`, update of 2026-11-13). The 157 era rows among
-those 759 are no longer DATA-MISSING, and the 499 DATA-MISSING rows that the regenerated `t.exp` added at v2.10.04 were not
-cross-checked against the C.
-`Tests/conformance/value-mismatch-triage.tsv` was re-measured on 2026-11-24 against upstream v2.10.04 (`e308765d`) and covers all 533 `VALUE-MISMATCH` rows: upstream's own `setest`, built with gcc on Linux and run on the same 8 ephemeris files this repository ships, reproduces the port on 260 of them (the official `t.exp` was made in a different data environment), 230 are iterations whose era ephemeris file is not among those 8 (the official run found it, the port and the C on this data set do not; apart from the ephemeris directory embedded in the error string the two agree, and 155 of the 230 also differ from the official `t.exp` in a return code), and 43 differ only through glibc against the Windows C runtime (the MSVC-built C equals the port exactly); none is a port defect. The conformance test also pins, for every one of these 533 rows, the value the port produces for each mismatching field (`Tests/conformance/known-fail-pins.tsv`), so an accepted row cannot change unnoticed. The four port defects the earlier (2026-08-02, 668-row) triage found, a missing JD-range guard on
+18,919 iterations across 11 suites. 1,401 of those still fail, every one of them because the answer
+is outside the tolerance Astrodienst's own suite allows (the per-quantity tolerances of `setest`'s `tolerances.c`).
+The harness skips nothing: each iteration runs as `setest` runs it on the 8 ephemeris files this repository
+ships, so an iteration that asks for a file the 8 do not contain (a JPL DE file, an `ephe/sat/` planetary-moon or
+center-of-body file, a per-asteroid file, or an era file for a date outside roughly the years 1200 to 2399)
+takes the library's fallback and is compared with the official `t.exp`, which was made with every file. Until
+2026-11-24 the harness parked 1,101 of those iterations as `DATA-MISSING` without running them (1,037 `SEFLG_JPLEPH`,
+30 `SEFLG_CENTER_BODY`, 18 planetary moons, 16 numbered asteroids); that category no longer exists. Of the
+1,101, 233 pass and 868 differ from `t.exp` and are among the 1,401.
+`Tests/conformance/value-mismatch-triage.tsv` was re-measured on 2026-11-24 against upstream v2.10.04 (`e308765d`) and covers all 1,401 `VALUE-MISMATCH` rows: upstream's own `setest`, built with gcc on Linux and run on the same 8 ephemeris files this repository ships, reproduces the port on 623 of them (the official `t.exp` was made in a different data environment), 705 are iterations whose ephemeris file is not among those 8 (the official run found it, the port and the C on this data set do not; apart from the ephemeris directory embedded in the error string the two agree), and 73 differ only through glibc against the Windows C runtime (the MSVC-built C equals the port exactly, 121 of 121 compared fields); none is a port defect. The conformance test also pins, for every one of these 1,401 rows, the value the port produces for each mismatching field (`Tests/conformance/known-fail-pins.tsv`; for a runtime self-check, both of its operands), so an accepted row cannot change unnoticed. The four port defects the earlier (2026-08-02, 668-row) triage found, a missing JD-range guard on
 interpolated lunar perigee (`docs/compliance-2.10.04.md` section 3a), are fixed and their rows pruned. So the port matches everything it has been
 checked against and is not yet at full parity with Astrodienst's own reference corpus.
 At the 2.10.3.x pins the figures were different, and not comparable, because the corpus changed:
 12,757 iterations, 2,395 failing (1,636 `VALUE-MISMATCH`, 972 of them the house-speed rows (`setest` 6.8 and 6.9)
-that the sync to upstream `6c989727` moved, and 759 `DATA-MISSING`). Upstream regenerated `t.exp` for
+that the sync to upstream `6c989727` moved, and 759 `DATA-MISSING`, a category since removed). Upstream regenerated `t.exp` for
 v2.10.04 and those 972 rows pass again; their evidence file `house-speed-drift-6c989727.tsv` was
 retired with them and is in git history.
 
@@ -1015,13 +1014,12 @@ The reference corpus is Swiss Ephemeris **2.10.04**'s `setest` test suite
 (18,919 iterations across 11 suites and 68 testcases; the number of asserted values has not been
 re-counted for this corpus). The port has
 landed the whole 2.10.03 delta and the v2.10.04 changes, but `known-fail.tsv` still
-lists 1,634 failing iterations (17,285 passing, 91.4%). Each
+lists 1,401 failing iterations (17,518 passing, 92.6%). Each
 porting PR should remove entries from it; any entry that reappears is a regression.
 
-Read that 1,634 with the split under "Numerical compatibility" above, because it is not 1,634
-things left to port: 1,101 of them are a data file this repository does not ship rather than a wrong
-answer, the other 533 sit outside the tolerance Astrodienst's own suite allows and are all triaged
-as drift (260 data environment, 230 missing era file, 43 libm platform),
+Read that 1,401 with the split under "Numerical compatibility" above, because it is not 1,401
+things left to port: every row sits outside the tolerance Astrodienst's own suite allows and all are triaged
+as drift (623 data environment, 705 missing ephemeris file, 73 libm platform),
 and the four rows ever confirmed as port defects were fixed and pruned. At the 2.10.3.x pins the
 figures were 12,757 iterations and 2,395 failing, and are not comparable.
 
@@ -1043,7 +1041,7 @@ figures were 12,757 iterations and 2,395 failing, and are not comparable.
 
 - `Tests/conformance/known-fail.tsv`, one row per iteration currently known
   to fail, with a category (`NOT-IMPLEMENTED`, `VALUE-MISMATCH`,
-  `DATA-MISSING`, `ERROR`, or `UNREPRODUCIBLE`) and a short reason. The
+  `ERROR`, or `UNREPRODUCIBLE`) and a short reason. The
   conformance run **fails** unless the port's actual behavior matches this
   file exactly: any iteration failing that isn't on the list (a regression),
   any listed row recorded under a category the port no longer matches
@@ -1057,15 +1055,14 @@ figures were 12,757 iterations and 2,395 failing, and are not comparable.
     currently empty and its classifier unreachable, because every function the 2.10.03 API
     surface declares now exists on the port (the last three, `swe_calc_pctr`,
     `swe_houses_ex2` and `swe_houses_armc_ex2`, landed with `sweph.c`'s dispatch slice).
-    `DATA-MISSING`: a required data file (a JPL DE ephemeris, `ephe/sat/`)
-    isn't shipped by this repo. `ERROR`: the dispatch threw. `VALUE-MISMATCH`:
+    `ERROR`: the dispatch threw. `VALUE-MISMATCH`:
     the port ran and produced an answer that doesn't match the reference
     within `setest`'s tolerance for that quantity (`tolerances.c`). This and `ERROR` are the actionable
     categories, the actual porting work queue. `UNREPRODUCIBLE`: a structural
     C-vs-C# representational gap makes the reference call impossible to
     construct at all, as opposed to constructible but wrong, distinct from
-    the other three, and excluded from the pass-rate denominator the same way
-    they are (see `ConformanceReport.SuiteSummary.PassRate`'s doc comment).
+    the other two, and excluded from the pass-rate denominator the same way
+    `NOT-IMPLEMENTED` is (see `ConformanceReport.SuiteSummary.PassRate`'s doc comment).
     Currently 0 across the whole corpus (suite 6 testcase 6, the one place
     that used to carry all of it, became reproducible once the port's five
     house entry points gained faithful `int hsys` overloads; see
@@ -1078,18 +1075,20 @@ figures were 12,757 iterations and 2,395 failing, and are not comparable.
   baseline above failing at all is not. They are not the same kind of
   red.
 
-- Two data sources this repo does not ship are skipped by default and
-  reported as `DATA-MISSING`, not run: `SEFLG_JPLEPH` iterations need a
-  multi-hundred-MB JPL DE file (opt in with `SWISSEPH_CONFORMANCE_INCLUDE_JPL=1`
-  and `SWISSEPH_CONFORMANCE_JPL_FILE=<path>`), and planetary-moon bodies
-  (`ipl` 9000-9999) need `ephe/sat/` at ~227 MB (opt in with
-  `SWISSEPH_CONFORMANCE_INCLUDE_MOONS=1` and that directory populated).
+- Two data sources this repo does not ship are not skipped, and are not reported as missing either:
+  `SEFLG_JPLEPH` iterations need a multi-hundred-MB JPL DE file, and planetary-moon bodies
+  (`ipl` 9000-9999) and `SEFLG_CENTER_BODY` need `ephe/sat/` at ~227 MB. Upstream's `setest` skips
+  nothing, so the harness does not either: on the 8 shipped ephemeris files each such iteration runs,
+  `swe_calc` takes its fallback (the Swiss ephemeris or Moshier, with the "not found" text in `serr`)
+  and the result is compared with `t.exp`. The 868 of them that differ from the official values are
+  `VALUE-MISMATCH` rows, triaged against the C on the same files (2026-11-24).
+  Until that date the harness parked all 1,101 of them as `DATA-MISSING` (1,037 JPL, 30 center-of-body,
+  18 planetary moon, 16 numbered asteroid) and that category was removed.
 
-  **Skipped is not untested.** Both were run once, against real data, under the 2.10.03-era
-  corpus (as of 2.10.3.x), and the measurement is recorded in
+  **Running without the file is not the same as proving the backend.** Both were run once, against
+  real data, under the 2.10.03-era corpus (as of 2.10.3.x), and the measurement is recorded in
   `Tests/conformance/regenerations.log`'s entry of 2026-07-31: the full
-  12,757-iteration corpus with `SWISSEPH_CONFORMANCE_INCLUDE_JPL=1` and
-  `SWISSEPH_CONFORMANCE_JPL_FILE` pointed at `de431.eph`, which is what `setest`'s
+  12,757-iteration corpus with `SWISSEPH_CONFORMANCE_JPL_FILE` pointed at `de431.eph`, which is what `setest`'s
   suites 1 and 10 then passed to `swe_set_jpl_file`. **500 of the 538 JPL rows pass
   outright** once the data is present, along with 4 of the 18 `sat` rows, as measured
   on 2026-07-31, before 30 `SEFLG_CENTER_BODY` rows joined the `sat` category on
@@ -1099,8 +1098,11 @@ figures were 12,757 iterations and 2,395 failing, and are not comparable.
   That run has not been repeated. Upstream regenerated `t.exp` for v2.10.04 against DE441
   and suites 1 and 10 now call `swe_set_jpl_file("de441.eph")`, so the 18,919-iteration
   corpus expects upstream's `de441.eph`, and `EphemerisFileResolver` defaults to that
-  name. To run the JPL rows, point `SWISSEPH_CONFORMANCE_JPL_FILE` at that file and set
-  `SWISSEPH_CONFORMANCE_INCLUDE_JPL=1`. No size or checksum for `de441.eph` is recorded
+  name. To run the JPL rows against a real file, point `SWISSEPH_CONFORMANCE_JPL_FILE` at it (the
+  former `SWISSEPH_CONFORMANCE_INCLUDE_JPL` and `SWISSEPH_CONFORMANCE_INCLUDE_MOONS` switches are
+  gone: there is nothing left to opt in to). The rows then differ from the committed
+  `known-fail.tsv`, which describes the 8-file data set, so a run with a DE file is a measurement, not
+  a gate. No size or checksum for `de441.eph` is recorded
   here, because none has been measured on this repository's side; when you run it, record
   the SHA-256 of the file you used next to the result. A checksum from the download
   location is the right thing to compare it against, and an MD5 alone only shows that a

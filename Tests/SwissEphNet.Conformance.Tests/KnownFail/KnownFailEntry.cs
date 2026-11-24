@@ -7,7 +7,6 @@ public enum FailureCategory
 {
     NotImplemented,
     ValueMismatch,
-    DataMissing,
     Error,
     Unreproducible,
 }
@@ -16,7 +15,6 @@ public static class FailureCategoryNames
 {
     public const string NotImplemented = "NOT-IMPLEMENTED";
     public const string ValueMismatch = "VALUE-MISMATCH";
-    public const string DataMissing = "DATA-MISSING";
     public const string Error = "ERROR";
     public const string Unreproducible = "UNREPRODUCIBLE";
 
@@ -24,7 +22,6 @@ public static class FailureCategoryNames
     {
         FailureCategory.NotImplemented => NotImplemented,
         FailureCategory.ValueMismatch => ValueMismatch,
-        FailureCategory.DataMissing => DataMissing,
         FailureCategory.Error => Error,
         FailureCategory.Unreproducible => Unreproducible,
         _ => throw new ArgumentOutOfRangeException(nameof(category)),
@@ -34,7 +31,8 @@ public static class FailureCategoryNames
     {
         NotImplemented => FailureCategory.NotImplemented,
         ValueMismatch => FailureCategory.ValueMismatch,
-        DataMissing => FailureCategory.DataMissing,
+        // Retired 2026-11-24: the harness no longer skips any iteration for want of data, so no row can carry it.
+        "DATA-MISSING" => throw new FormatException("The DATA-MISSING failure category was retired: the harness runs every iteration as setest does. Regenerate known-fail.tsv with scripts/regenerate-known-fail.ps1."),
         Error => FailureCategory.Error,
         Unreproducible => FailureCategory.Unreproducible,
         _ => throw new FormatException($"Unknown failure category '{name}'."),
@@ -53,7 +51,6 @@ public static class FailureCategoryNames
     {
         OutcomeKind.NotImplemented => FailureCategory.NotImplemented,
         OutcomeKind.ValueMismatch => FailureCategory.ValueMismatch,
-        OutcomeKind.DataMissing => FailureCategory.DataMissing,
         OutcomeKind.Error => FailureCategory.Error,
         OutcomeKind.Unreproducible => FailureCategory.Unreproducible,
         OutcomeKind.Passed => throw new InvalidOperationException("Passed has no failure category."),

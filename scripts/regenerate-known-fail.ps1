@@ -97,6 +97,15 @@
     it yet (e.g. regenerating locally before opening the PR), omit this and
     fill in the logged line by hand once you do, before the PR merges.
 
+.PARAMETER AllowUnsupportedPlatform
+    Overrides the platform guard. known-fail-pins.tsv pins the port's own floating-point output, and
+    that is not portable: measured against the baseline, about 8% of the fields beyond tolerance on
+    one OS/architecture differ on another (CONTRIBUTING.md, "Correctness oracle known-fail list"), so
+    the pins are generated on Windows x64 only, the platform the gate runs on. On any other platform a
+    real run (default or -PruneOnly) refuses with a message unless this switch is given, and the log
+    entry then records the platform it was run on. Not needed for -SelfTest, which exercises the
+    guard against synthetic platforms and never regenerates anything.
+
 .PARAMETER SelfTest
     Exercises this script's own pure functions (Read-KnownFailTable, Get-SurvivingLines,
     Get-KnownFailPruneOnlyRefusal, and the pin helpers Read-PinBlocks, Get-PinPruneOnlyChanges,
@@ -120,6 +129,8 @@ param(
     # reference fix); this script was one of the five left unguarded when that one shipped.
     [ValidatePattern('^\d+$')]
     [string]$PR,
+
+    [switch]$AllowUnsupportedPlatform,
 
     [switch]$SelfTest,
 
@@ -256,6 +267,31 @@ function Assert-IterationCount {
     if (-not $verdict.Ok) {
         Write-Host "FAIL: $($verdict.Reason)" -ForegroundColor Red
         exit 1
+    }
+}
+
+# The platform known-fail-pins.tsv is generated on and gated against (CONTRIBUTING.md): the pins are
+# the port's own double-precision output, which differs between Windows and Linux (libm) and between
+# x64 and ARM. Pure so -SelfTest can feed it synthetic platforms; the real run passes the host's.
+function Test-PinPlatform {
+    param([string]$OperatingSystem, [string]$Architecture)
+    if ($OperatingSystem -eq 'Windows' -and $Architecture -eq 'X64') {
+        return [pscustomobject]@{ Ok = $true; Reason = $null }
+    }
+    return [pscustomobject]@{
+        Ok     = $false
+        Reason = "this machine is $OperatingSystem/$Architecture, and known-fail-pins.tsv is generated on Windows/X64 only: the pins are the port's own floating-point output and it differs between platforms (a measured 8% of the baseline's fields beyond tolerance between Windows and Linux), so pins written here would fail the gate on the platform it runs on. Run this on Windows x64. If you know what you are doing (a fixture, a deliberate cross-platform probe), pass -AllowUnsupportedPlatform; the log entry will record the platform."
+    }
+}
+
+function Get-HostPinPlatform {
+    $os = if ([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)) { 'Windows' }
+    elseif ([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Linux)) { 'Linux' }
+    elseif ([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::OSX)) { 'macOS' }
+    else { 'Other' }
+    return [pscustomobject]@{
+        OperatingSystem = $os
+        Architecture    = [System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString()
     }
 }
 
@@ -564,11 +600,11 @@ if ($SelfTest) {
             $headerLine
             "1`t1`t1`tVALUE-MISMATCH`t-4`treason a"
             "1`t1`t2`tVALUE-MISMATCH`t-4`treason b"
-            "2`t1`t1`tDATA-MISSING`tn/a`treason c"
+            "2`t1`t1`tERROR`tn/a`treason c"
         )
         $freshTwoSurvive = New-FreshTable @{
             "1`t1`t1" = "VALUE-MISMATCH`t-4"
-            "2`t1`t1" = "DATA-MISSING`tn/a"
+            "2`t1`t1" = "ERROR`tn/a"
         }
         $surviving = Get-SurvivingLines -CurrentRawLines $multiRowLines -Fresh $freshTwoSurvive
         Assert-True 'Get-SurvivingLines keeps exactly the rows whose key is still in $Fresh' `
@@ -744,7 +780,7 @@ if ($SelfTest) {
         $freshKf = New-FreshTable @{
             "1`t1`t1" = "VALUE-MISMATCH`t-4"
             "1`t1`t2" = "VALUE-MISMATCH`t-4"
-            "4`t2`t3" = "DATA-MISSING`tn/a"
+            "4`t2`t3" = "ERROR`tn/a"
         }
         $sameBlocks = Read-PinBlocks -Path $currentPinsPath
         Assert-True 'identical fresh pins on every surviving VALUE-MISMATCH row are no change (a non-VALUE-MISMATCH key is ignored)' `
@@ -771,10 +807,21 @@ if ($SelfTest) {
         Assert-True 'a field that left the mismatch set (pin line gone) on a surviving row is reported' `
             ($lostChanges.Count -eq 1 -and $lostChanges[0] -eq "1`t1`t1") "got: $($lostChanges -join ',')"
 
-        $prunedKf = New-FreshTable @{ "1`t1`t2" = "VALUE-MISMATCH`t-4"; "4`t2`t3" = "DATA-MISSING`tn/a" }
+        $prunedKf = New-FreshTable @{ "1`t1`t2" = "VALUE-MISMATCH`t-4"; "4`t2`t3" = "ERROR`tn/a" }
         $prunedText = Get-PrunedPinText -PinsPath $currentPinsPath -FreshKnownFail $prunedKf
         Assert-True 'Get-PrunedPinText drops the pins of rows that left the list and of rows that are no longer VALUE-MISMATCH, keeping the rest verbatim' `
             ($prunedText -ceq "$pinHeader`n1`t1`t2`txx[0]`tDouble`t2.5`n") "got: '$prunedText'"
+
+        $okPlatform = Test-PinPlatform -OperatingSystem 'Windows' -Architecture 'X64'
+        Assert-True 'the platform guard accepts Windows/X64' ($okPlatform.Ok -and $null -eq $okPlatform.Reason)
+        foreach ($other in @(@('Linux', 'X64'), @('Windows', 'Arm64'), @('macOS', 'Arm64'))) {
+            $verdict = Test-PinPlatform -OperatingSystem $other[0] -Architecture $other[1]
+            Assert-True "the platform guard refuses $($other[0])/$($other[1]) and names it and the override switch" `
+                ((-not $verdict.Ok) -and $verdict.Reason.Contains("$($other[0])/$($other[1])") -and $verdict.Reason.Contains('-AllowUnsupportedPlatform')) "got: $($verdict | ConvertTo-Json -Compress)"
+        }
+        $hostNow = Get-HostPinPlatform
+        Assert-True 'the host platform is reported as a known operating system and an architecture' `
+            ($hostNow.OperatingSystem -in @('Windows', 'Linux', 'macOS') -and -not [string]::IsNullOrEmpty($hostNow.Architecture)) "got: $($hostNow | ConvertTo-Json -Compress)"
 
         $truncatedPinsPath = Join-Path $lab 'pins-truncated.tsv'
         [System.IO.File]::WriteAllText($truncatedPinsPath, "$pinHeader`n1`t1`t1`txx[0]`n", (New-Object System.Text.UTF8Encoding($false)))
@@ -798,6 +845,20 @@ if ($SelfTest) {
 # ---------------------------------------------------------------------------------------------
 # Real run.
 # ---------------------------------------------------------------------------------------------
+
+# Platform guard, before anything is built or written. -AllowUnsupportedPlatform is the explicit
+# override; whoever uses it gets the platform recorded in the log entry below.
+$hostPlatform = Get-HostPinPlatform
+$platformVerdict = Test-PinPlatform -OperatingSystem $hostPlatform.OperatingSystem -Architecture $hostPlatform.Architecture
+$platformNote = ''
+if (-not $platformVerdict.Ok) {
+    if (-not $AllowUnsupportedPlatform) {
+        Write-Host "FAIL: $($platformVerdict.Reason)" -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "WARNING: -AllowUnsupportedPlatform given; $($platformVerdict.Reason)" -ForegroundColor Yellow
+    $platformNote = " [platform override: $($hostPlatform.OperatingSystem)/$($hostPlatform.Architecture)]"
+}
 
 Write-Host "Building $genProject (Release)..."
 dotnet build $genProject -c Release
@@ -902,7 +963,7 @@ if ($PruneOnly) {
         $prCitation = if ($PR) { "PR #$PR" } else { "(no PR yet -- fill in `"PR #N`" before merging, per CONTRIBUTING.md)" }
         $reasonText = if ($Reason) { $Reason } else { "Pruned $removed newly-passing row(s); no reason required for a pure removal." }
         $epheDescription = Get-EpheDescription
-        $logEntry = "$date $prCitation ($beforeCount -> $afterCount, $removed fewer rows) [$epheDescription]: $reasonText"
+        $logEntry = "$date $prCitation ($beforeCount -> $afterCount, $removed fewer rows) [$epheDescription]$platformNote`: $reasonText"
         Add-Content -Path $logPath -Value $logEntry -Encoding utf8NoBOM
 
         Write-Host ""
@@ -955,7 +1016,7 @@ try {
     Copy-Item -LiteralPath $tempKnownFailPath -Destination $knownFailPath -Force
     Copy-Item -LiteralPath $tempPinsFullPath -Destination $pinsPath -Force
 
-    $logEntry = "$date $prCitation ($beforeCount -> $afterCount, $deltaDescription) [$epheDescription]: $Reason"
+    $logEntry = "$date $prCitation ($beforeCount -> $afterCount, $deltaDescription) [$epheDescription]$platformNote`: $Reason"
     Add-Content -Path $logPath -Value $logEntry -Encoding utf8NoBOM
 
     Write-Host ""

@@ -9,7 +9,8 @@ namespace SwissEphNet.Conformance.Tests.KnownFail;
 
 /// <summary>
 /// Reads/writes Tests/conformance/known-fail-pins.tsv: for every VALUE-MISMATCH row of
-/// known-fail.tsv, the name, kind and port-produced value of each field that mismatches t.exp.
+/// known-fail.tsv, the name, kind and port-produced value of each field that mismatches t.exp, and
+/// for a failing runtime self-check (CHECK_EQUALS_*) both of its operands (the second as "name#2").
 /// A separate file, not a column of known-fail.tsv: a row has one pin per mismatching field (up to
 /// dozens), known-fail.tsv is one row per iteration and is parsed by several scripts, and the
 /// pins are the part that is allowed to move only through the logged regeneration
@@ -79,7 +80,10 @@ public static class PinList
         {
             foreach (var m in r.Mismatches)
             {
-                pins.Add(new PinnedField(r.Key, m.Name, m.Kind, PinGate.PinText(m, epheDir)));
+                foreach (var operand in PinGate.Operands(m, epheDir))
+                {
+                    pins.Add(new PinnedField(r.Key, operand.Name, operand.Kind, operand.Text));
+                }
             }
         }
 

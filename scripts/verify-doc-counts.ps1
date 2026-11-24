@@ -196,10 +196,13 @@ function Invoke-DocCountCheck {
 
     $GroundTruth['known-fail-total'] = $knownFailRows.Count
 
-    # All five categories ConformanceReport can emit (see CONTRIBUTING.md, "Correctness oracle
+    # All four categories ConformanceReport can emit (see CONTRIBUTING.md, "Correctness oracle
     # known-fail list"), listed explicitly so a category with zero current rows still has a
-    # ground-truth entry of 0 rather than silently having none at all.
-    foreach ($category in @('VALUE-MISMATCH', 'DATA-MISSING', 'ERROR', 'UNREPRODUCIBLE', 'NOT-IMPLEMENTED')) {
+    # ground-truth entry of 0 rather than silently having none at all. DATA-MISSING is not one of
+    # them any more: the harness stopped skipping iterations for want of data on 2026-11-24 and
+    # the category was removed from the code, so a document citing doccount:known-fail-data-missing
+    # fails here as an id with no definition.
+    foreach ($category in @('VALUE-MISMATCH', 'ERROR', 'UNREPRODUCIBLE', 'NOT-IMPLEMENTED')) {
         $id = 'known-fail-' + (ConvertTo-DocCountId $category)
         $GroundTruth[$id] = @($knownFailRows | Where-Object { $_.Split("`t")[$catIdx] -eq $category }).Count
     }
@@ -545,7 +548,7 @@ $knownFailTsv = @(
     "iteration`tcategory`tnote",
     "1`tVALUE-MISMATCH`ta",
     "2`tVALUE-MISMATCH`tb",
-    "3`tDATA-MISSING`tc")
+    "3`tERROR`tc")
 $oracleKnownDiffTsv = @('# lab', "func`tnote", "CALC`ta", "CALC`tb")
 $oracleKnownDiffFilesTsv = @('# lab', "func`tnote", "CALC`ta")
 $oracleKnownDiffJplTsv = @('# lab', "func`tnote", "CALC`ta")
@@ -585,8 +588,7 @@ $readmeLines = @(
     '',
     '- known-fail rows: 3<!--doccount:known-fail-total-->',
     '- of them VALUE-MISMATCH: 2<!--doccount:known-fail-value-mismatch-->',
-    '- of them DATA-MISSING: 1<!--doccount:known-fail-data-missing-->',
-    '- of them ERROR: 0<!--doccount:known-fail-error-->',
+    '- of them ERROR: 1<!--doccount:known-fail-error-->',
     '- of them UNREPRODUCIBLE: 0<!--doccount:known-fail-unreproducible-->',
     '- of them NOT-IMPLEMENTED: 0<!--doccount:known-fail-not-implemented-->',
     '- analytic oracle known-diff rows: 2<!--doccount:oracle-known-diff-analytic-->',

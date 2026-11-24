@@ -7,7 +7,6 @@ public enum OutcomeKind
     Passed,
     ValueMismatch,
     NotImplemented,
-    DataMissing,
     Error,
 
     /// <summary>
@@ -36,7 +35,14 @@ public enum FieldKind
     String,
 }
 
-public sealed record FieldMismatch(string Name, string Expected, string Actual, double? Diff, FieldKind Kind = FieldKind.Double);
+/// <summary>
+/// One failed comparison. For a file-backed check <see cref="Expected"/> is the t.exp value and
+/// <see cref="Actual"/> the port's. For a runtime self-check (<paramref name="SelfCheck"/>, from
+/// CHECK_EQUALS_D / CHECK_EQUALS_I) there is no t.exp side: <see cref="Actual"/> is the macro's first
+/// operand and <see cref="Expected"/> its second, whichever of them the port computed (see
+/// <see cref="KnownFail.PinOperand"/>).
+/// </summary>
+public sealed record FieldMismatch(string Name, string Expected, string Actual, double? Diff, FieldKind Kind = FieldKind.Double, bool SelfCheck = false);
 
 public sealed class DispatchOutcome
 {
@@ -51,7 +57,7 @@ public sealed class DispatchOutcome
     /// <c>CheckContext</c> was constructed but never had a Check* method
     /// called on it -- see <see cref="Dispatch.CheckContext.AnyComparisonPerformed"/>.
     /// Always true for an outcome built any other way (Passed/NotImplemented/
-    /// DataMissing/Error/Unreproducible never claim to have compared t.exp).
+    /// NotImplemented/Error/Unreproducible never claim to have compared t.exp).
     /// </summary>
     public bool AnyComparisonPerformed { get; init; } = true;
 
@@ -59,9 +65,6 @@ public sealed class DispatchOutcome
 
     public static DispatchOutcome NotImplemented(string reason) =>
         new() { Kind = OutcomeKind.NotImplemented, Reason = reason };
-
-    public static DispatchOutcome DataMissing(string reason) =>
-        new() { Kind = OutcomeKind.DataMissing, Reason = reason };
 
     public static DispatchOutcome Error(string reason) =>
         new() { Kind = OutcomeKind.Error, Reason = reason };

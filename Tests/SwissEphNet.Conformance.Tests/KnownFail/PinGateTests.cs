@@ -124,6 +124,58 @@ public class PinGateTests
     }
 
     [Fact]
+    public void ATrailingSeparatorOnTheEpheDirectory_GivesTheSamePin()
+    {
+        // SWISSEPH_CONFORMANCE_EPHE=...\ephe\ makes the library's own "/" follow a backslash, so serr
+        // reads '...\ephe\/'. The pin is the same as for the separator-free spelling.
+        const string plain = @"SwissEph file 'sepl_30.se1' not found in PATH 'C:\work\swisseph\ephe/' 
+using Moshier eph.; ";
+        const string trailing = @"SwissEph file 'sepl_30.se1' not found in PATH 'C:\work\swisseph\ephe\/' 
+using Moshier eph.; ";
+        var reference = PinGate.PinText(new FieldMismatch("serr", "", plain, null, FieldKind.String), EpheA);
+        Assert.Contains("PATH '<ephe>/'", reference);
+
+        Assert.Equal(reference, PinGate.PinText(new FieldMismatch("serr", "", trailing, null, FieldKind.String), EpheA + @"\"));
+        Assert.Equal(reference, PinGate.PinText(new FieldMismatch("serr", "", trailing, null, FieldKind.String), EpheA + "/"));
+        Assert.Equal(reference, PinGate.PinText(new FieldMismatch("serr", "", plain, null, FieldKind.String), EpheA + @"\"));
+
+        var pins = new[] { Pin("serr", FieldKind.String, reference) };
+        Assert.Empty(PinGate.Check(Row(new FieldMismatch("serr", "", trailing, null, FieldKind.String)), pins, EpheA + @"\"));
+    }
+
+    [Fact]
+    public void ARuntimeSelfCheck_PinsBothOperands_NotJustTheFirst()
+    {
+        // suite_10_solcross.c:31 CHECK_EQUALS_D(xcross, xx[0]): the first operand is the t.exp input,
+        // the second the value the port computed. Both are pinned, the second as "xcross#2".
+        var selfCheck = new FieldMismatch("xcross", "36.7645140093774", "30", 6.7645140093774, FieldKind.Double, SelfCheck: true);
+        var operands = PinGate.Operands(selfCheck, EpheA);
+        Assert.Equal(["xcross", "xcross#2"], operands.Select(o => o.Name).ToArray());
+        Assert.Equal(["30", "36.7645140093774"], operands.Select(o => o.Text).ToArray());
+
+        var pins = new[] { Pin("xcross", FieldKind.Double, "30"), Pin("xcross#2", FieldKind.Double, "36.7645140093774") };
+        Assert.Empty(PinGate.Check(Row(selfCheck), pins, EpheA));
+
+        // The computed operand moving beyond setest's tolerance is a violation. Before both were
+        // pinned, only the input (which cannot move) was.
+        var moved = new FieldMismatch("xcross", "36.7745140093774", "30", 6.7745140093774, FieldKind.Double, SelfCheck: true);
+        var v = Assert.Single(PinGate.Check(Row(moved), pins, EpheA));
+        Assert.Equal("xcross#2", v.Field);
+        Assert.Contains("pinned 36.7645140093774, actual 36.7745140093774", v.Message);
+    }
+
+    [Fact]
+    public void ANewRuntimeSelfCheckFailure_IsLabelledAsOne_NotAsAT_ExpMismatch()
+    {
+        var selfCheck = new FieldMismatch("xx[1]", "0", "-5.05", 5.05, FieldKind.Double, SelfCheck: true);
+        var v = Assert.Single(PinGate.Check(Row(selfCheck), [Pin("rc", FieldKind.Int, "4")], EpheA), x => x.Field == "xx[1]");
+        Assert.Contains("runtime self-check", v.Message);
+        Assert.DoesNotContain("t.exp 0", v.Message);
+        Assert.Contains("first -5.05", v.Message);
+        Assert.Contains("second 0", v.Message);
+    }
+
+    [Fact]
     public void AChangedSerrText_IsAViolation_AndNamesBothValues()
     {
         const string was = "SwissEph file 'sepl_30.se1' not found in PATH 'C:\\work\\swisseph\\ephe/'";

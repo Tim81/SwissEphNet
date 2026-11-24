@@ -75,7 +75,7 @@ public class ConformanceSuiteTests
 
         Assert.True(
             report.PinViolations.Count == 0,
-            $"{report.PinViolations.Count} accepted VALUE-MISMATCH row(s) no longer reproduce their pinned fields " +
+            $"{report.PinViolations.Count} pin violation(s) in {report.PinViolations.Select(v => v.Key).Distinct().Count()} accepted VALUE-MISMATCH row(s): the rows no longer reproduce their pinned fields " +
             $"(known-fail-pins.tsv): a field joined or left the mismatch set, or a value moved beyond setest's tolerance. " +
             "A real change of behaviour: fix the port, or if it is deliberate, regenerate with scripts/regenerate-known-fail.ps1 -Reason." +
             Environment.NewLine +

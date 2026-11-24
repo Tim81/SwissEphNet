@@ -136,6 +136,25 @@ public class CheckContextTests
     }
 
     [Fact]
+    public void RuntimeSelfChecks_AreMarked_AndFileBackedChecksAreNot()
+    {
+        // CHECK_EQUALS_D / CHECK_EQUALS_I compare two values the run produced: no t.exp side, so the
+        // mismatch is marked and the pin gate pins both operands (see PinGate).
+        var self = ContextFor(new ExpFields(), 10, 1, Precision.Default);
+        self.CheckEqualsD("xcross", 30.0, 36.5);
+        self.CheckEqualsI("rc==iflag", 2, 1);
+        Assert.All(self.Mismatches, m => Assert.True(m.SelfCheck));
+        Assert.Equal("30", self.Mismatches[0].Actual);      // the macro's first operand
+        Assert.Equal("36.5", self.Mismatches[0].Expected);  // its second operand
+        Assert.Equal("2", self.Mismatches[1].Actual);
+        Assert.Equal("1", self.Mismatches[1].Expected);
+
+        var backed = ContextFor(FieldsWith(("jd", "1.0")), 10, 1, Precision.Default);
+        backed.CheckD("jd", 2.0);
+        Assert.False(Assert.Single(backed.Mismatches).SelfCheck);
+    }
+
+    [Fact]
     public void CheckEqualsD_UnclassifiedNameUsesTheOverallPrecision()
     {
         var ctx = ContextFor(new ExpFields(), 11, 1, new Precision(1e-3, [1e-9, 1e-9, 1e-9, 1e-9, 1e-9, 1e-9]));

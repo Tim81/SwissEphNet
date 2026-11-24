@@ -139,10 +139,10 @@
 - Verification against the MSVC-built C at e308765d: both oracle grids are bit-identical (27,437
   analytic and 3,376 file rows) with empty known-diff lists; 251 of 268 swetest cases are
   byte-identical and the other 17 differ only by the directory separator and -nan(ind). The
-  conformance corpus is now 11 suites and 18,919 iterations; known-fail.tsv has 1,634 rows (1,101
-  DATA-MISSING, 533 VALUE-MISMATCH, down from 2,395), and all 533 VALUE-MISMATCH rows are triaged
-  against the C as drift, none a port defect; each is also pinned field by field in
-  known-fail-pins.tsv. The 972 house-speed rows of 2.10.3.3 pass against
+  conformance corpus is now 11 suites and 18,919 iterations; known-fail.tsv has 1,401 rows (all
+  VALUE-MISMATCH, down from 2,395; the harness no longer skips iterations for want of data and the
+  DATA-MISSING category is gone), and all 1,401 are triaged against the C as drift, none a port
+  defect; each is also pinned field by field in known-fail-pins.tsv. The 972 house-speed rows of 2.10.3.3 pass against
   the regenerated t.exp.
 - Known issues: v2.10.04's dt[] has 69.2093 for 2023 where USNO's deltat.data has 69.2039, and the
   prediction 69.05 for 2026.0 where the measured value is 69.1099; the port keeps the C's values and

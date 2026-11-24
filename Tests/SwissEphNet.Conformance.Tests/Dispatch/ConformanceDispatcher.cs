@@ -33,6 +33,10 @@ public sealed class ConformanceDispatcher
 
     public DispatchOutcome Dispatch(SwissEph swe, ExpTestSuite suite, ExpTestCase testCase, ExpIteration iteration, Precision precision)
     {
+        // Nothing is skipped for want of data: like setest, every iteration runs against the 8
+        // declared ephemeris files, and a planetary-moon, numbered-asteroid, center-of-body or JPL request
+        // takes the library's own fallback (Moshier or the built-in elements) with the serr text
+        // that produces. An iteration is compared as the C compares it, never parked.
         var scope = new TestCaseScope(suite.Id, testCase.Id, precision);
         if (TryGetStaticNotImplementedReason(suite.Id, testCase.Id, out var staticReason))
         {
@@ -40,42 +44,6 @@ public sealed class ConformanceDispatcher
         }
 
         var f = iteration.Fields;
-
-        var iephe = f.TryGetInt("iephe");
-        if (iephe is not null && EphemerisFileResolver.NeedsJplDataWeDoNotHave(iephe.Value))
-        {
-            return DispatchOutcome.DataMissing(
-                "iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. " +
-                "Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.");
-        }
-
-        foreach (var plField in PlanetFields)
-        {
-            var ipl = f.TryGetInt(plField);
-            if (ipl is not null && EphemerisFileResolver.NeedsMoonDataWeDoNotHave(ipl.Value))
-            {
-                return DispatchOutcome.DataMissing(
-                    $"{plField}={ipl.Value} is a planetary-moon body, which requires ephe/sat/ (227 MB), not shipped by default. " +
-                    "Set SWISSEPH_CONFORMANCE_INCLUDE_MOONS=1 and provide ephe/sat/ to opt in.");
-            }
-
-            if (ipl is not null && EphemerisFileResolver.NeedsAsteroidFileWeDoNotShip(ipl.Value))
-            {
-                return DispatchOutcome.DataMissing(
-                    $"{plField}={ipl.Value} is a numbered asteroid beyond the four with built-in orbital elements " +
-                    "(Ceres/Pallas/Juno/Vesta), which requires a per-asteroid file (e.g. se00433s.se1) this repo " +
-                    "does not ship at any tier.");
-            }
-        }
-
-        var iflagForCenterBody = f.TryGetInt("iflag");
-        if (iflagForCenterBody is not null && EphemerisFileResolver.NeedsCenterBodySatFileWeDoNotHave(iflagForCenterBody.Value))
-        {
-            return DispatchOutcome.DataMissing(
-                "iflag includes SEFLG_CENTER_BODY, which reads a per-planet ephe/sat/ record (e.g. sepm9599.se1) " +
-                "even for a major-planet ipl, not shipped by default. Set SWISSEPH_CONFORMANCE_INCLUDE_MOONS=1 " +
-                "and provide ephe/sat/ to opt in.");
-        }
 
         return suite.Id switch
         {
@@ -94,12 +62,10 @@ public sealed class ConformanceDispatcher
         };
     }
 
-    private static readonly string[] PlanetFields = ["ipl", "iplctr"];
-
     /// <summary>
     /// Testcases whose target function does not exist in SwissEphNet at all --
     /// true regardless of what data the iteration needs, so checked before any
-    /// data-availability check. The port now tracks the same pinned C tag
+    /// data-availability concern. The port now tracks the same pinned C tag
     /// (v2.10.04) the conformance corpus targets, so this switch currently
     /// has no cases; it stays as the mechanism for the next API gap, not dead code.
     /// </summary>

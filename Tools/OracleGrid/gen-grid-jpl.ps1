@@ -35,9 +35,10 @@
     A JPL DE file is 190 MB (DE406) to 2.6 GB (DE431); this repo ships none and never will. Both
     drivers therefore take the file to open as an argument -- see scripts/run-oracle-dump.ps1's
     -JplFile and its SWISSEPH_ORACLE_JPL_FILE environment variable, which is what makes this grid
-    opt-in and keeps it out of CI, exactly as SWISSEPH_CONFORMANCE_INCLUDE_JPL/
-    SWISSEPH_CONFORMANCE_JPL_FILE already do for the correctness oracle's own JPL iterations
-    (Tests/SwissEphNet.Conformance.Tests/Dispatch/EphemerisFileResolver.cs).
+    opt-in and keeps it out of CI, in the same way SWISSEPH_CONFORMANCE_JPL_FILE lets the
+    correctness oracle's JPL iterations run against a real DE file (without it they run anyway and
+    take the library's Swiss ephemeris fallback, as setest does; see
+    Tests/SwissEphNet.Conformance.Tests/Dispatch/EphemerisFileResolver.cs).
 
     Which DE file is used does not have to be pinned for this grid to mean something, and that is
     the whole reason the oracle -- rather than the conformance corpus -- is the instrument here:

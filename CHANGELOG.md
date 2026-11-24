@@ -141,22 +141,36 @@ Each of these is an adoption of an upstream change, not a correction of the port
 - `swetest`. 251 of 268 cases are byte-identical to the MSVC-built `swetest`. The other 17 differ
   only by the directory separator and the CRT's `-nan(ind)`. `DATE_FORMATS|FAR_FUTURE` is newly
   listed, because it now prints a `sepl_24.se1` not-found warning in both programs.
-- Characterization baseline, regenerated twice, each with a deviation note. For the Delta T and tidal
-  defaults: with only those two changes reverted, exactly 82 case ids change, all Chiron `serr`
-  rows, plus `VER`. For the `swed` fix: 156 rows, scope `NA`/`NAUT` only, and all 360 `nodaps` calls
-  bit-identical to the C.
+- Characterization baseline, regenerated three times, each with a deviation note. For the Delta T and
+  tidal defaults: with only those two changes reverted, exactly 83 case ids change in total, 82
+  Chiron (ipl 15) `serr` rows plus `VER`. For the `swed` fix: 156 rows, scope `NA`/`NAUT` only, and
+  all 360 `nodaps` calls bit-identical to the C. For the `swecalc` serr-accumulation fix: 365
+  calc-defaulteph rows whose `serr` changed because `swecalc` no longer clears the buffer, `serr`
+  text only, no values moved.
 - Conformance. The corpus is now 11 suites, 68 testcases and 18,919 iterations (it was 10, 60 and
   12,757); suite 11 (`swe_pheno`, `swe_azalt`, `swe_refrac`, `swe_cotrans`) is new, and 8.9 calls
-  `swe_lun_eclipse_when_loc`. `known-fail.tsv` has 1,634 rows, 1,101 `DATA-MISSING` and 533
-  `VALUE-MISMATCH`, where it had 2,395 (759 and 1,636). The number measures divergence from
-  `t.exp`, a static Astrodienst snapshot, not port defects: all 533 rows are triaged against the C
-  in `Tests/conformance/value-mismatch-triage.tsv` as drift, 260 `DATA-ENV`, 230 `SERR-PATH` (an era
-  ephemeris file outside the 8 declared) and 43 `LIBM-PLATFORM`. The harness no longer skips
-  `SEFLG_SWIEPH` iterations dated outside the years the shipped era files cover (157 rows, filed as
-  `DATA-MISSING` before): it runs them as `setest` does, with the Moshier fallback. Each accepted
+  `swe_lun_eclipse_when_loc`. `known-fail.tsv` has 1,401 rows, all `VALUE-MISMATCH`, where it had
+  2,395 (759 `DATA-MISSING` and 1,636 `VALUE-MISMATCH`). The number measures divergence from
+  `t.exp`, a static Astrodienst snapshot, not port defects: all 1,401 rows are triaged against the C
+  in `Tests/conformance/value-mismatch-triage.tsv` as drift, 623 `DATA-ENV`, 705 `SERR-PATH` (an
+  ephemeris file outside the 8 declared) and 73 `LIBM-PLATFORM` (the MSVC-built C equals the port
+  on all 121 compared fields). The harness skips no iteration for want of data any more, and the
+  `DATA-MISSING` category is removed. It used to park four kinds without running them: dates outside
+  the years the shipped era files cover (157 rows, lifted first: they run with the Moshier
+  fallback), and then `SEFLG_JPLEPH` (1,037), `SEFLG_CENTER_BODY` (30), planetary moons (18) and
+  numbered asteroids (16). Upstream's `setest` skips none of them; on the same 8 files the C runs
+  each with the library's fallback, and so does the harness now: of those 1,101 iterations 233 pass
+  and 868 are `VALUE-MISMATCH` rows. The opt-in switches `SWISSEPH_CONFORMANCE_INCLUDE_JPL` and
+  `SWISSEPH_CONFORMANCE_INCLUDE_MOONS` are gone; `SWISSEPH_CONFORMANCE_JPL_FILE` still points a run
+  at a real DE file. Each accepted
   `VALUE-MISMATCH` row is also pinned in `Tests/conformance/known-fail-pins.tsv`, the port's value for
-  every mismatching field, so a field joining or leaving the row or a value moving fails the gate
-  even when the row's `magnitude_key` does not change. The harness uses `setest`'s v2.10.04
+  every mismatching field (both operands of a failing runtime self-check), so a field joining or
+  leaving the row or a value moving fails the gate
+  even when the row's `magnitude_key` does not change. A suite-10 self-check
+  (`CHECK_EQUALS_D(xcross, xx[0])`) used to be pinned by its `t.exp` input and never by the value the
+  port computed; it now pins both. A trailing separator on `SWISSEPH_CONFORMANCE_EPHE` no longer
+  fails the pin gate, and `scripts/regenerate-known-fail.ps1` refuses to run off Windows x64
+  (`-AllowUnsupportedPlatform` overrides it and is logged). The harness uses `setest`'s v2.10.04
   comparison rules (per-quantity tolerances from `tolerances.c`, precision reset per testcase) and
   mirrors the file-scope statics of its suite files. The 972 house-speed rows of the `6c989727` sync pass
   against the regenerated `t.exp`, so their drift ledger and its test are retired (in git history).

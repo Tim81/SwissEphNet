@@ -392,14 +392,26 @@ The category and `magnitude_key` comparison only sees the worst field of a
 `VALUE-MISMATCH` row, in decades, so any other field of the row could regress
 unseen (and a row whose key is `0` or `n/a` could not change visibly at all).
 For every `VALUE-MISMATCH` row the pins file records each mismatching field's
-name and the value the port produces. The gate (`PinGate`) then requires, per
+name and the value the port produces. A failing runtime self-check
+(`CHECK_EQUALS_D` and `CHECK_EQUALS_I`, which compare two values the run
+produced and have no `t.exp` side, at the moment suite 1 testcase 4 and suites
+10 and 11) pins both of its operands, the second as `name#2`: which one the
+port computed depends on the call site (suite 10's
+`CHECK_EQUALS_D(xcross, xx[0])` passes the `t.exp` input first and the computed
+`xx[0]` second, suite 11's `CHECK_EQUALS_D(xback[0], xin[0])` the reverse), so
+neither is assumed, and a failure message calls them the first and second
+operand rather than `t.exp`. The gate (`PinGate`) then requires, per
 row, that the set of mismatching fields is exactly the pinned set, that each
 double is within `setest`'s own tolerance for that field (`tolerances.c`, with
 the `t.fix` precision as fallback, as `CheckContext` does) of its pinned value,
 that ints are equal, and that strings are equal after the ephemeris directory
-is replaced by a placeholder. A failure names the row, the field, and the
-pinned and actual values. The pins are generated on Windows x64, the platform
-the conformance job gates on, and they change only through the script below.
+is replaced by a placeholder (with or without a trailing separator on
+`SWISSEPH_CONFORMANCE_EPHE`: both spellings give the same pin). A failure names
+the row, the field, and the pinned and actual values. The pins are generated on
+Windows x64, the platform the conformance job gates on, and
+`scripts/regenerate-known-fail.ps1` refuses to run anywhere else unless given
+`-AllowUnsupportedPlatform` (which records the platform in the log entry). They
+change only through the script below.
 
 The only supported way to touch `known-fail.tsv` and `known-fail-pins.tsv` is
 `scripts/regenerate-known-fail.ps1`, in one of two modes:
@@ -483,10 +495,12 @@ correctness oracle look, from a CI notification, like the same kind of thing:
 both run the library against a reference and report PASS/FAIL. Their
 *expected* results are opposites. The baseline expects **zero** diffs --
 anything else means a change altered something it should not have. This
-oracle expects **some iterations to still fail**: `known-fail.tsv` lists 1,634<!--doccount:known-fail-total--> of 18,919
-iterations (91.4% passing) at v2.10.04. That count is divergence from `t.exp`, a static
-snapshot made by Astrodienst, not a count of port defects: all 533 `VALUE-MISMATCH` rows are
-triaged against the C and none is a port defect, and the other 1,101 are `DATA-MISSING`. A red
+oracle expects **some iterations to still fail**: `known-fail.tsv` lists 1,401<!--doccount:known-fail-total--> of 18,919
+iterations (92.6% passing) at v2.10.04. That count is divergence from `t.exp`, a static
+snapshot made by Astrodienst, not a count of port defects: all 1,401 `VALUE-MISMATCH` rows are
+triaged against the C and none is a port defect. The harness skips no iteration for want of
+data (the `DATA-MISSING` category that did was removed on 2026-11-24): an iteration that asks
+for a file this repo does not ship runs as `setest` runs it, with the library's fallback. A red
 oracle run is not evidence anything is broken; a green one (all 18,919 passing with an empty
 `known-fail.tsv`) would mean every iteration matches `t.exp`, which needs the full data set the official run used, so it is
 not today's state. See "Reporting by testcase" below for how to read a run
@@ -500,19 +514,19 @@ without it looking alarming.
 groups by the 68 (suite, testcase) pairs instead and splits them into two
 lists: **actionable** (at least one `VALUE-MISMATCH`/`ERROR` -- the actual
 porting work queue) and **parked** (every non-passing iteration in that
-testcase is `NOT-IMPLEMENTED`, `DATA-MISSING`, or `UNREPRODUCIBLE` -- blocked
+testcase is `NOT-IMPLEMENTED` or `UNREPRODUCIBLE` -- blocked
 on something other than the port's logic: a 2.10-only API (currently none;
-the category is empty), a data file this repo doesn't ship, or a structural
-gap). A testcase with zero failing iterations appears in neither list; it is
-not "parked", it is done. Of the 68, 29 have at least one row in
-`known-fail.tsv`; splitting those by `FormatByTestCase()`'s rule gives 22
-actionable and 7 genuinely parked, and the remaining 39 have no row in
-`known-fail.tsv` at all -- they pass completely. Conflating "parked" with
-"everything not actionable" overstates how much of the 68 is blocked on
-something other than the port's own logic: it is 7, not 46 (68 minus the 22
-actionable). ("Actionable"
-is the rule's name, not a verdict: at v2.10.04 all 533 `VALUE-MISMATCH` rows
-are triaged as drift, none a port defect.) Measured at v2.10.04; at
+the category is empty) or a structural gap). A testcase with zero failing iterations appears in neither list; it is
+not "parked", it is done. Of the 68, 28 have at least one row in
+`known-fail.tsv`; splitting those by `FormatByTestCase()`'s rule gives 28
+actionable and none parked, and the remaining 40 have no row in
+`known-fail.tsv` at all -- they pass completely. ("Actionable"
+is the rule's name, not a verdict: at v2.10.04 all 1,401 `VALUE-MISMATCH` rows
+are triaged as drift, none a port defect.) Measured at v2.10.04 on 2026-11-24
+after the `DATA-MISSING` skips were lifted (earlier the same day: 29 testcases
+with a row, 22 actionable and 7 parked, the parked ones being the testcases
+whose only failures were skipped iterations: six of them, 1.2, 1.4, 1.5, 4.1, 7.3 and
+7.4, now carry `VALUE-MISMATCH` rows, and 5.3 passes completely); at
 2.10.3.x the figures were 60 testcases, 31 actionable and 8 parked. A porting PR
 should be shrinking the actionable list's mismatch/error counts, or moving a
 testcase from actionable to fully passing -- not touching the parked list,

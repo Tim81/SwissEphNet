@@ -1,26 +1,538 @@
 suite	testcase	iteration	field	kind	port_value
+1	1	3	xx[2]	Double	1.0113277174218718
+1	1	3	rc	Int	2
+1	1	6	xx[0]	Double	136.29880010324479
+1	1	6	xx[2]	Double	1.0136372497332231
+1	1	6	rc	Int	2
+1	1	9	xx[2]	Double	0.9966637059710437
+1	1	9	rc	Int	2
+1	1	12	xx[0]	Double	100.59604681748479
+1	1	12	xx[1]	Double	0.19263203521550398
+1	1	12	rc	Int	2
+1	1	15	xx[0]	Double	145.4269411068953
+1	1	15	rc	Int	2
+1	1	18	xx[0]	Double	93.138241590117772
+1	1	18	rc	Int	2
+1	1	21	rc	Int	2
+1	1	24	xx[2]	Double	1.7098904493677263
+1	1	24	rc	Int	2
+1	1	27	rc	Int	2
+1	1	30	xx[2]	Double	1.9429208599682128
+1	1	30	rc	Int	2
+1	1	33	rc	Int	2
+1	1	36	xx[2]	Double	3.8981309742627519
+1	1	36	rc	Int	2
+1	1	37	xx[0]	Double	0
+1	1	37	xx[1]	Double	0
+1	1	37	xx[2]	Double	0
+1	1	37	rc	Int	-1
+1	1	37	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
+1	1	38	xx[0]	Double	0
+1	1	38	xx[1]	Double	0
+1	1	38	xx[2]	Double	0
+1	1	38	rc	Int	-1
+1	1	38	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
+1	1	39	xx[0]	Double	0
+1	1	39	xx[1]	Double	0
+1	1	39	xx[2]	Double	0
+1	1	39	rc	Int	-1
+1	1	39	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
+1	1	40	xx[0]	Double	0
+1	1	40	xx[1]	Double	0
+1	1	40	xx[2]	Double	0
+1	1	40	rc	Int	-1
+1	1	40	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
+1	1	41	xx[0]	Double	0
+1	1	41	xx[1]	Double	0
+1	1	41	xx[2]	Double	0
+1	1	41	rc	Int	-1
+1	1	41	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
+1	1	42	xx[0]	Double	0
+1	1	42	xx[1]	Double	0
+1	1	42	xx[2]	Double	0
+1	1	42	rc	Int	-1
+1	1	42	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
+1	1	43	xx[0]	Double	0
+1	1	43	xx[1]	Double	0
+1	1	43	xx[2]	Double	0
+1	1	43	rc	Int	-1
+1	1	43	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
+1	1	44	xx[0]	Double	0
+1	1	44	xx[1]	Double	0
+1	1	44	xx[2]	Double	0
+1	1	44	rc	Int	-1
+1	1	44	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
+1	1	45	xx[0]	Double	0
+1	1	45	xx[1]	Double	0
+1	1	45	xx[2]	Double	0
+1	1	45	rc	Int	-1
+1	1	45	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
+1	1	48	xx[2]	Double	5.4100600932771714
+1	1	48	rc	Int	2
+1	1	51	xx[2]	Double	5.0600645629211494
+1	1	51	rc	Int	2
+1	1	54	xx[0]	Double	176.00667563568146
+1	1	54	xx[2]	Double	4.4510936031367221
+1	1	54	rc	Int	2
+1	1	57	xx[0]	Double	177.98159094572281
+1	1	57	xx[2]	Double	8.9493447833146256
+1	1	57	rc	Int	2
+1	1	60	xx[2]	Double	10.134852866664158
+1	1	60	rc	Int	2
+1	1	63	xx[0]	Double	146.94937399781858
+1	1	63	xx[1]	Double	1.7629038743389869
+1	1	63	xx[2]	Double	8.3941838939448878
+1	1	63	rc	Int	2
+1	1	66	xx[0]	Double	359.6465603569593
+1	1	66	xx[2]	Double	20.630044505482008
+1	1	66	rc	Int	2
+1	1	69	xx[0]	Double	194.15119784746622
+1	1	69	xx[1]	Double	0.62804828425593429
+1	1	69	xx[2]	Double	18.90254905591053
+1	1	69	rc	Int	2
+1	1	72	xx[0]	Double	138.12472483412637
+1	1	72	xx[2]	Double	17.594274410329785
+1	1	72	rc	Int	2
+1	1	75	xx[0]	Double	328.64721433762139
+1	1	75	xx[1]	Double	-0.45213987508759101
+1	1	75	xx[2]	Double	30.041677030924408
+1	1	75	rc	Int	2
+1	1	78	xx[2]	Double	30.080509256752489
+1	1	78	rc	Int	2
+1	1	81	xx[0]	Double	201.98606919743486
+1	1	81	xx[1]	Double	1.7829804419612665
+1	1	81	xx[2]	Double	29.412146689080785
+1	1	81	rc	Int	2
+1	1	84	xx[2]	Double	31.039878056144936
+1	1	84	rc	Int	2
+1	1	87	xx[0]	Double	65.846058953740041
+1	1	87	xx[1]	Double	-12.039242607774026
+1	1	87	xx[2]	Double	48.581223820877554
+1	1	87	rc	Int	2
+1	1	90	xx[1]	Double	-14.599080479605378
+1	1	90	xx[2]	Double	49.790693456566622
+1	1	90	rc	Int	2
+1	1	91	xx[0]	Double	0
+1	1	91	xx[1]	Double	0
+1	1	91	xx[2]	Double	0
+1	1	91	rc	Int	-1
+1	1	91	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	1	92	xx[0]	Double	0
+1	1	92	xx[1]	Double	0
+1	1	92	xx[2]	Double	0
+1	1	92	rc	Int	-1
+1	1	92	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	1	93	xx[0]	Double	0
+1	1	93	xx[1]	Double	0
+1	1	93	xx[2]	Double	0
+1	1	93	rc	Int	-1
+1	1	93	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	1	94	xx[0]	Double	0
+1	1	94	xx[1]	Double	0
+1	1	94	xx[2]	Double	0
+1	1	94	rc	Int	-1
+1	1	94	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	1	95	xx[0]	Double	0
+1	1	95	xx[1]	Double	0
+1	1	95	xx[2]	Double	0
+1	1	95	rc	Int	-1
+1	1	95	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	1	96	xx[0]	Double	0
+1	1	96	xx[1]	Double	0
+1	1	96	xx[2]	Double	0
+1	1	96	rc	Int	-1
+1	1	96	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	1	97	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	1	98	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	1	99	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	1	100	xx[0]	Double	0
+1	1	100	xx[1]	Double	0
+1	1	100	xx[2]	Double	0
+1	1	100	rc	Int	-1
+1	1	100	serr	String	SwissEph file 'sepm9699.se1' not found in PATH '<ephe>/'
+1	1	101	xx[0]	Double	0
+1	1	101	xx[1]	Double	0
+1	1	101	xx[2]	Double	0
+1	1	101	rc	Int	-1
+1	1	101	serr	String	SwissEph file 'sepm9699.se1' not found in PATH '<ephe>/'
+1	1	102	xx[0]	Double	0
+1	1	102	xx[1]	Double	0
+1	1	102	xx[2]	Double	0
+1	1	102	rc	Int	-1
+1	1	102	serr	String	SwissEph file 'sepm9699.se1' not found in PATH '<ephe>/'
+1	1	103	xx[0]	Double	0
+1	1	103	xx[1]	Double	0
+1	1	103	xx[2]	Double	0
+1	1	103	rc	Int	-1
+1	1	103	serr	String	SwissEph file 'sepm9699.se1' not found in PATH '<ephe>/'
+1	1	104	xx[0]	Double	0
+1	1	104	xx[1]	Double	0
+1	1	104	xx[2]	Double	0
+1	1	104	rc	Int	-1
+1	1	104	serr	String	SwissEph file 'sepm9699.se1' not found in PATH '<ephe>/'
+1	1	105	xx[0]	Double	0
+1	1	105	xx[1]	Double	0
+1	1	105	xx[2]	Double	0
+1	1	105	rc	Int	-1
+1	1	105	serr	String	SwissEph file 'sepm9699.se1' not found in PATH '<ephe>/'
+1	1	106	serr	String	SwissEph file 'sepm9699.se1' not found in PATH '<ephe>/'
+1	1	107	serr	String	SwissEph file 'sepm9699.se1' not found in PATH '<ephe>/'
+1	1	108	serr	String	SwissEph file 'sepm9699.se1' not found in PATH '<ephe>/'
+1	1	109	xx[0]	Double	0
+1	1	109	xx[1]	Double	0
+1	1	109	xx[2]	Double	0
+1	1	109	rc	Int	-1
+1	1	109	serr	String	SwissEph file 'sepm9799.se1' not found in PATH '<ephe>/'
+1	1	110	xx[0]	Double	0
+1	1	110	xx[1]	Double	0
+1	1	110	xx[2]	Double	0
+1	1	110	rc	Int	-1
+1	1	110	serr	String	SwissEph file 'sepm9799.se1' not found in PATH '<ephe>/'
+1	1	111	xx[0]	Double	0
+1	1	111	xx[1]	Double	0
+1	1	111	xx[2]	Double	0
+1	1	111	rc	Int	-1
+1	1	111	serr	String	SwissEph file 'sepm9799.se1' not found in PATH '<ephe>/'
+1	1	112	xx[0]	Double	0
+1	1	112	xx[1]	Double	0
+1	1	112	xx[2]	Double	0
+1	1	112	rc	Int	-1
+1	1	112	serr	String	SwissEph file 'sepm9799.se1' not found in PATH '<ephe>/'
+1	1	113	xx[0]	Double	0
+1	1	113	xx[1]	Double	0
+1	1	113	xx[2]	Double	0
+1	1	113	rc	Int	-1
+1	1	113	serr	String	SwissEph file 'sepm9799.se1' not found in PATH '<ephe>/'
+1	1	114	xx[0]	Double	0
+1	1	114	xx[1]	Double	0
+1	1	114	xx[2]	Double	0
+1	1	114	rc	Int	-1
+1	1	114	serr	String	SwissEph file 'sepm9799.se1' not found in PATH '<ephe>/'
+1	1	115	serr	String	SwissEph file 'sepm9799.se1' not found in PATH '<ephe>/'
+1	1	116	serr	String	SwissEph file 'sepm9799.se1' not found in PATH '<ephe>/'
+1	1	117	serr	String	SwissEph file 'sepm9799.se1' not found in PATH '<ephe>/'
+1	1	118	xx[0]	Double	0
+1	1	118	xx[1]	Double	0
+1	1	118	xx[2]	Double	0
+1	1	118	rc	Int	-1
+1	1	118	serr	String	SwissEph file 'sepm9899.se1' not found in PATH '<ephe>/'
+1	1	119	xx[0]	Double	0
+1	1	119	xx[1]	Double	0
+1	1	119	xx[2]	Double	0
+1	1	119	rc	Int	-1
+1	1	119	serr	String	SwissEph file 'sepm9899.se1' not found in PATH '<ephe>/'
+1	1	120	xx[0]	Double	0
+1	1	120	xx[1]	Double	0
+1	1	120	xx[2]	Double	0
+1	1	120	rc	Int	-1
+1	1	120	serr	String	SwissEph file 'sepm9899.se1' not found in PATH '<ephe>/'
+1	1	121	xx[0]	Double	0
+1	1	121	xx[1]	Double	0
+1	1	121	xx[2]	Double	0
+1	1	121	rc	Int	-1
+1	1	121	serr	String	SwissEph file 'sepm9899.se1' not found in PATH '<ephe>/'
+1	1	122	xx[0]	Double	0
+1	1	122	xx[1]	Double	0
+1	1	122	xx[2]	Double	0
+1	1	122	rc	Int	-1
+1	1	122	serr	String	SwissEph file 'sepm9899.se1' not found in PATH '<ephe>/'
+1	1	123	xx[0]	Double	0
+1	1	123	xx[1]	Double	0
+1	1	123	xx[2]	Double	0
+1	1	123	rc	Int	-1
+1	1	123	serr	String	SwissEph file 'sepm9899.se1' not found in PATH '<ephe>/'
+1	1	124	serr	String	SwissEph file 'sepm9899.se1' not found in PATH '<ephe>/'
+1	1	125	serr	String	SwissEph file 'sepm9899.se1' not found in PATH '<ephe>/'
+1	1	126	serr	String	SwissEph file 'sepm9899.se1' not found in PATH '<ephe>/'
+1	1	127	xx[0]	Double	0
+1	1	127	xx[1]	Double	0
+1	1	127	xx[2]	Double	0
+1	1	127	rc	Int	-1
+1	1	127	serr	String	SwissEph file 'sepm9999.se1' not found in PATH '<ephe>/'
+1	1	128	xx[0]	Double	0
+1	1	128	xx[1]	Double	0
+1	1	128	xx[2]	Double	0
+1	1	128	rc	Int	-1
+1	1	128	serr	String	SwissEph file 'sepm9999.se1' not found in PATH '<ephe>/'
+1	1	129	xx[0]	Double	0
+1	1	129	xx[1]	Double	0
+1	1	129	xx[2]	Double	0
+1	1	129	rc	Int	-1
+1	1	129	serr	String	SwissEph file 'sepm9999.se1' not found in PATH '<ephe>/'
+1	1	130	xx[0]	Double	0
+1	1	130	xx[1]	Double	0
+1	1	130	xx[2]	Double	0
+1	1	130	rc	Int	-1
+1	1	130	serr	String	SwissEph file 'sepm9999.se1' not found in PATH '<ephe>/'
+1	1	131	xx[0]	Double	0
+1	1	131	xx[1]	Double	0
+1	1	131	xx[2]	Double	0
+1	1	131	rc	Int	-1
+1	1	131	serr	String	SwissEph file 'sepm9999.se1' not found in PATH '<ephe>/'
+1	1	132	xx[0]	Double	0
+1	1	132	xx[1]	Double	0
+1	1	132	xx[2]	Double	0
+1	1	132	rc	Int	-1
+1	1	132	serr	String	SwissEph file 'sepm9999.se1' not found in PATH '<ephe>/'
+1	1	133	serr	String	SwissEph file 'sepm9999.se1' not found in PATH '<ephe>/'
+1	1	134	serr	String	SwissEph file 'sepm9999.se1' not found in PATH '<ephe>/'
+1	1	135	serr	String	SwissEph file 'sepm9999.se1' not found in PATH '<ephe>/'
+1	1	136	xx[0]	Double	0
+1	1	136	xx[1]	Double	0
+1	1	136	xx[2]	Double	0
+1	1	136	rc	Int	-1
+1	1	136	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	1	137	xx[0]	Double	0
+1	1	137	xx[1]	Double	0
+1	1	137	xx[2]	Double	0
+1	1	137	rc	Int	-1
+1	1	137	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	1	138	xx[0]	Double	0
+1	1	138	xx[1]	Double	0
+1	1	138	xx[2]	Double	0
+1	1	138	rc	Int	-1
+1	1	138	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	1	139	xx[0]	Double	0
+1	1	139	xx[1]	Double	0
+1	1	139	xx[2]	Double	0
+1	1	139	rc	Int	-1
+1	1	139	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	1	140	xx[0]	Double	0
+1	1	140	xx[1]	Double	0
+1	1	140	xx[2]	Double	0
+1	1	140	rc	Int	-1
+1	1	140	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	1	141	xx[0]	Double	0
+1	1	141	xx[1]	Double	0
+1	1	141	xx[2]	Double	0
+1	1	141	rc	Int	-1
+1	1	141	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	1	142	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	1	143	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	1	144	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	1	145	xx[0]	Double	0
+1	1	145	xx[1]	Double	0
+1	1	145	xx[2]	Double	0
+1	1	145	rc	Int	-1
+1	1	145	serr	String	SwissEph file 'sepm9501.se1' not found in PATH '<ephe>/'
+1	1	146	xx[0]	Double	0
+1	1	146	xx[1]	Double	0
+1	1	146	xx[2]	Double	0
+1	1	146	rc	Int	-1
+1	1	146	serr	String	SwissEph file 'sepm9501.se1' not found in PATH '<ephe>/'
+1	1	147	xx[0]	Double	0
+1	1	147	xx[1]	Double	0
+1	1	147	xx[2]	Double	0
+1	1	147	rc	Int	-1
+1	1	147	serr	String	SwissEph file 'sepm9501.se1' not found in PATH '<ephe>/'
+1	1	148	xx[0]	Double	0
+1	1	148	xx[1]	Double	0
+1	1	148	xx[2]	Double	0
+1	1	148	rc	Int	-1
+1	1	148	serr	String	SwissEph file 'sepm9501.se1' not found in PATH '<ephe>/'
+1	1	149	xx[0]	Double	0
+1	1	149	xx[1]	Double	0
+1	1	149	xx[2]	Double	0
+1	1	149	rc	Int	-1
+1	1	149	serr	String	SwissEph file 'sepm9501.se1' not found in PATH '<ephe>/'
+1	1	150	xx[0]	Double	0
+1	1	150	xx[1]	Double	0
+1	1	150	xx[2]	Double	0
+1	1	150	rc	Int	-1
+1	1	150	serr	String	SwissEph file 'sepm9501.se1' not found in PATH '<ephe>/'
+1	1	151	serr	String	SwissEph file 'sepm9501.se1' not found in PATH '<ephe>/'
+1	1	152	serr	String	SwissEph file 'sepm9501.se1' not found in PATH '<ephe>/'
+1	1	153	serr	String	SwissEph file 'sepm9501.se1' not found in PATH '<ephe>/'
+1	1	156	xx[0]	Double	152.44641748627885
+1	1	156	xx[1]	Double	0.15044574975650621
+1	1	156	xx[2]	Double	0.0045916006763780911
+1	1	159	xx[2]	Double	1.0113277174218718
+1	1	159	rc	Int	2
+1	1	162	xx[0]	Double	270.87425814792402
+1	1	162	xx[2]	Double	0.46095352176543924
+1	1	162	rc	Int	17922
+1	1	165	xx[0]	Double	59.711163768426417
+1	1	165	xx[1]	Double	1.5714413537785934
+1	1	165	xx[2]	Double	0.31264338691368626
+1	1	165	rc	Int	17922
+1	1	168	xx[0]	Double	218.65542362093902
+1	1	168	xx[2]	Double	0.44047178481630639
+1	1	168	rc	Int	17922
+1	1	171	xx[0]	Double	0.59065426684926259
+1	1	171	xx[2]	Double	0.68663866163981058
+1	1	171	rc	Int	8450
+1	1	174	xx[0]	Double	2.1093680885583419
+1	1	174	xx[2]	Double	1.1282041188961982
+1	1	174	rc	Int	8450
+1	1	177	xx[2]	Double	0.72593951563327774
+1	1	177	rc	Int	8450
 1	1	178	xx[0]	Double	132.56097271613859
 1	1	178	xx[1]	Double	2.8081825020501965
+1	1	180	xx[0]	Double	132.56097271613859
+1	1	180	xx[1]	Double	2.8081825020501965
+1	1	180	rc	Int	1546
 1	1	181	xx[0]	Double	154.83694397345417
 1	1	181	xx[1]	Double	3.3331905679875429
 1	1	181	xx[2]	Double	0.71886419514520805
+1	1	183	xx[0]	Double	154.83694397345417
+1	1	183	xx[1]	Double	3.3331905679875429
+1	1	183	xx[2]	Double	0.71886419514520805
+1	1	183	rc	Int	1546
 1	1	184	xx[0]	Double	99.100261824009195
 1	1	184	xx[1]	Double	1.4767357169103217
 1	1	184	xx[2]	Double	0.71885046217542636
+1	1	186	xx[0]	Double	99.100261824009195
+1	1	186	xx[1]	Double	1.4767357169103217
+1	1	186	xx[2]	Double	0.71885046217542636
+1	1	186	rc	Int	1546
+1	1	189	rc	Int	4098
+1	1	192	xx[0]	Double	-0.92025471462812658
+1	1	192	xx[1]	Double	-0.75413209911806578
+1	1	192	xx[2]	Double	-0.026467099479921395
+1	1	192	rc	Int	4098
+1	1	195	xx[0]	Double	0.34340438559281222
+1	1	195	rc	Int	4098
+1	1	196	xx[0]	Double	0
+1	1	196	xx[1]	Double	0
+1	1	196	xx[2]	Double	0
+1	1	196	rc	Int	-1
+1	1	196	serr	String	SwissEph file 'se00010s.se1' not found in PATH '<ephe>/'
+1	1	197	xx[0]	Double	0
+1	1	197	xx[1]	Double	0
+1	1	197	xx[2]	Double	0
+1	1	197	rc	Int	-1
+1	1	197	serr	String	SwissEph file 'se00010s.se1' not found in PATH '<ephe>/'
+1	1	198	xx[0]	Double	0
+1	1	198	xx[1]	Double	0
+1	1	198	xx[2]	Double	0
+1	1	198	rc	Int	-1
+1	1	198	serr	String	SwissEph file 'se00010s.se1' not found in PATH '<ephe>/'
+1	1	204	xx[2]	Double	3.382133357006432
+1	1	204	rc	Int	98
+1	1	207	xx[2]	Double	2.8482773200194722
+1	1	207	rc	Int	131074
+1	1	210	xx[0]	Double	13.957907958786469
+1	1	210	xx[1]	Double	-7.1263217244294115
+1	1	210	xx[2]	Double	3.8954392993450844
+1	1	210	rc	Int	524290
+1	1	213	xx[2]	Double	2.5499556572690256
+1	1	213	xx[3]	Double	0.22831502022313543
+1	1	213	rc	Int	130
+1	1	216	rc	Int	66
+1	1	219	xx[2]	Double	1.6485010234750803
+1	1	219	rc	Int	8194
 1	1	220	xx[0]	Double	319.89547295242443
 1	1	220	xx[1]	Double	-9.1305167141689747
 1	1	220	xx[2]	Double	2.9755760344739084
+1	1	222	xx[0]	Double	319.89547295242443
+1	1	222	xx[1]	Double	-9.1305167141689747
+1	1	222	xx[2]	Double	2.9755760344739084
+1	1	222	rc	Int	1546
+1	1	225	xx[2]	Double	5.0600645629211494
+1	1	225	rc	Int	2050
 1	1	227	xx[3]	Double	0.12833514913369898
 1	1	227	xx[4]	Double	0.0014932664048600255
+1	1	228	xx[2]	Double	10.134852866664156
+1	1	228	xx[3]	Double	0.12833550398925264
+1	1	228	xx[4]	Double	0.0014932022377667374
+1	1	228	xx[5]	Double	-0.0014932558330018721
+1	1	228	rc	Int	258
+1	1	231	rc	Int	514
+1	1	234	xx[2]	Double	10.088214542963982
+1	1	234	rc	Int	1026
+1	1	237	xx[0]	Double	194.1511959666762
+1	1	237	xx[1]	Double	0.62804214110608136
+1	1	237	xx[2]	Double	18.902549055910534
+1	1	237	rc	Int	131074
+1	1	240	xx[2]	Double	30.080509256752499
+1	1	240	xx[3]	Double	0.014560206584081839
+1	1	240	xx[4]	Double	-0.00081785662771372979
+1	1	240	xx[5]	Double	-0.016260421411177516
+1	1	240	rc	Int	1282
+1	1	243	xx[0]	Double	65.848644757131552
+1	1	243	xx[1]	Double	-12.040195418495156
+1	1	243	xx[2]	Double	48.581165622364949
+1	1	243	rc	Int	1554
 1	1	248	xx[3]	Double	0.002377435120004517
+1	1	249	xx[0]	Double	173.83723157306764
+1	1	249	xx[3]	Double	0.0012482052990776609
+1	1	249	rc	Int	258
 1	1	255	xx[3]	Double	-0.37985262665560476
+1	1	257	xx[0]	Double	128.71902709916029
+1	1	257	xx[1]	Double	-3.7581123101787499
+1	1	257	xx[3]	Double	-0.38359312297860937
+1	1	257	xx[4]	Double	-0.025053115578369822
+1	1	257	rc	Int	258
+1	1	258	xx[0]	Double	128.71902709916029
+1	1	258	xx[1]	Double	-3.7581123101787499
+1	1	258	rc	Int	2
+1	1	258	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 1	1	271	xx[4]	Double	0.00036814407749954556
 1	1	271	xx[5]	Double	0.017193418096282775
+1	1	273	xx[2]	Double	41.194427675163659
+1	1	273	rc	Int	258
+1	1	276	xx[2]	Double	438.83328042520679
+1	1	276	rc	Int	258
+1	1	282	rc	Int	2
+1	1	288	xx[0]	Double	152.2971775291355
+1	1	288	xx[1]	Double	0.14992638322942306
+1	1	288	xx[2]	Double	0.0045916006763780911
+1	1	291	xx[0]	Double	25.680479922469733
+1	1	291	xx[1]	Double	-0.84450319359506787
+1	1	291	xx[2]	Double	0.0039757185707677001
+1	1	294	xx[0]	Double	355.47857174894472
+1	1	294	xx[1]	Double	-1.4730279177677645
+1	1	294	xx[2]	Double	0.0096863724809999087
 1	1	295	xx[0]	Double	0
 1	1	295	xx[1]	Double	0
 1	1	295	xx[2]	Double	0
 1	1	295	rc	Int	-1
 1	1	295	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+1	1	297	xx[0]	Double	0
+1	1	297	xx[1]	Double	0
+1	1	297	xx[2]	Double	0
+1	1	297	rc	Int	-1
+1	1	297	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+1	1	300	xx[0]	Double	137.86392045802455
+1	1	300	xx[2]	Double	1.0136372497332231
+1	1	300	rc	Int	1634
+1	1	303	xx[0]	Double	146.99250150619537
+1	1	303	rc	Int	1634
+1	1	306	xx[0]	Double	122.42285996647301
+1	1	306	xx[2]	Double	1.128204118896198
+1	1	306	rc	Int	1634
+1	1	309	xx[2]	Double	1.7098904493677143
+1	1	309	rc	Int	1634
+1	1	312	xx[2]	Double	1.1900775059089197
+1	1	312	rc	Int	1634
+1	1	315	xx[2]	Double	5.0600645629211503
+1	1	315	rc	Int	1634
+1	1	318	xx[2]	Double	10.134852866663461
+1	1	318	rc	Int	1634
+1	1	321	xx[0]	Double	195.71388528569869
+1	1	321	xx[1]	Double	0.6228827335720224
+1	1	321	xx[2]	Double	18.902549055910523
+1	1	321	rc	Int	1634
+1	1	324	xx[2]	Double	30.080509256752489
+1	1	324	rc	Int	1634
+1	1	327	xx[0]	Double	67.408373489165186
+1	1	327	xx[1]	Double	-12.026487975437114
+1	1	327	xx[2]	Double	48.581223820877547
+1	1	327	rc	Int	1634
+1	1	330	xx[2]	Double	17.819021999339469
+1	1	330	rc	Int	1634
+1	1	333	rc	Int	1634
+1	1	336	xx[2]	Double	2.5137412130731431
+1	1	336	rc	Int	1634
+1	1	339	xx[2]	Double	3.3436660981418314
+1	1	339	rc	Int	1634
+1	1	342	xx[2]	Double	1.7032270660926887
+1	1	342	rc	Int	1634
+1	1	345	rc	Int	1634
+1	1	348	xx[2]	Double	64.408909935021811
+1	1	348	rc	Int	1634
+1	1	351	xx[2]	Double	84.598279377863363
+1	1	351	rc	Int	1634
 1	1	352	xx[0]	Double	0
 1	1	352	xx[1]	Double	0
 1	1	352	xx[2]	Double	0
@@ -31,6 +543,16 @@ suite	testcase	iteration	field	kind	port_value
 1	1	353	xx[2]	Double	0
 1	1	353	rc	Int	-1
 1	1	353	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+1	1	356	xx[0]	Double	0
+1	1	356	xx[1]	Double	0
+1	1	356	xx[2]	Double	0
+1	1	356	rc	Int	-1
+1	1	356	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+1	1	357	xx[0]	Double	0
+1	1	357	xx[1]	Double	0
+1	1	357	xx[2]	Double	0
+1	1	357	rc	Int	-1
+1	1	357	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 1	1	358	xx[0]	Double	0
 1	1	358	xx[1]	Double	0
 1	1	358	xx[2]	Double	0
@@ -41,6 +563,16 @@ suite	testcase	iteration	field	kind	port_value
 1	1	359	xx[2]	Double	0
 1	1	359	rc	Int	-1
 1	1	359	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+1	1	362	xx[0]	Double	0
+1	1	362	xx[1]	Double	0
+1	1	362	xx[2]	Double	0
+1	1	362	rc	Int	-1
+1	1	362	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+1	1	363	xx[0]	Double	0
+1	1	363	xx[1]	Double	0
+1	1	363	xx[2]	Double	0
+1	1	363	rc	Int	-1
+1	1	363	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 1	1	388	xx[0]	Double	143.51777285905905
 1	1	388	xx[1]	Double	0.008634337071859375
 1	1	388	xx[2]	Double	1.0131406079464897
@@ -51,6 +583,16 @@ suite	testcase	iteration	field	kind	port_value
 1	1	389	xx[2]	Double	0.002711967059446692
 1	1	389	rc	Int	4
 1	1	389	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+1	1	392	xx[0]	Double	143.51777285905905
+1	1	392	xx[1]	Double	0.008634337071859375
+1	1	392	xx[2]	Double	1.0131406079464897
+1	1	392	rc	Int	17924
+1	1	392	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+1	1	393	xx[0]	Double	145.67890949701905
+1	1	393	xx[1]	Double	3.5831045597672682
+1	1	393	xx[2]	Double	0.002711967059446692
+1	1	393	rc	Int	4
+1	1	393	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 1	1	394	xx[0]	Double	217.62667951099507
 1	1	394	xx[1]	Double	-0.012856174332196985
 1	1	394	xx[2]	Double	1.0002220053055957
@@ -61,18 +603,115 @@ suite	testcase	iteration	field	kind	port_value
 1	1	395	xx[2]	Double	0.002687677709493728
 1	1	395	rc	Int	4
 1	1	395	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+1	1	398	xx[0]	Double	217.62667951099507
+1	1	398	xx[1]	Double	-0.012856174332196985
+1	1	398	xx[2]	Double	1.0002220053055957
+1	1	398	rc	Int	17924
+1	1	398	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+1	1	399	xx[0]	Double	89.417877047984817
+1	1	399	xx[1]	Double	-4.8313072004374078
+1	1	399	xx[2]	Double	0.002687677709493728
+1	1	399	rc	Int	4
+1	1	399	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+1	2	3	xx[0]	Double	100.60676730026283
+1	2	3	xx[1]	Double	0.19166641809216056
+1	2	3	rc	Int	2
+1	2	6	xx[0]	Double	145.42634088705012
+1	2	6	rc	Int	2
+1	2	9	xx[0]	Double	93.148576129660526
+1	2	9	rc	Int	2
 1	3	2	xx[4]	Double	-0.66001490073852587
+1	3	3	xx[0]	Double	100.99497976606024
+1	3	3	xx[1]	Double	-0.29823179869130106
+1	3	3	xx[3]	Double	10.999917826524097
+1	3	3	xx[4]	Double	-0.66004302282818283
+1	3	3	rc	Int	33026
 1	3	5	xx[3]	Double	10.088130659084982
 1	3	5	xx[4]	Double	-0.15400315770852657
+1	3	6	xx[0]	Double	145.6245050965282
+1	3	6	xx[3]	Double	10.088277881266094
+1	3	6	xx[4]	Double	-0.15416286522018652
+1	3	6	rc	Int	33026
+1	3	9	xx[0]	Double	93.722199512171883
+1	3	9	xx[3]	Double	12.084589671417234
+1	3	9	xx[4]	Double	1.2714925797663312
+1	3	9	rc	Int	33026
 1	3	11	xx[3]	Double	1.1940925344333664
 1	3	11	xx[4]	Double	0.035680416637928758
+1	3	12	xx[3]	Double	1.1940952581568354
+1	3	12	xx[4]	Double	0.035680590446673932
+1	3	12	rc	Int	33026
 1	3	14	xx[3]	Double	1.2296477622442126
+1	3	15	xx[2]	Double	1.7098564589170957
+1	3	15	xx[3]	Double	1.2296414797674515
+1	3	15	rc	Int	33026
+1	3	18	xx[3]	Double	1.1597821841391465
+1	3	18	rc	Int	33026
 1	3	20	xx[3]	Double	0.95480661961744318
 1	3	20	xx[4]	Double	0.001617558777202658
+1	3	21	xx[2]	Double	1.0112923204059243
+1	3	21	xx[3]	Double	0.9548090838862322
+1	3	21	xx[4]	Double	0.0016180142365361007
+1	3	21	rc	Int	33026
 1	3	23	xx[3]	Double	0.95085065794364709
+1	3	24	xx[0]	Double	136.29903591179331
+1	3	24	xx[2]	Double	1.0136031247894557
+1	3	24	xx[3]	Double	0.95085120534577072
+1	3	24	rc	Int	33026
+1	3	27	xx[2]	Double	0.99663860136858706
+1	3	27	xx[3]	Double	0.98343568112113644
+1	3	27	rc	Int	33026
 1	3	29	xx[3]	Double	-0.01846550247819323
 1	3	29	xx[4]	Double	0.00025707072803804465
+1	3	30	xx[3]	Double	-0.018467556230916671
+1	3	30	rc	Int	33026
 1	3	32	xx[3]	Double	0.019383492997349094
+1	3	33	rc	Int	33026
+1	3	36	xx[2]	Double	41.194409702196793
+1	3	36	rc	Int	33026
+1	4	3	rc==iflag	Int	2
+1	4	3	rc==iflag#2	Int	1
+1	5	3	xx[2]	Double	6.6100807300597335
+1	5	3	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+1	5	4	xx[0]	Double	169.36685241262407
+1	5	4	xx[1]	Double	1.2653938001196983
+1	5	4	xx[2]	Double	6.6100807300597335
+1	5	4	rc	Int	-1
+1	5	4	serr	String	SwissEph file 'sepm9501.se1' not found in PATH '<ephe>/'
+1	5	5	xx[0]	Double	169.36685241262407
+1	5	5	xx[1]	Double	1.2653938001196983
+1	5	5	xx[2]	Double	6.6100807300597335
+1	5	6	xx[0]	Double	169.36685241262407
+1	5	6	xx[1]	Double	1.2653938001196983
+1	5	6	xx[2]	Double	6.6100807300597335
+1	5	6	rc	Int	-1
+1	5	6	serr	String	SwissEph file 'sepm9501.se1' not found in PATH '<ephe>/'
+1	5	7	xx[0]	Double	169.36685241262407
+1	5	7	xx[1]	Double	1.2653938001196983
+1	5	7	xx[2]	Double	6.6100807300597335
+1	5	7	rc	Int	-1
+1	5	7	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	5	8	xx[0]	Double	169.36685241262407
+1	5	8	xx[1]	Double	1.2653938001196983
+1	5	8	xx[2]	Double	6.6100807300597335
+1	5	9	xx[0]	Double	169.36685241262407
+1	5	9	xx[1]	Double	1.2653938001196983
+1	5	9	xx[2]	Double	6.6100807300597335
+1	5	9	rc	Int	-1
+1	5	9	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	5	10	xx[0]	Double	169.36685241262407
+1	5	10	xx[1]	Double	1.2653938001196983
+1	5	10	xx[2]	Double	6.6100807300597335
+1	5	10	rc	Int	-1
+1	5	10	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
+1	5	11	xx[0]	Double	169.36685241262407
+1	5	11	xx[1]	Double	1.2653938001196983
+1	5	11	xx[2]	Double	6.6100807300597335
+1	5	12	xx[0]	Double	169.36685241262407
+1	5	12	xx[1]	Double	1.2653938001196983
+1	5	12	xx[2]	Double	6.6100807300597335
+1	5	12	rc	Int	-1
+1	5	12	serr	String	SwissEph file 'sepm9599.se1' not found in PATH '<ephe>/'
 2	1	2	xx[0]	Double	201.15168864868258
 2	1	2	xx[1]	Double	17.978340412243618
 2	1	2	xx[2]	Double	501715.75691132416
@@ -89,6 +728,14 @@ suite	testcase	iteration	field	kind	port_value
 2	5	2	xx[1]	Double	17.978340412243629
 2	5	2	xx[2]	Double	501715.7569113241
 2	5	2	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	1	5	xx[0]	Double	0
+4	1	5	xx[1]	Double	0
+4	1	5	xx[2]	Double	0
+4	1	5	xx[3]	Double	0
+4	1	5	xx[4]	Double	0
+4	1	5	xx[5]	Double	0
+4	1	5	rc	Int	-1
+4	1	5	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
 4	2	20	daya_ex_ut	Double	317.73676927423355
 4	2	20	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	20	rc_aya_ex	Int	-65
@@ -230,6 +877,195 @@ suite	testcase	iteration	field	kind	port_value
 4	2	231	serr_ex_ut	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	231	daya_ex	Double	10.84900146662461
 4	2	231	serr_ex	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	255	daya_ex_ut	Double	317.73676927423355
+4	2	255	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	255	rc_aya_ex	Int	-65
+4	2	255	daya_ex	Double	-0.00056711430532468141
+4	2	255	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+4	2	265	daya_ex_ut	Double	314.77503333795676
+4	2	265	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	265	rc_aya_ex	Int	-65
+4	2	265	daya_ex	Double	-0.00056711430532468141
+4	2	265	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+4	2	266	daya_ex_ut	Double	310.74723662048984
+4	2	266	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	266	rc_aya_ex	Int	-65
+4	2	266	daya_ex	Double	-0.00056711430532468141
+4	2	266	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+4	2	267	daya_ex_ut	Double	313.53088496779674
+4	2	267	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	267	rc_aya_ex	Int	-65
+4	2	267	daya_ex	Double	-0.00056711430532468141
+4	2	267	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+4	2	268	daya_ex_ut	Double	313.35982825723357
+4	2	268	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	268	rc_aya_ex	Int	-65
+4	2	268	daya_ex	Double	-0.00056711430532468141
+4	2	268	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+4	2	269	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	269	rc_aya_ex	Int	-65
+4	2	269	daya_ex	Double	-0.00056711430532468141
+4	2	269	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+4	2	270	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	270	rc_aya_ex	Int	-65
+4	2	270	daya_ex	Double	-0.00056711430532468141
+4	2	270	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+4	2	271	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	271	rc_aya_ex	Int	-65
+4	2	271	daya_ex	Double	-0.00056711430532468141
+4	2	271	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+4	2	273	daya_ex_ut	Double	315.50124332872019
+4	2	273	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	273	rc_aya_ex	Int	-65
+4	2	273	daya_ex	Double	-0.00056711430532468141
+4	2	273	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+4	2	274	daya_ex_ut	Double	308.94489612373809
+4	2	274	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	274	rc_aya_ex	Int	-65
+4	2	274	daya_ex	Double	-0.00056711430532468141
+4	2	274	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+4	2	277	daya_ex_ut	Double	316.03824275154676
+4	2	277	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	277	rc_aya_ex	Int	-65
+4	2	277	daya_ex	Double	-0.00056711430532468141
+4	2	277	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+4	2	278	daya_ex_ut	Double	287.73676927423355
+4	2	278	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	278	rc_aya_ex	Int	-65
+4	2	278	daya_ex	Double	-0.00056711430532468141
+4	2	278	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+4	2	302	daya_ex_ut	Double	359.03874220345887
+4	2	302	serr_ex_ut	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	302	daya_ex	Double	359.03873110486632
+4	2	302	serr_ex	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	312	daya_ex_ut	Double	356.05525959856413
+4	2	312	serr_ex_ut	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	312	daya_ex	Double	356.05524443087666
+4	2	312	serr_ex	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	313	daya_ex_ut	Double	352.16759295524537
+4	2	313	serr_ex_ut	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	313	daya_ex	Double	352.16760150515881
+4	2	313	serr_ex	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	314	daya_ex_ut	Double	354.89239237017171
+4	2	314	serr_ex_ut	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	314	daya_ex	Double	354.89238875816221
+4	2	314	serr_ex	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	315	daya_ex_ut	Double	354.66180118645883
+4	2	315	serr_ex_ut	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	315	daya_ex	Double	354.66179008786634
+4	2	315	serr_ex	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	316	serr_ex_ut	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	316	serr_ex	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	317	serr_ex_ut	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	317	serr_ex	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	318	serr_ex_ut	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	318	serr_ex	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	320	daya_ex_ut	Double	356.7798419226724
+4	2	320	serr_ex_ut	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	320	daya_ex	Double	356.7798302604308
+4	2	320	serr_ex	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	321	daya_ex_ut	Double	351.11887661563497
+4	2	321	serr_ex_ut	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	321	daya_ex	Double	351.11886485893183
+4	2	321	serr_ex	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	324	daya_ex_ut	Double	357.39975015392167
+4	2	324	serr_ex_ut	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	324	daya_ex	Double	357.39974654191224
+4	2	324	serr_ex	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	325	daya_ex_ut	Double	329.03874220345887
+4	2	325	serr_ex_ut	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	325	daya_ex	Double	329.03873110486632
+4	2	325	serr_ex	String	SwissEph file 'sepl_00.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	349	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	349	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	359	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	359	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	360	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	360	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	361	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	361	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	362	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	362	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	363	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	363	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	364	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	364	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	365	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	365	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	367	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	367	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	368	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	368	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	371	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	371	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	372	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	372	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	396	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	396	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	406	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	406	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	407	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	407	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	408	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	408	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	409	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	409	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	410	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	410	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	411	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	411	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	412	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	412	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	414	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	414	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	415	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	415	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	418	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	418	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	419	serr_ex_ut	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	419	serr_ex	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+4	2	443	daya_ex_ut	Double	40.849002908341909
+4	2	443	serr_ex_ut	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	443	daya_ex	Double	40.849001466624614
+4	2	443	serr_ex	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	453	daya_ex_ut	Double	37.829726363339667
+4	2	453	serr_ex_ut	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	453	daya_ex	Double	37.82972130657727
+4	2	453	serr_ex	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	454	daya_ex_ut	Double	34.081233558319191
+4	2	454	serr_ex_ut	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	454	daya_ex	Double	34.081235472786219
+4	2	454	serr_ex	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	455	daya_ex_ut	Double	36.741158338728219
+4	2	455	serr_ex_ut	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	455	daya_ex	Double	36.741154110636458
+4	2	455	serr_ex	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	456	daya_ex_ut	Double	36.472061891341909
+4	2	456	serr_ex_ut	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	456	daya_ex	Double	36.472060449624614
+4	2	456	serr_ex	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	457	serr_ex_ut	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	457	serr_ex	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	458	serr_ex_ut	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	458	serr_ex	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	459	serr_ex_ut	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	459	serr_ex	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	461	daya_ex_ut	Double	38.581765361922074
+4	2	461	serr_ex_ut	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	461	daya_ex	Double	38.581763638960425
+4	2	461	serr_ex	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	462	daya_ex_ut	Double	34.66985143378816
+4	2	462	serr_ex_ut	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	462	daya_ex	Double	34.669849965982237
+4	2	462	serr_ex	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	465	daya_ex_ut	Double	39.248516122478215
+4	2	465	serr_ex_ut	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	465	daya_ex	Double	39.248511894386453
+4	2	465	serr_ex	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	466	daya_ex_ut	Double	10.849002908341909
+4	2	466	serr_ex_ut	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+4	2	466	daya_ex	Double	10.84900146662461
+4	2	466	serr_ex	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	3	19	daya_ut	Double	317.73735108352901
 4	3	19	daya	Double	0
 4	3	29	daya_ut	Double	314.77561514725221
@@ -288,529 +1124,2302 @@ suite	testcase	iteration	field	kind	port_value
 4	3	230	daya_ut	Double	10.845418293310843
 4	3	230	daya	Double	10.845417012957512
 6	6	402	hp	Double	11.118439805641257
+7	1	5	xxnasc[2]	Double	1.0053756066937851
+7	1	5	xxndsc[2]	Double	1.0100298993725161
+7	1	5	xxperi[2]	Double	1.0097253038983456
+7	1	5	xxaphe[2]	Double	1.0055781101588293
+7	1	10	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	1	10	xxnasc[0]	Double	188.2794555428685
+7	1	10	xxnasc[3]	Double	-0.035651054626329497
+7	1	10	xxndsc[0]	Double	8.2794555428688916
+7	1	10	xxndsc[3]	Double	-0.035651054610986471
+7	1	10	xxperi[0]	Double	302.260533220095
+7	1	10	xxperi[1]	Double	4.7883172205273201
+7	1	10	xxperi[3]	Double	0.45630477888140564
+7	1	10	xxperi[4]	Double	-0.01830886442350102
+7	1	10	xxaphe[0]	Double	122.26053322009675
+7	1	10	xxaphe[1]	Double	-4.7883172205270919
+7	1	10	xxaphe[3]	Double	0.45630477889318055
+7	1	10	xxaphe[4]	Double	0.018308864414670344
+7	1	11	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	1	11	xxnasc[2]	Double	1.0053839205903765
+7	1	11	xxndsc[2]	Double	1.0100233194604147
+7	1	11	xxperi[2]	Double	1.009523769543879
+7	1	11	xxaphe[2]	Double	1.0057625018405447
+7	1	12	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	1	12	xxnasc[0]	Double	188.27945554286853
+7	1	12	xxndsc[0]	Double	8.2794555428688899
+7	1	12	xxperi[0]	Double	302.26053322009506
+7	1	12	xxperi[1]	Double	4.7883172205273201
+7	1	12	xxaphe[0]	Double	122.26053322009675
+7	1	12	xxaphe[1]	Double	-4.7883172205270919
+7	1	16	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	1	16	xxnasc[0]	Double	188.2794555428685
+7	1	16	xxnasc[3]	Double	-0.035651054626329497
+7	1	16	xxndsc[0]	Double	8.2794555428688916
+7	1	16	xxndsc[3]	Double	-0.035651054610986471
+7	1	16	xxperi[0]	Double	302.260533220095
+7	1	16	xxperi[1]	Double	4.7883172205273201
+7	1	16	xxperi[3]	Double	0.45630477888140564
+7	1	16	xxperi[4]	Double	-0.01830886442350102
+7	1	16	xxaphe[0]	Double	122.26053322009675
+7	1	16	xxaphe[1]	Double	-4.7883172205270919
+7	1	16	xxaphe[3]	Double	0.45630477889318055
+7	1	16	xxaphe[4]	Double	0.018308864414670344
+7	1	17	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	1	17	xxnasc[2]	Double	1.0053839205903765
+7	1	17	xxndsc[2]	Double	1.0100233194604147
+7	1	17	xxperi[2]	Double	1.009523769543879
+7	1	17	xxaphe[2]	Double	1.0057625018405447
+7	1	18	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	1	18	xxnasc[0]	Double	188.27945554286853
+7	1	18	xxndsc[0]	Double	8.2794555428688899
+7	1	18	xxperi[0]	Double	302.26053322009506
+7	1	18	xxperi[1]	Double	4.7883172205273201
+7	1	18	xxaphe[0]	Double	122.26053322009675
+7	1	18	xxaphe[1]	Double	-4.7883172205270919
+7	1	23	xxnasc[2]	Double	1.0053756066937851
+7	1	23	xxndsc[2]	Double	1.0100298993725161
+7	1	23	xxperi[2]	Double	1.0097253038983456
+7	1	23	xxaphe[2]	Double	1.0055781101588293
+7	1	29	xxnasc[2]	Double	1.0053756066937851
+7	1	29	xxndsc[2]	Double	1.0100298993725161
+7	1	29	xxperi[2]	Double	1.0097253038983456
+7	1	29	xxaphe[2]	Double	1.0075367261992498
+7	1	34	xxnasc[2]	Double	1.2615357429761438
+7	1	34	xxnasc[3]	Double	0.6302747619608885
+7	1	34	xxnasc[4]	Double	-4.4329850465718934E-07
+7	1	34	xxndsc[2]	Double	1.2188621695884958
+7	1	34	xxndsc[4]	Double	-2.8861668165421243E-06
+7	1	34	xxperi[2]	Double	1.656969709721287
+7	1	34	xxperi[3]	Double	0.59108475144067629
+7	1	34	xxperi[4]	Double	1.2060128694310226
+7	1	34	xxaphe[2]	Double	0.5617239918223853
+7	1	34	xxaphe[3]	Double	1.0835840135341241
+7	1	34	xxaphe[4]	Double	-3.5090361063973314
+7	1	36	xxnasc[2]	Double	1.2615357429761438
+7	1	36	xxndsc[2]	Double	1.2188622276317269
+7	1	36	xxperi[2]	Double	1.6569697366000111
+7	1	36	xxaphe[2]	Double	0.56172406931777841
 7	1	37	xxaphe[3]	Double	1.2627909613985868
 7	1	37	xxaphe[4]	Double	0.077086199337793163
+7	1	40	xxnasc[2]	Double	1.2615439514342837
+7	1	40	xxnasc[3]	Double	0.63027558560277963
+7	1	40	xxnasc[4]	Double	-3.0395663464771652E-06
+7	1	40	xxndsc[2]	Double	1.2188467430396213
+7	1	40	xxndsc[3]	Double	0.65169764213317727
+7	1	40	xxndsc[4]	Double	-1.7413179546227706E-07
+7	1	40	xxperi[0]	Double	150.88124157255487
+7	1	40	xxperi[2]	Double	1.6579485367222477
+7	1	40	xxperi[3]	Double	0.57130600924544372
+7	1	40	xxperi[4]	Double	0.0030636381415829373
+7	1	40	xxperi[5]	Double	-0.0042324180718459397
+7	1	40	xxaphe[0]	Double	209.20852910215265
+7	1	40	xxaphe[1]	Double	-3.6303212588682783
+7	1	40	xxaphe[2]	Double	0.55871867456964985
+7	1	40	xxaphe[3]	Double	1.2627909613985868
+7	1	40	xxaphe[4]	Double	0.077086199337793163
+7	1	40	xxaphe[5]	Double	0.011842595745848616
+7	1	41	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	1	41	xxndsc[2]	Double	0.72611420462893372
+7	1	41	xxperi[0]	Double	131.71401445432463
+7	1	41	xxperi[1]	Double	2.7839736529284163
+7	1	41	xxaphe[0]	Double	311.71400971082295
+7	1	41	xxaphe[1]	Double	-2.7839735258316174
+7	1	41	xxaphe[2]	Double	0.72824137406056511
+7	1	42	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	1	42	xxnasc[2]	Double	1.2615439514342837
+7	1	42	xxndsc[2]	Double	1.2188468010831812
+7	1	42	xxperi[0]	Double	150.88671876981891
+7	1	42	xxperi[2]	Double	1.6579485636887688
+7	1	42	xxaphe[0]	Double	209.2126029675282
+7	1	42	xxaphe[1]	Double	-3.630072460061613
+7	1	42	xxaphe[2]	Double	0.55871875210158228
 7	1	43	xxaphe[3]	Double	1.2627909613985868
 7	1	43	xxaphe[4]	Double	0.077086199337793163
+7	1	46	xxnasc[2]	Double	1.2615439514342837
+7	1	46	xxnasc[3]	Double	0.63027558560277963
+7	1	46	xxnasc[4]	Double	-3.0395663464771652E-06
+7	1	46	xxndsc[2]	Double	1.2188467430396213
+7	1	46	xxndsc[3]	Double	0.65169764213317727
+7	1	46	xxndsc[4]	Double	-1.7413179546227706E-07
+7	1	46	xxperi[0]	Double	150.88124157255487
+7	1	46	xxperi[2]	Double	1.6579485367222477
+7	1	46	xxperi[3]	Double	0.57130600924544372
+7	1	46	xxperi[4]	Double	0.0030636381415829373
+7	1	46	xxperi[5]	Double	-0.0042324180718459397
+7	1	46	xxaphe[0]	Double	209.20852910215265
+7	1	46	xxaphe[1]	Double	-3.6303212588682783
+7	1	46	xxaphe[2]	Double	0.55871867456964985
+7	1	46	xxaphe[3]	Double	1.2627909613985868
+7	1	46	xxaphe[4]	Double	0.077086199337793163
+7	1	46	xxaphe[5]	Double	0.011842595745848616
+7	1	47	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	1	47	xxndsc[2]	Double	0.72611420462893372
+7	1	47	xxperi[0]	Double	131.71401445432463
+7	1	47	xxperi[1]	Double	2.7839736529284163
+7	1	47	xxaphe[0]	Double	311.71400971082295
+7	1	47	xxaphe[1]	Double	-2.7839735258316174
+7	1	47	xxaphe[2]	Double	0.72824137406056511
+7	1	48	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	1	48	xxnasc[2]	Double	1.2615439514342837
+7	1	48	xxndsc[2]	Double	1.2188468010831812
+7	1	48	xxperi[0]	Double	150.88671876981891
+7	1	48	xxperi[2]	Double	1.6579485636887688
+7	1	48	xxaphe[0]	Double	209.2126029675282
+7	1	48	xxaphe[1]	Double	-3.630072460061613
+7	1	48	xxaphe[2]	Double	0.55871875210158228
+7	1	52	xxnasc[2]	Double	1.2615357429761438
+7	1	52	xxnasc[3]	Double	0.6302747619608885
+7	1	52	xxnasc[4]	Double	-4.4329850465718934E-07
+7	1	52	xxndsc[2]	Double	1.2188621695884958
+7	1	52	xxndsc[4]	Double	-2.8861668165421243E-06
+7	1	52	xxperi[2]	Double	1.656969709721287
+7	1	52	xxperi[3]	Double	0.59108475144067629
+7	1	52	xxperi[4]	Double	1.2060128694310226
+7	1	52	xxaphe[2]	Double	0.5617239918223853
+7	1	52	xxaphe[3]	Double	1.0835840135341241
+7	1	52	xxaphe[4]	Double	-3.5090361063973314
+7	1	54	xxnasc[2]	Double	1.2615357429761438
+7	1	54	xxndsc[2]	Double	1.2188622276317269
+7	1	54	xxperi[2]	Double	1.6569697366000111
+7	1	54	xxaphe[2]	Double	0.56172406931777841
+7	1	58	xxnasc[2]	Double	1.2615357429761438
+7	1	58	xxnasc[3]	Double	0.6302747619608885
+7	1	58	xxnasc[4]	Double	-4.4329850465718934E-07
+7	1	58	xxndsc[2]	Double	1.2188621695884958
+7	1	58	xxndsc[4]	Double	-2.8861668165421243E-06
+7	1	58	xxperi[2]	Double	1.656969709721287
+7	1	58	xxperi[3]	Double	0.59108475144067629
+7	1	58	xxperi[4]	Double	1.2060128694310226
+7	1	58	xxaphe[2]	Double	0.99956459591257063
+7	1	60	xxnasc[2]	Double	1.2615357429761438
+7	1	60	xxndsc[2]	Double	1.2188622276317269
+7	1	60	xxperi[2]	Double	1.6569697366000111
+7	1	60	xxaphe[2]	Double	0.9995646479160466
+7	1	64	xxnasc[2]	Double	5.6882045041161557
+7	1	64	xxnasc[3]	Double	0.097135148100063295
+7	1	64	xxndsc[4]	Double	-5.247827315636492E-06
+7	1	64	xxndsc[5]	Double	0.016530968401129754
+7	1	64	xxperi[2]	Double	4.1074903893283548
+7	1	64	xxperi[3]	Double	-0.18810607435807092
+7	1	64	xxperi[4]	Double	-1.571095669645175
+7	1	64	xxaphe[2]	Double	6.3484445282236752
+7	1	64	xxaphe[4]	Double	1.1162510065874687
+7	1	64	xxaphe[5]	Double	0.0067021712199234551
+7	1	66	xxnasc[2]	Double	5.6882045041161495
+7	1	66	xxperi[2]	Double	4.1074901658083123
+7	1	66	xxaphe[2]	Double	6.3484447059301274
+7	1	70	xxnasc[0]	Double	109.60968489063147
+7	1	70	xxnasc[2]	Double	5.6822294973454044
+7	1	70	xxnasc[3]	Double	0.09729156378376369
+7	1	70	xxnasc[4]	Double	-4.8919290152742528E-07
+7	1	70	xxndsc[0]	Double	269.69777016698333
+7	1	70	xxndsc[2]	Double	4.8561328518862297
+7	1	70	xxndsc[3]	Double	-0.050360132446276407
+7	1	70	xxndsc[4]	Double	-3.0412349740173182E-07
+7	1	70	xxndsc[5]	Double	0.016529239404244906
+7	1	70	xxperi[0]	Double	22.984839158710269
+7	1	70	xxperi[1]	Double	-1.5601549332114992
+7	1	70	xxperi[2]	Double	4.1226955841773645
+7	1	70	xxperi[3]	Double	-0.18676531401538773
+7	1	70	xxperi[4]	Double	-0.0039520746802629379
+7	1	70	xxperi[5]	Double	-0.010446533797329405
+7	1	70	xxaphe[0]	Double	190.94493760692529
+7	1	70	xxaphe[1]	Double	1.118281327090056
+7	1	70	xxaphe[2]	Double	6.3371331035855496
+7	1	70	xxaphe[3]	Double	0.13967476462601877
+7	1	71	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	1	71	xxnasc[0]	Double	100.44314613405315
+7	1	71	xxnasc[2]	Double	5.1673173069431693
+7	1	71	xxndsc[0]	Double	280.4431432027036
+7	1	71	xxndsc[2]	Double	5.2132572929646601
+7	1	71	xxperi[0]	Double	15.686724035339335
+7	1	71	xxperi[1]	Double	-1.2992812130791631
+7	1	71	xxperi[2]	Double	4.9504003183941689
+7	1	71	xxaphe[0]	Double	195.68672916209727
+7	1	71	xxaphe[1]	Double	1.2992813516031689
+7	1	71	xxaphe[2]	Double	5.4543826464245271
+7	1	72	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	1	72	xxnasc[0]	Double	109.61287337847889
+7	1	72	xxnasc[2]	Double	5.6822294973454053
+7	1	72	xxndsc[0]	Double	269.69635869233531
+7	1	72	xxndsc[2]	Double	4.8561329979694747
+7	1	72	xxperi[0]	Double	22.980370545019493
+7	1	72	xxperi[1]	Double	-1.5602491166698083
+7	1	72	xxperi[2]	Double	4.1226953591548998
+7	1	72	xxaphe[0]	Double	190.95002425700537
+7	1	72	xxaphe[1]	Double	1.1182333228903567
+7	1	72	xxaphe[2]	Double	6.33713328351004
+7	1	76	xxnasc[0]	Double	109.60968489063147
+7	1	76	xxnasc[2]	Double	5.6822294973454044
+7	1	76	xxnasc[3]	Double	0.09729156378376369
+7	1	76	xxnasc[4]	Double	-4.8919290152742528E-07
+7	1	76	xxndsc[0]	Double	269.69777016698333
+7	1	76	xxndsc[2]	Double	4.8561328518862297
+7	1	76	xxndsc[3]	Double	-0.050360132446276407
+7	1	76	xxndsc[4]	Double	-3.0412349740173182E-07
+7	1	76	xxndsc[5]	Double	0.016529239404244906
+7	1	76	xxperi[0]	Double	22.984839158710269
+7	1	76	xxperi[1]	Double	-1.5601549332114992
+7	1	76	xxperi[2]	Double	4.1226955841773645
+7	1	76	xxperi[3]	Double	-0.18676531401538773
+7	1	76	xxperi[4]	Double	-0.0039520746802629379
+7	1	76	xxperi[5]	Double	-0.010446533797329405
+7	1	76	xxaphe[0]	Double	190.94493760692529
+7	1	76	xxaphe[1]	Double	1.118281327090056
+7	1	76	xxaphe[2]	Double	6.3371331035855496
+7	1	76	xxaphe[3]	Double	0.13967476462601877
+7	1	77	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	1	77	xxnasc[0]	Double	100.44314613405315
+7	1	77	xxnasc[2]	Double	5.1673173069431693
+7	1	77	xxndsc[0]	Double	280.4431432027036
+7	1	77	xxndsc[2]	Double	5.2132572929646601
+7	1	77	xxperi[0]	Double	15.686724035339335
+7	1	77	xxperi[1]	Double	-1.2992812130791631
+7	1	77	xxperi[2]	Double	4.9504003183941689
+7	1	77	xxaphe[0]	Double	195.68672916209727
+7	1	77	xxaphe[1]	Double	1.2992813516031689
+7	1	77	xxaphe[2]	Double	5.4543826464245271
+7	1	78	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	1	78	xxnasc[0]	Double	109.61287337847889
+7	1	78	xxnasc[2]	Double	5.6822294973454053
+7	1	78	xxndsc[0]	Double	269.69635869233531
+7	1	78	xxndsc[2]	Double	4.8561329979694747
+7	1	78	xxperi[0]	Double	22.980370545019493
+7	1	78	xxperi[1]	Double	-1.5602491166698083
+7	1	78	xxperi[2]	Double	4.1226953591548998
+7	1	78	xxaphe[0]	Double	190.95002425700537
+7	1	78	xxaphe[1]	Double	1.1182333228903567
+7	1	78	xxaphe[2]	Double	6.33713328351004
+7	1	82	xxnasc[2]	Double	5.6882045041161557
+7	1	82	xxnasc[3]	Double	0.097135148100063295
+7	1	82	xxndsc[4]	Double	-5.247827315636492E-06
+7	1	82	xxndsc[5]	Double	0.016530968401129754
+7	1	82	xxperi[2]	Double	4.1074903893283548
+7	1	82	xxperi[3]	Double	-0.18810607435807092
+7	1	82	xxperi[4]	Double	-1.571095669645175
+7	1	82	xxaphe[2]	Double	6.3484445282236752
+7	1	82	xxaphe[4]	Double	1.1162510065874687
+7	1	82	xxaphe[5]	Double	0.0067021712199234551
+7	1	84	xxnasc[2]	Double	5.6882045041161495
+7	1	84	xxperi[2]	Double	4.1074901658083123
+7	1	84	xxaphe[2]	Double	6.3484447059301274
+7	1	88	xxnasc[2]	Double	5.6882045041161557
+7	1	88	xxnasc[3]	Double	0.097135148100063295
+7	1	88	xxndsc[4]	Double	-5.247827315636492E-06
+7	1	88	xxndsc[5]	Double	0.016530968401129754
+7	1	88	xxperi[2]	Double	4.1074903893283548
+7	1	88	xxperi[3]	Double	-0.18810607435807092
+7	1	88	xxperi[4]	Double	-1.571095669645175
+7	1	88	xxaphe[2]	Double	1.4668871477543668
+7	1	88	xxaphe[3]	Double	0.65512069190776412
+7	1	88	xxaphe[4]	Double	0.44645167971638705
+7	1	90	xxnasc[2]	Double	5.6882045041161495
+7	1	90	xxperi[2]	Double	4.1074901658083123
+7	1	90	xxaphe[2]	Double	1.4668872987858983
 7	1	91	xxndsc[3]	Double	-0.027522243560363667
 7	1	91	xxndsc[5]	Double	0.0096418154505186638
+7	1	94	xxnasc[2]	Double	30.931343947464025
+7	1	94	xxnasc[3]	Double	0.026755940008341344
+7	1	94	xxnasc[4]	Double	3.2776382172292116E-06
+7	1	94	xxnasc[5]	Double	-0.0091240012534141227
+7	1	94	xxndsc[2]	Double	29.294455195432004
+7	1	94	xxndsc[3]	Double	-0.027522243560363667
+7	1	94	xxndsc[4]	Double	-3.7032188465234947E-06
+7	1	94	xxndsc[5]	Double	0.0096418154505186638
+7	1	94	xxperi[2]	Double	29.406866706085484
+7	1	94	xxperi[3]	Double	-0.012455586386527462
+7	1	94	xxperi[4]	Double	-1.786143045235294
+7	1	94	xxperi[5]	Double	-0.01500663992660432
+7	1	94	xxaphe[2]	Double	30.841016089033563
+7	1	96	xxnasc[2]	Double	30.931343947463951
+7	1	96	xxndsc[2]	Double	29.294454996808412
+7	1	96	xxperi[2]	Double	29.406865388531084
+7	1	96	xxaphe[2]	Double	30.841017433523895
 7	1	97	xxperi[3]	Double	-0.016947852669186463
+7	1	100	xxnasc[0]	Double	132.73932925336283
+7	1	100	xxnasc[2]	Double	31.307560297140284
+7	1	100	xxnasc[3]	Double	0.026462380496608991
+7	1	100	xxnasc[4]	Double	-1.1050611859025596E-07
+7	1	100	xxnasc[5]	Double	-0.0091473328514075723
+7	1	100	xxndsc[0]	Double	310.68811262893894
+7	1	100	xxndsc[2]	Double	29.253674289335748
+7	1	100	xxndsc[3]	Double	-0.027529837432596228
+7	1	100	xxndsc[4]	Double	-1.1673909061188654E-07
+7	1	100	xxndsc[5]	Double	0.0096109446098027948
+7	1	100	xxperi[0]	Double	2.9052690253182121
+7	1	100	xxperi[1]	Double	-1.4112204378736026
+7	1	100	xxperi[2]	Double	29.038848103996198
+7	1	100	xxperi[3]	Double	-0.016947852669186463
+7	1	100	xxperi[4]	Double	-0.00054280701036412359
+7	1	100	xxperi[5]	Double	-0.0052612016339622742
+7	1	100	xxaphe[0]	Double	181.72123947646097
+7	1	100	xxaphe[1]	Double	1.3246091219877782
+7	1	100	xxaphe[2]	Double	31.518906672067047
+7	1	100	xxaphe[3]	Double	0.043935547917541659
+7	1	100	xxaphe[4]	Double	7.2193181944653982E-05
+7	1	100	xxaphe[5]	Double	0.0048879400504744808
+7	1	101	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	1	101	xxnasc[0]	Double	131.74872237865003
+7	1	101	xxnasc[2]	Double	30.454424888930465
+7	1	101	xxndsc[0]	Double	311.74872107784449
+7	1	101	xxndsc[2]	Double	30.097029238608815
+7	1	101	xxperi[0]	Double	2.289230669582687
+7	1	101	xxperi[1]	Double	-1.3662133876400482
+7	1	101	xxperi[2]	Double	29.996012785263737
+7	1	101	xxaphe[0]	Double	182.28924044375842
+7	1	101	xxaphe[1]	Double	1.3662139201043997
+7	1	101	xxaphe[2]	Double	30.558557848951374
+7	1	102	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	1	102	xxnasc[0]	Double	132.74409503579591
+7	1	102	xxnasc[2]	Double	31.307560297140206
+7	1	102	xxndsc[0]	Double	310.68345946116455
+7	1	102	xxndsc[2]	Double	29.253674088324622
+7	1	102	xxperi[0]	Double	2.8998846710289254
+7	1	102	xxperi[1]	Double	-1.4112626843914871
+7	1	102	xxperi[2]	Double	29.038846911578819
+7	1	102	xxaphe[0]	Double	181.72665079214477
+7	1	102	xxaphe[1]	Double	1.3245715311788158
+7	1	102	xxaphe[2]	Double	31.518907841526527
 7	1	103	xxndsc[3]	Double	-0.027547517476870727
 7	1	103	xxndsc[4]	Double	-3.9851320477717694E-07
 7	1	103	xxndsc[5]	Double	0.0096427476187507365
+7	1	106	xxnasc[0]	Double	132.74950231311334
+7	1	106	xxnasc[2]	Double	30.963942890697979
+7	1	106	xxnasc[3]	Double	0.026712178459385061
+7	1	106	xxnasc[5]	Double	-0.0091236457793333007
+7	1	106	xxndsc[0]	Double	310.68553384970937
+7	1	106	xxndsc[2]	Double	29.249809241581204
+7	1	106	xxndsc[3]	Double	-0.027547517476870727
+7	1	106	xxndsc[4]	Double	-3.9851320477717694E-07
+7	1	106	xxndsc[5]	Double	0.0096427476187507365
+7	1	106	xxperi[0]	Double	39.366209498663856
+7	1	106	xxperi[1]	Double	-1.8019681584493097
+7	1	106	xxperi[2]	Double	29.262194782402915
+7	1	106	xxperi[3]	Double	-0.019792378990712872
+7	1	106	xxperi[4]	Double	-0.00085283954648188187
+7	1	106	xxperi[5]	Double	-0.01385405861722218
+7	1	106	xxaphe[0]	Double	216.30973917213819
+7	1	106	xxaphe[1]	Double	1.7313085871282552
+7	1	106	xxaphe[2]	Double	30.967217543556373
+7	1	106	xxaphe[3]	Double	0.019520804761335261
+7	1	106	xxaphe[4]	Double	-0.00074519896880796395
+7	1	106	xxaphe[5]	Double	0.013307771512185
+7	1	107	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	1	107	xxnasc[0]	Double	131.74782425927086
+7	1	107	xxnasc[2]	Double	30.110763339374969
+7	1	107	xxndsc[0]	Double	311.74635471993503
+7	1	107	xxndsc[2]	Double	30.093140609323495
+7	1	107	xxperi[0]	Double	37.77843013588123
+7	1	107	xxperi[1]	Double	-1.7664860422824178
+7	1	107	xxperi[2]	Double	29.852027354161169
+7	1	107	xxaphe[0]	Double	217.81107478648346
+7	1	107	xxaphe[1]	Double	1.7660463660925043
+7	1	107	xxaphe[2]	Double	30.356085925582011
+7	1	108	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	1	108	xxnasc[0]	Double	132.75426863435581
+7	1	108	xxnasc[2]	Double	30.963942890697901
+7	1	108	xxndsc[0]	Double	310.68088368233447
+7	1	108	xxndsc[2]	Double	29.249809241581207
+7	1	108	xxperi[0]	Double	39.36289757769152
+7	1	108	xxperi[1]	Double	-1.8021121139786074
+7	1	108	xxperi[2]	Double	29.262194782402911
+7	1	108	xxaphe[0]	Double	216.31328837909976
+7	1	108	xxaphe[1]	Double	1.7311757654941244
+7	1	108	xxaphe[2]	Double	30.967217543556345
 7	1	109	xxndsc[3]	Double	-0.027522243560363667
 7	1	109	xxndsc[5]	Double	0.0096418154505186638
+7	1	112	xxnasc[2]	Double	30.931343947464025
+7	1	112	xxnasc[3]	Double	0.026755940008341344
+7	1	112	xxnasc[4]	Double	3.2776382172292116E-06
+7	1	112	xxnasc[5]	Double	-0.0091240012534141227
+7	1	112	xxndsc[2]	Double	29.294455195432004
+7	1	112	xxndsc[3]	Double	-0.027522243560363667
+7	1	112	xxndsc[4]	Double	-3.7032188465234947E-06
+7	1	112	xxndsc[5]	Double	0.0096418154505186638
+7	1	112	xxperi[2]	Double	29.406866706085484
+7	1	112	xxperi[3]	Double	-0.012455586386527462
+7	1	112	xxperi[4]	Double	-1.786143045235294
+7	1	112	xxperi[5]	Double	-0.01500663992660432
+7	1	112	xxaphe[2]	Double	30.841016089033563
+7	1	114	xxnasc[2]	Double	30.931343947463951
+7	1	114	xxndsc[2]	Double	29.294454996808412
+7	1	114	xxperi[2]	Double	29.406865388531084
+7	1	114	xxaphe[2]	Double	30.841017433523895
 7	1	115	xxndsc[3]	Double	-0.027522243560363667
 7	1	115	xxndsc[5]	Double	0.0096418154505186638
+7	1	118	xxnasc[2]	Double	30.931343947464025
+7	1	118	xxnasc[3]	Double	0.026755940008341344
+7	1	118	xxnasc[4]	Double	3.2776382172292116E-06
+7	1	118	xxnasc[5]	Double	-0.0091240012534141227
+7	1	118	xxndsc[2]	Double	29.294455195432004
+7	1	118	xxndsc[3]	Double	-0.027522243560363667
+7	1	118	xxndsc[4]	Double	-3.7032188465234947E-06
+7	1	118	xxndsc[5]	Double	0.0096418154505186638
+7	1	118	xxperi[2]	Double	29.406866706085484
+7	1	118	xxperi[3]	Double	-0.012455586386527462
+7	1	118	xxperi[4]	Double	-1.786143045235294
+7	1	118	xxperi[5]	Double	-0.01500663992660432
+7	1	118	xxaphe[2]	Double	1.3387232657236183
+7	1	118	xxaphe[3]	Double	0.67012890706868444
+7	1	120	xxnasc[2]	Double	30.931343947463951
+7	1	120	xxndsc[2]	Double	29.294454996808412
+7	1	120	xxperi[2]	Double	29.406865388531084
+7	1	120	xxaphe[2]	Double	1.3387244959592697
+7	2	5	xxnasc[2]	Double	1.005375414638606
+7	2	5	xxndsc[2]	Double	1.0100297349564953
+7	2	5	xxperi[2]	Double	1.0097251110272567
+7	2	5	xxaphe[2]	Double	1.0055779496657846
+7	2	10	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	2	10	xxnasc[0]	Double	188.27942991727102
+7	2	10	xxnasc[3]	Double	-0.035662911430507246
+7	2	10	xxndsc[0]	Double	8.2794299172706474
+7	2	10	xxndsc[3]	Double	-0.035662911404542794
+7	2	10	xxperi[0]	Double	302.26086124722951
+7	2	10	xxperi[1]	Double	4.7883040588967587
+7	2	10	xxperi[3]	Double	0.45656803903889259
+7	2	10	xxperi[4]	Double	-0.018318883589258067
+7	2	10	xxaphe[0]	Double	122.26086124722983
+7	2	10	xxaphe[1]	Double	-4.7883040588964398
+7	2	10	xxaphe[3]	Double	0.45656803903272808
+7	2	10	xxaphe[4]	Double	0.01831888359858868
+7	2	11	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	2	11	xxnasc[2]	Double	1.0053837258163147
+7	2	11	xxndsc[2]	Double	1.0100231600372316
+7	2	11	xxperi[2]	Double	1.0095235886101248
+7	2	11	xxaphe[2]	Double	1.0057623360198542
+7	2	12	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	2	12	xxnasc[0]	Double	188.27942991727102
+7	2	12	xxndsc[0]	Double	8.2794299172706509
+7	2	12	xxperi[0]	Double	302.26086124722951
+7	2	12	xxperi[1]	Double	4.7883040588967543
+7	2	12	xxaphe[0]	Double	122.26086124722983
+7	2	12	xxaphe[1]	Double	-4.7883040588964425
+7	2	16	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	2	16	xxnasc[0]	Double	188.27942991727102
+7	2	16	xxnasc[3]	Double	-0.035662911430507246
+7	2	16	xxndsc[0]	Double	8.2794299172706474
+7	2	16	xxndsc[3]	Double	-0.035662911404542794
+7	2	16	xxperi[0]	Double	302.26086124722951
+7	2	16	xxperi[1]	Double	4.7883040588967587
+7	2	16	xxperi[3]	Double	0.45656803903889259
+7	2	16	xxperi[4]	Double	-0.018318883589258067
+7	2	16	xxaphe[0]	Double	122.26086124722983
+7	2	16	xxaphe[1]	Double	-4.7883040588964398
+7	2	16	xxaphe[3]	Double	0.45656803903272808
+7	2	16	xxaphe[4]	Double	0.01831888359858868
+7	2	17	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	2	17	xxnasc[2]	Double	1.0053837258163147
+7	2	17	xxndsc[2]	Double	1.0100231600372316
+7	2	17	xxperi[2]	Double	1.0095235886101248
+7	2	17	xxaphe[2]	Double	1.0057623360198542
+7	2	18	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	2	18	xxnasc[0]	Double	188.27942991727102
+7	2	18	xxndsc[0]	Double	8.2794299172706509
+7	2	18	xxperi[0]	Double	302.26086124722951
+7	2	18	xxperi[1]	Double	4.7883040588967543
+7	2	18	xxaphe[0]	Double	122.26086124722983
+7	2	18	xxaphe[1]	Double	-4.7883040588964425
+7	2	23	xxnasc[2]	Double	1.005375414638606
+7	2	23	xxndsc[2]	Double	1.0100297349564953
+7	2	23	xxperi[2]	Double	1.0097251110272567
+7	2	23	xxaphe[2]	Double	1.0055779496657846
+7	2	29	xxnasc[2]	Double	1.005375414638606
+7	2	29	xxndsc[2]	Double	1.0100297349564953
+7	2	29	xxperi[2]	Double	1.0097251110272567
+7	2	29	xxaphe[2]	Double	1.0075365503725517
 7	2	31	xxaphe[3]	Double	1.0835630659037168
+7	2	34	xxnasc[2]	Double	1.2615285961422908
+7	2	34	xxnasc[3]	Double	0.63027651994103129
+7	2	34	xxnasc[4]	Double	-4.3429139350185345E-07
+7	2	34	xxndsc[2]	Double	1.218869329651981
+7	2	34	xxperi[2]	Double	1.6569666483219774
+7	2	34	xxperi[3]	Double	0.59108561162937523
+7	2	34	xxperi[4]	Double	1.2060151646203152
+7	2	34	xxaphe[2]	Double	0.56173250380438089
+7	2	34	xxaphe[3]	Double	1.0835630659037168
+7	2	34	xxaphe[4]	Double	-3.5089841947466049
+7	2	36	xxnasc[2]	Double	1.2615285961422904
+7	2	36	xxndsc[2]	Double	1.2188693876949688
+7	2	36	xxperi[2]	Double	1.6569666752011716
+7	2	36	xxaphe[2]	Double	0.56173258129970716
+7	2	40	xxnasc[2]	Double	1.2615368046907955
+7	2	40	xxnasc[3]	Double	0.6302773109501173
+7	2	40	xxnasc[4]	Double	-3.0432614992427994E-06
+7	2	40	xxndsc[2]	Double	1.2188539030824999
+7	2	40	xxndsc[4]	Double	-1.6888754894051624E-07
+7	2	40	xxperi[0]	Double	150.88165215222924
+7	2	40	xxperi[2]	Double	1.6579454930288426
+7	2	40	xxperi[3]	Double	0.57130641934948234
+7	2	40	xxaphe[0]	Double	209.20943662203476
+7	2	40	xxaphe[1]	Double	-3.6302658616687742
+7	2	40	xxaphe[2]	Double	0.55872718501609386
+7	2	40	xxaphe[3]	Double	1.2627676167628386
+7	2	40	xxaphe[4]	Double	0.07708417203828144
+7	2	40	xxaphe[5]	Double	0.01184264341784484
+7	2	41	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	2	41	xxndsc[2]	Double	0.72611420476148913
+7	2	41	xxperi[0]	Double	131.71401374855753
+7	2	41	xxperi[1]	Double	2.7839736282371206
+7	2	41	xxaphe[0]	Double	311.71400900506052
+7	2	41	xxaphe[1]	Double	-2.7839735011409079
+7	2	41	xxaphe[2]	Double	0.72824137415578571
+7	2	42	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	2	42	xxnasc[2]	Double	1.2615368046907953
+7	2	42	xxndsc[2]	Double	1.2188539611258153
+7	2	42	xxperi[0]	Double	150.88712934354763
+7	2	42	xxperi[2]	Double	1.6579455199958333
+7	2	42	xxaphe[0]	Double	209.21351047407234
+7	2	42	xxaphe[1]	Double	-3.6300170656575217
+7	2	42	xxaphe[2]	Double	0.55872726254796112
+7	2	46	xxnasc[2]	Double	1.2615368046907955
+7	2	46	xxnasc[3]	Double	0.6302773109501173
+7	2	46	xxnasc[4]	Double	-3.0432614992427994E-06
+7	2	46	xxndsc[2]	Double	1.2188539030824999
+7	2	46	xxndsc[4]	Double	-1.6888754894051624E-07
+7	2	46	xxperi[0]	Double	150.88165215222924
+7	2	46	xxperi[2]	Double	1.6579454930288426
+7	2	46	xxperi[3]	Double	0.57130641934948234
+7	2	46	xxaphe[0]	Double	209.20943662203476
+7	2	46	xxaphe[1]	Double	-3.6302658616687742
+7	2	46	xxaphe[2]	Double	0.55872718501609386
+7	2	46	xxaphe[3]	Double	1.2627676167628386
+7	2	46	xxaphe[4]	Double	0.07708417203828144
+7	2	46	xxaphe[5]	Double	0.01184264341784484
+7	2	47	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	2	47	xxndsc[2]	Double	0.72611420476148913
+7	2	47	xxperi[0]	Double	131.71401374855753
+7	2	47	xxperi[1]	Double	2.7839736282371206
+7	2	47	xxaphe[0]	Double	311.71400900506052
+7	2	47	xxaphe[1]	Double	-2.7839735011409079
+7	2	47	xxaphe[2]	Double	0.72824137415578571
+7	2	48	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	2	48	xxnasc[2]	Double	1.2615368046907953
+7	2	48	xxndsc[2]	Double	1.2188539611258153
+7	2	48	xxperi[0]	Double	150.88712934354763
+7	2	48	xxperi[2]	Double	1.6579455199958333
+7	2	48	xxaphe[0]	Double	209.21351047407234
+7	2	48	xxaphe[1]	Double	-3.6300170656575217
+7	2	48	xxaphe[2]	Double	0.55872726254796112
 7	2	49	xxaphe[3]	Double	1.0835630659037168
+7	2	52	xxnasc[2]	Double	1.2615285961422908
+7	2	52	xxnasc[3]	Double	0.63027651994103129
+7	2	52	xxnasc[4]	Double	-4.3429139350185345E-07
+7	2	52	xxndsc[2]	Double	1.218869329651981
+7	2	52	xxperi[2]	Double	1.6569666483219774
+7	2	52	xxperi[3]	Double	0.59108561162937523
+7	2	52	xxperi[4]	Double	1.2060151646203152
+7	2	52	xxaphe[2]	Double	0.56173250380438089
+7	2	52	xxaphe[3]	Double	1.0835630659037168
+7	2	52	xxaphe[4]	Double	-3.5089841947466049
+7	2	54	xxnasc[2]	Double	1.2615285961422904
+7	2	54	xxndsc[2]	Double	1.2188693876949688
+7	2	54	xxperi[2]	Double	1.6569666752011716
+7	2	54	xxaphe[2]	Double	0.56173258129970716
+7	2	58	xxnasc[2]	Double	1.2615285961422908
+7	2	58	xxnasc[3]	Double	0.63027651994103129
+7	2	58	xxnasc[4]	Double	-4.3429139350185345E-07
+7	2	58	xxndsc[2]	Double	1.218869329651981
+7	2	58	xxperi[2]	Double	1.6569666483219774
+7	2	58	xxperi[3]	Double	0.59108561162937523
+7	2	58	xxperi[4]	Double	1.2060151646203152
+7	2	58	xxaphe[2]	Double	0.99956448362716777
+7	2	58	xxaphe[3]	Double	0.97783083561499884
+7	2	60	xxnasc[2]	Double	1.2615285961422904
+7	2	60	xxndsc[2]	Double	1.2188693876949688
+7	2	60	xxperi[2]	Double	1.6569666752011716
+7	2	60	xxaphe[2]	Double	0.99956453563120096
+7	2	64	xxnasc[2]	Double	5.6881943750584592
+7	2	64	xxndsc[4]	Double	-5.2323094886722981E-06
+7	2	64	xxndsc[5]	Double	0.016531030626507785
+7	2	64	xxperi[2]	Double	4.1074831700821601
+7	2	64	xxperi[3]	Double	-0.18810859355699153
+7	2	64	xxperi[4]	Double	-1.5710983605873512
+7	2	64	xxaphe[2]	Double	6.348449615930738
+7	2	64	xxaphe[3]	Double	0.13822432645399241
+7	2	64	xxaphe[5]	Double	0.0067020054030656117
+7	2	66	xxnasc[2]	Double	5.6881943750584565
+7	2	66	xxperi[2]	Double	4.1074829465617286
+7	2	66	xxaphe[2]	Double	6.3484497936369282
+7	2	70	xxnasc[0]	Double	109.6097548105304
+7	2	70	xxnasc[2]	Double	5.6822193665154188
+7	2	70	xxnasc[3]	Double	0.097290176235529199
+7	2	70	xxnasc[4]	Double	-4.9528916133343718E-07
+7	2	70	xxnasc[5]	Double	-0.014091157602445841
+7	2	70	xxndsc[0]	Double	269.69773397566928
+7	2	70	xxndsc[2]	Double	4.8561447325320648
+7	2	70	xxndsc[3]	Double	-0.050357504138822173
+7	2	70	xxndsc[4]	Double	-3.0258545676300362E-07
+7	2	70	xxperi[0]	Double	22.984704935438273
+7	2	70	xxperi[1]	Double	-1.5601577736317498
+7	2	70	xxperi[2]	Double	4.1226880805411419
+7	2	70	xxperi[3]	Double	-0.18676781229258194
+7	2	70	xxperi[4]	Double	-0.0039520137029963875
+7	2	70	xxperi[5]	Double	-0.010446339575941288
+7	2	70	xxaphe[0]	Double	190.94503798702436
+7	2	70	xxaphe[1]	Double	1.118280386012388
+7	2	70	xxaphe[2]	Double	6.3371384192167381
+7	2	70	xxaphe[3]	Double	0.13967538798240314
+7	2	70	xxaphe[5]	Double	0.0074059499566030557
+7	2	71	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	2	71	xxnasc[0]	Double	100.44314615073837
+7	2	71	xxnasc[2]	Double	5.1673173026610186
+7	2	71	xxndsc[0]	Double	280.44314321937969
+7	2	71	xxndsc[2]	Double	5.2132572930533776
+7	2	71	xxperi[0]	Double	15.686724549882806
+7	2	71	xxperi[1]	Double	-1.299281211793176
+7	2	71	xxperi[2]	Double	4.9504003161785191
+7	2	71	xxaphe[0]	Double	195.68672967671662
+7	2	71	xxaphe[1]	Double	1.2992813503234051
+7	2	71	xxaphe[2]	Double	5.4543826444402468
+7	2	72	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	2	72	xxnasc[0]	Double	109.6129432474993
+7	2	72	xxnasc[2]	Double	5.6822193665154161
+7	2	72	xxndsc[0]	Double	269.69632257136072
+7	2	72	xxndsc[2]	Double	4.8561448786154173
+7	2	72	xxperi[0]	Double	22.980236270061411
+7	2	72	xxperi[1]	Double	-1.5602519554712835
+7	2	72	xxperi[2]	Double	4.1226878555182633
+7	2	72	xxaphe[0]	Double	190.95012466403406
+7	2	72	xxaphe[1]	Double	1.1182323829135086
+7	2	72	xxaphe[2]	Double	6.337138599140955
+7	2	76	xxnasc[0]	Double	109.6097548105304
+7	2	76	xxnasc[2]	Double	5.6822193665154188
+7	2	76	xxnasc[3]	Double	0.097290176235529199
+7	2	76	xxnasc[4]	Double	-4.9528916133343718E-07
+7	2	76	xxnasc[5]	Double	-0.014091157602445841
+7	2	76	xxndsc[0]	Double	269.69773397566928
+7	2	76	xxndsc[2]	Double	4.8561447325320648
+7	2	76	xxndsc[3]	Double	-0.050357504138822173
+7	2	76	xxndsc[4]	Double	-3.0258545676300362E-07
+7	2	76	xxperi[0]	Double	22.984704935438273
+7	2	76	xxperi[1]	Double	-1.5601577736317498
+7	2	76	xxperi[2]	Double	4.1226880805411419
+7	2	76	xxperi[3]	Double	-0.18676781229258194
+7	2	76	xxperi[4]	Double	-0.0039520137029963875
+7	2	76	xxperi[5]	Double	-0.010446339575941288
+7	2	76	xxaphe[0]	Double	190.94503798702436
+7	2	76	xxaphe[1]	Double	1.118280386012388
+7	2	76	xxaphe[2]	Double	6.3371384192167381
+7	2	76	xxaphe[3]	Double	0.13967538798240314
+7	2	76	xxaphe[5]	Double	0.0074059499566030557
+7	2	77	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	2	77	xxnasc[0]	Double	100.44314615073837
+7	2	77	xxnasc[2]	Double	5.1673173026610186
+7	2	77	xxndsc[0]	Double	280.44314321937969
+7	2	77	xxndsc[2]	Double	5.2132572930533776
+7	2	77	xxperi[0]	Double	15.686724549882806
+7	2	77	xxperi[1]	Double	-1.299281211793176
+7	2	77	xxperi[2]	Double	4.9504003161785191
+7	2	77	xxaphe[0]	Double	195.68672967671662
+7	2	77	xxaphe[1]	Double	1.2992813503234051
+7	2	77	xxaphe[2]	Double	5.4543826444402468
+7	2	78	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	2	78	xxnasc[0]	Double	109.6129432474993
+7	2	78	xxnasc[2]	Double	5.6822193665154161
+7	2	78	xxndsc[0]	Double	269.69632257136072
+7	2	78	xxndsc[2]	Double	4.8561448786154173
+7	2	78	xxperi[0]	Double	22.980236270061411
+7	2	78	xxperi[1]	Double	-1.5602519554712835
+7	2	78	xxperi[2]	Double	4.1226878555182633
+7	2	78	xxaphe[0]	Double	190.95012466403406
+7	2	78	xxaphe[1]	Double	1.1182323829135086
+7	2	78	xxaphe[2]	Double	6.337138599140955
+7	2	82	xxnasc[2]	Double	5.6881943750584592
+7	2	82	xxndsc[4]	Double	-5.2323094886722981E-06
+7	2	82	xxndsc[5]	Double	0.016531030626507785
+7	2	82	xxperi[2]	Double	4.1074831700821601
+7	2	82	xxperi[3]	Double	-0.18810859355699153
+7	2	82	xxperi[4]	Double	-1.5710983605873512
+7	2	82	xxaphe[2]	Double	6.348449615930738
+7	2	82	xxaphe[3]	Double	0.13822432645399241
+7	2	82	xxaphe[5]	Double	0.0067020054030656117
+7	2	84	xxnasc[2]	Double	5.6881943750584565
+7	2	84	xxperi[2]	Double	4.1074829465617286
+7	2	84	xxaphe[2]	Double	6.3484497936369282
+7	2	88	xxnasc[2]	Double	5.6881943750584592
+7	2	88	xxndsc[4]	Double	-5.2323094886722981E-06
+7	2	88	xxndsc[5]	Double	0.016531030626507785
+7	2	88	xxperi[2]	Double	4.1074831700821601
+7	2	88	xxperi[3]	Double	-0.18810859355699153
+7	2	88	xxperi[4]	Double	-1.5710983605873512
+7	2	88	xxaphe[2]	Double	1.4668890736479849
+7	2	88	xxaphe[3]	Double	0.65512048706582071
+7	2	88	xxaphe[4]	Double	0.44645112004963466
+7	2	90	xxnasc[2]	Double	5.6881943750584565
+7	2	90	xxperi[2]	Double	4.1074829465617286
+7	2	90	xxaphe[2]	Double	1.4668892246801206
 7	2	91	xxndsc[3]	Double	-0.027521989160753584
 7	2	91	xxndsc[4]	Double	-3.7094911798781763E-06
 7	2	91	xxndsc[5]	Double	0.0096419846733424176
 7	2	91	xxaphe[3]	Double	0.01369871448706712
 7	2	91	xxaphe[4]	Double	1.7325282928586476
 7	2	91	xxaphe[5]	Double	0.014556342340602354
+7	2	94	xxnasc[2]	Double	30.931337358244775
+7	2	94	xxnasc[3]	Double	0.026755757781559419
+7	2	94	xxnasc[4]	Double	3.2786733101192741E-06
+7	2	94	xxnasc[5]	Double	-0.0091241815493523972
+7	2	94	xxndsc[2]	Double	29.294462154400751
+7	2	94	xxperi[2]	Double	29.406855628498217
+7	2	94	xxperi[3]	Double	-0.012455979836832009
+7	2	94	xxperi[5]	Double	-0.015006541419870043
+7	2	94	xxaphe[2]	Double	30.841026831372286
+7	2	94	xxaphe[3]	Double	0.01369871448706712
+7	2	94	xxaphe[4]	Double	1.7325282928586476
+7	2	94	xxaphe[5]	Double	0.014556342340602354
+7	2	96	xxnasc[2]	Double	30.931337358244718
+7	2	96	xxndsc[2]	Double	29.294461955779163
+7	2	96	xxperi[2]	Double	29.406854310943054
+7	2	96	xxaphe[2]	Double	30.841028175862359
+7	2	100	xxnasc[0]	Double	132.73934827106689
+7	2	100	xxnasc[2]	Double	31.307553690771154
+7	2	100	xxnasc[3]	Double	0.026462188341421604
+7	2	100	xxnasc[4]	Double	-1.0438048391293872E-07
+7	2	100	xxnasc[5]	Double	-0.0091475074952265256
+7	2	100	xxndsc[0]	Double	310.6880928441027
+7	2	100	xxndsc[2]	Double	29.253681226087604
+7	2	100	xxndsc[3]	Double	-0.027529599717532792
+7	2	100	xxndsc[4]	Double	-1.1005988467134256E-07
+7	2	100	xxndsc[5]	Double	0.00961112374765178
+7	2	100	xxperi[0]	Double	2.9052568452433296
+7	2	100	xxperi[1]	Double	-1.4112208279985099
+7	2	100	xxperi[2]	Double	29.038844356297041
+7	2	100	xxperi[3]	Double	-0.016947935832310985
+7	2	100	xxperi[4]	Double	-0.00054279741522478828
+7	2	100	xxperi[5]	Double	-0.0052609884671445933
+7	2	100	xxaphe[0]	Double	181.72127105165973
+7	2	100	xxaphe[1]	Double	1.3246091738447141
+7	2	100	xxaphe[2]	Double	31.518910148432198
+7	2	100	xxaphe[3]	Double	0.043935708417824897
+7	2	100	xxaphe[4]	Double	7.2201865321895595E-05
+7	2	100	xxaphe[5]	Double	0.0048877580324903393
+7	2	101	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	2	101	xxnasc[0]	Double	131.74872242352734
+7	2	101	xxnasc[2]	Double	30.454424873683493
+7	2	101	xxndsc[0]	Double	311.74872112264546
+7	2	101	xxndsc[2]	Double	30.097029216421507
+7	2	101	xxperi[0]	Double	2.2892411929067822
+7	2	101	xxperi[1]	Double	-1.36621359115583
+7	2	101	xxperi[2]	Double	29.996012699780181
+7	2	101	xxaphe[0]	Double	182.28925096734594
+7	2	101	xxaphe[1]	Double	1.3662141236607439
+7	2	101	xxaphe[2]	Double	30.558557899446875
+7	2	102	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	2	102	xxnasc[0]	Double	132.744114018251
+7	2	102	xxnasc[2]	Double	31.307553690771073
+7	2	102	xxndsc[0]	Double	310.68343971569971
+7	2	102	xxndsc[2]	Double	29.253681025078503
+7	2	102	xxperi[0]	Double	2.8998724682395829
+7	2	102	xxperi[1]	Double	-1.411263072847867
+7	2	102	xxperi[2]	Double	29.038843163880244
+7	2	102	xxaphe[0]	Double	181.72668238717233
+7	2	102	xxaphe[1]	Double	1.3245715844873569
+7	2	102	xxaphe[2]	Double	31.518911317891188
+7	2	106	xxnasc[0]	Double	132.74952151033708
+7	2	106	xxnasc[2]	Double	30.963936301704933
+7	2	106	xxnasc[3]	Double	0.026711978293516663
+7	2	106	xxnasc[4]	Double	-5.2841475402691409E-07
+7	2	106	xxnasc[5]	Double	-0.0091238156260195925
+7	2	106	xxndsc[0]	Double	310.68551405217414
+7	2	106	xxndsc[2]	Double	29.249816201180494
+7	2	106	xxndsc[3]	Double	-0.027547264154055777
+7	2	106	xxndsc[4]	Double	-4.10154643035589E-07
+7	2	106	xxndsc[5]	Double	0.0096429287117074623
+7	2	106	xxperi[0]	Double	39.366195274194958
+7	2	106	xxperi[1]	Double	-1.8019687713895001
+7	2	106	xxperi[2]	Double	29.262184846138197
+7	2	106	xxperi[3]	Double	-0.019792722283740353
+7	2	106	xxperi[4]	Double	-0.0008528377338477553
+7	2	106	xxperi[5]	Double	-0.01385393272199778
+7	2	106	xxaphe[0]	Double	216.30975320117261
+7	2	106	xxaphe[1]	Double	1.7313080515505295
+7	2	106	xxaphe[2]	Double	30.967227084438289
+7	2	106	xxaphe[3]	Double	0.019521116150172081
+7	2	106	xxaphe[4]	Double	-0.00074518590507866435
+7	2	106	xxaphe[5]	Double	0.013307644294048265
+7	2	107	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	2	107	xxnasc[0]	Double	131.7478242709546
+7	2	107	xxnasc[2]	Double	30.110763339975417
+7	2	107	xxndsc[0]	Double	311.74635475355063
+7	2	107	xxndsc[2]	Double	30.093140609421955
+7	2	107	xxperi[0]	Double	37.778429943066378
+7	2	107	xxperi[1]	Double	-1.7664860415864534
+7	2	107	xxperi[2]	Double	29.852027357299214
+7	2	107	xxaphe[0]	Double	217.81107459561903
+7	2	107	xxaphe[1]	Double	1.7660463655769809
+7	2	107	xxaphe[2]	Double	30.356085923245363
+7	2	108	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	2	108	xxnasc[0]	Double	132.7542877963503
+7	2	108	xxnasc[2]	Double	30.963936301704873
+7	2	108	xxndsc[0]	Double	310.68086392417331
+7	2	108	xxndsc[2]	Double	29.249816201180487
+7	2	108	xxperi[0]	Double	39.362883295018015
+7	2	108	xxperi[1]	Double	-1.8021127256637293
+7	2	108	xxperi[2]	Double	29.262184846138197
+7	2	108	xxaphe[0]	Double	216.31330246188455
+7	2	108	xxaphe[1]	Double	1.7311752312483655
+7	2	108	xxaphe[2]	Double	30.96722708443826
 7	2	109	xxndsc[3]	Double	-0.027521989160753584
 7	2	109	xxndsc[4]	Double	-3.7094911798781763E-06
 7	2	109	xxndsc[5]	Double	0.0096419846733424176
 7	2	109	xxaphe[3]	Double	0.01369871448706712
 7	2	109	xxaphe[4]	Double	1.7325282928586476
 7	2	109	xxaphe[5]	Double	0.014556342340602354
+7	2	112	xxnasc[2]	Double	30.931337358244775
+7	2	112	xxnasc[3]	Double	0.026755757781559419
+7	2	112	xxnasc[4]	Double	3.2786733101192741E-06
+7	2	112	xxnasc[5]	Double	-0.0091241815493523972
+7	2	112	xxndsc[2]	Double	29.294462154400751
+7	2	112	xxperi[2]	Double	29.406855628498217
+7	2	112	xxperi[3]	Double	-0.012455979836832009
+7	2	112	xxperi[5]	Double	-0.015006541419870043
+7	2	112	xxaphe[2]	Double	30.841026831372286
+7	2	112	xxaphe[3]	Double	0.01369871448706712
+7	2	112	xxaphe[4]	Double	1.7325282928586476
+7	2	112	xxaphe[5]	Double	0.014556342340602354
+7	2	114	xxnasc[2]	Double	30.931337358244718
+7	2	114	xxndsc[2]	Double	29.294461955779163
+7	2	114	xxperi[2]	Double	29.406854310943054
+7	2	114	xxaphe[2]	Double	30.841028175862359
 7	2	115	xxndsc[3]	Double	-0.027521989160753584
 7	2	115	xxndsc[4]	Double	-3.7094911798781763E-06
 7	2	115	xxndsc[5]	Double	0.0096419846733424176
+7	2	118	xxnasc[2]	Double	30.931337358244775
+7	2	118	xxnasc[3]	Double	0.026755757781559419
+7	2	118	xxnasc[4]	Double	3.2786733101192741E-06
+7	2	118	xxnasc[5]	Double	-0.0091241815493523972
+7	2	118	xxndsc[2]	Double	29.294462154400751
+7	2	118	xxperi[2]	Double	29.406855628498217
+7	2	118	xxperi[3]	Double	-0.012455979836832009
+7	2	118	xxperi[5]	Double	-0.015006541419870043
+7	2	118	xxaphe[2]	Double	1.3387275433760195
+7	2	118	xxaphe[3]	Double	0.67012800161974073
+7	2	120	xxnasc[2]	Double	30.931337358244718
+7	2	120	xxndsc[2]	Double	29.294461955779163
+7	2	120	xxperi[2]	Double	29.406854310943054
+7	2	120	xxaphe[2]	Double	1.3387287736159805
+7	3	4	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	3	4	xxdret[3]	Double	188.32600313544108
+7	3	4	xxdret[4]	Double	113.89098662321973
+7	3	4	xxdret[5]	Double	302.21698975866082
+7	3	4	xxdret[6]	Double	150.67702498981308
+7	3	4	xxdret[7]	Double	154.09354298532207
+7	3	4	xxdret[8]	Double	152.40880871752773
+7	3	4	xxdret[9]	Double	92.894014748473865
+7	3	4	xxdret[10]	Double	0.074056952429758877
+7	3	4	xxdret[11]	Double	13.309296112897375
+7	3	4	xxdret[12]	Double	0.074059722382550153
+7	3	4	xxdret[13]	Double	-29.212033526097887
+7	3	4	xxdret[14]	Double	2450321.9288133862
+7	3	5	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	3	5	xxdret[3]	Double	188.32600313544108
+7	3	5	xxdret[4]	Double	113.89098662321973
+7	3	5	xxdret[5]	Double	302.21698975866082
+7	3	5	xxdret[6]	Double	150.67702498981308
+7	3	5	xxdret[7]	Double	154.09354298532207
+7	3	5	xxdret[8]	Double	152.40880871752773
+7	3	5	xxdret[9]	Double	92.894014748473865
+7	3	5	xxdret[10]	Double	0.074056952429758877
+7	3	5	xxdret[11]	Double	13.309296112897375
+7	3	5	xxdret[12]	Double	0.074059722382550153
+7	3	5	xxdret[13]	Double	-29.212033526097887
+7	3	5	xxdret[14]	Double	2450321.9288133862
+7	3	6	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	3	6	xxdret[3]	Double	188.32600313544108
+7	3	6	xxdret[4]	Double	113.89098662321973
+7	3	6	xxdret[5]	Double	302.21698975866082
+7	3	6	xxdret[6]	Double	150.67702498981308
+7	3	6	xxdret[7]	Double	154.09354298532207
+7	3	6	xxdret[8]	Double	152.40880871752773
+7	3	6	xxdret[9]	Double	92.894014748473865
+7	3	6	xxdret[10]	Double	0.074056952429758877
+7	3	6	xxdret[11]	Double	13.309296112897375
+7	3	6	xxdret[12]	Double	0.074059722382550153
+7	3	6	xxdret[13]	Double	-29.212033526097887
+7	3	6	xxdret[14]	Double	2450321.9288133862
+7	3	13	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	3	13	xxdret[0]	Double	0.72332399030043837
+7	3	13	xxdret[4]	Double	55.11676772027436
+7	3	13	xxdret[5]	Double	131.8066350444781
+7	3	13	xxdret[6]	Double	268.79103291635039
+7	3	13	xxdret[7]	Double	268.01234050327298
+7	3	13	xxdret[8]	Double	268.40166975357613
+7	3	13	xxdret[10]	Double	0.61519975527319726
+7	3	13	xxdret[12]	Double	0.61520984804950019
+7	3	13	xxdret[13]	Double	-583.89593825285249
+7	3	13	xxdret[14]	Double	2450165.4816603335
+7	3	13	xxdret[16]	Double	0.72824137406058898
+7	3	14	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	3	14	xxdret[0]	Double	0.72332399030043837
+7	3	14	xxdret[4]	Double	55.11676772027436
+7	3	14	xxdret[5]	Double	131.8066350444781
+7	3	14	xxdret[6]	Double	268.79103291635039
+7	3	14	xxdret[7]	Double	268.01234050327298
+7	3	14	xxdret[8]	Double	268.40166975357613
+7	3	14	xxdret[10]	Double	0.61519975527319726
+7	3	14	xxdret[12]	Double	0.61520984804950019
+7	3	14	xxdret[13]	Double	-583.89593825285249
+7	3	14	xxdret[14]	Double	2450165.4816603335
+7	3	14	xxdret[16]	Double	0.72824137406058898
+7	3	15	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	3	15	xxdret[0]	Double	0.72332387026462674
+7	3	15	xxdret[4]	Double	55.118166027074686
+7	3	15	xxdret[5]	Double	131.80803335127843
+7	3	15	xxdret[6]	Double	268.78963457725973
+7	3	15	xxdret[7]	Double	268.01094219647263
+7	3	15	xxdret[8]	Double	268.40027141449798
+7	3	15	xxdret[10]	Double	0.61519960213435521
+7	3	15	xxdret[12]	Double	0.61520969491180133
+7	3	15	xxdret[13]	Double	-583.89556055700575
+7	3	15	xxdret[14]	Double	2450165.4825748811
+7	3	15	xxdret[16]	Double	0.72824125655877747
+7	3	22	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	3	22	xxdret[0]	Double	1.0000058691841198
+7	3	22	xxdret[2]	Double	0.00047920284860336257
+7	3	22	xxdret[3]	Double	347.94008520746263
+7	3	22	xxdret[4]	Double	114.95526151973395
+7	3	22	xxdret[5]	Double	102.89534672719657
+7	3	22	xxdret[6]	Double	243.25718114721846
+7	3	22	xxdret[7]	Double	241.56188916563701
+7	3	22	xxdret[8]	Double	242.40791860936088
+7	3	22	xxdret[9]	Double	346.152527874415
+7	3	22	xxdret[10]	Double	1.0000476030439076
+7	3	22	xxdret[11]	Double	0.9855989915943435
+7	3	22	xxdret[12]	Double	1.0000490765485248
+7	3	22	xxdret[14]	Double	2450086.4384841383
+7	3	22	xxdret[15]	Double	0.98328122024196563
+7	3	22	xxdret[16]	Double	1.016730518126274
+7	3	23	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	3	23	xxdret[0]	Double	1.0000058691841198
+7	3	23	xxdret[2]	Double	0.00047920284860336257
+7	3	23	xxdret[3]	Double	347.94008520746263
+7	3	23	xxdret[4]	Double	114.95526151973395
+7	3	23	xxdret[5]	Double	102.89534672719657
+7	3	23	xxdret[6]	Double	243.25718114721846
+7	3	23	xxdret[7]	Double	241.56188916563701
+7	3	23	xxdret[8]	Double	242.40791860936088
+7	3	23	xxdret[9]	Double	346.152527874415
+7	3	23	xxdret[10]	Double	1.0000476030439076
+7	3	23	xxdret[11]	Double	0.9855989915943435
+7	3	23	xxdret[12]	Double	1.0000490765485248
+7	3	23	xxdret[14]	Double	2450086.4384841383
+7	3	23	xxdret[15]	Double	0.98328122024196563
+7	3	23	xxdret[16]	Double	1.016730518126274
+7	3	24	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	3	24	xxdret[0]	Double	1.0000032955226685
+7	3	24	xxdret[2]	Double	0.00047920284860336257
+7	3	24	xxdret[3]	Double	347.94008520746263
+7	3	24	xxdret[4]	Double	114.96313502999021
+7	3	24	xxdret[5]	Double	102.90322023745284
+7	3	24	xxdret[6]	Double	243.24930651842499
+7	3	24	xxdret[7]	Double	241.55401565538074
+7	3	24	xxdret[8]	Double	242.40004399763367
+7	3	24	xxdret[9]	Double	346.15252675587783
+7	3	24	xxdret[10]	Double	1.0000437423931026
+7	3	24	xxdret[11]	Double	0.985602796481449
+7	3	24	xxdret[12]	Double	1.0000452160418307
+7	3	24	xxdret[14]	Double	2450086.4474266036
+7	3	24	xxdret[15]	Double	0.98327748844387264
+7	3	24	xxdret[16]	Double	1.0167291026014644
+7	3	28	rc	Int	-1
+7	3	28	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
+7	3	28	xxdret[0]	Double	0.99999995058515689
+7	3	28	xxdret[1]	Double	0.016727168107181917
+7	3	28	xxdret[2]	Double	0.00046991689080317126
+7	3	28	xxdret[3]	Double	347.80552355507359
+7	3	28	xxdret[4]	Double	115.10858769831739
+7	3	28	xxdret[5]	Double	102.91411125339096
+7	3	28	xxdret[6]	Double	243.23839263695447
+7	3	28	xxdret[7]	Double	241.54312836088559
+7	3	28	xxdret[8]	Double	242.38914270639788
+7	3	28	xxdret[9]	Double	346.15250389034543
+7	3	28	xxdret[10]	Double	1.0000387247880933
+7	3	28	xxdret[11]	Double	0.98560774165547704
+7	3	28	xxdret[12]	Double	1.0000401986241172
+7	3	28	xxdret[13]	Double	0
+7	3	28	xxdret[14]	Double	2450086.4597381577
+7	3	28	xxdret[15]	Double	0.98327278330454537
+7	3	28	xxdret[16]	Double	1.0167271178657684
+7	3	29	rc	Int	-1
+7	3	29	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
+7	3	29	xxdret[0]	Double	0.99999995058515689
+7	3	29	xxdret[1]	Double	0.016727168107181917
+7	3	29	xxdret[2]	Double	0.00046991689080317126
+7	3	29	xxdret[3]	Double	347.80552355507359
+7	3	29	xxdret[4]	Double	115.10858769831739
+7	3	29	xxdret[5]	Double	102.91411125339096
+7	3	29	xxdret[6]	Double	243.23839263695447
+7	3	29	xxdret[7]	Double	241.54312836088559
+7	3	29	xxdret[8]	Double	242.38914270639788
+7	3	29	xxdret[9]	Double	346.15250389034543
+7	3	29	xxdret[10]	Double	1.0000387247880933
+7	3	29	xxdret[11]	Double	0.98560774165547704
+7	3	29	xxdret[12]	Double	1.0000401986241172
+7	3	29	xxdret[13]	Double	0
+7	3	29	xxdret[14]	Double	2450086.4597381577
+7	3	29	xxdret[15]	Double	0.98327278330454537
+7	3	29	xxdret[16]	Double	1.0167271178657684
+7	3	30	rc	Int	-1
+7	3	30	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
+7	3	30	xxdret[0]	Double	0.99999995058515689
+7	3	30	xxdret[1]	Double	0.016727168107181917
+7	3	30	xxdret[2]	Double	0.00046991689080317126
+7	3	30	xxdret[3]	Double	347.80552355507359
+7	3	30	xxdret[4]	Double	115.10858769831739
+7	3	30	xxdret[5]	Double	102.91411125339096
+7	3	30	xxdret[6]	Double	243.23839263695447
+7	3	30	xxdret[7]	Double	241.54312836088559
+7	3	30	xxdret[8]	Double	242.38914270639788
+7	3	30	xxdret[9]	Double	346.15250389034543
+7	3	30	xxdret[10]	Double	1.0000387247880933
+7	3	30	xxdret[11]	Double	0.98560774165547704
+7	3	30	xxdret[12]	Double	1.0000401986241172
+7	3	30	xxdret[13]	Double	0
+7	3	30	xxdret[14]	Double	2450086.4597381577
+7	3	30	xxdret[15]	Double	0.98327278330454537
+7	3	30	xxdret[16]	Double	1.0167271178657684
+7	3	31	rc	Int	-1
+7	3	31	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
+7	3	31	xxdret[0]	Double	0.99999995058515689
+7	3	31	xxdret[1]	Double	0.016727168107181917
+7	3	31	xxdret[2]	Double	0.00046991689080317126
+7	3	31	xxdret[3]	Double	347.80552355507359
+7	3	31	xxdret[4]	Double	115.10858769831739
+7	3	31	xxdret[5]	Double	102.91411125339096
+7	3	31	xxdret[6]	Double	243.23839263695447
+7	3	31	xxdret[7]	Double	241.54312836088559
+7	3	31	xxdret[8]	Double	242.38914270639788
+7	3	31	xxdret[9]	Double	346.15250389034543
+7	3	31	xxdret[10]	Double	1.0000387247880933
+7	3	31	xxdret[11]	Double	0.98560774165547704
+7	3	31	xxdret[12]	Double	1.0000401986241172
+7	3	31	xxdret[13]	Double	0
+7	3	31	xxdret[14]	Double	2450086.4597381577
+7	3	31	xxdret[15]	Double	0.98327278330454537
+7	3	31	xxdret[16]	Double	1.0167271178657684
+7	3	32	rc	Int	-1
+7	3	32	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
+7	3	32	xxdret[0]	Double	0.99999995058515689
+7	3	32	xxdret[1]	Double	0.016727168107181917
+7	3	32	xxdret[2]	Double	0.00046991689080317126
+7	3	32	xxdret[3]	Double	347.80552355507359
+7	3	32	xxdret[4]	Double	115.10858769831739
+7	3	32	xxdret[5]	Double	102.91411125339096
+7	3	32	xxdret[6]	Double	243.23839263695447
+7	3	32	xxdret[7]	Double	241.54312836088559
+7	3	32	xxdret[8]	Double	242.38914270639788
+7	3	32	xxdret[9]	Double	346.15250389034543
+7	3	32	xxdret[10]	Double	1.0000387247880933
+7	3	32	xxdret[11]	Double	0.98560774165547704
+7	3	32	xxdret[12]	Double	1.0000401986241172
+7	3	32	xxdret[13]	Double	0
+7	3	32	xxdret[14]	Double	2450086.4597381577
+7	3	32	xxdret[15]	Double	0.98327278330454537
+7	3	32	xxdret[16]	Double	1.0167271178657684
+7	3	33	rc	Int	-1
+7	3	33	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
+7	3	33	xxdret[0]	Double	0.99999995058515689
+7	3	33	xxdret[1]	Double	0.016727168107181917
+7	3	33	xxdret[2]	Double	0.00046991689080317126
+7	3	33	xxdret[3]	Double	347.80552355507359
+7	3	33	xxdret[4]	Double	115.10858769831739
+7	3	33	xxdret[5]	Double	102.91411125339096
+7	3	33	xxdret[6]	Double	243.23839263695447
+7	3	33	xxdret[7]	Double	241.54312836088559
+7	3	33	xxdret[8]	Double	242.38914270639788
+7	3	33	xxdret[9]	Double	346.15250389034543
+7	3	33	xxdret[10]	Double	1.0000387247880933
+7	3	33	xxdret[11]	Double	0.98560774165547704
+7	3	33	xxdret[12]	Double	1.0000401986241172
+7	3	33	xxdret[13]	Double	0
+7	3	33	xxdret[14]	Double	2450086.4597381577
+7	3	33	xxdret[15]	Double	0.98327278330454537
+7	3	33	xxdret[16]	Double	1.0167271178657684
+7	3	34	rc	Int	-1
+7	3	34	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
+7	3	34	xxdret[0]	Double	0.99999995058515689
+7	3	34	xxdret[1]	Double	0.016727168107181917
+7	3	34	xxdret[2]	Double	0.00046991689080317126
+7	3	34	xxdret[3]	Double	347.80552355507359
+7	3	34	xxdret[4]	Double	115.10858769831739
+7	3	34	xxdret[5]	Double	102.91411125339096
+7	3	34	xxdret[6]	Double	243.23839263695447
+7	3	34	xxdret[7]	Double	241.54312836088559
+7	3	34	xxdret[8]	Double	242.38914270639788
+7	3	34	xxdret[9]	Double	346.15250389034543
+7	3	34	xxdret[10]	Double	1.0000387247880933
+7	3	34	xxdret[11]	Double	0.98560774165547704
+7	3	34	xxdret[12]	Double	1.0000401986241172
+7	3	34	xxdret[13]	Double	0
+7	3	34	xxdret[14]	Double	2450086.4597381577
+7	3	34	xxdret[15]	Double	0.98327278330454537
+7	3	34	xxdret[16]	Double	1.0167271178657684
+7	3	35	rc	Int	-1
+7	3	35	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
+7	3	35	xxdret[0]	Double	0.99999995058515689
+7	3	35	xxdret[1]	Double	0.016727168107181917
+7	3	35	xxdret[2]	Double	0.00046991689080317126
+7	3	35	xxdret[3]	Double	347.80552355507359
+7	3	35	xxdret[4]	Double	115.10858769831739
+7	3	35	xxdret[5]	Double	102.91411125339096
+7	3	35	xxdret[6]	Double	243.23839263695447
+7	3	35	xxdret[7]	Double	241.54312836088559
+7	3	35	xxdret[8]	Double	242.38914270639788
+7	3	35	xxdret[9]	Double	346.15250389034543
+7	3	35	xxdret[10]	Double	1.0000387247880933
+7	3	35	xxdret[11]	Double	0.98560774165547704
+7	3	35	xxdret[12]	Double	1.0000401986241172
+7	3	35	xxdret[13]	Double	0
+7	3	35	xxdret[14]	Double	2450086.4597381577
+7	3	35	xxdret[15]	Double	0.98327278330454537
+7	3	35	xxdret[16]	Double	1.0167271178657684
+7	3	36	rc	Int	-1
+7	3	36	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
+7	3	36	xxdret[0]	Double	0.99999995058515689
+7	3	36	xxdret[1]	Double	0.016727168107181917
+7	3	36	xxdret[2]	Double	0.00046991689080317126
+7	3	36	xxdret[3]	Double	347.80552355507359
+7	3	36	xxdret[4]	Double	115.10858769831739
+7	3	36	xxdret[5]	Double	102.91411125339096
+7	3	36	xxdret[6]	Double	243.23839263695447
+7	3	36	xxdret[7]	Double	241.54312836088559
+7	3	36	xxdret[8]	Double	242.38914270639788
+7	3	36	xxdret[9]	Double	346.15250389034543
+7	3	36	xxdret[10]	Double	1.0000387247880933
+7	3	36	xxdret[11]	Double	0.98560774165547704
+7	3	36	xxdret[12]	Double	1.0000401986241172
+7	3	36	xxdret[13]	Double	0
+7	3	36	xxdret[14]	Double	2450086.4597381577
+7	3	36	xxdret[15]	Double	0.98327278330454537
+7	3	36	xxdret[16]	Double	1.0167271178657684
+7	4	4	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	4	5	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	4	6	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	4	13	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	4	13	dmax	Double	1.7359152497861663
+7	4	13	dmin	Double	0.26431024211696114
+7	4	13	dtrue	Double	0.84362207566026093
+7	4	14	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	4	14	dmax	Double	0.72824137406058898
+7	4	15	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	4	15	dmax	Double	0.72824137406058898
+7	4	22	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	4	22	dmax	Double	1.016730518126274
+7	4	22	dmin	Double	0.98328122024196563
+7	4	22	dtrue	Double	1.0077522842442239
+7	4	23	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	4	23	dmax	Double	1.016730518126274
+7	4	23	dmin	Double	0.98328122024196563
+7	4	23	dtrue	Double	1.0077522842442239
+7	4	24	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
+7	4	24	dmax	Double	1.016730518126274
+7	4	24	dmin	Double	0.98328122024196563
+7	4	24	dtrue	Double	1.0077522842442239
 8	7	8	xxattr[2]	Double	29511.341765847734
 8	7	8	xxattr[4]	Double	228.59626514481164
 8	7	8	xxattr[5]	Double	-1.4101670569775211
 8	7	8	xxattr[6]	Double	-1.4101670569775211
+10	1	2	rc	Int	2
+10	1	2	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	1	3	rc	Int	4
 10	1	3	jx	Double	625079.67104348063
 10	1	3	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	1	4	rc	Int	4
+10	1	4	jx	Double	625079.67104348063
+10	1	4	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	1	5	rc	Int	4
 10	1	5	jx	Double	2817999
 10	1	5	xcross	Double	30
+10	1	5	xcross#2	Double	36.7645140093774
 10	1	5	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	1	6	rc	Int	4
+10	1	6	jx	Double	2817999
+10	1	6	xcross	Double	30
+10	1	6	xcross#2	Double	36.7645140093774
+10	1	6	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	1	8	rc	Int	2
+10	1	8	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	1	9	rc	Int	4
 10	1	9	jx	Double	625125.41484101501
 10	1	9	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	1	10	rc	Int	4
+10	1	10	jx	Double	625125.41484101501
+10	1	10	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	1	11	rc	Int	4
 10	1	11	jx	Double	2817999
 10	1	11	xcross	Double	73.769999999999996
+10	1	11	xcross#2	Double	36.7645140093774
 10	1	11	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	1	12	rc	Int	4
+10	1	12	jx	Double	2817999
+10	1	12	xcross	Double	73.769999999999996
+10	1	12	xcross#2	Double	36.7645140093774
+10	1	12	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	1	14	rc	Int	2
+10	1	14	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	1	15	rc	Int	4
 10	1	15	jx	Double	625047.05870696658
 10	1	15	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	1	16	rc	Int	4
+10	1	16	jx	Double	625047.05870696658
+10	1	16	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	1	17	rc	Int	4
 10	1	17	jx	Double	2817999
 10	1	17	xcross	Double	359
+10	1	17	xcross#2	Double	36.7645140093774
 10	1	17	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	1	18	rc	Int	4
+10	1	18	jx	Double	2817999
+10	1	18	xcross	Double	359
+10	1	18	xcross#2	Double	36.7645140093774
+10	1	18	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	2	2	rc	Int	2
+10	2	2	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	2	3	rc	Int	4
 10	2	3	jx	Double	625078.83150714391
 10	2	3	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	2	4	rc	Int	4
+10	2	4	jx	Double	625078.83150714391
+10	2	4	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	2	5	rc	Int	4
 10	2	5	jx	Double	2817999
 10	2	5	xcross	Double	30
+10	2	5	xcross#2	Double	36.802205291810765
 10	2	5	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	2	6	rc	Int	4
+10	2	6	jx	Double	2817999
+10	2	6	xcross	Double	30
+10	2	6	xcross#2	Double	36.802205291810765
+10	2	6	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	2	8	rc	Int	2
+10	2	8	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	2	9	rc	Int	4
 10	2	9	jx	Double	625124.57534820831
 10	2	9	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	2	10	rc	Int	4
+10	2	10	jx	Double	625124.57534820831
+10	2	10	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	2	11	rc	Int	4
 10	2	11	jx	Double	2817999
 10	2	11	xcross	Double	73.769999999999996
+10	2	11	xcross#2	Double	36.802205291810765
 10	2	11	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	2	12	rc	Int	4
+10	2	12	jx	Double	2817999
+10	2	12	xcross	Double	73.769999999999996
+10	2	12	xcross#2	Double	36.802205291810765
+10	2	12	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	2	14	rc	Int	2
+10	2	14	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	2	15	rc	Int	4
 10	2	15	jx	Double	625046.21913955233
 10	2	15	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	2	16	rc	Int	4
+10	2	16	jx	Double	625046.21913955233
+10	2	16	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	2	17	rc	Int	4
 10	2	17	jx	Double	2817999
 10	2	17	xcross	Double	359
+10	2	17	xcross#2	Double	36.802205291810765
 10	2	17	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	2	18	rc	Int	4
+10	2	18	jx	Double	2817999
+10	2	18	xcross	Double	359
+10	2	18	xcross#2	Double	36.802205291810765
+10	2	18	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	3	2	rc	Int	2
+10	3	2	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	3	3	rc	Int	4
 10	3	3	jx	Double	625028.16743776086
 10	3	3	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	3	4	rc	Int	4
+10	3	4	jx	Double	625028.16743776086
+10	3	4	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	3	5	rc	Int	4
 10	3	5	jx	Double	2817999
 10	3	5	xcross	Double	30
+10	3	5	xcross#2	Double	77.424831635701366
 10	3	5	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	3	6	rc	Int	4
+10	3	6	jx	Double	2817999
+10	3	6	xcross	Double	30
+10	3	6	xcross#2	Double	77.424831635701366
+10	3	6	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	3	8	rc	Int	2
+10	3	8	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	3	9	rc	Int	4
 10	3	9	jx	Double	625031.38089872012
 10	3	9	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	3	10	rc	Int	4
+10	3	10	jx	Double	625031.38089872012
+10	3	10	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	3	11	rc	Int	4
 10	3	11	jx	Double	2817999
 10	3	11	xcross	Double	73.769999999999996
+10	3	11	xcross#2	Double	77.424831635701366
 10	3	11	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	3	12	rc	Int	4
+10	3	12	jx	Double	2817999
+10	3	12	xcross	Double	73.769999999999996
+10	3	12	xcross#2	Double	77.424831635701366
+10	3	12	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	3	14	rc	Int	2
+10	3	14	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	3	15	rc	Int	4
 10	3	15	jx	Double	625026.05960279529
 10	3	15	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	3	16	rc	Int	4
+10	3	16	jx	Double	625026.05960279529
+10	3	16	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	3	17	rc	Int	4
 10	3	17	jx	Double	2817999
 10	3	17	xcross	Double	359
+10	3	17	xcross#2	Double	77.424831635701366
 10	3	17	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	3	18	rc	Int	4
+10	3	18	jx	Double	2817999
+10	3	18	xcross	Double	359
+10	3	18	xcross#2	Double	77.424831635701366
+10	3	18	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	4	2	rc	Int	2
+10	4	2	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	4	3	rc	Int	4
 10	4	3	jx	Double	625027.32785237848
 10	4	3	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	4	4	rc	Int	4
+10	4	4	jx	Double	625027.32785237848
+10	4	4	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	4	5	rc	Int	4
 10	4	5	jx	Double	2817999
 10	4	5	xcross	Double	30
+10	4	5	xcross#2	Double	77.883009946676282
 10	4	5	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	4	6	rc	Int	4
+10	4	6	jx	Double	2817999
+10	4	6	xcross	Double	30
+10	4	6	xcross#2	Double	77.883009946676282
+10	4	6	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	4	8	rc	Int	2
+10	4	8	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	4	9	rc	Int	4
 10	4	9	jx	Double	625030.54131639691
 10	4	9	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	4	10	rc	Int	4
+10	4	10	jx	Double	625030.54131639691
+10	4	10	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	4	11	rc	Int	4
 10	4	11	jx	Double	2817999
 10	4	11	xcross	Double	73.769999999999996
+10	4	11	xcross#2	Double	77.883009946676282
 10	4	11	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	4	12	rc	Int	4
+10	4	12	jx	Double	2817999
+10	4	12	xcross	Double	73.769999999999996
+10	4	12	xcross#2	Double	77.883009946676282
+10	4	12	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	4	14	rc	Int	2
+10	4	14	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	4	15	rc	Int	4
 10	4	15	jx	Double	625025.22001540638
 10	4	15	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	4	16	rc	Int	4
+10	4	16	jx	Double	625025.22001540638
+10	4	16	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	4	17	rc	Int	4
 10	4	17	jx	Double	2817999
 10	4	17	xcross	Double	359
+10	4	17	xcross#2	Double	77.883009946676282
 10	4	17	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	4	18	rc	Int	4
+10	4	18	jx	Double	2817999
+10	4	18	xcross	Double	359
+10	4	18	xcross#2	Double	77.883009946676282
+10	4	18	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	5	2	rc	Int	2
+10	5	2	jx	Double	2455334.1525964751
+10	5	2	xlon	Double	102.73339128870359
+10	5	2	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	5	3	rc	Int	4
 10	5	3	jx	Double	625013.722218554
 10	5	3	xlon	Double	189.71117263871648
 10	5	3	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	5	4	rc	Int	4
+10	5	4	jx	Double	625013.722218554
+10	5	4	xlon	Double	189.71117263871648
+10	5	4	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	5	5	rc	Int	4
 10	5	5	jx	Double	2817999
 10	5	5	xlon	Double	0
 10	5	5	xlat	Double	0
 10	5	5	xx[1]	Double	-5.0554440393627056
+10	5	5	xx[1]#2	Double	0
 10	5	5	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	5	6	rc	Int	4
+10	5	6	jx	Double	2817999
+10	5	6	xlon	Double	0
+10	5	6	xlat	Double	0
+10	5	6	xx[1]	Double	-5.0554440393627056
+10	5	6	xx[1]#2	Double	0
+10	5	6	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	6	2	rc	Int	2
+10	6	2	jx	Double	2455334.1518306551
+10	6	2	xlon	Double	102.73339128870359
+10	6	2	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	6	3	rc	Int	4
 10	6	3	jx	Double	625012.88261942007
 10	6	3	xlon	Double	189.71117264084614
 10	6	3	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	6	4	rc	Int	4
+10	6	4	jx	Double	625012.88261942007
+10	6	4	xlon	Double	189.71117264084614
+10	6	4	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	6	5	rc	Int	4
 10	6	5	jx	Double	2817999
 10	6	5	xlon	Double	0
 10	6	5	xlat	Double	0
 10	6	5	xx[1]	Double	-5.0509348297699139
+10	6	5	xx[1]#2	Double	0
 10	6	5	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	6	6	rc	Int	4
+10	6	6	jx	Double	2817999
+10	6	6	xlon	Double	0
+10	6	6	xlat	Double	0
+10	6	6	xx[1]	Double	-5.0509348297699139
+10	6	6	xx[1]#2	Double	0
+10	6	6	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	1	jx	Double	2455805.7592374934
+10	7	2	jx	Double	2455805.7592374934
+10	7	2	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	3	jx	Double	628246.17071183852
 10	7	3	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	4	jx	Double	628246.17071183852
+10	7	4	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	5	jx	Double	0
 10	7	5	rc	Int	-1
 10	7	5	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	7	6	jx	Double	0
+10	7	6	rc	Int	-1
+10	7	6	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	7	7	jx	Double	2455467.7127713589
+10	7	8	jx	Double	2455467.7127713589
+10	7	8	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	9	jx	Double	627880.5178214116
 10	7	9	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	10	jx	Double	627880.5178214116
+10	7	10	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	11	jx	Double	0
 10	7	11	rc	Int	-1
 10	7	11	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	7	12	jx	Double	0
+10	7	12	rc	Int	-1
+10	7	12	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	7	13	jx	Double	2461855.3803375135
+10	7	14	jx	Double	2461855.3803375135
+10	7	14	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	15	jx	Double	634580.00954712904
 10	7	15	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	16	jx	Double	634580.00954712904
+10	7	16	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	17	jx	Double	0
 10	7	17	rc	Int	-1
 10	7	17	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	7	18	jx	Double	0
+10	7	18	rc	Int	-1
+10	7	18	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	7	19	jx	Double	2460954.5597445108
+10	7	20	jx	Double	2460954.5597445108
+10	7	20	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	21	jx	Double	633773.23482142098
 10	7	21	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	22	jx	Double	633773.23482142098
+10	7	22	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	23	jx	Double	0
 10	7	23	rc	Int	-1
 10	7	23	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	7	24	jx	Double	0
+10	7	24	rc	Int	-1
+10	7	24	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	7	25	jx	Double	2455365.1132186968
+10	7	26	jx	Double	2455365.1132186968
+10	7	26	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	27	jx	Double	625087.44086576614
 10	7	27	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	28	jx	Double	625087.44086576614
+10	7	28	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	29	jx	Double	0
 10	7	29	rc	Int	-1
 10	7	29	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	7	30	jx	Double	0
+10	7	30	rc	Int	-1
+10	7	30	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	7	31	jx	Double	2455359.1235689088
+10	7	32	jx	Double	2455359.1235689088
+10	7	32	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	33	jx	Double	625082.44942406728
 10	7	33	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	34	jx	Double	625082.44942406728
+10	7	34	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	35	jx	Double	0
 10	7	35	rc	Int	-1
 10	7	35	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	7	36	jx	Double	0
+10	7	36	rc	Int	-1
+10	7	36	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	7	37	jx	Double	2455495.104097656
+10	7	38	jx	Double	2455495.104097656
+10	7	38	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	39	jx	Double	625125.51672716951
 10	7	39	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	40	jx	Double	625125.51672716951
+10	7	40	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	41	jx	Double	0
 10	7	41	rc	Int	-1
 10	7	41	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	7	42	jx	Double	0
+10	7	42	rc	Int	-1
+10	7	42	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	7	43	jx	Double	2455475.655647079
+10	7	44	jx	Double	2455475.655647079
+10	7	44	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	45	jx	Double	625106.39746087079
 10	7	45	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	46	jx	Double	625106.39746087079
+10	7	46	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	47	jx	Double	0
 10	7	47	rc	Int	-1
 10	7	47	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	7	48	jx	Double	0
+10	7	48	rc	Int	-1
+10	7	48	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	7	49	jx	Double	2455716.7098439741
+10	7	50	jx	Double	2455716.7098439741
+10	7	50	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	51	jx	Double	625051.58405650826
 10	7	51	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	52	jx	Double	625051.58405650826
+10	7	52	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	53	jx	Double	0
 10	7	53	rc	Int	-1
 10	7	53	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	7	54	jx	Double	0
+10	7	54	rc	Int	-1
+10	7	54	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	7	55	jx	Double	2455665.9409236233
+10	7	56	jx	Double	2455665.9409236233
+10	7	56	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	57	jx	Double	625672.81709118339
 10	7	57	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	58	jx	Double	625672.81709118339
+10	7	58	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	59	jx	Double	0
 10	7	59	rc	Int	-1
 10	7	59	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	7	60	jx	Double	0
+10	7	60	rc	Int	-1
+10	7	60	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	7	61	jx	Double	2458365.1494639316
+10	7	62	jx	Double	2458365.1494639316
+10	7	62	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	63	jx	Double	653683.71132250724
 10	7	63	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	64	jx	Double	653683.71132250724
+10	7	64	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	65	jx	Double	0
 10	7	65	rc	Int	-1
 10	7	65	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	7	66	jx	Double	0
+10	7	66	rc	Int	-1
+10	7	66	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	7	67	jx	Double	2455498.2485549203
+10	7	68	jx	Double	2455498.2485549203
+10	7	68	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	69	jx	Double	651085.61032483855
 10	7	69	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	70	jx	Double	651085.61032483855
+10	7	70	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	71	jx	Double	0
 10	7	71	rc	Int	-1
 10	7	71	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	7	72	jx	Double	0
+10	7	72	rc	Int	-1
+10	7	72	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	7	73	jx	Double	2465728.6959646726
+10	7	74	jx	Double	2465728.6959646726
+10	7	74	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	75	jx	Double	671443.606514649
 10	7	75	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	76	jx	Double	671443.606514649
+10	7	76	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	77	jx	Double	0
 10	7	77	rc	Int	-1
 10	7	77	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	7	78	jx	Double	0
+10	7	78	rc	Int	-1
+10	7	78	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	7	79	jx	Double	2460654.8570563155
+10	7	80	jx	Double	2460654.8570563155
+10	7	80	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	81	jx	Double	666364.24774688983
 10	7	81	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	82	jx	Double	666364.24774688983
+10	7	82	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	83	jx	Double	0
 10	7	83	rc	Int	-1
 10	7	83	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	7	84	jx	Double	0
+10	7	84	rc	Int	-1
+10	7	84	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	7	85	jx	Double	2486750.2030694587
+10	7	86	jx	Double	2486750.2030694587
+10	7	86	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	87	jx	Double	707998.98553870607
 10	7	87	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	88	jx	Double	707998.98553870607
+10	7	88	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	89	jx	Double	0
 10	7	89	rc	Int	-1
 10	7	89	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	7	90	jx	Double	0
+10	7	90	rc	Int	-1
+10	7	90	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	7	91	jx	Double	2475930.527055189
+10	7	92	jx	Double	2475930.527055189
+10	7	92	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	93	jx	Double	696952.55270862323
 10	7	93	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	94	jx	Double	696952.55270862323
+10	7	94	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	95	jx	Double	0
 10	7	95	rc	Int	-1
 10	7	95	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	7	96	jx	Double	0
+10	7	96	rc	Int	-1
+10	7	96	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	7	97	jx	Double	2451476.1573407338
+10	7	98	jx	Double	2451476.1573407338
+10	7	98	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	99	jx	Double	0
 10	7	99	rc	Int	-1
 10	7	99	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	7	100	jx	Double	0
+10	7	100	rc	Int	-1
+10	7	100	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	7	101	jx	Double	2815263.4725715336
 10	7	101	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	102	jx	Double	2815263.4725715336
+10	7	102	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	103	jx	Double	2451137.8359687142
+10	7	104	jx	Double	2451137.8359687142
+10	7	104	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	105	jx	Double	0
 10	7	105	rc	Int	-1
 10	7	105	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	7	106	jx	Double	0
+10	7	106	rc	Int	-1
+10	7	106	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	7	107	jx	Double	2814925.0047016912
 10	7	107	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	108	jx	Double	2814925.0047016912
+10	7	108	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	109	jx	Double	2451105.9105748665
+10	7	110	jx	Double	2451105.9105748665
+10	7	110	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	111	jx	Double	0
 10	7	111	rc	Int	-1
 10	7	111	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	7	112	jx	Double	0
+10	7	112	rc	Int	-1
+10	7	112	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	7	113	jx	Double	2816507.7701442754
 10	7	113	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	114	jx	Double	2816507.7701442754
+10	7	114	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	115	jx	Double	2450205.8131329292
+10	7	116	jx	Double	2450205.8131329292
+10	7	116	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	117	jx	Double	0
 10	7	117	rc	Int	-1
 10	7	117	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	7	118	jx	Double	0
+10	7	118	rc	Int	-1
+10	7	118	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	7	119	jx	Double	2815575.2300493475
 10	7	119	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	120	jx	Double	2815575.2300493475
+10	7	120	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	121	jx	Double	2455277.1446520854
+10	7	122	jx	Double	2455277.1446520854
+10	7	122	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	123	jx	Double	0
 10	7	123	rc	Int	-1
 10	7	123	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	7	124	jx	Double	0
+10	7	124	rc	Int	-1
+10	7	124	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	7	125	jx	Double	2817971.9208244341
 10	7	125	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	126	jx	Double	2817971.9208244341
+10	7	126	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	127	jx	Double	2455271.1550705703
+10	7	128	jx	Double	2455271.1550705703
+10	7	128	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	129	jx	Double	0
 10	7	129	rc	Int	-1
 10	7	129	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	7	130	jx	Double	0
+10	7	130	rc	Int	-1
+10	7	130	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	7	131	jx	Double	2817965.3355988115
 10	7	131	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	132	jx	Double	2817965.3355988115
+10	7	132	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	133	jx	Double	2455270.4104831642
+10	7	134	jx	Double	2455270.4104831642
+10	7	134	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	135	jx	Double	0
 10	7	135	rc	Int	-1
 10	7	135	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	7	136	jx	Double	0
+10	7	136	rc	Int	-1
+10	7	136	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	7	137	jx	Double	2817928.7593261451
 10	7	137	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	138	jx	Double	2817928.7593261451
+10	7	138	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	139	jx	Double	2455250.9619808262
+10	7	140	jx	Double	2455250.9619808262
+10	7	140	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	141	jx	Double	0
 10	7	141	rc	Int	-1
 10	7	141	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	7	142	jx	Double	0
+10	7	142	rc	Int	-1
+10	7	142	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	7	143	jx	Double	2817909.2798726745
 10	7	143	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	144	jx	Double	2817909.2798726745
+10	7	144	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	145	jx	Double	2455029.7618426969
+10	7	146	jx	Double	2455029.7618426969
+10	7	146	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	147	jx	Double	0
 10	7	147	rc	Int	-1
 10	7	147	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	7	148	jx	Double	0
+10	7	148	rc	Int	-1
+10	7	148	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	7	149	jx	Double	2817733.1850309535
 10	7	149	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	150	jx	Double	2817733.1850309535
+10	7	150	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	151	jx	Double	2454978.9820744069
+10	7	152	jx	Double	2454978.9820744069
+10	7	152	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	153	jx	Double	0
 10	7	153	rc	Int	-1
 10	7	153	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	7	154	jx	Double	0
+10	7	154	rc	Int	-1
+10	7	154	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	7	155	jx	Double	2817683.8373564342
 10	7	155	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	156	jx	Double	2817683.8373564342
+10	7	156	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	157	jx	Double	2427784.4225836047
+10	7	158	jx	Double	2427784.4225836047
+10	7	158	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	159	jx	Double	0
 10	7	159	rc	Int	-1
 10	7	159	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	7	160	jx	Double	0
+10	7	160	rc	Int	-1
+10	7	160	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	7	161	jx	Double	2794630.9722585361
 10	7	161	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	162	jx	Double	2794630.9722585361
+10	7	162	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	163	jx	Double	2424923.6881961171
+10	7	164	jx	Double	2424923.6881961171
+10	7	164	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	165	jx	Double	0
 10	7	165	rc	Int	-1
 10	7	165	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	7	166	jx	Double	0
+10	7	166	rc	Int	-1
+10	7	166	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	7	167	jx	Double	2791743.3330983799
 10	7	167	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	168	jx	Double	2791743.3330983799
+10	7	168	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	169	jx	Double	2405918.1151621742
+10	7	170	jx	Double	2405918.1151621742
+10	7	170	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	171	jx	Double	0
 10	7	171	rc	Int	-1
 10	7	171	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	7	172	jx	Double	0
+10	7	172	rc	Int	-1
+10	7	172	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	7	173	jx	Double	2764871.1388537926
 10	7	173	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	174	jx	Double	2764871.1388537926
+10	7	174	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	175	jx	Double	2400842.099937601
+10	7	176	jx	Double	2400842.099937601
+10	7	176	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	177	jx	Double	0
 10	7	177	rc	Int	-1
 10	7	177	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	7	178	jx	Double	0
+10	7	178	rc	Int	-1
+10	7	178	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	7	179	jx	Double	2759791.2489699638
 10	7	179	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	180	jx	Double	2759791.2489699638
+10	7	180	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	181	jx	Double	2397486.3411879987
+10	7	182	jx	Double	2397486.3411879987
+10	7	182	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	183	jx	Double	0
 10	7	183	rc	Int	-1
 10	7	183	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	7	184	jx	Double	0
+10	7	184	rc	Int	-1
+10	7	184	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	7	185	jx	Double	2754809.8732139585
 10	7	185	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	186	jx	Double	2754809.8732139585
+10	7	186	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	7	187	jx	Double	2386497.1315896278
+10	7	188	jx	Double	2386497.1315896278
+10	7	188	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	7	189	jx	Double	0
 10	7	189	rc	Int	-1
 10	7	189	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	7	190	jx	Double	0
+10	7	190	rc	Int	-1
+10	7	190	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	7	191	jx	Double	2744547.0583991744
 10	7	191	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	7	192	jx	Double	2744547.0583991744
+10	7	192	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	1	jx	Double	2455805.7584677334
+10	8	2	jx	Double	2455805.7584677334
+10	8	2	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	3	jx	Double	628245.33418728877
 10	8	3	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	4	jx	Double	628245.33418728877
+10	8	4	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	5	jx	Double	0
 10	8	5	rc	Int	-1
 10	8	5	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	8	6	jx	Double	0
+10	8	6	rc	Int	-1
+10	8	6	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	8	7	jx	Double	2455467.712004472
+10	8	8	jx	Double	2455467.712004472
+10	8	8	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	9	jx	Double	627879.68094936188
 10	8	9	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	10	jx	Double	627879.68094936188
+10	8	10	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	11	jx	Double	0
 10	8	11	rc	Int	-1
 10	8	11	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	8	12	jx	Double	0
+10	8	12	rc	Int	-1
+10	8	12	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	8	13	jx	Double	2461855.3795342734
+10	8	14	jx	Double	2461855.3795342734
+10	8	14	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	15	jx	Double	634579.17903051758
 10	8	15	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	16	jx	Double	634579.17903051758
+10	8	16	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	17	jx	Double	0
 10	8	17	rc	Int	-1
 10	8	17	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	8	18	jx	Double	0
+10	8	18	rc	Int	-1
+10	8	18	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	8	19	jx	Double	2460954.5589451701
+10	8	20	jx	Double	2460954.5589451701
+10	8	20	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	21	jx	Double	633772.40354060405
 10	8	21	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	22	jx	Double	633772.40354060405
+10	8	22	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	23	jx	Double	0
 10	8	23	rc	Int	-1
 10	8	23	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	8	24	jx	Double	0
+10	8	24	rc	Int	-1
+10	8	24	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	8	25	jx	Double	2455365.1124526286
+10	8	26	jx	Double	2455365.1124526286
+10	8	26	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	27	jx	Double	625086.60133681074
 10	8	27	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	28	jx	Double	625086.60133681074
+10	8	28	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	29	jx	Double	0
 10	8	29	rc	Int	-1
 10	8	29	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	8	30	jx	Double	0
+10	8	30	rc	Int	-1
+10	8	30	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	8	31	jx	Double	2455359.1228028885
+10	8	32	jx	Double	2455359.1228028885
+10	8	32	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	33	jx	Double	625081.6098903676
 10	8	33	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	34	jx	Double	625081.6098903676
+10	8	34	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	35	jx	Double	0
 10	8	35	rc	Int	-1
 10	8	35	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	8	36	jx	Double	0
+10	8	36	rc	Int	-1
+10	8	36	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	8	37	jx	Double	2455495.1033305502
+10	8	38	jx	Double	2455495.1033305502
+10	8	38	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	39	jx	Double	625124.67723448726
 10	8	39	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	40	jx	Double	625124.67723448726
+10	8	40	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	41	jx	Double	0
 10	8	41	rc	Int	-1
 10	8	41	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	8	42	jx	Double	0
+10	8	42	rc	Int	-1
+10	8	42	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	8	43	jx	Double	2455475.6548801288
+10	8	44	jx	Double	2455475.6548801288
+10	8	44	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	45	jx	Double	625105.55794996105
 10	8	45	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	46	jx	Double	625105.55794996105
+10	8	46	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	47	jx	Double	0
 10	8	47	rc	Int	-1
 10	8	47	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	8	48	jx	Double	0
+10	8	48	rc	Int	-1
+10	8	48	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	8	49	jx	Double	2455716.7090750025
+10	8	50	jx	Double	2455716.7090750025
+10	8	50	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	51	jx	Double	625050.74449336727
 10	8	51	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	52	jx	Double	625050.74449336727
+10	8	52	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	53	jx	Double	0
 10	8	53	rc	Int	-1
 10	8	53	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	8	54	jx	Double	0
+10	8	54	rc	Int	-1
+10	8	54	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	8	55	jx	Double	2455665.9401550936
+10	8	56	jx	Double	2455665.9401550936
+10	8	56	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	57	jx	Double	625671.97811941279
 10	8	57	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	58	jx	Double	625671.97811941279
+10	8	58	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	59	jx	Double	0
 10	8	59	rc	Int	-1
 10	8	59	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	8	60	jx	Double	0
+10	8	60	rc	Int	-1
+10	8	60	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	8	61	jx	Double	2458365.14866358
+10	8	62	jx	Double	2458365.14866358
+10	8	62	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	63	jx	Double	653682.89879481145
 10	8	63	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	64	jx	Double	653682.89879481145
+10	8	64	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	65	jx	Double	0
 10	8	65	rc	Int	-1
 10	8	65	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	8	66	jx	Double	0
+10	8	66	rc	Int	-1
+10	8	66	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	8	67	jx	Double	2455498.2477877894
+10	8	68	jx	Double	2455498.2477877894
+10	8	68	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	69	jx	Double	651084.79536135052
 10	8	69	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	70	jx	Double	651084.79536135052
+10	8	70	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	71	jx	Double	0
 10	8	71	rc	Int	-1
 10	8	71	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	8	72	jx	Double	0
+10	8	72	rc	Int	-1
+10	8	72	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	8	73	jx	Double	2465728.6951266383
+10	8	74	jx	Double	2465728.6951266383
+10	8	74	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	75	jx	Double	671442.81053392228
 10	8	75	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	76	jx	Double	671442.81053392228
+10	8	76	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	77	jx	Double	0
 10	8	77	rc	Int	-1
 10	8	77	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	8	78	jx	Double	0
+10	8	78	rc	Int	-1
+10	8	78	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	8	79	jx	Double	2460654.8562560678
+10	8	80	jx	Double	2460654.8562560678
+10	8	80	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	81	jx	Double	666363.44705098728
 10	8	81	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	82	jx	Double	666363.44705098728
+10	8	82	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	83	jx	Double	0
 10	8	83	rc	Int	-1
 10	8	83	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	8	84	jx	Double	0
+10	8	84	rc	Int	-1
+10	8	84	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	8	85	jx	Double	2486750.2020061598
+10	8	86	jx	Double	2486750.2020061598
+10	8	86	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	87	jx	Double	707998.22308081994
 10	8	87	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	88	jx	Double	707998.22308081994
+10	8	88	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	89	jx	Double	0
 10	8	89	rc	Int	-1
 10	8	89	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	8	90	jx	Double	0
+10	8	90	rc	Int	-1
+10	8	90	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	8	91	jx	Double	2475930.5261232969
+10	8	92	jx	Double	2475930.5261232969
+10	8	92	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	93	jx	Double	696951.78019808827
 10	8	93	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	94	jx	Double	696951.78019808827
+10	8	94	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	95	jx	Double	0
 10	8	95	rc	Int	-1
 10	8	95	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
+10	8	96	jx	Double	0
+10	8	96	rc	Int	-1
+10	8	96	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/'
 10	8	97	jx	Double	2451476.1566026574
+10	8	98	jx	Double	2451476.1566026574
+10	8	98	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	99	jx	Double	0
 10	8	99	rc	Int	-1
 10	8	99	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	8	100	jx	Double	0
+10	8	100	rc	Int	-1
+10	8	100	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	8	101	jx	Double	2815263.4347785925
 10	8	101	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	102	jx	Double	2815263.4347785925
+10	8	102	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	103	jx	Double	2451137.8352346984
+10	8	104	jx	Double	2451137.8352346984
+10	8	104	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	105	jx	Double	0
 10	8	105	rc	Int	-1
 10	8	105	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	8	106	jx	Double	0
+10	8	106	rc	Int	-1
+10	8	106	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	8	107	jx	Double	2814924.9669781378
 10	8	107	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	108	jx	Double	2814924.9669781378
+10	8	108	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	109	jx	Double	2451105.9098412977
+10	8	110	jx	Double	2451105.9098412977
+10	8	110	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	111	jx	Double	0
 10	8	111	rc	Int	-1
 10	8	111	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	8	112	jx	Double	0
+10	8	112	rc	Int	-1
+10	8	112	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	8	113	jx	Double	2816507.7320956429
 10	8	113	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	114	jx	Double	2816507.7320956429
+10	8	114	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	115	jx	Double	2450205.8124169218
+10	8	116	jx	Double	2450205.8124169218
+10	8	116	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	117	jx	Double	0
 10	8	117	rc	Int	-1
 10	8	117	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	8	118	jx	Double	0
+10	8	118	rc	Int	-1
+10	8	118	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	8	119	jx	Double	2815575.1921923952
 10	8	119	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	120	jx	Double	2815575.1921923952
+10	8	120	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	121	jx	Double	2455277.1438867263
+10	8	122	jx	Double	2455277.1438867263
+10	8	122	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	123	jx	Double	0
 10	8	123	rc	Int	-1
 10	8	123	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	8	124	jx	Double	0
+10	8	124	rc	Int	-1
+10	8	124	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	8	125	jx	Double	2817971.8824738958
 10	8	125	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	126	jx	Double	2817971.8824738958
+10	8	126	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	127	jx	Double	2455271.1543052602
+10	8	128	jx	Double	2455271.1543052602
+10	8	128	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	129	jx	Double	0
 10	8	129	rc	Int	-1
 10	8	129	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	8	130	jx	Double	0
+10	8	130	rc	Int	-1
+10	8	130	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	8	131	jx	Double	2817965.2972496338
 10	8	131	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	132	jx	Double	2817965.2972496338
+10	8	132	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	133	jx	Double	2455270.4097178602
+10	8	134	jx	Double	2455270.4097178602
+10	8	134	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	135	jx	Double	0
 10	8	135	rc	Int	-1
 10	8	135	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	8	136	jx	Double	0
+10	8	136	rc	Int	-1
+10	8	136	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	8	137	jx	Double	2817928.7209845237
 10	8	137	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	138	jx	Double	2817928.7209845237
+10	8	138	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	139	jx	Double	2455250.9612156814
+10	8	140	jx	Double	2455250.9612156814
+10	8	140	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	141	jx	Double	0
 10	8	141	rc	Int	-1
 10	8	141	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	8	142	jx	Double	0
+10	8	142	rc	Int	-1
+10	8	142	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	8	143	jx	Double	2817909.2415350792
 10	8	143	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	144	jx	Double	2817909.2415350792
+10	8	144	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	145	jx	Double	2455029.7610794925
+10	8	146	jx	Double	2455029.7610794925
+10	8	146	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	147	jx	Double	0
 10	8	147	rc	Int	-1
 10	8	147	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	8	148	jx	Double	0
+10	8	148	rc	Int	-1
+10	8	148	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	8	149	jx	Double	2817733.1467297305
 10	8	149	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	150	jx	Double	2817733.1467297305
+10	8	150	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	151	jx	Double	2454978.981311677
+10	8	152	jx	Double	2454978.981311677
+10	8	152	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	153	jx	Double	0
 10	8	153	rc	Int	-1
 10	8	153	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	8	154	jx	Double	0
+10	8	154	rc	Int	-1
+10	8	154	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	8	155	jx	Double	2817683.7990654013
 10	8	155	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	156	jx	Double	2817683.7990654013
+10	8	156	serr	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	157	jx	Double	2427784.4223038377
+10	8	158	jx	Double	2427784.4223038377
+10	8	158	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	159	jx	Double	0
 10	8	159	rc	Int	-1
 10	8	159	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	8	160	jx	Double	0
+10	8	160	rc	Int	-1
+10	8	160	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	8	161	jx	Double	2794630.9385774205
 10	8	161	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	162	jx	Double	2794630.9385774205
+10	8	162	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	163	jx	Double	2424923.6879157675
+10	8	164	jx	Double	2424923.6879157675
+10	8	164	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	165	jx	Double	0
 10	8	165	rc	Int	-1
 10	8	165	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	8	166	jx	Double	0
+10	8	166	rc	Int	-1
+10	8	166	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	8	167	jx	Double	2791743.2999736308
 10	8	167	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	168	jx	Double	2791743.2999736308
+10	8	168	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	169	jx	Double	2405918.1151748346
+10	8	170	jx	Double	2405918.1151748346
+10	8	170	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	171	jx	Double	0
 10	8	171	rc	Int	-1
 10	8	171	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	8	172	jx	Double	0
+10	8	172	rc	Int	-1
+10	8	172	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	8	173	jx	Double	2764871.1106806998
 10	8	173	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	174	jx	Double	2764871.1106806998
+10	8	174	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	175	jx	Double	2400842.0998324039
+10	8	176	jx	Double	2400842.0998324039
+10	8	176	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	177	jx	Double	0
 10	8	177	rc	Int	-1
 10	8	177	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	8	178	jx	Double	0
+10	8	178	rc	Int	-1
+10	8	178	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	8	179	jx	Double	2759791.2216872107
 10	8	179	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	180	jx	Double	2759791.2216872107
+10	8	180	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	181	jx	Double	2397486.3410712052
+10	8	182	jx	Double	2397486.3410712052
+10	8	182	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	183	jx	Double	0
 10	8	183	rc	Int	-1
 10	8	183	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	8	184	jx	Double	0
+10	8	184	rc	Int	-1
+10	8	184	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	8	185	jx	Double	2754809.8467901764
 10	8	185	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	186	jx	Double	2754809.8467901764
+10	8	186	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	187	jx	Double	2386497.1314036511
+10	8	188	jx	Double	2386497.1314036511
+10	8	188	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	8	189	jx	Double	0
 10	8	189	rc	Int	-1
 10	8	189	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+10	8	190	jx	Double	0
+10	8	190	rc	Int	-1
+10	8	190	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 10	8	191	jx	Double	2744547.0337014645
 10	8	191	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
+10	8	192	jx	Double	2744547.0337014645
+10	8	192	serr	String	SwissEph file 'sepl_24.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 11	1	3	xpheno[0]	Double	120.78559806662145
 11	1	3	xpheno[1]	Double	0.24408653022797738
 11	1	3	xpheno[4]	Double	1.0930207681033721
@@ -825,6 +3434,53 @@ suite	testcase	iteration	field	kind	port_value
 11	1	9	xpheno[0]	Double	1.9307171787119881
 11	1	10	xpheno[0]	Double	1.1344105384007614
 11	1	11	xpheno[0]	Double	12.346651229081631
+11	1	12	rc	Int	2
+11	1	13	rc	Int	2
+11	1	13	xpheno[0]	Double	129.24961766100051
+11	1	13	xpheno[2]	Double	50.641613702820202
+11	1	14	rc	Int	2
+11	1	14	xpheno[0]	Double	120.78559806662145
+11	1	14	xpheno[1]	Double	0.24408653022797738
+11	1	14	xpheno[4]	Double	1.0930207681033721
+11	1	15	rc	Int	2
+11	1	15	xpheno[0]	Double	45.797994870269527
+11	1	15	xpheno[1]	Double	0.84859509575711578
+11	1	15	xpheno[4]	Double	-3.9219150421091986
+11	1	16	rc	Int	2
+11	1	16	xpheno[0]	Double	37.348804412210747
+11	1	16	xpheno[2]	Double	82.988073025382732
+11	1	16	xpheno[4]	Double	0.94752184356344182
+11	1	17	rc	Int	2
+11	1	17	xpheno[0]	Double	10.138636534722094
+11	1	18	rc	Int	2
+11	1	18	xpheno[0]	Double	5.2242700216023881
+11	1	19	rc	Int	2
+11	1	19	xpheno[0]	Double	2.4259015104637007
+11	1	19	xpheno[2]	Double	57.305560821658034
+11	1	20	rc	Int	2
+11	1	20	xpheno[0]	Double	1.9307171787119881
+11	1	21	rc	Int	2
+11	1	21	xpheno[0]	Double	1.1344105384007614
+11	1	22	rc	Int	2
+11	1	22	xpheno[0]	Double	12.346651229081631
+11	1	22	xpheno[2]	Double	143.46435414568666
+11	1	34	rc	Int	18
+11	1	35	rc	Int	18
+11	1	35	xpheno[0]	Double	129.25493381785626
+11	1	35	xpheno[2]	Double	50.6361866514195
+11	1	36	rc	Int	18
+11	1	36	xpheno[0]	Double	120.76862384100008
+11	1	37	rc	Int	18
+11	1	38	rc	Int	18
+11	1	38	xpheno[2]	Double	82.986334013410712
+11	1	39	rc	Int	18
+11	1	40	rc	Int	18
+11	1	41	rc	Int	18
+11	1	41	xpheno[2]	Double	57.306849490880147
+11	1	42	rc	Int	18
+11	1	43	rc	Int	18
+11	1	44	rc	Int	18
+11	1	44	xpheno[2]	Double	143.47130198708683
 11	1	47	xpheno[0]	Double	120.78559806662145
 11	1	47	xpheno[1]	Double	0.24408653022797738
 11	1	47	xpheno[4]	Double	1.0930207681033721
@@ -839,6 +3495,36 @@ suite	testcase	iteration	field	kind	port_value
 11	1	53	xpheno[0]	Double	1.9307171787119881
 11	1	54	xpheno[0]	Double	1.1344105384007614
 11	1	55	xpheno[0]	Double	12.346651229081631
+11	1	56	rc	Int	2
+11	1	57	rc	Int	2
+11	1	57	xpheno[0]	Double	129.24961766100051
+11	1	57	xpheno[2]	Double	50.641613702820202
+11	1	58	rc	Int	2
+11	1	58	xpheno[0]	Double	120.78559806662145
+11	1	58	xpheno[1]	Double	0.24408653022797738
+11	1	58	xpheno[4]	Double	1.0930207681033721
+11	1	59	rc	Int	2
+11	1	59	xpheno[0]	Double	45.797994870269527
+11	1	59	xpheno[1]	Double	0.84859509575711578
+11	1	59	xpheno[4]	Double	-3.9219150421091986
+11	1	60	rc	Int	2
+11	1	60	xpheno[0]	Double	37.348804412210747
+11	1	60	xpheno[2]	Double	82.988073025382732
+11	1	60	xpheno[4]	Double	0.94752184356344182
+11	1	61	rc	Int	2
+11	1	61	xpheno[0]	Double	10.138636534722094
+11	1	62	rc	Int	2
+11	1	62	xpheno[0]	Double	5.2242700216023881
+11	1	63	rc	Int	2
+11	1	63	xpheno[0]	Double	2.4259015104637007
+11	1	63	xpheno[2]	Double	57.305560821658034
+11	1	64	rc	Int	2
+11	1	64	xpheno[0]	Double	1.9307171787119881
+11	1	65	rc	Int	2
+11	1	65	xpheno[0]	Double	1.1344105384007614
+11	1	66	rc	Int	2
+11	1	66	xpheno[0]	Double	12.346651229081631
+11	1	66	xpheno[2]	Double	143.46435414568666
 11	1	69	xpheno[0]	Double	60.758004823283734
 11	1	69	xpheno[1]	Double	0.74424966992787811
 11	1	69	xpheno[4]	Double	-0.96127442365668814
@@ -852,6 +3538,57 @@ suite	testcase	iteration	field	kind	port_value
 11	1	76	xpheno[0]	Double	1.1362697107772295
 11	1	77	xpheno[0]	Double	14.464740002456139
 11	1	77	xpheno[4]	Double	8.9421862019544296
+11	1	78	rc	Int	2
+11	1	79	rc	Int	2
+11	1	79	xpheno[0]	Double	170.58420973054467
+11	1	79	xpheno[2]	Double	9.3924760378841246
+11	1	80	rc	Int	2
+11	1	80	xpheno[0]	Double	60.758004823283734
+11	1	80	xpheno[1]	Double	0.74424966992787811
+11	1	80	xpheno[4]	Double	-0.96127442365668814
+11	1	81	rc	Int	2
+11	1	81	xpheno[0]	Double	11.018334310676179
+11	1	81	xpheno[4]	Double	-3.9063000822885563
+11	1	82	rc	Int	2
+11	1	82	xpheno[0]	Double	43.311837839195313
+11	1	82	xpheno[2]	Double	83.03693034711111
+11	1	83	rc	Int	2
+11	1	83	xpheno[0]	Double	10.750982773601335
+11	1	83	xpheno[2]	Double	100.58215284595758
+11	1	84	rc	Int	2
+11	1	84	xpheno[0]	Double	0.59754412398964207
+11	1	84	xpheno[2]	Double	5.4209378855320169
+11	1	85	rc	Int	2
+11	1	85	xpheno[0]	Double	2.6775056362810319
+11	1	85	xpheno[2]	Double	57.854560709960154
+11	1	86	rc	Int	2
+11	1	86	xpheno[0]	Double	1.873714192438777
+11	1	87	rc	Int	2
+11	1	87	xpheno[0]	Double	1.1362697107772295
+11	1	87	xpheno[2]	Double	70.899569635316126
+11	1	88	rc	Int	2
+11	1	88	xpheno[0]	Double	14.464740002456139
+11	1	88	xpheno[4]	Double	8.9421862019544296
+11	1	100	rc	Int	18
+11	1	101	rc	Int	18
+11	1	101	xpheno[0]	Double	170.58929117400305
+11	1	101	xpheno[2]	Double	9.3872154169061144
+11	1	102	rc	Int	18
+11	1	102	xpheno[0]	Double	60.717650138034173
+11	1	103	rc	Int	18
+11	1	104	rc	Int	18
+11	1	104	xpheno[0]	Double	43.316546613072425
+11	1	104	xpheno[2]	Double	83.03523765829064
+11	1	105	rc	Int	18
+11	1	105	xpheno[2]	Double	100.57792688352738
+11	1	106	rc	Int	18
+11	1	106	xpheno[2]	Double	5.4190504132997228
+11	1	107	rc	Int	18
+11	1	107	xpheno[2]	Double	57.853335489415102
+11	1	108	rc	Int	18
+11	1	109	rc	Int	18
+11	1	109	xpheno[2]	Double	70.90259695875389
+11	1	110	rc	Int	18
 11	1	113	xpheno[0]	Double	60.758004823283734
 11	1	113	xpheno[1]	Double	0.74424966992787811
 11	1	113	xpheno[4]	Double	-0.96127442365668814
@@ -865,6 +3602,37 @@ suite	testcase	iteration	field	kind	port_value
 11	1	120	xpheno[0]	Double	1.1362697107772295
 11	1	121	xpheno[0]	Double	14.464740002456139
 11	1	121	xpheno[4]	Double	8.9421862019544296
+11	1	122	rc	Int	2
+11	1	123	rc	Int	2
+11	1	123	xpheno[0]	Double	170.58420973054467
+11	1	123	xpheno[2]	Double	9.3924760378841246
+11	1	124	rc	Int	2
+11	1	124	xpheno[0]	Double	60.758004823283734
+11	1	124	xpheno[1]	Double	0.74424966992787811
+11	1	124	xpheno[4]	Double	-0.96127442365668814
+11	1	125	rc	Int	2
+11	1	125	xpheno[0]	Double	11.018334310676179
+11	1	125	xpheno[4]	Double	-3.9063000822885563
+11	1	126	rc	Int	2
+11	1	126	xpheno[0]	Double	43.311837839195313
+11	1	126	xpheno[2]	Double	83.03693034711111
+11	1	127	rc	Int	2
+11	1	127	xpheno[0]	Double	10.750982773601335
+11	1	127	xpheno[2]	Double	100.58215284595758
+11	1	128	rc	Int	2
+11	1	128	xpheno[0]	Double	0.59754412398964207
+11	1	128	xpheno[2]	Double	5.4209378855320169
+11	1	129	rc	Int	2
+11	1	129	xpheno[0]	Double	2.6775056362810319
+11	1	129	xpheno[2]	Double	57.854560709960154
+11	1	130	rc	Int	2
+11	1	130	xpheno[0]	Double	1.873714192438777
+11	1	131	rc	Int	2
+11	1	131	xpheno[0]	Double	1.1362697107772295
+11	1	131	xpheno[2]	Double	70.899569635316126
+11	1	132	rc	Int	2
+11	1	132	xpheno[0]	Double	14.464740002456139
+11	1	132	xpheno[4]	Double	8.9421862019544296
 11	1	133	rc	Int	4
 11	1	133	xpheno[3]	Double	0.54144248804219619
 11	1	133	xpheno[4]	Double	-26.893571551489632
@@ -915,6 +3683,56 @@ suite	testcase	iteration	field	kind	port_value
 11	1	143	xpheno[3]	Double	0
 11	1	143	xpheno[4]	Double	0
 11	1	143	serr	String	SwissEph file 'seas_30.se1' not found in PATH '<ephe>/'
+11	1	144	rc	Int	4
+11	1	144	xpheno[3]	Double	0.54144248804219619
+11	1	144	xpheno[4]	Double	-26.893571551489632
+11	1	145	rc	Int	4
+11	1	145	xpheno[0]	Double	140.46207940468361
+11	1	145	xpheno[1]	Double	0.11439828355344472
+11	1	145	xpheno[2]	Double	39.43876703797136
+11	1	145	xpheno[3]	Double	0.49649966516005262
+11	1	145	xpheno[4]	Double	-7.4567695437176145
+11	1	146	rc	Int	4
+11	1	146	xpheno[0]	Double	18.690879483438589
+11	1	146	xpheno[1]	Double	0.97363065094831946
+11	1	146	xpheno[2]	Double	8.6077509086840323
+11	1	146	xpheno[4]	Double	-0.76103975559431714
+11	1	147	rc	Int	4
+11	1	147	xpheno[0]	Double	48.34498409359464
+11	1	147	xpheno[1]	Double	0.83232197435490929
+11	1	147	xpheno[2]	Double	33.478831156660824
+11	1	147	xpheno[4]	Double	-3.9572733488667318
+11	1	148	rc	Int	4
+11	1	148	xpheno[0]	Double	15.93711254984734
+11	1	148	xpheno[2]	Double	26.051153861174637
+11	1	148	xpheno[4]	Double	1.613520740474613
+11	1	149	rc	Int	4
+11	1	149	xpheno[0]	Double	9.9639432217543753
+11	1	149	xpheno[2]	Double	109.54459317255501
+11	1	149	xpheno[4]	Double	-2.2147001302706899
+11	1	150	rc	Int	4
+11	1	150	xpheno[0]	Double	5.5334459119269814
+11	1	150	xpheno[2]	Double	113.41324806973853
+11	1	150	xpheno[4]	Double	0.44160361876522103
+11	1	151	rc	Int	4
+11	1	151	xpheno[0]	Double	0.84175140034183871
+11	1	151	xpheno[2]	Double	16.781211766845136
+11	1	151	xpheno[4]	Double	5.8372451686523945
+11	1	152	rc	Int	4
+11	1	152	xpheno[0]	Double	1.622378171270505
+11	1	152	xpheno[2]	Double	59.539987964664356
+11	1	152	xpheno[4]	Double	7.8080914911857953
+11	1	153	rc	Int	4
+11	1	153	xpheno[0]	Double	0.20611794069128694
+11	1	153	xpheno[2]	Double	6.5390945316507461
+11	1	153	xpheno[4]	Double	14.020392670947594
+11	1	154	rc	Int	-1
+11	1	154	xpheno[0]	Double	0
+11	1	154	xpheno[1]	Double	0
+11	1	154	xpheno[2]	Double	0
+11	1	154	xpheno[3]	Double	0
+11	1	154	xpheno[4]	Double	0
+11	1	154	serr	String	SwissEph file 'seas_30.se1' not found in PATH '<ephe>/'
 11	1	155	rc	Int	20
 11	1	155	xpheno[3]	Double	0.5414424880421963
 11	1	155	xpheno[4]	Double	-26.893571551489632
@@ -965,6 +3783,56 @@ suite	testcase	iteration	field	kind	port_value
 11	1	165	xpheno[3]	Double	0
 11	1	165	xpheno[4]	Double	0
 11	1	165	serr	String	SwissEph file 'seas_30.se1' not found in PATH '<ephe>/'
+11	1	166	rc	Int	20
+11	1	166	xpheno[3]	Double	0.5414424880421963
+11	1	166	xpheno[4]	Double	-26.893571551489632
+11	1	167	rc	Int	20
+11	1	167	xpheno[0]	Double	140.46749445277027
+11	1	167	xpheno[1]	Double	0.11436820314005958
+11	1	167	xpheno[2]	Double	39.433227469604887
+11	1	167	xpheno[3]	Double	0.49653101931133908
+11	1	167	xpheno[4]	Double	-7.4565226939919551
+11	1	168	rc	Int	20
+11	1	168	xpheno[0]	Double	18.673248137502629
+11	1	168	xpheno[1]	Double	0.97367993564477651
+11	1	168	xpheno[2]	Double	8.6009904269414097
+11	1	168	xpheno[4]	Double	-0.76134811265637636
+11	1	169	rc	Int	20
+11	1	169	xpheno[0]	Double	48.354355664227711
+11	1	169	xpheno[1]	Double	0.83226086536593336
+11	1	169	xpheno[2]	Double	33.48229602097701
+11	1	169	xpheno[4]	Double	-3.9572879981363989
+11	1	170	rc	Int	20
+11	1	170	xpheno[0]	Double	15.935470695197067
+11	1	170	xpheno[2]	Double	26.047375871248089
+11	1	170	xpheno[4]	Double	1.6134845331806229
+11	1	171	rc	Int	20
+11	1	171	xpheno[0]	Double	9.9596916417847723
+11	1	171	xpheno[2]	Double	109.5499731740167
+11	1	171	xpheno[4]	Double	-2.2147245271265605
+11	1	172	rc	Int	20
+11	1	172	xpheno[0]	Double	5.5375183772750258
+11	1	172	xpheno[2]	Double	113.40706462495787
+11	1	172	xpheno[4]	Double	0.44166924794118856
+11	1	173	rc	Int	20
+11	1	173	xpheno[0]	Double	0.8375605034736564
+11	1	173	xpheno[2]	Double	16.782247548120331
+11	1	173	xpheno[4]	Double	5.8372230805513476
+11	1	174	rc	Int	20
+11	1	174	xpheno[0]	Double	1.6204837131526617
+11	1	174	xpheno[2]	Double	59.538201275120073
+11	1	174	xpheno[4]	Double	7.8080891998698903
+11	1	175	rc	Int	20
+11	1	175	xpheno[0]	Double	0.20534765979672642
+11	1	175	xpheno[2]	Double	6.5388744481999215
+11	1	175	xpheno[4]	Double	14.02041090780107
+11	1	176	rc	Int	-1
+11	1	176	xpheno[0]	Double	0
+11	1	176	xpheno[1]	Double	0
+11	1	176	xpheno[2]	Double	0
+11	1	176	xpheno[3]	Double	0
+11	1	176	xpheno[4]	Double	0
+11	1	176	serr	String	SwissEph file 'seas_30.se1' not found in PATH '<ephe>/'
 11	1	177	rc	Int	4
 11	1	177	xpheno[3]	Double	0.54144248804219619
 11	1	177	xpheno[4]	Double	-26.893571551489632
@@ -1015,6 +3883,56 @@ suite	testcase	iteration	field	kind	port_value
 11	1	187	xpheno[3]	Double	0
 11	1	187	xpheno[4]	Double	0
 11	1	187	serr	String	SwissEph file 'seas_30.se1' not found in PATH '<ephe>/'
+11	1	188	rc	Int	4
+11	1	188	xpheno[3]	Double	0.54144248804219619
+11	1	188	xpheno[4]	Double	-26.893571551489632
+11	1	189	rc	Int	4
+11	1	189	xpheno[0]	Double	140.46207940468361
+11	1	189	xpheno[1]	Double	0.11439828355344472
+11	1	189	xpheno[2]	Double	39.43876703797136
+11	1	189	xpheno[3]	Double	0.49649966516005262
+11	1	189	xpheno[4]	Double	-7.4567695437176145
+11	1	190	rc	Int	4
+11	1	190	xpheno[0]	Double	18.690879483438589
+11	1	190	xpheno[1]	Double	0.97363065094831946
+11	1	190	xpheno[2]	Double	8.6077509086840323
+11	1	190	xpheno[4]	Double	-0.76103975559431714
+11	1	191	rc	Int	4
+11	1	191	xpheno[0]	Double	48.34498409359464
+11	1	191	xpheno[1]	Double	0.83232197435490929
+11	1	191	xpheno[2]	Double	33.478831156660824
+11	1	191	xpheno[4]	Double	-3.9572733488667318
+11	1	192	rc	Int	4
+11	1	192	xpheno[0]	Double	15.93711254984734
+11	1	192	xpheno[2]	Double	26.051153861174637
+11	1	192	xpheno[4]	Double	1.613520740474613
+11	1	193	rc	Int	4
+11	1	193	xpheno[0]	Double	9.9639432217543753
+11	1	193	xpheno[2]	Double	109.54459317255501
+11	1	193	xpheno[4]	Double	-2.2147001302706899
+11	1	194	rc	Int	4
+11	1	194	xpheno[0]	Double	5.5334459119269814
+11	1	194	xpheno[2]	Double	113.41324806973853
+11	1	194	xpheno[4]	Double	0.44160361876522103
+11	1	195	rc	Int	4
+11	1	195	xpheno[0]	Double	0.84175140034183871
+11	1	195	xpheno[2]	Double	16.781211766845136
+11	1	195	xpheno[4]	Double	5.8372451686523945
+11	1	196	rc	Int	4
+11	1	196	xpheno[0]	Double	1.622378171270505
+11	1	196	xpheno[2]	Double	59.539987964664356
+11	1	196	xpheno[4]	Double	7.8080914911857953
+11	1	197	rc	Int	4
+11	1	197	xpheno[0]	Double	0.20611794069128694
+11	1	197	xpheno[2]	Double	6.5390945316507461
+11	1	197	xpheno[4]	Double	14.020392670947594
+11	1	198	rc	Int	-1
+11	1	198	xpheno[0]	Double	0
+11	1	198	xpheno[1]	Double	0
+11	1	198	xpheno[2]	Double	0
+11	1	198	xpheno[3]	Double	0
+11	1	198	xpheno[4]	Double	0
+11	1	198	serr	String	SwissEph file 'seas_30.se1' not found in PATH '<ephe>/'
 11	1	199	rc	Int	-1
 11	1	199	xpheno[3]	Double	0
 11	1	199	xpheno[4]	Double	0
@@ -1089,6 +4007,80 @@ suite	testcase	iteration	field	kind	port_value
 11	1	209	xpheno[3]	Double	0
 11	1	209	xpheno[4]	Double	0
 11	1	209	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	210	rc	Int	-1
+11	1	210	xpheno[3]	Double	0
+11	1	210	xpheno[4]	Double	0
+11	1	210	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	211	rc	Int	-1
+11	1	211	xpheno[0]	Double	0
+11	1	211	xpheno[1]	Double	0
+11	1	211	xpheno[2]	Double	0
+11	1	211	xpheno[3]	Double	0
+11	1	211	xpheno[4]	Double	0
+11	1	211	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	212	rc	Int	-1
+11	1	212	xpheno[0]	Double	0
+11	1	212	xpheno[1]	Double	0
+11	1	212	xpheno[2]	Double	0
+11	1	212	xpheno[3]	Double	0
+11	1	212	xpheno[4]	Double	0
+11	1	212	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	213	rc	Int	-1
+11	1	213	xpheno[0]	Double	0
+11	1	213	xpheno[1]	Double	0
+11	1	213	xpheno[2]	Double	0
+11	1	213	xpheno[3]	Double	0
+11	1	213	xpheno[4]	Double	0
+11	1	213	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	214	rc	Int	-1
+11	1	214	xpheno[0]	Double	0
+11	1	214	xpheno[1]	Double	0
+11	1	214	xpheno[2]	Double	0
+11	1	214	xpheno[3]	Double	0
+11	1	214	xpheno[4]	Double	0
+11	1	214	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	215	rc	Int	-1
+11	1	215	xpheno[0]	Double	0
+11	1	215	xpheno[1]	Double	0
+11	1	215	xpheno[2]	Double	0
+11	1	215	xpheno[3]	Double	0
+11	1	215	xpheno[4]	Double	0
+11	1	215	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	216	rc	Int	-1
+11	1	216	xpheno[0]	Double	0
+11	1	216	xpheno[1]	Double	0
+11	1	216	xpheno[2]	Double	0
+11	1	216	xpheno[3]	Double	0
+11	1	216	xpheno[4]	Double	0
+11	1	216	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	217	rc	Int	-1
+11	1	217	xpheno[0]	Double	0
+11	1	217	xpheno[1]	Double	0
+11	1	217	xpheno[2]	Double	0
+11	1	217	xpheno[3]	Double	0
+11	1	217	xpheno[4]	Double	0
+11	1	217	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	218	rc	Int	-1
+11	1	218	xpheno[0]	Double	0
+11	1	218	xpheno[1]	Double	0
+11	1	218	xpheno[2]	Double	0
+11	1	218	xpheno[3]	Double	0
+11	1	218	xpheno[4]	Double	0
+11	1	218	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	219	rc	Int	-1
+11	1	219	xpheno[0]	Double	0
+11	1	219	xpheno[1]	Double	0
+11	1	219	xpheno[2]	Double	0
+11	1	219	xpheno[3]	Double	0
+11	1	219	xpheno[4]	Double	0
+11	1	219	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	220	rc	Int	-1
+11	1	220	xpheno[0]	Double	0
+11	1	220	xpheno[1]	Double	0
+11	1	220	xpheno[2]	Double	0
+11	1	220	xpheno[3]	Double	0
+11	1	220	xpheno[4]	Double	0
+11	1	220	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 11	1	221	rc	Int	-1
 11	1	221	xpheno[3]	Double	0
 11	1	221	xpheno[4]	Double	0
@@ -1163,6 +4155,80 @@ suite	testcase	iteration	field	kind	port_value
 11	1	231	xpheno[3]	Double	0
 11	1	231	xpheno[4]	Double	0
 11	1	231	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	232	rc	Int	-1
+11	1	232	xpheno[3]	Double	0
+11	1	232	xpheno[4]	Double	0
+11	1	232	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	233	rc	Int	-1
+11	1	233	xpheno[0]	Double	0
+11	1	233	xpheno[1]	Double	0
+11	1	233	xpheno[2]	Double	0
+11	1	233	xpheno[3]	Double	0
+11	1	233	xpheno[4]	Double	0
+11	1	233	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	234	rc	Int	-1
+11	1	234	xpheno[0]	Double	0
+11	1	234	xpheno[1]	Double	0
+11	1	234	xpheno[2]	Double	0
+11	1	234	xpheno[3]	Double	0
+11	1	234	xpheno[4]	Double	0
+11	1	234	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	235	rc	Int	-1
+11	1	235	xpheno[0]	Double	0
+11	1	235	xpheno[1]	Double	0
+11	1	235	xpheno[2]	Double	0
+11	1	235	xpheno[3]	Double	0
+11	1	235	xpheno[4]	Double	0
+11	1	235	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	236	rc	Int	-1
+11	1	236	xpheno[0]	Double	0
+11	1	236	xpheno[1]	Double	0
+11	1	236	xpheno[2]	Double	0
+11	1	236	xpheno[3]	Double	0
+11	1	236	xpheno[4]	Double	0
+11	1	236	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	237	rc	Int	-1
+11	1	237	xpheno[0]	Double	0
+11	1	237	xpheno[1]	Double	0
+11	1	237	xpheno[2]	Double	0
+11	1	237	xpheno[3]	Double	0
+11	1	237	xpheno[4]	Double	0
+11	1	237	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	238	rc	Int	-1
+11	1	238	xpheno[0]	Double	0
+11	1	238	xpheno[1]	Double	0
+11	1	238	xpheno[2]	Double	0
+11	1	238	xpheno[3]	Double	0
+11	1	238	xpheno[4]	Double	0
+11	1	238	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	239	rc	Int	-1
+11	1	239	xpheno[0]	Double	0
+11	1	239	xpheno[1]	Double	0
+11	1	239	xpheno[2]	Double	0
+11	1	239	xpheno[3]	Double	0
+11	1	239	xpheno[4]	Double	0
+11	1	239	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	240	rc	Int	-1
+11	1	240	xpheno[0]	Double	0
+11	1	240	xpheno[1]	Double	0
+11	1	240	xpheno[2]	Double	0
+11	1	240	xpheno[3]	Double	0
+11	1	240	xpheno[4]	Double	0
+11	1	240	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	241	rc	Int	-1
+11	1	241	xpheno[0]	Double	0
+11	1	241	xpheno[1]	Double	0
+11	1	241	xpheno[2]	Double	0
+11	1	241	xpheno[3]	Double	0
+11	1	241	xpheno[4]	Double	0
+11	1	241	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	242	rc	Int	-1
+11	1	242	xpheno[0]	Double	0
+11	1	242	xpheno[1]	Double	0
+11	1	242	xpheno[2]	Double	0
+11	1	242	xpheno[3]	Double	0
+11	1	242	xpheno[4]	Double	0
+11	1	242	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 11	1	243	rc	Int	-1
 11	1	243	xpheno[3]	Double	0
 11	1	243	xpheno[4]	Double	0
@@ -1237,6 +4303,80 @@ suite	testcase	iteration	field	kind	port_value
 11	1	253	xpheno[3]	Double	0
 11	1	253	xpheno[4]	Double	0
 11	1	253	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	254	rc	Int	-1
+11	1	254	xpheno[3]	Double	0
+11	1	254	xpheno[4]	Double	0
+11	1	254	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	255	rc	Int	-1
+11	1	255	xpheno[0]	Double	0
+11	1	255	xpheno[1]	Double	0
+11	1	255	xpheno[2]	Double	0
+11	1	255	xpheno[3]	Double	0
+11	1	255	xpheno[4]	Double	0
+11	1	255	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	256	rc	Int	-1
+11	1	256	xpheno[0]	Double	0
+11	1	256	xpheno[1]	Double	0
+11	1	256	xpheno[2]	Double	0
+11	1	256	xpheno[3]	Double	0
+11	1	256	xpheno[4]	Double	0
+11	1	256	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	257	rc	Int	-1
+11	1	257	xpheno[0]	Double	0
+11	1	257	xpheno[1]	Double	0
+11	1	257	xpheno[2]	Double	0
+11	1	257	xpheno[3]	Double	0
+11	1	257	xpheno[4]	Double	0
+11	1	257	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	258	rc	Int	-1
+11	1	258	xpheno[0]	Double	0
+11	1	258	xpheno[1]	Double	0
+11	1	258	xpheno[2]	Double	0
+11	1	258	xpheno[3]	Double	0
+11	1	258	xpheno[4]	Double	0
+11	1	258	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	259	rc	Int	-1
+11	1	259	xpheno[0]	Double	0
+11	1	259	xpheno[1]	Double	0
+11	1	259	xpheno[2]	Double	0
+11	1	259	xpheno[3]	Double	0
+11	1	259	xpheno[4]	Double	0
+11	1	259	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	260	rc	Int	-1
+11	1	260	xpheno[0]	Double	0
+11	1	260	xpheno[1]	Double	0
+11	1	260	xpheno[2]	Double	0
+11	1	260	xpheno[3]	Double	0
+11	1	260	xpheno[4]	Double	0
+11	1	260	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	261	rc	Int	-1
+11	1	261	xpheno[0]	Double	0
+11	1	261	xpheno[1]	Double	0
+11	1	261	xpheno[2]	Double	0
+11	1	261	xpheno[3]	Double	0
+11	1	261	xpheno[4]	Double	0
+11	1	261	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	262	rc	Int	-1
+11	1	262	xpheno[0]	Double	0
+11	1	262	xpheno[1]	Double	0
+11	1	262	xpheno[2]	Double	0
+11	1	262	xpheno[3]	Double	0
+11	1	262	xpheno[4]	Double	0
+11	1	262	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	263	rc	Int	-1
+11	1	263	xpheno[0]	Double	0
+11	1	263	xpheno[1]	Double	0
+11	1	263	xpheno[2]	Double	0
+11	1	263	xpheno[3]	Double	0
+11	1	263	xpheno[4]	Double	0
+11	1	263	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
+11	1	264	rc	Int	-1
+11	1	264	xpheno[0]	Double	0
+11	1	264	xpheno[1]	Double	0
+11	1	264	xpheno[2]	Double	0
+11	1	264	xpheno[3]	Double	0
+11	1	264	xpheno[4]	Double	0
+11	1	264	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
 11	2	3	xpheno[0]	Double	120.78378492362506
 11	2	3	xpheno[1]	Double	0.24410012342047932
 11	2	3	xpheno[4]	Double	1.0929471386128649
@@ -1251,6 +4391,53 @@ suite	testcase	iteration	field	kind	port_value
 11	2	9	xpheno[0]	Double	1.9307182698145811
 11	2	10	xpheno[0]	Double	1.1343921819548459
 11	2	11	xpheno[0]	Double	12.346405944778244
+11	2	12	rc	Int	2
+11	2	13	rc	Int	2
+11	2	13	xpheno[0]	Double	129.23957759812208
+11	2	13	xpheno[2]	Double	50.651638482284504
+11	2	14	rc	Int	2
+11	2	14	xpheno[0]	Double	120.78378492362506
+11	2	14	xpheno[1]	Double	0.24410012342047932
+11	2	14	xpheno[4]	Double	1.0929471386128649
+11	2	15	rc	Int	2
+11	2	15	xpheno[0]	Double	45.798319624337857
+11	2	15	xpheno[1]	Double	0.84859306408605195
+11	2	15	xpheno[4]	Double	-3.921916035942695
+11	2	16	rc	Int	2
+11	2	16	xpheno[0]	Double	37.348784996051904
+11	2	16	xpheno[2]	Double	82.987693657633898
+11	2	16	xpheno[4]	Double	0.94753126309061009
+11	2	17	rc	Int	2
+11	2	17	xpheno[0]	Double	10.138700824468426
+11	2	18	rc	Int	2
+11	2	18	xpheno[0]	Double	5.2243121283961216
+11	2	19	rc	Int	2
+11	2	19	xpheno[0]	Double	2.425921260943205
+11	2	19	xpheno[2]	Double	57.306270733461297
+11	2	20	rc	Int	2
+11	2	20	xpheno[0]	Double	1.9307182698145811
+11	2	21	rc	Int	2
+11	2	21	xpheno[0]	Double	1.1343921819548459
+11	2	22	rc	Int	2
+11	2	22	xpheno[0]	Double	12.346405944778244
+11	2	22	xpheno[2]	Double	143.46518224230212
+11	2	34	rc	Int	18
+11	2	35	rc	Int	18
+11	2	35	xpheno[0]	Double	129.24489378813354
+11	2	35	xpheno[2]	Double	50.646211424154025
+11	2	36	rc	Int	18
+11	2	36	xpheno[0]	Double	120.76681069751042
+11	2	37	rc	Int	18
+11	2	38	rc	Int	18
+11	2	38	xpheno[2]	Double	82.985954684915541
+11	2	39	rc	Int	18
+11	2	40	rc	Int	18
+11	2	41	rc	Int	18
+11	2	41	xpheno[2]	Double	57.307559461340375
+11	2	42	rc	Int	18
+11	2	43	rc	Int	18
+11	2	44	rc	Int	18
+11	2	44	xpheno[2]	Double	143.47213012707883
 11	2	47	xpheno[0]	Double	120.78378492362506
 11	2	47	xpheno[1]	Double	0.24410012342047932
 11	2	47	xpheno[4]	Double	1.0929471386128649
@@ -1265,6 +4452,36 @@ suite	testcase	iteration	field	kind	port_value
 11	2	53	xpheno[0]	Double	1.9307182698145811
 11	2	54	xpheno[0]	Double	1.1343921819548459
 11	2	55	xpheno[0]	Double	12.346405944778244
+11	2	56	rc	Int	2
+11	2	57	rc	Int	2
+11	2	57	xpheno[0]	Double	129.23957759812208
+11	2	57	xpheno[2]	Double	50.651638482284504
+11	2	58	rc	Int	2
+11	2	58	xpheno[0]	Double	120.78378492362506
+11	2	58	xpheno[1]	Double	0.24410012342047932
+11	2	58	xpheno[4]	Double	1.0929471386128649
+11	2	59	rc	Int	2
+11	2	59	xpheno[0]	Double	45.798319624337857
+11	2	59	xpheno[1]	Double	0.84859306408605195
+11	2	59	xpheno[4]	Double	-3.921916035942695
+11	2	60	rc	Int	2
+11	2	60	xpheno[0]	Double	37.348784996051904
+11	2	60	xpheno[2]	Double	82.987693657633898
+11	2	60	xpheno[4]	Double	0.94753126309061009
+11	2	61	rc	Int	2
+11	2	61	xpheno[0]	Double	10.138700824468426
+11	2	62	rc	Int	2
+11	2	62	xpheno[0]	Double	5.2243121283961216
+11	2	63	rc	Int	2
+11	2	63	xpheno[0]	Double	2.425921260943205
+11	2	63	xpheno[2]	Double	57.306270733461297
+11	2	64	rc	Int	2
+11	2	64	xpheno[0]	Double	1.9307182698145811
+11	2	65	rc	Int	2
+11	2	65	xpheno[0]	Double	1.1343921819548459
+11	2	66	rc	Int	2
+11	2	66	xpheno[0]	Double	12.346405944778244
+11	2	66	xpheno[2]	Double	143.46518224230212
 11	2	69	xpheno[0]	Double	60.758204744051909
 11	2	69	xpheno[1]	Double	0.74424814761777236
 11	2	69	xpheno[4]	Double	-0.96126998819361065
@@ -1278,6 +4495,57 @@ suite	testcase	iteration	field	kind	port_value
 11	2	76	xpheno[0]	Double	1.1362694313802297
 11	2	77	xpheno[0]	Double	14.464732482631604
 11	2	77	xpheno[4]	Double	8.9421862246823416
+11	2	78	rc	Int	2
+11	2	79	rc	Int	2
+11	2	79	xpheno[0]	Double	170.58476432297485
+11	2	79	xpheno[2]	Double	9.3919228077849759
+11	2	80	rc	Int	2
+11	2	80	xpheno[0]	Double	60.758204744051909
+11	2	80	xpheno[1]	Double	0.74424814761777236
+11	2	80	xpheno[4]	Double	-0.96126998819361065
+11	2	81	rc	Int	2
+11	2	81	xpheno[0]	Double	11.018317158660308
+11	2	81	xpheno[4]	Double	-3.9063000993242425
+11	2	82	rc	Int	2
+11	2	82	xpheno[0]	Double	43.311838202852748
+11	2	82	xpheno[2]	Double	83.036947656491279
+11	2	83	rc	Int	2
+11	2	83	xpheno[0]	Double	10.750981381840548
+11	2	83	xpheno[2]	Double	100.58219347846713
+11	2	84	rc	Int	2
+11	2	84	xpheno[0]	Double	0.59754006482508926
+11	2	84	xpheno[2]	Double	5.4209011332591368
+11	2	85	rc	Int	2
+11	2	85	xpheno[0]	Double	2.6775068560937911
+11	2	85	xpheno[2]	Double	57.854601670533064
+11	2	86	rc	Int	2
+11	2	86	xpheno[0]	Double	1.8737138121340593
+11	2	87	rc	Int	2
+11	2	87	xpheno[0]	Double	1.1362694313802297
+11	2	87	xpheno[2]	Double	70.899528328877551
+11	2	88	rc	Int	2
+11	2	88	xpheno[0]	Double	14.464732482631604
+11	2	88	xpheno[4]	Double	8.9421862246823416
+11	2	100	rc	Int	18
+11	2	101	rc	Int	18
+11	2	101	xpheno[0]	Double	170.58984575273331
+11	2	101	xpheno[2]	Double	9.3866622004233697
+11	2	102	rc	Int	18
+11	2	102	xpheno[0]	Double	60.717850088808582
+11	2	103	rc	Int	18
+11	2	104	rc	Int	18
+11	2	104	xpheno[0]	Double	43.316546977445149
+11	2	104	xpheno[2]	Double	83.035254965820243
+11	2	105	rc	Int	18
+11	2	105	xpheno[2]	Double	100.57796751206438
+11	2	106	rc	Int	18
+11	2	106	xpheno[2]	Double	5.419013660759842
+11	2	107	rc	Int	18
+11	2	107	xpheno[2]	Double	57.853376446560212
+11	2	108	rc	Int	18
+11	2	109	rc	Int	18
+11	2	109	xpheno[2]	Double	70.902555648406491
+11	2	110	rc	Int	18
 11	2	113	xpheno[0]	Double	60.758204744051909
 11	2	113	xpheno[1]	Double	0.74424814761777236
 11	2	113	xpheno[4]	Double	-0.96126998819361065
@@ -1291,6 +4559,37 @@ suite	testcase	iteration	field	kind	port_value
 11	2	120	xpheno[0]	Double	1.1362694313802297
 11	2	121	xpheno[0]	Double	14.464732482631604
 11	2	121	xpheno[4]	Double	8.9421862246823416
+11	2	122	rc	Int	2
+11	2	123	rc	Int	2
+11	2	123	xpheno[0]	Double	170.58476432297485
+11	2	123	xpheno[2]	Double	9.3919228077849759
+11	2	124	rc	Int	2
+11	2	124	xpheno[0]	Double	60.758204744051909
+11	2	124	xpheno[1]	Double	0.74424814761777236
+11	2	124	xpheno[4]	Double	-0.96126998819361065
+11	2	125	rc	Int	2
+11	2	125	xpheno[0]	Double	11.018317158660308
+11	2	125	xpheno[4]	Double	-3.9063000993242425
+11	2	126	rc	Int	2
+11	2	126	xpheno[0]	Double	43.311838202852748
+11	2	126	xpheno[2]	Double	83.036947656491279
+11	2	127	rc	Int	2
+11	2	127	xpheno[0]	Double	10.750981381840548
+11	2	127	xpheno[2]	Double	100.58219347846713
+11	2	128	rc	Int	2
+11	2	128	xpheno[0]	Double	0.59754006482508926
+11	2	128	xpheno[2]	Double	5.4209011332591368
+11	2	129	rc	Int	2
+11	2	129	xpheno[0]	Double	2.6775068560937911
+11	2	129	xpheno[2]	Double	57.854601670533064
+11	2	130	rc	Int	2
+11	2	130	xpheno[0]	Double	1.8737138121340593
+11	2	131	rc	Int	2
+11	2	131	xpheno[0]	Double	1.1362694313802297
+11	2	131	xpheno[2]	Double	70.899528328877551
+11	2	132	rc	Int	2
+11	2	132	xpheno[0]	Double	14.464732482631604
+11	2	132	xpheno[4]	Double	8.9421862246823416
 11	2	133	rc	Int	4
 11	2	133	xpheno[3]	Double	0.54144453760548883
 11	2	133	xpheno[4]	Double	-26.893579771313188
@@ -1341,6 +4640,56 @@ suite	testcase	iteration	field	kind	port_value
 11	2	143	xpheno[3]	Double	0
 11	2	143	xpheno[4]	Double	0
 11	2	143	serr	String	SwissEph file 'seas_30.se1' not found in PATH '<ephe>/'
+11	2	144	rc	Int	4
+11	2	144	xpheno[3]	Double	0.54144453760548883
+11	2	144	xpheno[4]	Double	-26.893579771313188
+11	2	145	rc	Int	4
+11	2	145	xpheno[0]	Double	140.04117972761779
+11	2	145	xpheno[1]	Double	0.11674688464336647
+11	2	145	xpheno[2]	Double	39.858810871107444
+11	2	145	xpheno[3]	Double	0.49663054174273397
+11	2	145	xpheno[4]	Double	-7.4868436081268186
+11	2	146	rc	Int	4
+11	2	146	xpheno[0]	Double	18.643072755065699
+11	2	146	xpheno[1]	Double	0.97376418046193947
+11	2	146	xpheno[2]	Double	8.5877785506852273
+11	2	146	xpheno[4]	Double	-0.76173222089637704
+11	2	147	rc	Int	4
+11	2	147	xpheno[0]	Double	48.358693150137199
+11	2	147	xpheno[1]	Double	0.83223257901023384
+11	2	147	xpheno[2]	Double	33.48688724576229
+11	2	147	xpheno[4]	Double	-3.9573746668823082
+11	2	148	rc	Int	4
+11	2	148	xpheno[0]	Double	15.944799971043897
+11	2	148	xpheno[2]	Double	26.063611753480195
+11	2	148	xpheno[4]	Double	1.6134204588524022
+11	2	149	rc	Int	4
+11	2	149	xpheno[0]	Double	9.9615034954195494
+11	2	149	xpheno[2]	Double	109.58279610053117
+11	2	149	xpheno[4]	Double	-2.214973392282781
+11	2	150	rc	Int	4
+11	2	150	xpheno[0]	Double	5.5350700171833749
+11	2	150	xpheno[2]	Double	113.37424547621524
+11	2	150	xpheno[4]	Double	0.4417759621271653
+11	2	151	rc	Int	4
+11	2	151	xpheno[0]	Double	0.8399784281850573
+11	2	151	xpheno[2]	Double	16.744689660272293
+11	2	151	xpheno[4]	Double	5.837254526020633
+11	2	152	rc	Int	4
+11	2	152	xpheno[0]	Double	1.6217447948921384
+11	2	152	xpheno[2]	Double	59.502107212049808
+11	2	152	xpheno[4]	Double	7.8081317959763599
+11	2	153	rc	Int	4
+11	2	153	xpheno[0]	Double	0.20598556058802242
+11	2	153	xpheno[2]	Double	6.5357220604652886
+11	2	153	xpheno[4]	Double	14.02039537515053
+11	2	154	rc	Int	-1
+11	2	154	xpheno[0]	Double	0
+11	2	154	xpheno[1]	Double	0
+11	2	154	xpheno[2]	Double	0
+11	2	154	xpheno[3]	Double	0
+11	2	154	xpheno[4]	Double	0
+11	2	154	serr	String	SwissEph file 'seas_30.se1' not found in PATH '<ephe>/'
 11	2	155	rc	Int	20
 11	2	155	xpheno[3]	Double	0.54144453760548894
 11	2	155	xpheno[4]	Double	-26.893579771313188
@@ -1391,6 +4740,56 @@ suite	testcase	iteration	field	kind	port_value
 11	2	165	xpheno[3]	Double	0
 11	2	165	xpheno[4]	Double	0
 11	2	165	serr	String	SwissEph file 'seas_30.se1' not found in PATH '<ephe>/'
+11	2	166	rc	Int	20
+11	2	166	xpheno[3]	Double	0.54144453760548894
+11	2	166	xpheno[4]	Double	-26.893579771313188
+11	2	167	rc	Int	20
+11	2	167	xpheno[0]	Double	140.04659669994734
+11	2	167	xpheno[1]	Double	0.11671652653407211
+11	2	167	xpheno[2]	Double	39.853270289989361
+11	2	167	xpheno[3]	Double	0.49666219240977255
+11	2	167	xpheno[4]	Double	-7.4865999956841893
+11	2	168	rc	Int	20
+11	2	168	xpheno[0]	Double	18.625450799843069
+11	2	168	xpheno[1]	Double	0.97381331735197385
+11	2	168	xpheno[2]	Double	8.5810159562243467
+11	2	168	xpheno[4]	Double	-0.76204179871047939
+11	2	169	rc	Int	20
+11	2	169	xpheno[0]	Double	48.36806455984231
+11	2	169	xpheno[1]	Double	0.83217145806816128
+11	2	169	xpheno[2]	Double	33.490350433348283
+11	2	169	xpheno[4]	Double	-3.95738934206905
+11	2	170	rc	Int	20
+11	2	170	xpheno[0]	Double	15.943157660365671
+11	2	170	xpheno[2]	Double	26.059834278290914
+11	2	170	xpheno[4]	Double	1.6133842630195936
+11	2	171	rc	Int	20
+11	2	171	xpheno[0]	Double	9.9572486295746216
+11	2	171	xpheno[2]	Double	109.58817967499279
+11	2	171	xpheno[4]	Double	-2.2149978201739273
+11	2	172	rc	Int	20
+11	2	172	xpheno[0]	Double	5.5391390254866879
+11	2	172	xpheno[2]	Double	113.36806558540221
+11	2	172	xpheno[4]	Double	0.44184147535863971
+11	2	173	rc	Int	20
+11	2	173	xpheno[0]	Double	0.83578649311428277
+11	2	173	xpheno[2]	Double	16.745726451488089
+11	2	173	xpheno[4]	Double	5.8372324339659389
+11	2	174	rc	Int	20
+11	2	174	xpheno[0]	Double	1.6198470506134153
+11	2	174	xpheno[2]	Double	59.500323761560786
+11	2	174	xpheno[4]	Double	7.808129505103258
+11	2	175	rc	Int	20
+11	2	175	xpheno[0]	Double	0.2052411251712199
+11	2	175	xpheno[2]	Double	6.535495969469677
+11	2	175	xpheno[4]	Double	14.02041361291724
+11	2	176	rc	Int	-1
+11	2	176	xpheno[0]	Double	0
+11	2	176	xpheno[1]	Double	0
+11	2	176	xpheno[2]	Double	0
+11	2	176	xpheno[3]	Double	0
+11	2	176	xpheno[4]	Double	0
+11	2	176	serr	String	SwissEph file 'seas_30.se1' not found in PATH '<ephe>/'
 11	2	177	rc	Int	4
 11	2	177	xpheno[3]	Double	0.54144453760548883
 11	2	177	xpheno[4]	Double	-26.893579771313188
@@ -1441,6 +4840,56 @@ suite	testcase	iteration	field	kind	port_value
 11	2	187	xpheno[3]	Double	0
 11	2	187	xpheno[4]	Double	0
 11	2	187	serr	String	SwissEph file 'seas_30.se1' not found in PATH '<ephe>/'
+11	2	188	rc	Int	4
+11	2	188	xpheno[3]	Double	0.54144453760548883
+11	2	188	xpheno[4]	Double	-26.893579771313188
+11	2	189	rc	Int	4
+11	2	189	xpheno[0]	Double	140.04117972761779
+11	2	189	xpheno[1]	Double	0.11674688464336647
+11	2	189	xpheno[2]	Double	39.858810871107444
+11	2	189	xpheno[3]	Double	0.49663054174273397
+11	2	189	xpheno[4]	Double	-7.4868436081268186
+11	2	190	rc	Int	4
+11	2	190	xpheno[0]	Double	18.643072755065699
+11	2	190	xpheno[1]	Double	0.97376418046193947
+11	2	190	xpheno[2]	Double	8.5877785506852273
+11	2	190	xpheno[4]	Double	-0.76173222089637704
+11	2	191	rc	Int	4
+11	2	191	xpheno[0]	Double	48.358693150137199
+11	2	191	xpheno[1]	Double	0.83223257901023384
+11	2	191	xpheno[2]	Double	33.48688724576229
+11	2	191	xpheno[4]	Double	-3.9573746668823082
+11	2	192	rc	Int	4
+11	2	192	xpheno[0]	Double	15.944799971043897
+11	2	192	xpheno[2]	Double	26.063611753480195
+11	2	192	xpheno[4]	Double	1.6134204588524022
+11	2	193	rc	Int	4
+11	2	193	xpheno[0]	Double	9.9615034954195494
+11	2	193	xpheno[2]	Double	109.58279610053117
+11	2	193	xpheno[4]	Double	-2.214973392282781
+11	2	194	rc	Int	4
+11	2	194	xpheno[0]	Double	5.5350700171833749
+11	2	194	xpheno[2]	Double	113.37424547621524
+11	2	194	xpheno[4]	Double	0.4417759621271653
+11	2	195	rc	Int	4
+11	2	195	xpheno[0]	Double	0.8399784281850573
+11	2	195	xpheno[2]	Double	16.744689660272293
+11	2	195	xpheno[4]	Double	5.837254526020633
+11	2	196	rc	Int	4
+11	2	196	xpheno[0]	Double	1.6217447948921384
+11	2	196	xpheno[2]	Double	59.502107212049808
+11	2	196	xpheno[4]	Double	7.8081317959763599
+11	2	197	rc	Int	4
+11	2	197	xpheno[0]	Double	0.20598556058802242
+11	2	197	xpheno[2]	Double	6.5357220604652886
+11	2	197	xpheno[4]	Double	14.02039537515053
+11	2	198	rc	Int	-1
+11	2	198	xpheno[0]	Double	0
+11	2	198	xpheno[1]	Double	0
+11	2	198	xpheno[2]	Double	0
+11	2	198	xpheno[3]	Double	0
+11	2	198	xpheno[4]	Double	0
+11	2	198	serr	String	SwissEph file 'seas_30.se1' not found in PATH '<ephe>/'
 11	2	199	rc	Int	4
 11	2	199	xpheno[3]	Double	0.52891365508056187
 11	2	199	xpheno[4]	Double	-26.842733785180414
@@ -1499,6 +4948,64 @@ suite	testcase	iteration	field	kind	port_value
 11	2	209	xpheno[3]	Double	0
 11	2	209	xpheno[4]	Double	0
 11	2	209	serr	String	SwissEph file 'seasm36.se1' not found in PATH '<ephe>/'
+11	2	210	rc	Int	4
+11	2	210	xpheno[3]	Double	0.52891365508056187
+11	2	210	xpheno[4]	Double	-26.842733785180414
+11	2	211	rc	Int	4
+11	2	211	xpheno[0]	Double	104.22961753421501
+11	2	211	xpheno[1]	Double	0.3770957589228694
+11	2	211	xpheno[2]	Double	75.632821773207525
+11	2	211	xpheno[3]	Double	0.5328409093132942
+11	2	211	xpheno[4]	Double	-9.5830758775273068
+11	2	212	rc	Int	4
+11	2	212	xpheno[0]	Double	66.589907511737366
+11	2	212	xpheno[1]	Double	0.6986547721671259
+11	2	212	xpheno[2]	Double	16.908170214087502
+11	2	212	xpheno[3]	Double	0.0017122467554171199
+11	2	212	xpheno[4]	Double	-0.78705031696851213
+11	2	213	rc	Int	4
+11	2	213	xpheno[0]	Double	78.109971422173089
+11	2	213	xpheno[1]	Double	0.60301694414859319
+11	2	213	xpheno[2]	Double	44.957043000246586
+11	2	213	xpheno[3]	Double	0.0053699371659778105
+11	2	213	xpheno[4]	Double	-4.2334315380878333
+11	2	214	rc	Int	4
+11	2	214	xpheno[0]	Double	19.662167342615735
+11	2	214	xpheno[1]	Double	0.97084646252445572
+11	2	214	xpheno[2]	Double	31.966075728469814
+11	2	214	xpheno[3]	Double	0.0011054653989940803
+11	2	214	xpheno[4]	Double	1.6499622827313554
+11	2	215	rc	Int	4
+11	2	215	xpheno[0]	Double	4.2183902599889453
+11	2	215	xpheno[1]	Double	0.99864545927250337
+11	2	215	xpheno[2]	Double	156.70568206648261
+11	2	215	xpheno[3]	Double	0.011977069233735141
+11	2	215	xpheno[4]	Double	-2.4668455372061988
+11	2	216	rc	Int	4
+11	2	216	xpheno[0]	Double	5.7179080421695776
+11	2	216	xpheno[1]	Double	0.99751223927172283
+11	2	216	xpheno[2]	Double	112.64995613972886
+11	2	216	xpheno[3]	Double	0.0050140239620821711
+11	2	216	xpheno[4]	Double	0.37924870384391873
+11	2	217	rc	Int	4
+11	2	217	xpheno[0]	Double	3.0987269734806886
+11	2	217	xpheno[2]	Double	96.098038511650572
+11	2	217	xpheno[4]	Double	5.5242370934855503
+11	2	218	rc	Int	4
+11	2	218	xpheno[0]	Double	0.80574424233487252
+11	2	218	xpheno[2]	Double	154.85641218569938
+11	2	218	xpheno[4]	Double	7.8484707270128178
+11	2	219	rc	Int	4
+11	2	219	xpheno[0]	Double	1.4579653381814581
+11	2	219	xpheno[2]	Double	93.436841024989747
+11	2	219	xpheno[4]	Double	14.963159761733614
+11	2	220	rc	Int	-1
+11	2	220	xpheno[0]	Double	0
+11	2	220	xpheno[1]	Double	0
+11	2	220	xpheno[2]	Double	0
+11	2	220	xpheno[3]	Double	0
+11	2	220	xpheno[4]	Double	0
+11	2	220	serr	String	SwissEph file 'seasm36.se1' not found in PATH '<ephe>/'
 11	2	221	rc	Int	20
 11	2	221	xpheno[3]	Double	0.52891365508056187
 11	2	221	xpheno[4]	Double	-26.842733785180414
@@ -1557,6 +5064,64 @@ suite	testcase	iteration	field	kind	port_value
 11	2	231	xpheno[3]	Double	0
 11	2	231	xpheno[4]	Double	0
 11	2	231	serr	String	SwissEph file 'seasm36.se1' not found in PATH '<ephe>/'
+11	2	232	rc	Int	20
+11	2	232	xpheno[3]	Double	0.52891365508056187
+11	2	232	xpheno[4]	Double	-26.842733785180414
+11	2	233	rc	Int	20
+11	2	233	xpheno[0]	Double	104.2350161366677
+11	2	233	xpheno[1]	Double	0.37705009323603922
+11	2	233	xpheno[2]	Double	75.627376896599387
+11	2	233	xpheno[3]	Double	0.5328918631980929
+11	2	233	xpheno[4]	Double	-9.5830351321603153
+11	2	234	rc	Int	20
+11	2	234	xpheno[0]	Double	66.626993572518941
+11	2	234	xpheno[1]	Double	0.69835773392555667
+11	2	234	xpheno[2]	Double	16.913275296807107
+11	2	234	xpheno[3]	Double	0.0017125297888346651
+11	2	234	xpheno[4]	Double	-0.78606915837007074
+11	2	235	rc	Int	20
+11	2	235	xpheno[0]	Double	78.100848800823343
+11	2	235	xpheno[1]	Double	0.60309484469038399
+11	2	235	xpheno[2]	Double	44.957304971156809
+11	2	235	xpheno[3]	Double	0.0053693277183416632
+11	2	235	xpheno[4]	Double	-4.2333827511525071
+11	2	236	rc	Int	20
+11	2	236	xpheno[0]	Double	19.664097997426087
+11	2	236	xpheno[1]	Double	0.97084079330351358
+11	2	236	xpheno[2]	Double	31.969438258143857
+11	2	236	xpheno[3]	Double	0.0011054877013958388
+11	2	236	xpheno[4]	Double	1.6499851126769229
+11	2	237	rc	Int	20
+11	2	237	xpheno[0]	Double	4.22557935673996
+11	2	237	xpheno[1]	Double	0.99864084054184699
+11	2	237	xpheno[2]	Double	156.69722756724863
+11	2	237	xpheno[3]	Double	0.011977105485818375
+11	2	237	xpheno[4]	Double	-2.466817188786889
+11	2	238	rc	Int	20
+11	2	238	xpheno[0]	Double	5.7219602444180548
+11	2	238	xpheno[1]	Double	0.99750871487124204
+11	2	238	xpheno[2]	Double	112.6439345168877
+11	2	238	xpheno[3]	Double	0.0050140295193062973
+11	2	238	xpheno[4]	Double	0.37937989045572351
+11	2	239	rc	Int	20
+11	2	239	xpheno[0]	Double	3.1007630025224024
+11	2	239	xpheno[2]	Double	96.093042551814307
+11	2	239	xpheno[4]	Double	5.5242441627266512
+11	2	240	rc	Int	20
+11	2	240	xpheno[0]	Double	0.81189412458067456
+11	2	240	xpheno[2]	Double	154.84666080184604
+11	2	240	xpheno[4]	Double	7.8484709113938083
+11	2	241	rc	Int	20
+11	2	241	xpheno[0]	Double	1.4592431717797454
+11	2	241	xpheno[2]	Double	93.431597591202674
+11	2	241	xpheno[4]	Double	14.963133421895769
+11	2	242	rc	Int	-1
+11	2	242	xpheno[0]	Double	0
+11	2	242	xpheno[1]	Double	0
+11	2	242	xpheno[2]	Double	0
+11	2	242	xpheno[3]	Double	0
+11	2	242	xpheno[4]	Double	0
+11	2	242	serr	String	SwissEph file 'seasm36.se1' not found in PATH '<ephe>/'
 11	2	243	rc	Int	4
 11	2	243	xpheno[3]	Double	0.52891365508056187
 11	2	243	xpheno[4]	Double	-26.842733785180414
@@ -1615,3 +5180,61 @@ suite	testcase	iteration	field	kind	port_value
 11	2	253	xpheno[3]	Double	0
 11	2	253	xpheno[4]	Double	0
 11	2	253	serr	String	SwissEph file 'seasm36.se1' not found in PATH '<ephe>/'
+11	2	254	rc	Int	4
+11	2	254	xpheno[3]	Double	0.52891365508056187
+11	2	254	xpheno[4]	Double	-26.842733785180414
+11	2	255	rc	Int	4
+11	2	255	xpheno[0]	Double	104.22961753421501
+11	2	255	xpheno[1]	Double	0.3770957589228694
+11	2	255	xpheno[2]	Double	75.632821773207525
+11	2	255	xpheno[3]	Double	0.5328409093132942
+11	2	255	xpheno[4]	Double	-9.5830758775273068
+11	2	256	rc	Int	4
+11	2	256	xpheno[0]	Double	66.589907511737366
+11	2	256	xpheno[1]	Double	0.6986547721671259
+11	2	256	xpheno[2]	Double	16.908170214087502
+11	2	256	xpheno[3]	Double	0.0017122467554171199
+11	2	256	xpheno[4]	Double	-0.78705031696851213
+11	2	257	rc	Int	4
+11	2	257	xpheno[0]	Double	78.109971422173089
+11	2	257	xpheno[1]	Double	0.60301694414859319
+11	2	257	xpheno[2]	Double	44.957043000246586
+11	2	257	xpheno[3]	Double	0.0053699371659778105
+11	2	257	xpheno[4]	Double	-4.2334315380878333
+11	2	258	rc	Int	4
+11	2	258	xpheno[0]	Double	19.662167342615735
+11	2	258	xpheno[1]	Double	0.97084646252445572
+11	2	258	xpheno[2]	Double	31.966075728469814
+11	2	258	xpheno[3]	Double	0.0011054653989940803
+11	2	258	xpheno[4]	Double	1.6499622827313554
+11	2	259	rc	Int	4
+11	2	259	xpheno[0]	Double	4.2183902599889453
+11	2	259	xpheno[1]	Double	0.99864545927250337
+11	2	259	xpheno[2]	Double	156.70568206648261
+11	2	259	xpheno[3]	Double	0.011977069233735141
+11	2	259	xpheno[4]	Double	-2.4668455372061988
+11	2	260	rc	Int	4
+11	2	260	xpheno[0]	Double	5.7179080421695776
+11	2	260	xpheno[1]	Double	0.99751223927172283
+11	2	260	xpheno[2]	Double	112.64995613972886
+11	2	260	xpheno[3]	Double	0.0050140239620821711
+11	2	260	xpheno[4]	Double	0.37924870384391873
+11	2	261	rc	Int	4
+11	2	261	xpheno[0]	Double	3.0987269734806886
+11	2	261	xpheno[2]	Double	96.098038511650572
+11	2	261	xpheno[4]	Double	5.5242370934855503
+11	2	262	rc	Int	4
+11	2	262	xpheno[0]	Double	0.80574424233487252
+11	2	262	xpheno[2]	Double	154.85641218569938
+11	2	262	xpheno[4]	Double	7.8484707270128178
+11	2	263	rc	Int	4
+11	2	263	xpheno[0]	Double	1.4579653381814581
+11	2	263	xpheno[2]	Double	93.436841024989747
+11	2	263	xpheno[4]	Double	14.963159761733614
+11	2	264	rc	Int	-1
+11	2	264	xpheno[0]	Double	0
+11	2	264	xpheno[1]	Double	0
+11	2	264	xpheno[2]	Double	0
+11	2	264	xpheno[3]	Double	0
+11	2	264	xpheno[4]	Double	0
+11	2	264	serr	String	SwissEph file 'seasm36.se1' not found in PATH '<ephe>/'

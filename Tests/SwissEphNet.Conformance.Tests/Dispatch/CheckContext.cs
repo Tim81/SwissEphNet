@@ -89,7 +89,7 @@ public sealed class CheckContext(ExpFields expected, TestCaseScope scope)
         _comparisonCount++;
         if (actual != expectedLiteral)
         {
-            _mismatches.Add(new FieldMismatch(name, expectedLiteral.ToString(CultureInfo.InvariantCulture), actual.ToString(CultureInfo.InvariantCulture), null, FieldKind.Int));
+            _mismatches.Add(new FieldMismatch(name, expectedLiteral.ToString(CultureInfo.InvariantCulture), actual.ToString(CultureInfo.InvariantCulture), null, FieldKind.Int, SelfCheck: true));
         }
     }
 
@@ -104,7 +104,7 @@ public sealed class CheckContext(ExpFields expected, TestCaseScope scope)
     public void CheckEqualsD(string name, double actual, double expectedValue)
     {
         _comparisonCount++;
-        CheckEqualsDInternal(name, actual, expectedValue, precision.All);
+        CheckEqualsDInternal(name, actual, expectedValue, precision.All, selfCheck: true);
     }
 
     /// <summary>
@@ -134,7 +134,7 @@ public sealed class CheckContext(ExpFields expected, TestCaseScope scope)
 
     // checkpoints.c:129 check_equals_d_internal. The harness never has -p parameters, so
     // ctx->precisions.from_parameters is false and tolerance_for always applies.
-    private void CheckEqualsDInternal(string name, double act, double exp, double fallbackPrecision)
+    private void CheckEqualsDInternal(string name, double act, double exp, double fallbackPrecision, bool selfCheck = false)
     {
         var tol = fallbackPrecision;
         var t = Tolerances.tolerance_for(name, exp, scope.SuiteId, scope.TestCaseId, expected.PeekInt("iflag") ?? 0);
@@ -149,7 +149,8 @@ public sealed class CheckContext(ExpFields expected, TestCaseScope scope)
                 name,
                 exp.ToString("G17", CultureInfo.InvariantCulture),
                 act.ToString("G17", CultureInfo.InvariantCulture),
-                exp - act));
+                exp - act,
+                SelfCheck: selfCheck));
         }
     }
 

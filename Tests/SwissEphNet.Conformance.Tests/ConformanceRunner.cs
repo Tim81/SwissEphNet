@@ -108,9 +108,9 @@ public static class ConformanceRunner
             //
             // suite_01_calc.c and suite_10_solcross.c follow the reset with
             // swe_set_jpl_file("de441.eph") (de431.eph before v2.10.04). That is not inert either:
-            // sweph.c:1481 routes it through swi_close_keep_topo_etc, which memsets swed.fidat
-            // (sweph.c:1205) and so zeroes fidat[SEI_FILE_MOON].sweph_denum -- exactly
-            // the field calc_deltat reads at swephlib.c:2565. Without it those two
+            // sweph.c:1600 routes it through swi_close_keep_topo_etc, which memsets swed.fidat
+            // (sweph.c:1277) and so zeroes fidat[SEI_FILE_MOON].sweph_denum -- exactly
+            // the field calc_deltat reads at swephlib.c:2574. Without it those two
             // suites started with the DE number still set by swe_set_ephe_path's eager
             // lunar open, where setest starts with it cleared.
             foreach (var call in MirroredSuiteInit(suite.Id))
