@@ -82,7 +82,7 @@ Read the status line first and the body for how it got there.
 | `C.atoi` saturation; `C.atof`'s remaining gaps | closed / won't fix |
 | `SwissEph.DefaultFileProvider` widened to a property | record |
 | Eight live buffer-vs-unbounded-string sites | won't fix |
-| What `known-fail.tsv`'s 1,423 rows actually are (2,395 at `6c989727`, 1,591 at `v2.10.04`) | record |
+| What `known-fail.tsv`'s 1,423 rows actually are (2,395 at `6c989727`, 1,635 at `v2.10.04`) | record |
 | Ephemeris file byte order taken from the host, not the file | closed |
 | `heliacal_ut_arc_vis` sized `xaz` for two values, `swe_azalt` writes three | closed |
 | `verify-swetest-diff.ps1` digests depend on the console code page | open |
@@ -3423,7 +3423,7 @@ found stale while explaining it. `known-fail.tsv` had 1,423 rows when this entry
 759 `DATA-MISSING`, 664 `VALUE-MISMATCH`, 0 `NOT-IMPLEMENTED` (confirmed directly, `awk -F'\t'
 'NR>1{print $4}' Tests/conformance/known-fail.tsv | sort | uniq -c`). **It had 2,395 rows**
 after the `6c989727` sync added 972 (759 `DATA-MISSING` and 1,636 `VALUE-MISMATCH`, 664 plus the 972),
-and **has 1,591 since `v2.10.04`** (see the update at the end of this entry). Everything below is the analysis of the original 1,423 and is kept as written;
+and **has 1,635 since `v2.10.04`** (see the update at the end of this entry). Everything below is the analysis of the original 1,423 and is kept as written;
 the 972 are in "setest 6.8/6.9 house speeds" at the end of this file.
 
 **The stale framing.** Several checked-in comments describe this list as reflecting "the port is
@@ -3449,7 +3449,7 @@ nothing on its own about whether the *current* vendored C would also diverge
 from it. The 972 rows added by the `6c989727` sync were exactly that case, and the answer there was
 yes, deliberately: see the last section of this file. They pass again at `v2.10.04`.
 
-**The one place this was actually checked.** (Superseded on 2026-11-24: `Tests/conformance/value-mismatch-triage.tsv` now holds 333 rows, all `DRIFT` and none `PORT-DEFECT`, measured against upstream v2.10.04; the text below is the 2026-08-02 triage as it was written.) `Tests/conformance/value-mismatch-triage.tsv` (669
+**The one place this was actually checked.** (Superseded on 2026-11-24: `Tests/conformance/value-mismatch-triage.tsv` now holds 377 rows, all `DRIFT` and none `PORT-DEFECT`, measured against upstream v2.10.04; the text below is the 2026-08-02 triage as it was written.) `Tests/conformance/value-mismatch-triage.tsv` (669
 lines) drove all 668 `VALUE-MISMATCH` rows that were on `known-fail.tsv` as of 2026-08-02 through
 Astrodienst's own C, built fresh from the same pinned commit (`external/.c-reference/build-
 2.10.03/libswe-2.10.03.lib`, MSVC), via a scratch driver replaying the same dispatch sequence as
@@ -3514,13 +3514,18 @@ build of libswe at `6c989727`, and none is a port defect (970 `CORRECTION`, 2 `S
 `DATA-MISSING` rows unchecked. The size of the list (2,395) still measures divergence from the
 2023 `t.exp` snapshot, not a count of port defects.
 
-**Update 2026-11-24: 1,591 rows, against a regenerated `t.exp`.** Upstream regenerated `setest/t.exp`
+**Update 2026-11-24: 1,635 rows, against a regenerated `t.exp`.** Upstream regenerated `setest/t.exp`
 for `v2.10.04`, and the corpus is now 11 suites, 68 testcases and 18,919 iterations (it was 10, 60
-and 12,757). `known-fail.tsv` has 1,591 rows: 1,258 `DATA-MISSING` (the new `de441.eph` cases in
-4.2, 11.1 and 11.2 raise it from 759) and 333 `VALUE-MISMATCH`. The 972 house-speed rows now pass.
-All 333 `VALUE-MISMATCH` rows were driven through the C at `v2.10.04` and none is a port defect:
-228 `DATA-ENV`, 91 `SERR-PATH`, 13 `LIBM-PLATFORM` and 1 `SETEST-STALE-XX`
+and 12,757). `known-fail.tsv` has 1,635 rows: 1,258 `DATA-MISSING` (the new `de441.eph` cases in
+4.2, 11.1 and 11.2 raise it from 759) and 377 `VALUE-MISMATCH`. The 972 house-speed rows now pass.
+All 377 `VALUE-MISMATCH` rows were driven through the C at `v2.10.04` and none is a port defect:
+260 `DATA-ENV`, 91 `SERR-PATH` (iterations whose era ephemeris file is not among the 8 declared files;
+against the C-generated corpus only the directory in the `serr` differs) and 26 `LIBM-PLATFORM`
 (`Tests/conformance/value-mismatch-triage.tsv`, which replaced the 668-row ledger).
+The harness applies `setest`'s own v2.10.04 comparison rules (`tolerances.c`, and the per-testcase
+precision reset of `prepare_precisions`) and mirrors the file-scope statics of `suite_NN_*.c`; the first
+version of this update, at 1,591 rows, did neither. Mirroring suite 1's `static double xx[6]` made 1.5.2
+pass, and the stricter tolerances added 45 rows (32 `DATA-ENV`, 13 `LIBM-PLATFORM`).
 The `DATA-MISSING` rows were not cross-checked against real C this way. The size of the list
 still measures divergence from a `t.exp` snapshot, not a count of port defects.
 
@@ -4085,7 +4090,7 @@ cases from `AGREES-BOTH` to `TRACKS-2.10.03` (18,497 to 18,460, and 8,940 to 8,9
 is unchanged (690 and 2,686).
 
 **Update at `v2.10.04`.** Upstream regenerated `setest/t.exp`, and all 972 rows now pass against it, so
-the drift is gone from `known-fail.tsv` (1,591 rows, none of them house speeds). The ledger and its
+the drift is gone from `known-fail.tsv` (1,635 rows, none of them house speeds). The ledger and its
 test are retired, as described above; the evidence stays in git history.
 
 **PR.** #48

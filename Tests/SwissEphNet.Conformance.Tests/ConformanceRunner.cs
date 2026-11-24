@@ -62,9 +62,12 @@ public static class ConformanceRunner
         AssertModelCoversCorpus(setest, doc);
 
         // The per-suite setup below is hardcoded by suite id. The model has read the same setup out
-        // of setest's own SUITE_INIT / TEARDOWN blocks and testcase bodies, so any drift between the
-        // two (a suite gaining or losing a path reset, a swe_close, another JPL file name) is a loud
-        // harness failure rather than every result in that suite quietly moving.
+        // of setest's own SUITE_INIT, SETUP and TEARDOWN blocks (every swe_set_* call and swe_close)
+        // and out of the testcase bodies (swe_set_ephe_path, swe_close and swe_set_jpl_file only), so
+        // any drift between the two (a suite gaining or losing a path reset, a swe_close, another JPL
+        // file name, a new swe_set_topo in a SETUP) is a loud harness failure rather than every result
+        // in that suite quietly moving. Not covered: swe_set_topo and swe_set_sid_mode inside a
+        // testcase body, which are inputs of the call under test and live in the dispatchers.
         AssertSetupMirrorsSetest(setest, doc);
 
         var results = new List<IterationResult>();
@@ -321,6 +324,25 @@ public static class ConformanceRunner
             {
                 problems.Add(
                     $"suite {suite.Id} SUITE_INIT is [{string.Join("; ", actual)}] in setest but the harness performs [{string.Join("; ", wanted)}]");
+            }
+
+            // SETUP only reads the iteration's inputs (GET_*) and clears serr; the harness performs no
+            // library-state call for it, so setest must not have one either.
+            var setupCalls = setest.SuiteSetupCalls(suite.Id);
+            if (setupCalls.Count > 0)
+            {
+                problems.Add(
+                    $"suite {suite.Id} SETUP calls [{string.Join("; ", setupCalls)}] in setest but the harness performs none per iteration");
+            }
+
+            // TEARDOWN: swe_close when the iteration's "initialize" is set, in the suites the model
+            // reports as closing on it, and nothing else.
+            var wantedTeardown = setest.SuitesClosingOnInitialize.Contains(suite.Id) ? new[] { "swe_close()" } : [];
+            var actualTeardown = setest.SuiteTeardownCalls(suite.Id);
+            if (!wantedTeardown.SequenceEqual(actualTeardown, StringComparer.Ordinal))
+            {
+                problems.Add(
+                    $"suite {suite.Id} TEARDOWN calls [{string.Join("; ", actualTeardown)}] in setest but the harness performs [{string.Join("; ", wantedTeardown)}]");
             }
 
             foreach (var testCase in suite.TestCases)

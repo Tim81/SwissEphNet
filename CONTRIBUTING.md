@@ -469,9 +469,9 @@ correctness oracle look, from a CI notification, like the same kind of thing:
 both run the library against a reference and report PASS/FAIL. Their
 *expected* results are opposites. The baseline expects **zero** diffs --
 anything else means a change altered something it should not have. This
-oracle expects **some iterations to still fail**: `known-fail.tsv` lists 1,591<!--doccount:known-fail-total--> of 18,919
-iterations (91.6% passing) at v2.10.04. That count is divergence from `t.exp`, a static
-snapshot made by Astrodienst, not a count of port defects: all 333 `VALUE-MISMATCH` rows are
+oracle expects **some iterations to still fail**: `known-fail.tsv` lists 1,635<!--doccount:known-fail-total--> of 18,919
+iterations (91.4% passing) at v2.10.04. That count is divergence from `t.exp`, a static
+snapshot made by Astrodienst, not a count of port defects: all 377 `VALUE-MISMATCH` rows are
 triaged against the C and none is a port defect, and the other 1,258 are `DATA-MISSING`. A red
 oracle run is not evidence anything is broken; a green one (all 18,919 passing with an empty
 `known-fail.tsv`) would mean every iteration matches `t.exp`, which needs the full data set the official run used, so it is
@@ -490,13 +490,13 @@ testcase is `NOT-IMPLEMENTED`, `DATA-MISSING`, or `UNREPRODUCIBLE` -- blocked
 on something other than the port's logic: a 2.10-only API (currently none;
 the category is empty), a data file this repo doesn't ship, or a structural
 gap). A testcase with zero failing iterations appears in neither list; it is
-not "parked", it is done. Of the 68, 28 have at least one row in
-`known-fail.tsv`; splitting those by `FormatByTestCase()`'s rule gives 14
-actionable and 14 genuinely parked, and the remaining 40 have no row in
+not "parked", it is done. Of the 68, 29 have at least one row in
+`known-fail.tsv`; splitting those by `FormatByTestCase()`'s rule gives 16
+actionable and 13 genuinely parked, and the remaining 39 have no row in
 `known-fail.tsv` at all -- they pass completely. Conflating "parked" with
 "everything not actionable" overstates how much of the 68 is blocked on
-something other than the port's own logic: it is 14, not 54. ("Actionable"
-is the rule's name, not a verdict: at v2.10.04 all 333 `VALUE-MISMATCH` rows
+something other than the port's own logic: it is 13, not 55. ("Actionable"
+is the rule's name, not a verdict: at v2.10.04 all 377 `VALUE-MISMATCH` rows
 are triaged as drift, none a port defect.) Measured at v2.10.04; at
 2.10.3.x the figures were 60 testcases, 31 actionable and 8 parked. A porting PR
 should be shrinking the actionable list's mismatch/error counts, or moving a

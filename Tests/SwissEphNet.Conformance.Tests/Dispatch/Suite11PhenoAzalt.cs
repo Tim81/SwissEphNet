@@ -32,10 +32,11 @@ internal sealed class Suite11PhenoAzalt
     private readonly double[] _xback = new double[6];
     private readonly double[] _xrefr = new double[4];
 
-    public DispatchOutcome Dispatch(SwissEph swe, int testCaseId, ExpIteration iteration, Precision precision)
+    public DispatchOutcome Dispatch(SwissEph swe, TestCaseScope scope, ExpIteration iteration)
     {
+        var testCaseId = scope.TestCaseId;
         var f = iteration.Fields;
-        var ctx = new CheckContext(f, precision);
+        var ctx = new CheckContext(f, scope);
 
         // SETUP: *serr = '\0'; a fresh empty string per iteration.
         string serr = "";

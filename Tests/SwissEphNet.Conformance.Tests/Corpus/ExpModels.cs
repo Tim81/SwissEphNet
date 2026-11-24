@@ -133,6 +133,22 @@ public sealed class ExpFields
 
     public int? TryGetInt(string name) => Contains(name) ? GetInt(name) : null;
 
+    /// <summary>
+    /// Like <see cref="TryGetInt"/> but without recording the key as consumed. For lookups the
+    /// reference C makes on its own behalf and that are not a testcase input of the harness's --
+    /// tolerances.c reads the iteration's "iflag" this way (get_entry("iflag", I, ctx)) to classify
+    /// a value, whichever suite is running.
+    /// </summary>
+    internal int? PeekInt(string name)
+    {
+        if (!_values.TryGetValue(name, out var raw))
+        {
+            return null;
+        }
+
+        return int.TryParse(TruncateComment(raw), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? value : null;
+    }
+
     /// <summary>Comparison-tracking counterpart to <see cref="GetInt"/> -- see <see cref="GetDoubleCompared"/>.</summary>
     internal int GetIntCompared(string name)
     {

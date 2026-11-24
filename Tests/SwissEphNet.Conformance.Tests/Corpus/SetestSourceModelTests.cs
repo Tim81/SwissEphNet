@@ -66,6 +66,47 @@ public class SetestSourceModelTests
 
         // The suites whose TEARDOWN is "if (GET_I(initialize)) swe_close( );".
         Assert.Equal([1, 6, 7, 8, 9, 10, 11], model.SuitesClosingOnInitialize.OrderBy(s => s));
+
+        // No suite's SETUP makes a library-state call; TEARDOWN is swe_close() or nothing.
+        for (var suite = 1; suite <= 11; suite++)
+        {
+            Assert.Empty(model.SuiteSetupCalls(suite));
+            Assert.Equal(
+                model.SuitesClosingOnInitialize.Contains(suite) ? ["swe_close()"] : [],
+                model.SuiteTeardownCalls(suite));
+        }
+    }
+
+    [Fact]
+    public void LifecycleBlocksCaptureEverySweSetCallAndSweClose()
+    {
+        var model = LoadSynthetic(
+            suiteSource: """
+                TESTSUITE(98,"synthetic")
+                SUITE_INIT {
+                  swe_set_topo( 1, 2, 3 );
+                  swe_set_sid_mode(1, 0, 0);
+                }
+                SETUP {
+                  swe_set_delta_t_userdef(0.5);
+                  jd = GET_D(jd);
+                }
+                TEARDOWN {
+                  swe_close( );
+                }
+                TESTCASE(1,"x") {
+                  swe_set_topo(4, 5, 6);
+                  CHECK_I(rc);
+                }
+                END_TESTSUITE
+                """);
+
+        Assert.Equal(["swe_set_topo(1,2,3)", "swe_set_sid_mode(1,0,0)"], model.SuiteInitCalls(98));
+        Assert.Equal(["swe_set_delta_t_userdef(0.5)"], model.SuiteSetupCalls(98));
+        Assert.Equal(["swe_close()"], model.SuiteTeardownCalls(98));
+
+        // A body's swe_set_topo is an input of the call under test, not setup.
+        Assert.Empty(model.TestCaseStateCalls(98, 1));
     }
 
     [Fact]

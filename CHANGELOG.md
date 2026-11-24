@@ -18,6 +18,12 @@ that were under "Unreleased" are part of this release and appear under Fixed and
   441. A caller that relied on the DE406 fallback no longer gets it.
 - Results move without a code change, from the default Delta T model and the tidal acceleration
   (next section). UT-input results before 1 January 1962 and after 2020 differ from 2.10.3.3.
+- The changed values are C# `const`s (`SE_TIDAL_DEFAULT`, and with it `SE_TIDAL_SWIEPH` and
+  `SE_TIDAL_JPLEPH`; `SEMOD_DELTAT_DEFAULT`, `SEMOD_NDELTAT`, `SE_DE_NUMBER`, `SE_FNAME_DFT`), so
+  the compiler inlines them into the caller. Code compiled against 2.10.3.x keeps the old values
+  until it is recompiled against this version.
+- A caller that has only `de431.eph` must now call `swe_set_jpl_file("de431.eph")`: `SE_FNAME_DFT`
+  is `de441.eph`, and the `SE_FNAME_DFT2` fallback is gone.
 
 ### Changed to follow upstream
 
@@ -28,7 +34,8 @@ Each of these is an adoption of an upstream change, not a correction of the port
   (`deltat_stephenson_etc_2020()`, `swephlib.c:2964-3091`); the former default was
   `SEMOD_DELTAT_STEPHENSON_ETC_2016` (model 5). `dt[]` runs to 2033 (`TABEND`), and
   `adjust_for_tidacc()` changed (it uses 1955.5 and 0.000091072). Measured from the MSVC-built C
-  at `e308765d`, `swe_deltat_ex` at 1000 CE (JD 2086302.5) is 0.018871612655972776 days under
+  at `e308765d`, `swe_deltat_ex` at JD 2086302.5 (1 January 1000 proleptic Gregorian, 27 December
+  999 Julian, the calendar Swiss Ephemeris uses before 1582) is 0.018871612655972776 days under
   model 6 and 0.016726901931961108 days under model 5: 1630.507 s and 1445.204 s, so 185.303 s
   apart (0.002144710724 days times 86400). `SEMOD_NDELTAT` is 6.
 - Tidal acceleration. `SE_TIDAL_DEFAULT` is `SE_TIDAL_DE441` (-25.936), where it was
@@ -140,11 +147,13 @@ Each of these is an adoption of an upstream change, not a correction of the port
   bit-identical to the C.
 - Conformance. The corpus is now 11 suites, 68 testcases and 18,919 iterations (it was 10, 60 and
   12,757); suite 11 (`swe_pheno`, `swe_azalt`, `swe_refrac`, `swe_cotrans`) is new, and 8.9 calls
-  `swe_lun_eclipse_when_loc`. `known-fail.tsv` has 1,591 rows, 1,258 `DATA-MISSING` and 333
+  `swe_lun_eclipse_when_loc`. `known-fail.tsv` has 1,635 rows, 1,258 `DATA-MISSING` and 377
   `VALUE-MISMATCH`, where it had 2,395 (759 and 1,636). The number measures divergence from
-  `t.exp`, a static Astrodienst snapshot, not port defects: all 333 rows are triaged against the C
-  in `Tests/conformance/value-mismatch-triage.tsv` as drift, 228 `DATA-ENV`, 91 `SERR-PATH`, 13
-  `LIBM-PLATFORM` and 1 `SETEST-STALE-XX`. The 972 house-speed rows of the `6c989727` sync pass
+  `t.exp`, a static Astrodienst snapshot, not port defects: all 377 rows are triaged against the C
+  in `Tests/conformance/value-mismatch-triage.tsv` as drift, 260 `DATA-ENV`, 91 `SERR-PATH` (an era
+  ephemeris file outside the 8 declared) and 26 `LIBM-PLATFORM`. The harness uses `setest`'s v2.10.04
+  comparison rules (per-quantity tolerances from `tolerances.c`, precision reset per testcase) and
+  mirrors the file-scope statics of its suite files. The 972 house-speed rows of the `6c989727` sync pass
   against the regenerated `t.exp`, so their drift ledger and its test are retired (in git history).
 - New tests pin the v2.10.04 behaviour with values measured from the C: `FileBoundaryHistoryTest`,
   `HeliocentricLightTimeTest`, `DeltaTModelsTest`, `CalcMessagesTest`, `AstroModelsStringTest` and

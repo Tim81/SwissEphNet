@@ -14,6 +14,14 @@ public sealed class ConformanceDispatcher
     // instance per corpus run reproduces that.
     private readonly Suite02FixStar _suite02 = new();
 
+    // Suites 1, 6, 7, 9 and 10 declare file-scope statics (xx, cusps, xxnasc, xxtret, tret, ...) shared
+    // by every iteration and testcase too; see each class's remarks.
+    private readonly Suite01Calc _suite01 = new();
+    private readonly Suite06Houses _suite06 = new();
+    private readonly Suite07Apsides _suite07 = new();
+    private readonly Suite09Rise _suite09 = new();
+    private readonly Suite10Solcross _suite10 = new();
+
     // Suite 8's xxtret/xxgeopos/xxattr are suite-scoped C locals too (see
     // Suite08Eclipses' remarks) -- some testcases' expected values are pure
     // carry-over from a previous testcase's last call.
@@ -25,6 +33,7 @@ public sealed class ConformanceDispatcher
 
     public DispatchOutcome Dispatch(SwissEph swe, ExpTestSuite suite, ExpTestCase testCase, ExpIteration iteration, Precision precision)
     {
+        var scope = new TestCaseScope(suite.Id, testCase.Id, precision);
         if (TryGetStaticNotImplementedReason(suite.Id, testCase.Id, out var staticReason))
         {
             return DispatchOutcome.NotImplemented(staticReason);
@@ -70,17 +79,17 @@ public sealed class ConformanceDispatcher
 
         return suite.Id switch
         {
-            1 => Suite01Calc.Dispatch(swe, testCase.Id, iteration, precision),
-            2 => _suite02.Dispatch(swe, testCase.Id, iteration, precision),
-            3 => Suite03Misc.Dispatch(swe, testCase.Id, iteration, precision),
-            4 => Suite04Ayanamsa.Dispatch(swe, testCase.Id, iteration, precision),
-            5 => Suite05DateTime.Dispatch(swe, testCase.Id, iteration, precision),
-            6 => Suite06Houses.Dispatch(swe, testCase.Id, iteration, precision),
-            7 => Suite07Apsides.Dispatch(swe, testCase.Id, iteration, precision),
-            8 => _suite08.Dispatch(swe, testCase.Id, iteration, precision),
-            9 => Suite09Rise.Dispatch(swe, testCase.Id, iteration, precision),
-            10 => Suite10Solcross.Dispatch(swe, testCase.Id, iteration, precision),
-            11 => _suite11.Dispatch(swe, testCase.Id, iteration, precision),
+            1 => _suite01.Dispatch(swe, scope, iteration),
+            2 => _suite02.Dispatch(swe, scope, iteration),
+            3 => Suite03Misc.Dispatch(swe, scope, iteration),
+            4 => Suite04Ayanamsa.Dispatch(swe, scope, iteration),
+            5 => Suite05DateTime.Dispatch(swe, scope, iteration),
+            6 => _suite06.Dispatch(swe, scope, iteration),
+            7 => _suite07.Dispatch(swe, scope, iteration),
+            8 => _suite08.Dispatch(swe, scope, iteration),
+            9 => _suite09.Dispatch(swe, scope, iteration),
+            10 => _suite10.Dispatch(swe, scope, iteration),
+            11 => _suite11.Dispatch(swe, scope, iteration),
             _ => DispatchOutcome.Error($"Unknown suite id {suite.Id}."),
         };
     }

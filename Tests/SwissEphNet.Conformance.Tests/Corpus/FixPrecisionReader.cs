@@ -16,8 +16,8 @@ public readonly record struct Precision(double All, double[] Xx)
     /// <summary>
     /// DEFAULT_PRECISION for every component. Used as a fallback for the rare
     /// (suite, testcase) pair present in t.exp but absent from t.fix (a real,
-    /// small drift between the two files -- see FixPrecisionReader's remarks)
-    /// where nothing in that suite ever overrides precision anyway.
+    /// small drift between the two files -- see FixPrecisionReader's remarks).
+    /// That is also what prepare_precisions would give such a testcase.
     /// </summary>
     public static Precision Default => new(
         FixPrecisionReader.DefaultPrecision,
@@ -49,20 +49,22 @@ public readonly record struct Precision(double All, double[] Xx)
 ///    despite starting with the word "precision", they are inert.
 /// </para>
 /// <para>
-/// 3. The resolved (all, xx[0..5]) tolerance is stored in one mutable
-///    location that is *only overwritten* when a testcase's hierarchy search
-///    actually finds something. A testcase that finds nothing anywhere in its
-///    hierarchy silently inherits whatever the previous testcase (in suite
-///    declaration order) left behind -- this is a real, observable behavior of
-///    the reference tool, confirmed here by cross-checking against the
-///    "precision"/"precision-xx" lines t.exp itself embeds per testcase at
-///    generation time (only ever written when found, which is exactly the
-///    set of testcases this reader computes a *newly set* tolerance for).
+/// 3. Since v2.10.04 every testcase starts from the default. prepare_precisions
+///    (setest.c:253-258) first sets precision and precision-xx[0..5] to
+///    DEFAULT_PRECISION ("a precision of an earlier test case does not carry
+///    over"), and only then overlays whatever its hierarchy search finds. A testcase
+///    that finds nothing anywhere in its hierarchy therefore gets 1e-9, not the
+///    previous testcase's value. Before v2.10.04 the state persisted from one
+///    testcase to the next, across suite boundaries; this reader did the same, and
+///    the t.exp it was checked against embedded the precision lines to prove it.
+///    The 2.10.04 t.exp still embeds them, only for testcases that found a value.
 /// </para>
 /// <para>
-/// The default, absent any override anywhere in the hierarchy for the very
-/// first testcase, is 1e-9 (external/swisseph/setest/constants.c:
-/// DEFAULT_PRECISION).
+/// Since v2.10.04 this resolved precision is also only the fallback for names that
+/// tolerances.c does not classify; see <c>Tolerances</c> and <c>CheckContext</c>.
+/// </para>
+/// <para>
+/// The default is 1e-9 (external/swisseph/setest/constants.c: DEFAULT_PRECISION).
 /// </para>
 /// </remarks>
 public static class FixPrecisionReader
@@ -101,9 +103,6 @@ public static class FixPrecisionReader
         double? generalAll = null;
         double[]? generalXx = null;
 
-        double currentAll = DefaultPrecision;
-        var currentXx = new[] { DefaultPrecision, DefaultPrecision, DefaultPrecision, DefaultPrecision, DefaultPrecision, DefaultPrecision };
-
         // Scope tracking. "General" is before the first TESTSUITE. Once a
         // TESTSUITE is open, lines belong to it until the first nested
         // TESTCASE; once a TESTCASE is open, lines belong to it until the
@@ -127,6 +126,10 @@ public static class FixPrecisionReader
                 return;
             }
 
+            // setest.c:253-258: start from the default in every testcase.
+            var currentAll = DefaultPrecision;
+            var currentXx = new[] { DefaultPrecision, DefaultPrecision, DefaultPrecision, DefaultPrecision, DefaultPrecision, DefaultPrecision };
+
             var foundAll = tcAll ?? suiteAll ?? generalAll;
             if (foundAll is not null)
             {
@@ -143,7 +146,7 @@ public static class FixPrecisionReader
                 Array.Copy(foundXx, currentXx, 6);
             }
 
-            result[(suiteId, testCaseId)] = new Precision(currentAll, (double[])currentXx.Clone());
+            result[(suiteId, testCaseId)] = new Precision(currentAll, currentXx);
         }
 
         string? line;

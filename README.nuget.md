@@ -181,6 +181,10 @@ no longer compiles. Results also move without a code change: the default Delta T
 1 January 1962 is now `SEMOD_DELTAT_STEPHENSON_ETC_2020`, `dt[]` runs to 2033, and the default tidal
 acceleration is `SE_TIDAL_DE441`. See `CHANGELOG.md` for the measured effect.
 
+These values are C# `const`s, so code compiled against 2.10.3.x keeps the old ones until it is
+recompiled. A caller that has only `de431.eph` must now call `swe_set_jpl_file("de431.eph")`:
+`SE_FNAME_DFT` is `de441.eph` and the `SE_FNAME_DFT2` fallback is gone.
+
 The [full README](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.0/README.md) documents
 every breaking change with the C source line each one corresponds to.
 

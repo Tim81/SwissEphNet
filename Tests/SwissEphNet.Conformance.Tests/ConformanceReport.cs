@@ -56,7 +56,7 @@ public sealed record CategoryDrift(IterationResult Result, FailureCategory Recor
 /// <summary>
 /// One (suite, testcase) group's outcome breakdown -- see "Reporting by testcase" in
 /// CONTRIBUTING.md. Exists because reporting 18,919 iteration rows is not something a
-/// contributor can read; 60 testcase-level rows is. Two gates in this repo have opposite
+/// contributor can read; 68 testcase-level rows is. Two gates in this repo have opposite
 /// expectations (the characterization baseline expects zero diffs, this oracle expects most
 /// iterations to fail) and grouping by testcase, split into <see cref="IsActionable"/> and
 /// parked, is what makes a red oracle run legible instead of alarming: most testcases are

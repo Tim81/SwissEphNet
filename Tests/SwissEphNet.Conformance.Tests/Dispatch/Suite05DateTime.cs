@@ -5,10 +5,11 @@ namespace SwissEphNet.Conformance.Tests.Dispatch;
 /// <summary>Suite 5: "Date and time functions" (external/swisseph/setest/suite_05_date_time.c).</summary>
 internal static class Suite05DateTime
 {
-    public static DispatchOutcome Dispatch(SwissEph swe, int testCaseId, ExpIteration iteration, Precision precision)
+    public static DispatchOutcome Dispatch(SwissEph swe, TestCaseScope scope, ExpIteration iteration)
     {
+        var testCaseId = scope.TestCaseId;
         var f = iteration.Fields;
-        var ctx = new CheckContext(f, precision);
+        var ctx = new CheckContext(f, scope);
 
         switch (testCaseId)
         {

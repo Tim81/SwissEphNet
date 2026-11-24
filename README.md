@@ -573,11 +573,13 @@ divergence is each platform's own math library disagreeing with itself in the la
 same thing two independently built C programs would show; it is not evidence against the port.
 
 Separately, the port's output is checked against Astrodienst's own 2.10.04 test suite (`setest`),
-18,919 iterations across 11 suites. 1,591 of those still fail: 333 because the answer
-is outside the tolerance Astrodienst's own suite allows, and 1,258 because a required data file (a
+18,919 iterations across 11 suites. 1,635 of those still fail: 377 because the answer
+is outside the tolerance Astrodienst's own suite allows (the per-quantity tolerances of `setest`'s `tolerances.c`), and 1,258 because a required data file (a
 JPL ephemeris, a per-asteroid or `ephe/sat/` file, or an ephemeris era this repository does not
-ship, roughly years 1200 to 2399) is not present, not because the answer is wrong.
-`Tests/conformance/value-mismatch-triage.tsv` was re-measured on 2026-11-24 against upstream v2.10.04 (`e308765d`) and covers all 333 `VALUE-MISMATCH` rows: upstream's own `setest`, built with gcc on Linux and run on the same 8 ephemeris files this repository ships, reproduces the port on 228 of them (the official `t.exp` was made in a different data environment), 91 differ only in the ephemeris directory embedded in an error string, 13 differ only through glibc against the Windows C runtime (the MSVC-built C equals the port exactly), and 1 is stale `xx[]` that `setest` records after an error return; none is a port defect. The four port defects the earlier (2026-08-02, 668-row) triage found, a missing JD-range guard on
+ship, roughly years 1200 to 2399) is not present. The earlier DATA-MISSING rows were checked
+against the C and found to be a missing file, not a wrong answer; the rows added at v2.10.04 were
+not cross-checked.
+`Tests/conformance/value-mismatch-triage.tsv` was re-measured on 2026-11-24 against upstream v2.10.04 (`e308765d`) and covers all 377 `VALUE-MISMATCH` rows: upstream's own `setest`, built with gcc on Linux and run on the same 8 ephemeris files this repository ships, reproduces the port on 260 of them (the official `t.exp` was made in a different data environment), 91 are iterations whose era ephemeris file is not among those 8 (the official run found it, the port and the C on this data set do not, and apart from the ephemeris directory embedded in the error string the two agree), and 26 differ only through glibc against the Windows C runtime (the MSVC-built C equals the port exactly); none is a port defect. The four port defects the earlier (2026-08-02, 668-row) triage found, a missing JD-range guard on
 interpolated lunar perigee (`docs/compliance-2.10.04.md` section 3a), are fixed and their rows pruned. So the port matches everything it has been
 checked against and is not yet at full parity with Astrodienst's own reference corpus.
 At the 2.10.3.x pins the figures were different, and not comparable, because the corpus changed:
@@ -592,12 +594,18 @@ retired with them and is in git history.
 
 `SE_FNAME_DFT2` is removed. Upstream deleted it together with the DE406 fallback in
 `open_jpl_file`, and the port follows, so code that names the constant no longer compiles. The
-default JPL file name, `SE_FNAME_DFT`, is now `de441.eph`, and `SE_DE_NUMBER` is 441.
+default JPL file name, `SE_FNAME_DFT`, is now `de441.eph`, and `SE_DE_NUMBER` is 441. A caller
+that has only `de431.eph` must now call `swe_set_jpl_file("de431.eph")`.
 
 The Delta T defaults changed too, and results move without any code change: the default model is
 `SEMOD_DELTAT_STEPHENSON_ETC_2020` before 1 January 1962, `dt[]` runs to 2033, and
 `SE_TIDAL_DEFAULT` is `SE_TIDAL_DE441`. UT-input results before 1962 and after 2020 differ from
 2.10.3.3. `CHANGELOG.md` has the measured magnitude.
+
+The changed values are C# `const`s (`SE_TIDAL_DEFAULT`, and with it `SE_TIDAL_SWIEPH` and
+`SE_TIDAL_JPLEPH`; `SEMOD_DELTAT_DEFAULT`, `SEMOD_NDELTAT`, `SE_DE_NUMBER`, `SE_FNAME_DFT`), so the
+compiler inlines them into the caller. Code compiled against 2.10.3.x keeps the old values until
+it is recompiled against this version.
 
 ## V:2.10.3
 
@@ -1003,13 +1011,13 @@ The reference corpus is Swiss Ephemeris **2.10.04**'s `setest` test suite
 (18,919 iterations across 11 suites and 68 testcases; the number of asserted values has not been
 re-counted for this corpus). The port has
 landed the whole 2.10.03 delta and the v2.10.04 changes, but `known-fail.tsv` still
-lists 1,591 failing iterations (17,328 passing, 91.6%). Each
+lists 1,635 failing iterations (17,284 passing, 91.4%). Each
 porting PR should remove entries from it; any entry that reappears is a regression.
 
-Read that 1,591 with the split under "Numerical compatibility" above, because it is not 1,591
+Read that 1,635 with the split under "Numerical compatibility" above, because it is not 1,635
 things left to port: 1,258 of them are a data file this repository does not ship rather than a wrong
-answer, the other 333 sit outside the tolerance Astrodienst's own suite allows and are all triaged
-as drift (228 data environment, 91 error-string path, 13 libm platform, 1 stale `setest` array),
+answer, the other 377 sit outside the tolerance Astrodienst's own suite allows and are all triaged
+as drift (260 data environment, 91 missing era file, 26 libm platform),
 and the four rows ever confirmed as port defects were fixed and pruned. At the 2.10.3.x pins the
 figures were 12,757 iterations and 2,395 failing, and are not comparable.
 

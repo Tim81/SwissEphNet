@@ -41,7 +41,7 @@ namespace SwissEphNet.Conformance.Tests.Corpus;
 /// tjd_lat, while testcase 6 (line 71) does exactly the reverse. A global set
 /// would either miss half the real assertions or reject half the legitimate
 /// inputs. Cross-iteration key-set consistency is not assumed anywhere -- it is
-/// not an invariant of this corpus (43 of the 60 testcases have iterations
+/// not an invariant of this corpus (12 of the 68 testcases at v2.10.04 have iterations
 /// whose key sets differ).
 /// </para>
 /// <para>
@@ -110,15 +110,27 @@ public sealed class SetestSourceModel
     private static readonly Regex SuiteInitRegex =
         new(@"(?<![A-Za-z0-9_])SUITE_INIT\s*\{", RegexOptions.Compiled);
 
+    private static readonly Regex SetupRegex =
+        new(@"(?<![A-Za-z0-9_])SETUP\s*\{", RegexOptions.Compiled);
+
     private static readonly Regex TeardownRegex =
         new(@"(?<![A-Za-z0-9_])TEARDOWN\s*\{", RegexOptions.Compiled);
 
-    // The calls that change library state the runner has to reproduce: a reset of the ephemeris
-    // path, swe_close, and swe_set_jpl_file (which closes the files as a side effect, see
-    // EphemerisFileResolver.SetJplFile). The argument is kept, whitespace removed, so
+    // The calls that change library state the runner has to reproduce from a testcase body: a reset
+    // of the ephemeris path, swe_close, and swe_set_jpl_file (which closes the files as a side effect,
+    // see EphemerisFileResolver.SetJplFile). The argument is kept, whitespace removed, so
     // "swe_set_jpl_file("de441.eph")" is distinguishable from the same call with another file.
+    // The testcase bodies' other swe_set_* calls (swe_set_topo, swe_set_sid_mode) are inputs of the
+    // call under test, which the dispatchers make themselves, not setup.
     private static readonly Regex StateCallRegex =
         new(@"(?<![A-Za-z0-9_])(swe_set_ephe_path|swe_close|swe_set_jpl_file)\s*\(([^()]*)\)", RegexOptions.Compiled);
+
+    // The lifecycle blocks (SUITE_INIT, SETUP, TEARDOWN) are held to a wider net: any swe_set_* call
+    // and swe_close. A suite gaining a swe_set_topo, swe_set_sid_mode or swe_set_delta_t_userdef there
+    // would change the state every iteration runs in, and must be reproduced by the runner, so the
+    // model has to see it.
+    private static readonly Regex LifecycleCallRegex =
+        new(@"(?<![A-Za-z0-9_])(swe_set_[A-Za-z0-9_]+|swe_close)\s*\(([^()]*)\)", RegexOptions.Compiled);
 
     private readonly HashSet<string> _inputNames;
 
@@ -139,6 +151,8 @@ public sealed class SetestSourceModel
     // Ephemeris-state facts, per suite id / per (suite, testcase). Empty for a model built
     // for testing: only Load(string) parses them.
     private readonly Dictionary<int, IReadOnlyList<string>> _suiteInitCalls = [];
+    private readonly Dictionary<int, IReadOnlyList<string>> _suiteSetupCalls = [];
+    private readonly Dictionary<int, IReadOnlyList<string>> _suiteTeardownCalls = [];
     private readonly Dictionary<(int Suite, int TestCase), IReadOnlyList<string>> _testCaseStateCalls = [];
     private readonly HashSet<int> _suitesClosingOnInitialize = [];
 
@@ -157,13 +171,28 @@ public sealed class SetestSourceModel
     }
 
     /// <summary>
-    /// The ephemeris-state calls of the suite's <c>SUITE_INIT { ... }</c> block, in source order,
-    /// as "name(argument)" with whitespace removed: <c>swe_set_ephe_path(NULL)</c>,
+    /// Every <c>swe_set_*</c> call and <c>swe_close</c> of the suite's <c>SUITE_INIT { ... }</c> block,
+    /// in source order, as "name(argument)" with whitespace removed: <c>swe_set_ephe_path(NULL)</c>,
     /// <c>swe_close()</c>, <c>swe_set_jpl_file("de441.eph")</c>. Empty for a suite with no
     /// SUITE_INIT (suite 3) and for a suite the model has no file for.
     /// </summary>
     public IReadOnlyList<string> SuiteInitCalls(int suiteId) =>
         _suiteInitCalls.TryGetValue(suiteId, out var calls) ? calls : [];
+
+    /// <summary>
+    /// Every <c>swe_set_*</c> call and <c>swe_close</c> in the suite's <c>SETUP { ... }</c> block (run
+    /// before every iteration), in source order, as "name(argument)" with whitespace removed. Empty for
+    /// a suite with no SETUP and for one whose SETUP makes no such call.
+    /// </summary>
+    public IReadOnlyList<string> SuiteSetupCalls(int suiteId) =>
+        _suiteSetupCalls.TryGetValue(suiteId, out var calls) ? calls : [];
+
+    /// <summary>
+    /// Every <c>swe_set_*</c> call and <c>swe_close</c> in the suite's <c>TEARDOWN { ... }</c> block
+    /// (run after every iteration), in source order, as "name(argument)" with whitespace removed.
+    /// </summary>
+    public IReadOnlyList<string> SuiteTeardownCalls(int suiteId) =>
+        _suiteTeardownCalls.TryGetValue(suiteId, out var calls) ? calls : [];
 
     /// <summary>
     /// The ephemeris-state calls (<c>swe_set_ephe_path</c>, <c>swe_close</c>, <c>swe_set_jpl_file</c>)
@@ -300,6 +329,8 @@ public sealed class SetestSourceModel
         var inputNames = new HashSet<string>(StringComparer.Ordinal);
         var checkedNames = new Dictionary<(int, int), HashSet<string>>();
         var suiteInitCalls = new Dictionary<int, IReadOnlyList<string>>();
+        var suiteSetupCalls = new Dictionary<int, IReadOnlyList<string>>();
+        var suiteTeardownCalls = new Dictionary<int, IReadOnlyList<string>>();
         var testCaseStateCalls = new Dictionary<(int, int), IReadOnlyList<string>>();
         var suitesClosingOnInitialize = new HashSet<int>();
 
@@ -320,15 +351,23 @@ public sealed class SetestSourceModel
             var initMatch = SuiteInitRegex.Match(text);
             if (initMatch.Success)
             {
-                suiteInitCalls[suiteId] = StateCalls(BlockBody(text, initMatch.Index + initMatch.Length, file, "SUITE_INIT"));
+                suiteInitCalls[suiteId] = LifecycleCalls(BlockBody(text, initMatch.Index + initMatch.Length, file, "SUITE_INIT"));
+            }
+
+            var setupMatch = SetupRegex.Match(text);
+            if (setupMatch.Success)
+            {
+                suiteSetupCalls[suiteId] = LifecycleCalls(BlockBody(text, setupMatch.Index + setupMatch.Length, file, "SETUP"));
             }
 
             var teardownMatch = TeardownRegex.Match(text);
             if (teardownMatch.Success)
             {
                 var teardown = BlockBody(text, teardownMatch.Index + teardownMatch.Length, file, "TEARDOWN");
+                var teardownCalls = LifecycleCalls(teardown);
+                suiteTeardownCalls[suiteId] = teardownCalls;
                 if (teardown.Contains("initialize", StringComparison.Ordinal) &&
-                    StateCalls(teardown).Contains("swe_close()"))
+                    teardownCalls.Contains("swe_close()"))
                 {
                     suitesClosingOnInitialize.Add(suiteId);
                 }
@@ -369,6 +408,16 @@ public sealed class SetestSourceModel
         foreach (var (id, calls) in suiteInitCalls)
         {
             model._suiteInitCalls[id] = calls;
+        }
+
+        foreach (var (id, calls) in suiteSetupCalls)
+        {
+            model._suiteSetupCalls[id] = calls;
+        }
+
+        foreach (var (id, calls) in suiteTeardownCalls)
+        {
+            model._suiteTeardownCalls[id] = calls;
         }
 
         foreach (var (key, calls) in testCaseStateCalls)
@@ -415,7 +464,7 @@ public sealed class SetestSourceModel
         var distinctChecked = AllCheckedNames.Count;
         if (distinctChecked < 40)
         {
-            problems.Add($"only {distinctChecked} distinct CHECK_* name(s) extracted (expected ~NCHK, floor 40)");
+            problems.Add($"only {distinctChecked} distinct CHECK_* name(s) extracted (expected 51, floor 40)");
         }
 
         // Per family, because the aggregate floor above cannot see one family stop
@@ -554,6 +603,15 @@ public sealed class SetestSourceModel
         throw new InvalidOperationException(
             $"Cannot build the setest source model: the {what} block in '{file}' has no closing brace.");
     }
+
+    /// <summary>
+    /// Every swe_set_* call and swe_close in a lifecycle block, in order, as "name(argument)" with
+    /// whitespace removed.
+    /// </summary>
+    private static List<string> LifecycleCalls(string text) =>
+        LifecycleCallRegex.Matches(text)
+            .Select(m => $"{m.Groups[1].Value}({Regex.Replace(m.Groups[2].Value, @"\s+", "")})")
+            .ToList();
 
     /// <summary>
     /// swe_set_ephe_path / swe_close / swe_set_jpl_file calls in <paramref name="text"/>, in order, as

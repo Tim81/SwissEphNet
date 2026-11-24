@@ -108,9 +108,9 @@ suite	testcase	iteration	category	magnitude_key	reason
 1	1	177	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 1	1	178	VALUE-MISMATCH	-7	xx[0]: expected 132.5609322038313, got 132.56097271613859; xx[1]: expected 2.8081811539341701, got 2.8081825020501965
 1	1	180	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
-1	1	181	VALUE-MISMATCH	-7	xx[0]: expected 154.83696823611749, got 154.83694397345417; xx[1]: expected 3.3331908371853607, got 3.3331905679875429
+1	1	181	VALUE-MISMATCH	-7	xx[0]: expected 154.83696823611749, got 154.83694397345417; xx[1]: expected 3.3331908371853607, got 3.3331905679875429; xx[2]: expected 0.71886419610044672, got 0.71886419514520805
 1	1	183	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
-1	1	184	VALUE-MISMATCH	-6	xx[0]: expected 99.100290606301598, got 99.100261824009195; xx[1]: expected 1.4767372511962118, got 1.4767357169103217
+1	1	184	VALUE-MISMATCH	-6	xx[0]: expected 99.100290606301598, got 99.100261824009195; xx[1]: expected 1.4767372511962118, got 1.4767357169103217; xx[2]: expected 0.71885046119360929, got 0.71885046217542636
 1	1	186	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 1	1	189	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 1	1	192	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
@@ -230,7 +230,6 @@ suite	testcase	iteration	category	magnitude_key	reason
 1	3	33	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 1	3	36	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 1	4	3	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
-1	5	2	VALUE-MISMATCH	0	xx[0]: expected 169.36685241262407, got 0; xx[1]: expected 1.2653938001196983, got 0; xx[2]: expected 6.6100807300597335, got 0
 1	5	3	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 1	5	4	DATA-MISSING	n/a	ipl=9501 is a planetary-moon body, which requires ephe/sat/ (227 MB), not shipped by default. Set SWISSEPH_CONFORMANCE_INCLUDE_MOONS=1 and provide ephe/sat/ to opt in.
 1	5	5	DATA-MISSING	n/a	ipl=9501 is a planetary-moon body, which requires ephe/sat/ (227 MB), not shipped by default. Set SWISSEPH_CONFORMANCE_INCLUDE_MOONS=1 and provide ephe/sat/ to opt in.
@@ -552,6 +551,7 @@ suite	testcase	iteration	category	magnitude_key	reason
 5	3	7	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 5	3	11	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 5	3	15	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+6	6	402	VALUE-MISMATCH	-10	hp: expected 11.118439807020108, got 11.118439805641257
 7	1	4	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	5	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	6	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
@@ -570,9 +570,11 @@ suite	testcase	iteration	category	magnitude_key	reason
 7	1	34	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	35	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	36	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+7	1	37	VALUE-MISMATCH	-8	xxaphe[3]: expected 1.2627909715393772, got 1.2627909613985868; xxaphe[4]: expected 0.077086201129824922, got 0.077086199337793163
 7	1	40	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	41	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	42	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+7	1	43	VALUE-MISMATCH	-8	xxaphe[3]: expected 1.2627909715393772, got 1.2627909613985868; xxaphe[4]: expected 0.077086201129824922, got 0.077086199337793163
 7	1	46	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	47	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	48	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
@@ -597,18 +599,23 @@ suite	testcase	iteration	category	magnitude_key	reason
 7	1	88	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	89	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	90	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+7	1	91	VALUE-MISMATCH	-7	xxndsc[3]: expected -0.027522233436303237, got -0.027522243560363667; xxndsc[5]: expected 0.00964180943990821, got 0.0096418154505186638
 7	1	94	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	95	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	96	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+7	1	97	VALUE-MISMATCH	-8	xxperi[3]: expected -0.016947854275370353, got -0.016947852669186463
 7	1	100	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	101	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	102	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+7	1	103	VALUE-MISMATCH	-2	xxndsc[3]: expected -0.027547509144447684, got -0.027547517476870727; xxndsc[4]: expected -4.0404976769252998E-07, got -3.9851320477717694E-07; xxndsc[5]: expected 0.0096427426787169274, got 0.0096427476187507365
 7	1	106	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	107	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	108	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+7	1	109	VALUE-MISMATCH	-7	xxndsc[3]: expected -0.027522233436303237, got -0.027522243560363667; xxndsc[5]: expected 0.00964180943990821, got 0.0096418154505186638
 7	1	112	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	113	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	114	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+7	1	115	VALUE-MISMATCH	-7	xxndsc[3]: expected -0.027522233436303237, got -0.027522243560363667; xxndsc[5]: expected 0.00964180943990821, got 0.0096418154505186638
 7	1	118	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	119	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	1	120	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
@@ -627,6 +634,7 @@ suite	testcase	iteration	category	magnitude_key	reason
 7	2	28	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	2	29	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	2	30	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+7	2	31	VALUE-MISMATCH	-9	xxaphe[3]: expected 1.0835630714602464, got 1.0835630659037168
 7	2	34	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	2	35	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	2	36	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
@@ -636,6 +644,7 @@ suite	testcase	iteration	category	magnitude_key	reason
 7	2	46	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	2	47	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	2	48	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+7	2	49	VALUE-MISMATCH	-9	xxaphe[3]: expected 1.0835630714602464, got 1.0835630659037168
 7	2	52	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	2	53	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	2	54	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
@@ -657,6 +666,7 @@ suite	testcase	iteration	category	magnitude_key	reason
 7	2	88	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	2	89	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	2	90	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+7	2	91	VALUE-MISMATCH	-3	xxndsc[3]: expected -0.027521980840397579, got -0.027521989160753584; xxndsc[4]: expected -3.71501926326962E-06, got -3.7094911798781763E-06; xxndsc[5]: expected 0.0096419797335759155, got 0.0096419846733424176; xxaphe[3]: expected 0.013698709645645313, got 0.01369871448706712; xxaphe[4]: expected 1.7325283097870732, got 1.7325282928586476; xxaphe[5]: expected 0.014556350191979105, got 0.014556342340602354
 7	2	94	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	2	95	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	2	96	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
@@ -666,9 +676,11 @@ suite	testcase	iteration	category	magnitude_key	reason
 7	2	106	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	2	107	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	2	108	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+7	2	109	VALUE-MISMATCH	-3	xxndsc[3]: expected -0.027521980840397579, got -0.027521989160753584; xxndsc[4]: expected -3.71501926326962E-06, got -3.7094911798781763E-06; xxndsc[5]: expected 0.0096419797335759155, got 0.0096419846733424176; xxaphe[3]: expected 0.013698709645645313, got 0.01369871448706712; xxaphe[4]: expected 1.7325283097870732, got 1.7325282928586476; xxaphe[5]: expected 0.014556350191979105, got 0.014556342340602354
 7	2	112	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	2	113	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	2	114	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
+7	2	115	VALUE-MISMATCH	-3	xxndsc[3]: expected -0.027521980840397579, got -0.027521989160753584; xxndsc[4]: expected -3.71501926326962E-06, got -3.7094911798781763E-06; xxndsc[5]: expected 0.0096419797335759155, got 0.0096419846733424176
 7	2	118	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	2	119	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	2	120	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
@@ -699,7 +711,7 @@ suite	testcase	iteration	category	magnitude_key	reason
 7	4	22	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	4	23	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 7	4	24	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
-8	7	8	VALUE-MISMATCH	-9	xxattr[0]: expected 5.7093462736605982, got 5.7093462878009928; xxattr[2]: expected 29511.341764584555, got 29511.341765847734
+8	7	8	VALUE-MISMATCH	-8	xxattr[2]: expected 29511.341764584555, got 29511.341765847734; xxattr[4]: expected 228.5962650124977, got 228.59626514481164; xxattr[5]: expected -1.410167133693127, got -1.4101670569775211; xxattr[6]: expected -1.410167133693127, got -1.4101670569775211
 10	1	2	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 10	1	3	DATA-MISSING	n/a	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
 10	1	4	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
@@ -1154,10 +1166,14 @@ suite	testcase	iteration	category	magnitude_key	reason
 10	8	190	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 10	8	191	DATA-MISSING	n/a	iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to Moshier internally and reports "using Moshier eph." in serr, which the reference run (built against the full file set) does not.
 10	8	192	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
-11	1	3	VALUE-MISMATCH	-6	xpheno[0]: expected 120.78556096340405, got 120.78559806662145; xpheno[4]: expected 1.0930186016039465, got 1.0930207681033721
-11	1	4	VALUE-MISMATCH	-7	xpheno[0]: expected 45.797954209843624, got 45.797994870269527
-11	1	5	VALUE-MISMATCH	-7	xpheno[0]: expected 37.348793759506684, got 37.348804412210747
+11	1	3	VALUE-MISMATCH	-6	xpheno[0]: expected 120.78556096340405, got 120.78559806662145; xpheno[1]: expected 0.24408680838944641, got 0.24408653022797738; xpheno[4]: expected 1.0930186016039465, got 1.0930207681033721
+11	1	4	VALUE-MISMATCH	-7	xpheno[0]: expected 45.797954209843624, got 45.797994870269527; xpheno[1]: expected 0.84859535012915477, got 0.84859509575711578; xpheno[4]: expected -3.9219157925597359, got -3.9219150421091986
+11	1	5	VALUE-MISMATCH	-7	xpheno[0]: expected 37.348793759506684, got 37.348804412210747; xpheno[4]: expected 0.94752172043981375, got 0.94752184356344182
 11	1	6	VALUE-MISMATCH	-7	xpheno[0]: expected 10.138634206032291, got 10.138636534722094
+11	1	7	VALUE-MISMATCH	-7	xpheno[0]: expected 5.2242692576293885, got 5.2242700216023881
+11	1	8	VALUE-MISMATCH	-7	xpheno[0]: expected 2.4259012531457032, got 2.4259015104637007
+11	1	9	VALUE-MISMATCH	-8	xpheno[0]: expected 1.9307170204473825, got 1.9307171787119881
+11	1	10	VALUE-MISMATCH	-8	xpheno[0]: expected 1.1344104633802439, got 1.1344105384007614
 11	1	11	VALUE-MISMATCH	-7	xpheno[0]: expected 12.346649513569746, got 12.346651229081631
 11	1	12	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	13	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
@@ -1181,10 +1197,14 @@ suite	testcase	iteration	category	magnitude_key	reason
 11	1	42	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	43	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	44	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
-11	1	47	VALUE-MISMATCH	-6	xpheno[0]: expected 120.78556096340405, got 120.78559806662145; xpheno[4]: expected 1.0930186016039465, got 1.0930207681033721
-11	1	48	VALUE-MISMATCH	-7	xpheno[0]: expected 45.797954209843624, got 45.797994870269527
-11	1	49	VALUE-MISMATCH	-7	xpheno[0]: expected 37.348793759506684, got 37.348804412210747
+11	1	47	VALUE-MISMATCH	-6	xpheno[0]: expected 120.78556096340405, got 120.78559806662145; xpheno[1]: expected 0.24408680838944641, got 0.24408653022797738; xpheno[4]: expected 1.0930186016039465, got 1.0930207681033721
+11	1	48	VALUE-MISMATCH	-7	xpheno[0]: expected 45.797954209843624, got 45.797994870269527; xpheno[1]: expected 0.84859535012915477, got 0.84859509575711578; xpheno[4]: expected -3.9219157925597359, got -3.9219150421091986
+11	1	49	VALUE-MISMATCH	-7	xpheno[0]: expected 37.348793759506684, got 37.348804412210747; xpheno[4]: expected 0.94752172043981375, got 0.94752184356344182
 11	1	50	VALUE-MISMATCH	-7	xpheno[0]: expected 10.138634206032291, got 10.138636534722094
+11	1	51	VALUE-MISMATCH	-7	xpheno[0]: expected 5.2242692576293885, got 5.2242700216023881
+11	1	52	VALUE-MISMATCH	-7	xpheno[0]: expected 2.4259012531457032, got 2.4259015104637007
+11	1	53	VALUE-MISMATCH	-8	xpheno[0]: expected 1.9307170204473825, got 1.9307171787119881
+11	1	54	VALUE-MISMATCH	-8	xpheno[0]: expected 1.1344104633802439, got 1.1344105384007614
 11	1	55	VALUE-MISMATCH	-7	xpheno[0]: expected 12.346649513569746, got 12.346651229081631
 11	1	56	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	57	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
@@ -1197,11 +1217,15 @@ suite	testcase	iteration	category	magnitude_key	reason
 11	1	64	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	65	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	66	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
-11	1	69	VALUE-MISMATCH	-6	xpheno[0]: expected 60.758120584260674, got 60.758004823283734; xpheno[4]: expected -0.96127074921298128, got -0.96127442365668814
-11	1	70	VALUE-MISMATCH	-6	xpheno[0]: expected 11.018358215021996, got 11.018334310676179
+11	1	69	VALUE-MISMATCH	-6	xpheno[0]: expected 60.758120584260674, got 60.758004823283734; xpheno[1]: expected 0.74424878845851294, got 0.74424966992787811; xpheno[4]: expected -0.96127074921298128, got -0.96127442365668814
+11	1	70	VALUE-MISMATCH	-6	xpheno[0]: expected 11.018358215021996, got 11.018334310676179; xpheno[4]: expected -3.9062999334966371, got -3.9063000822885563
 11	1	71	VALUE-MISMATCH	-7	xpheno[0]: expected 43.311844562525607, got 43.311837839195313
 11	1	72	VALUE-MISMATCH	-7	xpheno[0]: expected 10.750984084010794, got 10.750982773601335
-11	1	77	VALUE-MISMATCH	-7	xpheno[0]: expected 14.46474285804797, got 14.464740002456139
+11	1	73	VALUE-MISMATCH	-7	xpheno[0]: expected 0.59754389324352331, got 0.59754412398964207
+11	1	74	VALUE-MISMATCH	-7	xpheno[0]: expected 2.6775059272336281, got 2.6775056362810319
+11	1	75	VALUE-MISMATCH	-8	xpheno[0]: expected 1.8737143052063281, got 1.873714192438777
+11	1	76	VALUE-MISMATCH	-8	xpheno[0]: expected 1.1362697544544766, got 1.1362697107772295
+11	1	77	VALUE-MISMATCH	-7	xpheno[0]: expected 14.46474285804797, got 14.464740002456139; xpheno[4]: expected 8.9421863145870599, got 8.9421862019544296
 11	1	78	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	79	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	80	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
@@ -1224,11 +1248,15 @@ suite	testcase	iteration	category	magnitude_key	reason
 11	1	108	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	109	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	110	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
-11	1	113	VALUE-MISMATCH	-6	xpheno[0]: expected 60.758120584260674, got 60.758004823283734; xpheno[4]: expected -0.96127074921298128, got -0.96127442365668814
-11	1	114	VALUE-MISMATCH	-6	xpheno[0]: expected 11.018358215021996, got 11.018334310676179
+11	1	113	VALUE-MISMATCH	-6	xpheno[0]: expected 60.758120584260674, got 60.758004823283734; xpheno[1]: expected 0.74424878845851294, got 0.74424966992787811; xpheno[4]: expected -0.96127074921298128, got -0.96127442365668814
+11	1	114	VALUE-MISMATCH	-6	xpheno[0]: expected 11.018358215021996, got 11.018334310676179; xpheno[4]: expected -3.9062999334966371, got -3.9063000822885563
 11	1	115	VALUE-MISMATCH	-7	xpheno[0]: expected 43.311844562525607, got 43.311837839195313
 11	1	116	VALUE-MISMATCH	-7	xpheno[0]: expected 10.750984084010794, got 10.750982773601335
-11	1	121	VALUE-MISMATCH	-7	xpheno[0]: expected 14.46474285804797, got 14.464740002456139
+11	1	117	VALUE-MISMATCH	-7	xpheno[0]: expected 0.59754389324352331, got 0.59754412398964207
+11	1	118	VALUE-MISMATCH	-7	xpheno[0]: expected 2.6775059272336281, got 2.6775056362810319
+11	1	119	VALUE-MISMATCH	-8	xpheno[0]: expected 1.8737143052063281, got 1.873714192438777
+11	1	120	VALUE-MISMATCH	-8	xpheno[0]: expected 1.1362697544544766, got 1.1362697107772295
+11	1	121	VALUE-MISMATCH	-7	xpheno[0]: expected 14.46474285804797, got 14.464740002456139; xpheno[4]: expected 8.9421863145870599, got 8.9421862019544296
 11	1	122	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	123	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	124	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
@@ -1240,11 +1268,11 @@ suite	testcase	iteration	category	magnitude_key	reason
 11	1	130	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	131	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	132	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
-11	1	133	VALUE-MISMATCH	n/a	rc: expected 2, got 4
-11	1	134	VALUE-MISMATCH	-5	rc: expected 2, got 4; xpheno[0]: expected 140.46324066997951, got 140.46207940468361; xpheno[1]: expected 0.11439183247293189, got 0.11439828355344472; xpheno[2]: expected 39.437609783868297, got 39.43876703797136; xpheno[4]: expected -7.4566897364178928, got -7.4567695437176145
-11	1	135	VALUE-MISMATCH	-6	rc: expected 2, got 4; xpheno[0]: expected 18.690956142735956, got 18.690879483438589; xpheno[2]: expected 8.6077678191178908, got 8.6077509086840323; xpheno[4]: expected -0.761038459036252, got -0.76103975559431714
-11	1	136	VALUE-MISMATCH	-7	rc: expected 2, got 4; xpheno[0]: expected 48.344957193433281, got 48.34498409359464; xpheno[2]: expected 33.478807611305783, got 33.478831156660824
-11	1	137	VALUE-MISMATCH	-7	rc: expected 2, got 4; xpheno[0]: expected 15.937114448834096, got 15.93711254984734; xpheno[2]: expected 26.051139857392844, got 26.051153861174637
+11	1	133	VALUE-MISMATCH	-8	rc: expected 2, got 4; xpheno[3]: expected 0.54144243781731838, got 0.54144248804219619; xpheno[4]: expected -26.893571350061144, got -26.893571551489632
+11	1	134	VALUE-MISMATCH	-5	rc: expected 2, got 4; xpheno[0]: expected 140.46324066997951, got 140.46207940468361; xpheno[1]: expected 0.11439183247293189, got 0.11439828355344472; xpheno[2]: expected 39.437609783868297, got 39.43876703797136; xpheno[3]: expected 0.49650009747949464, got 0.49649966516005262; xpheno[4]: expected -7.4566897364178928, got -7.4567695437176145
+11	1	135	VALUE-MISMATCH	-6	rc: expected 2, got 4; xpheno[0]: expected 18.690956142735956, got 18.690879483438589; xpheno[1]: expected 0.97363043656554649, got 0.97363065094831946; xpheno[2]: expected 8.6077678191178908, got 8.6077509086840323; xpheno[4]: expected -0.761038459036252, got -0.76103975559431714
+11	1	136	VALUE-MISMATCH	-7	rc: expected 2, got 4; xpheno[0]: expected 48.344957193433281, got 48.34498409359464; xpheno[1]: expected 0.83232214974938823, got 0.83232197435490929; xpheno[2]: expected 33.478807611305783, got 33.478831156660824; xpheno[4]: expected -3.9572738707603499, got -3.9572733488667318
+11	1	137	VALUE-MISMATCH	-7	rc: expected 2, got 4; xpheno[0]: expected 15.937114448834096, got 15.93711254984734; xpheno[2]: expected 26.051139857392844, got 26.051153861174637; xpheno[4]: expected 1.6135200392708335, got 1.613520740474613
 11	1	138	VALUE-MISMATCH	-6	rc: expected 2, got 4; xpheno[0]: expected 9.9639288988424077, got 9.9639432217543753; xpheno[2]: expected 109.54499778518506, got 109.54459317255501; xpheno[4]: expected -2.2147087661142661, got -2.2147001302706899
 11	1	139	VALUE-MISMATCH	-6	rc: expected 2, got 4; xpheno[0]: expected 5.5334478868653019, got 5.5334459119269814; xpheno[2]: expected 113.41327686579645, got 113.41324806973853; xpheno[4]: expected 0.44160177819248148, got 0.44160361876522103
 11	1	140	VALUE-MISMATCH	-5	rc: expected 2, got 4; xpheno[0]: expected 0.84169101986060091, got 0.84175140034183871; xpheno[2]: expected 16.779970808570102, got 16.781211766845136; xpheno[4]: expected 5.8372372540136057, got 5.8372451686523945
@@ -1262,11 +1290,11 @@ suite	testcase	iteration	category	magnitude_key	reason
 11	1	152	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	153	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	154	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
-11	1	155	VALUE-MISMATCH	n/a	rc: expected 18, got 20
-11	1	156	VALUE-MISMATCH	-5	rc: expected 18, got 20; xpheno[0]: expected 140.46865423281437, got 140.46749445277027; xpheno[1]: expected 0.11436176104806239, got 0.11436820314005958; xpheno[2]: expected 39.432070217952621, got 39.433227469604887; xpheno[4]: expected -7.4564429279091193, got -7.4565226939919551
-11	1	157	VALUE-MISMATCH	-6	rc: expected 18, got 20; xpheno[0]: expected 18.673294568525389, got 18.673248137502629; xpheno[2]: expected 8.6010082756953832, got 8.6009904269414097
-11	1	158	VALUE-MISMATCH	-7	rc: expected 18, got 20; xpheno[0]: expected 48.354336992854414, got 48.354355664227711; xpheno[2]: expected 33.482273386845684, got 33.48229602097701
-11	1	159	VALUE-MISMATCH	-7	rc: expected 18, got 20; xpheno[0]: expected 15.93546853053113, got 15.935470695197067; xpheno[2]: expected 26.047361994532388, got 26.047375871248089
+11	1	155	VALUE-MISMATCH	-8	rc: expected 18, got 20; xpheno[3]: expected 0.54144245133888369, got 0.5414424880421963; xpheno[4]: expected -26.893571404289819, got -26.893571551489632
+11	1	156	VALUE-MISMATCH	-5	rc: expected 18, got 20; xpheno[0]: expected 140.46865423281437, got 140.46749445277027; xpheno[1]: expected 0.11436176104806239, got 0.11436820314005958; xpheno[2]: expected 39.432070217952621, got 39.433227469604887; xpheno[3]: expected 0.49653145261698561, got 0.49653101931133908; xpheno[4]: expected -7.4564429279091193, got -7.4565226939919551
+11	1	157	VALUE-MISMATCH	-6	rc: expected 18, got 20; xpheno[0]: expected 18.673294568525389, got 18.673248137502629; xpheno[1]: expected 0.97367980591558179, got 0.97367993564477651; xpheno[2]: expected 8.6010082756953832, got 8.6009904269414097; xpheno[4]: expected -0.76134766346259752, got -0.76134811265637636
+11	1	158	VALUE-MISMATCH	-7	rc: expected 18, got 20; xpheno[0]: expected 48.354336992854414, got 48.354355664227711; xpheno[1]: expected 0.83226098712477348, got 0.83226086536593336; xpheno[2]: expected 33.482273386845684, got 33.48229602097701; xpheno[4]: expected -3.957288319834126, got -3.9572879981363989
+11	1	159	VALUE-MISMATCH	-7	rc: expected 18, got 20; xpheno[0]: expected 15.93546853053113, got 15.935470695197067; xpheno[2]: expected 26.047361994532388, got 26.047375871248089; xpheno[4]: expected 1.6134836104941708, got 1.6134845331806229
 11	1	160	VALUE-MISMATCH	-6	rc: expected 18, got 20; xpheno[0]: expected 9.9596799046539495, got 9.9596916417847723; xpheno[2]: expected 109.55037788203957, got 109.5499731740167; xpheno[4]: expected -2.2147331823357934, got -2.2147245271265605
 11	1	161	VALUE-MISMATCH	-6	rc: expected 18, got 20; xpheno[0]: expected 5.5375207804086584, got 5.5375183772750258; xpheno[2]: expected 113.40709343192746, got 113.40706462495787; xpheno[4]: expected 0.44166756415838115, got 0.44166924794118856
 11	1	162	VALUE-MISMATCH	-5	rc: expected 18, got 20; xpheno[0]: expected 0.83750203947728075, got 0.8375605034736564; xpheno[2]: expected 16.781006641999095, got 16.782247548120331; xpheno[4]: expected 5.8372151070567968, got 5.8372230805513476
@@ -1284,11 +1312,11 @@ suite	testcase	iteration	category	magnitude_key	reason
 11	1	174	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	175	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	176	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
-11	1	177	VALUE-MISMATCH	n/a	rc: expected 2, got 4
-11	1	178	VALUE-MISMATCH	-5	rc: expected 2, got 4; xpheno[0]: expected 140.46324066997951, got 140.46207940468361; xpheno[1]: expected 0.11439183247293189, got 0.11439828355344472; xpheno[2]: expected 39.437609783868297, got 39.43876703797136; xpheno[4]: expected -7.4566897364178928, got -7.4567695437176145
-11	1	179	VALUE-MISMATCH	-6	rc: expected 2, got 4; xpheno[0]: expected 18.690956142735956, got 18.690879483438589; xpheno[2]: expected 8.6077678191178908, got 8.6077509086840323; xpheno[4]: expected -0.761038459036252, got -0.76103975559431714
-11	1	180	VALUE-MISMATCH	-7	rc: expected 2, got 4; xpheno[0]: expected 48.344957193433281, got 48.34498409359464; xpheno[2]: expected 33.478807611305783, got 33.478831156660824
-11	1	181	VALUE-MISMATCH	-7	rc: expected 2, got 4; xpheno[0]: expected 15.937114448834096, got 15.93711254984734; xpheno[2]: expected 26.051139857392844, got 26.051153861174637
+11	1	177	VALUE-MISMATCH	-8	rc: expected 2, got 4; xpheno[3]: expected 0.54144243781731838, got 0.54144248804219619; xpheno[4]: expected -26.893571350061144, got -26.893571551489632
+11	1	178	VALUE-MISMATCH	-5	rc: expected 2, got 4; xpheno[0]: expected 140.46324066997951, got 140.46207940468361; xpheno[1]: expected 0.11439183247293189, got 0.11439828355344472; xpheno[2]: expected 39.437609783868297, got 39.43876703797136; xpheno[3]: expected 0.49650009747949464, got 0.49649966516005262; xpheno[4]: expected -7.4566897364178928, got -7.4567695437176145
+11	1	179	VALUE-MISMATCH	-6	rc: expected 2, got 4; xpheno[0]: expected 18.690956142735956, got 18.690879483438589; xpheno[1]: expected 0.97363043656554649, got 0.97363065094831946; xpheno[2]: expected 8.6077678191178908, got 8.6077509086840323; xpheno[4]: expected -0.761038459036252, got -0.76103975559431714
+11	1	180	VALUE-MISMATCH	-7	rc: expected 2, got 4; xpheno[0]: expected 48.344957193433281, got 48.34498409359464; xpheno[1]: expected 0.83232214974938823, got 0.83232197435490929; xpheno[2]: expected 33.478807611305783, got 33.478831156660824; xpheno[4]: expected -3.9572738707603499, got -3.9572733488667318
+11	1	181	VALUE-MISMATCH	-7	rc: expected 2, got 4; xpheno[0]: expected 15.937114448834096, got 15.93711254984734; xpheno[2]: expected 26.051139857392844, got 26.051153861174637; xpheno[4]: expected 1.6135200392708335, got 1.613520740474613
 11	1	182	VALUE-MISMATCH	-6	rc: expected 2, got 4; xpheno[0]: expected 9.9639288988424077, got 9.9639432217543753; xpheno[2]: expected 109.54499778518506, got 109.54459317255501; xpheno[4]: expected -2.2147087661142661, got -2.2147001302706899
 11	1	183	VALUE-MISMATCH	-6	rc: expected 2, got 4; xpheno[0]: expected 5.5334478868653019, got 5.5334459119269814; xpheno[2]: expected 113.41327686579645, got 113.41324806973853; xpheno[4]: expected 0.44160177819248148, got 0.44160361876522103
 11	1	184	VALUE-MISMATCH	-5	rc: expected 2, got 4; xpheno[0]: expected 0.84169101986060091, got 0.84175140034183871; xpheno[2]: expected 16.779970808570102, got 16.781211766845136; xpheno[4]: expected 5.8372372540136057, got 5.8372451686523945
@@ -1372,10 +1400,14 @@ suite	testcase	iteration	category	magnitude_key	reason
 11	1	262	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	263	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	1	264	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
-11	2	3	VALUE-MISMATCH	-6	xpheno[0]: expected 120.7837478176085, got 120.78378492362506; xpheno[4]: expected 1.0929449720242559, got 1.0929471386128649
-11	2	4	VALUE-MISMATCH	-7	xpheno[0]: expected 45.798278963911486, got 45.798319624337857
-11	2	5	VALUE-MISMATCH	-7	xpheno[0]: expected 37.348774343137087, got 37.348784996051904
+11	2	3	VALUE-MISMATCH	-6	xpheno[0]: expected 120.7837478176085, got 120.78378492362506; xpheno[1]: expected 0.24410040160817825, got 0.24410012342047932; xpheno[4]: expected 1.0929449720242559, got 1.0929471386128649
+11	2	4	VALUE-MISMATCH	-7	xpheno[0]: expected 45.798278963911486, got 45.798319624337857; xpheno[1]: expected 0.84859331845949626, got 0.84859306408605195; xpheno[4]: expected -3.9219167863959705, got -3.921916035942695
+11	2	5	VALUE-MISMATCH	-7	xpheno[0]: expected 37.348774343137087, got 37.348784996051904; xpheno[4]: expected 0.94753113996471516, got 0.94753126309061009
 11	2	6	VALUE-MISMATCH	-7	xpheno[0]: expected 10.138698495820735, got 10.138700824468426
+11	2	7	VALUE-MISMATCH	-7	xpheno[0]: expected 5.2243113644386927, got 5.2243121283961216
+11	2	8	VALUE-MISMATCH	-7	xpheno[0]: expected 2.4259210036247469, got 2.425921260943205
+11	2	9	VALUE-MISMATCH	-8	xpheno[0]: expected 1.9307181115508203, got 1.9307182698145811
+11	2	10	VALUE-MISMATCH	-8	xpheno[0]: expected 1.1343921069340783, got 1.1343921819548459
 11	2	11	VALUE-MISMATCH	-7	xpheno[0]: expected 12.346404229266811, got 12.346405944778244
 11	2	12	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	13	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
@@ -1399,10 +1431,14 @@ suite	testcase	iteration	category	magnitude_key	reason
 11	2	42	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	43	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	44	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
-11	2	47	VALUE-MISMATCH	-6	xpheno[0]: expected 120.7837478176085, got 120.78378492362506; xpheno[4]: expected 1.0929449720242559, got 1.0929471386128649
-11	2	48	VALUE-MISMATCH	-7	xpheno[0]: expected 45.798278963911486, got 45.798319624337857
-11	2	49	VALUE-MISMATCH	-7	xpheno[0]: expected 37.348774343137087, got 37.348784996051904
+11	2	47	VALUE-MISMATCH	-6	xpheno[0]: expected 120.7837478176085, got 120.78378492362506; xpheno[1]: expected 0.24410040160817825, got 0.24410012342047932; xpheno[4]: expected 1.0929449720242559, got 1.0929471386128649
+11	2	48	VALUE-MISMATCH	-7	xpheno[0]: expected 45.798278963911486, got 45.798319624337857; xpheno[1]: expected 0.84859331845949626, got 0.84859306408605195; xpheno[4]: expected -3.9219167863959705, got -3.921916035942695
+11	2	49	VALUE-MISMATCH	-7	xpheno[0]: expected 37.348774343137087, got 37.348784996051904; xpheno[4]: expected 0.94753113996471516, got 0.94753126309061009
 11	2	50	VALUE-MISMATCH	-7	xpheno[0]: expected 10.138698495820735, got 10.138700824468426
+11	2	51	VALUE-MISMATCH	-7	xpheno[0]: expected 5.2243113644386927, got 5.2243121283961216
+11	2	52	VALUE-MISMATCH	-7	xpheno[0]: expected 2.4259210036247469, got 2.425921260943205
+11	2	53	VALUE-MISMATCH	-8	xpheno[0]: expected 1.9307181115508203, got 1.9307182698145811
+11	2	54	VALUE-MISMATCH	-8	xpheno[0]: expected 1.1343921069340783, got 1.1343921819548459
 11	2	55	VALUE-MISMATCH	-7	xpheno[0]: expected 12.346404229266811, got 12.346405944778244
 11	2	56	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	57	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
@@ -1415,11 +1451,15 @@ suite	testcase	iteration	category	magnitude_key	reason
 11	2	64	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	65	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	66	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
-11	2	69	VALUE-MISMATCH	-6	xpheno[0]: expected 60.758320504978855, got 60.758204744051909; xpheno[4]: expected -0.96126631374425742, got -0.96126998819361065
-11	2	70	VALUE-MISMATCH	-6	xpheno[0]: expected 11.018341063005732, got 11.018317158660308
+11	2	69	VALUE-MISMATCH	-6	xpheno[0]: expected 60.758320504978855, got 60.758204744051909; xpheno[1]: expected 0.74424726614706604, got 0.74424814761777236; xpheno[4]: expected -0.96126631374425742, got -0.96126998819361065
+11	2	70	VALUE-MISMATCH	-6	xpheno[0]: expected 11.018341063005732, got 11.018317158660308; xpheno[4]: expected -3.9062999505325617, got -3.9063000993242425
 11	2	71	VALUE-MISMATCH	-7	xpheno[0]: expected 43.311844926444437, got 43.311838202852748
 11	2	72	VALUE-MISMATCH	-7	xpheno[0]: expected 10.750982692213315, got 10.750981381840548
-11	2	77	VALUE-MISMATCH	-7	xpheno[0]: expected 14.464735338223383, got 14.464732482631604
+11	2	73	VALUE-MISMATCH	-7	xpheno[0]: expected 0.59753983407862299, got 0.59754006482508926
+11	2	74	VALUE-MISMATCH	-7	xpheno[0]: expected 2.6775071470461191, got 2.6775068560937911
+11	2	75	VALUE-MISMATCH	-8	xpheno[0]: expected 1.8737139249016332, got 1.8737138121340593
+11	2	76	VALUE-MISMATCH	-8	xpheno[0]: expected 1.1362694750574875, got 1.1362694313802297
+11	2	77	VALUE-MISMATCH	-7	xpheno[0]: expected 14.464735338223383, got 14.464732482631604; xpheno[4]: expected 8.9421863373149879, got 8.9421862246823416
 11	2	78	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	79	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	80	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
@@ -1442,11 +1482,15 @@ suite	testcase	iteration	category	magnitude_key	reason
 11	2	108	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	109	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	110	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
-11	2	113	VALUE-MISMATCH	-6	xpheno[0]: expected 60.758320504978855, got 60.758204744051909; xpheno[4]: expected -0.96126631374425742, got -0.96126998819361065
-11	2	114	VALUE-MISMATCH	-6	xpheno[0]: expected 11.018341063005732, got 11.018317158660308
+11	2	113	VALUE-MISMATCH	-6	xpheno[0]: expected 60.758320504978855, got 60.758204744051909; xpheno[1]: expected 0.74424726614706604, got 0.74424814761777236; xpheno[4]: expected -0.96126631374425742, got -0.96126998819361065
+11	2	114	VALUE-MISMATCH	-6	xpheno[0]: expected 11.018341063005732, got 11.018317158660308; xpheno[4]: expected -3.9062999505325617, got -3.9063000993242425
 11	2	115	VALUE-MISMATCH	-7	xpheno[0]: expected 43.311844926444437, got 43.311838202852748
 11	2	116	VALUE-MISMATCH	-7	xpheno[0]: expected 10.750982692213315, got 10.750981381840548
-11	2	121	VALUE-MISMATCH	-7	xpheno[0]: expected 14.464735338223383, got 14.464732482631604
+11	2	117	VALUE-MISMATCH	-7	xpheno[0]: expected 0.59753983407862299, got 0.59754006482508926
+11	2	118	VALUE-MISMATCH	-7	xpheno[0]: expected 2.6775071470461191, got 2.6775068560937911
+11	2	119	VALUE-MISMATCH	-8	xpheno[0]: expected 1.8737139249016332, got 1.8737138121340593
+11	2	120	VALUE-MISMATCH	-8	xpheno[0]: expected 1.1362694750574875, got 1.1362694313802297
+11	2	121	VALUE-MISMATCH	-7	xpheno[0]: expected 14.464735338223383, got 14.464732482631604; xpheno[4]: expected 8.9421863373149879, got 8.9421862246823416
 11	2	122	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	123	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	124	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
@@ -1458,11 +1502,11 @@ suite	testcase	iteration	category	magnitude_key	reason
 11	2	130	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	131	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	132	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
-11	2	133	VALUE-MISMATCH	n/a	rc: expected 2, got 4
-11	2	134	VALUE-MISMATCH	-5	rc: expected 2, got 4; xpheno[0]: expected 140.0423391486712, got 140.04117972761779; xpheno[1]: expected 0.11674038666075887, got 0.11674688464336647; xpheno[2]: expected 39.857655447938278, got 39.858810871107444; xpheno[4]: expected -7.486764393477241, got -7.4868436081268186
-11	2	135	VALUE-MISMATCH	-6	rc: expected 2, got 4; xpheno[0]: expected 18.643149368120948, got 18.643072755065699; xpheno[2]: expected 8.5877954599429085, got 8.5877785506852273; xpheno[4]: expected -0.76173091781813762, got -0.76173222089637704
-11	2	136	VALUE-MISMATCH	-7	rc: expected 2, got 4; xpheno[0]: expected 48.358666272697704, got 48.358693150137199; xpheno[2]: expected 33.486863704890077, got 33.48688724576229
-11	2	137	VALUE-MISMATCH	-7	rc: expected 2, got 4; xpheno[0]: expected 15.944801871838948, got 15.944799971043897; xpheno[2]: expected 26.063597741929531, got 26.063611753480195
+11	2	133	VALUE-MISMATCH	-8	rc: expected 2, got 4; xpheno[3]: expected 0.54144448739488193, got 0.54144453760548883; xpheno[4]: expected -26.893579569942698, got -26.893579771313188
+11	2	134	VALUE-MISMATCH	-5	rc: expected 2, got 4; xpheno[0]: expected 140.0423391486712, got 140.04117972761779; xpheno[1]: expected 0.11674038666075887, got 0.11674688464336647; xpheno[2]: expected 39.857655447938278, got 39.858810871107444; xpheno[3]: expected 0.4966309745388563, got 0.49663054174273397; xpheno[4]: expected -7.486764393477241, got -7.4868436081268186
+11	2	135	VALUE-MISMATCH	-6	rc: expected 2, got 4; xpheno[0]: expected 18.643149368120948, got 18.643072755065699; xpheno[1]: expected 0.97376396673698906, got 0.97376418046193947; xpheno[2]: expected 8.5877954599429085, got 8.5877785506852273; xpheno[4]: expected -0.76173091781813762, got -0.76173222089637704
+11	2	136	VALUE-MISMATCH	-7	rc: expected 2, got 4; xpheno[0]: expected 48.358666272697704, got 48.358693150137199; xpheno[1]: expected 0.83223275429385657, got 0.83223257901023384; xpheno[2]: expected 33.486863704890077, got 33.48688724576229; xpheno[4]: expected -3.9573751878370507, got -3.9573746668823082
+11	2	137	VALUE-MISMATCH	-7	rc: expected 2, got 4; xpheno[0]: expected 15.944801871838948, got 15.944799971043897; xpheno[2]: expected 26.063597741929531, got 26.063611753480195; xpheno[4]: expected 1.6134197567488677, got 1.6134204588524022
 11	2	138	VALUE-MISMATCH	-6	rc: expected 2, got 4; xpheno[0]: expected 9.9614891169469963, got 9.9615034954195494; xpheno[2]: expected 109.5832007943211, got 109.58279610053117; xpheno[4]: expected -2.2149820284514936, got -2.214973392282781
 11	2	139	VALUE-MISMATCH	-6	rc: expected 2, got 4; xpheno[0]: expected 5.5350719940758548, got 5.5350700171833749; xpheno[2]: expected 113.37427426346932, got 113.37424547621524; xpheno[4]: expected 0.44177412259571014, got 0.4417759621271653
 11	2	140	VALUE-MISMATCH	-5	rc: expected 2, got 4; xpheno[0]: expected 0.83991803704450474, got 0.8399784281850573; xpheno[2]: expected 16.743448705352215, got 16.744689660272293; xpheno[4]: expected 5.837246609537396, got 5.837254526020633
@@ -1480,11 +1524,11 @@ suite	testcase	iteration	category	magnitude_key	reason
 11	2	152	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	153	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	154	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
-11	2	155	VALUE-MISMATCH	n/a	rc: expected 18, got 20
-11	2	156	VALUE-MISMATCH	-5	rc: expected 18, got 20; xpheno[0]: expected 140.04775460643384, got 140.04659669994734; xpheno[1]: expected 0.11671003777206623, got 0.11671652653407211; xpheno[2]: expected 39.852114893339341, got 39.853270289989361; xpheno[4]: expected -7.4865208223597826, got -7.4865999956841893
-11	2	157	VALUE-MISMATCH	-6	rc: expected 18, got 20; xpheno[0]: expected 18.62549716041077, got 18.625450799843069; xpheno[2]: expected 8.5810338012470204, got 8.5810159562243467
-11	2	158	VALUE-MISMATCH	-7	rc: expected 18, got 20; xpheno[0]: expected 48.368045887010432, got 48.36806455984231; xpheno[2]: expected 33.490327803049659, got 33.490350433348283
-11	2	159	VALUE-MISMATCH	-7	rc: expected 18, got 20; xpheno[0]: expected 15.943155499249523, got 15.943157660365671; xpheno[2]: expected 26.059820394365712, got 26.059834278290914
+11	2	155	VALUE-MISMATCH	-8	rc: expected 18, got 20; xpheno[3]: expected 0.54144450090805141, got 0.54144453760548894; xpheno[4]: expected -26.893579624137494, got -26.893579771313188
+11	2	156	VALUE-MISMATCH	-5	rc: expected 18, got 20; xpheno[0]: expected 140.04775460643384, got 140.04659669994734; xpheno[1]: expected 0.11671003777206623, got 0.11671652653407211; xpheno[2]: expected 39.852114893339341, got 39.853270289989361; xpheno[3]: expected 0.49666262587100107, got 0.49666219240977255; xpheno[4]: expected -7.4865208223597826, got -7.4865999956841893
+11	2	157	VALUE-MISMATCH	-6	rc: expected 18, got 20; xpheno[0]: expected 18.62549716041077, got 18.625450799843069; xpheno[1]: expected 0.97381318813941364, got 0.97381331735197385; xpheno[2]: expected 8.5810338012470204, got 8.5810159562243467; xpheno[4]: expected -0.76204134499044895, got -0.76204179871047939
+11	2	158	VALUE-MISMATCH	-7	rc: expected 18, got 20; xpheno[0]: expected 48.368045887010432, got 48.36806455984231; xpheno[1]: expected 0.8321715798624183, got 0.83217145806816128; xpheno[2]: expected 33.490327803049659, got 33.490350433348283; xpheno[4]: expected -3.9573896631592027, got -3.95738934206905
+11	2	159	VALUE-MISMATCH	-7	rc: expected 18, got 20; xpheno[0]: expected 15.943155499249523, got 15.943157660365671; xpheno[2]: expected 26.059820394365712, got 26.059834278290914; xpheno[4]: expected 1.6133833394787986, got 1.6133842630195936
 11	2	160	VALUE-MISMATCH	-6	rc: expected 18, got 20; xpheno[0]: expected 9.9572368354767224, got 9.9572486295746216; xpheno[2]: expected 109.58858446668725, got 109.58817967499279; xpheno[4]: expected -2.2150064757106103, got -2.2149978201739273
 11	2	161	VALUE-MISMATCH	-6	rc: expected 18, got 20; xpheno[0]: expected 5.5391414310293836, got 5.5391390254866879; xpheno[2]: expected 113.36809437827478, got 113.36806558540221; xpheno[4]: expected 0.44183979263810791, got 0.44184147535863971
 11	2	162	VALUE-MISMATCH	-5	rc: expected 18, got 20; xpheno[0]: expected 0.83572801447662448, got 0.83578649311428277; xpheno[2]: expected 16.744485548425967, got 16.745726451488089; xpheno[4]: expected 5.8372244585965261, got 5.8372324339659389
@@ -1502,11 +1546,11 @@ suite	testcase	iteration	category	magnitude_key	reason
 11	2	174	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	175	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	176	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
-11	2	177	VALUE-MISMATCH	n/a	rc: expected 2, got 4
-11	2	178	VALUE-MISMATCH	-5	rc: expected 2, got 4; xpheno[0]: expected 140.0423391486712, got 140.04117972761779; xpheno[1]: expected 0.11674038666075887, got 0.11674688464336647; xpheno[2]: expected 39.857655447938278, got 39.858810871107444; xpheno[4]: expected -7.486764393477241, got -7.4868436081268186
-11	2	179	VALUE-MISMATCH	-6	rc: expected 2, got 4; xpheno[0]: expected 18.643149368120948, got 18.643072755065699; xpheno[2]: expected 8.5877954599429085, got 8.5877785506852273; xpheno[4]: expected -0.76173091781813762, got -0.76173222089637704
-11	2	180	VALUE-MISMATCH	-7	rc: expected 2, got 4; xpheno[0]: expected 48.358666272697704, got 48.358693150137199; xpheno[2]: expected 33.486863704890077, got 33.48688724576229
-11	2	181	VALUE-MISMATCH	-7	rc: expected 2, got 4; xpheno[0]: expected 15.944801871838948, got 15.944799971043897; xpheno[2]: expected 26.063597741929531, got 26.063611753480195
+11	2	177	VALUE-MISMATCH	-8	rc: expected 2, got 4; xpheno[3]: expected 0.54144448739488193, got 0.54144453760548883; xpheno[4]: expected -26.893579569942698, got -26.893579771313188
+11	2	178	VALUE-MISMATCH	-5	rc: expected 2, got 4; xpheno[0]: expected 140.0423391486712, got 140.04117972761779; xpheno[1]: expected 0.11674038666075887, got 0.11674688464336647; xpheno[2]: expected 39.857655447938278, got 39.858810871107444; xpheno[3]: expected 0.4966309745388563, got 0.49663054174273397; xpheno[4]: expected -7.486764393477241, got -7.4868436081268186
+11	2	179	VALUE-MISMATCH	-6	rc: expected 2, got 4; xpheno[0]: expected 18.643149368120948, got 18.643072755065699; xpheno[1]: expected 0.97376396673698906, got 0.97376418046193947; xpheno[2]: expected 8.5877954599429085, got 8.5877785506852273; xpheno[4]: expected -0.76173091781813762, got -0.76173222089637704
+11	2	180	VALUE-MISMATCH	-7	rc: expected 2, got 4; xpheno[0]: expected 48.358666272697704, got 48.358693150137199; xpheno[1]: expected 0.83223275429385657, got 0.83223257901023384; xpheno[2]: expected 33.486863704890077, got 33.48688724576229; xpheno[4]: expected -3.9573751878370507, got -3.9573746668823082
+11	2	181	VALUE-MISMATCH	-7	rc: expected 2, got 4; xpheno[0]: expected 15.944801871838948, got 15.944799971043897; xpheno[2]: expected 26.063597741929531, got 26.063611753480195; xpheno[4]: expected 1.6134197567488677, got 1.6134204588524022
 11	2	182	VALUE-MISMATCH	-6	rc: expected 2, got 4; xpheno[0]: expected 9.9614891169469963, got 9.9615034954195494; xpheno[2]: expected 109.5832007943211, got 109.58279610053117; xpheno[4]: expected -2.2149820284514936, got -2.214973392282781
 11	2	183	VALUE-MISMATCH	-6	rc: expected 2, got 4; xpheno[0]: expected 5.5350719940758548, got 5.5350700171833749; xpheno[2]: expected 113.37427426346932, got 113.37424547621524; xpheno[4]: expected 0.44177412259571014, got 0.4417759621271653
 11	2	184	VALUE-MISMATCH	-5	rc: expected 2, got 4; xpheno[0]: expected 0.83991803704450474, got 0.8399784281850573; xpheno[2]: expected 16.743448705352215, got 16.744689660272293; xpheno[4]: expected 5.837246609537396, got 5.837254526020633
@@ -1526,11 +1570,11 @@ suite	testcase	iteration	category	magnitude_key	reason
 11	2	198	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	199	VALUE-MISMATCH	-6	rc: expected 2, got 4; xpheno[3]: expected 0.5289090388247677, got 0.52891365508056187; xpheno[4]: expected -26.842714832907692, got -26.842733785180414
 11	2	200	VALUE-MISMATCH	-4	rc: expected 2, got 4; xpheno[0]: expected 104.26652225039182, got 104.22961753421501; xpheno[1]: expected 0.37678361117555292, got 0.3770957589228694; xpheno[2]: expected 75.595937432256193, got 75.632821773207525; xpheno[3]: expected 0.532817504746677, got 0.5328409093132942; xpheno[4]: expected -9.5813363653867505, got -9.5830758775273068
-11	2	201	VALUE-MISMATCH	-3	rc: expected 2, got 4; xpheno[0]: expected 66.629597105792456, got 66.589907511737366; xpheno[1]: expected 0.69833687798236865, got 0.6986547721671259; xpheno[2]: expected 16.914428642355681, got 16.908170214087502; xpheno[4]: expected -0.78610701321768195, got -0.78705031696851213
-11	2	202	VALUE-MISMATCH	-5	rc: expected 2, got 4; xpheno[0]: expected 78.10479486137946, got 78.109971422173089; xpheno[1]: expected 0.60306114852801462, got 0.60301694414859319; xpheno[2]: expected 44.955597266691768, got 44.957043000246586; xpheno[4]: expected -4.2333163809336884, got -4.2334315380878333
-11	2	203	VALUE-MISMATCH	-3	rc: expected 2, got 4; xpheno[0]: expected 19.601802773489617, got 19.662167342615735; xpheno[1]: expected 0.97102344878053071, got 0.97084646252445572; xpheno[2]: expected 31.862503011285629, got 31.966075728469814; xpheno[4]: expected 1.6505313640026131, got 1.6499622827313554
-11	2	204	VALUE-MISMATCH	-4	rc: expected 2, got 4; xpheno[0]: expected 4.2191937083802777, got 4.2183902599889453; xpheno[2]: expected 156.70126758881273, got 156.70568206648261; xpheno[4]: expected -2.4668359467185947, got -2.4668455372061988
-11	2	205	VALUE-MISMATCH	-4	rc: expected 2, got 4; xpheno[0]: expected 5.7182014261370551, got 5.7179080421695776; xpheno[2]: expected 112.64378703106412, got 112.64995613972886; xpheno[4]: expected 0.37930068803046879, got 0.37924870384391873
+11	2	201	VALUE-MISMATCH	-3	rc: expected 2, got 4; xpheno[0]: expected 66.629597105792456, got 66.589907511737366; xpheno[1]: expected 0.69833687798236865, got 0.6986547721671259; xpheno[2]: expected 16.914428642355681, got 16.908170214087502; xpheno[3]: expected 0.0017125874373501856, got 0.0017122467554171199; xpheno[4]: expected -0.78610701321768195, got -0.78705031696851213
+11	2	202	VALUE-MISMATCH	-4	rc: expected 2, got 4; xpheno[0]: expected 78.10479486137946, got 78.109971422173089; xpheno[1]: expected 0.60306114852801462, got 0.60301694414859319; xpheno[2]: expected 44.955597266691768, got 44.957043000246586; xpheno[3]: expected 0.0053693835304408927, got 0.0053699371659778105; xpheno[4]: expected -4.2333163809336884, got -4.2334315380878333
+11	2	203	VALUE-MISMATCH	-3	rc: expected 2, got 4; xpheno[0]: expected 19.601802773489617, got 19.662167342615735; xpheno[1]: expected 0.97102344878053071, got 0.97084646252445572; xpheno[2]: expected 31.862503011285629, got 31.966075728469814; xpheno[3]: expected 0.0011047026487425119, got 0.0011054653989940803; xpheno[4]: expected 1.6505313640026131, got 1.6499622827313554
+11	2	204	VALUE-MISMATCH	-4	rc: expected 2, got 4; xpheno[0]: expected 4.2191937083802777, got 4.2183902599889453; xpheno[1]: expected 0.99864494347607025, got 0.99864545927250337; xpheno[2]: expected 156.70126758881273, got 156.70568206648261; xpheno[3]: expected 0.011977031299969349, got 0.011977069233735141; xpheno[4]: expected -2.4668359467185947, got -2.4668455372061988
+11	2	205	VALUE-MISMATCH	-4	rc: expected 2, got 4; xpheno[0]: expected 5.7182014261370551, got 5.7179080421695776; xpheno[1]: expected 0.99751198418475595, got 0.99751223927172283; xpheno[2]: expected 112.64378703106412, got 112.64995613972886; xpheno[3]: expected 0.0050139546173672772, got 0.0050140239620821711; xpheno[4]: expected 0.37930068803046879, got 0.37924870384391873
 11	2	206	VALUE-MISMATCH	-5	rc: expected 2, got 4; xpheno[0]: expected 3.0987589130242488, got 3.0987269734806886; xpheno[2]: expected 96.098993062175126, got 96.098038511650572; xpheno[4]: expected 5.5242235052545672, got 5.5242370934855503
 11	2	207	VALUE-MISMATCH	-4	rc: expected 2, got 4; xpheno[0]: expected 0.80637178974814028, got 0.80574424233487252; xpheno[2]: expected 154.83601882879839, got 154.85641218569938; xpheno[4]: expected 7.8484746081648806, got 7.8484707270128178
 11	2	208	VALUE-MISMATCH	-5	rc: expected 2, got 4; xpheno[0]: expected 1.4580245530342659, got 1.4579653381814581; xpheno[2]: expected 93.436211913091284, got 93.436841024989747; xpheno[4]: expected 14.96302941206239, got 14.963159761733614
@@ -1548,11 +1592,11 @@ suite	testcase	iteration	category	magnitude_key	reason
 11	2	220	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	221	VALUE-MISMATCH	-6	rc: expected 18, got 20; xpheno[3]: expected 0.52890902676367835, got 0.52891365508056187; xpheno[4]: expected -26.842714783390061, got -26.842733785180414
 11	2	222	VALUE-MISMATCH	-4	rc: expected 18, got 20; xpheno[0]: expected 104.27191818196997, got 104.2350161366677; xpheno[1]: expected 0.37673797554707472, got 0.37705009323603922; xpheno[2]: expected 75.590492515657559, got 75.627376896599387; xpheno[3]: expected 0.53286842331913986, got 0.5328918631980929; xpheno[4]: expected -9.5812955425969335, got -9.5830351321603153
-11	2	223	VALUE-MISMATCH	-3	rc: expected 18, got 20; xpheno[0]: expected 66.666518972777041, got 66.626993572518941; xpheno[1]: expected 0.69804106648225317, got 0.69835773392555667; xpheno[2]: expected 16.919531684814473, got 16.913275296807107; xpheno[4]: expected -0.78513101918023676, got -0.78606915837007074
-11	2	224	VALUE-MISMATCH	-5	rc: expected 18, got 20; xpheno[0]: expected 78.095667840798114, got 78.100848800823343; xpheno[1]: expected 0.60313908515189651, got 0.60309484469038399; xpheno[2]: expected 44.955859179769661, got 44.957304971156809; xpheno[4]: expected -4.2332678393818188, got -4.2333827511525071
-11	2	225	VALUE-MISMATCH	-3	rc: expected 18, got 20; xpheno[0]: expected 19.603732545044888, got 19.664097997426087; xpheno[1]: expected 0.97101779886427053, got 0.97084079330351358; xpheno[2]: expected 31.865872853555629, got 31.969438258143857; xpheno[4]: expected 1.6505547064943622, got 1.6499851126769229
-11	2	226	VALUE-MISMATCH	-4	rc: expected 18, got 20; xpheno[0]: expected 4.2263759023268364, got 4.22557935673996; xpheno[2]: expected 156.69281327413125, got 156.69722756724863; xpheno[4]: expected -2.4668076494228295, got -2.466817188786889
-11	2	227	VALUE-MISMATCH	-4	rc: expected 18, got 20; xpheno[0]: expected 5.7222489760221942, got 5.7219602444180548; xpheno[2]: expected 112.63776594701248, got 112.6439345168877; xpheno[4]: expected 0.37943185480365926, got 0.37937989045572351
+11	2	223	VALUE-MISMATCH	-3	rc: expected 18, got 20; xpheno[0]: expected 66.666518972777041, got 66.626993572518941; xpheno[1]: expected 0.69804106648225317, got 0.69835773392555667; xpheno[2]: expected 16.919531684814473, got 16.913275296807107; xpheno[3]: expected 0.0017128705442960878, got 0.0017125297888346651; xpheno[4]: expected -0.78513101918023676, got -0.78606915837007074
+11	2	224	VALUE-MISMATCH	-4	rc: expected 18, got 20; xpheno[0]: expected 78.095667840798114, got 78.100848800823343; xpheno[1]: expected 0.60313908515189651, got 0.60309484469038399; xpheno[2]: expected 44.955859179769661, got 44.957304971156809; xpheno[3]: expected 0.005368774297864567, got 0.0053693277183416632; xpheno[4]: expected -4.2332678393818188, got -4.2333827511525071
+11	2	225	VALUE-MISMATCH	-3	rc: expected 18, got 20; xpheno[0]: expected 19.603732545044888, got 19.664097997426087; xpheno[1]: expected 0.97101779886427053, got 0.97084079330351358; xpheno[2]: expected 31.865872853555629, got 31.969438258143857; xpheno[3]: expected 0.0011047247847827135, got 0.0011054877013958388; xpheno[4]: expected 1.6505547064943622, got 1.6499851126769229
+11	2	226	VALUE-MISMATCH	-4	rc: expected 18, got 20; xpheno[0]: expected 4.2263759023268364, got 4.22557935673996; xpheno[1]: expected 0.99864032830746208, got 0.99864084054184699; xpheno[2]: expected 156.69281327413125, got 156.69722756724863; xpheno[3]: expected 0.011977067601662438, got 0.011977105485818375; xpheno[4]: expected -2.4668076494228295, got -2.466817188786889
+11	2	227	VALUE-MISMATCH	-4	rc: expected 18, got 20; xpheno[0]: expected 5.7222489760221942, got 5.7219602444180548; xpheno[1]: expected 0.99750846365212831, got 0.99750871487124204; xpheno[2]: expected 112.63776594701248, got 112.6439345168877; xpheno[3]: expected 0.005013960017580781, got 0.0050140295193062973; xpheno[4]: expected 0.37943185480365926, got 0.37937989045572351
 11	2	228	VALUE-MISMATCH	-6	rc: expected 18, got 20; xpheno[0]: expected 3.1007928415950836, got 3.1007630025224024; xpheno[2]: expected 96.093997042158264, got 96.093042551814307; xpheno[4]: expected 5.524230730015578, got 5.5242441627266512
 11	2	229	VALUE-MISMATCH	-4	rc: expected 18, got 20; xpheno[0]: expected 0.81251780710270671, got 0.81189412458067456; xpheno[2]: expected 154.82626827170611, got 154.84666080184604; xpheno[4]: expected 7.8484747786995603, got 7.8484709113938083
 11	2	230	VALUE-MISMATCH	-5	rc: expected 18, got 20; xpheno[0]: expected 1.4593007932178983, got 1.4592431717797454; xpheno[2]: expected 93.430968695113037, got 93.431597591202674; xpheno[4]: expected 14.963003256562187, got 14.963133421895769
@@ -1570,11 +1614,11 @@ suite	testcase	iteration	category	magnitude_key	reason
 11	2	242	DATA-MISSING	n/a	iephe includes SEFLG_JPLEPH, which requires a multi-hundred-MB DE file this repo does not ship. Set SWISSEPH_CONFORMANCE_INCLUDE_JPL=1 and SWISSEPH_CONFORMANCE_JPL_FILE to opt in.
 11	2	243	VALUE-MISMATCH	-6	rc: expected 2, got 4; xpheno[3]: expected 0.5289090388247677, got 0.52891365508056187; xpheno[4]: expected -26.842714832907692, got -26.842733785180414
 11	2	244	VALUE-MISMATCH	-4	rc: expected 2, got 4; xpheno[0]: expected 104.26652225039182, got 104.22961753421501; xpheno[1]: expected 0.37678361117555292, got 0.3770957589228694; xpheno[2]: expected 75.595937432256193, got 75.632821773207525; xpheno[3]: expected 0.532817504746677, got 0.5328409093132942; xpheno[4]: expected -9.5813363653867505, got -9.5830758775273068
-11	2	245	VALUE-MISMATCH	-3	rc: expected 2, got 4; xpheno[0]: expected 66.629597105792456, got 66.589907511737366; xpheno[1]: expected 0.69833687798236865, got 0.6986547721671259; xpheno[2]: expected 16.914428642355681, got 16.908170214087502; xpheno[4]: expected -0.78610701321768195, got -0.78705031696851213
-11	2	246	VALUE-MISMATCH	-5	rc: expected 2, got 4; xpheno[0]: expected 78.10479486137946, got 78.109971422173089; xpheno[1]: expected 0.60306114852801462, got 0.60301694414859319; xpheno[2]: expected 44.955597266691768, got 44.957043000246586; xpheno[4]: expected -4.2333163809336884, got -4.2334315380878333
-11	2	247	VALUE-MISMATCH	-3	rc: expected 2, got 4; xpheno[0]: expected 19.601802773489617, got 19.662167342615735; xpheno[1]: expected 0.97102344878053071, got 0.97084646252445572; xpheno[2]: expected 31.862503011285629, got 31.966075728469814; xpheno[4]: expected 1.6505313640026131, got 1.6499622827313554
-11	2	248	VALUE-MISMATCH	-4	rc: expected 2, got 4; xpheno[0]: expected 4.2191937083802777, got 4.2183902599889453; xpheno[2]: expected 156.70126758881273, got 156.70568206648261; xpheno[4]: expected -2.4668359467185947, got -2.4668455372061988
-11	2	249	VALUE-MISMATCH	-4	rc: expected 2, got 4; xpheno[0]: expected 5.7182014261370551, got 5.7179080421695776; xpheno[2]: expected 112.64378703106412, got 112.64995613972886; xpheno[4]: expected 0.37930068803046879, got 0.37924870384391873
+11	2	245	VALUE-MISMATCH	-3	rc: expected 2, got 4; xpheno[0]: expected 66.629597105792456, got 66.589907511737366; xpheno[1]: expected 0.69833687798236865, got 0.6986547721671259; xpheno[2]: expected 16.914428642355681, got 16.908170214087502; xpheno[3]: expected 0.0017125874373501856, got 0.0017122467554171199; xpheno[4]: expected -0.78610701321768195, got -0.78705031696851213
+11	2	246	VALUE-MISMATCH	-4	rc: expected 2, got 4; xpheno[0]: expected 78.10479486137946, got 78.109971422173089; xpheno[1]: expected 0.60306114852801462, got 0.60301694414859319; xpheno[2]: expected 44.955597266691768, got 44.957043000246586; xpheno[3]: expected 0.0053693835304408927, got 0.0053699371659778105; xpheno[4]: expected -4.2333163809336884, got -4.2334315380878333
+11	2	247	VALUE-MISMATCH	-3	rc: expected 2, got 4; xpheno[0]: expected 19.601802773489617, got 19.662167342615735; xpheno[1]: expected 0.97102344878053071, got 0.97084646252445572; xpheno[2]: expected 31.862503011285629, got 31.966075728469814; xpheno[3]: expected 0.0011047026487425119, got 0.0011054653989940803; xpheno[4]: expected 1.6505313640026131, got 1.6499622827313554
+11	2	248	VALUE-MISMATCH	-4	rc: expected 2, got 4; xpheno[0]: expected 4.2191937083802777, got 4.2183902599889453; xpheno[1]: expected 0.99864494347607025, got 0.99864545927250337; xpheno[2]: expected 156.70126758881273, got 156.70568206648261; xpheno[3]: expected 0.011977031299969349, got 0.011977069233735141; xpheno[4]: expected -2.4668359467185947, got -2.4668455372061988
+11	2	249	VALUE-MISMATCH	-4	rc: expected 2, got 4; xpheno[0]: expected 5.7182014261370551, got 5.7179080421695776; xpheno[1]: expected 0.99751198418475595, got 0.99751223927172283; xpheno[2]: expected 112.64378703106412, got 112.64995613972886; xpheno[3]: expected 0.0050139546173672772, got 0.0050140239620821711; xpheno[4]: expected 0.37930068803046879, got 0.37924870384391873
 11	2	250	VALUE-MISMATCH	-5	rc: expected 2, got 4; xpheno[0]: expected 3.0987589130242488, got 3.0987269734806886; xpheno[2]: expected 96.098993062175126, got 96.098038511650572; xpheno[4]: expected 5.5242235052545672, got 5.5242370934855503
 11	2	251	VALUE-MISMATCH	-4	rc: expected 2, got 4; xpheno[0]: expected 0.80637178974814028, got 0.80574424233487252; xpheno[2]: expected 154.83601882879839, got 154.85641218569938; xpheno[4]: expected 7.8484746081648806, got 7.8484707270128178
 11	2	252	VALUE-MISMATCH	-5	rc: expected 2, got 4; xpheno[0]: expected 1.4580245530342659, got 1.4579653381814581; xpheno[2]: expected 93.436211913091284, got 93.436841024989747; xpheno[4]: expected 14.96302941206239, got 14.963159761733614
