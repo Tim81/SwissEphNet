@@ -2825,6 +2825,10 @@ namespace SwissEphNet.CPort
                 return swed.delta_t_userdef;
             //if (serr != NULL)
             //    *serr = '\0';
+            // swephlib.c:2733-2734 (e308765d) clears the caller's buffer before calc_deltat. A ref string
+            // is always supplied, so the clear is unconditional; the C's NULL callers pass a local
+            // sdummy, which this clears harmlessly.
+            serr = null;
             calc_deltat(tjd, iflag, out deltat, ref serr);
             return deltat;
         }

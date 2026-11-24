@@ -595,7 +595,7 @@ namespace SwissEphNet.CPort
                  */
                 sd.tsave = tjd;
                 sd.ipl = ipl;
-                if ((sd.iflgsave = swecalc(tjd, ipl, iplmoon, iflag, sd.xsaves, out serr)) == ERR)
+                if ((sd.iflgsave = swecalc(tjd, ipl, iplmoon, iflag, sd.xsaves, ref serr)) == ERR)
                     goto return_error;
             }
             else
@@ -625,11 +625,11 @@ namespace SwissEphNet.CPort
                         dt = PLAN_SPEED_INTV;
                         break;
                 }
-                if ((sd.iflgsave = swecalc(tjd - dt, ipl, iplmoon, iflag, x0, out serr)) == ERR)
+                if ((sd.iflgsave = swecalc(tjd - dt, ipl, iplmoon, iflag, x0, ref serr)) == ERR)
                     goto return_error;
-                if ((sd.iflgsave = swecalc(tjd + dt, ipl, iplmoon, iflag, x2, out serr)) == ERR)
+                if ((sd.iflgsave = swecalc(tjd + dt, ipl, iplmoon, iflag, x2, ref serr)) == ERR)
                     goto return_error;
-                if ((sd.iflgsave = swecalc(tjd, ipl, iplmoon, iflag, sd.xsaves, out serr)) == ERR)
+                if ((sd.iflgsave = swecalc(tjd, ipl, iplmoon, iflag, sd.xsaves, ref serr)) == ERR)
                     goto return_error;
                 denormalize_positions(x0, sd.xsaves, x2);
                 calc_speed(x0, sd.xsaves, x2, dt);
@@ -730,7 +730,7 @@ namespace SwissEphNet.CPort
             return retval;
         }
 
-        Int32 swecalc(double tjd, int ipl, Int32 iplmoon, Int32 iflag, CPointer<double> x, out string serr)
+        Int32 swecalc(double tjd, int ipl, Int32 iplmoon, Int32 iflag, CPointer<double> x, ref string serr)
         {
             int i;
             int ipli, ipli_ast, ifno;
@@ -747,7 +747,10 @@ namespace SwissEphNet.CPort
             double[] xp, xp2;
             double[] ss = new double[3];
             string serr2 = null;
-            serr = null;
+            //if (serr != NULL)
+            //  *serr = '\0';  // is done in calling function
+            // sweph.c:613-631 (e308765d) does not clear serr here; the caller does, so the three
+            // SPEED3 calls in swecalc_1 accumulate into one buffer.
             /****************************************** 
              * iflag plausible?                       * 
              ******************************************/
@@ -1525,11 +1528,18 @@ namespace SwissEphNet.CPort
                 swed.fidat[i].Clear();
             }
             free_planets();
-            swed.oec = new epsilon();
-            swed.oec2000 = new epsilon();
-            swed.nut = new nut();
-            swed.nut2000 = new nut();
-            swed.nutv = new nut();
+            //memset((void *) &swed.oec, 0, sizeof(struct epsilon));
+            //memset((void *) &swed.oec2000, 0, sizeof(struct epsilon));
+            //memset((void *) &swed.nut, 0, sizeof(struct nut));
+            //memset((void *) &swed.nut2000, 0, sizeof(struct nut));
+            //memset((void *) &swed.nutv, 0, sizeof(struct nut));
+            // sweph.c:1280-1284 (e308765d) clears these in place; replacing them left a
+            // reference held across a close (SweCL.cs:687, swecl.c:662) on the discarded object.
+            swed.oec.Clear();
+            swed.oec2000.Clear();
+            swed.nut.Clear();
+            swed.nut2000.Clear();
+            swed.nutv.Clear();
             //memset((void *) &swed.astro_models, 0, SEI_NMODELS * sizeof(int32));
             // sweph.c:1285 (e308765d) clears astro_models in place.
             Array.Clear(swed.astro_models, 0, SEI_NMODELS);

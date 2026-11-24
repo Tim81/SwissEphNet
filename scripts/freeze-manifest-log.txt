@@ -845,7 +845,7 @@ b"} where the C gives {"a", ""}); that one is fixed
     the first-day rule, records the file's nominal range in the new file_data.tnom0/tnom1
     (gen_filename_range(), sweph.c:1206-1230) and reselects by tjd when the chosen file does not
     contain it (sweph.c:2277-2500); read_const() frees the segment of every body of a new file
-    (sweph.c:5113-5120). app_pos_etc_plan() with SEFLG_HELCTR uses the heliocentric distance for the
+    (sweph.c:5117-5126). app_pos_etc_plan() with SEFLG_HELCTR uses the heliocentric distance for the
     second light-time pass, and app_pos_etc_plan_osc() likewise (8178d0ac). app_pos_etc_moon() returns
     the error when the light-time point is outside the JPL file, and swecalc() then falls back to
     Moshier (sweph.c:750-765); C# cannot jump from after the switch into its moshier_moon: case
@@ -876,13 +876,14 @@ b"} where the C gives {"a", ""}); that one is fixed
     port assigned a new swe_data (Sweph.cs:1501) and a new int[] (Sweph.cs:1530). Anything holding
     swed.astro_models across the first initialisation was left pointing at the discarded array:
     swe_get_astro_models("SE2.06", ..., SEFLG_MOSEPH) on a fresh instance (it takes the array at
-    swephlib.c:4413 before swe_set_astro_models initialises swed) printed the default models, "-amod0,..."
+    swephlib.c:4601, `int *pmodel = &(swed.astro_models[0]);`, before swe_set_astro_models initialises swed) printed the default models, "-amod0,..."
     and model 6's Delta T text, where the MSVC-built C prints "-amod5,0,0,0,0,0,0,0," and
     "Stephenson/Morrison/Hohenkerk 2016 (before 1955)"; the second call on the same instance was
     right. The larger effect is in swe_nod_aps: it takes pedp and psbdp from swed.pldat
-    (swecl.c:5085-5086, SweCL.cs:5188-5189) before its first swe_calc runs
-    swe_set_ephe_path(NULL) -> swi_init_swed_if_start, so on a fresh instance both stayed on the
-    discarded object and the apsides came out wrong for some bodies and dates (NA|0|1000000|MEAN
+    (swecl.c:5085-5086, SweCL.cs:5188-5189) before its first swe_calc, and that swe_calc runs
+    swi_init_swed_if_start() directly in swecalc_1 (sweph.c:409, Sweph.cs:496; evaluated first,
+    whatever the ephemeris flag; swe_set_ephe_path(NULL) is never called with SEFLG_MOSEPH, the
+    measured case), so on a fresh instance both stayed on the discarded object and the apsides came out wrong for some bodies and dates (NA|0|1000000|MEAN
     perihelion 215.29900167326124 where the MSVC-built C gives 302.33849105597147). All 360
     swe_nod_aps and swe_nod_aps_ut calls of the nodaps baseline are now bit-identical to the C
     (0 differing fields), and the 156 NA/NAUT rows that differed were regenerated in the same
@@ -891,9 +892,38 @@ b"} where the C gives {"a", ""}); that one is fixed
     a new swe_data without replacing any array or nested object (Clear() on each fidat, pldat,
     nddat and savedat element, Array.Clear on astro_models, field-wise zeroing of oec, oec2000, nut,
     nut2000, nutv and topd); the init now calls it, and swi_close_keep_topo_etc clears astro_models
-    with Array.Clear. The other reallocations in swi_close_keep_topo_etc (oec, nut, ...) are left:
-    no code holds them across a close. Tests: AstroModelsStringTest.GetAstroModels_MatchesTheC
+    with Array.Clear. The reallocations of oec, nut, ... in swi_close_keep_topo_etc were not
+    addressed here; see entry 51. Tests: AstroModelsStringTest.GetAstroModels_MatchesTheC
     (SE2.06), AstroModelsStringTest.Se206_OnAFreshInstance_AndAgainOnTheSameInstance_MatchTheC,
     SweDataClearInPlaceTest.
     SwissEphNet/CPort: 50168 -> 50239 lines, kr_braces (1261) and trailing_ws (1280) unchanged,
     sha256 F4E85840... -> EEFA9FBA....
+51. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-24: Three corrections
+    of divergences from the C (e308765d), found in review.
+    (a) swi_close_keep_topo_etc replaced swed.oec, oec2000, nut, nut2000 and nutv where the C clears
+    them in place (sweph.c:1280-1284, memset). New epsilon.Clear() and nut.Clear() (Sweph.h.cs),
+    also used by swe_data.ClearInPlace. SweCL.cs:687 (eclipse_where, swecl.c:662) takes oe = swed.oec,
+    calls swe_calc (:698), then reads oe.eps (:716); on a fresh instance with a non-Moshier flag
+    swe_calc runs swe_set_ephe_path(NULL) -> swi_close_keep_topo_etc, which left oe on the discarded
+    object. Unreachable for results today (oe.eps is read only under SEFLG_NONUT, which every
+    eclipse_where caller masks off, swecl.c:574/618/938), so no output changes and there is no C
+    probe value; the expectation is the memset. Test: CloseKeepTopoClearsInPlaceTest.
+    (b) swecalc cleared serr, which the C does not (sweph.c:613-631: "//if (serr != NULL) *serr =
+    ' ';  // is done in calling function"). The port's swecalc takes ref string serr now and its
+    callers pass ref. In swecalc_1's SEFLG_SPEED3 branch (sweph.c:523-527) the three calls each wiped
+    the previous message, so the Moon's JPL fallback warning (sweph.c:753-764) was lost. MSVC-built C,
+    de406, swe_calc(625360.5 + {1.5e-5, 2e-5, 3e-5, 5e-5}, SE_MOON, SEFLG_JPLEPH|SEFLG_SPEED3): rc 129,
+    serr "jd 625360.499965 outside JPL eph. range 625360.50 .. 2816848.50; 
+using Moshier Eph; "
+    (jd .499970, .499980, .499985 for the others); the port gave an empty serr, values identical.
+    Tests: SwecalcSerrAccumulationTest (needs de406.eph; skipped without it, CI does not fetch it).
+    (c) swe_deltat_ex did not clear serr (swephlib.c:2733-2734: "if (serr != NULL) *serr = ' ';").
+    The port now sets serr = null unconditionally: its ref string is always supplied, and every C call
+    that passes NULL maps to a throwaway local sdummy, so clearing it is harmless. With SEFLG_TOPOCTR,
+    swi_get_observer calls it, so the C drops an earlier "file not found ... using Moshier eph.;"
+    warning. MSVC-built C, ephe path nonexistent, swe_set_topo(8.55, 47.37, 400),
+    swe_calc_ut(2451545.0, SE_SUN, 33026): rc 33028, serr "", x = 280.36857197667911
+    -0.0020782968730785954 0.9833134780820767; the port kept the message (values identical).
+    swe_deltat_ex(2451545.0, SEFLG_MOSEPH, "stale") gives serr "" in the C. Tests: DeltatExSerrClearTest.
+    SwissEphNet/CPort: 50239 -> 50273 lines, kr_braces (1261) and trailing_ws (1280) unchanged,
+    sha256 EEFA9FBA... -> 152ECAB6....

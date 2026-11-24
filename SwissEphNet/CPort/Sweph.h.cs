@@ -676,6 +676,19 @@ namespace SwissEphNet.CPort
             public double[] nutlo { get; private set; }	/* nutation in longitude and obliquity */
             public double snut, cnut;	/* sine and cosine of nutation in obliquity */
             public double[,] matrix { get; private set; }
+            /// <summary>
+            /// The port's counterpart of memset((void *) &amp;swed.nut, 0, sizeof(struct nut))
+            /// (sweph.c:1282-1284, e308765d): zeroes the fields and the arrays in place, so a
+            /// reference to this object stays valid as a pointer into the C struct does.
+            /// </summary>
+            public void Clear()
+            {
+                tnut = 0;
+                Array.Clear(nutlo, 0, nutlo.Length);
+                snut = 0;
+                cnut = 0;
+                Array.Clear(matrix, 0, matrix.Length);
+            }
         }
 
         public class plantbl
@@ -917,16 +930,11 @@ namespace SwissEphNet.CPort
                 foreach (var pd in pldat) pd.Clear();
                 foreach (var pd in nddat) pd.Clear();
                 foreach (var sp in savedat) sp.Clear();
-                foreach (var e in new[] { oec, oec2000 })
-                {
-                    e.teps = 0; e.eps = 0; e.seps = 0; e.ceps = 0;
-                }
-                foreach (var n in new[] { nut, nut2000, nutv })
-                {
-                    n.tnut = 0; n.snut = 0; n.cnut = 0;
-                    Array.Clear(n.nutlo, 0, n.nutlo.Length);
-                    Array.Clear(n.matrix, 0, n.matrix.Length);
-                }
+                oec.Clear();
+                oec2000.Clear();
+                nut.Clear();
+                nut2000.Clear();
+                nutv.Clear();
                 topd.geolon = 0; topd.geolat = 0; topd.geoalt = 0;
                 topd.teval = 0; topd.tjd_ut = 0;
                 Array.Clear(topd.xobs, 0, topd.xobs.Length);
@@ -999,6 +1007,18 @@ namespace SwissEphNet.CPort
         public class epsilon
         {
             public double teps, eps, seps, ceps; 	/* jd, eps, sin(eps), cos(eps) */
+            /// <summary>
+            /// The port's counterpart of memset((void *) &amp;swed.oec, 0, sizeof(struct epsilon))
+            /// (sweph.c:1280-1281, e308765d): zeroes the fields in place, so a reference to this
+            /// object stays valid as a pointer into the C struct does.
+            /// </summary>
+            public void Clear()
+            {
+                teps = 0;
+                eps = 0;
+                seps = 0;
+                ceps = 0;
+            }
         };
 
         public class plan_data
