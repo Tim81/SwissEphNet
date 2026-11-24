@@ -308,34 +308,36 @@ namespace SwissEphNet.Tests
                 serr = null;
 
                 // Before 1972
+                // Values moved with v2.10.04's default Delta T model SEMOD_DELTAT_STEPHENSON_ETC_2020,
+                // used before 1 Jan 1962 (swephlib.c calc_deltat at e308765d); measured from the C at e308765d.
                 year = 1960;
                 res = swe.swe_utc_to_jd(year, month, day, hour, min, sec, SwissEph.SE_GREG_CAL, dret, ref serr);
                 Assert.Equal(SwissEph.OK, res);
-                Assert.Equal(2437162.52122023, dret[0], 7);
+                Assert.Equal(2437162.52122046, dret[0], 7);
                 Assert.Equal(2437162.52083333, dret[1], 7);
                 Assert.Null(serr);
 
                 res = swe.swe_utc_to_jd(year, month, day, hour, min, sec, SwissEph.SE_JUL_CAL, dret, ref serr);
                 Assert.Equal(SwissEph.OK, res);
-                Assert.Equal(2437175.52122041, dret[0], 7);
+                Assert.Equal(2437175.52122063, dret[0], 7);
                 Assert.Equal(2437175.52083333, dret[1], 7);
                 Assert.Null(serr);
 
                 // Date > today (after last leap date)
-                // swephlib.c:2487-2497 (2.10.03): the delta T table is extended with measured
-                // 2020-2023 values and revised 2024-2028 extrapolation, which shifts the
-                // extrapolated delta T (and therefore the ET/UT split) for dates beyond it.
+                // swephlib.c:2496-2503 (2.10.04): dt[] is extended to TABEND 2033 (measured values
+                // to 2025, deltat.preds extrapolation for 2026-2033), which moves the ET/UT split
+                // here. Values measured from the C at e308765d.
                 year = 2030;
                 res = swe.swe_utc_to_jd(year, month, day, hour, min, sec, SwissEph.SE_GREG_CAL, dret, ref serr);
                 Assert.Equal(SwissEph.OK, res);
-                Assert.Equal(2462729.5216340744, dret[0], 7);
-                Assert.Equal(2462729.5208305302, dret[1], 7);
+                Assert.Equal(2462729.5216457443, dret[0], 7);
+                Assert.Equal(2462729.5208333335, dret[1], 7);
                 Assert.Null(serr);
 
                 res = swe.swe_utc_to_jd(year, month, day, hour, min, sec, SwissEph.SE_JUL_CAL, dret, ref serr);
                 Assert.Equal(SwissEph.OK, res);
-                Assert.Equal(2462742.5216340744, dret[0], 7);
-                Assert.Equal(2462742.5208304306, dret[1], 7);
+                Assert.Equal(2462742.5216458873, dret[0], 7);
+                Assert.Equal(2462742.5208333335, dret[1], 7);
                 Assert.Null(serr);
 
                 // Errors
@@ -396,13 +398,15 @@ namespace SwissEphNet.Tests
                 Assert.Equal(1.33598148822784, sec, 12);
 
                 // Before 1972
+                // Values moved with v2.10.04's default Delta T model SEMOD_DELTAT_STEPHENSON_ETC_2020,
+                // used before 1 Jan 1962 (swephlib.c calc_deltat at e308765d); measured from the C at e308765d.
                 swe.swe_jdet_to_utc(2437162.52122023, SwissEph.SE_GREG_CAL, ref year, ref month, ref day, ref hour, ref min, ref sec);
                 Assert.Equal(1960, year);
                 Assert.Equal(8, month);
                 Assert.Equal(16, day);
                 Assert.Equal(0, hour);
                 Assert.Equal(29, min);
-                Assert.Equal(59.9986857175827, sec, 12);
+                Assert.Equal(59.980017542839, sec, 12);
 
                 swe.swe_jdet_to_utc(2437175.52122041, SwissEph.SE_JUL_CAL, ref year, ref month, ref day, ref hour, ref min, ref sec);
                 Assert.Equal(1960, year);
@@ -410,18 +414,19 @@ namespace SwissEphNet.Tests
                 Assert.Equal(16, day);
                 Assert.Equal(0, hour);
                 Assert.Equal(29, min);
-                Assert.Equal(59.9987661838531, sec, 12);
+                Assert.Equal(59.9809831380844, sec, 12);
 
                 // Date > today (after last leap date)
-                // swephlib.c:2487-2497 (2.10.03): revised delta T table (see
-                // Test_swe_utc_to_jd above) shifts the ET-UT split for dates beyond it.
+                // swephlib.c:2496-2503 (2.10.04): dt[] is extended to TABEND 2033 (measured values
+                // to 2025, deltat.preds extrapolation for 2026-2033), which moves the ET/UT split
+                // here (see Test_swe_utc_to_jd above). Values measured from the C at e308765d.
                 swe.swe_jdet_to_utc(2462729.5218584, SwissEph.SE_GREG_CAL, ref year, ref month, ref day, ref hour, ref min, ref sec);
                 Assert.Equal(2030, year);
                 Assert.Equal(8, month);
                 Assert.Equal(16, day);
                 Assert.Equal(0, hour);
                 Assert.Equal(30, min);
-                Assert.Equal(19.38176304101944, sec, 12);
+                Assert.Equal(18.373480439186096, sec, 12);
 
                 swe.swe_jdet_to_utc(2462742.52185908, SwissEph.SE_JUL_CAL, ref year, ref month, ref day, ref hour, ref min, ref sec);
                 Assert.Equal(2030, year);
@@ -429,7 +434,7 @@ namespace SwissEphNet.Tests
                 Assert.Equal(16, day);
                 Assert.Equal(0, hour);
                 Assert.Equal(30, min);
-                Assert.Equal(19.440503418445587, sec, 12);
+                Assert.Equal(18.419869244098663, sec, 12);
 
             }
         }

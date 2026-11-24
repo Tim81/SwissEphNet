@@ -8823,29 +8823,7 @@ namespace SwissEphNet.CPort
         int open_jpl_file(CPointer<double> ss, string fname, string fpath, ref string serr)
         {
             int retc;
-            string serr2 = String.Empty;
             retc = SE.SweJPL.swi_open_jpl_file(ss, fname, fpath, ref serr);
-            /* If we fail with default JPL ephemeris (DE431), we try the second default
-             * (DE406), but only if serr is not NULL and an warning message can be 
-             * returned. */
-            // sweph.c:7446 uses strstr, a byte-wise search; Contains(string) without
-            // StringComparison is culture-sensitive. The (string, StringComparison)
-            // overload is not part of netstandard2.0, so use IndexOf(string,
-            // StringComparison.Ordinal) instead, which is.
-            if (retc != OK && fname.IndexOf(SwissEph.SE_FNAME_DFT, StringComparison.Ordinal) >= 0)
-            {
-                retc = SE.SweJPL.swi_open_jpl_file(ss, SwissEph.SE_FNAME_DFT2, fpath, ref serr2);
-                if (retc == OK)
-                {
-                    swed.jplfnam = SwissEph.SE_FNAME_DFT2;
-                    serr2 = "Error with JPL ephemeris file ";
-                    serr2 += SwissEph.SE_FNAME_DFT;
-                    serr2 += C.sprintf(": %s", serr);
-                    serr2 += ". Defaulting to ";
-                    serr2 += SwissEph.SE_FNAME_DFT2;
-                    serr = serr2;
-                }
-            }
             if (retc == OK)
             {
                 swed.jpldenum = (short)SE.SweJPL.swi_get_jpl_denum();

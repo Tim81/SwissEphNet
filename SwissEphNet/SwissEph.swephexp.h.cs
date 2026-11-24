@@ -604,7 +604,7 @@ namespace SwissEphNet
          * which are available at Astrodienst's internal network
          */
         /// <summary>JPL DE ephemeris number matching <see cref="SE_FNAME_DFT"/>, the current default JPL file.</summary>
-        public const int SE_DE_NUMBER = 431;
+        public const int SE_DE_NUMBER = 441;
         /// <summary>JPL DE ephemeris number matching <see cref="SE_FNAME_DFT3"/>, the default JPL file
         /// upstream declares for its future Swiss Ephemeris 3.0. Nothing in this library reads it.</summary>
         public const int SE3_DE_NUMBER = 441;
@@ -622,13 +622,11 @@ namespace SwissEphNet
         public const string SE_FNAME_DE431 = "de431.eph";
         /// <summary>JPL ephemeris file name for DE441.</summary>
         public const string SE_FNAME_DE441 = "de441.eph";
-        /// <summary>Default JPL ephemeris file name; alias for <see cref="SE_FNAME_DE431"/>.</summary>
-        public const string SE_FNAME_DFT = SE_FNAME_DE431;
+        /// <summary>Default JPL ephemeris file name; alias for <see cref="SE_FNAME_DE441"/>.</summary>
+        public const string SE_FNAME_DFT = SE_FNAME_DE441;
         /// <summary>Default JPL ephemeris file name upstream declares for its future Swiss Ephemeris 3.0;
         /// alias for <see cref="SE_FNAME_DE441"/>. Nothing in this library reads it.</summary>
         public const string SE_FNAME_DFT3 = SE_FNAME_DE441;
-        /// <summary>Secondary/fallback default JPL ephemeris file name; alias for <see cref="SE_FNAME_DE406"/>.</summary>
-        public const string SE_FNAME_DFT2 = SE_FNAME_DE406;
         /// <summary>Legacy fixed-star data file name, superseded by <see cref="SE_STARFILE"/> (see <see cref="swe_set_ephe_path"/>).</summary>
         public const string SE_STARFILE_OLD = "fixstars.cat";
         /// <summary>Fixed-star data file name (see <see cref="swe_set_ephe_path"/>).</summary>
@@ -905,7 +903,7 @@ namespace SwissEphNet
         public const double SE_TIDAL_DE430 = (-25.82);   /* JPL Interoffice Memorandum 9-jul-2013 on DE430 Lunar Orbit */
         /// <summary>Tidal acceleration preset for <see cref="swe_set_tid_acc"/>: the value implicit
         /// in JPL ephemeris DE431, per IPN Progress Report 42-196, 15-feb-2014, p. 15 (was -25.82 in
-        /// v. 2.00.00). This is <see cref="SE_TIDAL_DEFAULT"/>.</summary>
+        /// v. 2.00.00). It was <see cref="SE_TIDAL_DEFAULT"/> up to v. 2.10.03.</summary>
         public const double SE_TIDAL_DE431 = (-25.80);   /* IPN Progress Report 42-196 • February 15, 2014, p. 15; was (-25.82) in V. 2.00.00 */
         /// <summary>Tidal acceleration preset for <see cref="swe_set_tid_acc"/>: the value implicit
         /// in JPL ephemeris DE441 (unpublished value, from email by Jon Giorgini to Dieter Koch, 11
@@ -917,9 +915,12 @@ namespace SwissEphNet
         /// <summary>Tidal acceleration preset for <see cref="swe_set_tid_acc"/>: the Stephenson et
         /// al. 2016 value.</summary>
         public const double SE_TIDAL_STEPHENSON_2016 = (-25.85);
+        /// <summary>Tidal acceleration preset for <see cref="swe_set_tid_acc"/>: the Stephenson et
+        /// al. 2020 value (-25.82), from a mail by Jon Giorgini to Dieter Koch, 8 Oct 2026.</summary>
+        public const double SE_TIDAL_STEPHENSON_2020 = (-25.82); /* mail from Jon Giorgini to DK on 8-Oct-2026 */
         /// <summary>The current default tidal acceleration, currently
-        /// <see cref="SE_TIDAL_DE431"/>.</summary>
-        public const double SE_TIDAL_DEFAULT = SE_TIDAL_DE431;
+        /// <see cref="SE_TIDAL_DE441"/>.</summary>
+        public const double SE_TIDAL_DEFAULT = SE_TIDAL_DE441;
         /// <summary>Special value for <see cref="swe_set_tid_acc"/> that picks the tidal
         /// acceleration automatically from whichever ephemeris file is in use, instead of a fixed
         /// preset.</summary>
@@ -1140,7 +1141,7 @@ namespace SwissEphNet
          * Delta T model choice for SE_MODEL_DELTAT (see <see cref="swe_set_astro_models"/> and
          * <see cref="swe_deltat(double)"/>); SEMOD_DELTAT_DEFAULT aliases the current default. */
         /// <summary>Count of <c>SEMOD_DELTAT_*</c> Delta T model choices.</summary>
-        public const int SEMOD_NDELTAT = 5;
+        public const int SEMOD_NDELTAT = 6;
         /// <summary>Delta T model: Stephenson and Morrison 1984.</summary>
         public const int SEMOD_DELTAT_STEPHENSON_MORRISON_1984 = 1;
         /// <summary>Delta T model: Stephenson 1997.</summary>
@@ -1151,10 +1152,12 @@ namespace SwissEphNet
         public const int SEMOD_DELTAT_ESPENAK_MEEUS_2006 = 4;
         /// <summary>Delta T model: Stephenson et al. 2016.</summary>
         public const int SEMOD_DELTAT_STEPHENSON_ETC_2016 = 5;
+        /// <summary>Delta T model: Morrison, Stephenson, Hohenkerk and Zawilski 2020 (before 1962).</summary>
+        public const int SEMOD_DELTAT_STEPHENSON_ETC_2020 = 6;
         //#define SEMOD_DELTAT_DEFAULT   SEMOD_DELTAT_ESPENAK_MEEUS_2006
         /// <summary>The current default Delta T model, currently
-        /// <see cref="SEMOD_DELTAT_STEPHENSON_ETC_2016"/>.</summary>
-        public const int SEMOD_DELTAT_DEFAULT = SEMOD_DELTAT_STEPHENSON_ETC_2016;
+        /// <see cref="SEMOD_DELTAT_STEPHENSON_ETC_2020"/>.</summary>
+        public const int SEMOD_DELTAT_DEFAULT = SEMOD_DELTAT_STEPHENSON_ETC_2020;
 
         /// <summary>
         /// 2000 January 1.5

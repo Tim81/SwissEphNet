@@ -210,14 +210,15 @@ namespace SwissEphNet.Tests
         [InlineData("")]
         public void TestSetAstroModels_EmptyOrNull_SelectsCurrentLibraryVersion(string samod)
         {
-            // SE_VERSION is "2.10.03" (Sweph.h.cs), which is >= 2.06, so both ""
-            // and null should resolve to AMODELS_SE_2_06 = "5,9,9,4,3,0,0,4" --
+            // SE_VERSION is "2.10.04" (Sweph.h.cs), which is >= 2.1004, so both ""
+            // and null should resolve to AMODELS_SE_2_1004 = "6,9,9,4,3,0,0,4"
+            // (swephlib.c:4382-4394 at e308765d: an empty s becomes "SE" SE_VERSION) --
             // the same model set as explicitly requesting it via the
             // digit-list branch, which does not go through the buggy code path.
             string expected;
             using (var reference = new SwissEph())
             {
-                reference.swe_set_astro_models("5,9,9,4,3,0,0,4", 0);
+                reference.swe_set_astro_models("6,9,9,4,3,0,0,4", 0);
                 reference.swe_get_astro_models(null, out expected, 0);
             }
 
@@ -230,7 +231,7 @@ namespace SwissEphNet.Tests
                 // The comparison above is not enough on its own: an early "return;" for a
                 // null/empty samod (skipping set_astro_models entirely) leaves swed.astro_models
                 // at its constructor default of all zeros, and swe_get_astro_models resolves an
-                // all-zero array to the same defaults as AMODELS_SE_2_06 -- so the string above
+                // all-zero array to the same defaults as AMODELS_SE_2_1004 -- so the string above
                 // reads identically whether the "SE"/empty branch actually ran or was skipped.
                 // Read the internal array directly (the same reflection convention
                 // Test_swe_set_lapse_rate uses, since no public getter exists) to prove the branch
@@ -243,7 +244,7 @@ namespace SwissEphNet.Tests
                 var astroModelsField = swedObj.GetType().GetField("astro_models", BindingFlags.Public | BindingFlags.Instance);
                 var astroModels = (int[])astroModelsField.GetValue(swedObj);
 
-                Assert.Equal(new[] { 5, 9, 9, 4, 3, 0, 0, 4 }, astroModels[..8]);
+                Assert.Equal(new[] { 6, 9, 9, 4, 3, 0, 0, 4 }, astroModels[..8]);
             }
         }
 

@@ -86,7 +86,7 @@ namespace SwissEphNet.CPort
          * move over from swephexp.h
          */
 
-        public const String SE_VERSION = "2.10.03";  //"2.07.02a"
+        public const String SE_VERSION = "2.10.04";  //"2.07.02a"
 
         /// <summary>
         /// 2000 January 1.5
@@ -227,6 +227,7 @@ namespace SwissEphNet.CPort
         public const int SEI_FILE_EFPOSBEGIN = 500;
 
         public const string SE_FILE_SUFFIX = "se1";
+        public const string SE3_FILE_SUFFIX = "se3";
 
         public const int SEI_NEPHFILES = 7;
         public const int SEI_CURR_FPOS = -1;
