@@ -840,7 +840,9 @@ namespace SwissEphNet.CPort
                         if (retc == NOT_AVAILABLE)
                         {
                             iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_SWIEPH;
-                            serr += " \ntrying Swiss Eph; ";
+                            // sweph.c:709-710 (e308765d): if (serr != NULL && strlen(serr) + 30 < AS_MAXCH) strcat(serr, " \ntrying Swiss Eph; ");
+                            if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                serr += " \ntrying Swiss Eph; ";
                             goto sweph_moon;
                         }
                         else if (retc == BEYOND_EPH_LIMITS)
@@ -960,7 +962,9 @@ namespace SwissEphNet.CPort
                         if (retc == NOT_AVAILABLE)
                         {
                             iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_SWIEPH;
-                            serr = (serr ?? String.Empty) + serr;
+                            // sweph.c:803-804 (e308765d): if (serr != NULL && strlen(serr) + 30 < AS_MAXCH) strcat(serr, " \ntrying Swiss Eph; ");
+                            if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                serr += " \ntrying Swiss Eph; ";
                             goto sweph_sbar;
                         }
                         psdp.teval = tjd;
@@ -1330,11 +1334,10 @@ namespace SwissEphNet.CPort
                 /* iflag (ephemeris bit) has possibly changed in main_planet() */
                 iflag = swed.pldat[SEI_EARTH].xflgs;
                 /* asteroid */
-                if (!String.IsNullOrWhiteSpace(serr))
-                {
-                    serr2 = serr;
-                    serr = String.Empty;
-                }
+                // sweph.c:1115-1118 (e308765d), under "if (serr != NULL)": strcpy(serr2, serr); *serr = '\0';
+                // The copy is unconditional, so a second pass through do_asteroid replaces serr2.
+                serr2 = serr ?? String.Empty;
+                serr = String.Empty;
                 /* asteroid */
                 retc = sweph(tjd, ipli_ast, ifno, iflag, psdp.x, DO_SAVE, null, ref serr);
                 if (retc == ERR || retc == NOT_AVAILABLE)
@@ -1359,8 +1362,11 @@ namespace SwissEphNet.CPort
                         goto return_error;
                 }
                 /* add warnings from earth/sun computation */
-                if (String.IsNullOrWhiteSpace(serr) && !String.IsNullOrWhiteSpace(serr2))
-                    serr = "sun: " + serr2;
+                // sweph.c:1140-1143 (e308765d), under "if (serr != NULL && *serr == '\0' && *serr2 != '\0')":
+                //   strcpy(serr, "sun: "); serr2[AS_MAXCH-5] = '\0'; strcat(serr, serr2);
+                // serr2[AS_MAXCH-5] = '\0' cuts serr2 to AS_MAXCH-5 (251) characters before the append.
+                if (String.IsNullOrEmpty(serr) && !String.IsNullOrEmpty(serr2))
+                    serr = "sun: " + (serr2.Length > 256 - 5 ? serr2.Substring(0, 256 - 5) : serr2);
                 /*********************************************** 
                  * fictitious planets                          *    
                  * (Isis-Transpluto and Uranian planets)       *
@@ -1574,8 +1580,18 @@ namespace SwissEphNet.CPort
                 swed.fidat[i].Clear();
             }
             free_planets();
-            swed.Reset(false);
-            /* sweph.c:1248 memsets astro_models here. Reset(false) does not touch it --
+            //memset((void *) &swed.oec, 0, sizeof(struct epsilon));
+            //memset((void *) &swed.oec2000, 0, sizeof(struct epsilon));
+            //memset((void *) &swed.nut, 0, sizeof(struct nut));
+            //memset((void *) &swed.nut2000, 0, sizeof(struct nut));
+            //memset((void *) &swed.nutv, 0, sizeof(struct nut));
+            // sweph.c:1315-1319 (e308765d) clears these in place; swed.Reset(false) replaced them.
+            swed.oec.Clear();
+            swed.oec2000.Clear();
+            swed.nut.Clear();
+            swed.nut2000.Clear();
+            swed.nutv.Clear();
+            /* sweph.c:1320 (e308765d) memsets astro_models here. Reset(false) does not touch it --
              * it is inside the `full` arm -- so a model set before swe_close survived it,
              * where the C clears it. swi_close_keep_topo_etc already clears it. */
             Array.Clear(swed.astro_models, 0, swed.astro_models.Length);
@@ -1595,8 +1611,13 @@ namespace SwissEphNet.CPort
             swed.is_old_starfile = false;
             swed.i_saved_planet_name = 0;
             swed.saved_planet_name = String.Empty;
-            swed.topd = new topo_data();
-            swed.sidd = new sid_data();
+            //memset((void *) &swed.topd, 0, sizeof(struct topo_data));
+            //memset((void *) &swed.sidd, 0, sizeof(struct sid_data));
+            // sweph.c:1336-1337 (e308765d) clears these in place; they were replaced with new objects.
+            swed.topd.geolon = 0; swed.topd.geolat = 0; swed.topd.geoalt = 0;
+            swed.topd.teval = 0; swed.topd.tjd_ut = 0;
+            Array.Clear(swed.topd.xobs, 0, swed.topd.xobs.Length);
+            swed.sidd = default(sid_data);
             swed.timeout = 0;
             swed.last_epheflag = 0;
             if (swed.dpsi != null)
@@ -2029,7 +2050,9 @@ namespace SwissEphNet.CPort
                     if (retc == NOT_AVAILABLE)
                     {
                         iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_SWIEPH;
-                        serr += " \ntrying Swiss Eph; ";
+                        // sweph.c:1708-1709 (e308765d): if (serr != NULL && strlen(serr) + 30 < AS_MAXCH) strcat(serr, " \ntrying Swiss Eph; ");
+                        if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                            serr += " \ntrying Swiss Eph; ";
                         goto sweph_planet;
                     }
                     else if (retc == BEYOND_EPH_LIMITS)
@@ -2059,7 +2082,9 @@ namespace SwissEphNet.CPort
                     if (retc == NOT_AVAILABLE)
                     {
                         iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_SWIEPH;
-                        serr += " \ntrying Swiss Eph; ";
+                        // sweph.c:1732-1733 (e308765d): if (serr != NULL && strlen(serr) + 30 < AS_MAXCH) strcat(serr, " \ntrying Swiss Eph; ");
+                        if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                            serr += " \ntrying Swiss Eph; ";
                         goto sweph_planet;
                     }
                     else if (retc == BEYOND_EPH_LIMITS)
@@ -2180,7 +2205,9 @@ namespace SwissEphNet.CPort
                     if (retc == NOT_AVAILABLE)
                     {
                         iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_SWIEPH;
-                        serr += " \ntrying Swiss Eph; ";
+                        // sweph.c:1836-1837 (e308765d): if (serr != NULL && strlen(serr) + 30 < AS_MAXCH) strcat(serr, " \ntrying Swiss Eph; ");
+                        if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                            serr += " \ntrying Swiss Eph; ";
                         goto sweph_planet;
                     }
                     break;
