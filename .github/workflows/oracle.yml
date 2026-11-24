@@ -248,13 +248,14 @@ jobs:
         shell: pwsh
         run: pwsh scripts/verify-crt-parity.ps1
 
-  # Gate. Compares Tools/CReference/build-c.ps1's MSVC build against pyswisseph 2.10.03, both
-  # resolved on this runner in this run -- see scripts/validate-c-reference.ps1's own
-  # .DESCRIPTION for what "independent" does and does not mean here (same upstream C, different
-  # build configuration). A FAIL means the local MSVC build is wrong, which every other job below
+  # Gate. Compares Tools/CReference/build-c.ps1's MSVC build (v2.10.04) against pyswisseph 2.10.03,
+  # both resolved on this runner in this run -- see scripts/validate-c-reference.ps1's own
+  # .DESCRIPTION for what "independent" does and does not mean here (nearly the same upstream C,
+  # one release apart, different build configuration; the fixed inputs avoid what 2.10.04
+  # changed). A FAIL means the local MSVC build is wrong, which every other job below
   # depends on, so this is worth knowing before trusting any of them.
   c-reference-validate:
-    name: "Gate: MSVC C reference build agrees with pyswisseph 2.10.03"
+    name: "Gate: MSVC C reference build (v2.10.04) agrees with pyswisseph 2.10.03"
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -335,7 +336,7 @@ jobs:
       # install. A FAIL naming a missing vswhere.exe or C++ component here means that assumption
       # did not hold; do not paper over it with a manual toolset install without first checking
       # what actually broke.
-      - name: Build C reference (MSVC, 2.10.03 and 2.08)
+      - name: Build C reference (MSVC, v2.10.04 and 2.08)
         shell: pwsh
         run: pwsh Tools/CReference/build-c.ps1
 
@@ -352,13 +353,13 @@ jobs:
         shell: pwsh
         run: python -m pip install pyswisseph==2.10.3.2
 
-      - name: Validate C reference build against pyswisseph 2.10.03
+      - name: Validate the pinned C reference (v2.10.04) against pyswisseph 2.10.03
         shell: pwsh
         run: pwsh scripts/validate-c-reference.ps1
 
   # Gate. Wires scripts/verify-gen-delta.ps1 into this workflow for the first time -- until now it
   # ran only when a contributor remembered to invoke it by hand, despite being the strongest check
-  # in this repo of the tool every commit of the 2.10.03 port is transcribed from
+  # in this repo of the tool every commit of the 2.10.x port is transcribed from
   # (scripts/gen-delta.ps1). For every hunk gen-delta renders, it indexes into the real 2.08 and
   # 2.10.3 files at the citation's own coordinates and compares case-sensitively (`-ceq`), plus an
   # external per-file hunk-count pin (scripts/gen-delta-hunk-counts.tsv) so a whole dropped hunk
@@ -441,7 +442,7 @@ jobs:
         shell: pwsh
         run: pwsh scripts/verify-gen-delta.ps1
 
-  # Gates end to end. run-oracle-dump.ps1 builds and runs both C drivers (2.10.03 and 2.08, the
+  # Gates end to end. run-oracle-dump.ps1 builds and runs both C drivers (v2.10.04 and 2.08, the
   # "both submodule trees" this job needs) and the .NET driver, and its own row-count guards are a
   # hard failure -- a driver silently truncating its own output is a real defect regardless of
   # which MSVC produced it. So are the gitlink assertion, the two fetch/build steps,
@@ -470,12 +471,12 @@ jobs:
   # malformed provenance sidecar, a missing dump, a failed Tools/OracleVerify build, and
   # OracleVerify's own row-count and case-id-set mismatches, all indistinguishably from a genuine
   # divergence. Flagging the step made the project's headline result -- every oracle row
-  # bit-identical against MSVC-built 2.10.03 C -- the one claim nothing in CI could turn red.
+  # bit-identical against MSVC-built v2.10.04 C -- the one claim nothing in CI could turn red.
   #
   # If a toolchain bump ever does move the C side's last bits, the answer is a known-diff row with
   # a named cause and a pinned maximum ULP, which is what that file is for. Not a blanket flag.
   oracle-dump:
-    name: "Gate: port matches the 2.10.03 C reference bit for bit"
+    name: "Gate: port matches the pinned C reference (v2.10.04) bit for bit"
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -540,7 +541,7 @@ jobs:
         shell: pwsh
         run: pwsh scripts/fetch-2.08-baseline.ps1
 
-      - name: Build C reference (MSVC, 2.10.03 and 2.08)
+      - name: Build C reference (MSVC, v2.10.04 and 2.08)
         shell: pwsh
         run: pwsh Tools/CReference/build-c.ps1
 
@@ -556,7 +557,7 @@ jobs:
         shell: pwsh
         run: pwsh scripts/verify-oracle.ps1 -SelfTest
 
-      - name: Compare port vs 2.10.03 C reference against known-diff.tsv
+      - name: Compare port vs the pinned C reference (v2.10.04) against known-diff.tsv
         shell: pwsh
         run: pwsh scripts/verify-oracle.ps1
 
@@ -707,7 +708,7 @@ jobs:
       # build-c.ps1 always builds both libraries, so swetest.exe is not available without the
       # 2.08 tree present too, even though this job's own comparison never touches it -- see
       # Tools/CReference/build-c.ps1's own .DESCRIPTION.
-      - name: Build C reference (MSVC, 2.10.03 and 2.08)
+      - name: Build C reference (MSVC, v2.10.04 and 2.08)
         shell: pwsh
         run: pwsh Tools/CReference/build-c.ps1
 
@@ -734,7 +735,7 @@ jobs:
       # including the guard step immediately above, is a real gate; this step re-runs the same
       # build (a redundant few seconds, not a second grid dispatch -- see -GuardOnly's own
       # parameter help) before dispatching the grid for the actual text comparison.
-      - name: Compare Programs/SweTest vs 2.10.03 C reference against known-diff.tsv
+      - name: Compare Programs/SweTest vs the pinned C reference (v2.10.04) against known-diff.tsv
         shell: pwsh
         continue-on-error: true
         run: pwsh scripts/verify-swetest-diff.ps1
@@ -808,7 +809,7 @@ jobs:
 
       # An explicit source list, not a glob: external/swisseph also ships obama.c, sweephe4.c
       # and swephgen4.c, and at least one carries its own main(), so a glob build fails at link.
-      # These four -D flags match what scripts/run-oracle-dump.ps1 defines for the 2.10.03 build;
+      # These four -D flags match what scripts/run-oracle-dump.ps1 defines for the v2.10.04 build;
       # the eight crossing functions, swe_houses_ex2/swe_houses_armc_ex2, swe_calc_pctr and
       # swe_get_current_file_data do not exist in 2.08 and sedump.c guards on all four macros.
       - name: Build the C reference with clang (no contraction, no builtin substitution)
@@ -1195,7 +1196,7 @@ jobs:
       # An explicit source list, not a glob -- same reason as macos-exactness's copy of this
       # step: external/swisseph also ships obama.c, sweephe4.c and swephgen4.c, and at least one
       # carries its own main(), so a glob build fails at link. These four -D flags match what
-      # scripts/run-oracle-dump.ps1 defines for the 2.10.03 build -- see that job's own comment
+      # scripts/run-oracle-dump.ps1 defines for the v2.10.04 build -- see that job's own comment
       # above for which four functions each macro guards.
       #
       # -march=x86-64, but no -ffp-contract=off and no -fno-builtin: see the job comment above for

@@ -879,7 +879,15 @@ b"} where the C gives {"a", ""}); that one is fixed
     swephlib.c:4413 before swe_set_astro_models initialises swed) printed the default models, "-amod0,..."
     and model 6's Delta T text, where the MSVC-built C prints "-amod5,0,0,0,0,0,0,0," and
     "Stephenson/Morrison/Hohenkerk 2016 (before 1955)"; the second call on the same instance was
-    right. New swe_data.ClearInPlace() (Sweph.h.cs, after Reset) returns the object to the state of
+    right. The larger effect is in swe_nod_aps: it takes pedp and psbdp from swed.pldat
+    (swecl.c:5085-5086, SweCL.cs:5188-5189) before its first swe_calc runs
+    swe_set_ephe_path(NULL) -> swi_init_swed_if_start, so on a fresh instance both stayed on the
+    discarded object and the apsides came out wrong for some bodies and dates (NA|0|1000000|MEAN
+    perihelion 215.29900167326124 where the MSVC-built C gives 302.33849105597147). All 360
+    swe_nod_aps and swe_nod_aps_ut calls of the nodaps baseline are now bit-identical to the C
+    (0 differing fields), and the 156 NA/NAUT rows that differed were regenerated in the same
+    commit (deviation 30 in Tests/baseline/baseline-2.8.0.2.env.txt). New swe_data.ClearInPlace()
+    (Sweph.h.cs, after Reset) returns the object to the state of
     a new swe_data without replacing any array or nested object (Clear() on each fidat, pldat,
     nddat and savedat element, Array.Clear on astro_models, field-wise zeroing of oec, oec2000, nut,
     nut2000, nutv and topd); the init now calls it, and swi_close_keep_topo_etc clears astro_models
