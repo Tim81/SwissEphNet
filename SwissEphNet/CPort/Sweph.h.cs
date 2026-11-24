@@ -713,6 +713,8 @@ namespace SwissEphNet.CPort
             public CFile fptr;		/* ephemeris file pointer */
             public double tfstart;       /* file may be used from this date */
             public double tfend;         /*      through this date          */
+            public double tnom0;         /* dates this open file serves, [tnom0, tnom1):  */
+            public double tnom1;         /* its nominal range, with the first-day rule    */
             public Int32 iflg; 		/* byte reorder flag and little/bigendian flag */
             public short npl;		/* how many planets in file */
             public int[] ipl = new int[SEI_FILE_NMAXPLAN];	/* planet numbers */
@@ -724,7 +726,7 @@ namespace SwissEphNet.CPort
             /// are zeroed and the array object is kept.</summary>
             public void Clear() {
                 fnam = null; fversion = 0; astnam = null; sweph_denum = 0;
-                fptr = null; tfstart = 0; tfend = 0; iflg = 0; npl = 0;
+                fptr = null; tfstart = 0; tfend = 0; tnom0 = 0; tnom1 = 0; iflg = 0; npl = 0;
                 Array.Clear(ipl, 0, ipl.Length);
             }
 }
