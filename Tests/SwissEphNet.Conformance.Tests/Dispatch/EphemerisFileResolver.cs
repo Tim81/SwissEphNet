@@ -7,30 +7,20 @@ namespace SwissEphNet.Conformance.Tests.Dispatch;
 
 /// <summary>
 /// Points SwissEph's ephemeris path at the external/swisseph submodule's ephe/
-/// directory (or an environment-variable override), and classifies iterations
-/// whose data files this repo does not ship (JPL DE files, planetary-moon .se1
-/// files) so the runner can mark them DATA-MISSING instead of running them.
+/// directory (or an environment-variable override) and mirrors setest's own file
+/// handling. It classifies nothing: an iteration that asks for a file the 8
+/// declared ones do not contain runs anyway and compares what the library does
+/// without it, as setest does.
 /// </summary>
 public static class EphemerisFileResolver
 {
-    /// <summary>Opt in to running SEFLG_JPLEPH iterations, provided a real DE file path is supplied.</summary>
-    public static readonly bool IncludeJpl =
-        Environment.GetEnvironmentVariable("SWISSEPH_CONFORMANCE_INCLUDE_JPL") == "1";
-
+    /// <summary>
+    /// Optional path to a real JPL DE file (SWISSEPH_CONFORMANCE_JPL_FILE). Unset by default and in CI:
+    /// SEFLG_JPLEPH iterations then run without it, take the library's own fallback and compare the
+    /// "not found" text in serr like any other iteration. Set it to run them against a real file.
+    /// </summary>
     public static readonly string? JplFilePath =
         Environment.GetEnvironmentVariable("SWISSEPH_CONFORMANCE_JPL_FILE");
-
-    /// <summary>Opt in to running planetary-moon iterations (ipl 9000-9999), provided ephe/sat/ is available.</summary>
-    public static readonly bool IncludeMoons =
-        Environment.GetEnvironmentVariable("SWISSEPH_CONFORMANCE_INCLUDE_MOONS") == "1";
-
-    /// <summary>
-    /// Opt in to running SEFLG_SWIEPH iterations for dates outside the shipped _12/_18 core era
-    /// files, provided the specific era files those dates need are actually present under
-    /// <see cref="RepoLocator.EpheDir"/>. See <see cref="NeedsEraFileWeDoNotShip"/>.
-    /// </summary>
-    public static readonly bool IncludeEra =
-        Environment.GetEnvironmentVariable("SWISSEPH_CONFORMANCE_INCLUDE_ERA") == "1";
 
     /// <summary>
     /// Wires the file handler and establishes the ephemeris path, in that order.
@@ -55,8 +45,9 @@ public static class EphemerisFileResolver
     }
 
     /// <summary>
-    /// The equivalent of setest's suite-scope swe_set_jpl_file("de431.eph"), issued by
-    /// suite_01_calc.c:11 and suite_10_solcross.c:11 immediately after their path reset.
+    /// The equivalent of setest's suite-scope swe_set_jpl_file("de441.eph"), issued by
+    /// suite_01_calc.c and suite_10_solcross.c (their SUITE_INIT blocks) immediately after their
+    /// path reset. Upstream passed "de431.eph" until v2.10.04 (cb67a4a3).
     /// </summary>
     /// <remarks>
     /// Named rather than skipped even when no DE file is available, because the call has a
@@ -70,9 +61,16 @@ public static class EphemerisFileResolver
     public static void SetJplFile(SwissEph swe)
     {
         swe.swe_set_jpl_file(string.IsNullOrEmpty(JplFilePath)
-            ? "de431.eph"
+            ? SetestJplFileName
             : Path.GetFileName(JplFilePath));
     }
+
+    /// <summary>
+    /// The file name setest's SUITE_INIT passes to swe_set_jpl_file: upstream's de441.eph since
+    /// v2.10.04 (cb67a4a3), de431.eph before. ConformanceRunner checks this against the pinned
+    /// suite_01_calc.c and suite_10_solcross.c, so it cannot silently go stale again.
+    /// </summary>
+    public const string SetestJplFileName = "de441.eph";
 
     /// <summary>
     /// The equivalent of setest's swe_set_ephe_path(NULL). Every suite file issues one at
@@ -112,165 +110,26 @@ public static class EphemerisFileResolver
         swe.swe_set_ephe_path(path);
     }
 
-    /// <summary>SEFLG_JPLEPH set and we have nowhere to get a multi-hundred-MB DE file from.</summary>
-    public static bool NeedsJplDataWeDoNotHave(int iephe) =>
-        (iephe & SwissEph.SEFLG_JPLEPH) != 0 && (!IncludeJpl || string.IsNullOrEmpty(JplFilePath));
-
-    /// <summary>Planetary-moon body (ipl 9000-9999) and we have not opted into ephe/sat/.</summary>
-    public static bool NeedsMoonDataWeDoNotHave(int ipl) =>
-        ipl is >= 9000 and < SwissEph.SE_AST_OFFSET && !IncludeMoons;
-
-    /// <summary>
-    /// SEFLG_CENTER_BODY requested and we have not opted into ephe/sat/.
-    /// </summary>
-    /// <remarks>
-    /// swi_gen_filename's own asteroid-or-planetary-moon default branch (external/swisseph/
-    /// swephlib.c:3639-3644) routes any SEI_* planet number in (SE_PLMOON_OFFSET, SE_AST_OFFSET)
-    /// to "sat&lt;DIR_GLUE&gt;sepm&lt;N&gt;.se1" -- the same ephe/sat/ directory
-    /// <see cref="NeedsMoonDataWeDoNotHave"/> already gates on. SEFLG_CENTER_BODY (center-of-body
-    /// correction) reads that same per-planet sepm9Nxx.se1 record even for a major-planet ipl
-    /// like Jupiter (5) that is nowhere near the 9000-9999 range itself, so a plain ipl check
-    /// alone misses it: found via known-fail.tsv suite 1 testcase 1 iterations 91-128 (Jupiter
-    /// through Pluto, SEFLG_CENTER_BODY, citing sepm9599.se1 through sepm9999.se1 -- none of
-    /// which required an in-range ipl at all) reporting VALUE-MISMATCH when both the port and a
-    /// fresh MSVC build of Astrodienst's own 2.10.03 C return an identical "file not found" serr,
-    /// which is DATA-MISSING, not a value mismatch (regenerations.log's Phase 6 probe entry notes
-    /// the same directory already flips these once ephe/sat/ is actually present, without needing
-    /// SWISSEPH_CONFORMANCE_INCLUDE_MOONS at all -- this checks the flag that predicts it instead
-    /// of waiting for the data to be present to notice).
-    /// </remarks>
-    public static bool NeedsCenterBodySatFileWeDoNotHave(int iflag) =>
-        (iflag & SwissEph.SEFLG_CENTER_BODY) != 0 && !IncludeMoons;
-
-    /// <summary>
-    /// A numbered asteroid beyond the four with built-in orbital elements (Ceres/Pallas/Juno/
-    /// Vesta, ipl SE_AST_OFFSET+1..+4, which read from the shipped sepl_NN.se1 main-planet file)
-    /// -- these need their own per-asteroid file, which this repo never ships at any tier.
-    /// </summary>
-    /// <remarks>
-    /// external/swisseph/swephlib.c:3639-3649's swi_gen_filename resolves any ipli beyond
-    /// SE_AST_OFFSET+4 (Sweph.cs:1213's own boundary for the built-in four) to
-    /// "ast&lt;N/1000&gt;&lt;DIR_GLUE&gt;se&lt;N%05d&gt;s.se1" -- a directory this repo's
-    /// required-ephemeris-files.tsv core set has never contained a single file from (verified:
-    /// zero "se*s.se1" or "ast*" entries in that list or in external/swisseph/ephe/). Unlike
-    /// <see cref="NeedsJplDataWeDoNotHave"/> and <see cref="NeedsMoonDataWeDoNotHave"/>, this
-    /// carries no opt-in env var: nothing in this repo's toolchain currently fetches or verifies
-    /// per-asteroid files the way SWISSEPH_CONFORMANCE_JPL_FILE or ephe/sat/ do, so unlike those
-    /// two there is no "provide the file and opt in" path to wire up yet. Found via known-fail.tsv
-    /// suite 1 testcases 1/5, suite 4 testcase 1 and suite 7 testcase 3 all citing
-    /// se00433s.se1 (433 Eros) or se00010s.se1 (10 Hygiea) as VALUE-MISMATCH when both the port
-    /// and a fresh MSVC build of Astrodienst's own 2.10.03 C return an identical "file not found"
-    /// serr, which is DATA-MISSING, not a value mismatch -- the same shape as the already-known
-    /// suite 4 Eros row this method's sibling checks were modeled on, just not previously routed
-    /// through any DataMissing check at all (this ipl range predates every existing check here).
-    /// </remarks>
-    public static bool NeedsAsteroidFileWeDoNotShip(int ipl) =>
-        ipl > SwissEph.SE_AST_OFFSET + 4;
-
-    /// <summary>
-    /// SEFLG_SWIEPH requested for a date outside the era this repo's shipped core ephemeris
-    /// files (sepl/semo/seas_12.se1 and _18.se1) cover, and either <see cref="IncludeEra"/> is
-    /// not set or the specific era files that date needs are not actually present.
-    /// </summary>
-    /// <remarks>
-    /// Mirrors external/swisseph/swephlib.c:3610 <c>swi_gen_filename</c>'s file-naming logic:
-    /// era files are named ..._&lt;icty&gt;, where icty is the calendar year's century floored
-    /// to a multiple of <c>NCTIES</c> (sweph.h:249, 6 centuries = 600 years per file). "_12"
-    /// covers years 1200-1799, "_18" covers 1800-2399 -- the two this repo ships by default
-    /// (see README.md's "Correctness oracle" section and .github/workflows/conformance.yml's
-    /// sparse-checkout list). Anything outside [1200, 2400) needs a different era file
-    /// (e.g. "_06", "_00", "_m06", "_m24", ...) this repo does not ship by default. A request
-    /// in that range still returns a numeric answer -- Swiss Ephemeris falls back to Moshier
-    /// internally -- but emits a "using Moshier eph." warning in <c>serr</c> that a
-    /// reference run with the full file set never sees, so the numbers can (and for
-    /// delta-T, do not, since delta-T is not itself read from these files) still agree while
-    /// <c>serr</c> does not. Found via suite 5 testcase 3 iteration 6 (JD 1173182.5, "18.12.-1501",
-    /// requesting SEFLG_SWIEPH): passes with this repo's full, non-sparse submodule checkout
-    /// (every era file present) and fails -- correctly, since the two environments now differ
-    /// in exactly the ephemeris data available -- with only the declared 8-file core set.
-    ///
-    /// Until this method carried an opt-in and a real file check, it was a bare year range test:
-    /// every date outside [1200, 2400) reported DATA-MISSING unconditionally, with no way to ask
-    /// it "but what if the file were actually there". A Phase 6 probe (dated 2026-07-31 in
-    /// Tests/conformance/regenerations.log) widened the checkout to all 150 era files, set a
-    /// then-temporary bypass, and re-ran the corpus: of 157 SEFLG_SWIEPH rows this method routed
-    /// to DATA-MISSING, zero passed once the files were actually present. They are genuine
-    /// VALUE-MISMATCH rows wearing a DATA-MISSING label, which hid them from
-    /// ConformanceReport.IsActionable's porting queue. This method's shape now matches
-    /// <see cref="NeedsJplDataWeDoNotHave"/>'s (opt-in and a real file check, not just an
-    /// opt-in): with <see cref="IncludeEra"/> unset (the default), behavior is unchanged from
-    /// before -- every out-of-range date still reports true, since the files genuinely are not
-    /// shipped by default. Opting in only changes the outcome for a checkout that actually has
-    /// the file swi_gen_filename would resolve to for that date; it does not make this method
-    /// optimistic about data it cannot see.
-    /// </remarks>
-    public static bool NeedsEraFileWeDoNotShip(SwissEph swe, double jd)
-    {
-        var gregflag = jd >= 2305447.5 ? 1 : 0; // swi_gen_filename's own Julian/Gregorian switch (1582-10-15)
-        int year = 0, month = 0, day = 0;
-        double hour = 0;
-        swe.swe_revjul(jd, gregflag, ref year, ref month, ref day, ref hour);
-        if (year >= 1200 && year < 2400)
-        {
-            return false; // covered by the shipped _12/_18 core files regardless of IncludeEra
-        }
-
-        if (!IncludeEra)
-        {
-            return true;
-        }
-
-        return !EraFilesExist(year);
-    }
-
-    /// <summary>
-    /// True when every one of the three era files (sepl, semo, seas) swi_gen_filename would
-    /// resolve <paramref name="year"/> to is present under <see cref="RepoLocator.EpheDir"/>.
-    /// All three, not just the one a specific testcase's body happens to need: this method has
-    /// no ipl to work from (<see cref="NeedsEraFileWeDoNotShip"/> is called before the body is
-    /// known, from suite dispatch code shared across every body a testcase might exercise), and
-    /// era files ship in same-century triples in practice -- the Phase 6 probe this documents
-    /// widened the checkout to all 150 that way, not per body.
-    /// </summary>
-    private static bool EraFilesExist(int year)
-    {
-        var suffix = EraFileSuffix(year);
-        foreach (var prefix in EraFilePrefixes)
-        {
-            if (!File.Exists(Path.Combine(RepoLocator.EpheDir, prefix + suffix + ".se1")))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static readonly string[] EraFilePrefixes = ["sepl", "semo", "seas"];
-
-    /// <summary>
-    /// Port of external/swisseph/swephlib.c:3663-3684's icty computation and "_&lt;icty&gt;" /
-    /// "m&lt;icty&gt;" suffix formatting -- the part of swi_gen_filename that does not depend on
-    /// which body ipl names (that part only selects the "sepl"/"semo"/"seas" prefix, handled by
-    /// <see cref="EraFilePrefixes"/> instead). C's truncating integer division and modulo match
-    /// C#'s for this arithmetic, so the port is direct rather than needing Euclidean division.
-    /// </summary>
-    private static string EraFileSuffix(int year)
-    {
-        const int Ncties = 6; // sweph.h:249 NCTIES
-        var sgn = year < 0 ? -1 : 1;
-        var icty = year / 100;
-        if (sgn < 0 && year % 100 != 0)
-        {
-            icty -= 1;
-        }
-        while (icty % Ncties != 0)
-        {
-            icty--;
-        }
-
-        var prefix = icty < 0 ? "m" : "_";
-        icty = Math.Abs(icty);
-        return prefix + icty.ToString("D2", CultureInfo.InvariantCulture);
-    }
+    // There is deliberately no "needs a file we do not ship" check for any ephemeris request, and
+    // there used to be four (SEFLG_JPLEPH, planetary moons 9000-9999, numbered asteroids beyond
+    // Ceres/Pallas/Juno/Vesta, SEFLG_CENTER_BODY), which parked 1,101 iterations as DATA-MISSING
+    // without running them. Upstream setest skips nothing: on the same 8 files the C runs every one
+    // of them, swe_calc takes its fallback and writes the "not found" text to serr, and the
+    // iteration is compared against t.exp like any other. Measured against a C-generated corpus of
+    // the same iterations (setest built from the pinned tag, run on the 8 files): 595 of the 1,101
+    // pass outright, 458 differ only in the ephemeris directory inside serr, and 48 differ in values
+    // of kinds the other triaged rows already show. Those that differ are VALUE-MISMATCH rows
+    // triaged in Tests/conformance/value-mismatch-triage.tsv, which is where a difference from
+    // t.exp (generated with every data file present) belongs.
+    //
+    // There is deliberately no "needs an era file we do not ship" check for SEFLG_SWIEPH any more.
+    // An iteration dated outside 1200-2399 asks for an era file (sepl_06, seas_m06, ...) that the
+    // declared 8-file set does not contain; upstream setest, run on that same set, does not skip
+    // it either: swe_calc falls back to Moshier, writes the "using Moshier eph." and "not found in
+    // PATH" text to serr, and the iteration is compared against t.exp like any other. The
+    // comparison then fails on the data environment (the official t.exp was generated with every
+    // era file), which is a VALUE-MISMATCH row triaged as SERR-PATH or LIBM-PLATFORM in
+    // Tests/conformance/value-mismatch-triage.tsv, not a reason to never run the port. The 157 rows
+    // the old check parked as DATA-MISSING were therefore running code hidden from the porting
+    // queue; Suite05DateTime and Suite10Solcross now dispatch them.
 }

@@ -1,7 +1,7 @@
 #Requires -Version 7
 <#
 .SYNOPSIS
-    Cross-checks Tools/CReference/build-c.ps1's MSVC build against pyswisseph 2.10.03.
+    Cross-checks Tools/CReference/build-c.ps1's MSVC build (v2.10.04) against pyswisseph 2.10.03.
 
 .DESCRIPTION
     Tools/CReference/build-c.ps1 compiles Astrodienst's own C into external/.c-reference/. Those
@@ -10,7 +10,14 @@
     the check on the build itself, before anything else trusts it.
 
     The check is a trust hop, the same shape as scripts/validate-pyswisseph.py: pyswisseph
-    packages the same upstream libswe 2.10.03. Its Windows wheel is also MSVC-built from the same
+    packages upstream libswe 2.10.03, and the MSVC build compiles v2.10.04 (e308765d), so this is
+    now a cross-version check. It still holds because the fixed inputs avoid what 2.10.04
+    changed: the swe_calc cases take the Julian day as TT, so no Delta T enters, and the one UT
+    input is the house calculation at J2000 (2451545.0 UT), where Delta T is the same in both
+    versions (2.10.04 changed the dt[] table only from 2020 on and the new Delta T model only
+    before 1962). A future case with a UT input before 1962 or after 2020 would legitimately
+    differ between the two versions and would need its own expected value. The output files keep
+    their historical names (libswe-2.10.03.lib and so on). Its Windows wheel is also MSVC-built from the same
     upstream C, so this is not independent of MSVC as a compiler family -- the independence is in
     build configuration: a different translation-unit list, different flags, none of this repo's
     swetest patch (see New-PatchedSwetestSource in Tools/CReference/build-c.ps1), and different
@@ -240,7 +247,7 @@ $pyLines.Add('import swisseph as swe')
 # The whole point of this script is agreement with pyswisseph 2.10.03 specifically -- see
 # .DESCRIPTION. Nothing else in this script reads swe.version, so without this check, a 2.08 or
 # 2.10.02 pyswisseph either fails unattributably on real differences, or silently passes on
-# whatever did not change between versions, and that pass gets recorded as "the 2.10.03 reference
+# whatever did not change between versions, and that pass gets recorded as "the C reference
 # build is validated" when it validated nothing of the sort. Exit code 3 is this script's own
 # signal, distinct from an ordinary Python exception (any other nonzero exit).
 $pyLines.Add("if swe.version != '2.10.03':")
@@ -283,7 +290,7 @@ finally {
 }
 
 if ($pyExitCode -eq 3) {
-    Write-Host 'FAIL: pyswisseph is not version 2.10.03 -- this script only validates agreement with the 2.10.03 reference build (see .DESCRIPTION).'
+    Write-Host 'FAIL: pyswisseph is not version 2.10.03 -- this script only validates agreement with pyswisseph 2.10.03 (see .DESCRIPTION).'
     $pyOutput | ForEach-Object { Write-Host "  $_" }
     exit 3
 }

@@ -39,8 +39,8 @@ namespace SwissEphNet.Tests
         [Fact]
         public void TestVersion() {
             using (var target = new SwissEph()) {
-                Assert.Equal("2.10.03", target.swe_version());
-                Assert.Equal("2.10.03-net-0003", target.swe_dotnet_version());
+                Assert.Equal("2.10.04", target.swe_version());
+                Assert.Equal("2.10.04-net-0000", target.swe_dotnet_version());
             }
         }
 
@@ -175,14 +175,10 @@ namespace SwissEphNet.Tests
         // swe_lmt_to_lat, swe_lat_to_lmt, swe_degnorm, swe_set_tid_acc: see the comment block
         // above TestConstructor's neighbours for where each is really covered.)
 
-        // Despite its name, Suite08Eclipses.cs testcase 9 -- t.exp's own recorded values, not a
-        // dispatch mistake this port introduced -- calls swe_sol_eclipse_when_loc a second time,
-        // not swe_lun_eclipse_when_loc (see that testcase's own comment: upstream's
-        // suite_08_eclipses.c TESTCASE(9), despite being titled "swe_lun_eclipse_when_loc()",
-        // has the same bug and t.exp was generated from it, so the substitution is reproduced
-        // verbatim rather than "fixed"). swe_lun_eclipse_when_loc itself is therefore never
-        // actually invoked anywhere in the conformance corpus, unlike its eight eclipse/occult
-        // siblings above -- implemented here instead of deleted.
+        // Suite08Eclipses.cs testcase 9 calls swe_lun_eclipse_when_loc, as upstream's
+        // suite_08_eclipses.c TESTCASE(9) has done since v2.10.04 (1988a23c; before that it
+        // called swe_sol_eclipse_when_loc by mistake), so the oracle covers the function's
+        // normal path. The test below covers its argument validation, which the corpus does not.
         //
         // swehel.c/swecl.c: dgeo[2] outside [SEI_ECL_GEOALT_MIN, SEI_ECL_GEOALT_MAX] must return
         // ERR with this exact message, the same contract swe_heliacal_angle below has.

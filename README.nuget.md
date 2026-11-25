@@ -6,7 +6,7 @@ line-by-line translation of Astrodienst's C source rather than a reimplementatio
 names, arguments and return values are the ones in Astrodienst's own
 [programming documentation](http://www.astro.com/swisseph/swephprg.htm).
 
-`swe_version()` reports `2.10.03`. Targets `netstandard2.0`, `net8.0` and `net10.0`. No
+`swe_version()` reports `2.10.04`. Targets `netstandard2.0`, `net8.0` and `net10.0`. No
 dependencies.
 
 ## Read the license first
@@ -165,7 +165,7 @@ Four things to check, in the order that matters:
    `SwissEphSharp.dll`. Source that only calls the public API needs no change beyond the
    `PackageReference`. Anything that hardcodes the assembly name needs updating.
 3. **Your numbers will change.** Some of that is Astrodienst's own model changes between 2.08 and
-   2.10.03; some is port defects that are now fixed, including one that gave every
+   2.10.04; some is port defects that are now fixed, including one that gave every
    `SEFLG_SWIEPH` position the wrong obliquity. Eclipse magnitude and obscuration are now
    fractions rather than percentages, so a value that read `100` reads `1`.
 4. **`OnLoadFile` is gone**, replaced by `SwissEph.FileProvider`. If your handler just opened a
@@ -174,14 +174,25 @@ Four things to check, in the order that matters:
 Target frameworks moved too. 2.8.0.2 shipped `net40` and `netstandard1.0`; neither is supported
 here. .NET Framework 4.6.1 and later resolve `netstandard2.0`.
 
-The [full README](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.3/README.md) documents
+## Upgrading from 2.10.3.x
+
+`SE_FNAME_DFT2` is gone, because upstream removed it with the DE406 fallback, so code that names it
+no longer compiles. Results also move without a code change: the default Delta T model before
+1 January 1962 is now `SEMOD_DELTAT_STEPHENSON_ETC_2020`, `dt[]` runs to 2033, and the default tidal
+acceleration is `SE_TIDAL_DE441`. See `CHANGELOG.md` for the measured effect.
+
+These values are C# `const`s, so code compiled against 2.10.3.x keeps the old ones until it is
+recompiled. A caller that has only `de431.eph` must now call `swe_set_jpl_file("de431.eph")`:
+`SE_FNAME_DFT` is `de441.eph` and the `SE_FNAME_DFT2` fallback is gone.
+
+The [full README](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.0/README.md) documents
 every breaking change with the C source line each one corresponds to.
 
 ## Credits
 
 The original C-to-C# port is [Yan Grenier](https://github.com/ygrenier/SwissEphNet)'s work
 (2014-2019). SwissEphSharp continues it, maintained since 2026 by Timothy van der Ham:
-modernised target frameworks, the 2.10.03 upgrade, and a number of bug fixes in the port. The
+modernised target frameworks, the upgrade to Swiss Ephemeris 2.10.04, and a number of bug fixes in the port. The
 Swiss Ephemeris itself is by Astrodienst. See `NOTICE` in this package for the full attribution.
 
 This package is not published or endorsed by Yan Grenier or Astrodienst.
@@ -190,5 +201,5 @@ This package is not published or endorsed by Yan Grenier or Astrodienst.
 
 - [Repository and full documentation](https://github.com/Tim81/SwissEphNet)
 - [Report an issue](https://github.com/Tim81/SwissEphNet/issues)
-- [How the numbers are verified](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.3/docs/compliance-2.10.03.md)
-- [Known issues](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.3/docs/known-issues.md)
+- [How the numbers are verified](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.0/docs/compliance-2.10.04.md)
+- [Known issues](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.0/docs/known-issues.md)

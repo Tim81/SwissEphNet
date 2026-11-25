@@ -5,10 +5,11 @@ namespace SwissEphNet.Conformance.Tests.Dispatch;
 /// <summary>Suite 4: "Some computations in sidereal mode" (external/swisseph/setest/suite_04_ayanamsa.c).</summary>
 internal static class Suite04Ayanamsa
 {
-    public static DispatchOutcome Dispatch(SwissEph swe, int testCaseId, ExpIteration iteration, Precision precision)
+    public static DispatchOutcome Dispatch(SwissEph swe, TestCaseScope scope, ExpIteration iteration)
     {
+        var testCaseId = scope.TestCaseId;
         var f = iteration.Fields;
-        var ctx = new CheckContext(f, precision);
+        var ctx = new CheckContext(f, scope);
 
         SetSidMode(swe, f);
 

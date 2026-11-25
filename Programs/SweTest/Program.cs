@@ -777,6 +777,7 @@ namespace SweTest
         //static int32 orbital_elements(double tjd_et, int32 ipl, int32 iflag, char* serr);
         //static char *hms_from_tjd(double x);
         //static void do_printf(char *info);
+        //static char *jd_and_date(double tjd, char *s);
         //static char *hms(double x, int32 iflag);
         //static void remove_whitespace(char *s);
         //#if MSDOS
@@ -905,6 +906,34 @@ namespace SweTest
         const int ECL_SOL_TOTAL = 6;
 
         static SwissEph sweph = null;
+
+        /* "JD 1940207.5 = 01.01.0600j" for -lim: Julian day and date as -fT
+         * prints it, with Julian or Gregorian calendar for each date (before or
+         * from 15.10.1582), time only if not 0h; s needs at least 60 bytes
+         * (added 2026-11-19) */
+        static string jd_and_date(double tjd, out string s)
+        {
+            int iyear = 0, imon = 0, iday = 0;
+            Int32 ih, im, isec, isgn;
+            int gflag = SwissEph.SE_GREG_CAL;
+            double hour = 0, dsecfr;
+            if (Math.Abs(tjd * 10 - Math.Floor(tjd * 10 + 0.5)) < 1e-6)
+                s = C.sprintf("JD %.1f = ", tjd);
+            else
+                s = C.sprintf("JD %.6f = ", tjd);
+            if (tjd < 2299160.5)
+                gflag = SwissEph.SE_JUL_CAL;
+            sweph.swe_revjul(tjd, gflag, ref iyear, ref imon, ref iday, ref hour);
+            s += C.sprintf("%02d.%02d.%04d", iday, imon, iyear);
+            if (gflag == SwissEph.SE_JUL_CAL)
+                s += "j";
+            if (hour != 0)
+            {
+                sweph.swe_split_deg(hour, SwissEph.SE_SPLIT_DEG_ROUND_SEC, out ih, out im, out isec, out dsecfr, out isgn);
+                s += C.sprintf(" %d:%02d:%02d TT", ih, im, isec);
+            }
+            return s;
+        }
 
         static int main_test(int argc, string[] argv)
         {
@@ -2137,13 +2166,8 @@ namespace SweTest
                                     var fnam = sweph.swe_get_current_file_data(ifno, ref tfstart, ref tfend, ref denum);
                                     if (fnam != null)
                                     {
-                                        int jy = 0, jm = 0, jd = 0;
-                                        double jt = 0;
-                                        sweph.swe_revjul(tfstart, gregflag, ref jy, ref jm, ref jd, ref jt);
-                                        sbeg = C.sprintf("%d.%02d.%04d", jd, jm, jy);
-                                        sweph.swe_revjul(tfend, gregflag, ref jy, ref jm, ref jd, ref jt);
-                                        send = C.sprintf("%d.%02d.%04d", jd, jm, jy);
-                                        printf("range %s: %.1lf = %s to %.1lf = %s de=%d\n", fnam, tfstart, sbeg, tfend, send, denum);
+                                        /* dates as with -fT, calendar for each date (2026-11-19) */
+                                        printf("range %s: %s to %s de=%d\n", fnam, jd_and_date(tfstart, out sbeg), jd_and_date(tfend, out send), denum);
                                         show_file_limit = false;
                                     }
                                 }
@@ -2195,6 +2219,7 @@ namespace SweTest
                                 if (String.CompareOrdinal(serr, serr_save) != 0
                                   && (ipl == SwissEph.SE_SUN || ipl == SwissEph.SE_MOON || ipl <= SwissEph.SE_PLUTO
                                       || ipl == SwissEph.SE_MEAN_NODE || ipl == SwissEph.SE_TRUE_NODE
+                                      || ipl == SwissEph.SE_INTP_APOG || ipl == SwissEph.SE_INTP_PERG
                                       || ipl == SwissEph.SE_CERES || ipl == SwissEph.SE_PALLAS || ipl == SwissEph.SE_JUNO || ipl == SwissEph.SE_VESTA
                                       || ipl == SwissEph.SE_CHIRON || ipl == SwissEph.SE_PHOLUS || ipl == SwissEph.SE_CUPIDO
                                       || (ipl > SwissEph.SE_FICT_OFFSET_1 && ipl <= SwissEph.SE_FICT_MAX)

@@ -43,12 +43,12 @@
     files, JPL) and for swetest; all three oracle grid row counts together with their per-`func`
     breakdown; and Tools/NetStandardCompat/grid-netstandard.tsv's own row count (grid-netstandard-
     total), the only instrument's grid that shipped with no doccount id pinning its size until this
-    addition. $docFiles below -- README.md, CONTRIBUTING.md, docs/compliance-2.10.03.md,
+    addition. $docFiles below -- README.md, CONTRIBUTING.md, docs/compliance-2.10.04.md,
     docs/known-issues.md, .github/workflows/oracle.yml, .github/workflows/conformance.yml,
     .github/workflows/baseline.yml and .github/workflows/ci.yml -- is the allowlist of files a
     marker is permitted to live in; a marker anywhere else is a failure in its own right (see
     "Reverse check" below), not merely unread. As of this writing, markers actually appear in
-    README.md, CONTRIBUTING.md, docs/compliance-2.10.03.md, .github/workflows/oracle.yml and
+    README.md, CONTRIBUTING.md, docs/compliance-2.10.04.md, .github/workflows/oracle.yml and
     .github/workflows/ci.yml (grid-netstandard-total, cited in a step comment there rather than in
     a prose document); docs/known-issues.md, conformance.yml and baseline.yml are allowlisted
     destinations that happen to hold none today, not files this script currently reads a number out
@@ -196,10 +196,13 @@ function Invoke-DocCountCheck {
 
     $GroundTruth['known-fail-total'] = $knownFailRows.Count
 
-    # All five categories ConformanceReport can emit (see CONTRIBUTING.md, "Correctness oracle
+    # All four categories ConformanceReport can emit (see CONTRIBUTING.md, "Correctness oracle
     # known-fail list"), listed explicitly so a category with zero current rows still has a
-    # ground-truth entry of 0 rather than silently having none at all.
-    foreach ($category in @('VALUE-MISMATCH', 'DATA-MISSING', 'ERROR', 'UNREPRODUCIBLE', 'NOT-IMPLEMENTED')) {
+    # ground-truth entry of 0 rather than silently having none at all. DATA-MISSING is not one of
+    # them any more: the harness stopped skipping iterations for want of data on 2026-11-24 and
+    # the category was removed from the code, so a document citing doccount:known-fail-data-missing
+    # fails here as an id with no definition.
+    foreach ($category in @('VALUE-MISMATCH', 'ERROR', 'UNREPRODUCIBLE', 'NOT-IMPLEMENTED')) {
         $id = 'known-fail-' + (ConvertTo-DocCountId $category)
         $GroundTruth[$id] = @($knownFailRows | Where-Object { $_.Split("`t")[$catIdx] -eq $category }).Count
     }
@@ -243,7 +246,7 @@ function Invoke-DocCountCheck {
     # no iflag column at all (HOUSES, GET_PLANET_NAME, AYANAMSA, SIDTIME, ...) leaves the field
     # empty, which counts toward "default nutation path" here -- this is a coarse classification
     # ("did this row opt out via SEFLG_NONUT" vs not), not a claim that every counted row actually
-    # exercises nutation code internally. docs/compliance-2.10.03.md's own prose describes exactly
+    # exercises nutation code internally. docs/compliance-2.10.04.md's own prose describes exactly
     # this classification, not a narrower one.
     function Get-GridNonutOptOutCount {
         param([Parameter(Mandatory)][string] $Path)
@@ -266,7 +269,7 @@ function Invoke-DocCountCheck {
         $GroundTruth['grid-analytic-func-' + (ConvertTo-DocCountId $func)] = $analyticGrid.ByFunc[$func]
     }
     # Crossing-family subtotal (HELIO_CROSS[_UT], SOLCROSS[_UT], MOONCROSS[_UT], MOONCROSS_NODE[_UT]):
-    # docs/compliance-2.10.03.md cites this as "plus 600 crossing rows" rather than spelling out all
+    # docs/compliance-2.10.04.md cites this as "plus 600 crossing rows" rather than spelling out all
     # eight counts inline a second time.
     $GroundTruth['grid-analytic-crossing-total'] = ($analyticGrid.ByFunc.Keys |
         Where-Object { $_ -like '*CROSS*' } | ForEach-Object { $analyticGrid.ByFunc[$_] } | Measure-Object -Sum).Sum
@@ -322,7 +325,7 @@ function Invoke-DocCountCheck {
     $docFileRelPaths = @(
         'README.md',
         'CONTRIBUTING.md',
-        'docs/compliance-2.10.03.md',
+        'docs/compliance-2.10.04.md',
         'docs/known-issues.md',
         '.github/workflows/oracle.yml',
         '.github/workflows/conformance.yml',
@@ -545,7 +548,7 @@ $knownFailTsv = @(
     "iteration`tcategory`tnote",
     "1`tVALUE-MISMATCH`ta",
     "2`tVALUE-MISMATCH`tb",
-    "3`tDATA-MISSING`tc")
+    "3`tERROR`tc")
 $oracleKnownDiffTsv = @('# lab', "func`tnote", "CALC`ta", "CALC`tb")
 $oracleKnownDiffFilesTsv = @('# lab', "func`tnote", "CALC`ta")
 $oracleKnownDiffJplTsv = @('# lab', "func`tnote", "CALC`ta")
@@ -585,8 +588,7 @@ $readmeLines = @(
     '',
     '- known-fail rows: 3<!--doccount:known-fail-total-->',
     '- of them VALUE-MISMATCH: 2<!--doccount:known-fail-value-mismatch-->',
-    '- of them DATA-MISSING: 1<!--doccount:known-fail-data-missing-->',
-    '- of them ERROR: 0<!--doccount:known-fail-error-->',
+    '- of them ERROR: 1<!--doccount:known-fail-error-->',
     '- of them UNREPRODUCIBLE: 0<!--doccount:known-fail-unreproducible-->',
     '- of them NOT-IMPLEMENTED: 0<!--doccount:known-fail-not-implemented-->',
     '- analytic oracle known-diff rows: 2<!--doccount:oracle-known-diff-analytic-->',

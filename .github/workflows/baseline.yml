@@ -176,7 +176,7 @@ jobs:
   # macOS counterpart to verify-baseline-linux above: informational only, for the same reason --
   # the baseline is Windows-generated and this gate stays locked to Windows (see that job's own
   # comment). Before this job, macOS was the only one of the three CI-supported platforms with no
-  # baseline-drift measurement at all (docs/compliance-2.10.03.md, "What this record does not
+  # baseline-drift measurement at all (docs/compliance-2.10.04.md, "What this record does not
   # cover"). Same script, same -ReportOnly flag, same continue-on-error placement (on the report
   # step alone, not job-level -- see verify-baseline-linux's own comment for why job-level was
   # wrong): this job answers the same question verify-baseline-linux does, just against libSystem

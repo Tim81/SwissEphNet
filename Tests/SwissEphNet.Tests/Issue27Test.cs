@@ -22,9 +22,9 @@ namespace SwissEphNet.Tests
             // SEFLG_JPLEPH but no JPL file available does not need one to exercise the reported
             // crash: sweph.c's ephemeris selection falls back to Moshier and still calls all the
             // same code the NullReferenceException came from, just via a different underlying
-            // ephemeris. Confirmed this reproduces the fallback path (rc=OK, serr carries a
-            // "using Moshier eph." warning, a real risetime gets computed) without any ephemeris
-            // file at all, so the regression is now covered on every CI run instead of never.
+            // ephemeris. Confirmed this reproduces the fallback path (rc=OK, a real risetime gets
+            // computed, serr ends empty as in the C) without any ephemeris file at all, so the
+            // regression is now covered on every CI run instead of never.
             string jplfolder = @"C:\Temp\ephe\jplfiles";
             string file = "de430.eph";
 
@@ -67,7 +67,11 @@ namespace SwissEphNet.Tests
                 // Falls back to Moshier rather than failing outright, and actually computes a
                 // risetime instead of leaving it at its zero default.
                 Assert.NotEqual(0, risetime);
-                Assert.Contains("Moshier", serr ?? string.Empty, StringComparison.Ordinal);
+                // The C ends with an empty serr: swe_deltat_ex clears the buffer (swephlib.c:2733-2734),
+                // so the fallback warning built earlier in swe_rise_trans does not survive. MSVC-built C at
+                // e308765d, same calls: rc 0, risetime 2457755.3268016274, serr "".
+                Assert.True(string.IsNullOrEmpty(serr), serr);
+                Assert.Equal(2457755.3268016274, risetime, 6);
             }
         }
 

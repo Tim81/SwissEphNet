@@ -2,11 +2,24 @@ using SwissEphNet.Conformance.Tests.Corpus;
 
 namespace SwissEphNet.Conformance.Tests.Dispatch;
 
-/// <summary>Suite 1: "Various swe_calc calls in different modes" (external/swisseph/setest/suite_01_calc.c).</summary>
-internal static class Suite01Calc
+/// <summary>
+/// Suite 1: "Various swe_calc calls in different modes" (external/swisseph/setest/suite_01_calc.c).
+/// </summary>
+/// <remarks>
+/// suite_01_calc.c:6 declares <c>static double xx[6],jd;</c> at file scope, so <c>xx</c> is one array
+/// shared by every iteration of every testcase. That is observable: when swe_calc_pctr fails on the
+/// Moshier path (Sweph.cs:9908-9933, as in the C) it returns ERR without writing xxret, and setest
+/// then records whatever the previous iteration left in <c>xx</c>. Hence one instance per corpus run
+/// and a shared <c>_xx</c>. <c>jd</c>, <c>iflag</c>, <c>iephe</c> and <c>serr</c> are file-scope too but
+/// SETUP rewrites all of them before every iteration, so locals are equivalent.
+/// </remarks>
+internal sealed class Suite01Calc
 {
-    public static DispatchOutcome Dispatch(SwissEph swe, int testCaseId, ExpIteration iteration, Precision precision)
+    private readonly double[] _xx = new double[6];
+
+    public DispatchOutcome Dispatch(SwissEph swe, TestCaseScope scope, ExpIteration iteration)
     {
+        var testCaseId = scope.TestCaseId;
         var f = iteration.Fields;
 
         switch (testCaseId)
@@ -18,10 +31,10 @@ internal static class Suite01Calc
                 var iephe = f.GetInt("iephe");
                 var jd = f.GetDouble("jd");
                 var ipl = f.GetInt("ipl");
-                var xx = new double[6];
+                var xx = _xx;
                 string serr = "";
                 var rc = swe.swe_calc(jd, ipl, iflag | iephe, xx, ref serr);
-                return CheckCalc(f, precision, rc, xx, serr);
+                return CheckCalc(f, scope, rc, xx, serr);
             }
 
             case 2:
@@ -30,10 +43,10 @@ internal static class Suite01Calc
                 var iephe = f.GetInt("iephe");
                 var jd = f.GetDouble("jd");
                 var ipl = f.GetInt("ipl");
-                var xx = new double[6];
+                var xx = _xx;
                 string serr = "";
                 var rc = swe.swe_calc_ut(jd, ipl, iflag | iephe, xx, ref serr);
-                return CheckCalc(f, precision, rc, xx, serr);
+                return CheckCalc(f, scope, rc, xx, serr);
             }
 
             case 3:
@@ -46,10 +59,10 @@ internal static class Suite01Calc
                 var altitude = f.GetDouble("altitude");
                 var ipl = f.GetInt("ipl");
                 swe.swe_set_topo(geolon, geolat, altitude);
-                var xx = new double[6];
+                var xx = _xx;
                 string serr = "";
                 var rc = swe.swe_calc(jd, ipl, iflag | iephe, xx, ref serr);
-                return CheckCalc(f, precision, rc, xx, serr);
+                return CheckCalc(f, scope, rc, xx, serr);
             }
 
             case 4:
@@ -81,13 +94,13 @@ internal static class Suite01Calc
                 var iephe = f.GetInt("iephe");
                 var jd = f.GetDouble("jd");
                 var ipl = f.GetInt("ipl");
-                var xx = new double[6];
+                var xx = _xx;
                 string serr = "";
                 var iflag = SwissEph.SEFLG_EQUATORIAL | iephe;
                 swe.swe_calc(jd, ipl, iflag, xx, ref serr); // discarded, matches upstream
                 iflag = iephe;
                 var rc = swe.swe_calc(jd, ipl, iflag, xx, ref serr);
-                var ctx = new CheckContext(f, precision);
+                var ctx = new CheckContext(f, scope);
                 ctx.CheckEqualsI("rc==iflag", rc, iflag);
                 return DispatchOutcome.FromMismatches(ctx);
             }
@@ -99,10 +112,10 @@ internal static class Suite01Calc
                 var jd = f.GetDouble("jd");
                 var ipl = f.GetInt("ipl");
                 var iplctr = f.GetInt("iplctr");
-                var xx = new double[6];
+                var xx = _xx;
                 string serr = "";
                 var rc = swe.swe_calc_pctr(jd, ipl, iplctr, iflag | iephe, xx, ref serr);
-                return CheckCalc(f, precision, rc, xx, serr);
+                return CheckCalc(f, scope, rc, xx, serr);
             }
 
             default:
@@ -110,9 +123,9 @@ internal static class Suite01Calc
         }
     }
 
-    private static DispatchOutcome CheckCalc(ExpFields f, Precision precision, int rc, double[] xx, string serr)
+    private static DispatchOutcome CheckCalc(ExpFields f, TestCaseScope scope, int rc, double[] xx, string serr)
     {
-        var ctx = new CheckContext(f, precision);
+        var ctx = new CheckContext(f, scope);
         ctx.CheckDD("xx", xx);
         ctx.CheckI("rc", rc);
         ctx.CheckS("serr", serr);

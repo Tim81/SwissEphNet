@@ -132,14 +132,14 @@ A PR that changes a frozen file with no hunk citation should not be merged.
 
 Existing citations of the upstream C (in port comments, docs and the freeze log) refer to
 `v2.10.3bfinal` (`f4dcd18e`) unless they name another version; they were not renumbered when the
-pin moved to `94621aba`. Cite new hunks against the current pin and say so if it is not obvious.
+pin moved (to `94621aba`, then `43c9fe54`, then `e308765d`). Cite new hunks against the current pin and say so if it is not obvious.
 `docs/known-issues.md` ("C file:line citations were written against `v2.10.3bfinal`") has the exact
 line offsets for mapping an old citation to the current pin.
 
 ### The upstream C is vendored at `external/swisseph`
 
 `external/swisseph` is a git submodule of `https://github.com/aloistr/swisseph`,
-pinned to upstream master at `43c9fe54` (`v2.10.3bfinal` plus 25 commits; no newer tag exists) -- the upstream C this port tracks.
+pinned to the upstream tag `v2.10.04` (`e308765d`) -- the upstream C this port tracks.
 It is sparse-checked-out to keep it small: only `*.c`, `*.h`, `Makefile`,
 `LICENSE`, `setest/` (the reference test corpus `Tests/SwissEphNet.Conformance.Tests`
 is built against) and eight specific `ephe/` files the conformance oracle needs to run
@@ -167,7 +167,7 @@ git sparse-checkout set --no-cone /*.c /*.h /Makefile /LICENSE /setest/* /seleap
     /ephe/seas_12.se1 /ephe/semo_12.se1 /ephe/sepl_12.se1 `
     /ephe/seas_18.se1 /ephe/semo_18.se1 /ephe/sepl_18.se1 `
     /ephe/sefstars.txt /ephe/seorbel.txt
-git checkout 43c9fe54fc1255a6a83dcb5f4364218ab4034e39
+git checkout e308765d10b9463ab0ed53b102ad454820ee0b43
 cd ../..
 git submodule absorbgitdirs external/swisseph
 ```
@@ -250,7 +250,7 @@ input (the PyPI URL above) and no parameter or code path that can reach the
 ### Generating a per-file delta
 
 `scripts/gen-delta.ps1` diffs a file between the 2.08 baseline (fetched above)
-and the pinned 2.10.03 submodule:
+and the pinned submodule (`v2.10.04` at this writing):
 
 ```powershell
 pwsh scripts/gen-delta.ps1 -File sweph.c
@@ -371,7 +371,7 @@ that many files under `SwissEphNet/CPort/` carry in their header comment.
 ## Correctness oracle known-fail list
 
 `Tests/SwissEphNet.Conformance.Tests` checks the port against Astrodienst's
-own 2.10.03 reference values (`external/swisseph/setest/t.exp`), not against
+own 2.10.04 reference values (`external/swisseph/setest/t.exp`), not against
 the port's own prior output -- see "Correctness oracle" in `README.md`.
 `Tests/conformance/known-fail.tsv` is the work queue: every iteration the port
 is currently known not to match, by category. The gate passes only when the
@@ -387,12 +387,38 @@ silent by design: once it is in the file, a matching failure never shows up
 again as a gate failure, so nothing else will catch a bad addition. This is
 why `/Tests/conformance/` has a `CODEOWNERS` entry.
 
-The only supported way to touch `known-fail.tsv` is `scripts/regenerate-known-fail.ps1`,
-in one of two modes:
+`Tests/conformance/known-fail-pins.tsv` is the value-level half of the same gate.
+The category and `magnitude_key` comparison only sees the worst field of a
+`VALUE-MISMATCH` row, in decades, so any other field of the row could regress
+unseen (and a row whose key is `0` or `n/a` could not change visibly at all).
+For every `VALUE-MISMATCH` row the pins file records each mismatching field's
+name and the value the port produces. A failing runtime self-check
+(`CHECK_EQUALS_D` and `CHECK_EQUALS_I`, which compare two values the run
+produced and have no `t.exp` side, at the moment suite 1 testcase 4 and suites
+10 and 11) pins both of its operands, the second as `name#2`: which one the
+port computed depends on the call site (suite 10's
+`CHECK_EQUALS_D(xcross, xx[0])` passes the `t.exp` input first and the computed
+`xx[0]` second, suite 11's `CHECK_EQUALS_D(xback[0], xin[0])` the reverse), so
+neither is assumed, and a failure message calls them the first and second
+operand rather than `t.exp`. The gate (`PinGate`) then requires, per
+row, that the set of mismatching fields is exactly the pinned set, that each
+double is within `setest`'s own tolerance for that field (`tolerances.c`, with
+the `t.fix` precision as fallback, as `CheckContext` does) of its pinned value,
+that ints are equal, and that strings are equal after the ephemeris directory
+is replaced by a placeholder (with or without a trailing separator on
+`SWISSEPH_CONFORMANCE_EPHE`: both spellings give the same pin). A failure names
+the row, the field, and the pinned and actual values. The pins are generated on
+Windows x64, the platform the conformance job gates on, and
+`scripts/regenerate-known-fail.ps1` refuses to run anywhere else unless given
+`-AllowUnsupportedPlatform` (which records the platform in the log entry). They
+change only through the script below.
+
+The only supported way to touch `known-fail.tsv` and `known-fail-pins.tsv` is
+`scripts/regenerate-known-fail.ps1`, in one of two modes:
 
 - `-PruneOnly`: removes rows that now pass; refuses to run at all (non-zero
-  exit, no file changes) if the current run would add a row or change an
-  existing row's category. This is the mode to reach for after a porting PR --
+  exit, no file changes) if the current run would add a row, change an
+  existing row's category, or change any pinned field value of a surviving row. This is the mode to reach for after a porting PR --
   it mechanically cannot smuggle in an unreviewed new failure, so it needs no
   `-Reason`.
 - Default (full regenerate, `-Reason "..."` required): overwrites the file
@@ -469,34 +495,39 @@ correctness oracle look, from a CI notification, like the same kind of thing:
 both run the library against a reference and report PASS/FAIL. Their
 *expected* results are opposites. The baseline expects **zero** diffs --
 anything else means a change altered something it should not have. This
-oracle expects **some iterations to still fail** -- the 2.10.03 delta has
-landed file by file, but `known-fail.tsv` still lists 2,395<!--doccount:known-fail-total--> of 12,757
-iterations (81.2% passing), and closing the rest is incremental porting
-work, not something a single PR finishes. A red oracle run is not evidence
-anything is broken; a green one (all 12,757 passing with an empty
-`known-fail.tsv`) would mean the port is at full parity with 2.10.03, which
-is the multi-PR goal this whole mechanism exists to track progress toward,
+oracle expects **some iterations to still fail**: `known-fail.tsv` lists 1,401<!--doccount:known-fail-total--> of 18,919
+iterations (92.6% passing) at v2.10.04. That count is divergence from `t.exp`, a static
+snapshot made by Astrodienst, not a count of port defects: all 1,401 `VALUE-MISMATCH` rows are
+triaged against the C and none is a port defect. The harness skips no iteration for want of
+data (the `DATA-MISSING` category that did was removed on 2026-11-24): an iteration that asks
+for a file this repo does not ship runs as `setest` runs it, with the library's fallback. A red
+oracle run is not evidence anything is broken; a green one (all 18,919 passing with an empty
+`known-fail.tsv`) would mean every iteration matches `t.exp`, which needs the full data set the official run used, so it is
 not today's state. See "Reporting by testcase" below for how to read a run
 without it looking alarming.
 
 ### Reporting by testcase
 
-12,757 individual iteration results is not something a contributor can read.
+18,919 individual iteration results is not something a contributor can read.
 `ConformanceReport.FormatByTestCase()` (wired into
 `scripts/regenerate-known-fail.ps1` and `Tools/ConformanceKnownFailGen`)
-groups by the 60 (suite, testcase) pairs instead and splits them into two
+groups by the 68 (suite, testcase) pairs instead and splits them into two
 lists: **actionable** (at least one `VALUE-MISMATCH`/`ERROR` -- the actual
 porting work queue) and **parked** (every non-passing iteration in that
-testcase is `NOT-IMPLEMENTED`, `DATA-MISSING`, or `UNREPRODUCIBLE` -- blocked
+testcase is `NOT-IMPLEMENTED` or `UNREPRODUCIBLE` -- blocked
 on something other than the port's logic: a 2.10-only API (currently none;
-the category is empty), a data file this repo doesn't ship, or a structural
-gap). A testcase with zero failing iterations appears in neither list; it is
-not "parked", it is done. Of the 60, 39 have at least one row in
-`known-fail.tsv`; splitting those by `FormatByTestCase()`'s rule gives 31
-actionable and 8 genuinely parked, and the remaining 21 have no row in
-`known-fail.tsv` at all -- they pass completely. Conflating "parked" with
-"everything not actionable" overstates how much of the 60 is blocked on
-something other than the port's own logic: it is 8, not 29. A porting PR
+the category is empty) or a structural gap). A testcase with zero failing iterations appears in neither list; it is
+not "parked", it is done. Of the 68, 28 have at least one row in
+`known-fail.tsv`; splitting those by `FormatByTestCase()`'s rule gives 28
+actionable and none parked, and the remaining 40 have no row in
+`known-fail.tsv` at all -- they pass completely. ("Actionable"
+is the rule's name, not a verdict: at v2.10.04 all 1,401 `VALUE-MISMATCH` rows
+are triaged as drift, none a port defect.) Measured at v2.10.04 on 2026-11-24
+after the `DATA-MISSING` skips were lifted (earlier the same day: 29 testcases
+with a row, 22 actionable and 7 parked, the parked ones being the testcases
+whose only failures were skipped iterations: six of them, 1.2, 1.4, 1.5, 4.1, 7.3 and
+7.4, now carry `VALUE-MISMATCH` rows, and 5.3 passes completely); at
+2.10.3.x the figures were 60 testcases, 31 actionable and 8 parked. A porting PR
 should be shrinking the actionable list's mismatch/error counts, or moving a
 testcase from actionable to fully passing -- not touching the parked list,
 which changes only when a 2.10 API gets implemented or a data-file constraint

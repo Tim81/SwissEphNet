@@ -6,7 +6,7 @@
     setest/t.exp), not against the port's own prior output (that is what
     Tests/baseline does). See README.md, "Correctness oracle" section.
 
-    It is deliberately separate from Tests/SwissEphNet.Tests: 12,757 iterations
+    It is deliberately separate from Tests/SwissEphNet.Tests: 18,919 iterations
     must not be in the fast unit-test loop. This repo's own precedent for a
     self-executing xunit v3 console test project is Tools/BaselineVerify.Tests,
     so this project follows the same shape (OutputType Exe + xunit.v3), not the
@@ -41,6 +41,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>conformance\known-fail.tsv</Link>
     </None>
+    <None Include="..\conformance\known-fail-pins.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>conformance\known-fail-pins.tsv</Link>
+    </None>
     <None Include="..\conformance\required-ephemeris-files.tsv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>conformance\required-ephemeris-files.tsv</Link>
@@ -48,10 +52,6 @@
     <None Include="..\conformance\value-mismatch-triage.tsv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>conformance\value-mismatch-triage.tsv</Link>
-    </None>
-    <None Include="..\conformance\house-speed-drift-6c989727.tsv">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>conformance\house-speed-drift-6c989727.tsv</Link>
     </None>
   </ItemGroup>
 

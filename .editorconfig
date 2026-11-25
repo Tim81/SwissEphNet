@@ -25,9 +25,16 @@ indent_size = 2
 # separated data files read by plain line-splitting code (PowerShell's `-split "`t"`, Python's
 # csv/split), not files parsed by a BOM-aware reader, so a leading BOM would silently attach
 # itself to the first row's first column.
+#
+# Trailing whitespace is data in these files, not formatting: a pinned serr or a baseline string can
+# end in a space (160 lines of Tests/conformance/known-fail-pins.tsv, 124 of known-fail.tsv, and
+# 3,313 lines across five Tests/baseline/*.tsv at the time of writing), so an editor that trims on
+# save silently changes the value the gate compares. Applies to every *.tsv, not only the conformance
+# ones, because the baseline files carry the same trailing spaces.
 [*.tsv]
 charset = utf-8
 end_of_line = lf
+trim_trailing_whitespace = false
 
 [*.{sln,slnx,slnf}]
 indent_style = tab

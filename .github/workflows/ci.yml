@@ -226,7 +226,7 @@ jobs:
       # by a shrunken corpus sliding under the ratio floor -- and its -SelfTestApplyPrune case
       # exercises the real write path (the `@()` wrap feeding $header, not just Get-SurvivingLines)
       # in a real child process, the way scripts/verify-freeze.ps1's own Assert-Gate does, without
-      # building Tools/ConformanceKnownFailGen or dispatching the 12,757-iteration corpus.
+      # building Tools/ConformanceKnownFailGen or dispatching the 18,919-iteration corpus.
       - name: Self-test the known-fail regeneration guard
         shell: pwsh
         run: pwsh scripts/regenerate-known-fail.ps1 -SelfTest
@@ -413,7 +413,7 @@ jobs:
   # swetest's, and both oracle grids' totals with their per-func breakdown) directly from the
   # files that define them, and fails when a doccount-marker-tagged figure (see
   # scripts/verify-doc-counts.ps1's own header for the exact HTML-comment marker syntax) in
-  # README.md, CONTRIBUTING.md, docs/compliance-2.10.03.md, docs/known-issues.md or the
+  # README.md, CONTRIBUTING.md, docs/compliance-2.10.04.md, docs/known-issues.md or the
   # oracle/conformance/baseline workflow files disagrees -- or when a defined count has no marker
   # left to check at all, or a marker exists somewhere outside that document set. See
   # scripts/verify-doc-counts.ps1's own header for the marker-vs-manifest design choice.

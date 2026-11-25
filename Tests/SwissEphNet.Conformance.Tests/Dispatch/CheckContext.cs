@@ -9,10 +9,12 @@ namespace SwissEphNet.Conformance.Tests.Dispatch;
 /// Accumulates CHECK_D / CHECK_DD / CHECK_I / CHECK_S-style comparisons for one
 /// iteration, mirroring external/swisseph/setest/checkpoints.c and
 /// globals_suite.c exactly (including the "xx" array's per-component
-/// precision special case).
+/// fallback precision and, since v2.10.04, the per-quantity tolerances of tolerances.c).
 /// </summary>
-public sealed class CheckContext(ExpFields expected, Precision precision)
+public sealed class CheckContext(ExpFields expected, TestCaseScope scope)
 {
+    private readonly Precision precision = scope.Precision;
+
     private readonly List<FieldMismatch> _mismatches = [];
     private int _comparisonCount;
 
@@ -33,29 +35,33 @@ public sealed class CheckContext(ExpFields expected, Precision precision)
     /// </summary>
     public bool AnyComparisonPerformed => _comparisonCount > 0;
 
-    /// <summary>CHECK_D(name) -- always uses the testcase's overall precision.</summary>
+    /// <summary>
+    /// CHECK_D(name) -- checkpoints.c:6 check_d: the testcase's overall precision is the fallback
+    /// tolerance; <see cref="CheckDInternal"/> replaces it with the per-quantity tolerance when
+    /// tolerances.c knows the name.
+    /// </summary>
     public void CheckD(string name, double actual) => CheckDInternal(name, actual, precision.All);
 
     /// <summary>
     /// CHECK_DD(name, length) -- for any name with an "xx" *prefix* (xx, xxnasc,
     /// xxndsc, xxperi, xxaphe, xxdret, xxtret, xxattr, xxgeopos, ...) and
-    /// index &lt; 6, uses precision.Xx[i]; otherwise uses the overall precision
-    /// for every index.
+    /// index &lt; 6, the fallback precision is precision.Xx[i]; otherwise the overall precision.
     /// </summary>
     /// <remarks>
-    /// Matches external/swisseph/setest/checkpoints.c:14 exactly:
+    /// <para>
+    /// Matches external/swisseph/setest/checkpoints.c:10-19 exactly:
     /// <c>strncmp(name,"xx", 2) == 0 &amp;&amp; i &lt; 6</c> -- a prefix test, not an
     /// exact-name test. The exact-name form lives in a different function
-    /// (check_equals_dd, checkpoints.c:146) that no suite actually calls;
-    /// testsuite.m4:79 maps CHECK_DD to the prefix-matching check_dd. Getting
-    /// this wrong is not cosmetic: every array whose name starts with "xx" --
-    /// xxnasc/xxndsc/xxperi/xxaphe (suite 7), xxdret (suite 7), xxtret/xxattr
-    /// (suites 8-9), xxgeopos (suite 8) -- would otherwise be compared at
-    /// precision.All instead of the (usually far tighter) precision.Xx[i],
-    /// which is a false-pass generator: in suites 7-9 the carried-over
-    /// precision.All is often 1e-3 (leaked from suite 6's testsuite-level
-    /// override) against precision.Xx of 1e-8/1e-6, so indices 0-2 would be
-    /// let through 100,000x too loosely and 3-5 by 1,000x.
+    /// (check_equals_dd, checkpoints.c:147) that no suite actually calls;
+    /// testsuite.m4 maps CHECK_DD to the prefix-matching check_dd.
+    /// </para>
+    /// <para>
+    /// Since v2.10.04 (f952691) that precision is only the fallback: check_d_internal ends in
+    /// check_equals_d_internal (checkpoints.c:129), which asks tolerance_for (tolerances.c) first and
+    /// uses the t.fix precision only for names that function does not classify (it returns -1).
+    /// For the classified names, which is nearly all of the corpus, the per-quantity tolerance
+    /// decides and the t.fix precision never enters.
+    /// </para>
     /// </remarks>
     public void CheckDD(string name, IReadOnlyList<double> actual)
     {
@@ -73,7 +79,7 @@ public sealed class CheckContext(ExpFields expected, Precision precision)
         var exp = expected.GetIntCompared(name);
         if (actual != exp)
         {
-            _mismatches.Add(new FieldMismatch(name, exp.ToString(CultureInfo.InvariantCulture), actual.ToString(CultureInfo.InvariantCulture), null));
+            _mismatches.Add(new FieldMismatch(name, exp.ToString(CultureInfo.InvariantCulture), actual.ToString(CultureInfo.InvariantCulture), null, FieldKind.Int));
         }
     }
 
@@ -83,8 +89,22 @@ public sealed class CheckContext(ExpFields expected, Precision precision)
         _comparisonCount++;
         if (actual != expectedLiteral)
         {
-            _mismatches.Add(new FieldMismatch(name, expectedLiteral.ToString(CultureInfo.InvariantCulture), actual.ToString(CultureInfo.InvariantCulture), null));
+            _mismatches.Add(new FieldMismatch(name, expectedLiteral.ToString(CultureInfo.InvariantCulture), actual.ToString(CultureInfo.InvariantCulture), null, FieldKind.Int, SelfCheck: true));
         }
+    }
+
+    /// <summary>
+    /// CHECK_EQUALS_D(actual, expected) -- a pure runtime self-consistency check of two computed
+    /// doubles (a round trip), not file-backed. Mirrors external/swisseph/setest/checkpoints.c's
+    /// check_equals_d (:116) and check_equals_d_internal (:129): the tolerance is the per-quantity
+    /// one from tolerances.c when it classifies <paramref name="name"/> (evaluated at the second
+    /// argument, the "expected" side), the testcase's overall precision otherwise; a NaN on either
+    /// side fails.
+    /// </summary>
+    public void CheckEqualsD(string name, double actual, double expectedValue)
+    {
+        _comparisonCount++;
+        CheckEqualsDInternal(name, actual, expectedValue, precision.All, selfCheck: true);
     }
 
     /// <summary>
@@ -101,21 +121,36 @@ public sealed class CheckContext(ExpFields expected, Precision precision)
         var escapedActual = EscapeNewlines(actual ?? "");
         if (!string.Equals(exp, escapedActual, StringComparison.Ordinal))
         {
-            _mismatches.Add(new FieldMismatch(name, exp, escapedActual, null));
+            _mismatches.Add(new FieldMismatch(name, exp, escapedActual, null, FieldKind.String));
         }
     }
 
-    private void CheckDInternal(string name, double actual, double allowedDiff)
+    private void CheckDInternal(string name, double actual, double fallbackPrecision)
     {
         _comparisonCount++;
         var exp = expected.GetDoubleCompared(name);
-        if (double.IsNaN(actual) || double.IsNaN(exp) || Math.Abs(exp - actual) > allowedDiff)
+        CheckEqualsDInternal(name, actual, exp, fallbackPrecision);
+    }
+
+    // checkpoints.c:129 check_equals_d_internal. The harness never has -p parameters, so
+    // ctx->precisions.from_parameters is false and tolerance_for always applies.
+    private void CheckEqualsDInternal(string name, double act, double exp, double fallbackPrecision, bool selfCheck = false)
+    {
+        var tol = fallbackPrecision;
+        var t = Tolerances.tolerance_for(name, exp, scope.SuiteId, scope.TestCaseId, expected.PeekInt("iflag") ?? 0);
+        if (t >= 0)
+        {
+            tol = t;
+        }
+
+        if (double.IsNaN(act) || double.IsNaN(exp) || Math.Abs(exp - act) > tol)
         {
             _mismatches.Add(new FieldMismatch(
                 name,
                 exp.ToString("G17", CultureInfo.InvariantCulture),
-                actual.ToString("G17", CultureInfo.InvariantCulture),
-                exp - actual));
+                act.ToString("G17", CultureInfo.InvariantCulture),
+                exp - act,
+                SelfCheck: selfCheck));
         }
     }
 

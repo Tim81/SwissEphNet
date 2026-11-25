@@ -32,8 +32,9 @@
     the SWISSEPH_ORACLE_JPL_FILE environment variable when that parameter is not passed. With
     neither set, this script prints a SKIP line for the JPL grid and everything else behaves
     exactly as it did before the grid existed: same two grids, same six dump files, same five
-    provenance rows. That is the same opt-in shape the correctness oracle already uses for its own
-    SEFLG_JPLEPH iterations (SWISSEPH_CONFORMANCE_INCLUDE_JPL/SWISSEPH_CONFORMANCE_JPL_FILE, see
+    provenance rows. That is the same opt-in shape the correctness oracle uses to run its
+    SEFLG_JPLEPH iterations against a real DE file (SWISSEPH_CONFORMANCE_JPL_FILE; without it they
+    run anyway and take the library's Swiss ephemeris fallback, see
     Tests/SwissEphNet.Conformance.Tests/Dispatch/EphemerisFileResolver.cs).
 
     Unlike the correctness oracle, this grid does not care WHICH DE file it is given. setest

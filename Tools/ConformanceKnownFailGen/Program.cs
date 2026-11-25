@@ -6,8 +6,9 @@ using SwissEphNet.Conformance.Tests.KnownFail;
 
 // Never invoke this directly -- see scripts/regenerate-known-fail.ps1.
 var outputPath = args.Length > 0 ? args[0] : "known-fail.tsv";
+var pinsPath = args.Length > 1 ? args[1] : "known-fail-pins.tsv";
 
-Console.WriteLine("Running the full conformance corpus (this dispatches all 12,757 iterations)...");
+Console.WriteLine("Running the full conformance corpus (this dispatches all 18,919 iterations)...");
 var startedAt = DateTime.UtcNow;
 ExpDocument doc;
 System.Collections.Generic.IReadOnlyList<IterationResult> results;
@@ -40,13 +41,14 @@ foreach (var r in results)
 
     var category = FailureCategoryNames.FromOutcomeKind(r.Kind);
     var magnitudeKey = MagnitudeKey.Compute(r.Mismatches);
-    var rawReason = r.Reason ?? string.Join("; ", r.Mismatches.Select(m => $"{m.Name}: expected {m.Expected}, got {m.Actual}"));
+    var rawReason = r.Reason ?? string.Join("; ", r.Mismatches.Select(m => m.SelfCheck ? $"{m.Name}: self-check operands {m.Actual} and {m.Expected}" : $"{m.Name}: expected {m.Expected}, got {m.Actual}"));
     var reason = NormalizeReason(rawReason);
     entries.Add(new KnownFailEntry(r.Key, category, magnitudeKey, reason));
 }
 
 KnownFailList.Save(outputPath, entries);
-Console.WriteLine($"Wrote {entries.Count} known-fail entries to {outputPath}");
+PinList.Save(pinsPath, PinList.FromResults(results, RepoLocator.EpheDir));
+Console.WriteLine($"Wrote {entries.Count} known-fail entries to {outputPath} and their VALUE-MISMATCH field pins to {pinsPath}");
 
 Console.WriteLine();
 Console.WriteLine("By suite / category:");
@@ -59,7 +61,7 @@ foreach (var g in entries
 }
 
 // Emit the per-suite pass-rate table too, since a reviewer regenerating the
-// file wants this in the same run, not a second full 12,757-iteration pass.
+// file wants this in the same run, not a second full 18,919-iteration pass.
 Console.WriteLine();
 var knownFailByKey = entries.ToDictionary(e => e.Key);
 var report = ConformanceReport.Build(results, knownFailByKey);

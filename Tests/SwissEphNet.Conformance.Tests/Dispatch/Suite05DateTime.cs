@@ -5,10 +5,11 @@ namespace SwissEphNet.Conformance.Tests.Dispatch;
 /// <summary>Suite 5: "Date and time functions" (external/swisseph/setest/suite_05_date_time.c).</summary>
 internal static class Suite05DateTime
 {
-    public static DispatchOutcome Dispatch(SwissEph swe, int testCaseId, ExpIteration iteration, Precision precision)
+    public static DispatchOutcome Dispatch(SwissEph swe, TestCaseScope scope, ExpIteration iteration)
     {
+        var testCaseId = scope.TestCaseId;
         var f = iteration.Fields;
-        var ctx = new CheckContext(f, precision);
+        var ctx = new CheckContext(f, scope);
 
         switch (testCaseId)
         {
@@ -36,21 +37,9 @@ internal static class Suite05DateTime
                 var iephe = f.GetInt("iephe");
                 var jd = f.GetDouble("jd");
 
-                // SEFLG_SWIEPH delta-T for a date outside this repo's shipped era files
-                // (sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) still returns the
-                // right number -- delta-T is not itself read from these files -- but Swiss
-                // Ephemeris falls back to Moshier internally and reports that in serr, which
-                // a reference run with the full file set never sees. See
-                // EphemerisFileResolver.NeedsEraFileWeDoNotShip's remarks (suite 5 testcase 3
-                // iteration 6 is what surfaced this).
-                if (iephe == SwissEph.SEFLG_SWIEPH && EphemerisFileResolver.NeedsEraFileWeDoNotShip(swe, jd))
-                {
-                    return DispatchOutcome.DataMissing(
-                        "iephe is SEFLG_SWIEPH for a date outside the era this repo's shipped core ephemeris files " +
-                        "(sepl/semo/seas_12.se1 and _18.se1, years 1200-2399) cover; Swiss Ephemeris falls back to " +
-                        "Moshier internally and reports \"using Moshier eph.\" in serr, which the reference run " +
-                        "(built against the full file set) does not.");
-                }
+                // No era-file skip: for an SEFLG_SWIEPH request outside the declared files' 1200-2399 the
+                // library falls back to Moshier and serr says so, as under upstream setest on the same
+                // files (suite 5 testcase 3 iteration 6 is the one that first surfaced this).
 
                 double deltat;
                 if (iephe > 0)

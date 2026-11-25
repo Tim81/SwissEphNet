@@ -31,8 +31,9 @@ internal sealed class Suite08Eclipses
     private readonly double[] _xxgeopos = new double[3];
     private readonly double[] _xxattr = new double[20];
 
-    public DispatchOutcome Dispatch(SwissEph swe, int testCaseId, ExpIteration iteration, Precision precision)
+    public DispatchOutcome Dispatch(SwissEph swe, TestCaseScope scope, ExpIteration iteration)
     {
+        var testCaseId = scope.TestCaseId;
         var f = iteration.Fields;
 
         // SETUP: read every iteration.
@@ -47,7 +48,7 @@ internal sealed class Suite08Eclipses
                 var jd = f.GetDouble("jd");
                 string serr = "";
                 var rc = swe.swe_sol_eclipse_when_glob(jd, f.GetInt("iephe"), f.GetInt("ifltype"), _xxtret, f.GetInt("backward") != 0, ref serr);
-                var ctx = new CheckContext(f, precision);
+                var ctx = new CheckContext(f, scope);
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxtret", _xxtret);
                 return DispatchOutcome.FromMismatches(ctx);
@@ -58,7 +59,7 @@ internal sealed class Suite08Eclipses
                 var jd = f.GetDouble("jd");
                 string serr = "";
                 var rc = swe.swe_sol_eclipse_where(jd, f.GetInt("iephe"), _xxgeopos, _xxattr, ref serr);
-                var ctx = new CheckContext(f, precision);
+                var ctx = new CheckContext(f, scope);
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxgeopos", _xxgeopos[..2]);
                 ctx.CheckDD("xxattr", _xxattr[..8]);
@@ -71,7 +72,7 @@ internal sealed class Suite08Eclipses
                 var geopos = new[] { geolon, geolat, altitude };
                 string serr = "";
                 var rc = swe.swe_sol_eclipse_when_loc(jd, f.GetInt("iephe"), geopos, _xxtret, _xxattr, f.GetInt("backward") != 0, ref serr);
-                var ctx = new CheckContext(f, precision);
+                var ctx = new CheckContext(f, scope);
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxtret", _xxtret[..7]);
                 ctx.CheckDD("xxattr", _xxattr[..11]);
@@ -84,7 +85,7 @@ internal sealed class Suite08Eclipses
                 var geopos = new[] { geolon, geolat, altitude };
                 string serr = "";
                 var rc = swe.swe_sol_eclipse_how(jd, f.GetInt("iephe"), geopos, _xxattr, ref serr);
-                var ctx = new CheckContext(f, precision);
+                var ctx = new CheckContext(f, scope);
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxattr", _xxattr[..11]);
                 return DispatchOutcome.FromMismatches(ctx);
@@ -97,7 +98,7 @@ internal sealed class Suite08Eclipses
                 var star = ipl == -1 ? f.GetRawString("star") : "";
                 string serr = "";
                 var rc = swe.swe_lun_occult_when_glob(jd, ipl, star, f.GetInt("iephe"), f.GetInt("ifltype"), _xxtret, f.GetInt("backward") != 0, ref serr);
-                var ctx = new CheckContext(f, precision);
+                var ctx = new CheckContext(f, scope);
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxtret", _xxtret);
                 return DispatchOutcome.FromMismatches(ctx);
@@ -110,7 +111,7 @@ internal sealed class Suite08Eclipses
                 var star = ipl == -1 ? f.GetRawString("star") : "";
                 string serr = "";
                 swe.swe_lun_occult_where(jd, ipl, star, f.GetInt("iephe"), _xxgeopos, _xxattr, ref serr);
-                var ctx = new CheckContext(f, precision);
+                var ctx = new CheckContext(f, scope);
                 ctx.CheckDD("xxgeopos", _xxgeopos[..2]);
                 ctx.CheckDD("xxattr", _xxattr[..8]);
                 return DispatchOutcome.FromMismatches(ctx);
@@ -124,7 +125,7 @@ internal sealed class Suite08Eclipses
                 var star = ipl == -1 ? f.GetRawString("star") : "";
                 string serr = "";
                 var rc = swe.swe_lun_occult_when_loc(jd, ipl, star, f.GetInt("iephe"), geopos, _xxtret, _xxattr, f.GetInt("backward") != 0, ref serr);
-                var ctx = new CheckContext(f, precision);
+                var ctx = new CheckContext(f, scope);
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxtret", _xxtret[..7]);
                 ctx.CheckDD("xxattr", _xxattr[..11]);
@@ -136,7 +137,7 @@ internal sealed class Suite08Eclipses
                 var jd = f.GetDouble("jd");
                 string serr = "";
                 var rc = swe.swe_lun_eclipse_when(jd, f.GetInt("iephe"), f.GetInt("ifltype"), _xxtret, f.GetInt("backward") != 0, ref serr);
-                var ctx = new CheckContext(f, precision);
+                var ctx = new CheckContext(f, scope);
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxtret", _xxtret);
                 return DispatchOutcome.FromMismatches(ctx);
@@ -144,17 +145,13 @@ internal sealed class Suite08Eclipses
 
             case 9:
             {
-                // Upstream's own suite_08_eclipses.c TESTCASE(9), despite being
-                // titled "swe_lun_eclipse_when_loc( )", actually calls
-                // swe_sol_eclipse_when_loc again (with all 10 of xxtret's
-                // elements checked this time, not 7). This is reproduced
-                // verbatim: t.exp's recorded values were generated by that
-                // exact call, bug or not.
+                // suite_08_eclipses.c TESTCASE(9) calls swe_lun_eclipse_when_loc and checks
+                // all 10 of xxtret's elements and the first 11 of xxattr.
                 var jd = f.GetDouble("jd");
                 var geopos = new[] { geolon, geolat, altitude };
                 string serr = "";
-                var rc = swe.swe_sol_eclipse_when_loc(jd, f.GetInt("iephe"), geopos, _xxtret, _xxattr, f.GetInt("backward") != 0, ref serr);
-                var ctx = new CheckContext(f, precision);
+                var rc = swe.swe_lun_eclipse_when_loc(jd, f.GetInt("iephe"), geopos, _xxtret, _xxattr, f.GetInt("backward") != 0, ref serr);
+                var ctx = new CheckContext(f, scope);
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxtret", _xxtret);
                 ctx.CheckDD("xxattr", _xxattr[..11]);
@@ -167,7 +164,7 @@ internal sealed class Suite08Eclipses
                 var geopos = new[] { geolon, geolat, altitude };
                 string serr = "";
                 var rc = swe.swe_lun_eclipse_how(jd, f.GetInt("iephe"), geopos, _xxattr, ref serr);
-                var ctx = new CheckContext(f, precision);
+                var ctx = new CheckContext(f, scope);
                 ctx.CheckI("rc", rc);
                 ctx.CheckDD("xxattr", _xxattr[..11]);
                 return DispatchOutcome.FromMismatches(ctx);

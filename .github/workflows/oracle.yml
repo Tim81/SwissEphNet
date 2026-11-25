@@ -44,7 +44,7 @@ name: Oracle build gates
 # step the same way, added afterwards for the same reason (see Tests/oracle/version-classification*.tsv).
 #
 # swetest-diff is one of three jobs that still exempt one step apiece. It compares the runner's
-# MSVC C against Tests/swetest/known-diff.tsv, which holds 16<!--doccount:swetest-known-diff--> real rows of printed output captured
+# MSVC C against Tests/swetest/known-diff.tsv, which holds 17<!--doccount:swetest-known-diff--> real rows of printed output captured
 # from one specific compiler (external/.c-reference/toolchain.txt records which one) -- a future
 # windows-latest MSVC genuinely can move those without the port changing at all, so that
 # comparison step carries continue-on-error, matching baseline.yml's own verify-baseline-linux job:
@@ -248,13 +248,14 @@ jobs:
         shell: pwsh
         run: pwsh scripts/verify-crt-parity.ps1
 
-  # Gate. Compares Tools/CReference/build-c.ps1's MSVC build against pyswisseph 2.10.03, both
-  # resolved on this runner in this run -- see scripts/validate-c-reference.ps1's own
-  # .DESCRIPTION for what "independent" does and does not mean here (same upstream C, different
-  # build configuration). A FAIL means the local MSVC build is wrong, which every other job below
+  # Gate. Compares Tools/CReference/build-c.ps1's MSVC build (v2.10.04) against pyswisseph 2.10.03,
+  # both resolved on this runner in this run -- see scripts/validate-c-reference.ps1's own
+  # .DESCRIPTION for what "independent" does and does not mean here (nearly the same upstream C,
+  # one release apart, different build configuration; the fixed inputs avoid what 2.10.04
+  # changed). A FAIL means the local MSVC build is wrong, which every other job below
   # depends on, so this is worth knowing before trusting any of them.
   c-reference-validate:
-    name: "Gate: MSVC C reference build agrees with pyswisseph 2.10.03"
+    name: "Gate: MSVC C reference build (v2.10.04) agrees with pyswisseph 2.10.03"
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -267,7 +268,7 @@ jobs:
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: pwsh
         run: |
-          $pinnedSha = "43c9fe54fc1255a6a83dcb5f4364218ab4034e39"
+          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
           $line = git ls-tree HEAD external/swisseph
           $actual = ($line -split '\s+')[2]
           if ($actual -ne $pinnedSha) {
@@ -281,13 +282,13 @@ jobs:
         uses: actions/cache@v6
         with:
           path: external/swisseph
-          key: swisseph-submodule-43c9fe54fc1255a6a83dcb5f4364218ab4034e39
+          key: swisseph-submodule-e308765d10b9463ab0ed53b102ad454820ee0b43
 
       - name: Checkout external/swisseph submodule (sparse, ~25 MB)
         if: steps.submodule-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          $pinnedSha = "43c9fe54fc1255a6a83dcb5f4364218ab4034e39"
+          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
           git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
           Push-Location external/swisseph
           git config core.autocrlf false
@@ -335,7 +336,7 @@ jobs:
       # install. A FAIL naming a missing vswhere.exe or C++ component here means that assumption
       # did not hold; do not paper over it with a manual toolset install without first checking
       # what actually broke.
-      - name: Build C reference (MSVC, 2.10.03 and 2.08)
+      - name: Build C reference (MSVC, v2.10.04 and 2.08)
         shell: pwsh
         run: pwsh Tools/CReference/build-c.ps1
 
@@ -352,13 +353,13 @@ jobs:
         shell: pwsh
         run: python -m pip install pyswisseph==2.10.3.2
 
-      - name: Validate C reference build against pyswisseph 2.10.03
+      - name: Validate the pinned C reference (v2.10.04) against pyswisseph 2.10.03
         shell: pwsh
         run: pwsh scripts/validate-c-reference.ps1
 
   # Gate. Wires scripts/verify-gen-delta.ps1 into this workflow for the first time -- until now it
   # ran only when a contributor remembered to invoke it by hand, despite being the strongest check
-  # in this repo of the tool every commit of the 2.10.03 port is transcribed from
+  # in this repo of the tool every commit of the 2.10.x port is transcribed from
   # (scripts/gen-delta.ps1). For every hunk gen-delta renders, it indexes into the real 2.08 and
   # 2.10.3 files at the citation's own coordinates and compares case-sensitively (`-ceq`), plus an
   # external per-file hunk-count pin (scripts/gen-delta-hunk-counts.tsv) so a whole dropped hunk
@@ -381,7 +382,7 @@ jobs:
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: pwsh
         run: |
-          $pinnedSha = "43c9fe54fc1255a6a83dcb5f4364218ab4034e39"
+          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
           $line = git ls-tree HEAD external/swisseph
           $actual = ($line -split '\s+')[2]
           if ($actual -ne $pinnedSha) {
@@ -395,13 +396,13 @@ jobs:
         uses: actions/cache@v6
         with:
           path: external/swisseph
-          key: swisseph-submodule-43c9fe54fc1255a6a83dcb5f4364218ab4034e39
+          key: swisseph-submodule-e308765d10b9463ab0ed53b102ad454820ee0b43
 
       - name: Checkout external/swisseph submodule (sparse, ~25 MB)
         if: steps.submodule-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          $pinnedSha = "43c9fe54fc1255a6a83dcb5f4364218ab4034e39"
+          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
           git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
           Push-Location external/swisseph
           git config core.autocrlf false
@@ -441,7 +442,7 @@ jobs:
         shell: pwsh
         run: pwsh scripts/verify-gen-delta.ps1
 
-  # Gates end to end. run-oracle-dump.ps1 builds and runs both C drivers (2.10.03 and 2.08, the
+  # Gates end to end. run-oracle-dump.ps1 builds and runs both C drivers (v2.10.04 and 2.08, the
   # "both submodule trees" this job needs) and the .NET driver, and its own row-count guards are a
   # hard failure -- a driver silently truncating its own output is a real defect regardless of
   # which MSVC produced it. So are the gitlink assertion, the two fetch/build steps,
@@ -462,7 +463,7 @@ jobs:
   # carried 5 recorded SERR entries, all a single deliberate, platform-portable path-separator
   # choice (DIR_GLUE) rather than a compiler-version-sensitive ULP, and they are gone now, not
   # waived -- the returned file path was scoped down to its basename (see
-  # docs/compliance-2.10.03.md's "The last two 2.10.03-only entry points") -- so every one of the
+  # docs/compliance-2.10.04.md's "The last two 2.10.03-only entry points") -- so every one of the
   # 3,376<!--doccount:grid-files-total--> file-backed rows is required to be bit-identical, full
   # stop, not "bit-identical or one of 5 recorded exceptions".
   #
@@ -470,12 +471,12 @@ jobs:
   # malformed provenance sidecar, a missing dump, a failed Tools/OracleVerify build, and
   # OracleVerify's own row-count and case-id-set mismatches, all indistinguishably from a genuine
   # divergence. Flagging the step made the project's headline result -- every oracle row
-  # bit-identical against MSVC-built 2.10.03 C -- the one claim nothing in CI could turn red.
+  # bit-identical against MSVC-built v2.10.04 C -- the one claim nothing in CI could turn red.
   #
   # If a toolchain bump ever does move the C side's last bits, the answer is a known-diff row with
   # a named cause and a pinned maximum ULP, which is what that file is for. Not a blanket flag.
   oracle-dump:
-    name: "Gate: port matches the 2.10.03 C reference bit for bit"
+    name: "Gate: port matches the pinned C reference (v2.10.04) bit for bit"
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -484,7 +485,7 @@ jobs:
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: pwsh
         run: |
-          $pinnedSha = "43c9fe54fc1255a6a83dcb5f4364218ab4034e39"
+          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
           $line = git ls-tree HEAD external/swisseph
           $actual = ($line -split '\s+')[2]
           if ($actual -ne $pinnedSha) {
@@ -498,13 +499,13 @@ jobs:
         uses: actions/cache@v6
         with:
           path: external/swisseph
-          key: swisseph-submodule-43c9fe54fc1255a6a83dcb5f4364218ab4034e39
+          key: swisseph-submodule-e308765d10b9463ab0ed53b102ad454820ee0b43
 
       - name: Checkout external/swisseph submodule (sparse, ~25 MB)
         if: steps.submodule-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          $pinnedSha = "43c9fe54fc1255a6a83dcb5f4364218ab4034e39"
+          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
           git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
           Push-Location external/swisseph
           git config core.autocrlf false
@@ -540,7 +541,7 @@ jobs:
         shell: pwsh
         run: pwsh scripts/fetch-2.08-baseline.ps1
 
-      - name: Build C reference (MSVC, 2.10.03 and 2.08)
+      - name: Build C reference (MSVC, v2.10.04 and 2.08)
         shell: pwsh
         run: pwsh Tools/CReference/build-c.ps1
 
@@ -556,7 +557,7 @@ jobs:
         shell: pwsh
         run: pwsh scripts/verify-oracle.ps1 -SelfTest
 
-      - name: Compare port vs 2.10.03 C reference against known-diff.tsv
+      - name: Compare port vs the pinned C reference (v2.10.04) against known-diff.tsv
         shell: pwsh
         run: pwsh scripts/verify-oracle.ps1
 
@@ -608,7 +609,7 @@ jobs:
           Write-Host "PASS: the committed three-way version classification matches this run's dumps." -ForegroundColor Green
 
   # Partly gating, and unlike oracle-dump above the exemption here is still earned:
-  # Tests/swetest/known-diff.tsv holds 16<!--doccount:swetest-known-diff--> real rows of printed output captured from one specific
+  # Tests/swetest/known-diff.tsv holds 17<!--doccount:swetest-known-diff--> real rows of printed output captured from one specific
   # MSVC, so a runner toolset bump genuinely can move them without this port changing. Everything
   # before the comparison step -- the gitlink assertion, the submodule checkout, the 2.08 sdist
   # fetch and build-c.ps1 -- is a hard failure. Not because those steps are toolchain-independent;
@@ -648,7 +649,7 @@ jobs:
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: pwsh
         run: |
-          $pinnedSha = "43c9fe54fc1255a6a83dcb5f4364218ab4034e39"
+          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
           $line = git ls-tree HEAD external/swisseph
           $actual = ($line -split '\s+')[2]
           if ($actual -ne $pinnedSha) {
@@ -662,13 +663,13 @@ jobs:
         uses: actions/cache@v6
         with:
           path: external/swisseph
-          key: swisseph-submodule-43c9fe54fc1255a6a83dcb5f4364218ab4034e39
+          key: swisseph-submodule-e308765d10b9463ab0ed53b102ad454820ee0b43
 
       - name: Checkout external/swisseph submodule (sparse, ~25 MB)
         if: steps.submodule-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          $pinnedSha = "43c9fe54fc1255a6a83dcb5f4364218ab4034e39"
+          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
           git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
           Push-Location external/swisseph
           git config core.autocrlf false
@@ -707,7 +708,7 @@ jobs:
       # build-c.ps1 always builds both libraries, so swetest.exe is not available without the
       # 2.08 tree present too, even though this job's own comparison never touches it -- see
       # Tools/CReference/build-c.ps1's own .DESCRIPTION.
-      - name: Build C reference (MSVC, 2.10.03 and 2.08)
+      - name: Build C reference (MSVC, v2.10.04 and 2.08)
         shell: pwsh
         run: pwsh Tools/CReference/build-c.ps1
 
@@ -734,7 +735,7 @@ jobs:
       # including the guard step immediately above, is a real gate; this step re-runs the same
       # build (a redundant few seconds, not a second grid dispatch -- see -GuardOnly's own
       # parameter help) before dispatching the grid for the actual text comparison.
-      - name: Compare Programs/SweTest vs 2.10.03 C reference against known-diff.tsv
+      - name: Compare Programs/SweTest vs the pinned C reference (v2.10.04) against known-diff.tsv
         shell: pwsh
         continue-on-error: true
         run: pwsh scripts/verify-swetest-diff.ps1
@@ -773,7 +774,7 @@ jobs:
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: bash
         run: |
-          pinned=43c9fe54fc1255a6a83dcb5f4364218ab4034e39
+          pinned=e308765d10b9463ab0ed53b102ad454820ee0b43
           actual=$(git ls-tree HEAD external/swisseph | awk '{print $3}')
           if [ "$actual" != "$pinned" ]; then
             echo "::error::external/swisseph gitlink is $actual, this job is pinned to $pinned"
@@ -786,13 +787,13 @@ jobs:
         uses: actions/cache@v6
         with:
           path: external/swisseph
-          key: swisseph-submodule-macos-43c9fe54fc1255a6a83dcb5f4364218ab4034e39
+          key: swisseph-submodule-macos-e308765d10b9463ab0ed53b102ad454820ee0b43
 
       - name: Checkout external/swisseph submodule (sparse)
         if: steps.submodule-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          pinned=43c9fe54fc1255a6a83dcb5f4364218ab4034e39
+          pinned=e308765d10b9463ab0ed53b102ad454820ee0b43
           git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
           cd external/swisseph
           git config core.autocrlf false
@@ -808,7 +809,7 @@ jobs:
 
       # An explicit source list, not a glob: external/swisseph also ships obama.c, sweephe4.c
       # and swephgen4.c, and at least one carries its own main(), so a glob build fails at link.
-      # These four -D flags match what scripts/run-oracle-dump.ps1 defines for the 2.10.03 build;
+      # These four -D flags match what scripts/run-oracle-dump.ps1 defines for the v2.10.04 build;
       # the eight crossing functions, swe_houses_ex2/swe_houses_armc_ex2, swe_calc_pctr and
       # swe_get_current_file_data do not exist in 2.08 and sedump.c guards on all four macros.
       - name: Build the C reference with clang (no contraction, no builtin substitution)
@@ -841,7 +842,7 @@ jobs:
       # This build keeps that comparison running so a change in it is noticed -- the 62/10 figures
       # are from the grid's size at that first run and have not been re-measured since (the grid
       # has grown four times since then -- 8f601cf, 6d63999, 5ced3b8, 571092e; see
-      # docs/compliance-2.10.03.md's own "macOS is now measured"
+      # docs/compliance-2.10.04.md's own "macOS is now measured"
       # section for the current row counts and for why they are not re-quoted here). This step's
       # own PASS/FAIL output on every run is the current measurement, not this comment.
       - name: Build a diagnostic C reference with clang's builtins left on
@@ -1114,7 +1115,7 @@ jobs:
   # Gate, and the other non-Windows job (macos-exactness above is the first). It answers the
   # same question that job does, for glibc: does the port reproduce Astrodienst's C on the libm
   # most Linux deployments of this port would actually run against? Until this job existed, the
-  # 17,064-of-17,064 Linux result README.md and docs/compliance-2.10.03.md quoted was measured
+  # 17,064-of-17,064 Linux result README.md and docs/compliance-2.10.04.md quoted was measured
   # once by hand, in a WSL2 Docker container, and nothing re-checked it -- both documents said so
   # in as many words ("measured once, not gated"). This job is that check, run the same way on
   # every push and pull request oracle-dump and macos-exactness already are.
@@ -1159,7 +1160,7 @@ jobs:
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: bash
         run: |
-          pinned=43c9fe54fc1255a6a83dcb5f4364218ab4034e39
+          pinned=e308765d10b9463ab0ed53b102ad454820ee0b43
           actual=$(git ls-tree HEAD external/swisseph | awk '{print $3}')
           if [ "$actual" != "$pinned" ]; then
             echo "::error::external/swisseph gitlink is $actual, this job is pinned to $pinned"
@@ -1172,13 +1173,13 @@ jobs:
         uses: actions/cache@v6
         with:
           path: external/swisseph
-          key: swisseph-submodule-linux-43c9fe54fc1255a6a83dcb5f4364218ab4034e39
+          key: swisseph-submodule-linux-e308765d10b9463ab0ed53b102ad454820ee0b43
 
       - name: Checkout external/swisseph submodule (sparse)
         if: steps.submodule-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          pinned=43c9fe54fc1255a6a83dcb5f4364218ab4034e39
+          pinned=e308765d10b9463ab0ed53b102ad454820ee0b43
           git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
           cd external/swisseph
           git config core.autocrlf false
@@ -1195,7 +1196,7 @@ jobs:
       # An explicit source list, not a glob -- same reason as macos-exactness's copy of this
       # step: external/swisseph also ships obama.c, sweephe4.c and swephgen4.c, and at least one
       # carries its own main(), so a glob build fails at link. These four -D flags match what
-      # scripts/run-oracle-dump.ps1 defines for the 2.10.03 build -- see that job's own comment
+      # scripts/run-oracle-dump.ps1 defines for the v2.10.04 build -- see that job's own comment
       # above for which four functions each macro guards.
       #
       # -march=x86-64, but no -ffp-contract=off and no -fno-builtin: see the job comment above for

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using SwissEphNet.Conformance.Tests.Corpus;
 using SwissEphNet.Conformance.Tests.Dispatch;
 using SwissEphNet.Conformance.Tests.KnownFail;
@@ -60,6 +61,15 @@ public static class ConformanceRunner
         // failure rather than a quiet gap in coverage.
         AssertModelCoversCorpus(setest, doc);
 
+        // The per-suite setup below is hardcoded by suite id. The model has read the same setup out
+        // of setest's own SUITE_INIT, SETUP and TEARDOWN blocks (every swe_set_* call and swe_close)
+        // and out of the testcase bodies (swe_set_ephe_path, swe_close and swe_set_jpl_file only), so
+        // any drift between the two (a suite gaining or losing a path reset, a swe_close, another JPL
+        // file name, a new swe_set_topo in a SETUP) is a loud harness failure rather than every result
+        // in that suite quietly moving. Not covered: swe_set_topo and swe_set_sid_mode inside a
+        // testcase body, which are inputs of the call under test and live in the dispatchers.
+        AssertSetupMirrorsSetest(setest, doc);
+
         var results = new List<IterationResult>();
 
         using var swe = new SwissEph();
@@ -85,32 +95,27 @@ public static class ConformanceRunner
             // set, so C.rewind could not re-read the star catalogue) and is covered by
             // tests in Tests/SwissEphNet.Tests rather than by this corpus, which was only
             // catching it by accident.
-            if (suite.Id != 3)
+            //
+            // Since v2.10.04 (fe1a59db) that statement sits in the suite's SUITE_INIT block, which
+            // testsuite_N() runs once before its testcases -- the same once-per-suite placement.
+            //
+            // suite_06_houses.c's SUITE_INIT precedes its reset with swe_close(), which clears
+            // strictly more than swi_close_keep_topo_etc does -- topocentric and
+            // sidereal state, ayana_is_set, geopos_is_set, last_epheflag, dpsi/deps and
+            // the loaded fixed-star array. Measured as inert for every one of that
+            // suite's iterations, but mirrored so the sequence matches the reference
+            // rather than relying on it staying inert.
+            //
+            // suite_01_calc.c and suite_10_solcross.c follow the reset with
+            // swe_set_jpl_file("de441.eph") (de431.eph before v2.10.04). That is not inert either:
+            // sweph.c:1600 routes it through swi_close_keep_topo_etc, which memsets swed.fidat
+            // (sweph.c:1277) and so zeroes fidat[SEI_FILE_MOON].sweph_denum -- exactly
+            // the field calc_deltat reads at swephlib.c:2574. Without it those two
+            // suites started with the DE number still set by swe_set_ephe_path's eager
+            // lunar open, where setest starts with it cleared.
+            foreach (var call in MirroredSuiteInit(suite.Id))
             {
-                // suite_06_houses.c:9 precedes its reset with swe_close(), which clears
-                // strictly more than swi_close_keep_topo_etc does -- topocentric and
-                // sidereal state, ayana_is_set, geopos_is_set, last_epheflag, dpsi/deps and
-                // the loaded fixed-star array. Measured as inert for every one of that
-                // suite's iterations, but mirrored so the sequence matches the reference
-                // rather than relying on it staying inert.
-                if (suite.Id == 6)
-                {
-                    swe.swe_close();
-                }
-
-                EphemerisFileResolver.ResetEphePath(swe);
-
-                // suite_01_calc.c:11 and suite_10_solcross.c:11 follow the reset with
-                // swe_set_jpl_file("de431.eph"). That is not inert either: sweph.c:1481
-                // routes it through swi_close_keep_topo_etc, which memsets swed.fidat
-                // (sweph.c:1205) and so zeroes fidat[SEI_FILE_MOON].sweph_denum -- exactly
-                // the field calc_deltat reads at swephlib.c:2565. Without it those two
-                // suites started with the DE number still set by swe_set_ephe_path's eager
-                // lunar open, where setest starts with it cleared.
-                if (suite.Id is 1 or 10)
-                {
-                    EphemerisFileResolver.SetJplFile(swe);
-                }
+                RunSuiteInitCall(swe, call);
             }
 
             foreach (var testCase in suite.TestCases)
@@ -129,8 +134,7 @@ public static class ConformanceRunner
                     // testsuite_facade.h -- that header says at line 1 that it holds
                     // provisional definitions only so the C reads as complete in an IDE,
                     // and its TESTCASE carries no loop.
-                    if ((suite.Id == 1 && testCase.Id is 2 or 3 or 4) ||
-                        (suite.Id == 2 && testCase.Id is 4 or 5 or 6 or 7))
+                    if (MirroredPerIterationReset(suite.Id, testCase.Id))
                     {
                         EphemerisFileResolver.ResetEphePath(swe);
                     }
@@ -244,12 +248,17 @@ public static class ConformanceRunner
                         testCase.Description,
                         outcome.Kind,
                         outcome.Reason,
-                        outcome.Mismatches));
+                        outcome.Mismatches,
+                        new PinContext(iteration.Fields.PeekInt("iflag") ?? 0, precision)));
 
                     // TEARDOWN: several suites re-initialize the library between
                     // iterations when the iteration's own "initialize" flag says
-                    // to (external/swisseph/setest/suite_0*.c TEARDOWN blocks).
-                    if (iteration.Fields.TryGetInt("initialize") == 1)
+                    // to (external/swisseph/setest/suite_*.c TEARDOWN blocks:
+                    // "if (GET_I(initialize)) swe_close( );", so any non-zero value).
+                    // Only a suite that has such a TEARDOWN records the flag at all;
+                    // AssertSetupMirrorsSetest holds that to the model.
+                    if (setest.SuitesClosingOnInitialize.Contains(suite.Id) &&
+                        (iteration.Fields.TryGetInt("initialize") ?? 0) != 0)
                     {
                         try
                         {
@@ -266,6 +275,105 @@ public static class ConformanceRunner
         }
 
         return (doc, results);
+    }
+
+    // What each suite's SUITE_INIT block does, in the "name(argument)" form SetestSourceModel
+    // reports (external/swisseph/setest/suite_*.c). suite_03_misc.c has none. This is the single
+    // source for both the setup the loop in Run performs and the check against setest itself.
+    private static IReadOnlyList<string> MirroredSuiteInit(int suiteId) => suiteId switch
+    {
+        3 => [],
+        6 => ["swe_close()", "swe_set_ephe_path(NULL)"],
+        1 or 10 => ["swe_set_ephe_path(NULL)", $"swe_set_jpl_file(\"{EphemerisFileResolver.SetestJplFileName}\")"],
+        _ => ["swe_set_ephe_path(NULL)"],
+    };
+
+    private static void RunSuiteInitCall(SwissEph swe, string call)
+    {
+        if (call == "swe_close()")
+        {
+            swe.swe_close();
+        }
+        else if (call == "swe_set_ephe_path(NULL)")
+        {
+            EphemerisFileResolver.ResetEphePath(swe);
+        }
+        else if (call.StartsWith("swe_set_jpl_file(", StringComparison.Ordinal))
+        {
+            EphemerisFileResolver.SetJplFile(swe);
+        }
+        else
+        {
+            throw new InvalidOperationException($"No harness equivalent for the SUITE_INIT call '{call}'.");
+        }
+    }
+
+    // Testcase bodies that repeat swe_set_ephe_path(NULL): suite_01_calc.c testcases 2, 3, 4 and
+    // suite_02_fixstar.c testcases 4, 5, 6, 7.
+    private static bool MirroredPerIterationReset(int suiteId, int testCaseId) =>
+        (suiteId == 1 && testCaseId is 2 or 3 or 4) ||
+        (suiteId == 2 && testCaseId is 4 or 5 or 6 or 7);
+
+    private static void AssertSetupMirrorsSetest(SetestSourceModel setest, ExpDocument doc)
+    {
+        var problems = new List<string>();
+        foreach (var suite in doc.TestSuites)
+        {
+            var wanted = MirroredSuiteInit(suite.Id);
+            var actual = setest.SuiteInitCalls(suite.Id);
+            if (!wanted.SequenceEqual(actual, StringComparer.Ordinal))
+            {
+                problems.Add(
+                    $"suite {suite.Id} SUITE_INIT is [{string.Join("; ", actual)}] in setest but the harness performs [{string.Join("; ", wanted)}]");
+            }
+
+            // SETUP only reads the iteration's inputs (GET_*) and clears serr; the harness performs no
+            // library-state call for it, so setest must not have one either.
+            var setupCalls = setest.SuiteSetupCalls(suite.Id);
+            if (setupCalls.Count > 0)
+            {
+                problems.Add(
+                    $"suite {suite.Id} SETUP calls [{string.Join("; ", setupCalls)}] in setest but the harness performs none per iteration");
+            }
+
+            // TEARDOWN: swe_close when the iteration's "initialize" is set, in the suites the model
+            // reports as closing on it, and nothing else.
+            var wantedTeardown = setest.SuitesClosingOnInitialize.Contains(suite.Id) ? new[] { "swe_close()" } : [];
+            var actualTeardown = setest.SuiteTeardownCalls(suite.Id);
+            if (!wantedTeardown.SequenceEqual(actualTeardown, StringComparer.Ordinal))
+            {
+                problems.Add(
+                    $"suite {suite.Id} TEARDOWN calls [{string.Join("; ", actualTeardown)}] in setest but the harness performs [{string.Join("; ", wantedTeardown)}]");
+            }
+
+            foreach (var testCase in suite.TestCases)
+            {
+                var wantedBody = MirroredPerIterationReset(suite.Id, testCase.Id) ? new[] { "swe_set_ephe_path(NULL)" } : [];
+                var actualBody = setest.TestCaseStateCalls(suite.Id, testCase.Id);
+                if (!wantedBody.SequenceEqual(actualBody, StringComparer.Ordinal))
+                {
+                    problems.Add(
+                        $"testcase {suite.Id}.{testCase.Id} body calls [{string.Join("; ", actualBody)}] in setest but the harness repeats [{string.Join("; ", wantedBody)}] per iteration");
+                }
+            }
+
+            var carriesInitialize = suite.TestCases.Any(tc => tc.Iterations.Any(it => it.Fields.Contains("initialize")));
+            if (carriesInitialize != setest.SuitesClosingOnInitialize.Contains(suite.Id))
+            {
+                problems.Add(
+                    $"suite {suite.Id}: t.exp {(carriesInitialize ? "records" : "does not record")} 'initialize' but setest's TEARDOWN " +
+                    $"{(setest.SuitesClosingOnInitialize.Contains(suite.Id) ? "closes on it" : "does not close on it")}");
+            }
+        }
+
+        if (problems.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "The harness's hardcoded per-suite setup no longer mirrors external/swisseph/setest: " +
+                string.Join("; ", problems) +
+                ". Update ConformanceRunner.MirroredSuiteInit / MirroredPerIterationReset after reading the C -- " +
+                "do not loosen this check.");
+        }
     }
 
     private static void AssertModelCoversCorpus(SetestSourceModel setest, ExpDocument doc)

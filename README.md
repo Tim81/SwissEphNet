@@ -6,11 +6,12 @@ quantities. It is a line-by-line translation of Astrodienst's C source rather th
 reimplementation, so the function names, arguments and return values are the ones in Astrodienst's
 own [programming documentation](http://www.astro.com/swisseph/swephprg.htm).
 
-`swe_version()` reports `2.10.03`. The whole 2.10.03 delta has landed: `swephlib.c`, the ayanamsa
+`swe_version()` reports `2.10.04`. The whole 2.10.03 delta has landed: `swephlib.c`, the ayanamsa
 and `pla_diam` tables, the header and constants, the eight crossing functions, the ayanamsha
-machinery, `sweph.c`, `swecl.c`, `swehouse.c` and `swetest.c`. Parity with Astrodienst's own
+machinery, `sweph.c`, `swecl.c`, `swehouse.c` and `swetest.c`, and the port now follows upstream's
+tag `v2.10.04`. Parity with Astrodienst's own
 reference values is close but not complete; "How the numbers are verified" below says exactly how
-far, and `docs/compliance-2.10.03.md` gives the detail.
+far, and `docs/compliance-2.10.04.md` gives the detail.
 
 Targets `netstandard2.0`, `net8.0` and `net10.0`. No dependencies.
 
@@ -225,11 +226,11 @@ Swiss Ephemeris, and therefore this library, is dual-licensed. You must choose o
 The package ships all three of these files at its own root, so the authoritative copies travel
 with whatever version you installed: `LICENSE` for the full license conditions, `agpl-3.0.txt`
 for the AGPL text, and `NOTICE` for attribution. To read them in the repository instead:
-[`LICENSE`](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.3/LICENSE),
-[`agpl-3.0.txt`](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.3/agpl-3.0.txt),
-[`NOTICE`](https://github.com/Tim81/SwissEphNet/blob/v2.10.3.3/NOTICE). These links are absolute
+[`LICENSE`](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.0/LICENSE),
+[`agpl-3.0.txt`](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.0/agpl-3.0.txt),
+[`NOTICE`](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.0/NOTICE). These links are absolute
 rather than relative because this section also renders on nuget.org's package page, where a
-relative link to a file in this repository does not resolve, and they name the `v2.10.3.3` release
+relative link to a file in this repository does not resolve, and they name the `v2.10.4.0` release
 tag so that they match the installed version.
 
 Astrodienst has issued a new edition of the Professional License contract, dated September 2026
@@ -305,6 +306,7 @@ too.
 The package version tracks upstream, with a fourth component for releases this project makes on
 its own. `2.10.3` tracks Swiss Ephemeris C 2.10.03; a port-only release while upstream stays put
 would be `2.10.3.1`, then `2.10.3.2`, and the fourth component resets whenever upstream moves.
+`2.10.4.0` tracks Swiss Ephemeris C 2.10.04 (upstream tag `v2.10.04`); NuGet shows it as `2.10.4`.
 
 Two things about that are worth knowing rather than discovering. NuGet normalizes a trailing zero
 away, so `2.10.3.0` and `2.10.3` are the same package and writing the `.0` achieves nothing.
@@ -319,8 +321,8 @@ build metadata. The upstream version and tag it used to spell out are now `Assem
 entries, `UpstreamSwissEphemerisVersion`, `UpstreamSwissEphemerisTag` and
 `UpstreamSwissEphemerisCommit`, which is where text that does not have to parse as a version
 belongs. `UpstreamSwissEphemerisCommit` is the full SHA of the pinned upstream commit
-(`43c9fe54fc1255a6a83dcb5f4364218ab4034e39`), and `UpstreamSwissEphemerisTag` names the nearest
-upstream tag that pin is based on (`v2.10.3bfinal`).
+(`e308765d10b9463ab0ed53b102ad454820ee0b43`), and `UpstreamSwissEphemerisTag` names the upstream
+tag that pin is (`v2.10.04`).
 
 This project is not published or endorsed by Yan Grenier or Astrodienst. See "About this repository"
 above and `NOTICE` for the credit both are owed.
@@ -502,7 +504,7 @@ did not have:
 None of this replaces existing API. It is purely additive.
 
 With those additions the port now covers the C library's whole public surface. `swephexp.h` at
-the current pin (`43c9fe54`) declares 107 `swe_*` functions, and all 107 are present and public here.
+the current pin (`e308765d`, `v2.10.04`) declares 107 `swe_*` functions, and all 107 are present and public here.
 The count is not an estimate: it comes from parsing the header and diffing it against the committed
 public-API list under `Tests/SwissEphNet.Tests/PublicApi/`, which a test regenerates and compares
 on every run, so a member appearing or disappearing fails the build rather than going unnoticed.
@@ -511,7 +513,7 @@ port's own and named so it cannot be mistaken for upstream.
 
 Surface coverage is not the same as behavioural agreement, and the two are measured separately.
 What the port does with that surface is the subject of "Correctness oracle" below, which runs
-Astrodienst's own 12,757-iteration reference corpus. Read both before concluding anything: a
+Astrodienst's own 18,919-iteration reference corpus. Read both before concluding anything: a
 function can be present and still disagree, and the oracle is what says whether it does.
 
 ## What was actually fixed, and how we know
@@ -553,7 +555,7 @@ bit-identical, not merely close (gated in CI on all three platforms; see the tab
 what has and has not been independently reproduced outside CI on this workstation); all three
 tracked difference lists (0
 recorded exceptions each) are empty. A `GET_CURRENT_FILE_DATA` row records only the basename of
-the file it opened, deliberately, not the full path; see `docs/compliance-2.10.03.md`'s "The
+the file it opened, deliberately, not the full path; see `docs/compliance-2.10.04.md`'s "The
 last two 2.10.03-only entry points" section for why, and for the six `SERR` rows (five in the
 files grid, one in the JPL grid) that briefly
 existed before that scoping decision. macOS's own math builtins had to be told not to substitute
@@ -570,25 +572,43 @@ in others), so this triple no longer describes the current matrix and needs a re
 divergence is each platform's own math library disagreeing with itself in the last few bits, the
 same thing two independently built C programs would show; it is not evidence against the port.
 
-Separately, the port's output is checked against Astrodienst's own 2.10.03 test suite (`setest`),
-12,757 iterations across ten functional areas. 2,395 of those still fail: 1,636 because the answer
-is outside the tolerance Astrodienst's own suite allows, and 759 because a required data file (a
-JPL ephemeris, a per-asteroid or `ephe/sat/` file, or an ephemeris era this repository does not
-ship, roughly years 1200 to 2399) is not present, not because the answer is wrong.
-`Tests/conformance/value-mismatch-triage.tsv` drove Astrodienst's own MSVC-built 2.10.03 C through
-the identical inputs for all 668 `VALUE-MISMATCH` rows at the time it ran, and found 4 confirmed
-port defects, all a missing JD-range guard on interpolated lunar perigee (`docs/compliance-2.10.03.md`
-section 3a). That guard is fixed now and the four rows are pruned, so of the 664 remaining at the time, none
-is a port defect anyone has demonstrated: each reproduces the port's own output rather than the
-reference corpus's, i.e. drift between this build's toolchain/environment and whatever produced
-`setest`'s reference values, not a wrong answer. So the port matches everything it has been
+Separately, the port's output is checked against Astrodienst's own 2.10.04 test suite (`setest`),
+18,919 iterations across 11 suites. 1,401 of those still fail, every one of them because the answer
+is outside the tolerance Astrodienst's own suite allows (the per-quantity tolerances of `setest`'s `tolerances.c`).
+The harness skips nothing: each iteration runs as `setest` runs it on the 8 ephemeris files this repository
+ships, so an iteration that asks for a file the 8 do not contain (a JPL DE file, an `ephe/sat/` planetary-moon or
+center-of-body file, a per-asteroid file, or an era file for a date outside roughly the years 1200 to 2399)
+takes the library's fallback and is compared with the official `t.exp`, which was made with every file. Until
+2026-11-24 the harness parked 1,101 of those iterations as `DATA-MISSING` without running them (1,037 `SEFLG_JPLEPH`,
+30 `SEFLG_CENTER_BODY`, 18 planetary moons, 16 numbered asteroids); that category no longer exists. Of the
+1,101, 233 pass and 868 differ from `t.exp` and are among the 1,401.
+`Tests/conformance/value-mismatch-triage.tsv` was re-measured on 2026-11-24 against upstream v2.10.04 (`e308765d`) and covers all 1,401 `VALUE-MISMATCH` rows: upstream's own `setest`, built with gcc on Linux and run on the same 8 ephemeris files this repository ships, reproduces the port on 623 of them (the official `t.exp` was made in a different data environment), 705 are iterations whose ephemeris file is not among those 8 (the official run found it, the port and the C on this data set do not; apart from the ephemeris directory embedded in the error string the two agree), and 73 differ only through glibc against the Windows C runtime (the MSVC-built C equals the port exactly, 121 of 121 compared fields); none is a port defect. The conformance test also pins, for every one of these 1,401 rows, the value the port produces for each mismatching field (`Tests/conformance/known-fail-pins.tsv`; for a runtime self-check, both of its operands), so an accepted row cannot change unnoticed. The four port defects the earlier (2026-08-02, 668-row) triage found, a missing JD-range guard on
+interpolated lunar perigee (`docs/compliance-2.10.04.md` section 3a), are fixed and their rows pruned. So the port matches everything it has been
 checked against and is not yet at full parity with Astrodienst's own reference corpus.
-The other 972 of the 1,636 are the house-speed rows (`setest` 6.8 and 6.9) that the sync to upstream
-`6c989727` moves: positions are unchanged and only speed fields differ from `t.exp`, which predates
-the analytic cusp speeds. `Tests/conformance/house-speed-drift-6c989727.tsv` carries per-row
-evidence from the MSVC-built C: 970 are a correction, 2 are a sign-ingress step, none is unexplained.
+At the 2.10.3.x pins the figures were different, and not comparable, because the corpus changed:
+12,757 iterations, 2,395 failing (1,636 `VALUE-MISMATCH`, 972 of them the house-speed rows (`setest` 6.8 and 6.9)
+that the sync to upstream `6c989727` moved, and 759 `DATA-MISSING`, a category since removed). Upstream regenerated `t.exp` for
+v2.10.04 and those 972 rows pass again; their evidence file `house-speed-drift-6c989727.tsv` was
+retired with them and is in git history.
 
 # Breaking changes
+
+## V:2.10.4
+
+`SE_FNAME_DFT2` is removed. Upstream deleted it together with the DE406 fallback in
+`open_jpl_file`, and the port follows, so code that names the constant no longer compiles. The
+default JPL file name, `SE_FNAME_DFT`, is now `de441.eph`, and `SE_DE_NUMBER` is 441. A caller
+that has only `de431.eph` must now call `swe_set_jpl_file("de431.eph")`.
+
+The Delta T defaults changed too, and results move without any code change: the default model is
+`SEMOD_DELTAT_STEPHENSON_ETC_2020` before 1 January 1962, `dt[]` runs to 2033, and
+`SE_TIDAL_DEFAULT` is `SE_TIDAL_DE441`. UT-input results before 1962 and after 2020 differ from
+2.10.3.3. `CHANGELOG.md` has the measured magnitude.
+
+The changed values are C# `const`s (`SE_TIDAL_DEFAULT`, and with it `SE_TIDAL_SWIEPH` and
+`SE_TIDAL_JPLEPH`; `SEMOD_DELTAT_DEFAULT`, `SEMOD_NDELTAT`, `SE_DE_NUMBER`, `SE_FNAME_DFT`), so the
+compiler inlines them into the caller. Code compiled against 2.10.3.x keeps the old values until
+it is recompiled against this version.
 
 ## V:2.10.3
 
@@ -897,7 +917,7 @@ platform:
 | Platform | C reference | Result |
 |---|---|---|
 | Windows x64 | MSVC 19.51, `/O2 /fp:precise /MD` | 25,569 of 25,569 rows bit-identical (gated) |
-| Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | 25,569 of 25,569 rows bit-identical, gated at that total on every push and pull request; confirmed by PR #32's "Oracle build gates" CI run at commit `f92c8ee` (`https://github.com/Tim81/SwissEphNet/actions/runs/30805814137`, job "Gate: port matches the C reference on Linux x64 (glibc)", pass) -- this workstation has not independently re-run it outside CI -- see `docs/compliance-2.10.03.md`'s "The last two 2.10.03-only entry points" for what was checked and when. This citation is re-anchored as the branch moves forward and commits get rewritten out from under earlier citations; verify reachability with `git merge-base --is-ancestor f92c8ee HEAD` before trusting an older copy of this line |
+| Linux x64 (Ubuntu 24.04) | gcc 13.3.0, `-O2` | 25,569 of 25,569 rows bit-identical, gated at that total on every push and pull request; confirmed by PR #32's "Oracle build gates" CI run at commit `f92c8ee` (`https://github.com/Tim81/SwissEphNet/actions/runs/30805814137`, job "Gate: port matches the C reference on Linux x64 (glibc)", pass) -- this workstation has not independently re-run it outside CI -- see `docs/compliance-2.10.04.md`'s "The last two 2.10.03-only entry points" for what was checked and when. This citation is re-anchored as the branch moves forward and commits get rewritten out from under earlier citations; verify reachability with `git merge-base --is-ancestor f92c8ee HEAD` before trusting an older copy of this line |
 | macOS arm64 | clang, `-O2 -ffp-contract=off -fno-builtin` | 25,569 of 25,569 rows bit-identical, gated by `macos-exactness` on every push and pull request; confirmed at the current grid by the same CI run at commit `f92c8ee`, job "Gate: port matches the C reference on macOS arm64 (Apple libSystem)", pass -- macOS has no local reproduction path here, so this row is CI's own result, not a claim made outside it |
 
 The characterization baseline (`scripts/verify-baseline.ps1`) separately runs on both `net8.0` and
@@ -914,7 +934,7 @@ CRT value table, `c-reference-validate` compares the MSVC C build against pyswis
 `swetest.exe`. `swetest-diff` is not itself gated on that comparison: the step carries
 `continue-on-error` by design, because it checks printed output captured from one specific MSVC
 build that a future toolchain bump could shift without the port changing (see that workflow's own
-header comment, and `docs/compliance-2.10.03.md`'s "4. SweTest text-output comparison" for the
+header comment, and `docs/compliance-2.10.04.md`'s "4. SweTest text-output comparison" for the
 same exemption stated in full). `macos-exactness` covers macOS the same way `oracle-dump` covers
 Windows, and `linux-exactness` covers Linux the same way: it builds Astrodienst's C with gcc on
 `ubuntu-latest`, replays both grids against it, and fails the workflow on any mismatch, on every
@@ -990,22 +1010,24 @@ is for.
 
 `Tests/SwissEphNet.Conformance.Tests` checks the port's output against
 Astrodienst's own reference values, not against the port's own prior output.
-The reference corpus is Swiss Ephemeris **2.10.03**'s `setest` test suite
-(12,757 iterations, ~334K asserted values across 10 functional areas). Even though the port has
-now landed the whole 2.10.03 delta file by file, it is not at full parity: `known-fail.tsv` still
-lists 2,395 failing iterations (10,362 passing, 81.2%). Each
+The reference corpus is Swiss Ephemeris **2.10.04**'s `setest` test suite
+(18,919 iterations across 11 suites and 68 testcases; the number of asserted values has not been
+re-counted for this corpus). The port has
+landed the whole 2.10.03 delta and the v2.10.04 changes, but `known-fail.tsv` still
+lists 1,401 failing iterations (17,518 passing, 92.6%). Each
 porting PR should remove entries from it; any entry that reappears is a regression.
 
-Read that 2,395 with the split under "Numerical compatibility" above, because it is not 2,395
-things left to port: 759 of them are a data file this repository does not ship rather than a wrong
-answer, the other 1,636 sit outside the tolerance Astrodienst's own suite allows (972 of them are
-house-speed rows where `t.exp` predates the upstream analytic cusp speeds), and the four rows
-ever confirmed as port defects were fixed and pruned.
+Read that 1,401 with the split under "Numerical compatibility" above, because it is not 1,401
+things left to port: every row sits outside the tolerance Astrodienst's own suite allows and all are triaged
+as drift (623 data environment, 705 missing ephemeris file, 73 libm platform),
+and the four rows ever confirmed as port defects were fixed and pruned. At the 2.10.3.x pins the
+figures were 12,757 iterations and 2,395 failing, and are not comparable.
 
-- `external/swisseph`, a git submodule, sparse-checked-out, pinned to upstream
-  master at `43c9fe54` (`v2.10.3bfinal` plus 25 commits; no newer tag exists). It serves two purposes:
+- `external/swisseph`, a git submodule, sparse-checked-out, pinned to the upstream
+  tag `v2.10.04` (`e308765d`). It serves two purposes:
   1. **The reference corpus** for the conformance oracle: `setest/t.exp`
-     (expected values) and `setest/t.fix` (tolerances), plus the core `.se1`
+     (expected values) and `setest/tolerances.c` (per-quantity tolerances; `setest/t.fix`
+     supplies only a fallback precision), plus the core `.se1`
      ephemeris files, `sefstars.txt`, `seorbel.txt`, and `seleapsec.txt` that
      the SWIEPH/analytic iterations need to run.
   2. **The C source to diff the port against**, file by file, as porting work
@@ -1019,7 +1041,7 @@ ever confirmed as port defects were fixed and pruned.
 
 - `Tests/conformance/known-fail.tsv`, one row per iteration currently known
   to fail, with a category (`NOT-IMPLEMENTED`, `VALUE-MISMATCH`,
-  `DATA-MISSING`, `ERROR`, or `UNREPRODUCIBLE`) and a short reason. The
+  `ERROR`, or `UNREPRODUCIBLE`) and a short reason. The
   conformance run **fails** unless the port's actual behavior matches this
   file exactly: any iteration failing that isn't on the list (a regression),
   any listed row recorded under a category the port no longer matches
@@ -1033,90 +1055,77 @@ ever confirmed as port defects were fixed and pruned.
     currently empty and its classifier unreachable, because every function the 2.10.03 API
     surface declares now exists on the port (the last three, `swe_calc_pctr`,
     `swe_houses_ex2` and `swe_houses_armc_ex2`, landed with `sweph.c`'s dispatch slice).
-    `DATA-MISSING`: a required data file (a JPL DE ephemeris, `ephe/sat/`)
-    isn't shipped by this repo. `ERROR`: the dispatch threw. `VALUE-MISMATCH`:
+    `ERROR`: the dispatch threw. `VALUE-MISMATCH`:
     the port ran and produced an answer that doesn't match the reference
-    within `t.fix` tolerance. This and `ERROR` are the actionable
+    within `setest`'s tolerance for that quantity (`tolerances.c`). This and `ERROR` are the actionable
     categories, the actual porting work queue. `UNREPRODUCIBLE`: a structural
     C-vs-C# representational gap makes the reference call impossible to
     construct at all, as opposed to constructible but wrong, distinct from
-    the other three, and excluded from the pass-rate denominator the same way
-    they are (see `ConformanceReport.SuiteSummary.PassRate`'s doc comment).
+    the other two, and excluded from the pass-rate denominator the same way
+    `NOT-IMPLEMENTED` is (see `ConformanceReport.SuiteSummary.PassRate`'s doc comment).
     Currently 0 across the whole corpus (suite 6 testcase 6, the one place
     that used to carry all of it, became reproducible once the port's five
     house entry points gained faithful `int hsys` overloads; see
     `Suite06Houses.Dispatch`'s remarks on testcase 6 for the mechanics).
 
   See "Reporting by testcase" in `CONTRIBUTING.md` for how to read a run
-  (60 testcases, split into actionable vs. parked) instead of 12,757
+  (68 testcases, split into actionable vs. parked) instead of 18,919
   individual rows, and "The two gates disagree on purpose, not by accident"
   for why this gate failing constantly is expected and the characterization
   baseline above failing at all is not. They are not the same kind of
   red.
 
-- Two data sources this repo does not ship are skipped by default and
-  reported as `DATA-MISSING`, not run: `SEFLG_JPLEPH` iterations need a
-  multi-hundred-MB JPL DE file (opt in with `SWISSEPH_CONFORMANCE_INCLUDE_JPL=1`
-  and `SWISSEPH_CONFORMANCE_JPL_FILE=<path>`), and planetary-moon bodies
-  (`ipl` 9000-9999) need `ephe/sat/` at ~227 MB (opt in with
-  `SWISSEPH_CONFORMANCE_INCLUDE_MOONS=1` and that directory populated).
+- Two data sources this repo does not ship are not skipped, and are not reported as missing either:
+  `SEFLG_JPLEPH` iterations need a multi-hundred-MB JPL DE file, and planetary-moon bodies
+  (`ipl` 9000-9999) and `SEFLG_CENTER_BODY` need `ephe/sat/` at ~227 MB. Upstream's `setest` skips
+  nothing, so the harness does not either: on the 8 shipped ephemeris files each such iteration runs,
+  `swe_calc` takes its fallback (the Swiss ephemeris or Moshier, with the "not found" text in `serr`)
+  and the result is compared with `t.exp`. The 868 of them that differ from the official values are
+  `VALUE-MISMATCH` rows, triaged against the C on the same files (2026-11-24).
+  Until that date the harness parked all 1,101 of them as `DATA-MISSING` (1,037 JPL, 30 center-of-body,
+  18 planetary moon, 16 numbered asteroid) and that category was removed.
 
-  **Skipped is not untested.** Both were run once, against real data, and the
-  measurement is recorded in `Tests/conformance/regenerations.log`'s entry of
-  2026-07-31: the full 12,757-iteration corpus with `SWISSEPH_CONFORMANCE_INCLUDE_JPL=1`
-  and `SWISSEPH_CONFORMANCE_JPL_FILE` pointed at `de431.eph`, the file `setest`'s own
-  suites 1 and 10 call `swe_set_jpl_file` with:
+  **Running without the file is not the same as proving the backend.** Both were run once, against
+  real data, under the 2.10.03-era corpus (as of 2.10.3.x), and the measurement is recorded in
+  `Tests/conformance/regenerations.log`'s entry of 2026-07-31: the full
+  12,757-iteration corpus with `SWISSEPH_CONFORMANCE_JPL_FILE` pointed at `de431.eph`, which is what `setest`'s
+  suites 1 and 10 then passed to `swe_set_jpl_file`. **500 of the 538 JPL rows pass
+  outright** once the data is present, along with 4 of the 18 `sat` rows, as measured
+  on 2026-07-31, before 30 `SEFLG_CENTER_BODY` rows joined the `sat` category on
+  2026-08-01 (`Tests/conformance/regenerations.log`, "Reclassify 56 rows"). The JPL
+  backend works; what it lacks is a way to keep proving it.
 
-  ```
-  size    2,788,676,624 bytes
-  sha256  fe3d0323d26ada11f8d8228fda9ca590c7eb00cee8b22dff1839f74f5be71149
-  md5     fad0f432ae18c330f9e14915fbf8960a
-  ```
+  That run has not been repeated. Upstream regenerated `t.exp` for v2.10.04 against DE441
+  and suites 1 and 10 now call `swe_set_jpl_file("de441.eph")`, so the 18,919-iteration
+  corpus expects upstream's `de441.eph`, and `EphemerisFileResolver` defaults to that
+  name. To run the JPL rows against a real file, point `SWISSEPH_CONFORMANCE_JPL_FILE` at it (the
+  former `SWISSEPH_CONFORMANCE_INCLUDE_JPL` and `SWISSEPH_CONFORMANCE_INCLUDE_MOONS` switches are
+  gone: there is nothing left to opt in to). The rows then differ from the committed
+  `known-fail.tsv`, which describes the 8-file data set, so a run with a DE file is a measurement, not
+  a gate. No size or checksum for `de441.eph` is recorded
+  here, because none has been measured on this repository's side; when you run it, record
+  the SHA-256 of the file you used next to the result. A checksum from the download
+  location is the right thing to compare it against, and an MD5 alone only shows that a
+  download was not corrupted in transit.
 
-  **500 of the 538 JPL rows pass outright** once the data is present, along with 4 of
-  the 18 `sat` rows, as measured on 2026-07-31, before 30 `SEFLG_CENTER_BODY` rows joined the
-  `sat` category on 2026-08-01 (`Tests/conformance/regenerations.log`, "Reclassify 56 rows");
-  `known-fail.tsv` carries 48 `sat` rows today, and the 4-of-18 figure has not been re-run
-  against that larger set. The JPL backend works; what it lacks is a way to keep proving it.
-
-  Verify with the SHA-256, not the MD5. Upstream publishes only an MD5, and their
-  `readme.md` lists `fad0f432ae18c330f9e14915fbf8960a  de431.eph` among the md5-keys --
-  and MD5 has had practical chosen-prefix collisions since 2019, so it establishes that
-  a download was not corrupted in transit, not that nobody chose its contents. The
-  SHA-256 above was computed here from the file that produced the result, after
-  confirming its MD5 against upstream's published one. Both are recorded so the chain
-  is checkable in either direction: the MD5 ties this file to Astrodienst, and the
-  SHA-256 is what anyone reproducing the run should actually match.
-
-  Get it from NASA rather than a mirror, because `de431.eph` is not a Swiss Ephemeris
-  format at all: it is JPL's own Linux binary, renamed. Upstream's `readme.md` links
-  straight to it, and the sizes confirm the rename is all that happens --
-  `lnxm13000p17000.431` is 2,788,676,624 bytes, the same count as the file measured
-  above, so nothing is converted in between.
+  The smaller DE files are on the same NASA FTP area (see the credits at the end of this
+  file), and are useful for a different job than this one:
 
   ```
-  de431.eph  https://ssd.jpl.nasa.gov/ftp/eph/planets/Linux/de431/lnxm13000p17000.431   2.6 GB
   de406.eph  https://ssd.jpl.nasa.gov/ftp/eph/planets/Linux/de406/lnxm3000p3000.406     190 MB
   de200.eph  https://ssd.jpl.nasa.gov/ftp/eph/planets/Linux/de200/lnxm1600p2170.200      41 MB
   ```
 
-  Download, rename to the `.eph` name, check the SHA-256. Astrodienst also list Alois
-  Treindl's Dropbox and `https://ephe.scryr.io/jpl/` (a web space provided by Phillip
-  McCabe) as alternatives, which are useful if NASA's FTP area is slow, but the point
-  of taking JPL's own copy is that the mirror stops being part of the trust chain.
+  Only DE441 is the file the corpus expects. `setest`'s suites hardcode it, so the
+  expected values in `t.exp` are DE441 values, and running the corpus against DE200,
+  DE406 or DE431 produces real differences that look exactly like port defects. The
+  smaller files are useful because `load_dpsi_deps` is reached only when the opened
+  file reports `jpldenum >= 403`, which DE406 clears and DE200 does not.
 
-  Only `de431.eph` reproduces the numbers above. `setest`'s suites hardcode it, so the
-  expected values in `t.exp` are DE431 values, and running the corpus against DE200 or
-  DE406 produces real differences that look exactly like port defects. The smaller
-  files are useful for a different job: `load_dpsi_deps` is reached only when the
-  opened file reports `jpldenum >= 403`, which DE406 clears and DE200 does not.
-
-  Nothing in CI measures that, and the reason is size rather than doubt. `de431.eph`
-  is 2.6 GB, cannot be committed, and no runner will fetch it per job, so the result
-  above is a dated one-time measurement rather than a gate. It is reproducible by
-  anyone holding that file: the MD5 is recorded so a different DE build, which would
-  produce different numbers and look like defects, can be ruled out first. Treat these
-  rows as verified-but-unwatched, not as covered.
+  Nothing in CI measures the JPL rows, and the reason is size rather than doubt. The DE
+  file is several GB, cannot be committed, and no runner will fetch it per job, so the
+  figures above are a dated one-time measurement rather than a gate. Treat these rows as
+  verified-but-unwatched, not as covered.
 
 - **The JPL backend also has a bit-exact grid**, and it is the one that found the
   bug. `Tools/OracleGrid/grid-jpl.tsv` is the third oracle grid: 2,407 rows, 1,200
@@ -1131,8 +1140,8 @@ ever confirmed as port defects were fixed and pruned.
   pwsh scripts/verify-oracle.ps1   -Grid Jpl
   ```
 
-  It runs against DE406 rather than DE431 on purpose. The conformance corpus is
-  locked to DE431 because `setest` hardcodes it, but the oracle compares the port
+  It runs against DE406 rather than DE441 on purpose. The conformance corpus is
+  locked to DE441 because `setest` hardcodes it, but the oracle compares the port
   against the C over the same file on the same machine, so any DE file works and the
   190 MB one is the one a contributor can actually download. `load_dpsi_deps` needs
   `jpldenum >= 403`, which DE406 clears and DE200 does not.
@@ -1172,9 +1181,9 @@ ever confirmed as port defects were fixed and pruned.
   complete (it missed `global.json`, `Directory.Build.props`, and a submodule gitlink bump
   to `external/swisseph` itself), so it was dropped to match `ci.yml` and `baseline.yml`,
   neither of which filters by paths either. It earns that spot on every PR on cost, not by
-  default: dispatching all 12,757
-  iterations is ~2s in-process (measured, Release build,
-  `Tools/ConformanceKnownFailGen`), and `dotnet test
+  default: dispatching all of the corpus
+  was ~2s in-process (measured at 12,757 iterations, Release build,
+  `Tools/ConformanceKnownFailGen`; not re-measured at 18,919), and `dotnet test
   Tests/SwissEphNet.Conformance.Tests` end-to-end (both TFMs, including test
   host startup) is ~8s. The submodule checkout is the only real cost and is
   sparse (~19 MB, not the ~423.9 MB a full, unfiltered checkout would pull)
@@ -1225,7 +1234,7 @@ is for, and it is the source of the "Numerical compatibility" table above.
   file level, not merely equal per `OracleVerify`'s own field comparator.
 
 Run `scripts/run-oracle-dump.ps1` to regenerate the dumps, then `scripts/verify-oracle.ps1` to
-check them. See `docs/compliance-2.10.03.md` for the current numbers on both Windows and Linux,
+check them. See `docs/compliance-2.10.04.md` for the current numbers on both Windows and Linux,
 what this instrument does and does not cover, and the same record for the other two instruments
 above.
 
@@ -1248,7 +1257,7 @@ Astrodienst's own material, which documents the API this port exposes:
 - [Swiss Ephemeris programming interface](http://www.astro.com/swisseph/swephprg.htm), the
   reference for every `swe_*` function here.
 - [`aloistr/swisseph`](https://github.com/aloistr/swisseph), the C source this port tracks. Pinned
-  here at master `43c9fe54` (`v2.10.3bfinal` plus 25 commits) under `external/swisseph`.
+  here at tag `v2.10.04` (`e308765d`) under `external/swisseph`.
 - [`aloistr/swisseph/ephe`](https://github.com/aloistr/swisseph/tree/master/ephe), the ephemeris
   data files, mirrored at [`ephe.scryr.io/ephe`](https://ephe.scryr.io/ephe).
 

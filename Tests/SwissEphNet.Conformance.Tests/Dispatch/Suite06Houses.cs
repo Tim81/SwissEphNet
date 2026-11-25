@@ -3,10 +3,25 @@ using SwissEphNet.Conformance.Tests.Corpus;
 namespace SwissEphNet.Conformance.Tests.Dispatch;
 
 /// <summary>Suite 6: "Houses functions" (external/swisseph/setest/suite_06_houses.c).</summary>
-internal static class Suite06Houses
+/// <remarks>
+/// suite_06_houses.c:5-8 declares <c>cusps[37]</c>, <c>ascmc[10]</c>, <c>xx[6]</c>, <c>cusp_speed[37]</c>
+/// and <c>ascmc_speed[10]</c> at file scope, shared by every iteration of every testcase; a house or
+/// calc call that returns early without writing them leaves the previous iteration's values to be
+/// recorded. Hence one instance per corpus run holding them. <c>serr</c> is reset by SETUP before
+/// every iteration and <c>rc</c>, <c>jd_ut</c>, <c>geolat</c>, <c>geolon</c>, <c>ihsy</c>, <c>armc</c>
+/// are always assigned first, so those stay locals.
+/// </remarks>
+internal sealed class Suite06Houses
 {
-    public static DispatchOutcome Dispatch(SwissEph swe, int testCaseId, ExpIteration iteration, Precision precision)
+    private readonly double[] _cusps = new double[37];
+    private readonly double[] _ascmc = new double[10];
+    private readonly double[] _cuspSpeed = new double[37];
+    private readonly double[] _ascmcSpeed = new double[10];
+    private readonly double[] _xx = new double[6];
+
+    public DispatchOutcome Dispatch(SwissEph swe, TestCaseScope scope, ExpIteration iteration)
     {
+        var testCaseId = scope.TestCaseId;
         var f = iteration.Fields;
 
         // SETUP: read every iteration, regardless of testcase.
@@ -23,32 +38,31 @@ internal static class Suite06Houses
         // How many of those 37 slots t.exp actually recorded (and so how many
         // this run compares) is derived from the data itself -- whether
         // "cusps[13]" is present -- rather than assumed from ihsy. Verified
-        // against the full corpus: "cusps[13]" never appears in t.exp (the
-        // highest recorded index across every iteration, every house system
-        // including Gauquelin 'G', is cusps[12], 13 values total), so this
-        // always resolves to 13 today. The check is kept data-driven rather
-        // than hardcoded to 13 so that a future corpus revision recording
-        // more cusps for some house system is picked up automatically instead
-        // of silently under-comparing.
+        // against the full corpus (e308765d's t.exp): "cusps[13]" appears 552 times,
+        // in the Gauquelin 'G' iterations, which record 37 cusps (cusps[1]..cusps[36]);
+        // every other house system records cusps[1]..cusps[12] (13 values with the
+        // unused slot 0). Deriving the count from the data, rather than from ihsy,
+        // means a corpus revision recording more cusps for another house system is
+        // picked up automatically instead of silently under-comparing.
         var cuspCount = f.Contains("cusps[13]") ? 37 : 13;
 
         switch (testCaseId)
         {
             case 1:
             {
-                var cusps = new double[37];
-                var ascmc = new double[10];
+                var cusps = _cusps;
+                var ascmc = _ascmc;
                 var rc = swe.swe_houses(jdUt, geolat, geolon, hsys, cusps, ascmc);
-                return CheckHouses(f, precision, rc, jdUt, cusps, ascmc, cuspCount);
+                return CheckHouses(f, scope, rc, jdUt, cusps, ascmc, cuspCount);
             }
 
             case 2:
             {
                 var iflag = f.GetInt("iflag");
-                var cusps = new double[37];
-                var ascmc = new double[10];
+                var cusps = _cusps;
+                var ascmc = _ascmc;
                 var rc = swe.swe_houses_ex(jdUt, iflag, geolat, geolon, hsys, cusps, ascmc);
-                return CheckHouses(f, precision, rc, jdUt, cusps, ascmc, cuspCount);
+                return CheckHouses(f, scope, rc, jdUt, cusps, ascmc, cuspCount);
             }
 
             case 3:
@@ -56,23 +70,23 @@ internal static class Suite06Houses
                 var isid = f.GetInt("isid");
                 var iflag = f.GetInt("iflag");
                 swe.swe_set_sid_mode(isid, 0, 0);
-                var cusps = new double[37];
-                var ascmc = new double[10];
+                var cusps = _cusps;
+                var ascmc = _ascmc;
                 var rc = swe.swe_houses_ex(jdUt, iflag, geolat, geolon, hsys, cusps, ascmc);
-                return CheckHouses(f, precision, rc, jdUt, cusps, ascmc, cuspCount);
+                return CheckHouses(f, scope, rc, jdUt, cusps, ascmc, cuspCount);
             }
 
             case 4:
             {
-                var xx = new double[6];
+                var xx = _xx;
                 string serr = "";
                 swe.swe_calc(jdUt, SwissEph.SE_ECL_NUT, 0, xx, ref serr);
                 var eps = xx[0];
                 var armc = swe.swe_degnorm(swe.swe_sidtime(jdUt) + geolon);
-                var cusps = new double[37];
-                var ascmc = new double[10];
+                var cusps = _cusps;
+                var ascmc = _ascmc;
                 var rc = swe.swe_houses_armc(armc, geolat, eps, hsys, cusps, ascmc);
-                return CheckHousesArmc(f, precision, rc, armc, cusps, ascmc, cuspCount);
+                return CheckHousesArmc(f, scope, rc, armc, cusps, ascmc, cuspCount);
             }
 
             case 5:
@@ -91,7 +105,7 @@ internal static class Suite06Houses
                 // reproduces the same fall-to-default here.
                 var rawHsys = (char)f.GetInt("ihsy");
                 var sp = swe.swe_house_name(rawHsys);
-                var ctx5 = new CheckContext(f, precision);
+                var ctx5 = new CheckContext(f, scope);
                 ctx5.CheckS("sp", sp);
                 return DispatchOutcome.FromMismatches(ctx5);
             }
@@ -117,7 +131,7 @@ internal static class Suite06Houses
                 // via CalcH -- the same one-variable-two-effective-values behavior as the C.
                 // Passing the raw (undecoded) ihsy here, not HouseSystemCodec's truncated
                 // `hsys`, is what makes this reproducible.
-                var xx = new double[6];
+                var xx = _xx;
                 string serr = "";
                 swe.swe_calc(jdUt, SwissEph.SE_ECL_NUT, 0, xx, ref serr);
                 var eps = xx[0];
@@ -129,7 +143,7 @@ internal static class Suite06Houses
                 swe.swe_calc(jdUt, SwissEph.SE_SUN, 0, xx, ref serr);
                 var rawIhsy = f.GetInt("ihsy");
                 var hp = swe.swe_house_pos(armc, geolat, eps, rawIhsy, xx, ref serr);
-                var ctx6 = new CheckContext(f, precision);
+                var ctx6 = new CheckContext(f, scope);
                 ctx6.CheckD("armc", armc);
                 ctx6.CheckD("xx[0]", xx[0]);
                 ctx6.CheckD("hp", hp);
@@ -143,7 +157,7 @@ internal static class Suite06Houses
                 string serr = "";
                 double gp = 0;
                 var rc = swe.swe_gauquelin_sector(jdUt, SwissEph.SE_SUN, null!, 0, imeth, geopos, 0.0, 20.0, ref gp, ref serr);
-                var ctx7 = new CheckContext(f, precision);
+                var ctx7 = new CheckContext(f, scope);
                 ctx7.CheckD("jd_ut", jdUt);
                 ctx7.CheckD("gp", gp);
                 ctx7.CheckI("rc", rc);
@@ -154,29 +168,29 @@ internal static class Suite06Houses
             case 8:
             {
                 var iflag = f.GetInt("iflag");
-                var cusps = new double[37];
-                var ascmc = new double[10];
-                var cuspSpeed = new double[37];
-                var ascmcSpeed = new double[10];
+                var cusps = _cusps;
+                var ascmc = _ascmc;
+                var cuspSpeed = _cuspSpeed;
+                var ascmcSpeed = _ascmcSpeed;
                 var serr = "";
                 var rc = swe.swe_houses_ex2(jdUt, iflag, geolat, geolon, hsys, cusps, ascmc, cuspSpeed, ascmcSpeed, ref serr);
-                return CheckHousesEx2(f, precision, rc, jdUt, cusps, ascmc, cuspSpeed, ascmcSpeed, cuspCount);
+                return CheckHousesEx2(f, scope, rc, jdUt, cusps, ascmc, cuspSpeed, ascmcSpeed, cuspCount);
             }
 
             case 9:
             {
-                var xx = new double[6];
+                var xx = _xx;
                 var serr = "";
                 swe.swe_calc(jdUt, SwissEph.SE_ECL_NUT, 0, xx, ref serr);
                 var eps = xx[0];
                 var armc = swe.swe_degnorm(swe.swe_sidtime(jdUt) + geolon);
-                var cusps = new double[37];
-                var ascmc = new double[10];
-                var cuspSpeed = new double[37];
-                var ascmcSpeed = new double[10];
+                var cusps = _cusps;
+                var ascmc = _ascmc;
+                var cuspSpeed = _cuspSpeed;
+                var ascmcSpeed = _ascmcSpeed;
                 serr = "";
                 var rc = swe.swe_houses_armc_ex2(armc, geolat, eps, hsys, cusps, ascmc, cuspSpeed, ascmcSpeed, ref serr);
-                return CheckHousesArmcEx2(f, precision, rc, armc, cusps, ascmc, cuspSpeed, ascmcSpeed, cuspCount);
+                return CheckHousesArmcEx2(f, scope, rc, armc, cusps, ascmc, cuspSpeed, ascmcSpeed, cuspCount);
             }
 
             default:
@@ -184,9 +198,9 @@ internal static class Suite06Houses
         }
     }
 
-    private static DispatchOutcome CheckHouses(ExpFields f, Precision precision, int rc, double jdUt, double[] cusps, double[] ascmc, int cuspCount)
+    private static DispatchOutcome CheckHouses(ExpFields f, TestCaseScope scope, int rc, double jdUt, double[] cusps, double[] ascmc, int cuspCount)
     {
-        var ctx = new CheckContext(f, precision);
+        var ctx = new CheckContext(f, scope);
         ctx.CheckD("jd_ut", jdUt);
         ctx.CheckDD("cusps", cusps[..cuspCount]);
         ctx.CheckDD("ascmc", ascmc[..6]);
@@ -194,9 +208,9 @@ internal static class Suite06Houses
         return DispatchOutcome.FromMismatches(ctx);
     }
 
-    private static DispatchOutcome CheckHousesArmc(ExpFields f, Precision precision, int rc, double armc, double[] cusps, double[] ascmc, int cuspCount)
+    private static DispatchOutcome CheckHousesArmc(ExpFields f, TestCaseScope scope, int rc, double armc, double[] cusps, double[] ascmc, int cuspCount)
     {
-        var ctx = new CheckContext(f, precision);
+        var ctx = new CheckContext(f, scope);
         ctx.CheckD("armc", armc);
         ctx.CheckDD("cusps", cusps[..cuspCount]);
         ctx.CheckDD("ascmc", ascmc[..6]);
@@ -207,9 +221,9 @@ internal static class Suite06Houses
     // external/swisseph/setest/globals_suite.c: check_swehouses_ex2_results -- same fields as
     // CheckHouses, plus cusp_speed/ascmc_speed. serr is not checked (globals_suite.c omits
     // CHECK_S(serr) here, unlike testcase 7's swe_gauquelin_sector).
-    private static DispatchOutcome CheckHousesEx2(ExpFields f, Precision precision, int rc, double jdUt, double[] cusps, double[] ascmc, double[] cuspSpeed, double[] ascmcSpeed, int cuspCount)
+    private static DispatchOutcome CheckHousesEx2(ExpFields f, TestCaseScope scope, int rc, double jdUt, double[] cusps, double[] ascmc, double[] cuspSpeed, double[] ascmcSpeed, int cuspCount)
     {
-        var ctx = new CheckContext(f, precision);
+        var ctx = new CheckContext(f, scope);
         ctx.CheckD("jd_ut", jdUt);
         ctx.CheckDD("cusps", cusps[..cuspCount]);
         ctx.CheckDD("cusp_speed", cuspSpeed[..cuspCount]);
@@ -221,9 +235,9 @@ internal static class Suite06Houses
 
     // external/swisseph/setest/globals_suite.c: check_swehouses_armc_ex2_results -- same fields
     // as CheckHousesArmc, plus cusp_speed/ascmc_speed.
-    private static DispatchOutcome CheckHousesArmcEx2(ExpFields f, Precision precision, int rc, double armc, double[] cusps, double[] ascmc, double[] cuspSpeed, double[] ascmcSpeed, int cuspCount)
+    private static DispatchOutcome CheckHousesArmcEx2(ExpFields f, TestCaseScope scope, int rc, double armc, double[] cusps, double[] ascmc, double[] cuspSpeed, double[] ascmcSpeed, int cuspCount)
     {
-        var ctx = new CheckContext(f, precision);
+        var ctx = new CheckContext(f, scope);
         ctx.CheckD("armc", armc);
         ctx.CheckDD("cusps", cusps[..cuspCount]);
         ctx.CheckDD("cusp_speed", cuspSpeed[..cuspCount]);

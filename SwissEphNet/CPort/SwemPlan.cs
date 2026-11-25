@@ -311,7 +311,9 @@ namespace SwissEphNet.CPort
             if (tjd < Sweph.MOSHPLEPH_START - 0.3 || tjd > Sweph.MOSHPLEPH_END + 0.3) {
                 s = C.sprintf("jd %f outside Moshier planet range %.2f .. %.2f ",
                       tjd, Sweph.MOSHPLEPH_START, Sweph.MOSHPLEPH_END);
-                serr = (serr ?? String.Empty) + s;
+                // swemplan.c:303-304 (e308765d): if (strlen(serr) + strlen(s) < AS_MAXCH) strcat(serr, s);
+                if ((serr == null ? 0 : serr.Length) + s.Length < 256)
+                    serr = (serr ?? String.Empty) + s;
                 return (SwissEph.ERR);
             }
             /* earth, for geocentric position */

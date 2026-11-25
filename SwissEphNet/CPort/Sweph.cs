@@ -258,6 +258,7 @@ namespace SwissEphNet.CPort
         int[] pnoext2int = new int[] { SEI_SUN, SEI_MOON, SEI_MERCURY, SEI_VENUS, SEI_MARS, SEI_JUPITER, SEI_SATURN, SEI_URANUS, SEI_NEPTUNE, SEI_PLUTO, 0, 0, 0, 0, SEI_EARTH, SEI_CHIRON, SEI_PHOLUS, SEI_CERES, SEI_PALLAS, SEI_JUNO, SEI_VESTA, };
 
         //static int32 swecalc(double tjd, int ipl, int32 iflag, double *x, char *serr);
+        //static char *jd_and_date(double tjd, char *s);
         //static int do_fread(void *targ, int size, int count, int corrsize, 
         //            FILE *fp, int32 fpos, int freord, int fendian, int ifno, 
         //            char *serr);
@@ -299,6 +300,7 @@ namespace SwissEphNet.CPort
         //    double *xx, double *x2000, struct epsilon *oe, char *serr);
         //static int open_jpl_file(double *ss, char *fname, char *fpath, char *serr);
         //static void free_planets(void);
+        //static void gen_filename_range(double tjd, int ipli, double *tnom0, double *tnom1);
 
         //#ifdef TRACE
         //static void trace_swe_calc(int param, double tjd, int ipl, int32 iflag, double *xx, char *serr);
@@ -320,48 +322,42 @@ namespace SwissEphNet.CPort
 #if !NO_SWE_GLP    // -DNO_SWE_GLP to suppress this function
         //#if MSDOS
         //HANDLE dllhandle = NULL;        // global used in swe_version
-        //                // if DLL, set by DllMain()
-        //#else		
-        //#if __GNUC__
+        //                                // if DLL, set by DllMain()
+        //#else
         //#ifdef __GNUC__
-        //        // The following define is actually forbidden. 
-        //        // It would be better to compile with -D_GNU_SOURCE.
+        //// The following define is actually forbidden.
+        //// It would be better to compile with -D_GNU_SOURCE.
         //#ifndef __USE_GNU
         //#define __USE_GNU
         //#endif
-        //#include <dlfcn.h>		// must be linked with -ldl
-        //  static Dl_info dli;
+        //#include <dlfcn.h>              // must be linked with -ldl
         //#endif
+        //#include <stdlib.h>             // realpath(), free()
         //#endif // MSDOS
+        //// Returns the path of the library (of the executable, if statically
+        //// linked), with symbolic links resolved. s must hold AS_MAXCH bytes.
 
         public string swe_get_library_path()
         {
-            //  size_t bytes;
-            //  size_t len;
             //  *s = '\0';
-            //#if !defined(__APPLE) 
-            //  len = AS_MAXCH;
-            //  bytes = 0;
+            //#if !defined(__APPLE)
             //#if MSDOS
-            //  bytes = GetModuleFileName((HMODULE) dllhandle, (TCHAR*) s, (DWORD) len);
+            //  DWORD n = GetModuleFileName((HMODULE) dllhandle, (TCHAR*) s, (DWORD) AS_MAXCH);
+            //  if (n >= AS_MAXCH) n = AS_MAXCH - 1;  // truncated
+            //  s[n] = '\0';
             //#else
-            //  #if __GNUC__
-            //    if (dladdr((void *)swe_version, &dli) != 0) {
-            //      if (strlen(dli.dli_fname) >= len) {
-            //    strncpy(s, dli.dli_fname, len);
-            //    s[len] = '\0';
-            //      } else{
-            //    strcpy(s, dli.dli_fname);
-            //      }
-            //      bytes = strlen(s);
-            //    } else {
-            //      bytes = readlink("/proc/self/exe", s, len);
-            //    }
-            //  #else
-            //    bytes = readlink("/proc/self/exe", s, len);
-            //  #endif
+            //  const char *name = "/proc/self/exe";
+            //  char *rp;
+            //#ifdef __GNUC__
+            //  Dl_info dli;
+            //  if (dladdr((void *) swe_version, &dli) != 0 && dli.dli_fname != NULL)
+            //    name = dli.dli_fname;
             //#endif
-            //  s[bytes] = '\0';
+            //  rp = realpath(name, NULL);            // resolves all symlinks, malloc'd
+            //  strncpy(s, rp != NULL ? rp : name, AS_MAXCH - 1);
+            //  s[AS_MAXCH - 1] = '\0';
+            //  free(rp);
+            //#endif
             //#endif
             //  return s;
             return typeof(Sweph).GetAssembly().FullName;
@@ -391,7 +387,33 @@ namespace SwissEphNet.CPort
          * program tests only.
          * -> If no speed flag has been specified, no speed will be returned.
          */
+        /* date of the current swe_calc() call. sweph() chooses the ephemeris file
+         * by this date also for the other positions computed in the same call,
+         * e.g. the light-time corrected ones, which are computed for slightly
+         * earlier dates. Otherwise, near the start of a file, a true position and
+         * its light-time corrected position could come from two different files;
+         * for the Moon this gave errors of up to 13 mas (2026-11-22). */
+        //static TLS double tjd_calc = 0;
+        //static TLS AS_BOOL have_tjd_calc = FALSE;
+        //static int32 swecalc_1(double tjd, int ipl, int32 iflag, double *xx, char *serr);
+        double tjd_calc = 0;
+        bool have_tjd_calc = false;
+
         public Int32 swe_calc(double tjd, int ipl, Int32 iflag,
+            double[] xx, ref string serr)
+        {
+            Int32 retc;
+            double tjd_calc_sv = tjd_calc;
+            bool have_tjd_calc_sv = have_tjd_calc;
+            tjd_calc = tjd;
+            have_tjd_calc = true;
+            retc = swecalc_1(tjd, ipl, iflag, xx, ref serr);
+            tjd_calc = tjd_calc_sv;
+            have_tjd_calc = have_tjd_calc_sv;
+            return retc;
+        }
+
+        Int32 swecalc_1(double tjd, int ipl, Int32 iflag,
             double[] xx, ref string serr)
         {
             int i, j;
@@ -573,7 +595,7 @@ namespace SwissEphNet.CPort
                  */
                 sd.tsave = tjd;
                 sd.ipl = ipl;
-                if ((sd.iflgsave = swecalc(tjd, ipl, iplmoon, iflag, sd.xsaves, out serr)) == ERR)
+                if ((sd.iflgsave = swecalc(tjd, ipl, iplmoon, iflag, sd.xsaves, ref serr)) == ERR)
                     goto return_error;
             }
             else
@@ -603,11 +625,11 @@ namespace SwissEphNet.CPort
                         dt = PLAN_SPEED_INTV;
                         break;
                 }
-                if ((sd.iflgsave = swecalc(tjd - dt, ipl, iplmoon, iflag, x0, out serr)) == ERR)
+                if ((sd.iflgsave = swecalc(tjd - dt, ipl, iplmoon, iflag, x0, ref serr)) == ERR)
                     goto return_error;
-                if ((sd.iflgsave = swecalc(tjd + dt, ipl, iplmoon, iflag, x2, out serr)) == ERR)
+                if ((sd.iflgsave = swecalc(tjd + dt, ipl, iplmoon, iflag, x2, ref serr)) == ERR)
                     goto return_error;
-                if ((sd.iflgsave = swecalc(tjd, ipl, iplmoon, iflag, sd.xsaves, out serr)) == ERR)
+                if ((sd.iflgsave = swecalc(tjd, ipl, iplmoon, iflag, sd.xsaves, ref serr)) == ERR)
                     goto return_error;
                 denormalize_positions(x0, sd.xsaves, x2);
                 calc_speed(x0, sd.xsaves, x2, dt);
@@ -708,7 +730,7 @@ namespace SwissEphNet.CPort
             return retval;
         }
 
-        Int32 swecalc(double tjd, int ipl, Int32 iplmoon, Int32 iflag, CPointer<double> x, out string serr)
+        Int32 swecalc(double tjd, int ipl, Int32 iplmoon, Int32 iflag, CPointer<double> x, ref string serr)
         {
             int i;
             int ipli, ipli_ast, ifno;
@@ -725,7 +747,10 @@ namespace SwissEphNet.CPort
             double[] xp, xp2;
             double[] ss = new double[3];
             string serr2 = null;
-            serr = null;
+            //if (serr != NULL)
+            //  *serr = '\0';  // is done in calling function
+            // sweph.c:613-631 (e308765d) does not clear serr here; the caller does, so the three
+            // SPEED3 calls in swecalc_1 accumulate into one buffer.
             /****************************************** 
              * iflag plausible?                       * 
              ******************************************/
@@ -799,6 +824,10 @@ namespace SwissEphNet.CPort
                 ipli = SEI_MOON;
                 pdp = swed.pldat[ipli];
                 xp = pdp.xreturn;
+                // C# cannot goto a label inside the switch from after it (the C does,
+                // see "goto moshier_moon" below): moshier_moon_enter re-dispatches to
+                // the SEFLG_MOSEPH case, where moshier_moon: is.
+                moshier_moon_enter:
                 switch (epheflag)
                 {
                     case SwissEph.SEFLG_JPLEPH:
@@ -811,7 +840,9 @@ namespace SwissEphNet.CPort
                         if (retc == NOT_AVAILABLE)
                         {
                             iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_SWIEPH;
-                            serr += " \ntrying Swiss Eph; ";
+                            // sweph.c:709-710 (e308765d): if (serr != NULL && strlen(serr) + 30 < AS_MAXCH) strcat(serr, " \ntrying Swiss Eph; ");
+                            if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                serr += " \ntrying Swiss Eph; ";
                             goto sweph_moon;
                         }
                         else if (retc == BEYOND_EPH_LIMITS)
@@ -872,7 +903,21 @@ namespace SwissEphNet.CPort
                 }
                 /* heliocentric, lighttime etc. */
                 if ((retc = app_pos_etc_moon(iflag, ref serr)) != OK)
+                {
+                    /* light-time point beyond the range of the JPL file: Moshier, as
+                     * main_planet() does for the planets (2026-11-19) */
+                    if (retc == BEYOND_EPH_LIMITS && (iflag & SwissEph.SEFLG_JPLEPH) != 0
+                        && tjd > MOSHLUEPH_START && tjd < MOSHLUEPH_END)
+                    {
+                        iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_MOSEPH;
+                        if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                            serr += " \nusing Moshier Eph; ";
+                        //goto moshier_moon;
+                        epheflag = SwissEph.SEFLG_MOSEPH;
+                        goto moshier_moon_enter;
+                    }
                     goto return_error; /* retc may be wrong with sidereal calculation */
+                }
                 /********************************************** 
                  * barycentric sun                            * 
                  * (only JPL and SWISSEPH ephemerises)        *
@@ -917,7 +962,9 @@ namespace SwissEphNet.CPort
                         if (retc == NOT_AVAILABLE)
                         {
                             iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_SWIEPH;
-                            serr = (serr ?? String.Empty) + serr;
+                            // sweph.c:803-804 (e308765d): if (serr != NULL && strlen(serr) + 30 < AS_MAXCH) strcat(serr, " \ntrying Swiss Eph; ");
+                            if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                serr += " \ntrying Swiss Eph; ";
                             goto sweph_sbar;
                         }
                         psdp.teval = tjd;
@@ -1168,8 +1215,9 @@ namespace SwissEphNet.CPort
                 {
                     for (i = 0; i < 24; i++)
                         x[i] = 0;
-                    serr = C.sprintf("Interpolated apsides are restricted to JD %8.1f - JD %8.1f",
-                            MOSHLUEPH_START, MOSHLUEPH_END);
+                    string sd0, sd1, sd2;
+                    serr = C.sprintf("interpolated apsides not available at %s; restricted to %s - %s",
+                            jd_and_date(tjd, out sd0), jd_and_date(MOSHLUEPH_START, out sd1), jd_and_date(MOSHLUEPH_END, out sd2));
                     return ERR;
                 }
                 ndp = swed.nddat[SEI_INTP_APOG];
@@ -1195,8 +1243,9 @@ namespace SwissEphNet.CPort
                 {
                     for (i = 0; i < 24; i++)
                         x[i] = 0;
-                    serr = C.sprintf("Interpolated apsides are restricted to JD %8.1f - JD %8.1f",
-                            MOSHLUEPH_START, MOSHLUEPH_END);
+                    string sd0, sd1, sd2;
+                    serr = C.sprintf("interpolated apsides not available at %s; restricted to %s - %s",
+                            jd_and_date(tjd, out sd0), jd_and_date(MOSHLUEPH_START, out sd1), jd_and_date(MOSHLUEPH_END, out sd2));
                     return ERR;
                 }
                 ndp = swed.nddat[SEI_INTP_PERG];
@@ -1265,15 +1314,16 @@ namespace SwissEphNet.CPort
                 }
                 if (ipli == SEI_CHIRON && (tjd < CHIRON_START || tjd > CHIRON_END))
                 {
-                    serr = C.sprintf("Chiron's ephemeris is restricted to JD %8.1f - JD %8.1f",
-                        CHIRON_START, CHIRON_END);
+                    string sd0, sd1, sd2;
+                    serr = C.sprintf("Chiron not available at %s; restricted to %s - %s",
+                        jd_and_date(tjd, out sd0), jd_and_date(CHIRON_START, out sd1), jd_and_date(CHIRON_END, out sd2));
                     return ERR;
                 }
                 if (ipli == SEI_PHOLUS && (tjd < PHOLUS_START || tjd > PHOLUS_END))
                 {
-                    serr = C.sprintf(
-                        "Pholus's ephemeris is restricted to JD %8.1f - JD %8.1f",
-                        PHOLUS_START, PHOLUS_END);
+                    string sd0, sd1, sd2;
+                    serr = C.sprintf("Pholus not available at %s; restricted to %s - %s",
+                        jd_and_date(tjd, out sd0), jd_and_date(PHOLUS_START, out sd1), jd_and_date(PHOLUS_END, out sd2));
                     return ERR;
                 }
             do_asteroid:
@@ -1284,11 +1334,10 @@ namespace SwissEphNet.CPort
                 /* iflag (ephemeris bit) has possibly changed in main_planet() */
                 iflag = swed.pldat[SEI_EARTH].xflgs;
                 /* asteroid */
-                if (!String.IsNullOrWhiteSpace(serr))
-                {
-                    serr2 = serr;
-                    serr = String.Empty;
-                }
+                // sweph.c:1115-1118 (e308765d), under "if (serr != NULL)": strcpy(serr2, serr); *serr = '\0';
+                // The copy is unconditional, so a second pass through do_asteroid replaces serr2.
+                serr2 = serr ?? String.Empty;
+                serr = String.Empty;
                 /* asteroid */
                 retc = sweph(tjd, ipli_ast, ifno, iflag, psdp.x, DO_SAVE, null, ref serr);
                 if (retc == ERR || retc == NOT_AVAILABLE)
@@ -1313,8 +1362,11 @@ namespace SwissEphNet.CPort
                         goto return_error;
                 }
                 /* add warnings from earth/sun computation */
-                if (String.IsNullOrWhiteSpace(serr) && !String.IsNullOrWhiteSpace(serr2))
-                    serr = "sun: " + serr2;
+                // sweph.c:1140-1143 (e308765d), under "if (serr != NULL && *serr == '\0' && *serr2 != '\0')":
+                //   strcpy(serr, "sun: "); serr2[AS_MAXCH-5] = '\0'; strcat(serr, serr2);
+                // serr2[AS_MAXCH-5] = '\0' cuts serr2 to AS_MAXCH-5 (251) characters before the append.
+                if (String.IsNullOrEmpty(serr) && !String.IsNullOrEmpty(serr2))
+                    serr = "sun: " + (serr2.Length > 256 - 5 ? serr2.Substring(0, 256 - 5) : serr2);
                 /*********************************************** 
                  * fictitious planets                          *    
                  * (Isis-Transpluto and Uranian planets)       *
@@ -1389,6 +1441,36 @@ namespace SwissEphNet.CPort
             return ERR;
         }
 
+        /* nominal range of the ephemeris file that swi_gen_filename() names for
+         * tjd and ipli: the dates [*tnom0, *tnom1) for which it names the same file.
+         * planet, moon and main asteroid files cover NCTIES centuries each and
+         * overlap their neighbours by some days; the other files cover all dates.
+         * the century rule must be the same as in swi_gen_filename(). */
+        void gen_filename_range(double tjd, int ipli, out double tnom0, out double tnom1)
+        {
+            int icty, y0, y1;
+            int ncties = (int)NCTIES;
+            int jmon = 0, jday = 0, jyear = 0;
+            double jut = 0;
+            if (ipli < 0 || ipli >= SEI_NPLANETS || ipli == SEI_ANYBODY)
+            {
+                tnom0 = -1e30;
+                tnom1 = 1e30;
+                return;
+            }
+            SE.swe_revjul(tjd, tjd >= 2305447.5 ? SwissEph.SE_GREG_CAL : SwissEph.SE_JUL_CAL, ref jyear, ref jmon, ref jday, ref jut);
+            icty = jyear / 100;
+            if (jyear < 0 && jyear % 100 != 0)
+                icty -= 1;
+            while (icty % ncties != 0)
+                icty--;
+            y0 = icty * 100;
+            y1 = y0 + ncties * 100;
+            /* swi_gen_filename() uses the gregorian calendar from 1600 on */
+            tnom0 = SE.swe_julday(y0, 1, 1, 0, y0 >= 1600 ? SwissEph.SE_GREG_CAL : SwissEph.SE_JUL_CAL);
+            tnom1 = SE.swe_julday(y1, 1, 1, 0, y1 >= 1600 ? SwissEph.SE_GREG_CAL : SwissEph.SE_JUL_CAL);
+        }
+
         void free_planets()
         {
             int i;
@@ -1425,7 +1507,10 @@ namespace SwissEphNet.CPort
             /* initialisation of swed, when called first time from */
             if (!swed.swed_is_initialised)
             {
-                swed = new swe_data();
+                //memset((void *) &swed, 0, sizeof(struct swe_data));
+                // sweph.c:1257 (e308765d) clears swed in place; replacing the object left
+                // swe_get_astro_models' pmodel on the discarded copy on a fresh instance.
+                swed.ClearInPlace();
                 swed.ephepath = SwissEph.DefaultEphePath;
                 swed.jplfnam = SwissEph.SE_FNAME_DFT;
                 SE.swe_set_tid_acc(SwissEph.SE_TIDAL_AUTOMATIC);
@@ -1449,12 +1534,21 @@ namespace SwissEphNet.CPort
                 swed.fidat[i].Clear();
             }
             free_planets();
-            swed.oec = new epsilon();
-            swed.oec2000 = new epsilon();
-            swed.nut = new nut();
-            swed.nut2000 = new nut();
-            swed.nutv = new nut();
-            swed.astro_models = new Int32[SEI_NMODELS];
+            //memset((void *) &swed.oec, 0, sizeof(struct epsilon));
+            //memset((void *) &swed.oec2000, 0, sizeof(struct epsilon));
+            //memset((void *) &swed.nut, 0, sizeof(struct nut));
+            //memset((void *) &swed.nut2000, 0, sizeof(struct nut));
+            //memset((void *) &swed.nutv, 0, sizeof(struct nut));
+            // sweph.c:1280-1284 (e308765d) clears these in place; replacing them left a
+            // reference held across a close (SweCL.cs:687, swecl.c:662) on the discarded object.
+            swed.oec.Clear();
+            swed.oec2000.Clear();
+            swed.nut.Clear();
+            swed.nut2000.Clear();
+            swed.nutv.Clear();
+            //memset((void *) &swed.astro_models, 0, SEI_NMODELS * sizeof(int32));
+            // sweph.c:1285 (e308765d) clears astro_models in place.
+            Array.Clear(swed.astro_models, 0, SEI_NMODELS);
             /* close JPL file */
             SE.SweJPL.swi_close_jpl_file();
             swed.jpl_file_is_open = false;
@@ -1486,8 +1580,18 @@ namespace SwissEphNet.CPort
                 swed.fidat[i].Clear();
             }
             free_planets();
-            swed.Reset(false);
-            /* sweph.c:1248 memsets astro_models here. Reset(false) does not touch it --
+            //memset((void *) &swed.oec, 0, sizeof(struct epsilon));
+            //memset((void *) &swed.oec2000, 0, sizeof(struct epsilon));
+            //memset((void *) &swed.nut, 0, sizeof(struct nut));
+            //memset((void *) &swed.nut2000, 0, sizeof(struct nut));
+            //memset((void *) &swed.nutv, 0, sizeof(struct nut));
+            // sweph.c:1315-1319 (e308765d) clears these in place; swed.Reset(false) replaced them.
+            swed.oec.Clear();
+            swed.oec2000.Clear();
+            swed.nut.Clear();
+            swed.nut2000.Clear();
+            swed.nutv.Clear();
+            /* sweph.c:1320 (e308765d) memsets astro_models here. Reset(false) does not touch it --
              * it is inside the `full` arm -- so a model set before swe_close survived it,
              * where the C clears it. swi_close_keep_topo_etc already clears it. */
             Array.Clear(swed.astro_models, 0, swed.astro_models.Length);
@@ -1507,8 +1611,13 @@ namespace SwissEphNet.CPort
             swed.is_old_starfile = false;
             swed.i_saved_planet_name = 0;
             swed.saved_planet_name = String.Empty;
-            swed.topd = new topo_data();
-            swed.sidd = new sid_data();
+            //memset((void *) &swed.topd, 0, sizeof(struct topo_data));
+            //memset((void *) &swed.sidd, 0, sizeof(struct sid_data));
+            // sweph.c:1336-1337 (e308765d) clears these in place; they were replaced with new objects.
+            swed.topd.geolon = 0; swed.topd.geolat = 0; swed.topd.geoalt = 0;
+            swed.topd.teval = 0; swed.topd.tjd_ut = 0;
+            Array.Clear(swed.topd.xobs, 0, swed.topd.xobs.Length);
+            swed.sidd = default(sid_data);
             swed.timeout = 0;
             swed.last_epheflag = 0;
             if (swed.dpsi != null)
@@ -1521,6 +1630,7 @@ namespace SwissEphNet.CPort
                 //free(swed.deps);
                 swed.deps = null;
             }
+            swed.eop_dpsi_loaded = 0;
             if (swed.n_fixstars_records > 0)
             {
                 //free(swed.fixed_stars);
@@ -1557,6 +1667,7 @@ namespace SwissEphNet.CPort
 #endif  //* TRACE */
         }
 
+        //#if 1
         /* sets ephemeris file path. 
          * also calls swe_close(). this makes sure that swe_calc()
          * won't return planet positions previously computed from other
@@ -1566,8 +1677,9 @@ namespace SwissEphNet.CPort
         {
             int i, iflag;
             string s; string sdummy = null;
+            string serr = null;
             string sp;
-            double[] xx = new double[6];
+            double[] xx = new double[6]; double denum = 0;
             /* close all open files and delete all planetary data */
             swi_close_keep_topo_etc();
             swi_init_swed_if_start();
@@ -1606,39 +1718,91 @@ namespace SwissEphNet.CPort
              * tidal acceleration of the Moon */
             iflag = SwissEph.SEFLG_SWIEPH | SwissEph.SEFLG_J2000 | SwissEph.SEFLG_TRUEPOS | SwissEph.SEFLG_ICRS;
             swed.last_epheflag = 2;
-            swe_calc(J2000, SwissEph.SE_MOON, iflag, xx, ref sdummy);
+            swe_calc(J2000, SwissEph.SE_MOON, iflag, xx, ref serr);
             if (swed.fidat[SEI_FILE_MOON].fptr != null)
             {
-                SE.SwephLib.swi_set_tid_acc(0, 0, swed.fidat[SEI_FILE_MOON].sweph_denum, ref sdummy);
+                denum = swed.fidat[SEI_FILE_MOON].sweph_denum;
             }
-#if TRACE
-            //  swi_open_trace(NULL);
-            //  if (swi_trace_count < TRACE_COUNT_MAX) {
-            //    if (swi_fp_trace_c != NULL) {
-            //      fputs("\n/*SWE_SET_EPHE_PATH*/\n", swi_fp_trace_c);
-            //      if (path == NULL) 
-            //        fputs("  *s = '\\0';\n", swi_fp_trace_c);
-            //      else
-            //    fprintf(swi_fp_trace_c, "  strcpy(s, \"%s\");\n", path);
-            //      fputs("  swe_set_ephe_path(s);\n", swi_fp_trace_c);
-            //      fputs("  printf(\"swe_set_ephe_path: path_in = \");", swi_fp_trace_c);
-            //      fputs("  printf(s);\n", swi_fp_trace_c);
-            //      fputs("  \tprintf(\"\\tpath_set = unknown to swetrace\\n\"); /* unknown to swetrace */\n", swi_fp_trace_c);
-            //      fflush(swi_fp_trace_c);
-            //    }
-            //    if (swi_fp_trace_out != NULL) {
-            //      fputs("swe_set_ephe_path: path_in = ", swi_fp_trace_out);
-            //      if (path != NULL)
-            //          fputs(path, swi_fp_trace_out);
-            //      fputs("\tpath_set = ", swi_fp_trace_out);
-            //      fputs(s, swi_fp_trace_out);
-            //      fputs("\n", swi_fp_trace_out);
-            trace("swe_set_ephe_path: path_in = %s\tpath_set = %s", path, s);
-            //      fflush(swi_fp_trace_out);
-            //    }
-            //  }
-#endif
+            swi_close_keep_topo_etc();
+            swed.ephe_path_is_set = true;
+            swed.ephepath = s;
+            if (denum > 0)
+            {
+                swed.fidat[SEI_FILE_MOON].sweph_denum = (Int32)denum;
+                SE.SwephLib.swi_set_tid_acc(0, 0, (Int32)denum, ref sdummy);
+            }
         }
+
+        //#else
+        ///* sets ephemeris file path. 
+        // * also calls swe_close(). this makes sure that swe_calc()
+        // * won't return planet positions previously computed from other
+        // * ephemerides
+        // */
+        //void CALL_CONV swe_set_ephe_path(const char *path) 
+        //{
+        //  int i, iflag;
+        //  char s[AS_MAXCH];
+        //  char *sp;
+        //  double xx[6];
+        //  /* close all open files and delete all planetary data */
+        //  swi_close_keep_topo_etc();
+        //  swi_init_swed_if_start();
+        //  swed.ephe_path_is_set = TRUE;
+        //  /* environment variable SE_EPHE_PATH has priority */
+        //  if ((sp = getenv("SE_EPHE_PATH")) != NULL 
+        //    && strlen(sp) != 0
+        //    && strlen(sp) <= AS_MAXCH-1-13) {
+        //    strcpy(s, sp);
+        //  } else if (path == NULL || *path == '\0') {
+        //    strcpy(s, SE_EPHE_PATH);
+        //  } else if (strlen(path) <= AS_MAXCH-1-13) {
+        //    strcpy(s, path);
+        //  } else {
+        //    strcpy(s, SE_EPHE_PATH);
+        //  }
+        //  i = (int) strlen(s);
+        //  if (*(s + i - 1) != *DIR_GLUE && *s != '\0')
+        //    strcat(s, DIR_GLUE);
+        //  strcpy(swed.ephepath, s);
+        ////swe_set_interpolate_nut(TRUE);
+        //  /* try to open lunar ephemeris, in order to get DE number and set
+        //   * tidal acceleration of the Moon */
+        //  iflag = SEFLG_SWIEPH|SEFLG_J2000|SEFLG_TRUEPOS|SEFLG_ICRS;
+        //  swed.last_epheflag = 2;
+        //  swe_calc(J2000, SE_MOON, iflag, xx, NULL);
+        //  if (swed.fidat[SEI_FILE_MOON].fptr != NULL) {
+        //    swi_set_tid_acc(0, 0, swed.fidat[SEI_FILE_MOON].sweph_denum, NULL);
+        //  }
+        //#ifdef TRACE
+        //  swi_open_trace(NULL);
+        //  if (swi_trace_count < TRACE_COUNT_MAX) {
+        //    if (swi_fp_trace_c != NULL) {
+        //      fputs("\n/*SWE_SET_EPHE_PATH*/\n", swi_fp_trace_c);
+        //      if (path == NULL) {
+        //        fputs("  *s = '\\0';\n", swi_fp_trace_c);
+        //      } else {
+        //\tfprintf(swi_fp_trace_c, "  strcpy(s, \"%s\");\n", path);
+        //      }
+        //      fputs("  swe_set_ephe_path(s);\n", swi_fp_trace_c);
+        //      fputs("  printf(\"swe_set_ephe_path: path_in = \");", swi_fp_trace_c);
+        //      fputs("  printf(s);\n", swi_fp_trace_c);
+        //      fputs("  \tprintf(\"\\tpath_set = unknown to swetrace\\n\"); /* unknown to swetrace */\n", swi_fp_trace_c);
+        //      fflush(swi_fp_trace_c);
+        //    }
+        //    if (swi_fp_trace_out != NULL) {
+        //      fputs("swe_set_ephe_path: path_in = ", swi_fp_trace_out);
+        //      if (path != NULL)
+        //\tfputs(path, swi_fp_trace_out);
+        //      fputs("\tpath_set = ", swi_fp_trace_out);
+        //      fputs(s, swi_fp_trace_out);
+        //      fputs("\n", swi_fp_trace_out);
+        //      fflush(swi_fp_trace_out);
+        //    }
+        //  }
+        //#endif
+        //}
+        //#endif
 
         void load_dpsi_deps()
         {
@@ -1728,17 +1892,17 @@ namespace SwissEphNet.CPort
                     return;
                 }
                 /* dpsi, deps Bulletin B */
-                // sweph.c:1446-1447/1450-1451 are atof(s + 168) etc. into a 256-byte
+                // sweph.c:1571-1572/1575-1576 are atof(s + 167) etc. into a 256-byte
                 // buffer: reading past a short line's NUL terminator, still inside that
                 // buffer, is benign in C (atof("") == 0). s.Substring(N) throws
                 // ArgumentOutOfRangeException on any line shorter than N chars; Substr(N)
                 // returns "" instead, matching atof's own empty-string-to-0 behavior.
-                dpsi = atof(s.Substr(168));
+                dpsi = atof(s.Substr(167));
                 deps = atof(s.Substr(178));
                 if (dpsi == 0)
                 {
                     /* try dpsi, deps Bulletin A */
-                    dpsi = atof(s.Substr(99));
+                    dpsi = atof(s.Substr(98));
                     deps = atof(s.Substr(118));
                 }
                 if (dpsi == 0)
@@ -1886,7 +2050,9 @@ namespace SwissEphNet.CPort
                     if (retc == NOT_AVAILABLE)
                     {
                         iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_SWIEPH;
-                        serr += " \ntrying Swiss Eph; ";
+                        // sweph.c:1708-1709 (e308765d): if (serr != NULL && strlen(serr) + 30 < AS_MAXCH) strcat(serr, " \ntrying Swiss Eph; ");
+                        if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                            serr += " \ntrying Swiss Eph; ";
                         goto sweph_planet;
                     }
                     else if (retc == BEYOND_EPH_LIMITS)
@@ -1916,7 +2082,9 @@ namespace SwissEphNet.CPort
                     if (retc == NOT_AVAILABLE)
                     {
                         iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_SWIEPH;
-                        serr += " \ntrying Swiss Eph; ";
+                        // sweph.c:1732-1733 (e308765d): if (serr != NULL && strlen(serr) + 30 < AS_MAXCH) strcat(serr, " \ntrying Swiss Eph; ");
+                        if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                            serr += " \ntrying Swiss Eph; ";
                         goto sweph_planet;
                     }
                     else if (retc == BEYOND_EPH_LIMITS)
@@ -2037,7 +2205,9 @@ namespace SwissEphNet.CPort
                     if (retc == NOT_AVAILABLE)
                     {
                         iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_SWIEPH;
-                        serr += " \ntrying Swiss Eph; ";
+                        // sweph.c:1836-1837 (e308765d): if (serr != NULL && strlen(serr) + 30 < AS_MAXCH) strcat(serr, " \ntrying Swiss Eph; ");
+                        if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                            serr += " \ntrying Swiss Eph; ";
                         goto sweph_planet;
                     }
                     break;
@@ -2497,6 +2667,34 @@ namespace SwissEphNet.CPort
             return (OK);
         }
 
+        /* "JD 4825621.5 = 01.07.8500" for messages: Julian day and calendar date
+         * as swetest -fT prints it (dd.mm.yyyy, "j" appended for Julian calendar
+         * dates, i.e. before 15.10.1582, time only if not 0h; tjd is TT);
+         * s needs at least 60 bytes (added 2026-11-19) */
+        string jd_and_date(double tjd, out string s)
+        {
+            int iyear = 0, imon = 0, iday = 0;
+            Int32 ih, im, isec, isgn;
+            int gregflag = SwissEph.SE_GREG_CAL;
+            double hour = 0, dsecfr;
+            if (Math.Abs(tjd * 10 - Math.Floor(tjd * 10 + 0.5)) < 1e-6)
+                s = C.sprintf("JD %.1f = ", tjd);
+            else
+                s = C.sprintf("JD %.6f = ", tjd);
+            if (tjd < 2299160.5)
+                gregflag = SwissEph.SE_JUL_CAL;
+            SE.swe_revjul(tjd, gregflag, ref iyear, ref imon, ref iday, ref hour);
+            s += C.sprintf("%02d.%02d.%04d", iday, imon, iyear);
+            if (gregflag == SwissEph.SE_JUL_CAL)
+                s += "j";
+            if (hour != 0)
+            {
+                SE.swe_split_deg(hour, SwissEph.SE_SPLIT_DEG_ROUND_SEC, out ih, out im, out isec, out dsecfr, out isgn);
+                s += C.sprintf(" %d:%02d:%02d TT", ih, im, isec);
+            }
+            return s;
+        }
+
         /* 
          * this function looks for an ephemeris file, 
          * opens it, if not yet open,
@@ -2520,6 +2718,9 @@ namespace SwissEphNet.CPort
             string s = String.Empty, subdirnam = String.Empty, fname = String.Empty/*, sp*/;
             int spi;
             double t, tsv;
+            double tsel = tjd;    /* date by which the file is chosen, see below */
+            double tjd_nom = tjd; /* a date in the nominal range of the file opened */
+            double tnom1_prev = 0; /* end of that range if the previous file was opened */
             double[] xemb = new double[6], xx = new double[6], xp;
             plan_data pdp;
             plan_data pedp = swed.pldat[SEI_EARTH];
@@ -2558,11 +2759,22 @@ namespace SwissEphNet.CPort
             /****************************** 
              * get correct ephemeris file * 
              ******************************/
+            /* the file is chosen by the date tsel: the date of the current swe_calc()
+             * call, if tjd is near it (light-time corrected positions of this call),
+             * otherwise tjd itself */
+            if (have_tjd_calc && Math.Abs(tjd - tjd_calc) <= 1)
+                tsel = tjd_calc;
+            tjd_nom = tsel;
+        reselect:
             if (fdp.fptr != null)
             {
                 /* if tjd is beyond file range, close old file.
-                 * if new asteroid, close old file. */
+                 * if new asteroid, close old file.
+                 * if tsel is beyond the file's nominal range (in the overlap with the
+                 * neighbouring file), close it too: otherwise the file used in the
+                 * overlap would depend on the order of earlier calls. */
                 if (tjd < fdp.tfstart || tjd > fdp.tfend
+                  || tsel < fdp.tnom0 || tsel >= fdp.tnom1
                   || (ipl == SEI_ANYBODY && ipli != pdp.ibdy))
                 {
                     //fclose(fdp.fptr);
@@ -2579,7 +2791,7 @@ namespace SwissEphNet.CPort
             /* if sweph file not open, find and open it */
             if (fdp.fptr == null)
             {
-                SE.SwephLib.swi_gen_filename(tjd, ipli, out fname);
+                SE.SwephLib.swi_gen_filename(tsel, ipli, out fname);
                 //sp = strrchr(subdirnam, (int)*DIR_GLUE);
                 //if (sp != NULL) {
                 //    *sp = '\0';
@@ -2664,17 +2876,93 @@ namespace SwissEphNet.CPort
                     }
                     return (NOT_AVAILABLE);
                 }
-                /* during the search error messages may have been built, delete them */
+                /* during the search, error messages may have been built, delete them */
                 serr = String.Empty;
                 retc = read_const(ifno, ref serr);
+                //#if 1 // dieter 24 april 2026
+                // tjd too close to file start => use previous file
+                // Only if it is another file and it exists: it is missing before the
+                // first file, if the user does not have it, and for an asteroid with
+                // only a short file (..s.se1, the generated name is that of the long
+                // file); without this check, read_const() was called with fptr == NULL
+                // and crashed. swi_fopen() with ifno -1, so that a failed search does
+                // not change fdp->fnam.
+                //if (1 && retc == OK && tsel < swed.fidat[ifno].tfstart + 1) {
+                if (retc == OK && tsel < swed.fidat[ifno].tfstart + 1)
+                {
+                    string fname2;
+                    CFile fptest;
+                    string serr_null = null;    // the C passes NULL for serr here
+                    SE.SwephLib.swi_gen_filename(tsel - 1000, ipli, out fname2);
+                    if (strcmp(fname2, fname) != 0
+                      && (fptest = swi_fopen(-1, fname2, swed.ephepath, ref serr_null)) != null)
+                    {
+                        //fclose(fptest);
+                        fptest.Dispose();
+                        //fclose(fdp->fptr);
+                        fdp.fptr.Dispose();
+                        tnom1_prev = swed.fidat[ifno].tfstart + 1;
+                        fname = fname2;
+                        s = fname;
+                        fdp.fptr = swi_fopen(ifno, s, swed.ephepath, ref serr);
+                        if (fdp.fptr == null)
+                            return (NOT_AVAILABLE);
+                        retc = read_const(ifno, ref serr);
+                        tjd_nom = tsel - 1000;
+                    }
+                }
+                // tjd too close to file end => use next file (not necessary)
+                //if (0 && tjd > swed.fidat[ifno].tfend - 1) {
+                //    swi_gen_filename(tjd + 1000, ipli, fname); 
+                //    strcpy(s, fname);
+                //    fdp->fptr = swi_fopen(ifno, s, swed.ephepath, serr);
+                //retc = read_const(ifno, serr);
+                //}
+                //#endif
                 if (retc != OK)
                     return (retc);
+                /* the range of dates this file serves, as the rules above choose it:
+                 * the nominal range of the file actually opened, and the first day of a
+                 * file (tjd < tfstart + 1) belongs to the previous file, if that exists.
+                 * Otherwise an open file would serve dates for which a new search
+                 * chooses another file, and the result would depend on history.
+                 * The first-day rule applies also to a file opened by the rule itself
+                 * (the previous file): its own first day belongs to its predecessor. */
+                gen_filename_range(tjd_nom, ipli, out fdp.tnom0, out fdp.tnom1);
+                if (tjd_nom != tjd)
+                    fdp.tnom1 = tnom1_prev;
+                if (fdp.tnom0 > -1e29 && fdp.tnom0 < fdp.tfstart + 1)
+                {
+                    string fname2;
+                    CFile fptest;
+                    string serr_null = null;    // the C passes NULL for serr here
+                    SE.SwephLib.swi_gen_filename(fdp.tnom0 - 1000, ipli, out fname2);
+                    if (strcmp(fname2, fname) != 0
+                      && (fptest = swi_fopen(-1, fname2, swed.ephepath, ref serr_null)) != null)
+                    {
+                        //fclose(fptest);
+                        fptest.Dispose();
+                        fdp.tnom0 = fdp.tfstart + 1;
+                    }
+                }
             }
             /* if first ephemeris file (J-3000), it might start a mars period
              * after -3000. if last ephemeris file (J3000), it might end a
              * 4000-day-period before 3000. */
+            if ((tjd < fdp.tfstart || tjd > fdp.tfend) && tsel != tjd)
+            {
+                /* the file chosen by the date of the swe_calc() call does not contain
+                 * tjd: choose the file by tjd itself */
+                //fclose(fdp->fptr);
+                fdp.fptr.Dispose();
+                fdp.fptr = null;
+                tsel = tjd;
+                tjd_nom = tjd;
+                goto reselect;
+            }
             if (tjd < fdp.tfstart || tjd > fdp.tfend)
             {
+                string sd1, sd2;
                 spi = fname.LastIndexOf(SwissEph.DIR_GLUE);
                 string sp;
                 if (spi >= 0)
@@ -2700,30 +2988,31 @@ namespace SwissEphNet.CPort
                     else
                         s = C.sprintf("plan. moon No. %d (%s): ", ipli, sp);
                 }
-                else if (ipli > SEI_PLUTO)
+                else if (ipli >= SEI_ANYBODY || ifno >= 2)
                 {
                     s = C.sprintf("asteroid eph. file (%s): ", sp);
                 }
-                else if (ipli != SEI_MOON)
+                else if (ifno == 0)
                 {
                     s = C.sprintf("planets eph. file (%s): ", sp);
                 }
-                else
+                else if (ifno == 1)
                 {
                     s = C.sprintf("moon eph. file (%s): ", sp);
                 }
                 if (tjd < fdp.tfstart)
                 {
-                    s += C.sprintf("jd %f < lower limit %f;",
-                          tjd, fdp.tfstart);
+                    s += C.sprintf("%s < lower limit %s;",
+                          jd_and_date(tjd, out sd1), jd_and_date(fdp.tfstart, out sd2));
                 }
                 else
                 {
-                    s += C.sprintf("jd %f > upper limit %f;",
-                          tjd, fdp.tfend);
+                    s += C.sprintf("%s > upper limit %s;",
+                          jd_and_date(tjd, out sd1), jd_and_date(fdp.tfend, out sd2));
                 }
-                //if (strlen(serr) + strlen(s) < AS_MAXCH)
-                serr += s;
+                // sweph.c:2494-2495 (e308765d): if (strlen(serr) + strlen(s) < AS_MAXCH) strcat(serr, s);
+                if ((serr == null ? 0 : serr.Length) + (s == null ? 0 : s.Length) < 256)
+                    serr += s;
                 return (NOT_AVAILABLE);
             }
             /******************************
@@ -3122,6 +3411,10 @@ namespace SwissEphNet.CPort
                     {
                         //xx[i] = pdp.x[i] - dt * pdp.x[i+3];
                         xx[i] = xx0[i] - dt * xx0[i + 3];
+                        /* xx0[] is barycentric: heliocentric distance for the next pass */
+                        if ((iflag & SwissEph.SEFLG_HELCTR) != 0
+                          && (pdp.iephe == SwissEph.SEFLG_JPLEPH || pdp.iephe == SwissEph.SEFLG_SWIEPH))
+                            xx[i] -= swed.pldat[SEI_SUNBARY].x[i];
                     }
                 }
                 /* part of daily motion resulting from change of dt */
@@ -4095,7 +4388,8 @@ namespace SwissEphNet.CPort
                     for (i = 0; i <= 2; i++)
                     {
                         dx[i] = xx[i];
-                        if (0 == (iflag & SwissEph.SEFLG_HELCTR) && 0 == (iflag & SwissEph.SEFLG_BARYCTR))
+                        /* heliocentric: xobs[] is the Sun */
+                        if (0 == (iflag & SwissEph.SEFLG_BARYCTR))
                             dx[i] -= xobs[i];
                     }
                     /* new dt */
@@ -4897,6 +5191,10 @@ namespace SwissEphNet.CPort
                         {
                             SE.SweJPL.swi_close_jpl_file();
                             swed.jpl_file_is_open = false;
+                            /* light-time point outside the JPL file: error, as for the Sun
+                             * and the planets (before 2026-11-19 the Moon was computed
+                             * from unset xx[] and xe[]) */
+                            return (retc);
                         }
                         for (i = 0; i <= 5; i++)
                             xx[i] += xe[i];
@@ -5137,7 +5435,26 @@ namespace SwissEphNet.CPort
             int fendian = (int)fdp.iflg & SEI_FILE_LITENDIAN;
             UInt32[] longs = new UInt32[MAXORD + 1];
             /* compute segment number */
+            //#if 1
             iseg = C.ToInt32((tjd - pdp.tfstart) / pdp.dseg);
+            //#else
+            //  // Dieter on 6 March 2026, bugfix for SE3: replaces previous line by next few lines
+            //  // It fixes the problem that older ephemeris files may start later than the 
+            //  // starting date mentioned in them
+            //  iseg = (int32) floor((tjd - pdp->tfstart) / pdp->dseg); 
+            //  if (iseg < 0) {
+            //    i = fdp->ipl[0]; 
+            //    if (serr != NULL) {
+            //      if (i > SE_AST_OFFSET) {
+            //        i -= SE_AST_OFFSET;
+            //        sprintf(serr, "ephemeris of asteroid %d not available for this date (1)", i);
+            //      } else {
+            //        sprintf(serr, "ephemeris of object %d not available for this date (2)", i);
+            //      }
+            //    }
+            //    return(NOT_AVAILABLE);
+            //  } // end of new code from 6 March 2026
+            //#endif
             /*if (tjd - pdp.tfstart < 0)
                 return(NOT_AVAILABLE);*/
             /* tjd == tfend passes the range check, but gives iseg == nndx, i.e. the
@@ -5198,10 +5515,12 @@ namespace SwissEphNet.CPort
                  * order + 1 */
                 if (nco > pdp.ncoe)
                 {
-                    //serr=C.sprintf("error in ephemeris file: %d coefficients instead of %d. ", nco, pdp.ncoe);
-                    //if (strlen(serr) + strlen(fdp.fnam) < AS_MAXCH - 1) {
-                    serr = C.sprintf("error in ephemeris file %s: %d coefficients instead of %d. ", fdp.fnam, nco, pdp.ncoe);
-                    //}
+                    // sweph.c:4695-4697 (e308765d): the short form is formatted first, the long form only if
+                    // strlen(serr) + strlen(fdp->fnam) < AS_MAXCH - 1
+                    serr = C.sprintf("error in ephemeris file: %d coefficients instead of %d. ", nco, pdp.ncoe);
+                    if (serr.Length + (fdp.fnam == null ? 0 : fdp.fnam.Length) < 256 - 1) {
+                        serr = C.sprintf("error in ephemeris file %s: %d coefficients instead of %d. ", fdp.fnam, nco, pdp.ncoe);
+                    }
                     //free(pdp.segp);
                     pdp.segp = null;
                     return (ERR);
@@ -5681,6 +6000,17 @@ namespace SwissEphNet.CPort
                 pdp.dqrot = doubles[7];
                 pdp.peri = doubles[8];
                 pdp.dperi = doubles[9];
+                /* a segment still held from the previous file of this planet is not
+                 * valid any more: its tseg0/tseg1 may still contain the next dates, and
+                 * then it would be used instead of the new file; also, the new file may
+                 * have another ncoe. This applies to all planets of the file, not only
+                 * to the planet that caused the switch and not only to planets with a
+                 * reference ellipse. */
+                if (pdp.segp != null)
+                {
+                    //free((void *) pdp.segp);
+                    pdp.segp = null;
+                }
                 /* alloc space for chebyshew coefficients */
                 /* if reference ellipse is used, read its coefficients */
                 if ((pdp.iflg & SEI_FLG_ELLIPSE) != 0)
@@ -5710,10 +6040,12 @@ namespace SwissEphNet.CPort
             return (OK);
         file_damage:
             //if (serr != null) {
-            //*serr = '\0';
-            //if (strlen(serr_file_damage) + strlen(fdp.fnam) + strlen(smsg) < AS_MAXCH) {
-            serr = C.sprintf(serr_file_damage, fdp.fnam, smsg);
-        //}
+            // sweph.c:5150-5154 (e308765d): *serr = '\0';
+            // if (strlen(serr_file_damage) + strlen(fdp->fnam) + strlen(smsg) < AS_MAXCH) sprintf(serr, serr_file_damage, fdp->fnam, smsg);
+            serr = String.Empty;
+            if (serr_file_damage.Length + (fdp.fnam == null ? 0 : fdp.fnam.Length) + (smsg == null ? 0 : smsg.Length) < 256) {
+                serr = C.sprintf(serr_file_damage, fdp.fnam, smsg);
+            }
         //}
         return_error:
             fdp.fptr.Dispose();
@@ -5755,7 +6087,11 @@ namespace SwissEphNet.CPort
                 // at all, silently accepting a partial read as success.
                 if (fp.Read(trg, 0, totsize) != totsize)
                 {
-                    serr = C.sprintf("Ephemeris file %s is damaged (2).", swed.fidat[ifno].fnam);
+                    // sweph.c:5191-5195 (e308765d): strcpy(serr, "Ephemeris file is damaged (1). ");
+                    // if (strlen(serr) + strlen(swed.fidat[ifno].fnam) < AS_MAXCH - 1) sprintf(serr, "Ephemeris file %s is damaged (2).", fnam);
+                    serr = "Ephemeris file is damaged (1). ";
+                    if (serr.Length + swed.fidat[ifno].fnam.Length < 256 - 1)
+                        serr = C.sprintf("Ephemeris file %s is damaged (2).", swed.fidat[ifno].fnam);
                     return (ERR);
                 }
                 else
@@ -5768,7 +6104,11 @@ namespace SwissEphNet.CPort
                 // rejected, not only a zero-byte one.
                 if (fp.Read(space, 0, totsize) != totsize)
                 {
-                    serr = C.sprintf("Ephemeris file %s is damaged (4).", swed.fidat[ifno].fnam);
+                    // sweph.c:5202-5206 (e308765d): strcpy(serr, "Ephemeris file is damaged (3). ");
+                    // if (strlen(serr) + strlen(swed.fidat[ifno].fnam) < AS_MAXCH - 1) sprintf(serr, "Ephemeris file %s is damaged (4).", fnam);
+                    serr = "Ephemeris file is damaged (3). ";
+                    if (serr.Length + swed.fidat[ifno].fnam.Length < 256 - 1)
+                        serr = C.sprintf("Ephemeris file %s is damaged (4).", swed.fidat[ifno].fnam);
                     return (ERR);
                 }
                 if (size != corrsize)
@@ -6237,7 +6577,8 @@ namespace SwissEphNet.CPort
                             iflag = (iflag & ~SwissEph.SEFLG_JPLEPH) | SwissEph.SEFLG_SWIEPH;
                             epheflag = SwissEph.SEFLG_SWIEPH;
                             //if (serr != NULL && strlen(serr) + 30 < AS_MAXCH)
-                            serr += " \ntrying Swiss Eph; ";
+                            if ((serr == null ? 0 : serr.Length) + 30 < 256)
+                                serr += " \ntrying Swiss Eph; ";
                             break;
                         }
                         else if (retc == BEYOND_EPH_LIMITS)
@@ -7230,9 +7571,15 @@ namespace SwissEphNet.CPort
             if (epheflag == 0)
                 epheflag = SwissEph.SEFLG_DEFAULTEPH;
             iflag = (iflag & ~SwissEph.SEFLG_EPHMASK) | epheflag;
-            /* SwissEph.SEFLG_JPLHOR only with JPL and Swiss Ephemeeris */
+            /* SEFLG_JPLHOR and SEFLG_JPLHOR_APPROX only with the JPL file: they are
+             * test features for comparisons with JPL Horizons. If they are removed,
+             * a warning is returned in serr. */
             if ((epheflag & SwissEph.SEFLG_JPLEPH) == 0)
+            {
+                if ((iflag & (SwissEph.SEFLG_JPLHOR | SwissEph.SEFLG_JPLHOR_APPROX)) != 0)
+                    serr = "JPL Horizons mode (SEFLG_JPLHOR, SEFLG_JPLHOR_APPROX) only with the JPL file; ignored";
                 iflag = iflag & ~(SwissEph.SEFLG_JPLHOR | SwissEph.SEFLG_JPLHOR_APPROX);
+            }
             /* planets that have no JPL Horizons mode */
             if (ipl == SwissEph.SE_OSCU_APOG || ipl == SwissEph.SE_TRUE_NODE
                 || ipl == SwissEph.SE_MEAN_APOG || ipl == SwissEph.SE_MEAN_NODE
@@ -8703,21 +9050,17 @@ namespace SwissEphNet.CPort
              * the height above sea level must be taken into account.
              * with the moon, an altitude of 3000 m makes a difference 
              * of about 2 arc seconds.
-             * height is referred to the average sea level. however, 
-             * the spheroid (geoid), which is defined by the average 
-             * sea level (or rather by all points of same gravitational
-             * potential), is of irregular shape and cannot easily
-             * be taken into account. therefore, we refer height to 
-             * the surface of the ellipsoid. the resulting error 
-             * is below 500 m, i.e. 0.2 - 0.3 arc seconds with the moon.
+             * Height is referred to the surface of the rotation ellipsoid. 
+             * The geoid, which is defined by the average sea level 
+             * (i.e. by all points of same gravitational potential), 
+             * is of irregular shape and cannot easily be taken into 
+             * account. The resulting error in position is roughly 
+             * 0.1 arcsec with the Moon and a lot smaller with the planets.
              */
             cosfi = Math.Cos(swed.topd.geolat * SwissEph.DEGTORAD);
             sinfi = Math.Sin(swed.topd.geolat * SwissEph.DEGTORAD);
             cc = 1 / Math.Sqrt(cosfi * cosfi + (1 - f) * (1 - f) * sinfi * sinfi);
             ss = (1 - f) * (1 - f) * cc;
-            /* neglect polar motion (displacement of a few meters), as long as 
-             * we use the earth ellipsoid */
-            /* ... */
             /* add sidereal time */
             cosl = Math.Cos((swed.topd.geolon + sidt) * SwissEph.DEGTORAD);
             sinl = Math.Sin((swed.topd.geolon + sidt) * SwissEph.DEGTORAD);
@@ -8823,29 +9166,7 @@ namespace SwissEphNet.CPort
         int open_jpl_file(CPointer<double> ss, string fname, string fpath, ref string serr)
         {
             int retc;
-            string serr2 = String.Empty;
             retc = SE.SweJPL.swi_open_jpl_file(ss, fname, fpath, ref serr);
-            /* If we fail with default JPL ephemeris (DE431), we try the second default
-             * (DE406), but only if serr is not NULL and an warning message can be 
-             * returned. */
-            // sweph.c:7446 uses strstr, a byte-wise search; Contains(string) without
-            // StringComparison is culture-sensitive. The (string, StringComparison)
-            // overload is not part of netstandard2.0, so use IndexOf(string,
-            // StringComparison.Ordinal) instead, which is.
-            if (retc != OK && fname.IndexOf(SwissEph.SE_FNAME_DFT, StringComparison.Ordinal) >= 0)
-            {
-                retc = SE.SweJPL.swi_open_jpl_file(ss, SwissEph.SE_FNAME_DFT2, fpath, ref serr2);
-                if (retc == OK)
-                {
-                    swed.jplfnam = SwissEph.SE_FNAME_DFT2;
-                    serr2 = "Error with JPL ephemeris file ";
-                    serr2 += SwissEph.SE_FNAME_DFT;
-                    serr2 += C.sprintf(": %s", serr);
-                    serr2 += ". Defaulting to ";
-                    serr2 += SwissEph.SE_FNAME_DFT2;
-                    serr = serr2;
-                }
-            }
             if (retc == OK)
             {
                 swed.jpldenum = (short)SE.SweJPL.swi_get_jpl_denum();
@@ -9000,11 +9321,13 @@ namespace SwissEphNet.CPort
             }
             //if (serr != null)
             {
-                //sprintf(serr, "star  not found");
-                //if (strlen(serr) + strlen(star) < SwissEph.AS_MAXCH)
-                //{
-                serr = sprintf("star %s not found", star);
-                //}
+                // sweph.c:7888-7891 (e308765d): the short form first, the long form only if
+                // strlen(serr) + strlen(star) < AS_MAXCH
+                serr = sprintf("star  not found");
+                if (serr.Length + (star == null ? 0 : star.Length) < SwissEph.AS_MAXCH)
+                {
+                    serr = sprintf("star %s not found", star);
+                }
                 return ERR;
             }
         found:

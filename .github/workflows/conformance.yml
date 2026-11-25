@@ -12,7 +12,7 @@ name: Conformance oracle
 # most needed to happen. Neither ci.yml nor baseline.yml in this repo filters
 # by paths at all; this workflow now matches that rather than maintaining a
 # second, incomplete allowlist. Whether it belongs on the PR path at all came
-# down to cost, not scope: a full run dispatches all 12,757 iterations
+# down to cost, not scope: a full run dispatches all 18,919 iterations
 # in-process in ~2s (measured locally, Tools/ConformanceKnownFailGen, Release
 # build) and `dotnet test` end-to-end (both TFMs, including host startup) in
 # ~8s -- see README.md's "Correctness oracle" section for the measurement.
@@ -60,7 +60,7 @@ jobs:
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: pwsh
         run: |
-          $pinnedSha = "43c9fe54fc1255a6a83dcb5f4364218ab4034e39"
+          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
           $line = git ls-tree HEAD external/swisseph
           $actual = ($line -split '\s+')[2]
           if ($actual -ne $pinnedSha) {
@@ -75,8 +75,8 @@ jobs:
       # (sparse-checkout patterns live in the submodule's own
       # .git/info/sparse-checkout, local configuration that a fresh clone does
       # not inherit from .gitmodules). Cached on the pinned commit SHA
-      # (external/swisseph is pinned to upstream master 43c9fe54 -- v2.10.3bfinal
-      # plus its 25 post-tag commits -- and only moves in a
+      # (external/swisseph is pinned to the upstream tag v2.10.04 (e308765d)
+      # and only moves in a
       # deliberate submodule-bump commit), so every run except the first after
       # a bump restores instantly instead of re-cloning.
       - name: Cache external/swisseph submodule
@@ -84,7 +84,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: external/swisseph
-          key: swisseph-submodule-43c9fe54fc1255a6a83dcb5f4364218ab4034e39
+          key: swisseph-submodule-e308765d10b9463ab0ed53b102ad454820ee0b43
 
       - name: Checkout external/swisseph submodule (sparse, ~25 MB)
         if: steps.submodule-cache.outputs.cache-hit != 'true'
@@ -94,7 +94,7 @@ jobs:
           # actual gitlink (git ls-files --stage external/swisseph) -- this
           # workflow does not parse it out dynamically, to keep the "what
           # commit will this checkout" answer readable from this file alone.
-          $pinnedSha = "43c9fe54fc1255a6a83dcb5f4364218ab4034e39"
+          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
           git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
           Push-Location external/swisseph
           git config core.autocrlf false
@@ -155,6 +155,26 @@ jobs:
           --blame-hang-timeout 15min
           --blame-hang-dump-type mini
 
+      # Tests/SwissEphNet.Tests' ephemeris-file tests (FileBoundaryHistoryTest,
+      # HeliocentricLightTimeTest, CalcMessagesTest) skip when external/swisseph/ephe is absent, which
+      # is the case in ci.yml and release.yml (no submodule there), so this is the only job that runs
+      # them. SWISSEPH_REQUIRE_EPHE=1 turns their skip into a failure: a wrong ephe path must not
+      # report green with the tests skipped. Bit-exact on Windows x64, within a tolerance elsewhere
+      # (V21004TestSupport.cs, CReference).
+      - name: Run ephemeris-file unit tests (files required)
+        shell: pwsh
+        env:
+          SWISSEPH_REQUIRE_EPHE: "1"
+          SWISSEPH_CONFORMANCE_EPHE: ${{ github.workspace }}/external/swisseph/ephe
+        run: >
+          dotnet test Tests/SwissEphNet.Tests/SwissEphNet.Tests.csproj -p:TestTfmsInParallel=false
+          -c Release
+          --filter "FullyQualifiedName~FileBoundaryHistoryTest|FullyQualifiedName~HeliocentricLightTimeTest|FullyQualifiedName~CalcMessagesTest|FullyQualifiedName~SerrLengthFallbackTest|FullyQualifiedName~TryingSwissEphGuardTest"
+          --logger "console;verbosity=detailed"
+          --blame-hang
+          --blame-hang-timeout 5min
+          --blame-hang-dump-type mini
+
       - name: Upload conformance report
         uses: actions/upload-artifact@v7
         if: always()
@@ -170,7 +190,7 @@ jobs:
   # file's own "verify-known-fail-log" job comment style, and oracle.yml's macos-exactness job
   # header, for why job-level would be wrong -- it would also swallow the submodule-checkout and
   # known-fail-generator-build steps, which have nothing to do with cross-platform drift).
-  # macOS was previously unmeasured on this instrument entirely (docs/compliance-2.10.03.md,
+  # macOS was previously unmeasured on this instrument entirely (docs/compliance-2.10.04.md,
   # "What this record does not cover"). continue-on-error stays here, unlike oracle.yml's
   # macos-exactness job (which shed its own initial flag after one clean run, per that job's own
   # header comment), until this leg has actually run clean in CI at least once -- promoting it to
@@ -186,7 +206,7 @@ jobs:
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: pwsh
         run: |
-          $pinnedSha = "43c9fe54fc1255a6a83dcb5f4364218ab4034e39"
+          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
           $line = git ls-tree HEAD external/swisseph
           $actual = ($line -split '\s+')[2]
           if ($actual -ne $pinnedSha) {
@@ -200,13 +220,13 @@ jobs:
         uses: actions/cache@v6
         with:
           path: external/swisseph
-          key: swisseph-submodule-macos-43c9fe54fc1255a6a83dcb5f4364218ab4034e39
+          key: swisseph-submodule-macos-e308765d10b9463ab0ed53b102ad454820ee0b43
 
       - name: Checkout external/swisseph submodule (sparse, ~25 MB)
         if: steps.submodule-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          $pinnedSha = "43c9fe54fc1255a6a83dcb5f4364218ab4034e39"
+          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
           git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
           Push-Location external/swisseph
           git config core.autocrlf false
@@ -251,6 +271,27 @@ jobs:
           --results-directory TestResults
           --blame-hang
           --blame-hang-timeout 15min
+          --blame-hang-dump-type mini
+
+      # Tests/SwissEphNet.Tests' ephemeris-file tests (FileBoundaryHistoryTest,
+      # HeliocentricLightTimeTest, CalcMessagesTest) skip when external/swisseph/ephe is absent, which
+      # is the case in ci.yml and release.yml (no submodule there), so this is the only job that runs
+      # them. SWISSEPH_REQUIRE_EPHE=1 turns their skip into a failure: a wrong ephe path must not
+      # report green with the tests skipped. Bit-exact on Windows x64, within a tolerance elsewhere
+      # (V21004TestSupport.cs, CReference).
+      - name: Run ephemeris-file unit tests (files required; never fails the job, as above)
+        shell: pwsh
+        continue-on-error: true
+        env:
+          SWISSEPH_REQUIRE_EPHE: "1"
+          SWISSEPH_CONFORMANCE_EPHE: ${{ github.workspace }}/external/swisseph/ephe
+        run: >
+          dotnet test Tests/SwissEphNet.Tests/SwissEphNet.Tests.csproj -p:TestTfmsInParallel=false
+          -c Release
+          --filter "FullyQualifiedName~FileBoundaryHistoryTest|FullyQualifiedName~HeliocentricLightTimeTest|FullyQualifiedName~CalcMessagesTest|FullyQualifiedName~SerrLengthFallbackTest|FullyQualifiedName~TryingSwissEphGuardTest"
+          --logger "console;verbosity=detailed"
+          --blame-hang
+          --blame-hang-timeout 5min
           --blame-hang-dump-type mini
 
       - name: Upload conformance report

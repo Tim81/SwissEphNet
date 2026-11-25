@@ -282,8 +282,12 @@ namespace SwissEphNet.CPort
             /* plausibility test of these constants. Start and end date must be
              * between -20000 and +20000, segment size >= 1 and <= 200 */
             if (js.eh_ss[0] < -5583942 || js.eh_ss[1] > 9025909 || js.eh_ss[2] < 1 || js.eh_ss[2] > 200) {
-                //serr= "alleged ephemeris file has invalid format.";
-                serr = C.sprintf("alleged ephemeris file (%s) has invalid format.", js.jplfname);
+                // swejpl.c:229-232 (e308765d): strcpy(serr, "alleged ephemeris file has invalid format.");
+                // if (strlen(serr) + strlen(js->jplfname) + 3 < AS_MAXCH) sprintf(serr, "alleged ephemeris file (%s) has invalid format.", js->jplfname);
+                serr = "alleged ephemeris file has invalid format.";
+                if (serr.Length + (js.jplfname == null ? 0 : js.jplfname.Length) + 3 < 256) {
+                    serr = C.sprintf("alleged ephemeris file (%s) has invalid format.", js.jplfname);
+                }
                 return (Sweph.NOT_AVAILABLE);
             }
             /* ncon = number of constants */
@@ -862,8 +866,12 @@ namespace SwissEphNet.CPort
                     /* some of our files are one record too long */
                   && flen - nb != ksize * nrecl
                   ) {
-                    //serr=C.sprintf("JPL ephemeris file is mutilated; length = %d instead of %d.", (uint)flen, (uint)nb);
-                    serr = C.sprintf("JPL ephemeris file %s is mutilated; length = %d instead of %d.", js.jplfname, flen, nb);
+                    // swejpl.c:755-759 (e308765d): the short form is formatted first, the long form only if
+                    // strlen(serr) + strlen(js->jplfname) < AS_MAXCH - 1
+                    serr = C.sprintf("JPL ephemeris file is mutilated; length = %d instead of %d.", (uint)flen, (uint)nb);
+                    if (serr.Length + (js.jplfname == null ? 0 : js.jplfname.Length) < 256 - 1) {
+                        serr = C.sprintf("JPL ephemeris file %s is mutilated; length = %d instead of %d.", js.jplfname, (uint)flen, (uint)nb);
+                    }
                     return (Sweph.NOT_AVAILABLE);
                 }
                 /* check if start and end dates in segments are the same as in 

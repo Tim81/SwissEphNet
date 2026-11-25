@@ -9,11 +9,13 @@ namespace SwissEphNet.Conformance.Tests.Corpus;
 /// One "key: value # comment" line as it literally appears in t.exp, keyed by
 /// name (e.g. "jd", "xx[0]", "ihsy"). The value is stored exactly as read
 /// (including any trailing "# comment" text) -- see <see cref="GetDouble"/>
-/// and <see cref="GetInt"/> for why: the reference reader (reader.c) never
-/// strips trailing comments from a value either, it just relies on sscanf's
-/// leading-numeric-prefix behavior when it later parses the value as a
-/// number. We reproduce that by truncating at "#" only inside the numeric
-/// accessors, never when a field is read as a raw string.
+/// and <see cref="GetInt"/> for why: the reference reader strips a trailing
+/// comment when it reads a line (reader.c strip_comment, called from read_block;
+/// since upstream 2026-11-22, e308765d -- before that the comment stayed in the value
+/// and sscanf's leading-numeric-prefix behavior hid it from numbers). This
+/// port keeps the text as read and truncates at "#" inside the numeric
+/// accessors only; a raw string is returned whole. That is equivalent for the
+/// corpus, where no string value carries a " #" comment.
 /// </summary>
 public sealed class ExpFields
 {
@@ -132,6 +134,22 @@ public sealed class ExpFields
     }
 
     public int? TryGetInt(string name) => Contains(name) ? GetInt(name) : null;
+
+    /// <summary>
+    /// Like <see cref="TryGetInt"/> but without recording the key as consumed. For lookups the
+    /// reference C makes on its own behalf and that are not a testcase input of the harness's --
+    /// tolerances.c reads the iteration's "iflag" this way (get_entry("iflag", I, ctx)) to classify
+    /// a value, whichever suite is running.
+    /// </summary>
+    internal int? PeekInt(string name)
+    {
+        if (!_values.TryGetValue(name, out var raw))
+        {
+            return null;
+        }
+
+        return int.TryParse(TruncateComment(raw), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) ? value : null;
+    }
 
     /// <summary>Comparison-tracking counterpart to <see cref="GetInt"/> -- see <see cref="GetDoubleCompared"/>.</summary>
     internal int GetIntCompared(string name)

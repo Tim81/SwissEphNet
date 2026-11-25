@@ -17,10 +17,17 @@ namespace SwissEphNet.Conformance.Tests.Dispatch;
 /// </remarks>
 internal sealed class Suite02FixStar
 {
+    // suite_02_fixstar.c:5-7: "static double xx[6],jd; static int rc, iflag, ipl; static char serr[255],
+    // star[100];" -- file scope, shared by every iteration and testcase. With no SETUP block nothing
+    // resets them between iterations, so xx and serr carry over too, wherever a call returns without
+    // writing them. rc, ipl, jd and star are always assigned before they are read.
     private int _iflag;
+    private readonly double[] _xx = new double[6];
+    private string _serr = "";
 
-    public DispatchOutcome Dispatch(SwissEph swe, int testCaseId, ExpIteration iteration, Precision precision)
+    public DispatchOutcome Dispatch(SwissEph swe, TestCaseScope scope, ExpIteration iteration)
     {
+        var testCaseId = scope.TestCaseId;
         var f = iteration.Fields;
 
         switch (testCaseId)
@@ -30,32 +37,29 @@ internal sealed class Suite02FixStar
                 var jd = f.GetDouble("jd");
                 _iflag = f.GetInt("iflag");
                 var star = f.GetRawString("star");
-                var xx = new double[6];
-                string serr = "";
-                var rc = swe.swe_fixstar(ref star, jd, _iflag, xx, ref serr);
-                return CheckCalc(f, precision, rc, xx, serr);
+                var xx = _xx;
+                var rc = swe.swe_fixstar(ref star, jd, _iflag, xx, ref _serr);
+                return CheckCalc(f, scope, rc, xx, _serr);
             }
 
             case 2:
             {
                 var jd = f.GetDouble("jd");
                 var star = f.GetRawString("star");
-                var xx = new double[6];
-                string serr = "";
-                var rc = swe.swe_fixstar_ut(ref star, jd, _iflag, xx, ref serr);
-                return CheckCalc(f, precision, rc, xx, serr);
+                var xx = _xx;
+                var rc = swe.swe_fixstar_ut(ref star, jd, _iflag, xx, ref _serr);
+                return CheckCalc(f, scope, rc, xx, _serr);
             }
 
             case 3:
             {
                 var star = f.GetRawString("star");
                 var mag = 0.0;
-                string serr = "";
-                var rc = swe.swe_fixstar_mag(ref star, ref mag, ref serr);
-                var ctx = new CheckContext(f, precision);
+                var rc = swe.swe_fixstar_mag(ref star, ref mag, ref _serr);
+                var ctx = new CheckContext(f, scope);
                 ctx.CheckD("mag", mag);
                 ctx.CheckI("rc", rc);
-                ctx.CheckS("serr", serr);
+                ctx.CheckS("serr", _serr);
                 return DispatchOutcome.FromMismatches(ctx);
             }
 
@@ -65,11 +69,10 @@ internal sealed class Suite02FixStar
                 // discarded, only the swe_fixstar result is compared.
                 var jd = f.GetDouble("jd");
                 var star = f.GetRawString("star");
-                var xx = new double[6];
-                string serr = "";
-                swe.swe_calc(jd, 2 /* SE_MERCURY */, _iflag, xx, ref serr);
-                var rc = swe.swe_fixstar(ref star, jd, _iflag, xx, ref serr);
-                return CheckCalc(f, precision, rc, xx, serr);
+                var xx = _xx;
+                swe.swe_calc(jd, 2 /* SE_MERCURY */, _iflag, xx, ref _serr);
+                var rc = swe.swe_fixstar(ref star, jd, _iflag, xx, ref _serr);
+                return CheckCalc(f, scope, rc, xx, _serr);
             }
 
             case 5:
@@ -77,13 +80,12 @@ internal sealed class Suite02FixStar
                 // "Algol, then Betelgeuze": priming swe_fixstar("Algol") call is
                 // discarded, only the second (real) star is compared.
                 var jd = f.GetDouble("jd");
-                var xx = new double[6];
-                string serr = "";
+                var xx = _xx;
                 var algol = "Algol";
-                swe.swe_fixstar(ref algol, jd, _iflag, xx, ref serr);
+                swe.swe_fixstar(ref algol, jd, _iflag, xx, ref _serr);
                 var star = f.GetRawString("star");
-                var rc = swe.swe_fixstar(ref star, jd, _iflag, xx, ref serr);
-                return CheckCalc(f, precision, rc, xx, serr);
+                var rc = swe.swe_fixstar(ref star, jd, _iflag, xx, ref _serr);
+                return CheckCalc(f, scope, rc, xx, _serr);
             }
 
             case 6:
@@ -91,20 +93,18 @@ internal sealed class Suite02FixStar
                 var jd = f.GetDouble("jd");
                 _iflag = f.GetInt("iflag");
                 var star = f.GetRawString("star");
-                var xx = new double[6];
-                string serr = "";
-                var rc = swe.swe_fixstar2(ref star, jd, _iflag, xx, ref serr);
-                return CheckCalc(f, precision, rc, xx, serr);
+                var xx = _xx;
+                var rc = swe.swe_fixstar2(ref star, jd, _iflag, xx, ref _serr);
+                return CheckCalc(f, scope, rc, xx, _serr);
             }
 
             case 7:
             {
                 var jd = f.GetDouble("jd");
                 var star = f.GetRawString("star");
-                var xx = new double[6];
-                string serr = "";
-                var rc = swe.swe_fixstar2_ut(ref star, jd, _iflag, xx, ref serr);
-                return CheckCalc(f, precision, rc, xx, serr);
+                var xx = _xx;
+                var rc = swe.swe_fixstar2_ut(ref star, jd, _iflag, xx, ref _serr);
+                return CheckCalc(f, scope, rc, xx, _serr);
             }
 
             default:
@@ -112,9 +112,9 @@ internal sealed class Suite02FixStar
         }
     }
 
-    private static DispatchOutcome CheckCalc(ExpFields f, Precision precision, int rc, double[] xx, string serr)
+    private static DispatchOutcome CheckCalc(ExpFields f, TestCaseScope scope, int rc, double[] xx, string serr)
     {
-        var ctx = new CheckContext(f, precision);
+        var ctx = new CheckContext(f, scope);
         ctx.CheckDD("xx", xx);
         ctx.CheckI("rc", rc);
         ctx.CheckS("serr", serr);

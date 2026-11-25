@@ -6,19 +6,22 @@
     <RootNamespace>SwissEphNet</RootNamespace>
     <PackageId>SwissEphSharp</PackageId>
     <!--
-      Version scheme: upstream Swiss Ephemeris version + port revision, e.g.
-      2.10.3 tracks Swiss Ephemeris C 2.10.03 (upstream tag v2.10.3bfinal),
-      the version the port itself now targets end to end: SE_VERSION,
-      sweph.c, swecl.c, swehouse.c and swetest.c have all landed. This is
-      the version intended for the first nuget.org release, under the
-      SwissEphSharp package ID. It cannot go out under SwissEphNet: 2.8.0.2
+      Version scheme: upstream Swiss Ephemeris version + port revision.
+
+      History: 2.10.3 tracked Swiss Ephemeris C 2.10.03 (upstream tag
+      v2.10.3bfinal), the version the port then targeted end to end:
+      SE_VERSION, sweph.c, swecl.c, swehouse.c and swetest.c had all landed.
+      That was the version intended for the first nuget.org release, under
+      the SwissEphSharp package ID. It cannot go out under SwissEphNet: 2.8.0.2
       already holds that ID, and the library no longer ships
       net40/netstandard1.0, so it would not be a drop-in replacement for
       that package anyway. Until the release lands, build from source or
       reference the project directly.
 
-      2.10.3.3 tracks upstream master at 43c9fe54 (v2.10.3bfinal plus 25
-      commits; no newer tag exists). SE_VERSION is still "2.10.03".
+      Current: 2.10.4.0 tracks upstream tag v2.10.04 (e308765d), the first
+      upstream tag since v2.10.3bfinal, and is what the port targets now. SE_VERSION is "2.10.04". NuGet drops the trailing
+      zero, so the package shows as 2.10.4; the assembly keeps 2.10.4.0.
+      (2.10.3.3 tracked upstream master at 43c9fe54.)
 
       The "port revision" above is the fourth component, for a port-only
       release made while upstream stays put: 2.10.3, then 2.10.3.1, 2.10.3.2,
@@ -50,7 +53,7 @@
       component. Decide it deliberately at the point of making one; do not
       discover it from a consumer's FileLoadException.
     -->
-    <Version>2.10.3.3</Version>
+    <Version>2.10.4.0</Version>
     <!--
       Plain SemVer, with no descriptive text. The SDK appends +<commit sha> to
       whatever is here, so anything with spaces or parentheses in the core
@@ -60,7 +63,7 @@
       used to carry now lives in the AssemblyMetadata items below, which is
       where arbitrary text belongs.
     -->
-    <InformationalVersion>2.10.3.3</InformationalVersion>
+    <InformationalVersion>2.10.4.0</InformationalVersion>
     <Authors>Yan Grenier, Timothy van der Ham</Authors>
     <!--
       Company is the publisher field, distinct from Authors above: NuGet shows it separately, and
@@ -73,7 +76,7 @@
     <Company>Timothy van der Ham</Company>
     <Product>SwissEphSharp</Product>
     <Title>SwissEphSharp</Title>
-    <Description>Swiss Ephemeris .Net portage. SwissEphSharp is the package ID this project is distributed under: the continuation of Yan Grenier's SwissEphNet C# port, tracking Swiss Ephemeris 2.10.03. The assembly is now named SwissEphSharp too, so it can coexist with the original SwissEphNet package; the namespace stays SwissEphNet, so source that only uses the public API needs no changes beyond the PackageReference itself. Callers of the removed OnLoadFile event still need to migrate to SwissEph.FileProvider. Not published or endorsed by Yan Grenier or Astrodienst.</Description>
+    <Description>Swiss Ephemeris .Net portage. SwissEphSharp is the package ID this project is distributed under: the continuation of Yan Grenier's SwissEphNet C# port, tracking Swiss Ephemeris 2.10.04. The assembly is now named SwissEphSharp too, so it can coexist with the original SwissEphNet package; the namespace stays SwissEphNet, so source that only uses the public API needs no changes beyond the PackageReference itself. Callers of the removed OnLoadFile event still need to migrate to SwissEph.FileProvider. Not published or endorsed by Yan Grenier or Astrodienst.</Description>
     <Copyright>Copyright (C) 1997-2021 Astrodienst AG; (C) 2014-2019 Yan Grenier; (C) 2026 Timothy van der Ham</Copyright>
     <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/Tim81/SwissEphNet</PackageProjectUrl>
@@ -92,7 +95,62 @@
       an API this library no longer has.
     -->
     <PackageReadmeFile>README.nuget.md</PackageReadmeFile>
-    <PackageReleaseNotes>2.10.3.3:
+    <PackageReleaseNotes>2.10.4.0:
+- BREAKING: SE_FNAME_DFT2 is removed. Upstream deleted it together with the DE406 fallback in
+  open_jpl_file, so code that names the constant no longer compiles. SE_FNAME_DFT is now
+  de441.eph and SE_DE_NUMBER is 441. A caller that has only de431.eph must now call
+  swe_set_jpl_file("de431.eph"). The changed values (SE_TIDAL_DEFAULT, SE_TIDAL_SWIEPH,
+  SE_TIDAL_JPLEPH, SEMOD_DELTAT_DEFAULT, SEMOD_NDELTAT, SE_DE_NUMBER, SE_FNAME_DFT) are C#
+  consts, so code compiled against 2.10.3.x keeps the old values until it is recompiled.
+- Results move without a code change. The default Delta T model is now
+  SEMOD_DELTAT_STEPHENSON_ETC_2020 (new, model 6), the Morrison, Stephenson, Hohenkerk and
+  Zawilski 2021 spline, used before 1 January 1962; dt[] runs to 2033 and adjust_for_tidacc()
+  changed. UT-input results before 1962 and after 2020 differ from 2.10.3.3. Measured from the
+  MSVC-built C, swe_deltat_ex at JD 2086302.5 (1 January 1000 proleptic Gregorian, 27 December 999
+  Julian) is 0.018871612655972776 days under model 6 and 0.016726901931961108 days under model 5,
+  the former default: 185.303 s apart.
+  SE_TIDAL_DEFAULT is SE_TIDAL_DE441 (was SE_TIDAL_DE431) and SE_TIDAL_STEPHENSON_2020 is new.
+- With SEFLG_HELCTR the second light-time pass uses the heliocentric distance (upstream 8178d0ac;
+  upstream's figures: Mars in 2016 by 21 mas, Mercury up to 0.84 arcseconds).
+- swe_calc chooses the ephemeris file by the date of the call, so results at file boundaries no
+  longer depend on call history (upstream 79d3553f, 85eb3a5d). When the light-time point falls
+  outside the JPL file, the Moon falls back to Moshier.
+- The Chiron, Pholus, interpolated-apsides and file-limit messages now give the JD and the calendar
+  date, for example "Chiron not available at JD 1967600.5 = 31.12.0674j; restricted to JD
+  1967601.5 = 01.01.0675j - JD 3419437.5 = 01.01.4650". swetest -lim prints JD and -fT dates and
+  shows the errors of the interpolated apsides.
+- swe_set_astro_models("") selects the current version's models. SEFLG_JPLHOR without the JPL file
+  returns a warning in serr. load_dpsi_deps reads the EOP dpsi column at the corrected offsets and
+  swe_close resets the EOP state. Upstream's sepl, semo and seas files were regenerated on DE441;
+  take the v2.10.04 files if you rely on the ephemeris data.
+- Port fix: swed is now cleared in place on first initialisation, as sweph.c:1257 does. On a fresh
+  SwissEph, swe_get_astro_models("SE2.06") listed the default models where the C gives "-amod5,...",
+  and swe_nod_aps returned wrong apsides for some bodies and dates (Sun MEAN at JD 1000000:
+  perihelion 215.299, the C gives 302.338). This predates the sync.
+- Also in this release, merged since 2.10.3.3: read_const no longer drops leading digits of an
+  asteroid's name beyond the C's prefix scan; the SEFLG_SIDEREAL Moshier-fallback warning is no
+  longer erased by plaus_iflag; a planet file opened as an asteroid file returns an error instead
+  of throwing; a seorbel.txt line with a trailing comma is accepted; swetest strcat slips,
+  FormatToDegreeMinuteSecond rounding, C.sprintf signs and non-finite values, non-seekable file
+  streams, and double-to-int conversions on .NET 9 and later are fixed; fixed-star loading is
+  faster. See CHANGELOG.md for each.
+- The upstream pin moves from 43c9fe54 to the tag v2.10.04 (e308765d10b9463ab0ed53b102ad454820ee0b43),
+  the first upstream tag since v2.10.3bfinal. SE_VERSION is "2.10.04".
+- Verification against the MSVC-built C at e308765d: both oracle grids are bit-identical (27,437
+  analytic and 3,376 file rows) with empty known-diff lists; 251 of 268 swetest cases are
+  byte-identical and the other 17 differ only by the directory separator and -nan(ind). The
+  conformance corpus is now 11 suites and 18,919 iterations; known-fail.tsv has 1,401 rows (all
+  VALUE-MISMATCH, down from 2,395; the harness no longer skips iterations for want of data and the
+  DATA-MISSING category is gone), and all 1,401 are triaged against the C as drift, none a port
+  defect; each is also pinned field by field in known-fail-pins.tsv. The 972 house-speed rows of 2.10.3.3 pass against
+  the regenerated t.exp.
+- Known issues: v2.10.04's dt[] has 69.2093 for 2023 where USNO's deltat.data has 69.2039, and the
+  prediction 69.05 for 2026.0 where the measured value is 69.1099; the port keeps the C's values and
+  a correction is being prepared for upstream. Upstream's setest harness (not the library)
+  declares undersized arrays in suite_09_rise.c and aborts under gcc's stack protector at 9.2.9.
+  See docs/known-issues.md.
+
+2.10.3.3:
 - House cusp speeds are now analytic for every house system. swe_houses_ex2 and
   swe_houses_armc_ex2 (and the older entry points that forward to them) previously used a
   finite-difference interpolation that returned values in the millions of degrees per day near the
@@ -186,7 +244,7 @@
   all 100% EXACT on both TFMs. A new NutationTableFidelityTest value-diffs the nutation
   coefficient table against upstream source instead of only checking its length.
 - CI gained macOS legs on the baseline and conformance gates (report-only).
-- No breaking changes. See docs/known-issues.md and docs/compliance-2.10.03.md for the
+- No breaking changes. See docs/known-issues.md and docs/compliance-2.10.04.md for the
   verification detail behind this release.
 
 2.10.3 (the first release published to nuget.org, under the SwissEphSharp
@@ -231,7 +289,7 @@ package ID):
   fixed between 2.08 and 2.10.03 that this port now also carries: swe_nod_aps/swe_nod_aps_ut
   returning all-zero nodes and apsides, an obliquity read that affected every SEFLG_SWIEPH
   position, eclipse magnitude and obscuration off by a factor of 100, and the swe_house_pos buffer
-  that was one element short for Gauquelin houses. See docs/compliance-2.10.03.md for the
+  that was one element short for Gauquelin houses. See docs/compliance-2.10.04.md for the
   verification numbers behind this release and docs/known-issues.md and the "V:2.10.3" section
   of README.md for the full list.
 
@@ -273,9 +331,9 @@ https://github.com/Tim81/SwissEphNet/blob/main/CHANGELOG.md.
     AssemblyMetadata takes arbitrary text without having to parse as a version.
   -->
   <ItemGroup>
-    <AssemblyMetadata Include="UpstreamSwissEphemerisVersion" Value="2.10.03" />
-    <AssemblyMetadata Include="UpstreamSwissEphemerisTag" Value="v2.10.3bfinal" />
-    <AssemblyMetadata Include="UpstreamSwissEphemerisCommit" Value="43c9fe54fc1255a6a83dcb5f4364218ab4034e39" />
+    <AssemblyMetadata Include="UpstreamSwissEphemerisVersion" Value="2.10.04" />
+    <AssemblyMetadata Include="UpstreamSwissEphemerisTag" Value="v2.10.04" />
+    <AssemblyMetadata Include="UpstreamSwissEphemerisCommit" Value="e308765d10b9463ab0ed53b102ad454820ee0b43" />
   </ItemGroup>
 
   <!--

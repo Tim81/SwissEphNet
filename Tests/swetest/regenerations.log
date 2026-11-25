@@ -17,3 +17,4 @@
 2026-11-08 PR #46 (15 -> 17, 2 more row(s)): Add POST_TAG rows for the 94621aba pin: the two -astpos rows hit seasnam.txt not-found and differ only by the documented DIR_GLUE separator
 2026-11-08 PR #46 (17 -> 16, 1 fewer row(s)): Drop POST_TAG|ASTPOS_ORB, which hit the same seasnam.txt not-found error as ASTPOS_DEFAULT_ORB before the orb is used; the remaining row is renamed POST_TAG|ASTPOS
 2026-11-19 PR #49 (16 -> 16, no change in row count): C.sprintf now prints non-finite doubles as C does (nan/inf); FMT_MULTI|6's interpolated-apogee NaN fields move from NaN to nan, closer to the C's -nan(ind)/nan. No other case changes.
+2026-11-24 PR #50 (16 -> 17, 1 more row(s)): v2.10.04 sync (e308765d): -lim now prints JD and -fT dates (34959cf5) and FAR_FUTURE now prints a sepl_24.se1 not-found warning in both C and port; every differing line still differs only by the directory separator or the CRT's -nan(ind) text, as before

@@ -86,7 +86,7 @@ namespace SwissEphNet.CPort
          * move over from swephexp.h
          */
 
-        public const String SE_VERSION = "2.10.03";  //"2.07.02a"
+        public const String SE_VERSION = "2.10.04";  //"2.07.02a"
 
         /// <summary>
         /// 2000 January 1.5
@@ -227,6 +227,7 @@ namespace SwissEphNet.CPort
         public const int SEI_FILE_EFPOSBEGIN = 500;
 
         public const string SE_FILE_SUFFIX = "se1";
+        public const string SE3_FILE_SUFFIX = "se3";
 
         public const int SEI_NEPHFILES = 7;
         public const int SEI_CURR_FPOS = -1;
@@ -675,6 +676,19 @@ namespace SwissEphNet.CPort
             public double[] nutlo { get; private set; }	/* nutation in longitude and obliquity */
             public double snut, cnut;	/* sine and cosine of nutation in obliquity */
             public double[,] matrix { get; private set; }
+            /// <summary>
+            /// The port's counterpart of memset((void *) &amp;swed.nut, 0, sizeof(struct nut))
+            /// (sweph.c:1282-1284, e308765d): zeroes the fields and the arrays in place, so a
+            /// reference to this object stays valid as a pointer into the C struct does.
+            /// </summary>
+            public void Clear()
+            {
+                tnut = 0;
+                Array.Clear(nutlo, 0, nutlo.Length);
+                snut = 0;
+                cnut = 0;
+                Array.Clear(matrix, 0, matrix.Length);
+            }
         }
 
         public class plantbl
@@ -712,6 +726,8 @@ namespace SwissEphNet.CPort
             public CFile fptr;		/* ephemeris file pointer */
             public double tfstart;       /* file may be used from this date */
             public double tfend;         /*      through this date          */
+            public double tnom0;         /* dates this open file serves, [tnom0, tnom1):  */
+            public double tnom1;         /* its nominal range, with the first-day rule    */
             public Int32 iflg; 		/* byte reorder flag and little/bigendian flag */
             public short npl;		/* how many planets in file */
             public int[] ipl = new int[SEI_FILE_NMAXPLAN];	/* planet numbers */
@@ -723,7 +739,7 @@ namespace SwissEphNet.CPort
             /// are zeroed and the array object is kept.</summary>
             public void Clear() {
                 fnam = null; fversion = 0; astnam = null; sweph_denum = 0;
-                fptr = null; tfstart = 0; tfend = 0; iflg = 0; npl = 0;
+                fptr = null; tfstart = 0; tfend = 0; tnom0 = 0; tnom1 = 0; iflg = 0; npl = 0;
                 Array.Clear(ipl, 0, ipl.Length);
             }
 }
@@ -867,6 +883,67 @@ namespace SwissEphNet.CPort
                 nut2000 = new nut();
                 nutv = new nut();
             }
+            /// <summary>
+            /// The port's counterpart of sweph.c:1257 (e308765d),
+            /// <c>memset((void *) &amp;swed, 0, sizeof(struct swe_data))</c>: brings every field back to the
+            /// state <c>new swe_data()</c> produces, clearing arrays and nested objects in place instead of
+            /// replacing them, so a reference taken before the clear (swe_get_astro_models' pmodel) stays
+            /// valid, as a pointer into the C struct does.
+            /// </summary>
+            public void ClearInPlace()
+            {
+                ephe_path_is_set = false;
+                jpl_file_is_open = false;
+                fixfp = null;
+                ephepath = String.Empty;
+                jplfnam = String.Empty;
+                jpldenum = 0;
+                last_epheflag = 0;
+                geopos_is_set = false;
+                ayana_is_set = false;
+                is_old_starfile = false;
+                eop_tjd_beg = 0;
+                eop_tjd_beg_horizons = 0;
+                eop_tjd_end = 0;
+                eop_tjd_end_add = 0;
+                eop_dpsi_loaded = 0;
+                tid_acc = 0;
+                is_tid_acc_manual = false;
+                init_dt_done = false;
+                swed_is_initialised = false;
+                delta_t_userdef_is_set = false;
+                delta_t_userdef = 0;
+                ast_G = 0;
+                ast_H = 0;
+                ast_diam = 0;
+                astelem = null;
+                i_saved_planet_name = 0;
+                saved_planet_name = null;
+                dpsi = default(CPointer<double>);
+                deps = default(CPointer<double>);
+                timeout = 0;
+                Array.Clear(astro_models, 0, astro_models.Length);
+                do_interpolate_nut = false;
+                interpol = default(interpol);
+                foreach (var fd in fidat) fd.Clear();
+                gcdat = default(gen_const);
+                foreach (var pd in pldat) pd.Clear();
+                foreach (var pd in nddat) pd.Clear();
+                foreach (var sp in savedat) sp.Clear();
+                oec.Clear();
+                oec2000.Clear();
+                nut.Clear();
+                nut2000.Clear();
+                nutv.Clear();
+                topd.geolon = 0; topd.geolat = 0; topd.geoalt = 0;
+                topd.teval = 0; topd.tjd_ut = 0;
+                Array.Clear(topd.xobs, 0, topd.xobs.Length);
+                sidd = default(sid_data);
+                n_fixstars_real = 0;
+                n_fixstars_named = 0;
+                n_fixstars_records = 0;
+                fixed_stars = null;
+            }
             public bool ephe_path_is_set;
             public bool /*short*/ jpl_file_is_open;
             public CFile fixfp;/* fixed stars file pointer */
@@ -930,6 +1007,18 @@ namespace SwissEphNet.CPort
         public class epsilon
         {
             public double teps, eps, seps, ceps; 	/* jd, eps, sin(eps), cos(eps) */
+            /// <summary>
+            /// The port's counterpart of memset((void *) &amp;swed.oec, 0, sizeof(struct epsilon))
+            /// (sweph.c:1280-1281, e308765d): zeroes the fields in place, so a reference to this
+            /// object stays valid as a pointer into the C struct does.
+            /// </summary>
+            public void Clear()
+            {
+                teps = 0;
+                eps = 0;
+                seps = 0;
+                ceps = 0;
+            }
         };
 
         public class plan_data
