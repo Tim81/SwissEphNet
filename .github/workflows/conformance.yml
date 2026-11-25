@@ -169,7 +169,7 @@ jobs:
         run: >
           dotnet test Tests/SwissEphNet.Tests/SwissEphNet.Tests.csproj -p:TestTfmsInParallel=false
           -c Release
-          --filter "FullyQualifiedName~FileBoundaryHistoryTest|FullyQualifiedName~HeliocentricLightTimeTest|FullyQualifiedName~CalcMessagesTest"
+          --filter "FullyQualifiedName~FileBoundaryHistoryTest|FullyQualifiedName~HeliocentricLightTimeTest|FullyQualifiedName~CalcMessagesTest|FullyQualifiedName~SerrLengthFallbackTest|FullyQualifiedName~TryingSwissEphGuardTest"
           --logger "console;verbosity=detailed"
           --blame-hang
           --blame-hang-timeout 5min
@@ -288,7 +288,7 @@ jobs:
         run: >
           dotnet test Tests/SwissEphNet.Tests/SwissEphNet.Tests.csproj -p:TestTfmsInParallel=false
           -c Release
-          --filter "FullyQualifiedName~FileBoundaryHistoryTest|FullyQualifiedName~HeliocentricLightTimeTest|FullyQualifiedName~CalcMessagesTest"
+          --filter "FullyQualifiedName~FileBoundaryHistoryTest|FullyQualifiedName~HeliocentricLightTimeTest|FullyQualifiedName~CalcMessagesTest|FullyQualifiedName~SerrLengthFallbackTest|FullyQualifiedName~TryingSwissEphGuardTest"
           --logger "console;verbosity=detailed"
           --blame-hang
           --blame-hang-timeout 5min
