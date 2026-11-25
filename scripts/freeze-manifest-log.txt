@@ -821,7 +821,7 @@ b"} where the C gives {"a", ""}); that one is fixed
     planets and stars, from 2020, are identical before and after and match the C. No test added.
     SwissEphNet/CPort: 49695 -> 49695 lines, kr_braces (1253) and trailing_ws (1258) unchanged,
     sha256 0D47E6CB... -> 80319BF4....
-47. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-24: Re-transliteration
+47. PR #50 2026-11-24: Re-transliteration
     of upstream v2.10.04 (e308765d) into SwephLib.cs, SwephLib.h.cs, Sweph.h.cs, SwissEph.swephexp.h.cs
     and the open_jpl_file() hunk of Sweph.cs (commit 4a2b156); an adoption of upstream changes, not a
     correction. swephexp.h: SE_DE_NUMBER 441, SE_FNAME_DFT de441.eph, SE_FNAME_DFT2 removed (a breaking
@@ -837,7 +837,7 @@ b"} where the C gives {"a", ""}); that one is fixed
     MSVC-built C at e308765d.
     SwissEphNet/CPort: 49695 -> 49879 lines, kr_braces (1253) unchanged, trailing_ws 1258 -> 1277,
     sha256 80319BF4... -> B5427269....
-48. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-24: Re-transliteration
+48. PR #50 2026-11-24: Re-transliteration
     of sweph.c v2.10.04 (e308765d) into Sweph.cs and Sweph.h.cs (commit 0882f78); an adoption of
     upstream changes, not a correction. swe_calc() is a wrapper that records the date of the call
     (tjd_calc) around swecalc_1(), the former body (sweph.c:308-340; 79d3553f, 85eb3a5d, 49fbf676).
@@ -858,7 +858,7 @@ b"} where the C gives {"a", ""}); that one is fixed
     follow the new source.
     SwissEphNet/CPort: 49879 -> 50168 lines, kr_braces 1253 -> 1261, trailing_ws 1277 -> 1280,
     sha256 B5427269... -> F4E85840....
-49. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-24: Re-transliteration
+49. PR #50 2026-11-24: Re-transliteration
     of swetest.c v2.10.04 (e308765d; 34959cf5, 0219d926, 280e4ce1) into Programs/SweTest/Program.cs; an
     adoption of upstream changes, not a correction. New jd_and_date() helper (swetest.c:833-858, the
     twin of the one in sweph.c, with gflag because swetest has a global gregflag) and its prototype
@@ -869,7 +869,7 @@ b"} where the C gives {"a", ""}); that one is fixed
     #ifdef USE_DLL hunk (ephepath_dll, the swe_get_named_ast_list() search).
     Programs/SweTest/Program.cs: 5185 -> 5210 lines, kr_braces (64) and trailing_ws (69) unchanged,
     sha256 0D3F0D21... -> 7A36212A....
-50. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-24: Correction of a
+50. PR #50 2026-11-24: Correction of a
     divergence from the C: swed was replaced, where the C clears it in place. sweph.c:1257 (at
     e308765d) does memset(&swed, 0, sizeof(struct swe_data)) in swi_init_swed_if_start, and :1285
     does memset(&swed.astro_models, 0, SEI_NMODELS * sizeof(int32)) in swi_close_keep_topo_etc; the
@@ -898,7 +898,7 @@ b"} where the C gives {"a", ""}); that one is fixed
     SweDataClearInPlaceTest.
     SwissEphNet/CPort: 50168 -> 50239 lines, kr_braces (1261) and trailing_ws (1280) unchanged,
     sha256 F4E85840... -> EEFA9FBA....
-51. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-24: Three corrections
+51. PR #50 2026-11-24: Three corrections
     of divergences from the C (e308765d), found in review.
     (a) swi_close_keep_topo_etc replaced swed.oec, oec2000, nut, nut2000 and nutv where the C clears
     them in place (sweph.c:1280-1284, memset). New epsilon.Clear() and nut.Clear() (Sweph.h.cs),
@@ -926,7 +926,7 @@ b"} where the C gives {"a", ""}); that one is fixed
     swe_deltat_ex(2451545.0, SEFLG_MOSEPH, "stale") gives serr "" in the C. Tests: DeltatExSerrClearTest.
     SwissEphNet/CPort: 50239 -> 50273 lines, kr_braces (1261) and trailing_ws (1280) unchanged,
     sha256 EEFA9FBA... -> 152ECAB6....
-52. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-24: Four corrections
+52. PR #50 2026-11-24: Four corrections
     of divergences from the C (e308765d), all in Sweph.cs, found in review. Only serr text and
     object identity change; numeric results are identical.
     (a) The " \ntrying Swiss Eph; " suffix was appended to serr unconditionally. The C appends it
@@ -962,7 +962,7 @@ b"} where the C gives {"a", ""}); that one is fixed
     with each of the three replaced again (the five epsilon/nut objects, topd, sidd) it fails.
     SwissEphNet/CPort: 50273 -> 50300 lines, kr_braces (1261) and trailing_ws (1280) unchanged,
     sha256 152ECAB6... -> E8B45D48....
-53. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-24: A sixth
+53. PR #50 2026-11-24: A sixth
     " \ntrying Swiss Eph; " append site, missed by entry 52's sweep, now carries the C's length
     guard. lunar_osc_elem's JPL "retc == NOT_AVAILABLE" branch (sweph.c:5559-5560, Sweph.cs:6567;
     reached by SE_TRUE_NODE and SE_OSCU_APOG with SEFLG_JPLEPH) appended the suffix to serr
@@ -977,7 +977,7 @@ b"} where the C gives {"a", ""}); that one is fixed
     theories); with the guard removed, both long-path cases fail.
     SwissEphNet/CPort: 50300 -> 50301 lines, kr_braces (1261) and trailing_ws (1280) unchanged,
     sha256 E8B45D48... -> 44FAE1FA....
-54. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-25: The remaining
+54. PR #50 2026-11-25: The remaining
     explicit serr length guards and short-form fallbacks of the C, dropped by the port, are
     reinstated. Only serr text changes; numeric results and return codes are unchanged. The C
     guards each append with "strlen(serr) + strlen(s) < AS_MAXCH" (AS_MAXCH 256); the port appended
@@ -1025,7 +1025,7 @@ b"} where the C gives {"a", ""}); that one is fixed
     tested.
     SwissEphNet/CPort: 50301 -> 50332 lines, kr_braces (1261 -> 1263, K&R "{" at the two JPL
     fallbacks) and trailing_ws (1280) as shown by verify-freeze, sha256 44FAE1FA... -> CFC642A1....
-55. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-25: The long form of
+55. PR #50 2026-11-25: The long form of
     the JPL "mutilated" message now casts its arguments as the C does. swejpl.c:758 (e308765d)
     reads "sprintf(serr, "JPL ephemeris file %s is mutilated; length = %d instead of %d.",
     js->jplfname, (unsigned int) flen, (unsigned int) nb);"; the port's SweJPL.cs:873 passed flen and
