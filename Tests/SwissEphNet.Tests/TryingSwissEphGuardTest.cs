@@ -30,7 +30,7 @@ namespace SwissEphNet.Tests
         {
             var swe = RepoEphe.Open();
             if (longPath)
-                swe.swe_set_ephe_path("C:\\" + new string('q', 150) + ";" + RepoEphe.Dir);
+                swe.swe_set_ephe_path("C:\\" + new string('q', 216 - RepoEphe.Dir.Length) + ";" + RepoEphe.Dir);
             swe.swe_set_jpl_file("missing.eph");
             return swe;
         }
