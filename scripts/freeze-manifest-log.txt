@@ -1025,3 +1025,13 @@ b"} where the C gives {"a", ""}); that one is fixed
     tested.
     SwissEphNet/CPort: 50301 -> 50332 lines, kr_braces (1261 -> 1263, K&R "{" at the two JPL
     fallbacks) and trailing_ws (1280) as shown by verify-freeze, sha256 44FAE1FA... -> CFC642A1....
+55. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-25: The long form of
+    the JPL "mutilated" message now casts its arguments as the C does. swejpl.c:758 (e308765d)
+    reads "sprintf(serr, "JPL ephemeris file %s is mutilated; length = %d instead of %d.",
+    js->jplfname, (unsigned int) flen, (unsigned int) nb);"; the port's SweJPL.cs:873 passed flen and
+    nb uncast (both are Int64, SweJPL.cs:731) and now passes "(uint)flen, (uint)nb". The short form
+    (swejpl.c:755, SweJPL.cs:871) already cast. The (uint) cast changes the serr text only when
+    flen or nb falls outside 0 to 2^31 - 1 (within that range it prints the same digits); numeric
+    results and return codes are unchanged, and this is a file-mutilated error path.
+    SwissEphNet/CPort: 50332 -> 50332 lines, kr_braces (1263) and trailing_ws (1280) unchanged,
+    sha256 CFC642A1... -> 2AA1F8D2....

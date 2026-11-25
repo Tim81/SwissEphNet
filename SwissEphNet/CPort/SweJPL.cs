@@ -870,7 +870,7 @@ namespace SwissEphNet.CPort
                     // strlen(serr) + strlen(js->jplfname) < AS_MAXCH - 1
                     serr = C.sprintf("JPL ephemeris file is mutilated; length = %d instead of %d.", (uint)flen, (uint)nb);
                     if (serr.Length + (js.jplfname == null ? 0 : js.jplfname.Length) < 256 - 1) {
-                        serr = C.sprintf("JPL ephemeris file %s is mutilated; length = %d instead of %d.", js.jplfname, flen, nb);
+                        serr = C.sprintf("JPL ephemeris file %s is mutilated; length = %d instead of %d.", js.jplfname, (uint)flen, (uint)nb);
                     }
                     return (Sweph.NOT_AVAILABLE);
                 }
