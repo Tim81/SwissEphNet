@@ -3010,8 +3010,9 @@ namespace SwissEphNet.CPort
                     s += C.sprintf("%s > upper limit %s;",
                           jd_and_date(tjd, out sd1), jd_and_date(fdp.tfend, out sd2));
                 }
-                //if (strlen(serr) + strlen(s) < AS_MAXCH)
-                serr += s;
+                // sweph.c:2494-2495 (e308765d): if (strlen(serr) + strlen(s) < AS_MAXCH) strcat(serr, s);
+                if ((serr == null ? 0 : serr.Length) + (s == null ? 0 : s.Length) < 256)
+                    serr += s;
                 return (NOT_AVAILABLE);
             }
             /******************************
@@ -5514,10 +5515,12 @@ namespace SwissEphNet.CPort
                  * order + 1 */
                 if (nco > pdp.ncoe)
                 {
-                    //serr=C.sprintf("error in ephemeris file: %d coefficients instead of %d. ", nco, pdp.ncoe);
-                    //if (strlen(serr) + strlen(fdp.fnam) < AS_MAXCH - 1) {
-                    serr = C.sprintf("error in ephemeris file %s: %d coefficients instead of %d. ", fdp.fnam, nco, pdp.ncoe);
-                    //}
+                    // sweph.c:4695-4697 (e308765d): the short form is formatted first, the long form only if
+                    // strlen(serr) + strlen(fdp->fnam) < AS_MAXCH - 1
+                    serr = C.sprintf("error in ephemeris file: %d coefficients instead of %d. ", nco, pdp.ncoe);
+                    if (serr.Length + (fdp.fnam == null ? 0 : fdp.fnam.Length) < 256 - 1) {
+                        serr = C.sprintf("error in ephemeris file %s: %d coefficients instead of %d. ", fdp.fnam, nco, pdp.ncoe);
+                    }
                     //free(pdp.segp);
                     pdp.segp = null;
                     return (ERR);
@@ -6037,10 +6040,12 @@ namespace SwissEphNet.CPort
             return (OK);
         file_damage:
             //if (serr != null) {
-            //*serr = '\0';
-            //if (strlen(serr_file_damage) + strlen(fdp.fnam) + strlen(smsg) < AS_MAXCH) {
-            serr = C.sprintf(serr_file_damage, fdp.fnam, smsg);
-        //}
+            // sweph.c:5150-5154 (e308765d): *serr = '\0';
+            // if (strlen(serr_file_damage) + strlen(fdp->fnam) + strlen(smsg) < AS_MAXCH) sprintf(serr, serr_file_damage, fdp->fnam, smsg);
+            serr = String.Empty;
+            if (serr_file_damage.Length + (fdp.fnam == null ? 0 : fdp.fnam.Length) + (smsg == null ? 0 : smsg.Length) < 256) {
+                serr = C.sprintf(serr_file_damage, fdp.fnam, smsg);
+            }
         //}
         return_error:
             fdp.fptr.Dispose();
@@ -6082,7 +6087,11 @@ namespace SwissEphNet.CPort
                 // at all, silently accepting a partial read as success.
                 if (fp.Read(trg, 0, totsize) != totsize)
                 {
-                    serr = C.sprintf("Ephemeris file %s is damaged (2).", swed.fidat[ifno].fnam);
+                    // sweph.c:5191-5195 (e308765d): strcpy(serr, "Ephemeris file is damaged (1). ");
+                    // if (strlen(serr) + strlen(swed.fidat[ifno].fnam) < AS_MAXCH - 1) sprintf(serr, "Ephemeris file %s is damaged (2).", fnam);
+                    serr = "Ephemeris file is damaged (1). ";
+                    if (serr.Length + swed.fidat[ifno].fnam.Length < 256 - 1)
+                        serr = C.sprintf("Ephemeris file %s is damaged (2).", swed.fidat[ifno].fnam);
                     return (ERR);
                 }
                 else
@@ -6095,7 +6104,11 @@ namespace SwissEphNet.CPort
                 // rejected, not only a zero-byte one.
                 if (fp.Read(space, 0, totsize) != totsize)
                 {
-                    serr = C.sprintf("Ephemeris file %s is damaged (4).", swed.fidat[ifno].fnam);
+                    // sweph.c:5202-5206 (e308765d): strcpy(serr, "Ephemeris file is damaged (3). ");
+                    // if (strlen(serr) + strlen(swed.fidat[ifno].fnam) < AS_MAXCH - 1) sprintf(serr, "Ephemeris file %s is damaged (4).", fnam);
+                    serr = "Ephemeris file is damaged (3). ";
+                    if (serr.Length + swed.fidat[ifno].fnam.Length < 256 - 1)
+                        serr = C.sprintf("Ephemeris file %s is damaged (4).", swed.fidat[ifno].fnam);
                     return (ERR);
                 }
                 if (size != corrsize)
@@ -9308,11 +9321,13 @@ namespace SwissEphNet.CPort
             }
             //if (serr != null)
             {
-                //sprintf(serr, "star  not found");
-                //if (strlen(serr) + strlen(star) < SwissEph.AS_MAXCH)
-                //{
-                serr = sprintf("star %s not found", star);
-                //}
+                // sweph.c:7888-7891 (e308765d): the short form first, the long form only if
+                // strlen(serr) + strlen(star) < AS_MAXCH
+                serr = sprintf("star  not found");
+                if (serr.Length + (star == null ? 0 : star.Length) < SwissEph.AS_MAXCH)
+                {
+                    serr = sprintf("star %s not found", star);
+                }
                 return ERR;
             }
         found:

@@ -977,3 +977,51 @@ b"} where the C gives {"a", ""}); that one is fixed
     theories); with the guard removed, both long-path cases fail.
     SwissEphNet/CPort: 50300 -> 50301 lines, kr_braces (1261) and trailing_ws (1280) unchanged,
     sha256 E8B45D48... -> 44FAE1FA....
+54. (no PR yet -- fill in "PR #N" before merging, per CONTRIBUTING.md) 2026-11-25: The remaining
+    explicit serr length guards and short-form fallbacks of the C, dropped by the port, are
+    reinstated. Only serr text changes; numeric results and return codes are unchanged. The C
+    guards each append with "strlen(serr) + strlen(s) < AS_MAXCH" (AS_MAXCH 256); the port appended
+    unconditionally. The port now uses the idiom of entries 52 and 53, "(serr == null ? 0 :
+    serr.Length) + s.Length < 256".
+    (a) Appends: Sweph.cs:3013 (sweph.c:2494-2495, the moon file range message, where the port had
+    the guard as a dead comment); SwemMoon.cs:913 (swemmoon.c:885-886, Moshier Moon range), :1526
+    (swemmoon.c:1509-1510, mean node range), :1593 (swemmoon.c:1582-1583, mean apogee range);
+    SwemPlan.cs:314 (swemplan.c:303-304, Moshier planet range).
+    (b) Short form first, long form only under a length test (the port always formatted the long
+    form): Sweph.cs:5519 (sweph.c:4695-4697, "strlen(serr) + strlen(fdp->fnam) < AS_MAXCH - 1");
+    Sweph.cs:6085 and :6098 (sweph.c:5191-5195 and 5202-5206, "Ephemeris file is damaged (1). " and
+    "(3). " first, the "(2)" and "(4)" forms with the file name under "< AS_MAXCH - 1");
+    Sweph.cs:9314 (sweph.c:7888-7891, "star  not found" first, "star %s not found" under
+    "strlen(serr) + strlen(star) < AS_MAXCH"); SweJPL.cs:286 (swejpl.c:229-232, "alleged ephemeris
+    file has invalid format." first, the "(%s)" form under "strlen(serr) + strlen(js->jplfname) + 3
+    < AS_MAXCH"); SweJPL.cs:866 (swejpl.c:755-759, the form without a file name first, the long form
+    under "strlen(serr) + strlen(js->jplfname) < AS_MAXCH - 1"). In the C the length is that of the
+    short form just written into serr, not of the caller's serr; the port mirrors that.
+    (c) A guard the report list did not name: read_const's file_damage label (sweph.c:5150-5154,
+    Sweph.cs:6041): "*serr = '\0'; if (strlen(serr_file_damage) + strlen(fdp->fnam) + strlen(smsg)
+    < AS_MAXCH) sprintf(serr, serr_file_damage, fdp->fnam, smsg);". The port formatted
+    unconditionally; serr is now empty when the test fails, as in the C.
+    Sweep of the C: every "strlen(serr)" in external/swisseph/*.c, plus sweph.c:2618 and :5152, which
+    test strlen(s) and strlen(serr_file_damage). The 20 "serr != NULL && strlen(serr)
+    + 30/35 < AS_MAXCH" sites (sweph.c:709, 715, 732, 759, 803, 825, 1133, 1174, 1708, 1714, 1732,
+    1738, 1755, 1773, 1836, 1852, 2018, 5559, 5566, 5600) already carry the guard in the port
+    (entries 52, 53 and earlier), except sweph.c:825, which is inside the "#else" of an "#if 1"
+    that the C does not compile and which the port keeps as a comment. sweph.c:2618 (Sweph.cs:3152)
+    already matches. This entry changes the twelve sites of (a), (b) and (c).
+    Tested: swe_fixstar's "star not found" (SerrLengthFallbackTest). MSVC-built C at e308765d
+    (external/.c-reference/build-2.10.03/libswe-2.10.03.lib), swe_set_ephe_path(<submodule ephe>),
+    swe_fixstar(n x 'z', 2451545.0, SEFLG_MOSEPH, ...): n = 5 gives "star zzzzz not found" (20
+    characters), n = 240 gives the long form at 255 characters, n = 241 and n = 245 give "star  not
+    found" (15 characters), rc -1 each; the port gave the long form for all. The test pins
+    n = 5, 240, 241 and 245.
+    Transliteration-only (no reachable input, so no test was invented): the four Moshier range
+    appends of (a) could follow a long file-not-found message only if the fallback ran, but the
+    fallback runs only when tjd lies inside the Moshier range and the range check is wider (0.2/0.3
+    day margin), so the message never follows a long serr; probed against the C with a 150-character missing path (SE_SUN, SE_MOON, SE_MEAN_NODE,
+    SE_MEAN_APOG, SE_TRUE_NODE, SE_OSCU_APOG at -5000000, -3100000 and 9000000): no range message
+    follows a file-not-found message. Sweph.cs:3013 (sweph.c:2494) enters with serr empty. The
+    (b) sites at Sweph.cs:5519, :6085, :6098, SweJPL.cs:286 and :866 and the (c) site need a corrupt
+    or truncated ephemeris file reported under a file name of about 200 characters, and are not
+    tested.
+    SwissEphNet/CPort: 50301 -> 50332 lines, kr_braces (1261 -> 1263, K&R "{" at the two JPL
+    fallbacks) and trailing_ws (1280) as shown by verify-freeze, sha256 44FAE1FA... -> CFC642A1....

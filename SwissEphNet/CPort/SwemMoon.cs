@@ -911,7 +911,9 @@ namespace SwissEphNet.CPort
             if (tjd < Sweph.MOSHLUEPH_START - 0.2 || tjd > Sweph.MOSHLUEPH_END + 0.2) {
                 s = C.sprintf("jd %f outside Moshier's Moon range %.2f .. %.2f ",
                       tjd, Sweph.MOSHLUEPH_START, Sweph.MOSHLUEPH_END);
-                serr = (serr ?? String.Empty) + s;
+                // swemmoon.c:885-886 (e308765d): if (strlen(serr) + strlen(s) < AS_MAXCH) strcat(serr, s);
+                if ((serr == null ? 0 : serr.Length) + s.Length < 256)
+                    serr = (serr ?? String.Empty) + s;
                 return (SwissEph.ERR);
             }
             /* if moon has already been computed */
@@ -1523,7 +1525,9 @@ namespace SwissEphNet.CPort
             if (J < Sweph.MOSHNDEPH_START || J > Sweph.MOSHNDEPH_END) {
                 s = C.sprintf("jd %f outside mean node range %.2f .. %.2f ",
                       J, Sweph.MOSHNDEPH_START, Sweph.MOSHNDEPH_END);
-                serr += s;
+                // swemmoon.c:1509-1510 (e308765d): if (strlen(serr) + strlen(s) < AS_MAXCH) strcat(serr, s);
+                if ((serr == null ? 0 : serr.Length) + s.Length < 256)
+                    serr += s;
                 return SwissEph.ERR;
             }
             mean_elements();
@@ -1591,7 +1595,9 @@ namespace SwissEphNet.CPort
             if (J < Sweph.MOSHNDEPH_START || J > Sweph.MOSHNDEPH_END) {
                 s = C.sprintf("jd %f outside mean apogee range %.2f .. %.2f ",
                        J, Sweph.MOSHNDEPH_START, Sweph.MOSHNDEPH_END);
-                serr = (serr ?? String.Empty) + s;
+                // swemmoon.c:1582-1583 (e308765d): if (strlen(serr) + strlen(s) < AS_MAXCH) strcat(serr, s);
+                if ((serr == null ? 0 : serr.Length) + s.Length < 256)
+                    serr = (serr ?? String.Empty) + s;
                 return (Sweph.ERR);
             }
             mean_elements();
