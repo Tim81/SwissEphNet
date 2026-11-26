@@ -716,9 +716,9 @@ suite	testcase	iteration	field	kind	port_value
 2	1	2	xx[1]	Double	17.978340412243618
 2	1	2	xx[2]	Double	501715.75691132416
 2	1	2	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-2	2	2	xx[0]	Double	201.15182484048881
-2	2	2	xx[1]	Double	17.978329680562542
-2	2	2	xx[2]	Double	501715.68395552522
+2	2	2	xx[0]	Double	201.15182485853825
+2	2	2	xx[1]	Double	17.978329688258015
+2	2	2	xx[2]	Double	501715.68395547743
 2	2	2	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 2	4	2	xx[0]	Double	201.15168864868255
 2	4	2	xx[1]	Double	17.978340412243629
@@ -736,27 +736,27 @@ suite	testcase	iteration	field	kind	port_value
 4	1	5	xx[5]	Double	0
 4	1	5	rc	Int	-1
 4	1	5	serr	String	SwissEph file 'se00433s.se1' not found in PATH '<ephe>/'
-4	2	20	daya_ex_ut	Double	317.73676927423355
+4	2	20	daya_ex_ut	Double	317.73676926763079
 4	2	20	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	20	rc_aya_ex	Int	-65
 4	2	20	daya_ex	Double	-0.00056711430532468141
 4	2	20	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
-4	2	30	daya_ex_ut	Double	314.77503333795676
+4	2	30	daya_ex_ut	Double	314.77503332280219
 4	2	30	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	30	rc_aya_ex	Int	-65
 4	2	30	daya_ex	Double	-0.00056711430532468141
 4	2	30	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
-4	2	31	daya_ex_ut	Double	310.74723662049007
+4	2	31	daya_ex_ut	Double	310.74723663565413
 4	2	31	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	31	rc_aya_ex	Int	-65
 4	2	31	daya_ex	Double	-0.00056711430532468141
 4	2	31	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
-4	2	32	daya_ex_ut	Double	313.53088496779674
+4	2	32	daya_ex_ut	Double	313.53088496362432
 4	2	32	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	32	rc_aya_ex	Int	-65
 4	2	32	daya_ex	Double	-0.00056711430532468141
 4	2	32	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
-4	2	33	daya_ex_ut	Double	313.35982825723357
+4	2	33	daya_ex_ut	Double	313.35982825063081
 4	2	33	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	33	rc_aya_ex	Int	-65
 4	2	33	daya_ex	Double	-0.00056711430532468141
@@ -773,22 +773,22 @@ suite	testcase	iteration	field	kind	port_value
 4	2	36	rc_aya_ex	Int	-65
 4	2	36	daya_ex	Double	-0.00056711430532468141
 4	2	36	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
-4	2	38	daya_ex_ut	Double	315.50124332872019
+4	2	38	daya_ex_ut	Double	315.50124332142434
 4	2	38	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	38	rc_aya_ex	Int	-65
 4	2	38	daya_ex	Double	-0.00056711430532468141
 4	2	38	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
-4	2	39	daya_ex_ut	Double	308.94489612373809
+4	2	39	daya_ex_ut	Double	308.94489611655206
 4	2	39	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	39	rc_aya_ex	Int	-65
 4	2	39	daya_ex	Double	-0.00056711430532468141
 4	2	39	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
-4	2	42	daya_ex_ut	Double	316.03824275154676
+4	2	42	daya_ex_ut	Double	316.03824274737428
 4	2	42	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	42	rc_aya_ex	Int	-65
 4	2	42	daya_ex	Double	-0.00056711430532468141
 4	2	42	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
-4	2	43	daya_ex_ut	Double	287.73676927423355
+4	2	43	daya_ex_ut	Double	287.73676926763079
 4	2	43	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	43	rc_aya_ex	Int	-65
 4	2	43	daya_ex	Double	-0.00056711430532468141
@@ -877,27 +877,27 @@ suite	testcase	iteration	field	kind	port_value
 4	2	231	serr_ex_ut	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	231	daya_ex	Double	10.84900146662461
 4	2	231	serr_ex	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-4	2	255	daya_ex_ut	Double	317.73676927423355
+4	2	255	daya_ex_ut	Double	317.73676926763079
 4	2	255	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	255	rc_aya_ex	Int	-65
 4	2	255	daya_ex	Double	-0.00056711430532468141
 4	2	255	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
-4	2	265	daya_ex_ut	Double	314.77503333795676
+4	2	265	daya_ex_ut	Double	314.77503332280219
 4	2	265	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	265	rc_aya_ex	Int	-65
 4	2	265	daya_ex	Double	-0.00056711430532468141
 4	2	265	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
-4	2	266	daya_ex_ut	Double	310.74723662048984
+4	2	266	daya_ex_ut	Double	310.74723663565396
 4	2	266	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	266	rc_aya_ex	Int	-65
 4	2	266	daya_ex	Double	-0.00056711430532468141
 4	2	266	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
-4	2	267	daya_ex_ut	Double	313.53088496779674
+4	2	267	daya_ex_ut	Double	313.53088496362432
 4	2	267	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	267	rc_aya_ex	Int	-65
 4	2	267	daya_ex	Double	-0.00056711430532468141
 4	2	267	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
-4	2	268	daya_ex_ut	Double	313.35982825723357
+4	2	268	daya_ex_ut	Double	313.35982825063081
 4	2	268	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	268	rc_aya_ex	Int	-65
 4	2	268	daya_ex	Double	-0.00056711430532468141
@@ -914,22 +914,22 @@ suite	testcase	iteration	field	kind	port_value
 4	2	271	rc_aya_ex	Int	-65
 4	2	271	daya_ex	Double	-0.00056711430532468141
 4	2	271	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
-4	2	273	daya_ex_ut	Double	315.50124332872019
+4	2	273	daya_ex_ut	Double	315.50124332142434
 4	2	273	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	273	rc_aya_ex	Int	-65
 4	2	273	daya_ex	Double	-0.00056711430532468141
 4	2	273	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
-4	2	274	daya_ex_ut	Double	308.94489612373809
+4	2	274	daya_ex_ut	Double	308.94489611655206
 4	2	274	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	274	rc_aya_ex	Int	-65
 4	2	274	daya_ex	Double	-0.00056711430532468141
 4	2	274	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
-4	2	277	daya_ex_ut	Double	316.03824275154676
+4	2	277	daya_ex_ut	Double	316.03824274737428
 4	2	277	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	277	rc_aya_ex	Int	-65
 4	2	277	daya_ex	Double	-0.00056711430532468141
 4	2	277	serr_ex	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/'
-4	2	278	daya_ex_ut	Double	287.73676927423355
+4	2	278	daya_ex_ut	Double	287.73676926763079
 4	2	278	serr_ex_ut	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	278	rc_aya_ex	Int	-65
 4	2	278	daya_ex	Double	-0.00056711430532468141
@@ -1066,26 +1066,26 @@ suite	testcase	iteration	field	kind	port_value
 4	2	466	serr_ex_ut	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 4	2	466	daya_ex	Double	10.84900146662461
 4	2	466	serr_ex	String	SwissEph file 'sepl_30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-4	3	19	daya_ut	Double	317.73735108352901
+4	3	19	daya_ut	Double	317.73735107693273
 4	3	19	daya	Double	0
-4	3	29	daya_ut	Double	314.77561514725221
+4	3	29	daya_ut	Double	314.77561513210412
 4	3	29	daya	Double	0
-4	3	30	daya_ut	Double	310.7478184297853
+4	3	30	daya_ut	Double	310.7478184449559
 4	3	30	daya	Double	0
-4	3	31	daya_ut	Double	313.53146677709219
+4	3	31	daya_ut	Double	313.53146677292625
 4	3	31	daya	Double	0
-4	3	32	daya_ut	Double	313.36041006652903
+4	3	32	daya_ut	Double	313.36041005993275
 4	3	32	daya	Double	0
 4	3	33	daya	Double	0
 4	3	34	daya	Double	0
 4	3	35	daya	Double	0
-4	3	37	daya_ut	Double	315.50182513801565
+4	3	37	daya_ut	Double	315.50182513072627
 4	3	37	daya	Double	0
-4	3	38	daya_ut	Double	308.94547793303354
+4	3	38	daya_ut	Double	308.94547792585399
 4	3	38	daya	Double	0
-4	3	41	daya_ut	Double	316.03882456084222
+4	3	41	daya_ut	Double	316.03882455667622
 4	3	41	daya	Double	0
-4	3	42	daya_ut	Double	287.73735108352901
+4	3	42	daya_ut	Double	287.73735107693273
 4	3	42	daya	Double	0
 4	3	66	daya_ut	Double	359.03417763722268
 4	3	66	daya	Double	359.03416512705689
@@ -1123,6 +1123,10 @@ suite	testcase	iteration	field	kind	port_value
 4	3	229	daya	Double	39.244927440719351
 4	3	230	daya_ut	Double	10.845418293310843
 4	3	230	daya	Double	10.845417012957512
+5	3	5	deltat	Double	0.40338690733415938
+5	3	6	deltat	Double	0.40338690733415938
+5	3	7	deltat	Double	0.40338690733415938
+5	3	8	deltat	Double	0.3989063264502557
 6	6	402	hp	Double	11.118439805641257
 7	1	5	xxnasc[2]	Double	1.0053756066937851
 7	1	5	xxndsc[2]	Double	1.0100298993725161
@@ -2377,10 +2381,10 @@ suite	testcase	iteration	field	kind	port_value
 10	2	2	rc	Int	2
 10	2	2	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	2	3	rc	Int	4
-10	2	3	jx	Double	625078.83150714391
+10	2	3	jx	Double	625078.83150660293
 10	2	3	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	2	4	rc	Int	4
-10	2	4	jx	Double	625078.83150714391
+10	2	4	jx	Double	625078.83150660293
 10	2	4	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	2	5	rc	Int	4
 10	2	5	jx	Double	2817999
@@ -2395,10 +2399,10 @@ suite	testcase	iteration	field	kind	port_value
 10	2	8	rc	Int	2
 10	2	8	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	2	9	rc	Int	4
-10	2	9	jx	Double	625124.57534820831
+10	2	9	jx	Double	625124.57534766698
 10	2	9	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	2	10	rc	Int	4
-10	2	10	jx	Double	625124.57534820831
+10	2	10	jx	Double	625124.57534766698
 10	2	10	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	2	11	rc	Int	4
 10	2	11	jx	Double	2817999
@@ -2413,10 +2417,10 @@ suite	testcase	iteration	field	kind	port_value
 10	2	14	rc	Int	2
 10	2	14	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	2	15	rc	Int	4
-10	2	15	jx	Double	625046.21913955233
+10	2	15	jx	Double	625046.21913897968
 10	2	15	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	2	16	rc	Int	4
-10	2	16	jx	Double	625046.21913955233
+10	2	16	jx	Double	625046.21913897968
 10	2	16	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	2	17	rc	Int	4
 10	2	17	jx	Double	2817999
@@ -2485,10 +2489,10 @@ suite	testcase	iteration	field	kind	port_value
 10	4	2	rc	Int	2
 10	4	2	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	4	3	rc	Int	4
-10	4	3	jx	Double	625027.32785237848
+10	4	3	jx	Double	625027.32785182167
 10	4	3	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	4	4	rc	Int	4
-10	4	4	jx	Double	625027.32785237848
+10	4	4	jx	Double	625027.32785182167
 10	4	4	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	4	5	rc	Int	4
 10	4	5	jx	Double	2817999
@@ -2503,10 +2507,10 @@ suite	testcase	iteration	field	kind	port_value
 10	4	8	rc	Int	2
 10	4	8	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	4	9	rc	Int	4
-10	4	9	jx	Double	625030.54131639691
+10	4	9	jx	Double	625030.54131583986
 10	4	9	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	4	10	rc	Int	4
-10	4	10	jx	Double	625030.54131639691
+10	4	10	jx	Double	625030.54131583986
 10	4	10	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	4	11	rc	Int	4
 10	4	11	jx	Double	2817999
@@ -2521,10 +2525,10 @@ suite	testcase	iteration	field	kind	port_value
 10	4	14	rc	Int	2
 10	4	14	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	4	15	rc	Int	4
-10	4	15	jx	Double	625025.22001540638
+10	4	15	jx	Double	625025.22001484956
 10	4	15	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	4	16	rc	Int	4
-10	4	16	jx	Double	625025.22001540638
+10	4	16	jx	Double	625025.22001484956
 10	4	16	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	4	17	rc	Int	4
 10	4	17	jx	Double	2817999
@@ -2567,12 +2571,12 @@ suite	testcase	iteration	field	kind	port_value
 10	6	2	xlon	Double	102.73339128870359
 10	6	2	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
 10	6	3	rc	Int	4
-10	6	3	jx	Double	625012.88261942007
-10	6	3	xlon	Double	189.71117264084614
+10	6	3	jx	Double	625012.88261886244
+10	6	3	xlon	Double	189.71117263254899
 10	6	3	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	6	4	rc	Int	4
-10	6	4	jx	Double	625012.88261942007
-10	6	4	xlon	Double	189.71117264084614
+10	6	4	jx	Double	625012.88261886244
+10	6	4	xlon	Double	189.71117263254899
 10	6	4	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	6	5	rc	Int	4
 10	6	5	jx	Double	2817999
@@ -3007,9 +3011,9 @@ suite	testcase	iteration	field	kind	port_value
 10	8	1	jx	Double	2455805.7584677334
 10	8	2	jx	Double	2455805.7584677334
 10	8	2	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
-10	8	3	jx	Double	628245.33418728877
+10	8	3	jx	Double	628245.33418661542
 10	8	3	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-10	8	4	jx	Double	628245.33418728877
+10	8	4	jx	Double	628245.33418661542
 10	8	4	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	5	jx	Double	0
 10	8	5	rc	Int	-1
@@ -3020,9 +3024,9 @@ suite	testcase	iteration	field	kind	port_value
 10	8	7	jx	Double	2455467.712004472
 10	8	8	jx	Double	2455467.712004472
 10	8	8	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
-10	8	9	jx	Double	627879.68094936188
+10	8	9	jx	Double	627879.68094868981
 10	8	9	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-10	8	10	jx	Double	627879.68094936188
+10	8	10	jx	Double	627879.68094868981
 10	8	10	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	11	jx	Double	0
 10	8	11	rc	Int	-1
@@ -3033,9 +3037,9 @@ suite	testcase	iteration	field	kind	port_value
 10	8	13	jx	Double	2461855.3795342734
 10	8	14	jx	Double	2461855.3795342734
 10	8	14	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
-10	8	15	jx	Double	634579.17903051758
+10	8	15	jx	Double	634579.17902982712
 10	8	15	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-10	8	16	jx	Double	634579.17903051758
+10	8	16	jx	Double	634579.17902982712
 10	8	16	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	17	jx	Double	0
 10	8	17	rc	Int	-1
@@ -3046,9 +3050,9 @@ suite	testcase	iteration	field	kind	port_value
 10	8	19	jx	Double	2460954.5589451701
 10	8	20	jx	Double	2460954.5589451701
 10	8	20	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
-10	8	21	jx	Double	633772.40354060405
+10	8	21	jx	Double	633772.4035400647
 10	8	21	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-10	8	22	jx	Double	633772.40354060405
+10	8	22	jx	Double	633772.4035400647
 10	8	22	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	23	jx	Double	0
 10	8	23	rc	Int	-1
@@ -3059,9 +3063,9 @@ suite	testcase	iteration	field	kind	port_value
 10	8	25	jx	Double	2455365.1124526286
 10	8	26	jx	Double	2455365.1124526286
 10	8	26	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
-10	8	27	jx	Double	625086.60133681074
+10	8	27	jx	Double	625086.60133625381
 10	8	27	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-10	8	28	jx	Double	625086.60133681074
+10	8	28	jx	Double	625086.60133625381
 10	8	28	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	29	jx	Double	0
 10	8	29	rc	Int	-1
@@ -3072,9 +3076,9 @@ suite	testcase	iteration	field	kind	port_value
 10	8	31	jx	Double	2455359.1228028885
 10	8	32	jx	Double	2455359.1228028885
 10	8	32	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
-10	8	33	jx	Double	625081.6098903676
+10	8	33	jx	Double	625081.60988980439
 10	8	33	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-10	8	34	jx	Double	625081.6098903676
+10	8	34	jx	Double	625081.60988980439
 10	8	34	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	35	jx	Double	0
 10	8	35	rc	Int	-1
@@ -3085,9 +3089,9 @@ suite	testcase	iteration	field	kind	port_value
 10	8	37	jx	Double	2455495.1033305502
 10	8	38	jx	Double	2455495.1033305502
 10	8	38	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
-10	8	39	jx	Double	625124.67723448726
+10	8	39	jx	Double	625124.6772339301
 10	8	39	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-10	8	40	jx	Double	625124.67723448726
+10	8	40	jx	Double	625124.6772339301
 10	8	40	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	41	jx	Double	0
 10	8	41	rc	Int	-1
@@ -3098,9 +3102,9 @@ suite	testcase	iteration	field	kind	port_value
 10	8	43	jx	Double	2455475.6548801288
 10	8	44	jx	Double	2455475.6548801288
 10	8	44	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
-10	8	45	jx	Double	625105.55794996105
+10	8	45	jx	Double	625105.55794941785
 10	8	45	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-10	8	46	jx	Double	625105.55794996105
+10	8	46	jx	Double	625105.55794941785
 10	8	46	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	47	jx	Double	0
 10	8	47	rc	Int	-1
@@ -3111,9 +3115,9 @@ suite	testcase	iteration	field	kind	port_value
 10	8	49	jx	Double	2455716.7090750025
 10	8	50	jx	Double	2455716.7090750025
 10	8	50	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
-10	8	51	jx	Double	625050.74449336727
+10	8	51	jx	Double	625050.74449281022
 10	8	51	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-10	8	52	jx	Double	625050.74449336727
+10	8	52	jx	Double	625050.74449281022
 10	8	52	serr	String	SwissEph file 'seplm36.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	53	jx	Double	0
 10	8	53	rc	Int	-1
@@ -3124,9 +3128,9 @@ suite	testcase	iteration	field	kind	port_value
 10	8	55	jx	Double	2455665.9401550936
 10	8	56	jx	Double	2455665.9401550936
 10	8	56	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
-10	8	57	jx	Double	625671.97811941279
+10	8	57	jx	Double	625671.97811887902
 10	8	57	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-10	8	58	jx	Double	625671.97811941279
+10	8	58	jx	Double	625671.97811887902
 10	8	58	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	59	jx	Double	0
 10	8	59	rc	Int	-1
@@ -3137,9 +3141,9 @@ suite	testcase	iteration	field	kind	port_value
 10	8	61	jx	Double	2458365.14866358
 10	8	62	jx	Double	2458365.14866358
 10	8	62	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
-10	8	63	jx	Double	653682.89879481145
+10	8	63	jx	Double	653682.89879462961
 10	8	63	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-10	8	64	jx	Double	653682.89879481145
+10	8	64	jx	Double	653682.89879462961
 10	8	64	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	65	jx	Double	0
 10	8	65	rc	Int	-1
@@ -3150,9 +3154,9 @@ suite	testcase	iteration	field	kind	port_value
 10	8	67	jx	Double	2455498.2477877894
 10	8	68	jx	Double	2455498.2477877894
 10	8	68	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
-10	8	69	jx	Double	651084.79536135052
+10	8	69	jx	Double	651084.79536158976
 10	8	69	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-10	8	70	jx	Double	651084.79536135052
+10	8	70	jx	Double	651084.79536158976
 10	8	70	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	71	jx	Double	0
 10	8	71	rc	Int	-1
@@ -3163,9 +3167,9 @@ suite	testcase	iteration	field	kind	port_value
 10	8	73	jx	Double	2465728.6951266383
 10	8	74	jx	Double	2465728.6951266383
 10	8	74	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
-10	8	75	jx	Double	671442.81053392228
+10	8	75	jx	Double	671442.81053332135
 10	8	75	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-10	8	76	jx	Double	671442.81053392228
+10	8	76	jx	Double	671442.81053332135
 10	8	76	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	77	jx	Double	0
 10	8	77	rc	Int	-1
@@ -3176,9 +3180,9 @@ suite	testcase	iteration	field	kind	port_value
 10	8	79	jx	Double	2460654.8562560678
 10	8	80	jx	Double	2460654.8562560678
 10	8	80	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
-10	8	81	jx	Double	666363.44705098728
+10	8	81	jx	Double	666363.44705051451
 10	8	81	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-10	8	82	jx	Double	666363.44705098728
+10	8	82	jx	Double	666363.44705051451
 10	8	82	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	83	jx	Double	0
 10	8	83	rc	Int	-1
@@ -3189,9 +3193,9 @@ suite	testcase	iteration	field	kind	port_value
 10	8	85	jx	Double	2486750.2020061598
 10	8	86	jx	Double	2486750.2020061598
 10	8	86	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
-10	8	87	jx	Double	707998.22308081994
+10	8	87	jx	Double	707998.22308137408
 10	8	87	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-10	8	88	jx	Double	707998.22308081994
+10	8	88	jx	Double	707998.22308137408
 10	8	88	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	89	jx	Double	0
 10	8	89	rc	Int	-1
@@ -3202,9 +3206,9 @@ suite	testcase	iteration	field	kind	port_value
 10	8	91	jx	Double	2475930.5261232969
 10	8	92	jx	Double	2475930.5261232969
 10	8	92	serr	String	SwissEph file 'de441.eph' not found in PATH '<ephe>/' \\ntrying Swiss Eph; 
-10	8	93	jx	Double	696951.78019808827
+10	8	93	jx	Double	696951.78019752086
 10	8	93	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
-10	8	94	jx	Double	696951.78019808827
+10	8	94	jx	Double	696951.78019752086
 10	8	94	serr	String	SwissEph file 'seplm30.se1' not found in PATH '<ephe>/' \\nusing Moshier eph.; 
 10	8	95	jx	Double	0
 10	8	95	rc	Int	-1
@@ -4891,56 +4895,56 @@ suite	testcase	iteration	field	kind	port_value
 11	2	198	xpheno[4]	Double	0
 11	2	198	serr	String	SwissEph file 'seas_30.se1' not found in PATH '<ephe>/'
 11	2	199	rc	Int	4
-11	2	199	xpheno[3]	Double	0.52891365508056187
-11	2	199	xpheno[4]	Double	-26.842733785180414
+11	2	199	xpheno[3]	Double	0.52891365499942511
+11	2	199	xpheno[4]	Double	-26.842733784847304
 11	2	200	rc	Int	4
-11	2	200	xpheno[0]	Double	104.22961753421501
-11	2	200	xpheno[1]	Double	0.3770957589228694
-11	2	200	xpheno[2]	Double	75.632821773207525
-11	2	200	xpheno[3]	Double	0.5328409093132942
-11	2	200	xpheno[4]	Double	-9.5830758775273068
+11	2	200	xpheno[0]	Double	104.22961036709626
+11	2	200	xpheno[1]	Double	0.37709581954880356
+11	2	200	xpheno[2]	Double	75.632828920640478
+11	2	200	xpheno[3]	Double	0.5328409052702977
+11	2	200	xpheno[4]	Double	-9.5830761763350747
 11	2	201	rc	Int	4
-11	2	201	xpheno[0]	Double	66.589907511737366
-11	2	201	xpheno[1]	Double	0.6986547721671259
-11	2	201	xpheno[2]	Double	16.908170214087502
-11	2	201	xpheno[3]	Double	0.0017122467554171199
-11	2	201	xpheno[4]	Double	-0.78705031696851213
+11	2	201	xpheno[0]	Double	66.589909790577039
+11	2	201	xpheno[1]	Double	0.69865475391747256
+11	2	201	xpheno[2]	Double	16.908170644040414
+11	2	201	xpheno[3]	Double	0.0017122467768036062
+11	2	201	xpheno[4]	Double	-0.78705026050415405
 11	2	202	rc	Int	4
-11	2	202	xpheno[0]	Double	78.109971422173089
-11	2	202	xpheno[1]	Double	0.60301694414859319
-11	2	202	xpheno[2]	Double	44.957043000246586
-11	2	202	xpheno[3]	Double	0.0053699371659778105
-11	2	202	xpheno[4]	Double	-4.2334315380878333
+11	2	202	xpheno[0]	Double	78.109971180867035
+11	2	202	xpheno[1]	Double	0.60301694620920565
+11	2	202	xpheno[2]	Double	44.957042938565145
+11	2	202	xpheno[3]	Double	0.0053699371369423541
+11	2	202	xpheno[4]	Double	-4.2334315314557749
 11	2	203	rc	Int	4
-11	2	203	xpheno[0]	Double	19.662167342615735
-11	2	203	xpheno[1]	Double	0.97084646252445572
-11	2	203	xpheno[2]	Double	31.966075728469814
-11	2	203	xpheno[3]	Double	0.0011054653989940803
-11	2	203	xpheno[4]	Double	1.6499622827313554
+11	2	203	xpheno[0]	Double	19.662167218989428
+11	2	203	xpheno[1]	Double	0.9708464628874578
+11	2	203	xpheno[2]	Double	31.966075577258088
+11	2	203	xpheno[3]	Double	0.0011054653975921995
+11	2	203	xpheno[4]	Double	1.6499622841186306
 11	2	204	rc	Int	4
-11	2	204	xpheno[0]	Double	4.2183902599889453
-11	2	204	xpheno[1]	Double	0.99864545927250337
-11	2	204	xpheno[2]	Double	156.70568206648261
-11	2	204	xpheno[3]	Double	0.011977069233735141
-11	2	204	xpheno[4]	Double	-2.4668455372061988
+11	2	204	xpheno[0]	Double	4.2183903791867436
+11	2	204	xpheno[1]	Double	0.99864545919598835
+11	2	204	xpheno[2]	Double	156.70568144678347
+11	2	204	xpheno[3]	Double	0.011977069224984633
+11	2	204	xpheno[4]	Double	-2.4668455350424967
 11	2	205	rc	Int	4
-11	2	205	xpheno[0]	Double	5.7179080421695776
-11	2	205	xpheno[1]	Double	0.99751223927172283
-11	2	205	xpheno[2]	Double	112.64995613972886
-11	2	205	xpheno[3]	Double	0.0050140239620821711
-11	2	205	xpheno[4]	Double	0.37924870384391873
+11	2	205	xpheno[0]	Double	5.7179080615983011
+11	2	205	xpheno[1]	Double	0.99751223925483068
+11	2	205	xpheno[2]	Double	112.64995558394497
+11	2	205	xpheno[3]	Double	0.0050140239572605298
+11	2	205	xpheno[4]	Double	0.37924870657684373
 11	2	206	rc	Int	4
-11	2	206	xpheno[0]	Double	3.0987269734806886
-11	2	206	xpheno[2]	Double	96.098038511650572
-11	2	206	xpheno[4]	Double	5.5242370934855503
+11	2	206	xpheno[0]	Double	3.0987269792356984
+11	2	206	xpheno[2]	Double	96.09803796258764
+11	2	206	xpheno[4]	Double	5.5242370945898029
 11	2	207	rc	Int	4
-11	2	207	xpheno[0]	Double	0.80574424233487252
-11	2	207	xpheno[2]	Double	154.85641218569938
-11	2	207	xpheno[4]	Double	7.8484707270128178
+11	2	207	xpheno[0]	Double	0.80574426917991182
+11	2	207	xpheno[2]	Double	154.85641160751959
+11	2	207	xpheno[4]	Double	7.8484707272993228
 11	2	208	rc	Int	4
-11	2	208	xpheno[0]	Double	1.4579653381814581
-11	2	208	xpheno[2]	Double	93.436841024989747
-11	2	208	xpheno[4]	Double	14.963159761733614
+11	2	208	xpheno[0]	Double	1.4579653298786683
+11	2	208	xpheno[2]	Double	93.436840483055022
+11	2	208	xpheno[4]	Double	14.963159762133621
 11	2	209	rc	Int	-1
 11	2	209	xpheno[0]	Double	0
 11	2	209	xpheno[1]	Double	0
@@ -4949,56 +4953,56 @@ suite	testcase	iteration	field	kind	port_value
 11	2	209	xpheno[4]	Double	0
 11	2	209	serr	String	SwissEph file 'seasm36.se1' not found in PATH '<ephe>/'
 11	2	210	rc	Int	4
-11	2	210	xpheno[3]	Double	0.52891365508056187
-11	2	210	xpheno[4]	Double	-26.842733785180414
+11	2	210	xpheno[3]	Double	0.52891365499942511
+11	2	210	xpheno[4]	Double	-26.842733784847304
 11	2	211	rc	Int	4
-11	2	211	xpheno[0]	Double	104.22961753421501
-11	2	211	xpheno[1]	Double	0.3770957589228694
-11	2	211	xpheno[2]	Double	75.632821773207525
-11	2	211	xpheno[3]	Double	0.5328409093132942
-11	2	211	xpheno[4]	Double	-9.5830758775273068
+11	2	211	xpheno[0]	Double	104.22961036709626
+11	2	211	xpheno[1]	Double	0.37709581954880356
+11	2	211	xpheno[2]	Double	75.632828920640478
+11	2	211	xpheno[3]	Double	0.5328409052702977
+11	2	211	xpheno[4]	Double	-9.5830761763350747
 11	2	212	rc	Int	4
-11	2	212	xpheno[0]	Double	66.589907511737366
-11	2	212	xpheno[1]	Double	0.6986547721671259
-11	2	212	xpheno[2]	Double	16.908170214087502
-11	2	212	xpheno[3]	Double	0.0017122467554171199
-11	2	212	xpheno[4]	Double	-0.78705031696851213
+11	2	212	xpheno[0]	Double	66.589909790577039
+11	2	212	xpheno[1]	Double	0.69865475391747256
+11	2	212	xpheno[2]	Double	16.908170644040414
+11	2	212	xpheno[3]	Double	0.0017122467768036062
+11	2	212	xpheno[4]	Double	-0.78705026050415405
 11	2	213	rc	Int	4
-11	2	213	xpheno[0]	Double	78.109971422173089
-11	2	213	xpheno[1]	Double	0.60301694414859319
-11	2	213	xpheno[2]	Double	44.957043000246586
-11	2	213	xpheno[3]	Double	0.0053699371659778105
-11	2	213	xpheno[4]	Double	-4.2334315380878333
+11	2	213	xpheno[0]	Double	78.109971180867035
+11	2	213	xpheno[1]	Double	0.60301694620920565
+11	2	213	xpheno[2]	Double	44.957042938565145
+11	2	213	xpheno[3]	Double	0.0053699371369423541
+11	2	213	xpheno[4]	Double	-4.2334315314557749
 11	2	214	rc	Int	4
-11	2	214	xpheno[0]	Double	19.662167342615735
-11	2	214	xpheno[1]	Double	0.97084646252445572
-11	2	214	xpheno[2]	Double	31.966075728469814
-11	2	214	xpheno[3]	Double	0.0011054653989940803
-11	2	214	xpheno[4]	Double	1.6499622827313554
+11	2	214	xpheno[0]	Double	19.662167218989428
+11	2	214	xpheno[1]	Double	0.9708464628874578
+11	2	214	xpheno[2]	Double	31.966075577258088
+11	2	214	xpheno[3]	Double	0.0011054653975921995
+11	2	214	xpheno[4]	Double	1.6499622841186306
 11	2	215	rc	Int	4
-11	2	215	xpheno[0]	Double	4.2183902599889453
-11	2	215	xpheno[1]	Double	0.99864545927250337
-11	2	215	xpheno[2]	Double	156.70568206648261
-11	2	215	xpheno[3]	Double	0.011977069233735141
-11	2	215	xpheno[4]	Double	-2.4668455372061988
+11	2	215	xpheno[0]	Double	4.2183903791867436
+11	2	215	xpheno[1]	Double	0.99864545919598835
+11	2	215	xpheno[2]	Double	156.70568144678347
+11	2	215	xpheno[3]	Double	0.011977069224984633
+11	2	215	xpheno[4]	Double	-2.4668455350424967
 11	2	216	rc	Int	4
-11	2	216	xpheno[0]	Double	5.7179080421695776
-11	2	216	xpheno[1]	Double	0.99751223927172283
-11	2	216	xpheno[2]	Double	112.64995613972886
-11	2	216	xpheno[3]	Double	0.0050140239620821711
-11	2	216	xpheno[4]	Double	0.37924870384391873
+11	2	216	xpheno[0]	Double	5.7179080615983011
+11	2	216	xpheno[1]	Double	0.99751223925483068
+11	2	216	xpheno[2]	Double	112.64995558394497
+11	2	216	xpheno[3]	Double	0.0050140239572605298
+11	2	216	xpheno[4]	Double	0.37924870657684373
 11	2	217	rc	Int	4
-11	2	217	xpheno[0]	Double	3.0987269734806886
-11	2	217	xpheno[2]	Double	96.098038511650572
-11	2	217	xpheno[4]	Double	5.5242370934855503
+11	2	217	xpheno[0]	Double	3.0987269792356984
+11	2	217	xpheno[2]	Double	96.09803796258764
+11	2	217	xpheno[4]	Double	5.5242370945898029
 11	2	218	rc	Int	4
-11	2	218	xpheno[0]	Double	0.80574424233487252
-11	2	218	xpheno[2]	Double	154.85641218569938
-11	2	218	xpheno[4]	Double	7.8484707270128178
+11	2	218	xpheno[0]	Double	0.80574426917991182
+11	2	218	xpheno[2]	Double	154.85641160751959
+11	2	218	xpheno[4]	Double	7.8484707272993228
 11	2	219	rc	Int	4
-11	2	219	xpheno[0]	Double	1.4579653381814581
-11	2	219	xpheno[2]	Double	93.436841024989747
-11	2	219	xpheno[4]	Double	14.963159761733614
+11	2	219	xpheno[0]	Double	1.4579653298786683
+11	2	219	xpheno[2]	Double	93.436840483055022
+11	2	219	xpheno[4]	Double	14.963159762133621
 11	2	220	rc	Int	-1
 11	2	220	xpheno[0]	Double	0
 11	2	220	xpheno[1]	Double	0
@@ -5007,56 +5011,56 @@ suite	testcase	iteration	field	kind	port_value
 11	2	220	xpheno[4]	Double	0
 11	2	220	serr	String	SwissEph file 'seasm36.se1' not found in PATH '<ephe>/'
 11	2	221	rc	Int	20
-11	2	221	xpheno[3]	Double	0.52891365508056187
-11	2	221	xpheno[4]	Double	-26.842733785180414
+11	2	221	xpheno[3]	Double	0.52891365499942511
+11	2	221	xpheno[4]	Double	-26.842733784847304
 11	2	222	rc	Int	20
-11	2	222	xpheno[0]	Double	104.2350161366677
-11	2	222	xpheno[1]	Double	0.37705009323603922
-11	2	222	xpheno[2]	Double	75.627376896599387
-11	2	222	xpheno[3]	Double	0.5328918631980929
-11	2	222	xpheno[4]	Double	-9.5830351321603153
+11	2	222	xpheno[0]	Double	104.23500896834652
+11	2	222	xpheno[1]	Double	0.37705015387069535
+11	2	222	xpheno[2]	Double	75.627384059495299
+11	2	222	xpheno[3]	Double	0.53289185902014058
+11	2	222	xpheno[4]	Double	-9.5830354304275787
 11	2	223	rc	Int	20
-11	2	223	xpheno[0]	Double	66.626993572518941
-11	2	223	xpheno[1]	Double	0.69835773392555667
-11	2	223	xpheno[2]	Double	16.913275296807107
-11	2	223	xpheno[3]	Double	0.0017125297888346651
-11	2	223	xpheno[4]	Double	-0.78606915837007074
+11	2	223	xpheno[0]	Double	66.626995892020247
+11	2	223	xpheno[1]	Double	0.69835771534507085
+11	2	223	xpheno[2]	Double	16.913275707083326
+11	2	223	xpheno[3]	Double	0.0017125298092961481
+11	2	223	xpheno[4]	Double	-0.78606909934776947
 11	2	224	rc	Int	20
-11	2	224	xpheno[0]	Double	78.100848800823343
-11	2	224	xpheno[1]	Double	0.60309484469038399
-11	2	224	xpheno[2]	Double	44.957304971156809
-11	2	224	xpheno[3]	Double	0.0053693277183416632
-11	2	224	xpheno[4]	Double	-4.2333827511525071
+11	2	224	xpheno[0]	Double	78.10084852294537
+11	2	224	xpheno[1]	Double	0.6030948470632197
+11	2	224	xpheno[2]	Double	44.957304910017513
+11	2	224	xpheno[3]	Double	0.0053693276913531381
+11	2	224	xpheno[4]	Double	-4.2333827461432065
 11	2	225	rc	Int	20
-11	2	225	xpheno[0]	Double	19.664097997426087
-11	2	225	xpheno[1]	Double	0.97084079330351358
-11	2	225	xpheno[2]	Double	31.969438258143857
-11	2	225	xpheno[3]	Double	0.0011054877013958388
-11	2	225	xpheno[4]	Double	1.6499851126769229
+11	2	225	xpheno[0]	Double	19.664097895528872
+11	2	225	xpheno[1]	Double	0.97084079360274111
+11	2	225	xpheno[2]	Double	31.96943808790131
+11	2	225	xpheno[3]	Double	0.0011054876998811516
+11	2	225	xpheno[4]	Double	1.6499851146663116
 11	2	226	rc	Int	20
-11	2	226	xpheno[0]	Double	4.22557935673996
-11	2	226	xpheno[1]	Double	0.99864084054184699
-11	2	226	xpheno[2]	Double	156.69722756724863
-11	2	226	xpheno[3]	Double	0.011977105485818375
-11	2	226	xpheno[4]	Double	-2.466817188786889
+11	2	226	xpheno[0]	Double	4.2255794602263599
+11	2	226	xpheno[1]	Double	0.99864084047530421
+11	2	226	xpheno[2]	Double	156.69722696771555
+11	2	226	xpheno[3]	Double	0.011977105476938929
+11	2	226	xpheno[4]	Double	-2.4668171866747386
 11	2	227	rc	Int	20
-11	2	227	xpheno[0]	Double	5.7219602444180548
-11	2	227	xpheno[1]	Double	0.99750871487124204
-11	2	227	xpheno[2]	Double	112.6439345168877
-11	2	227	xpheno[3]	Double	0.0050140295193062973
-11	2	227	xpheno[4]	Double	0.37937989045572351
+11	2	227	xpheno[0]	Double	5.7219602679199513
+11	2	227	xpheno[1]	Double	0.99750871485079418
+11	2	227	xpheno[2]	Double	112.64393397261186
+11	2	227	xpheno[3]	Double	0.005014029514456426
+11	2	227	xpheno[4]	Double	0.37937989329748589
 11	2	228	rc	Int	20
-11	2	228	xpheno[0]	Double	3.1007630025224024
-11	2	228	xpheno[2]	Double	96.093042551814307
-11	2	228	xpheno[4]	Double	5.5242441627266512
+11	2	228	xpheno[0]	Double	3.1007630061152485
+11	2	228	xpheno[2]	Double	96.093042015013495
+11	2	228	xpheno[4]	Double	5.5242441638346982
 11	2	229	rc	Int	20
-11	2	229	xpheno[0]	Double	0.81189412458067456
-11	2	229	xpheno[2]	Double	154.84666080184604
-11	2	229	xpheno[4]	Double	7.8484709113938083
+11	2	229	xpheno[0]	Double	0.81189414139458893
+11	2	229	xpheno[2]	Double	154.84666024881017
+11	2	229	xpheno[4]	Double	7.8484709116820115
 11	2	230	rc	Int	20
-11	2	230	xpheno[0]	Double	1.4592431717797454
-11	2	230	xpheno[2]	Double	93.431597591202674
-11	2	230	xpheno[4]	Double	14.963133421895769
+11	2	230	xpheno[0]	Double	1.4592431728413524
+11	2	230	xpheno[2]	Double	93.431597052239127
+11	2	230	xpheno[4]	Double	14.963133422373776
 11	2	231	rc	Int	-1
 11	2	231	xpheno[0]	Double	0
 11	2	231	xpheno[1]	Double	0
@@ -5065,56 +5069,56 @@ suite	testcase	iteration	field	kind	port_value
 11	2	231	xpheno[4]	Double	0
 11	2	231	serr	String	SwissEph file 'seasm36.se1' not found in PATH '<ephe>/'
 11	2	232	rc	Int	20
-11	2	232	xpheno[3]	Double	0.52891365508056187
-11	2	232	xpheno[4]	Double	-26.842733785180414
+11	2	232	xpheno[3]	Double	0.52891365499942511
+11	2	232	xpheno[4]	Double	-26.842733784847304
 11	2	233	rc	Int	20
-11	2	233	xpheno[0]	Double	104.2350161366677
-11	2	233	xpheno[1]	Double	0.37705009323603922
-11	2	233	xpheno[2]	Double	75.627376896599387
-11	2	233	xpheno[3]	Double	0.5328918631980929
-11	2	233	xpheno[4]	Double	-9.5830351321603153
+11	2	233	xpheno[0]	Double	104.23500896834652
+11	2	233	xpheno[1]	Double	0.37705015387069535
+11	2	233	xpheno[2]	Double	75.627384059495299
+11	2	233	xpheno[3]	Double	0.53289185902014058
+11	2	233	xpheno[4]	Double	-9.5830354304275787
 11	2	234	rc	Int	20
-11	2	234	xpheno[0]	Double	66.626993572518941
-11	2	234	xpheno[1]	Double	0.69835773392555667
-11	2	234	xpheno[2]	Double	16.913275296807107
-11	2	234	xpheno[3]	Double	0.0017125297888346651
-11	2	234	xpheno[4]	Double	-0.78606915837007074
+11	2	234	xpheno[0]	Double	66.626995892020247
+11	2	234	xpheno[1]	Double	0.69835771534507085
+11	2	234	xpheno[2]	Double	16.913275707083326
+11	2	234	xpheno[3]	Double	0.0017125298092961481
+11	2	234	xpheno[4]	Double	-0.78606909934776947
 11	2	235	rc	Int	20
-11	2	235	xpheno[0]	Double	78.100848800823343
-11	2	235	xpheno[1]	Double	0.60309484469038399
-11	2	235	xpheno[2]	Double	44.957304971156809
-11	2	235	xpheno[3]	Double	0.0053693277183416632
-11	2	235	xpheno[4]	Double	-4.2333827511525071
+11	2	235	xpheno[0]	Double	78.10084852294537
+11	2	235	xpheno[1]	Double	0.6030948470632197
+11	2	235	xpheno[2]	Double	44.957304910017513
+11	2	235	xpheno[3]	Double	0.0053693276913531381
+11	2	235	xpheno[4]	Double	-4.2333827461432065
 11	2	236	rc	Int	20
-11	2	236	xpheno[0]	Double	19.664097997426087
-11	2	236	xpheno[1]	Double	0.97084079330351358
-11	2	236	xpheno[2]	Double	31.969438258143857
-11	2	236	xpheno[3]	Double	0.0011054877013958388
-11	2	236	xpheno[4]	Double	1.6499851126769229
+11	2	236	xpheno[0]	Double	19.664097895528872
+11	2	236	xpheno[1]	Double	0.97084079360274111
+11	2	236	xpheno[2]	Double	31.96943808790131
+11	2	236	xpheno[3]	Double	0.0011054876998811516
+11	2	236	xpheno[4]	Double	1.6499851146663116
 11	2	237	rc	Int	20
-11	2	237	xpheno[0]	Double	4.22557935673996
-11	2	237	xpheno[1]	Double	0.99864084054184699
-11	2	237	xpheno[2]	Double	156.69722756724863
-11	2	237	xpheno[3]	Double	0.011977105485818375
-11	2	237	xpheno[4]	Double	-2.466817188786889
+11	2	237	xpheno[0]	Double	4.2255794602263599
+11	2	237	xpheno[1]	Double	0.99864084047530421
+11	2	237	xpheno[2]	Double	156.69722696771555
+11	2	237	xpheno[3]	Double	0.011977105476938929
+11	2	237	xpheno[4]	Double	-2.4668171866747386
 11	2	238	rc	Int	20
-11	2	238	xpheno[0]	Double	5.7219602444180548
-11	2	238	xpheno[1]	Double	0.99750871487124204
-11	2	238	xpheno[2]	Double	112.6439345168877
-11	2	238	xpheno[3]	Double	0.0050140295193062973
-11	2	238	xpheno[4]	Double	0.37937989045572351
+11	2	238	xpheno[0]	Double	5.7219602679199513
+11	2	238	xpheno[1]	Double	0.99750871485079418
+11	2	238	xpheno[2]	Double	112.64393397261186
+11	2	238	xpheno[3]	Double	0.005014029514456426
+11	2	238	xpheno[4]	Double	0.37937989329748589
 11	2	239	rc	Int	20
-11	2	239	xpheno[0]	Double	3.1007630025224024
-11	2	239	xpheno[2]	Double	96.093042551814307
-11	2	239	xpheno[4]	Double	5.5242441627266512
+11	2	239	xpheno[0]	Double	3.1007630061152485
+11	2	239	xpheno[2]	Double	96.093042015013495
+11	2	239	xpheno[4]	Double	5.5242441638346982
 11	2	240	rc	Int	20
-11	2	240	xpheno[0]	Double	0.81189412458067456
-11	2	240	xpheno[2]	Double	154.84666080184604
-11	2	240	xpheno[4]	Double	7.8484709113938083
+11	2	240	xpheno[0]	Double	0.81189414139458893
+11	2	240	xpheno[2]	Double	154.84666024881017
+11	2	240	xpheno[4]	Double	7.8484709116820115
 11	2	241	rc	Int	20
-11	2	241	xpheno[0]	Double	1.4592431717797454
-11	2	241	xpheno[2]	Double	93.431597591202674
-11	2	241	xpheno[4]	Double	14.963133421895769
+11	2	241	xpheno[0]	Double	1.4592431728413524
+11	2	241	xpheno[2]	Double	93.431597052239127
+11	2	241	xpheno[4]	Double	14.963133422373776
 11	2	242	rc	Int	-1
 11	2	242	xpheno[0]	Double	0
 11	2	242	xpheno[1]	Double	0
@@ -5123,56 +5127,56 @@ suite	testcase	iteration	field	kind	port_value
 11	2	242	xpheno[4]	Double	0
 11	2	242	serr	String	SwissEph file 'seasm36.se1' not found in PATH '<ephe>/'
 11	2	243	rc	Int	4
-11	2	243	xpheno[3]	Double	0.52891365508056187
-11	2	243	xpheno[4]	Double	-26.842733785180414
+11	2	243	xpheno[3]	Double	0.52891365499942511
+11	2	243	xpheno[4]	Double	-26.842733784847304
 11	2	244	rc	Int	4
-11	2	244	xpheno[0]	Double	104.22961753421501
-11	2	244	xpheno[1]	Double	0.3770957589228694
-11	2	244	xpheno[2]	Double	75.632821773207525
-11	2	244	xpheno[3]	Double	0.5328409093132942
-11	2	244	xpheno[4]	Double	-9.5830758775273068
+11	2	244	xpheno[0]	Double	104.22961036709626
+11	2	244	xpheno[1]	Double	0.37709581954880356
+11	2	244	xpheno[2]	Double	75.632828920640478
+11	2	244	xpheno[3]	Double	0.5328409052702977
+11	2	244	xpheno[4]	Double	-9.5830761763350747
 11	2	245	rc	Int	4
-11	2	245	xpheno[0]	Double	66.589907511737366
-11	2	245	xpheno[1]	Double	0.6986547721671259
-11	2	245	xpheno[2]	Double	16.908170214087502
-11	2	245	xpheno[3]	Double	0.0017122467554171199
-11	2	245	xpheno[4]	Double	-0.78705031696851213
+11	2	245	xpheno[0]	Double	66.589909790577039
+11	2	245	xpheno[1]	Double	0.69865475391747256
+11	2	245	xpheno[2]	Double	16.908170644040414
+11	2	245	xpheno[3]	Double	0.0017122467768036062
+11	2	245	xpheno[4]	Double	-0.78705026050415405
 11	2	246	rc	Int	4
-11	2	246	xpheno[0]	Double	78.109971422173089
-11	2	246	xpheno[1]	Double	0.60301694414859319
-11	2	246	xpheno[2]	Double	44.957043000246586
-11	2	246	xpheno[3]	Double	0.0053699371659778105
-11	2	246	xpheno[4]	Double	-4.2334315380878333
+11	2	246	xpheno[0]	Double	78.109971180867035
+11	2	246	xpheno[1]	Double	0.60301694620920565
+11	2	246	xpheno[2]	Double	44.957042938565145
+11	2	246	xpheno[3]	Double	0.0053699371369423541
+11	2	246	xpheno[4]	Double	-4.2334315314557749
 11	2	247	rc	Int	4
-11	2	247	xpheno[0]	Double	19.662167342615735
-11	2	247	xpheno[1]	Double	0.97084646252445572
-11	2	247	xpheno[2]	Double	31.966075728469814
-11	2	247	xpheno[3]	Double	0.0011054653989940803
-11	2	247	xpheno[4]	Double	1.6499622827313554
+11	2	247	xpheno[0]	Double	19.662167218989428
+11	2	247	xpheno[1]	Double	0.9708464628874578
+11	2	247	xpheno[2]	Double	31.966075577258088
+11	2	247	xpheno[3]	Double	0.0011054653975921995
+11	2	247	xpheno[4]	Double	1.6499622841186306
 11	2	248	rc	Int	4
-11	2	248	xpheno[0]	Double	4.2183902599889453
-11	2	248	xpheno[1]	Double	0.99864545927250337
-11	2	248	xpheno[2]	Double	156.70568206648261
-11	2	248	xpheno[3]	Double	0.011977069233735141
-11	2	248	xpheno[4]	Double	-2.4668455372061988
+11	2	248	xpheno[0]	Double	4.2183903791867436
+11	2	248	xpheno[1]	Double	0.99864545919598835
+11	2	248	xpheno[2]	Double	156.70568144678347
+11	2	248	xpheno[3]	Double	0.011977069224984633
+11	2	248	xpheno[4]	Double	-2.4668455350424967
 11	2	249	rc	Int	4
-11	2	249	xpheno[0]	Double	5.7179080421695776
-11	2	249	xpheno[1]	Double	0.99751223927172283
-11	2	249	xpheno[2]	Double	112.64995613972886
-11	2	249	xpheno[3]	Double	0.0050140239620821711
-11	2	249	xpheno[4]	Double	0.37924870384391873
+11	2	249	xpheno[0]	Double	5.7179080615983011
+11	2	249	xpheno[1]	Double	0.99751223925483068
+11	2	249	xpheno[2]	Double	112.64995558394497
+11	2	249	xpheno[3]	Double	0.0050140239572605298
+11	2	249	xpheno[4]	Double	0.37924870657684373
 11	2	250	rc	Int	4
-11	2	250	xpheno[0]	Double	3.0987269734806886
-11	2	250	xpheno[2]	Double	96.098038511650572
-11	2	250	xpheno[4]	Double	5.5242370934855503
+11	2	250	xpheno[0]	Double	3.0987269792356984
+11	2	250	xpheno[2]	Double	96.09803796258764
+11	2	250	xpheno[4]	Double	5.5242370945898029
 11	2	251	rc	Int	4
-11	2	251	xpheno[0]	Double	0.80574424233487252
-11	2	251	xpheno[2]	Double	154.85641218569938
-11	2	251	xpheno[4]	Double	7.8484707270128178
+11	2	251	xpheno[0]	Double	0.80574426917991182
+11	2	251	xpheno[2]	Double	154.85641160751959
+11	2	251	xpheno[4]	Double	7.8484707272993228
 11	2	252	rc	Int	4
-11	2	252	xpheno[0]	Double	1.4579653381814581
-11	2	252	xpheno[2]	Double	93.436841024989747
-11	2	252	xpheno[4]	Double	14.963159761733614
+11	2	252	xpheno[0]	Double	1.4579653298786683
+11	2	252	xpheno[2]	Double	93.436840483055022
+11	2	252	xpheno[4]	Double	14.963159762133621
 11	2	253	rc	Int	-1
 11	2	253	xpheno[0]	Double	0
 11	2	253	xpheno[1]	Double	0
@@ -5181,56 +5185,56 @@ suite	testcase	iteration	field	kind	port_value
 11	2	253	xpheno[4]	Double	0
 11	2	253	serr	String	SwissEph file 'seasm36.se1' not found in PATH '<ephe>/'
 11	2	254	rc	Int	4
-11	2	254	xpheno[3]	Double	0.52891365508056187
-11	2	254	xpheno[4]	Double	-26.842733785180414
+11	2	254	xpheno[3]	Double	0.52891365499942511
+11	2	254	xpheno[4]	Double	-26.842733784847304
 11	2	255	rc	Int	4
-11	2	255	xpheno[0]	Double	104.22961753421501
-11	2	255	xpheno[1]	Double	0.3770957589228694
-11	2	255	xpheno[2]	Double	75.632821773207525
-11	2	255	xpheno[3]	Double	0.5328409093132942
-11	2	255	xpheno[4]	Double	-9.5830758775273068
+11	2	255	xpheno[0]	Double	104.22961036709626
+11	2	255	xpheno[1]	Double	0.37709581954880356
+11	2	255	xpheno[2]	Double	75.632828920640478
+11	2	255	xpheno[3]	Double	0.5328409052702977
+11	2	255	xpheno[4]	Double	-9.5830761763350747
 11	2	256	rc	Int	4
-11	2	256	xpheno[0]	Double	66.589907511737366
-11	2	256	xpheno[1]	Double	0.6986547721671259
-11	2	256	xpheno[2]	Double	16.908170214087502
-11	2	256	xpheno[3]	Double	0.0017122467554171199
-11	2	256	xpheno[4]	Double	-0.78705031696851213
+11	2	256	xpheno[0]	Double	66.589909790577039
+11	2	256	xpheno[1]	Double	0.69865475391747256
+11	2	256	xpheno[2]	Double	16.908170644040414
+11	2	256	xpheno[3]	Double	0.0017122467768036062
+11	2	256	xpheno[4]	Double	-0.78705026050415405
 11	2	257	rc	Int	4
-11	2	257	xpheno[0]	Double	78.109971422173089
-11	2	257	xpheno[1]	Double	0.60301694414859319
-11	2	257	xpheno[2]	Double	44.957043000246586
-11	2	257	xpheno[3]	Double	0.0053699371659778105
-11	2	257	xpheno[4]	Double	-4.2334315380878333
+11	2	257	xpheno[0]	Double	78.109971180867035
+11	2	257	xpheno[1]	Double	0.60301694620920565
+11	2	257	xpheno[2]	Double	44.957042938565145
+11	2	257	xpheno[3]	Double	0.0053699371369423541
+11	2	257	xpheno[4]	Double	-4.2334315314557749
 11	2	258	rc	Int	4
-11	2	258	xpheno[0]	Double	19.662167342615735
-11	2	258	xpheno[1]	Double	0.97084646252445572
-11	2	258	xpheno[2]	Double	31.966075728469814
-11	2	258	xpheno[3]	Double	0.0011054653989940803
-11	2	258	xpheno[4]	Double	1.6499622827313554
+11	2	258	xpheno[0]	Double	19.662167218989428
+11	2	258	xpheno[1]	Double	0.9708464628874578
+11	2	258	xpheno[2]	Double	31.966075577258088
+11	2	258	xpheno[3]	Double	0.0011054653975921995
+11	2	258	xpheno[4]	Double	1.6499622841186306
 11	2	259	rc	Int	4
-11	2	259	xpheno[0]	Double	4.2183902599889453
-11	2	259	xpheno[1]	Double	0.99864545927250337
-11	2	259	xpheno[2]	Double	156.70568206648261
-11	2	259	xpheno[3]	Double	0.011977069233735141
-11	2	259	xpheno[4]	Double	-2.4668455372061988
+11	2	259	xpheno[0]	Double	4.2183903791867436
+11	2	259	xpheno[1]	Double	0.99864545919598835
+11	2	259	xpheno[2]	Double	156.70568144678347
+11	2	259	xpheno[3]	Double	0.011977069224984633
+11	2	259	xpheno[4]	Double	-2.4668455350424967
 11	2	260	rc	Int	4
-11	2	260	xpheno[0]	Double	5.7179080421695776
-11	2	260	xpheno[1]	Double	0.99751223927172283
-11	2	260	xpheno[2]	Double	112.64995613972886
-11	2	260	xpheno[3]	Double	0.0050140239620821711
-11	2	260	xpheno[4]	Double	0.37924870384391873
+11	2	260	xpheno[0]	Double	5.7179080615983011
+11	2	260	xpheno[1]	Double	0.99751223925483068
+11	2	260	xpheno[2]	Double	112.64995558394497
+11	2	260	xpheno[3]	Double	0.0050140239572605298
+11	2	260	xpheno[4]	Double	0.37924870657684373
 11	2	261	rc	Int	4
-11	2	261	xpheno[0]	Double	3.0987269734806886
-11	2	261	xpheno[2]	Double	96.098038511650572
-11	2	261	xpheno[4]	Double	5.5242370934855503
+11	2	261	xpheno[0]	Double	3.0987269792356984
+11	2	261	xpheno[2]	Double	96.09803796258764
+11	2	261	xpheno[4]	Double	5.5242370945898029
 11	2	262	rc	Int	4
-11	2	262	xpheno[0]	Double	0.80574424233487252
-11	2	262	xpheno[2]	Double	154.85641218569938
-11	2	262	xpheno[4]	Double	7.8484707270128178
+11	2	262	xpheno[0]	Double	0.80574426917991182
+11	2	262	xpheno[2]	Double	154.85641160751959
+11	2	262	xpheno[4]	Double	7.8484707272993228
 11	2	263	rc	Int	4
-11	2	263	xpheno[0]	Double	1.4579653381814581
-11	2	263	xpheno[2]	Double	93.436841024989747
-11	2	263	xpheno[4]	Double	14.963159761733614
+11	2	263	xpheno[0]	Double	1.4579653298786683
+11	2	263	xpheno[2]	Double	93.436840483055022
+11	2	263	xpheno[4]	Double	14.963159762133621
 11	2	264	rc	Int	-1
 11	2	264	xpheno[0]	Double	0
 11	2	264	xpheno[1]	Double	0

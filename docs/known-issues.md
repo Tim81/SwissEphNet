@@ -82,7 +82,7 @@ Read the status line first and the body for how it got there.
 | `C.atoi` saturation; `C.atof`'s remaining gaps | closed / won't fix |
 | `SwissEph.DefaultFileProvider` widened to a property | record |
 | Eight live buffer-vs-unbounded-string sites | won't fix |
-| What `known-fail.tsv`'s 1,423 rows actually are (2,395 at `6c989727`, 1,401 at `v2.10.04`) | record |
+| What `known-fail.tsv`'s 1,423 rows actually are (2,395 at `6c989727`, 1,401 at `v2.10.04` `e308765d`, 1,405 at `24e47d42`) | record |
 | Ephemeris file byte order taken from the host, not the file | closed |
 | `heliacal_ut_arc_vis` sized `xaz` for two values, `swe_azalt` writes three | closed |
 | `verify-swetest-diff.ps1` digests depend on the console code page | open |
@@ -3423,14 +3423,14 @@ found stale while explaining it. `known-fail.tsv` had 1,423 rows when this entry
 759 `DATA-MISSING`, 664 `VALUE-MISMATCH`, 0 `NOT-IMPLEMENTED` (confirmed directly, `awk -F'\t'
 'NR>1{print $4}' Tests/conformance/known-fail.tsv | sort | uniq -c`). **It had 2,395 rows**
 after the `6c989727` sync added 972 (759 `DATA-MISSING` and 1,636 `VALUE-MISMATCH`, 664 plus the 972),
-and **has 1,401 since `v2.10.04`** (see the updates at the end of this entry; it was 1,634 until the `DATA-MISSING` skips were lifted). Everything below is the analysis of the original 1,423 and is kept as written;
+and **has 1,401 since `v2.10.04` (`e308765d`) and 1,405 since the re-tag at `24e47d42`** (see the updates at the end of this entry; it was 1,634 until the `DATA-MISSING` skips were lifted). Everything below is the analysis of the original 1,423 and is kept as written;
 the 972 are in "setest 6.8/6.9 house speeds" at the end of this file.
 
 **The stale framing.** Several checked-in comments describe this list as reflecting "the port is
 at 2.08, the C reference is 2.10.03" -- true when first written, not true now. When this
 entry was written the port pinned `external/swisseph` at `v2.10.3bfinal` (`f4dcd18e`), the same
 tag the C reference is built from; it then pinned master `94621aba` (`v2.10.3bfinal` plus 12
-commits), then pinned `6c989727`, then `43c9fe54` (plus 25 commits), and now pins the tag `v2.10.04` (`e308765d`), which the C reference is also built from;
+commits), then pinned `6c989727`, then `43c9fe54` (plus 25 commits), and now pins the tag `v2.10.04` (`24e47d42`, the tag as re-pointed upstream after `e308765d`), which the C reference is also built from;
 `Tools/OracleVerify`'s `PORT-VERSION` diff category (the same "port lags the C" concept, for the
 bit-exact oracle and the swetest text diff rather than this conformance suite) has zero rows in
 every known-diff file in this repository (`Tests/oracle/known-diff*.tsv`,
@@ -3576,6 +3576,8 @@ fails `CHECK_EQUALS_I(rc, iflag)` the same way: a JPL request is answered from t
 2 where `iflag` is 1, in the C and in the port. None is a port defect. The ledger now has 1,401 rows: 623
 `DATA-ENV`, 705 `SERR-PATH` (395 differ from the official `t.exp` in a return code and 310 do not, 60 of
 those in `serr` only), 73 `LIBM-PLATFORM`. `known-fail-pins.tsv` has 5,239 field pins over the 1,401 rows.
+
+**Update 2026-11-26: 1,405 rows at `24e47d42`, category `TEXP-PREDATES-FIX`.** Upstream moved the `v2.10.04` tag from `e308765d` to `24e47d42`; the only library change is `swephlib.c` commit `27c94dee` (Delta T before -720), and `setest/t.exp` is identical at both because it was recorded before that commit. Four iterations that passed now fail, 5.3.5 to 5.3.8 (`deltat`; 5.3.5 has `t.exp` 0.4033867230909422, the port and the C at `24e47d42` 0.40338690733415938, and the C-generated corpus at `e308765d` agreed with `t.exp`). They are `DRIFT` with the note `TEXP-PREDATES-FIX`: the official `t.exp` was recorded before `27c94dee`, the C at `24e47d42` reproduces the port, and the C at `e308765d` reproduced `t.exp`. No row left. The change also moved the port's values on 134 rows already in the list, all dated before -720, and 18 of them changed note (10 `SERR-PATH` to `LIBM-PLATFORM`, 8 `LIBM-PLATFORM` to `SERR-PATH`, all in suites 10.2 and 10.8). The triage was redone in full against a C-generated corpus built at `24e47d42` and the MSVC-built C at `24e47d42`: 623 `DATA-ENV`, 703 `SERR-PATH`, 75 `LIBM-PLATFORM` (123 of 123 compared fields equal the MSVC-built C) and 4 `TEXP-PREDATES-FIX`; every row outside the 252 iterations whose C-generated value changed reproduces byte for byte. `known-fail-pins.tsv` has 5,243 field pins over the 1,405 rows. The counts above are those of 2026-11-24.
 
 Two defects in the pin gate, found by review, are fixed in the same change. The pin of a failing runtime
 self-check held only the first operand of the macro. In suite 10, `CHECK_EQUALS_D(xcross, xx[0])` passes the
@@ -3803,6 +3805,9 @@ no line moved), `swejpl.h` 1 and `swephlib.h` 1. `swehouse.c`, `swehel.c`, `swed
 are unchanged. To map a `43c9fe54` line number to `e308765d`, run that diff for the file; the one
 block cited at `swetest.c:918-930` below is byte-identical at `swetest.c:951-963`. Citations in the
 `v2.10.04` freeze-log entries (47-50) and in the commits of this sync use `e308765d` numbering.
+The tag was later re-pointed to `24e47d42`, whose only library change is `swephlib.c` (commit `27c94dee`,
+Delta T before -720): `swephlib.c` lines after 3075 at `e308765d` are 2 higher at `24e47d42`, and
+every other file is unchanged. Entry 56 and later cite `24e47d42` numbering.
 
 
 
@@ -3917,7 +3922,7 @@ and recorded here as documentation observations rather than defects: the nakshat
 
 **Status: fixed upstream in `91339e55`, which is at the pin; ported.** A crash in Astrodienst's
 `swetest.c` that this port could not reproduce, because the C# language forbids the construct that
-causes it. `91339e55` is an ancestor of the pinned `e308765d` (and of `43c9fe54`, `6c989727` and `94621aba`, the pins before it), so the
+causes it. `91339e55` is an ancestor of the pinned `24e47d42` (and of `e308765d`, `43c9fe54`, `6c989727` and `94621aba`, the pins before it), so the
 reference `swetest` built from the pin no longer crashes, and #46 re-transliterated the guard
 (`Programs/SweTest/Program.cs:1048`, `if (sp != null && (spi = C.strstr(sp, "jdisut")) >= 0)`).
 The analysis below was written when the pin was `v2.10.3bfinal` (`f4dcd18e`), which still had the
@@ -4012,7 +4017,7 @@ API-contract discussion. That separation paid off: the NULL check went in on its
 after it was sent, untouched by any of the arguments below. All three are still unsent, and all
 three still reproduce on upstream `master` at `91339e55` — checked directly, `strcpy(s1, argv[i] + 8)`
 is unchanged and `eclt0`/`ssyplane` still appear only in the usage text at `swetest.c:209-210` with
-no parser reading them — and at the current pin `e308765d` (`swetest.c:951-963`, the block
+no parser reading them — and at the current pin `24e47d42` (`swetest.c:951-963`, the block
 that was `:918-930` at `43c9fe54`; it did not change between `94621aba` and `e308765d`):
 
 `docs/upstream/swe_get_ayanamsa_name-negative-index.txt` — **`swe_get_ayanamsa_name` reads outside
