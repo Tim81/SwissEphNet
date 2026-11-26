@@ -41,8 +41,8 @@ namespace SwissEphNet.Conformance.Tests;
 /// before -720): the C at 24e47d42 reproduces the port, and the C at e308765d reproduced t.exp.
 /// The change to Delta T before -720 also moved the port's values on 134 rows that already
 /// failed, all dated before -720, so 18 of them changed note (10 SERR-PATH to LIBM-PLATFORM, 8
-/// LIBM-PLATFORM to SERR-PATH, all in suites 10.2 and 10.8): which note a row has depends on whether the
-/// C-generated corpus reproduces the port within tolerance, and that moved with the values. The
+/// LIBM-PLATFORM to SERR-PATH, all in testcases 10.2 and 10.8 of suite 10): which note a row has
+/// depends on whether the C-generated corpus reproduces the port within tolerance, and that moved with the values. The
 /// MSVC-built C at 24e47d42 equals the port exactly on every compared field of the
 /// LIBM-PLATFORM rows (123 of 123).
 ///

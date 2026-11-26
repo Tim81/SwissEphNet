@@ -71,8 +71,8 @@ namespace SwissEphNet.Tests
         }
 
         // Not a C value. Upstream states the parabola meets the spline at -720 to within 0.001 s. The old
-        // formula met it to 2.2e-8 s (the 0.6754326 term existed for that) and the new one leaves a step of
-        // -0.00082 s, so this guards continuity within 0.001 s and does not by itself detect the change;
+        // formula met it to 2.2e-8 s (the 0.6754326 term existed for that) and the new one ends the parabola
+        // 0.00082 s below the spline, so this guards continuity within 0.001 s and does not by itself detect the change;
         // the change itself is guarded by DefaultModel_BeforeMinus720_MatchesTheC.
         [Fact]
         public void DefaultModel_MeetsTheSplineAtMinus720()

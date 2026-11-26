@@ -7,8 +7,9 @@ and 50 commits after the previous pin, `43c9fe54` (43 to `e308765d`, where the t
 Sections written for earlier pins keep their own dated numbers and say so. The rows re-run at
 `24e47d42` in this sync (2026-11-26) are marked "at `24e47d42`" in the summary table below: the oracle
 (both grids, bit-identical to the MSVC-built C, and the version classification), the characterization
-baseline, the conformance known-fail list, triage and pins, the `swetest` diff gate (17 known, passing),
-`gen-delta`, the freeze and the unit tests. Every other figure was measured at `e308765d`.
+baseline, the conformance known-fail list, triage and pins, the `swetest` diff gate (17 known, passing).
+`gen-delta`, the freeze and the unit tests were re-run too; they are gates without table rows.
+Every other figure was measured at `e308765d`.
 Every number below comes from a gate in this repository or
 from a measurement run during the version-bump work (see `docs/known-issues.md`'s `SE_VERSION`
 entry). Where something has not been measured, that is stated rather than estimated.
@@ -23,12 +24,12 @@ them), so the older per-platform rows in section 1 stay as dated.
 
 | Claim | Gate | Measured |
 |---|---|---|
-| The port is bit-identical to Astrodienst's C on both oracle grids | `scripts/verify-oracle.ps1` | At `24e47d42`: 27,437 analytic rows and 3,376 file rows identical to the MSVC-built C, both known-diff lists empty, version classification with no category change (2,315 analytic rows change only their ulp reason); at `e308765d` the dumps were also SHA-256 identical |
+| The port is bit-identical to Astrodienst's C on both oracle grids | `scripts/verify-oracle.ps1` | At `24e47d42`: 27,437 analytic rows and 3,376 file rows identical to the MSVC-built C, both known-diff lists empty, both dumps SHA-256 identical to the C's, version classification with no category change (2,315 analytic rows change only the reason column: 2,247 only in ulp values, 68 also in the differing-field count or worst field); the dumps were also SHA-256 identical at `e308765d` |
 | The printed output of `SweTest` matches `swetest` | `scripts/verify-swetest-diff.ps1` | At `24e47d42`: 251 of 268 cases byte-identical, and the gate passes (17 known differences); the other 17 differ only by the directory separator and the CRT's `-nan(ind)` |
 | The v2.10.04 behaviour changes are the only thing that moved the characterization baseline | `scripts/verify-baseline.ps1`, regenerated four times with deviation notes | Delta T and tidal defaults (at `e308765d`): with only those reverted, exactly 83 case ids changed in total, 82 Chiron (ipl 15) `serr` rows plus `VER`. Nodaps fix: 156 rows, and all 360 `swe_nod_aps` calls bit-identical to the C. Serr-accumulation fix: 365 calc-defaulteph `serr` rows (column 9 only, verified against the MSVC C). Delta T before -720 (`27c94dee`, baseline log entry 32, at `24e47d42`): 10,024 case ids, all before -720 |
 | Agreement with Astrodienst's reference values | `Tests/SwissEphNet.Conformance.Tests`, `setest/t.exp` | At `24e47d42`: 11 suites, 68 testcases, 18,919 iterations; 1,405 rows in `known-fail.tsv`, all `VALUE-MISMATCH` (the harness skips no iteration for want of data) |
 | None of the 1,405 `VALUE-MISMATCH` rows is a port defect | `Tests/conformance/value-mismatch-triage.tsv`, checked by `ValueMismatchTriageTests` | All 1,405 are `DRIFT`: 623 `DATA-ENV`, 703 `SERR-PATH`, 75 `LIBM-PLATFORM`, 4 `TEXP-PREDATES-FIX` (re-measured 2026-11-26 at `24e47d42`) |
-| An accepted `VALUE-MISMATCH` row cannot change unnoticed | `Tests/conformance/known-fail-pins.tsv`, checked by `PinGate` in `PortMatchesKnownFailList` | For each of the 1,405 rows, the port's value for every mismatching field (both operands of a failing runtime self-check); the gate fails if the field set changes or a value moves beyond `setest`'s tolerance for that field |
+| An accepted `VALUE-MISMATCH` row cannot change unnoticed | `Tests/conformance/known-fail-pins.tsv`, checked by `PinGate` in `PortMatchesKnownFailList` | At `24e47d42`: for each of the 1,405 rows, the port's value for every mismatching field (both operands of a failing runtime self-check); the gate fails if the field set changes or a value moves beyond `setest`'s tolerance for that field |
 | New v2.10.04 behaviour is pinned against the C | `FileBoundaryHistoryTest`, `HeliocentricLightTimeTest`, `DeltaTModelsTest`, `CalcMessagesTest`, `AstroModelsStringTest`, `SweDataClearInPlaceTest`, `DeltaTBeforeMinus720Test` | Expected values measured from the MSVC-built C at `e308765d`; `DeltaTBeforeMinus720Test` at `24e47d42` |
 
 What this does not show: the `known-fail.tsv` count is divergence from `t.exp`, a static snapshot
@@ -69,7 +70,8 @@ full parity with 2.10.04; it is not, and the next section says by how much.
 **At v2.10.04 (`e308765d`), measured on Windows in this sync:** the port is bit-identical to the
 MSVC-built C on both grids, 27,437 analytic rows and 3,376 file rows, the dumps are SHA-256
 identical, and both known-diff lists are empty. At `24e47d42` the oracle was re-measured and is
-bit-identical again (27,437 analytic rows, 3,376 file rows, zero known-diff rows). The platform table and the dump hashes in this
+bit-identical again (27,437 analytic rows, 3,376 file rows, zero known-diff rows, both dumps SHA-256
+identical to the C's). The platform table and the dump hashes in this
 section were measured at earlier pins (the `2.10.03` names in the dump file names are the
 generator's, not the pin) and are kept as dated records, not rewritten.
 

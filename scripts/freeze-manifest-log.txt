@@ -1039,15 +1039,15 @@ b"} where the C gives {"a", ""}); that one is fixed
     of upstream v2.10.04 as re-tagged at 24e47d42 (upstream commit 27c94dee, "Delta T before -720
     with T as in Horizons") into SwissEphNet/CPort/SwephLib.cs; an adoption of an upstream change,
     not a correction. swephlib.c:3070-3077 (24e47d42) replaces swephlib.c:3070-3075 (e308765d), and
-    SwephLib.cs:3183-3189 follows it line for line. In deltat_stephenson_etc_2020(), for
+    SwephLib.cs:3181-3189 follows it line for line. In deltat_stephenson_etc_2020(), for
     iyear < -720, T is now Julian centuries since JD 2387627.5, computed from tjd as
     "(tjd - 2387627.5) / 36525.0", where it was computed from dyear as "(dyear - 1825) / 100.0"
     (epoch 2387626.25); the constant is 65.62 where it was 65, and the "dt += 0.6754326" continuity
     term is gone. The three new comment lines are the C's. This affects the default Delta T model
-    (the default model: SEMOD_DELTAT_DEFAULT = SEMOD_DELTAT_STEPHENSON_ETC_2020, swephexp.h:610) for tjd < 1458077.5 (dtcf20[0][0]) with
-    iyear < -720. Lines of swephlib.c after 3075 at e308765d are 2 higher at 24e47d42.
+    (SEMOD_DELTAT_DEFAULT = SEMOD_DELTAT_STEPHENSON_ETC_2020, swephexp.h:610) for tjd < 1458077.5
+    (dtcf20[0][0]) with iyear < -720. Lines of swephlib.c after 3075 at e308765d are 2 higher at 24e47d42.
     Tests: DeltaTBeforeMinus720Test pins swe_deltat_ex at 8 JDs (0 to 1458085.5), default model and
-    model 5, to the MSVC-built C at 24e47d42 (1e-12 days), plus continuity at -720 (< 0.001 s); red
+    model 5, to the MSVC-built C at 24e47d42 (exact on Windows x64, 1e-12 days elsewhere), plus continuity at -720 (< 0.001 s); red
     before (deltat_ex(0): expected 1.5401253137190427, got 1.5401243317097348), green after. The port
     is bit-identical to the C at 24e47d42 on both oracle grids (27,437 analytic, 3,376 file rows).
     Baseline regenerated deliberately (baseline log entry 32); the conformance known-fail gained

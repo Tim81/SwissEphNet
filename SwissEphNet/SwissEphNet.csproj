@@ -25,9 +25,11 @@
       NuGet shows it as 2.10.4.1 (2.10.4.0 showed as 2.10.4).
       (2.10.3.3 tracked upstream master at 43c9fe54.)
 
-      The "port revision" above is the fourth component, for a port-only
-      release made while upstream stays put: 2.10.3, then 2.10.3.1, 2.10.3.2,
-      resetting whenever upstream moves. Two things to know before using it.
+      The "port revision" above is the fourth component, for a release this
+      project makes without a new upstream version: 2.10.3, then 2.10.3.1,
+      2.10.3.2. It resets to zero when upstream's version (SE_VERSION) changes.
+      A re-tag or library change that keeps SE_VERSION, as 2.10.4.1 does,
+      ships as a port revision. Two things to know before using it.
       NuGet normalizes a trailing zero away, so 2.10.3.0 and 2.10.3 are the
       same package and there is no point writing the .0. That was measured,
       not assumed: packing 2.10.3.0 produces a .2.10.3.nupkg. And four components
@@ -106,7 +108,9 @@
   SEFLG_MOSEPH) moves by +0.085 s and by +0.026 s at JD 1000000; from the two formulas, about
   -0.0008 s just before 1 January -720, crossing zero near -758 and growing linearly by about
   0.002 s per century further back (+0.048 s at -3000). UT-input results before -720 move
-  slightly; results from -720 on are unchanged. No API change. The other upstream commits (documentation, seasnam.txt, binaries) need no port change.
+  slightly (TT-input results too, wherever they convert to UT internally); results from -720 on
+  are unchanged. No API change.
+- The other upstream commits (documentation, seasnam.txt, binaries) need no port change.
 
 2.10.4.0:
 - BREAKING: SE_FNAME_DFT2 is removed. Upstream deleted it together with the DE406 fallback in

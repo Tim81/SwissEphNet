@@ -28,7 +28,8 @@ this is a port revision of 2.10.4: `SE_VERSION` is still `"2.10.04"`. NuGet show
   convert to UT internally (the topocentric observer, whose position uses the sidereal time, and
   sidereal modes whose ayanamsa has a UT epoch). No API change.
 - The other upstream commits need no port change: the documentation rebuilt from Markdown
-  (`swephprg.md`, `swisseph.md`), `ephe/seasnam.txt` and `astlistn.md` (92 newly named asteroids;
+  (`swephprg.md`, `swisseph.md`), `ephe/seasnam.txt` and `astlistn.md` (65 newly named asteroids in
+  `seasnam.txt`, where upstream counts 92 in `astlistn.md`;
   the port reads `seasnam.txt` at run time), and the Windows binaries.
 
 ### Verification
