@@ -3,6 +3,46 @@
 Project history from the Swiss Ephemeris 2.08 upgrade forward. Entries are prose bullets, not a
 generated commit list — for anything earlier, see git history.
 
+## 2.10.4.1
+
+The port now tracks upstream tag `v2.10.04` as Astrodienst re-tagged it at `24e47d42`
+(`24e47d42d3e115d141d0e631930cf6e86fefb21c`); 2.10.4.0 was built at `e308765d`, the commit the tag
+named before it moved on 2026-11-25. The tag moved 7 commits but the upstream version did not, so
+this is a port revision of 2.10.4: `SE_VERSION` is still `"2.10.04"`. NuGet shows the package as
+`2.10.4.1` (there is no trailing zero to drop).
+
+### Changed to follow upstream
+
+- Delta T before 1 January -720 (upstream `27c94dee`, `deltat_stephenson_etc_2020()` in
+  `swephlib.c`). For `tjd < 1458077.5`, T is now Julian centuries since JD 2387627.5 (1825 Jan 1.0,
+  as in JPL Horizons) and `dt = 65.62 + 31.351922682 T^2` s, where it was T from the decimal year
+  and `dt = 65 + 31.351922682 T^2 + 0.6754326`. It affects the default model
+  `SEMOD_DELTAT_STEPHENSON_ETC_2020`. Upstream says Swiss Ephemeris now agrees with Horizons
+  TDB-UT within 0.001 s at -3000, -1000 and -721 and meets the spline at -720 within 0.001 s.
+  Measured from the MSVC-built C at `24e47d42`, `swe_deltat_ex(0, SEFLG_MOSEPH)` is
+  1.5401253137190427 days, where it was 1.5401243317097348 in 2.10.4.0: +0.085 s. At JD 1000000
+  the shift is +0.026 s. From the two formulas it is about -0.0008 s at -720 and grows
+  quadratically further back (+0.048 s at -3000). UT-input results before -720 therefore move slightly, through the UT to TT
+  conversion; results from -720 on are unchanged. TT-input results are unchanged, except on paths
+  that convert to UT (topocentric observer, sidereal time, LMT/LAT, UT-epoch ayanamsas). No API
+  change.
+- The other upstream commits need no port change: the documentation rebuilt from Markdown
+  (`swephprg.md`, `swisseph.md`), `ephe/seasnam.txt` and `astlistn.md` (92 newly named asteroids;
+  the port reads `seasnam.txt` at run time), and the Windows binaries.
+
+### Verification
+
+- Oracle grids. Against the MSVC-built C at `24e47d42` the port is bit-identical on 27,437
+  analytic rows and 3,376 file rows. The unit tests, 513 per target framework, include the new
+  `DeltaTBeforeMinus720Test`.
+- Characterization baseline, regenerated deliberately with a deviation note (log entry 32): 10,024
+  case ids change, all before -720.
+- Conformance. `known-fail.tsv` has 1,405 rows, all `VALUE-MISMATCH`, where it had 1,401. The 4 new
+  rows are `deltat` 5.3.5 to 5.3.8: upstream's `t.exp` was recorded before `27c94dee`, so it still
+  holds the old Delta T. All 1,405 rows are triaged as drift, none a port defect: 623 `DATA-ENV`,
+  703 `SERR-PATH`, 75 `LIBM-PLATFORM` and 4 `TEXP-PREDATES-FIX` (the new category: the C at
+  `24e47d42` reproduces the port, and the C at `e308765d` reproduced `t.exp`).
+
 ## 2.10.4.0
 
 The port now tracks upstream tag `v2.10.04` (`e308765d10b9463ab0ed53b102ad454820ee0b43`), the first
