@@ -226,11 +226,11 @@ Swiss Ephemeris, and therefore this library, is dual-licensed. You must choose o
 The package ships all three of these files at its own root, so the authoritative copies travel
 with whatever version you installed: `LICENSE` for the full license conditions, `agpl-3.0.txt`
 for the AGPL text, and `NOTICE` for attribution. To read them in the repository instead:
-[`LICENSE`](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.0/LICENSE),
-[`agpl-3.0.txt`](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.0/agpl-3.0.txt),
-[`NOTICE`](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.0/NOTICE). These links are absolute
+[`LICENSE`](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.1/LICENSE),
+[`agpl-3.0.txt`](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.1/agpl-3.0.txt),
+[`NOTICE`](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.1/NOTICE). These links are absolute
 rather than relative because this section also renders on nuget.org's package page, where a
-relative link to a file in this repository does not resolve, and they name the `v2.10.4.0` release
+relative link to a file in this repository does not resolve, and they name the `v2.10.4.1` release
 tag so that they match the installed version.
 
 Astrodienst has issued a new edition of the Professional License contract, dated September 2026
@@ -252,7 +252,7 @@ in the upstream repository). Compared with the June 2026 edition:
 
 On 9 November 2026 the contract PDF was updated ("Edition September 2026 update 9 Nov 2026",
 [`doc/secont_e_2609.pdf`](https://github.com/aloistr/swisseph/blob/6c9897279736b76e81f0b0039d05283a9ba59dc5/doc/secont_e_2609.pdf)
-at the upstream commit this repository now pins). The one substantive change is a new clause 13,
+at upstream commit 6c989727). The one substantive change is a new clause 13,
 "Use of language bindings and ports": every binding or port must honour the dual licensing
 (available under the AGPL and under Astrodienst's professional license), authors of bindings and
 ports may charge no extra fees, and Astrodienst lists the bindings it knows meet this (php-sweph,
@@ -303,10 +303,13 @@ too.
 
 ## Version numbers
 
-The package version tracks upstream, with a fourth component for releases this project makes on
-its own. `2.10.3` tracks Swiss Ephemeris C 2.10.03; a port-only release while upstream stays put
-would be `2.10.3.1`, then `2.10.3.2`, and the fourth component resets whenever upstream moves.
-`2.10.4.0` tracks Swiss Ephemeris C 2.10.04 (upstream tag `v2.10.04`); NuGet shows it as `2.10.4`.
+The package version tracks upstream, with a fourth component for releases this project makes
+without a new upstream version. `2.10.3` tracks Swiss Ephemeris C 2.10.03; a further release for
+the same upstream version would be `2.10.3.1`, then `2.10.3.2`. The fourth component resets to
+zero when upstream's version (`SE_VERSION`) changes, and a re-tag or library change that keeps
+`SE_VERSION` ships as a port revision. `2.10.4.0` tracks Swiss Ephemeris C 2.10.04 (upstream tag
+`v2.10.04`); NuGet shows it as `2.10.4`. `2.10.4.1` also reports `SE_VERSION` `2.10.04`, but
+follows the same tag after Astrodienst moved it to `24e47d42`.
 
 Two things about that are worth knowing rather than discovering. NuGet normalizes a trailing zero
 away, so `2.10.3.0` and `2.10.3` are the same package and writing the `.0` achieves nothing.
@@ -321,7 +324,7 @@ build metadata. The upstream version and tag it used to spell out are now `Assem
 entries, `UpstreamSwissEphemerisVersion`, `UpstreamSwissEphemerisTag` and
 `UpstreamSwissEphemerisCommit`, which is where text that does not have to parse as a version
 belongs. `UpstreamSwissEphemerisCommit` is the full SHA of the pinned upstream commit
-(`e308765d10b9463ab0ed53b102ad454820ee0b43`), and `UpstreamSwissEphemerisTag` names the upstream
+(`24e47d42d3e115d141d0e631930cf6e86fefb21c`), and `UpstreamSwissEphemerisTag` names the upstream
 tag that pin is (`v2.10.04`).
 
 This project is not published or endorsed by Yan Grenier or Astrodienst. See "About this repository"
@@ -504,7 +507,7 @@ did not have:
 None of this replaces existing API. It is purely additive.
 
 With those additions the port now covers the C library's whole public surface. `swephexp.h` at
-the current pin (`e308765d`, `v2.10.04`) declares 107 `swe_*` functions, and all 107 are present and public here.
+the current pin (`24e47d42`, `v2.10.04`) declares 107 `swe_*` functions, and all 107 are present and public here.
 The count is not an estimate: it comes from parsing the header and diffing it against the committed
 public-API list under `Tests/SwissEphNet.Tests/PublicApi/`, which a test regenerates and compares
 on every run, so a member appearing or disappearing fails the build rather than going unnoticed.
@@ -573,7 +576,7 @@ divergence is each platform's own math library disagreeing with itself in the la
 same thing two independently built C programs would show; it is not evidence against the port.
 
 Separately, the port's output is checked against Astrodienst's own 2.10.04 test suite (`setest`),
-18,919 iterations across 11 suites. 1,401 of those still fail, every one of them because the answer
+18,919 iterations across 11 suites. 1,405 of those still fail, every one of them because the answer
 is outside the tolerance Astrodienst's own suite allows (the per-quantity tolerances of `setest`'s `tolerances.c`).
 The harness skips nothing: each iteration runs as `setest` runs it on the 8 ephemeris files this repository
 ships, so an iteration that asks for a file the 8 do not contain (a JPL DE file, an `ephe/sat/` planetary-moon or
@@ -581,8 +584,8 @@ center-of-body file, a per-asteroid file, or an era file for a date outside roug
 takes the library's fallback and is compared with the official `t.exp`, which was made with every file. Until
 2026-11-24 the harness parked 1,101 of those iterations as `DATA-MISSING` without running them (1,037 `SEFLG_JPLEPH`,
 30 `SEFLG_CENTER_BODY`, 18 planetary moons, 16 numbered asteroids); that category no longer exists. Of the
-1,101, 233 pass and 868 differ from `t.exp` and are among the 1,401.
-`Tests/conformance/value-mismatch-triage.tsv` was re-measured on 2026-11-24 against upstream v2.10.04 (`e308765d`) and covers all 1,401 `VALUE-MISMATCH` rows: upstream's own `setest`, built with gcc on Linux and run on the same 8 ephemeris files this repository ships, reproduces the port on 623 of them (the official `t.exp` was made in a different data environment), 705 are iterations whose ephemeris file is not among those 8 (the official run found it, the port and the C on this data set do not; apart from the ephemeris directory embedded in the error string the two agree), and 73 differ only through glibc against the Windows C runtime (the MSVC-built C equals the port exactly, 121 of 121 compared fields); none is a port defect. The conformance test also pins, for every one of these 1,401 rows, the value the port produces for each mismatching field (`Tests/conformance/known-fail-pins.tsv`; for a runtime self-check, both of its operands), so an accepted row cannot change unnoticed. The four port defects the earlier (2026-08-02, 668-row) triage found, a missing JD-range guard on
+1,101, 233 pass and 868 differ from `t.exp` and are among the 1,405.
+`Tests/conformance/value-mismatch-triage.tsv` was measured on 2026-11-24 against upstream v2.10.04 (`e308765d`) and re-measured on 2026-11-26 at `24e47d42`, the re-tagged v2.10.04, whose only library change from `e308765d` is Delta T before -720 (upstream commit `27c94dee`); `t.exp` is identical at both and was recorded before that commit. It covers all 1,405 `VALUE-MISMATCH` rows: 4 of them (5.3.5 to 5.3.8, the `deltat` of 18.12.-1501) differ from `t.exp` only because `t.exp` predates `27c94dee`, and the C at `24e47d42` reproduces the port there. For the other 1,401: upstream's own `setest`, built with gcc on Linux and run on the same 8 ephemeris files this repository ships, reproduces the port on 623 of them (the official `t.exp` was made in a different data environment), 703 are iterations whose ephemeris file is not among those 8 (the official run found it, the port and the C on this data set do not; apart from the ephemeris directory embedded in the error string the two agree), and 75 differ only through glibc against the Windows C runtime (the MSVC-built C equals the port exactly; 123 of 123 compared fields at `24e47d42`); none is a port defect. The conformance test also pins, for every one of these 1,405 rows, the value the port produces for each mismatching field (`Tests/conformance/known-fail-pins.tsv`; for a runtime self-check, both of its operands), so an accepted row cannot change unnoticed. The four port defects the earlier (2026-08-02, 668-row) triage found, a missing JD-range guard on
 interpolated lunar perigee (`docs/compliance-2.10.04.md` section 3a), are fixed and their rows pruned. So the port matches everything it has been
 checked against and is not yet at full parity with Astrodienst's own reference corpus.
 At the 2.10.3.x pins the figures were different, and not comparable, because the corpus changed:
@@ -1014,17 +1017,17 @@ The reference corpus is Swiss Ephemeris **2.10.04**'s `setest` test suite
 (18,919 iterations across 11 suites and 68 testcases; the number of asserted values has not been
 re-counted for this corpus). The port has
 landed the whole 2.10.03 delta and the v2.10.04 changes, but `known-fail.tsv` still
-lists 1,401 failing iterations (17,518 passing, 92.6%). Each
+lists 1,405 failing iterations (17,514 passing, 92.6%). Each
 porting PR should remove entries from it; any entry that reappears is a regression.
 
-Read that 1,401 with the split under "Numerical compatibility" above, because it is not 1,401
+Read that 1,405 with the split under "Numerical compatibility" above, because it is not 1,405
 things left to port: every row sits outside the tolerance Astrodienst's own suite allows and all are triaged
-as drift (623 data environment, 705 missing ephemeris file, 73 libm platform),
+as drift (623 data environment, 703 missing ephemeris file, 75 libm platform, 4 `t.exp` recorded before upstream's Delta T change),
 and the four rows ever confirmed as port defects were fixed and pruned. At the 2.10.3.x pins the
 figures were 12,757 iterations and 2,395 failing, and are not comparable.
 
 - `external/swisseph`, a git submodule, sparse-checked-out, pinned to the upstream
-  tag `v2.10.04` (`e308765d`). It serves two purposes:
+  tag `v2.10.04` (`24e47d42`). It serves two purposes:
   1. **The reference corpus** for the conformance oracle: `setest/t.exp`
      (expected values) and `setest/tolerances.c` (per-quantity tolerances; `setest/t.fix`
      supplies only a fallback precision), plus the core `.se1`
@@ -1257,7 +1260,7 @@ Astrodienst's own material, which documents the API this port exposes:
 - [Swiss Ephemeris programming interface](http://www.astro.com/swisseph/swephprg.htm), the
   reference for every `swe_*` function here.
 - [`aloistr/swisseph`](https://github.com/aloistr/swisseph), the C source this port tracks. Pinned
-  here at tag `v2.10.04` (`e308765d`) under `external/swisseph`.
+  here at tag `v2.10.04` (`24e47d42`) under `external/swisseph`.
 - [`aloistr/swisseph/ephe`](https://github.com/aloistr/swisseph/tree/master/ephe), the ephemeris
   data files, mirrored at [`ephe.scryr.io/ephe`](https://ephe.scryr.io/ephe).
 

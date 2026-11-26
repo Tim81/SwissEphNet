@@ -5,7 +5,7 @@ namespace OracleVerify;
 /// for the definition of each:
 /// <list type="bullet">
 /// <item><see cref="PortVersion"/>: the port lags the pinned C reference tag -- a function that
-/// exists in the C but not yet in SwissEphNet, or vice versa. The port now tracks v2.10.04 (e308765d)
+/// exists in the C but not yet in SwissEphNet, or vice versa. The port now tracks v2.10.04 (24e47d42)
 /// (the same commit <c>external/swisseph</c> pins), so this category currently has zero rows in
 /// every known-diff file; it stays defined for the next time the pinned C tag moves ahead of the
 /// port, not as dead code. Must shrink to zero as porting lands, never grow without a reviewed

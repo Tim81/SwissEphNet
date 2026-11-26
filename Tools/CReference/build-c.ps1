@@ -280,7 +280,7 @@ function Get-ArchBaseline {
 # `#ifdef _WIN32` to match. Reported upstream by this fork; the report and Astrodienst's
 # replies are drafted outside the tracked tree and sent by hand, so there is no in-repo path
 # to follow. external/swisseph was pinned to v2.10.3bfinal (f4dcd18e) when this comment was
-# written; it is now pinned to the upstream tag v2.10.04 (e308765d).
+# written; it is now pinned to the upstream tag v2.10.04 (24e47d42).
 #
 # THE THIRD DEFECT, surfaced by that same sweodef.h change, is also fixed upstream, in v2.10.04
 # (commit 0219d926). do_printf (swetest.c) used to read:

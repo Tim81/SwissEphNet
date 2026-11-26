@@ -268,11 +268,11 @@ jobs:
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: pwsh
         run: |
-          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
+          $pinnedSha = "24e47d42d3e115d141d0e631930cf6e86fefb21c"
           $line = git ls-tree HEAD external/swisseph
           $actual = ($line -split '\s+')[2]
           if ($actual -ne $pinnedSha) {
-            Write-Error "external/swisseph's gitlink is $actual but this job is hardcoded to $pinnedSha. Update this occurrence and every other one listed in this file's own header comment."
+            Write-Error "external/swisseph's gitlink is $actual but this job is hardcoded to $pinnedSha. Update this occurrence and every other one in this file (search it for the SHA)."
             exit 1
           }
           Write-Host "OK: external/swisseph's gitlink ($actual) matches this job's pinned SHA."
@@ -282,13 +282,13 @@ jobs:
         uses: actions/cache@v6
         with:
           path: external/swisseph
-          key: swisseph-submodule-e308765d10b9463ab0ed53b102ad454820ee0b43
+          key: swisseph-submodule-24e47d42d3e115d141d0e631930cf6e86fefb21c
 
       - name: Checkout external/swisseph submodule (sparse, ~25 MB)
         if: steps.submodule-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
+          $pinnedSha = "24e47d42d3e115d141d0e631930cf6e86fefb21c"
           git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
           Push-Location external/swisseph
           git config core.autocrlf false
@@ -382,11 +382,11 @@ jobs:
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: pwsh
         run: |
-          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
+          $pinnedSha = "24e47d42d3e115d141d0e631930cf6e86fefb21c"
           $line = git ls-tree HEAD external/swisseph
           $actual = ($line -split '\s+')[2]
           if ($actual -ne $pinnedSha) {
-            Write-Error "external/swisseph's gitlink is $actual but this job is hardcoded to $pinnedSha. Update this occurrence and every other one listed in this file's own header comment."
+            Write-Error "external/swisseph's gitlink is $actual but this job is hardcoded to $pinnedSha. Update this occurrence and every other one in this file (search it for the SHA)."
             exit 1
           }
           Write-Host "OK: external/swisseph's gitlink ($actual) matches this job's pinned SHA."
@@ -396,13 +396,13 @@ jobs:
         uses: actions/cache@v6
         with:
           path: external/swisseph
-          key: swisseph-submodule-e308765d10b9463ab0ed53b102ad454820ee0b43
+          key: swisseph-submodule-24e47d42d3e115d141d0e631930cf6e86fefb21c
 
       - name: Checkout external/swisseph submodule (sparse, ~25 MB)
         if: steps.submodule-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
+          $pinnedSha = "24e47d42d3e115d141d0e631930cf6e86fefb21c"
           git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
           Push-Location external/swisseph
           git config core.autocrlf false
@@ -485,11 +485,11 @@ jobs:
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: pwsh
         run: |
-          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
+          $pinnedSha = "24e47d42d3e115d141d0e631930cf6e86fefb21c"
           $line = git ls-tree HEAD external/swisseph
           $actual = ($line -split '\s+')[2]
           if ($actual -ne $pinnedSha) {
-            Write-Error "external/swisseph's gitlink is $actual but this job is hardcoded to $pinnedSha. Update this occurrence and every other one listed in this file's own header comment."
+            Write-Error "external/swisseph's gitlink is $actual but this job is hardcoded to $pinnedSha. Update this occurrence and every other one in this file (search it for the SHA)."
             exit 1
           }
           Write-Host "OK: external/swisseph's gitlink ($actual) matches this job's pinned SHA."
@@ -499,13 +499,13 @@ jobs:
         uses: actions/cache@v6
         with:
           path: external/swisseph
-          key: swisseph-submodule-e308765d10b9463ab0ed53b102ad454820ee0b43
+          key: swisseph-submodule-24e47d42d3e115d141d0e631930cf6e86fefb21c
 
       - name: Checkout external/swisseph submodule (sparse, ~25 MB)
         if: steps.submodule-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
+          $pinnedSha = "24e47d42d3e115d141d0e631930cf6e86fefb21c"
           git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
           Push-Location external/swisseph
           git config core.autocrlf false
@@ -649,11 +649,11 @@ jobs:
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: pwsh
         run: |
-          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
+          $pinnedSha = "24e47d42d3e115d141d0e631930cf6e86fefb21c"
           $line = git ls-tree HEAD external/swisseph
           $actual = ($line -split '\s+')[2]
           if ($actual -ne $pinnedSha) {
-            Write-Error "external/swisseph's gitlink is $actual but this job is hardcoded to $pinnedSha. Update this occurrence and every other one listed in this file's own header comment."
+            Write-Error "external/swisseph's gitlink is $actual but this job is hardcoded to $pinnedSha. Update this occurrence and every other one in this file (search it for the SHA)."
             exit 1
           }
           Write-Host "OK: external/swisseph's gitlink ($actual) matches this job's pinned SHA."
@@ -663,13 +663,13 @@ jobs:
         uses: actions/cache@v6
         with:
           path: external/swisseph
-          key: swisseph-submodule-e308765d10b9463ab0ed53b102ad454820ee0b43
+          key: swisseph-submodule-24e47d42d3e115d141d0e631930cf6e86fefb21c
 
       - name: Checkout external/swisseph submodule (sparse, ~25 MB)
         if: steps.submodule-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          $pinnedSha = "e308765d10b9463ab0ed53b102ad454820ee0b43"
+          $pinnedSha = "24e47d42d3e115d141d0e631930cf6e86fefb21c"
           git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
           Push-Location external/swisseph
           git config core.autocrlf false
@@ -774,7 +774,7 @@ jobs:
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: bash
         run: |
-          pinned=e308765d10b9463ab0ed53b102ad454820ee0b43
+          pinned=24e47d42d3e115d141d0e631930cf6e86fefb21c
           actual=$(git ls-tree HEAD external/swisseph | awk '{print $3}')
           if [ "$actual" != "$pinned" ]; then
             echo "::error::external/swisseph gitlink is $actual, this job is pinned to $pinned"
@@ -787,13 +787,13 @@ jobs:
         uses: actions/cache@v6
         with:
           path: external/swisseph
-          key: swisseph-submodule-macos-e308765d10b9463ab0ed53b102ad454820ee0b43
+          key: swisseph-submodule-macos-24e47d42d3e115d141d0e631930cf6e86fefb21c
 
       - name: Checkout external/swisseph submodule (sparse)
         if: steps.submodule-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          pinned=e308765d10b9463ab0ed53b102ad454820ee0b43
+          pinned=24e47d42d3e115d141d0e631930cf6e86fefb21c
           git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
           cd external/swisseph
           git config core.autocrlf false
@@ -1160,7 +1160,7 @@ jobs:
       - name: Assert the pinned submodule SHA matches the gitlink
         shell: bash
         run: |
-          pinned=e308765d10b9463ab0ed53b102ad454820ee0b43
+          pinned=24e47d42d3e115d141d0e631930cf6e86fefb21c
           actual=$(git ls-tree HEAD external/swisseph | awk '{print $3}')
           if [ "$actual" != "$pinned" ]; then
             echo "::error::external/swisseph gitlink is $actual, this job is pinned to $pinned"
@@ -1173,13 +1173,13 @@ jobs:
         uses: actions/cache@v6
         with:
           path: external/swisseph
-          key: swisseph-submodule-linux-e308765d10b9463ab0ed53b102ad454820ee0b43
+          key: swisseph-submodule-linux-24e47d42d3e115d141d0e631930cf6e86fefb21c
 
       - name: Checkout external/swisseph submodule (sparse)
         if: steps.submodule-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          pinned=e308765d10b9463ab0ed53b102ad454820ee0b43
+          pinned=24e47d42d3e115d141d0e631930cf6e86fefb21c
           git clone --filter=blob:none --no-checkout https://github.com/aloistr/swisseph.git external/swisseph
           cd external/swisseph
           git config core.autocrlf false

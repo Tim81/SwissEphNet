@@ -18,14 +18,18 @@
       that package anyway. Until the release lands, build from source or
       reference the project directly.
 
-      Current: 2.10.4.0 tracks upstream tag v2.10.04 (e308765d), the first
-      upstream tag since v2.10.3bfinal, and is what the port targets now. SE_VERSION is "2.10.04". NuGet drops the trailing
-      zero, so the package shows as 2.10.4; the assembly keeps 2.10.4.0.
+      Current: 2.10.4.1 tracks upstream tag v2.10.04 as re-tagged at 24e47d42
+      (2.10.4.0 tracked the same tag at e308765d, before Astrodienst moved it),
+      the first upstream tag since v2.10.3bfinal, and is what the port targets
+      now. SE_VERSION is still "2.10.04". 2.10.4.1 has no trailing zero, so
+      NuGet shows it as 2.10.4.1 (2.10.4.0 showed as 2.10.4).
       (2.10.3.3 tracked upstream master at 43c9fe54.)
 
-      The "port revision" above is the fourth component, for a port-only
-      release made while upstream stays put: 2.10.3, then 2.10.3.1, 2.10.3.2,
-      resetting whenever upstream moves. Two things to know before using it.
+      The "port revision" above is the fourth component, for a release this
+      project makes without a new upstream version: 2.10.3, then 2.10.3.1,
+      2.10.3.2. It resets to zero when upstream's version (SE_VERSION) changes.
+      A re-tag or library change that keeps SE_VERSION, as 2.10.4.1 does,
+      ships as a port revision. Two things to know before using it.
       NuGet normalizes a trailing zero away, so 2.10.3.0 and 2.10.3 are the
       same package and there is no point writing the .0. That was measured,
       not assumed: packing 2.10.3.0 produces a .2.10.3.nupkg. And four components
@@ -53,7 +57,7 @@
       component. Decide it deliberately at the point of making one; do not
       discover it from a consumer's FileLoadException.
     -->
-    <Version>2.10.4.0</Version>
+    <Version>2.10.4.1</Version>
     <!--
       Plain SemVer, with no descriptive text. The SDK appends +<commit sha> to
       whatever is here, so anything with spaces or parentheses in the core
@@ -63,7 +67,7 @@
       used to carry now lives in the AssemblyMetadata items below, which is
       where arbitrary text belongs.
     -->
-    <InformationalVersion>2.10.4.0</InformationalVersion>
+    <InformationalVersion>2.10.4.1</InformationalVersion>
     <Authors>Yan Grenier, Timothy van der Ham</Authors>
     <!--
       Company is the publisher field, distinct from Authors above: NuGet shows it separately, and
@@ -95,7 +99,20 @@
       an API this library no longer has.
     -->
     <PackageReadmeFile>README.nuget.md</PackageReadmeFile>
-    <PackageReleaseNotes>2.10.4.0:
+    <PackageReleaseNotes>2.10.4.1:
+- Tracks upstream tag v2.10.04 as re-tagged at 24e47d42 (2.10.4.0 was built at e308765d). SE_VERSION
+  is still "2.10.04".
+- Delta T before 1 January -720 follows upstream 27c94dee: T is Julian centuries since JD
+  2387627.5 (1825 Jan 1.0, as in JPL Horizons) and dt = 65.62 + 31.351922682 T^2 s. It affects the
+  default model SEMOD_DELTAT_STEPHENSON_ETC_2020. Measured from the MSVC-built C, swe_deltat_ex(0,
+  SEFLG_MOSEPH) moves by +0.085 s and by +0.026 s at JD 1000000; from the two formulas, about
+  -0.0008 s just before 1 January -720, crossing zero near -758 and growing linearly by about
+  0.002 s per century further back (+0.048 s at -3000). UT-input results before -720 move
+  slightly (TT-input results too, wherever they convert to UT internally); results from -720 on
+  are unchanged. No API change.
+- The other upstream commits (documentation, seasnam.txt, binaries) need no port change.
+
+2.10.4.0:
 - BREAKING: SE_FNAME_DFT2 is removed. Upstream deleted it together with the DE406 fallback in
   open_jpl_file, so code that names the constant no longer compiles. SE_FNAME_DFT is now
   de441.eph and SE_DE_NUMBER is 441. A caller that has only de431.eph must now call
@@ -333,7 +350,7 @@ https://github.com/Tim81/SwissEphNet/blob/main/CHANGELOG.md.
   <ItemGroup>
     <AssemblyMetadata Include="UpstreamSwissEphemerisVersion" Value="2.10.04" />
     <AssemblyMetadata Include="UpstreamSwissEphemerisTag" Value="v2.10.04" />
-    <AssemblyMetadata Include="UpstreamSwissEphemerisCommit" Value="e308765d10b9463ab0ed53b102ad454820ee0b43" />
+    <AssemblyMetadata Include="UpstreamSwissEphemerisCommit" Value="24e47d42d3e115d141d0e631930cf6e86fefb21c" />
   </ItemGroup>
 
   <!--

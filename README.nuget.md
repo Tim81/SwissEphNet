@@ -185,7 +185,7 @@ These values are C# `const`s, so code compiled against 2.10.3.x keeps the old on
 recompiled. A caller that has only `de431.eph` must now call `swe_set_jpl_file("de431.eph")`:
 `SE_FNAME_DFT` is `de441.eph` and the `SE_FNAME_DFT2` fallback is gone.
 
-The [full README](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.0/README.md) documents
+The [full README](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.1/README.md) documents
 every breaking change with the C source line each one corresponds to.
 
 ## Credits
@@ -201,5 +201,5 @@ This package is not published or endorsed by Yan Grenier or Astrodienst.
 
 - [Repository and full documentation](https://github.com/Tim81/SwissEphNet)
 - [Report an issue](https://github.com/Tim81/SwissEphNet/issues)
-- [How the numbers are verified](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.0/docs/compliance-2.10.04.md)
-- [Known issues](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.0/docs/known-issues.md)
+- [How the numbers are verified](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.1/docs/compliance-2.10.04.md)
+- [Known issues](https://github.com/Tim81/SwissEphNet/blob/v2.10.4.1/docs/known-issues.md)

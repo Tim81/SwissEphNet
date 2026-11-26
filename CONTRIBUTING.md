@@ -132,14 +132,14 @@ A PR that changes a frozen file with no hunk citation should not be merged.
 
 Existing citations of the upstream C (in port comments, docs and the freeze log) refer to
 `v2.10.3bfinal` (`f4dcd18e`) unless they name another version; they were not renumbered when the
-pin moved (to `94621aba`, then `43c9fe54`, then `e308765d`). Cite new hunks against the current pin and say so if it is not obvious.
+pin moved (to `94621aba`, then `43c9fe54`, then `e308765d`, then `24e47d42`, the re-tagged `v2.10.04` with `27c94dee`, Delta T before -720). Cite new hunks against the current pin and say so if it is not obvious.
 `docs/known-issues.md` ("C file:line citations were written against `v2.10.3bfinal`") has the exact
 line offsets for mapping an old citation to the current pin.
 
 ### The upstream C is vendored at `external/swisseph`
 
 `external/swisseph` is a git submodule of `https://github.com/aloistr/swisseph`,
-pinned to the upstream tag `v2.10.04` (`e308765d`) -- the upstream C this port tracks.
+pinned to the upstream tag `v2.10.04` (`24e47d42`) -- the upstream C this port tracks.
 It is sparse-checked-out to keep it small: only `*.c`, `*.h`, `Makefile`,
 `LICENSE`, `setest/` (the reference test corpus `Tests/SwissEphNet.Conformance.Tests`
 is built against) and eight specific `ephe/` files the conformance oracle needs to run
@@ -167,7 +167,7 @@ git sparse-checkout set --no-cone /*.c /*.h /Makefile /LICENSE /setest/* /seleap
     /ephe/seas_12.se1 /ephe/semo_12.se1 /ephe/sepl_12.se1 `
     /ephe/seas_18.se1 /ephe/semo_18.se1 /ephe/sepl_18.se1 `
     /ephe/sefstars.txt /ephe/seorbel.txt
-git checkout e308765d10b9463ab0ed53b102ad454820ee0b43
+git checkout 24e47d42d3e115d141d0e631930cf6e86fefb21c
 cd ../..
 git submodule absorbgitdirs external/swisseph
 ```
@@ -495,9 +495,9 @@ correctness oracle look, from a CI notification, like the same kind of thing:
 both run the library against a reference and report PASS/FAIL. Their
 *expected* results are opposites. The baseline expects **zero** diffs --
 anything else means a change altered something it should not have. This
-oracle expects **some iterations to still fail**: `known-fail.tsv` lists 1,401<!--doccount:known-fail-total--> of 18,919
+oracle expects **some iterations to still fail**: `known-fail.tsv` lists 1,405<!--doccount:known-fail-total--> of 18,919
 iterations (92.6% passing) at v2.10.04. That count is divergence from `t.exp`, a static
-snapshot made by Astrodienst, not a count of port defects: all 1,401 `VALUE-MISMATCH` rows are
+snapshot made by Astrodienst, not a count of port defects: all 1,405 `VALUE-MISMATCH` rows are
 triaged against the C and none is a port defect. The harness skips no iteration for want of
 data (the `DATA-MISSING` category that did was removed on 2026-11-24): an iteration that asks
 for a file this repo does not ship runs as `setest` runs it, with the library's fallback. A red
@@ -517,16 +517,18 @@ porting work queue) and **parked** (every non-passing iteration in that
 testcase is `NOT-IMPLEMENTED` or `UNREPRODUCIBLE` -- blocked
 on something other than the port's logic: a 2.10-only API (currently none;
 the category is empty) or a structural gap). A testcase with zero failing iterations appears in neither list; it is
-not "parked", it is done. Of the 68, 28 have at least one row in
-`known-fail.tsv`; splitting those by `FormatByTestCase()`'s rule gives 28
-actionable and none parked, and the remaining 40 have no row in
+not "parked", it is done. Of the 68, 29 have at least one row in
+`known-fail.tsv`; splitting those by `FormatByTestCase()`'s rule gives 29
+actionable and none parked, and the remaining 39 have no row in
 `known-fail.tsv` at all -- they pass completely. ("Actionable"
-is the rule's name, not a verdict: at v2.10.04 all 1,401 `VALUE-MISMATCH` rows
-are triaged as drift, none a port defect.) Measured at v2.10.04 on 2026-11-24
-after the `DATA-MISSING` skips were lifted (earlier the same day: 29 testcases
+is the rule's name, not a verdict: at v2.10.04 all 1,405 `VALUE-MISMATCH` rows
+are triaged as drift, none a port defect.) Measured at `24e47d42` on 2026-11-26.
+At `e308765d` on 2026-11-24, after the `DATA-MISSING` skips were lifted, it was 28
+testcases with a row, 28 actionable, 40 without. Earlier the same day it was 29 testcases
 with a row, 22 actionable and 7 parked, the parked ones being the testcases
-whose only failures were skipped iterations: six of them, 1.2, 1.4, 1.5, 4.1, 7.3 and
-7.4, now carry `VALUE-MISMATCH` rows, and 5.3 passes completely); at
+whose only failures were skipped iterations. Six of them, 1.2, 1.4, 1.5, 4.1, 7.3 and
+7.4, now carry `VALUE-MISMATCH` rows, and 5.3 then passed completely. It has had rows
+since 2026-11-26, 5.3.5 to 5.3.8. At
 2.10.3.x the figures were 60 testcases, 31 actionable and 8 parked. A porting PR
 should be shrinking the actionable list's mismatch/error counts, or moving a
 testcase from actionable to fully passing -- not touching the parked list,

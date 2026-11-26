@@ -1,11 +1,16 @@
 # Compliance record: Swiss Ephemeris 2.10.04
 
 This records what has actually been measured about this port's agreement with Astrodienst's
-own Swiss Ephemeris C library, version 2.10.04 (upstream tag `v2.10.04`, `e308765d`), rather than
+own Swiss Ephemeris C library, version 2.10.04 (upstream tag `v2.10.04`, `24e47d42`), rather than
 asserting it. The submodule is pinned to that tag, the first upstream tag since `v2.10.3bfinal`
-and 43 commits after the previous pin, `43c9fe54`. Sections written for earlier pins keep their own
-dated numbers and say so; the sections that state a current count (3 and 4, and the summary just
-below) were re-measured at `e308765d`. Every number below comes from a gate in this repository or
+and 50 commits after the pin before the v2.10.04 sync, `43c9fe54` (43 to `e308765d`, where the tag first pointed).
+Sections written for earlier pins keep their own dated numbers and say so. The rows re-run at
+`24e47d42` in this sync (2026-11-26) are marked "at `24e47d42`" in the summary table below: the oracle
+(both grids, bit-identical to the MSVC-built C, and the version classification), the characterization
+baseline, the conformance known-fail list, triage and pins, the `swetest` diff gate (17 known, passing).
+`gen-delta` and the freeze were re-run too; they are gates without table rows.
+Every other figure was measured at `e308765d`.
+Every number below comes from a gate in this repository or
 from a measurement run during the version-bump work (see `docs/known-issues.md`'s `SE_VERSION`
 entry). Where something has not been measured, that is stated rather than estimated.
 
@@ -17,15 +22,15 @@ The claims, each with the gate that proves it. Windows x64 against an MSVC-built
 these were measured on in this sync; Linux and macOS were not re-measured here (the CI jobs gate
 them), so the older per-platform rows in section 1 stay as dated.
 
-| Claim | Gate | Measured at `e308765d` |
+| Claim | Gate | Measured |
 |---|---|---|
-| The port is bit-identical to Astrodienst's C on both oracle grids | `scripts/verify-oracle.ps1` | 27,437 analytic rows and 3,376 file rows identical, both dumps SHA-256 identical, both known-diff lists empty |
-| The printed output of `SweTest` matches `swetest` | `scripts/verify-swetest-diff.ps1` | 251 of 268 cases byte-identical; the other 17 differ only by the directory separator and the CRT's `-nan(ind)` |
-| The v2.10.04 behaviour changes are the only thing that moved the characterization baseline | `scripts/verify-baseline.ps1`, regenerated three times with deviation notes | Delta T and tidal defaults: with only those reverted, exactly 83 case ids changed in total, 82 Chiron (ipl 15) `serr` rows plus `VER`. Nodaps fix: 156 rows, and all 360 `swe_nod_aps` calls bit-identical to the C. Serr-accumulation fix: 365 calc-defaulteph `serr` rows (column 9 only, verified against the MSVC C) |
-| Agreement with Astrodienst's reference values | `Tests/SwissEphNet.Conformance.Tests`, `setest/t.exp` | 11 suites, 68 testcases, 18,919 iterations; 1,401 rows in `known-fail.tsv`, all `VALUE-MISMATCH` (the harness skips no iteration for want of data) |
-| None of the 1,401 `VALUE-MISMATCH` rows is a port defect | `Tests/conformance/value-mismatch-triage.tsv`, checked by `ValueMismatchTriageTests` | All 1,401 are `DRIFT`: 623 `DATA-ENV`, 705 `SERR-PATH`, 73 `LIBM-PLATFORM` |
-| An accepted `VALUE-MISMATCH` row cannot change unnoticed | `Tests/conformance/known-fail-pins.tsv`, checked by `PinGate` in `PortMatchesKnownFailList` | For each of the 1,401 rows, the port's value for every mismatching field (both operands of a failing runtime self-check); the gate fails if the field set changes or a value moves beyond `setest`'s tolerance for that field |
-| New v2.10.04 behaviour is pinned against the C | `FileBoundaryHistoryTest`, `HeliocentricLightTimeTest`, `DeltaTModelsTest`, `CalcMessagesTest`, `AstroModelsStringTest`, `SweDataClearInPlaceTest` | Expected values measured from the MSVC-built C at `e308765d` |
+| The port is bit-identical to Astrodienst's C on both oracle grids | `scripts/verify-oracle.ps1` | At `24e47d42`: 27,437 analytic rows and 3,376 file rows identical to the MSVC-built C, both known-diff lists empty, both dumps SHA-256 identical to the C's, version classification with no category change (2,315 analytic rows change only the reason column: 2,247 only in ulp values, 68 also in the differing-field count or worst field); the dumps were also SHA-256 identical at `e308765d` |
+| The printed output of `SweTest` matches `swetest` | `scripts/verify-swetest-diff.ps1` | At `24e47d42`: 251 of 268 cases byte-identical, and the gate passes (17 known differences); the other 17 differ only by the directory separator and the CRT's `-nan(ind)` |
+| The v2.10.04 behaviour changes are the only thing that moved the characterization baseline | `scripts/verify-baseline.ps1`, regenerated four times with deviation notes | Delta T and tidal defaults (at `e308765d`): with only those reverted, exactly 83 case ids changed in total, 82 Chiron (ipl 15) `serr` rows plus `VER`. Nodaps fix: 156 rows, and all 360 `swe_nod_aps` calls bit-identical to the C. Serr-accumulation fix: 365 calc-defaulteph `serr` rows (column 9 only, verified against the MSVC C). Delta T before -720 (`27c94dee`, baseline log entry 32, at `24e47d42`): 10,024 case ids, all before -720 |
+| Agreement with Astrodienst's reference values | `Tests/SwissEphNet.Conformance.Tests`, `setest/t.exp` | At `24e47d42`: 11 suites, 68 testcases, 18,919 iterations; 1,405 rows in `known-fail.tsv`, all `VALUE-MISMATCH` (the harness skips no iteration for want of data) |
+| None of the 1,405 `VALUE-MISMATCH` rows is a port defect | `Tests/conformance/value-mismatch-triage.tsv`, checked by `ValueMismatchTriageTests` | At `24e47d42`: all 1,405 are `DRIFT`: 623 `DATA-ENV`, 703 `SERR-PATH`, 75 `LIBM-PLATFORM`, 4 `TEXP-PREDATES-FIX` (re-measured 2026-11-26) |
+| An accepted `VALUE-MISMATCH` row cannot change unnoticed | `Tests/conformance/known-fail-pins.tsv`, checked by `PinGate` in `PortMatchesKnownFailList` | At `24e47d42`: for each of the 1,405 rows, the port's value for every mismatching field (both operands of a failing runtime self-check); the gate fails if the field set changes or a value moves beyond `setest`'s tolerance for that field |
+| New v2.10.04 behaviour is pinned against the C | `FileBoundaryHistoryTest`, `HeliocentricLightTimeTest`, `DeltaTModelsTest`, `CalcMessagesTest`, `AstroModelsStringTest`, `SweDataClearInPlaceTest`, `DeltaTBeforeMinus720Test` | Expected values measured from the MSVC-built C at `e308765d`; `DeltaTBeforeMinus720Test` at `24e47d42` |
 
 What this does not show: the `known-fail.tsv` count is divergence from `t.exp`, a static snapshot
 made by Astrodienst, not from a live C build, and is not a count of port defects. Sections 3 and 3a
@@ -62,9 +67,11 @@ full parity with 2.10.04; it is not, and the next section says by how much.
 
 ## 1. Bit-exact oracle
 
-**At v2.10.04 (`e308765d`), measured on Windows in this sync:** the port is bit-identical to the
+**At v2.10.04 (`e308765d`), measured on Windows in the 2026-11-24 sync:** the port is bit-identical to the
 MSVC-built C on both grids, 27,437 analytic rows and 3,376 file rows, the dumps are SHA-256
-identical, and both known-diff lists are empty. The platform table and the dump hashes in this
+identical, and both known-diff lists are empty. At `24e47d42` the oracle was re-measured and is
+bit-identical again (27,437 analytic rows, 3,376 file rows, zero known-diff rows, both dumps SHA-256
+identical to the C's). The platform table and the dump hashes in this
 section were measured at earlier pins (the `2.10.03` names in the dump file names are the
 generator's, not the pin) and are kept as dated records, not rewritten.
 
@@ -551,20 +558,20 @@ corpus had 10 suites, 60 testcases and 12,757 iterations. Suite 11 (`swe_pheno`,
 and the JPL file the suites open is `de441.eph`. `Tests/conformance/known-fail.tsv` lists one row
 per iteration the port does not currently match.
 
-As of this record, `known-fail.tsv` carries 1,401<!--doccount:known-fail-total--> rows, so 17,518 of 18,919 iterations pass
+As of this record, `known-fail.tsv` carries 1,405<!--doccount:known-fail-total--> rows, so 17,514 of 18,919 iterations pass
 (92.6%). It had 2,395 rows against the 12,757-iteration corpus at `6c989727` and `43c9fe54`; the
 two numbers are not a progress measure, because the corpus changed under them. That
 count is divergence from `t.exp`, a static Astrodienst snapshot (regenerated upstream for 2.10.04, header
 localtime 22.11.2026), not from a live C build, and it is
 not a count of port defects: section 3a shows that none of the `VALUE-MISMATCH` rows is one.
 
-The 1,401<!--doccount:known-fail-total--> rows are all one category, with 0<!--doccount:known-fail-error--> in
+The 1,405<!--doccount:known-fail-total--> rows are all one category, with 0<!--doccount:known-fail-error--> in
 `ERROR`, 0<!--doccount:known-fail-unreproducible--> in `UNREPRODUCIBLE`, and 0<!--doccount:known-fail-not-implemented--> in
 `NOT-IMPLEMENTED` at present:
 
 | Category | Rows | What it means |
 |---|---|---|
-| `VALUE-MISMATCH` | 1,401<!--doccount:known-fail-value-mismatch--> | The port ran and produced an answer outside `setest`'s tolerance for that quantity (`tolerances.c`; `t.fix`'s precision only for names it does not classify). Section 3a triages all 1,401: every one is `DRIFT`, none is a port defect. Each is also pinned field by field in `known-fail-pins.tsv` (see section 3a). |
+| `VALUE-MISMATCH` | 1,405<!--doccount:known-fail-value-mismatch--> | The port ran and produced an answer outside `setest`'s tolerance for that quantity (`tolerances.c`; `t.fix`'s precision only for names it does not classify). Section 3a triages all 1,405: every one is `DRIFT`, none is a port defect. Each is also pinned field by field in `known-fail-pins.tsv` (see section 3a). |
 
 There is no `DATA-MISSING` category any more. Until 2026-11-24 it held 1,101 rows (1,037 JPL, 30
 `SEFLG_CENTER_BODY`, 16 numbered-asteroid and 18 planetary-moon iterations) that the harness did not run,
@@ -588,7 +595,7 @@ regenerated `t.exp` carries the analytic speeds. The drift ledger that evidenced
 in git history. The evidence recorded below for the earlier 759 `DATA-MISSING` rows and the
 12,757-iteration corpus was measured against the old `t.exp` and is kept as dated.
 
-**Update (2026-11-24, v2.10.04): the 157 era rows are no longer `DATA-MISSING`.** The harness used to skip every `SEFLG_SWIEPH` iteration dated outside 1200-2399 (`EphemerisFileResolver.NeedsEraFileWeDoNotShip`, wired into suites 5.3 and 10) on the grounds below. Upstream's `setest`, run on the same 8 files, skips nothing: `swe_calc` falls back to Moshier, puts "not found in PATH ... using Moshier eph." in `serr`, and the result is compared with `t.exp` like any other. The skip was removed, so those iterations run. 5.3.6 now passes (its `serr` matches `t.exp`), and the 156 suite-10 rows (10.1 to 10.4 six each, 10.5 and 10.6 two each, 10.7 and 10.8 64 each) are `VALUE-MISMATCH`, all `DRIFT`: 139 `SERR-PATH` and 17 `LIBM-PLATFORM` (`helio_cross` `jx`, 1.4e-14 to 4.5e-12 relative against the gcc-built C, 4e-8 to 3e-6 day; the MSVC-built C equals the port bit for bit). The opt-in `SWISSEPH_CONFORMANCE_INCLUDE_ERA` is gone. The text of this paragraph and the next two describes the 2.10.3.x state and is kept as dated.
+**Update (2026-11-24, v2.10.04): the 157 era rows are no longer `DATA-MISSING`.** The harness used to skip every `SEFLG_SWIEPH` iteration dated outside 1200-2399 (`EphemerisFileResolver.NeedsEraFileWeDoNotShip`, wired into suites 5.3 and 10) on the grounds below. Upstream's `setest`, run on the same 8 files, skips nothing: `swe_calc` falls back to Moshier, puts "not found in PATH ... using Moshier eph." in `serr`, and the result is compared with `t.exp` like any other. The skip was removed, so those iterations run. 5.3.6 now passes (its `serr` matches `t.exp`; fails again since 2026-11-26, `TEXP-PREDATES-FIX`), and the 156 suite-10 rows (10.1 to 10.4 six each, 10.5 and 10.6 two each, 10.7 and 10.8 64 each) are `VALUE-MISMATCH`, all `DRIFT`: 139 `SERR-PATH` and 17 `LIBM-PLATFORM` (`helio_cross` `jx`, 1.4e-14 to 4.5e-12 relative against the gcc-built C, 4e-8 to 3e-6 day; the MSVC-built C equals the port bit for bit). The opt-in `SWISSEPH_CONFORMANCE_INCLUDE_ERA` is gone. The text of this paragraph and the next two describes the 2.10.3.x state and is kept as dated.
 
 **(As of 2.10.3.x.) 157 of the 759 `DATA-MISSING` rows were `SEFLG_SWIEPH` calls for a date outside the era this
 repo's shipped core ephemeris files cover** (the `sepl`/`semo`/`seas_N.se1` and their BCE `_N.se1`
@@ -734,7 +741,7 @@ measurement.
 
 ## 3a. VALUE-MISMATCH triage against Astrodienst's own C
 
-**Current triage (2026-11-24, v2.10.04).** `Tests/conformance/value-mismatch-triage.tsv` covers
+**Triage of 2026-11-24 (v2.10.04 at `e308765d`).** `Tests/conformance/value-mismatch-triage.tsv` covers
 exactly the 1,401 `VALUE-MISMATCH` keys of `known-fail.tsv` (533 when first written the same day; the 868 rows of the lifted `DATA-MISSING` skips were added after it, see the update in section 3); `ValueMismatchTriageTests` checks that
 the two cover the same keys and pins that the four 2.10.03-era `SE_INTP_PERG` iterations
 (1.1.377/379/383/385) stay off `known-fail.tsv`. All 1,401 rows are `DRIFT`, none is a port defect:
@@ -753,7 +760,9 @@ The old 668-row ledger was keyed to the pre-v2.10.04 `t.exp`.
 
 **Counts above are as of the last update of 2026-11-24.** The first version of this triage covered 533 rows (260 `DATA-ENV`, 230 `SERR-PATH`, 43 `LIBM-PLATFORM`; 71 of 71 MSVC fields); the 868 rows of the lifted `DATA-MISSING` skips (section 3) were added to it afterwards with the same method (363 `DATA-ENV`, 475 `SERR-PATH`, 30 `LIBM-PLATFORM`, 50 of 50 MSVC fields).
 
-**Pinned values.** The triage says why the rows differ from `t.exp`; `Tests/conformance/known-fail-pins.tsv` makes the gate see them change. The category and `magnitude_key` comparison covers only the worst field of a row, in decades, so another field could regress unseen, and the 144 rows whose key is `0` and the 6 whose key is `n/a` (340 and 111 of the 1,401 rows since the `DATA-MISSING` skips were lifted) could not change visibly at all (4.2.20: `daya_ex` fixes the key at 0 and `daya_ex_ut` was unguarded). For each `VALUE-MISMATCH` row the pins file records the name, kind and port value of every mismatching field. `PinGate` fails a row when its set of mismatching fields differs from the pinned set (a field that matched `t.exp` now does not, or the reverse), when a double moves by more than `setest`'s own tolerance for that field (`tolerances.c` for the iteration's suite, testcase and `iflag`, falling back to the `t.fix` precision as `CheckContext` does), when an int differs, or when a string differs after the ephemeris directory is replaced by a placeholder; the message names the row, field, pinned and actual value. A failing runtime self-check (`CHECK_EQUALS_D`, `CHECK_EQUALS_I`) has no `t.exp` side, so both of its operands are pinned, the second as `name#2`; before 2026-11-24 only the first was, which for suite 10's `CHECK_EQUALS_D(xcross, xx[0])` is the `t.exp` input, so the port's computed `xx[0]` was never pinned. The pins are generated by `scripts/regenerate-known-fail.ps1` with the known-fail rows, change only through that logged regeneration, and are generated and gated on Windows x64 (the script refuses to run elsewhere unless given `-AllowUnsupportedPlatform`). There are 5,239 field pins over the 1,401 rows.
+**Pinned values.** The triage says why the rows differ from `t.exp`; `Tests/conformance/known-fail-pins.tsv` makes the gate see them change. The category and `magnitude_key` comparison covers only the worst field of a row, in decades, so another field could regress unseen, and the 144 rows whose key is `0` and the 6 whose key is `n/a` (340 and 111 of the 1,401 rows since the `DATA-MISSING` skips were lifted) could not change visibly at all (4.2.20: `daya_ex` fixes the key at 0 and `daya_ex_ut` was unguarded). For each `VALUE-MISMATCH` row the pins file records the name, kind and port value of every mismatching field. `PinGate` fails a row when its set of mismatching fields differs from the pinned set (a field that matched `t.exp` now does not, or the reverse), when a double moves by more than `setest`'s own tolerance for that field (`tolerances.c` for the iteration's suite, testcase and `iflag`, falling back to the `t.fix` precision as `CheckContext` does), when an int differs, or when a string differs after the ephemeris directory is replaced by a placeholder; the message names the row, field, pinned and actual value. A failing runtime self-check (`CHECK_EQUALS_D`, `CHECK_EQUALS_I`) has no `t.exp` side, so both of its operands are pinned, the second as `name#2`; before 2026-11-24 only the first was, which for suite 10's `CHECK_EQUALS_D(xcross, xx[0])` is the `t.exp` input, so the port's computed `xx[0]` was never pinned. The pins are generated by `scripts/regenerate-known-fail.ps1` with the known-fail rows, change only through that logged regeneration, and are generated and gated on Windows x64 (the script refuses to run elsewhere unless given `-AllowUnsupportedPlatform`). As of 2026-11-24 there were 5,239 field pins over the 1,401 rows (5,243 over 1,405 after the update below).
+
+**Update 2026-11-26: re-measured at `24e47d42`; 1,405 rows, a fourth note.** Upstream moved the `v2.10.04` tag from `e308765d` to `24e47d42`; the only library change is `swephlib.c` commit `27c94dee` (Delta T before -720, `tjd < 1458077.5`), and `setest/t.exp` is identical at both commits because it was recorded (22.11.2026) before `27c94dee`. The port follows the new C and equals the MSVC-built C at `24e47d42` bit for bit on the oracle grids. Four iterations that passed before now fail: 5.3.5 to 5.3.8 (`deltat` of 18.12.-1501; for 5.3.5, for instance, `t.exp` has 0.4033867230909422 and the port and the C at `24e47d42` have 0.40338690733415938; the C-generated corpus at `e308765d` had `t.exp`'s value, so the C changed and `t.exp` did not). They are classified `DRIFT` with the new note `TEXP-PREDATES-FIX`: the official `t.exp` was recorded before upstream commit `27c94dee`, the C at `24e47d42` reproduces the port, and the C at `e308765d` reproduced `t.exp`. No row leaves `known-fail.tsv`. The same change moved the port's values on 134 rows that already failed (all dated before -720, all UT-based iterations: 1 in suite 2, 27 in suite 4, 46 in suite 10 and 60 in suite 11), so the whole ledger was re-derived against a C-generated corpus built at `24e47d42` and the MSVC-built C at `24e47d42`; every row outside the 252 iterations whose value in the C-generated corpus changed between `e308765d` and `24e47d42` reproduces byte for byte (252 is the number of iterations that differ between the two gcc-built C-generated corpora after normalizing the serr ephemeris directory; all are dated before -720 and UT-based; the corpus is not in the repository). Eighteen rows changed note because which note a row has depends on whether the C-generated corpus reproduces the port within tolerance, and that moved with the values: ten went from `SERR-PATH` to `LIBM-PLATFORM` (10.2.9, 10.2.10, 10.8.45, 46, 51, 52, 75, 76, 81, 82) and eight the other way (10.8.3, 4, 15, 16, 21, 22, 69, 70). The totals are now 623 `DATA-ENV`, 703 `SERR-PATH`, 75 `LIBM-PLATFORM` and 4 `TEXP-PREDATES-FIX`; the MSVC-built C at `24e47d42` equals the port on 123 of 123 compared fields of the `LIBM-PLATFORM` rows, and `known-fail-pins.tsv` has 5,243 field pins. The table above and the paragraphs before this one describe the measurement of 2026-11-24 at `e308765d`.
 
 The comparison rules are `setest`'s own at `v2.10.04`: `tolerances.c` (upstream f952691) gives every compared
 double a tolerance by kind of quantity (3e-8 degrees for an angle, 1e-10 AU for a distance, 1e-9 per day for a
