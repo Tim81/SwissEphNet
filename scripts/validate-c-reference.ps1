@@ -10,7 +10,7 @@
     the check on the build itself, before anything else trusts it.
 
     The check is a trust hop, the same shape as scripts/validate-pyswisseph.py: pyswisseph
-    packages upstream libswe 2.10.03, and the MSVC build compiles v2.10.04 (e308765d), so this is
+    packages upstream libswe 2.10.03, and the MSVC build compiles v2.10.04 (24e47d42), so this is
     now a cross-version check. It still holds because the fixed inputs avoid what 2.10.04
     changed: the swe_calc cases take the Julian day as TT, so no Delta T enters, and the one UT
     input is the house calculation at J2000 (2451545.0 UT), where Delta T is the same in both
