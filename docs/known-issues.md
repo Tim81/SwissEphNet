@@ -3534,7 +3534,7 @@ port change. (1) The harness had skipped every `SEFLG_SWIEPH` iteration dated ou
 `DATA-MISSING` (`EphemerisFileResolver.NeedsEraFileWeDoNotShip`, used by suites 5.3 and 10), but
 upstream's `setest` on the same 8 files runs them: the C falls back to Moshier and writes the
 "not found in PATH ... using Moshier eph." text to `serr`. The skip is removed. Of the 157 rows it
-parked, 5.3.6 now passes and 156 (suite 10: 10.1 to 10.4 six each, 10.5 and 10.6 two each, 10.7 and
+parked, 5.3.6 now passes (fails again since 2026-11-26, `TEXP-PREDATES-FIX`) and 156 (suite 10: 10.1 to 10.4 six each, 10.5 and 10.6 two each, 10.7 and
 10.8 64 each) are `VALUE-MISMATCH` against the official `t.exp`, which was made with every era file.
 `known-fail.tsv` therefore has 1,634 rows: 1,101 `DATA-MISSING` (1,037 JPL, 30 `SEFLG_CENTER_BODY`,
 16 numbered-asteroid, 18 planetary-moon) and 533 `VALUE-MISMATCH`. Triaged with the same method (the C-generated

@@ -36,7 +36,7 @@ this is a port revision of 2.10.4: `SE_VERSION` is still `"2.10.04"`. NuGet show
 
 - Oracle grids. Against the MSVC-built C at `24e47d42` the port is bit-identical on 27,437
   analytic rows and 3,376 file rows.
-- Unit tests. 513 per target framework, including the new `DeltaTBeforeMinus720Test`.
+- Unit tests. 513 per target framework locally with the ephemeris files present (CI: 486, 16 skipped), including the new `DeltaTBeforeMinus720Test`.
 - Characterization baseline, regenerated deliberately with a deviation note (log entry 32): 10,024
   case ids change, all before -720.
 - Conformance. `known-fail.tsv` has 1,405 rows, all `VALUE-MISMATCH`, where it had 1,401. The 4 new

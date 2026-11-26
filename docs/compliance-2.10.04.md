@@ -3,12 +3,12 @@
 This records what has actually been measured about this port's agreement with Astrodienst's
 own Swiss Ephemeris C library, version 2.10.04 (upstream tag `v2.10.04`, `24e47d42`), rather than
 asserting it. The submodule is pinned to that tag, the first upstream tag since `v2.10.3bfinal`
-and 50 commits after the previous pin, `43c9fe54` (43 to `e308765d`, where the tag first pointed).
+and 50 commits after the pin before the v2.10.04 sync, `43c9fe54` (43 to `e308765d`, where the tag first pointed).
 Sections written for earlier pins keep their own dated numbers and say so. The rows re-run at
 `24e47d42` in this sync (2026-11-26) are marked "at `24e47d42`" in the summary table below: the oracle
 (both grids, bit-identical to the MSVC-built C, and the version classification), the characterization
 baseline, the conformance known-fail list, triage and pins, the `swetest` diff gate (17 known, passing).
-`gen-delta`, the freeze and the unit tests were re-run too; they are gates without table rows.
+`gen-delta` and the freeze were re-run too; they are gates without table rows.
 Every other figure was measured at `e308765d`.
 Every number below comes from a gate in this repository or
 from a measurement run during the version-bump work (see `docs/known-issues.md`'s `SE_VERSION`
@@ -28,7 +28,7 @@ them), so the older per-platform rows in section 1 stay as dated.
 | The printed output of `SweTest` matches `swetest` | `scripts/verify-swetest-diff.ps1` | At `24e47d42`: 251 of 268 cases byte-identical, and the gate passes (17 known differences); the other 17 differ only by the directory separator and the CRT's `-nan(ind)` |
 | The v2.10.04 behaviour changes are the only thing that moved the characterization baseline | `scripts/verify-baseline.ps1`, regenerated four times with deviation notes | Delta T and tidal defaults (at `e308765d`): with only those reverted, exactly 83 case ids changed in total, 82 Chiron (ipl 15) `serr` rows plus `VER`. Nodaps fix: 156 rows, and all 360 `swe_nod_aps` calls bit-identical to the C. Serr-accumulation fix: 365 calc-defaulteph `serr` rows (column 9 only, verified against the MSVC C). Delta T before -720 (`27c94dee`, baseline log entry 32, at `24e47d42`): 10,024 case ids, all before -720 |
 | Agreement with Astrodienst's reference values | `Tests/SwissEphNet.Conformance.Tests`, `setest/t.exp` | At `24e47d42`: 11 suites, 68 testcases, 18,919 iterations; 1,405 rows in `known-fail.tsv`, all `VALUE-MISMATCH` (the harness skips no iteration for want of data) |
-| None of the 1,405 `VALUE-MISMATCH` rows is a port defect | `Tests/conformance/value-mismatch-triage.tsv`, checked by `ValueMismatchTriageTests` | All 1,405 are `DRIFT`: 623 `DATA-ENV`, 703 `SERR-PATH`, 75 `LIBM-PLATFORM`, 4 `TEXP-PREDATES-FIX` (re-measured 2026-11-26 at `24e47d42`) |
+| None of the 1,405 `VALUE-MISMATCH` rows is a port defect | `Tests/conformance/value-mismatch-triage.tsv`, checked by `ValueMismatchTriageTests` | At `24e47d42`: all 1,405 are `DRIFT`: 623 `DATA-ENV`, 703 `SERR-PATH`, 75 `LIBM-PLATFORM`, 4 `TEXP-PREDATES-FIX` (re-measured 2026-11-26) |
 | An accepted `VALUE-MISMATCH` row cannot change unnoticed | `Tests/conformance/known-fail-pins.tsv`, checked by `PinGate` in `PortMatchesKnownFailList` | At `24e47d42`: for each of the 1,405 rows, the port's value for every mismatching field (both operands of a failing runtime self-check); the gate fails if the field set changes or a value moves beyond `setest`'s tolerance for that field |
 | New v2.10.04 behaviour is pinned against the C | `FileBoundaryHistoryTest`, `HeliocentricLightTimeTest`, `DeltaTModelsTest`, `CalcMessagesTest`, `AstroModelsStringTest`, `SweDataClearInPlaceTest`, `DeltaTBeforeMinus720Test` | Expected values measured from the MSVC-built C at `e308765d`; `DeltaTBeforeMinus720Test` at `24e47d42` |
 
@@ -67,7 +67,7 @@ full parity with 2.10.04; it is not, and the next section says by how much.
 
 ## 1. Bit-exact oracle
 
-**At v2.10.04 (`e308765d`), measured on Windows in this sync:** the port is bit-identical to the
+**At v2.10.04 (`e308765d`), measured on Windows in the 2026-11-24 sync:** the port is bit-identical to the
 MSVC-built C on both grids, 27,437 analytic rows and 3,376 file rows, the dumps are SHA-256
 identical, and both known-diff lists are empty. At `24e47d42` the oracle was re-measured and is
 bit-identical again (27,437 analytic rows, 3,376 file rows, zero known-diff rows, both dumps SHA-256
@@ -595,7 +595,7 @@ regenerated `t.exp` carries the analytic speeds. The drift ledger that evidenced
 in git history. The evidence recorded below for the earlier 759 `DATA-MISSING` rows and the
 12,757-iteration corpus was measured against the old `t.exp` and is kept as dated.
 
-**Update (2026-11-24, v2.10.04): the 157 era rows are no longer `DATA-MISSING`.** The harness used to skip every `SEFLG_SWIEPH` iteration dated outside 1200-2399 (`EphemerisFileResolver.NeedsEraFileWeDoNotShip`, wired into suites 5.3 and 10) on the grounds below. Upstream's `setest`, run on the same 8 files, skips nothing: `swe_calc` falls back to Moshier, puts "not found in PATH ... using Moshier eph." in `serr`, and the result is compared with `t.exp` like any other. The skip was removed, so those iterations run. 5.3.6 now passes (its `serr` matches `t.exp`), and the 156 suite-10 rows (10.1 to 10.4 six each, 10.5 and 10.6 two each, 10.7 and 10.8 64 each) are `VALUE-MISMATCH`, all `DRIFT`: 139 `SERR-PATH` and 17 `LIBM-PLATFORM` (`helio_cross` `jx`, 1.4e-14 to 4.5e-12 relative against the gcc-built C, 4e-8 to 3e-6 day; the MSVC-built C equals the port bit for bit). The opt-in `SWISSEPH_CONFORMANCE_INCLUDE_ERA` is gone. The text of this paragraph and the next two describes the 2.10.3.x state and is kept as dated.
+**Update (2026-11-24, v2.10.04): the 157 era rows are no longer `DATA-MISSING`.** The harness used to skip every `SEFLG_SWIEPH` iteration dated outside 1200-2399 (`EphemerisFileResolver.NeedsEraFileWeDoNotShip`, wired into suites 5.3 and 10) on the grounds below. Upstream's `setest`, run on the same 8 files, skips nothing: `swe_calc` falls back to Moshier, puts "not found in PATH ... using Moshier eph." in `serr`, and the result is compared with `t.exp` like any other. The skip was removed, so those iterations run. 5.3.6 now passes (its `serr` matches `t.exp`; fails again since 2026-11-26, `TEXP-PREDATES-FIX`), and the 156 suite-10 rows (10.1 to 10.4 six each, 10.5 and 10.6 two each, 10.7 and 10.8 64 each) are `VALUE-MISMATCH`, all `DRIFT`: 139 `SERR-PATH` and 17 `LIBM-PLATFORM` (`helio_cross` `jx`, 1.4e-14 to 4.5e-12 relative against the gcc-built C, 4e-8 to 3e-6 day; the MSVC-built C equals the port bit for bit). The opt-in `SWISSEPH_CONFORMANCE_INCLUDE_ERA` is gone. The text of this paragraph and the next two describes the 2.10.3.x state and is kept as dated.
 
 **(As of 2.10.3.x.) 157 of the 759 `DATA-MISSING` rows were `SEFLG_SWIEPH` calls for a date outside the era this
 repo's shipped core ephemeris files cover** (the `sepl`/`semo`/`seas_N.se1` and their BCE `_N.se1`

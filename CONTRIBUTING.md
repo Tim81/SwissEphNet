@@ -522,11 +522,13 @@ not "parked", it is done. Of the 68, 29 have at least one row in
 actionable and none parked, and the remaining 39 have no row in
 `known-fail.tsv` at all -- they pass completely. ("Actionable"
 is the rule's name, not a verdict: at v2.10.04 all 1,405 `VALUE-MISMATCH` rows
-are triaged as drift, none a port defect.) Measured at `24e47d42` on 2026-11-26
-(at `e308765d` on 2026-11-24, after the `DATA-MISSING` skips were lifted, it was 28 testcases with a row, 28 actionable, 40 without; earlier the same day: 29 testcases
+are triaged as drift, none a port defect.) Measured at `24e47d42` on 2026-11-26.
+At `e308765d` on 2026-11-24, after the `DATA-MISSING` skips were lifted, it was 28
+testcases with a row, 28 actionable, 40 without. Earlier the same day it was 29 testcases
 with a row, 22 actionable and 7 parked, the parked ones being the testcases
-whose only failures were skipped iterations: six of them, 1.2, 1.4, 1.5, 4.1, 7.3 and
-7.4, now carry `VALUE-MISMATCH` rows, and 5.3 then passed completely; it has had rows since 2026-11-26, 5.3.5 to 5.3.8); at
+whose only failures were skipped iterations. Six of them, 1.2, 1.4, 1.5, 4.1, 7.3 and
+7.4, now carry `VALUE-MISMATCH` rows, and 5.3 then passed completely. It has had rows
+since 2026-11-26, 5.3.5 to 5.3.8. At
 2.10.3.x the figures were 60 testcases, 31 actionable and 8 parked. A porting PR
 should be shrinking the actionable list's mismatch/error counts, or moving a
 testcase from actionable to fully passing -- not touching the parked list,
