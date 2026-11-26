@@ -132,7 +132,7 @@ A PR that changes a frozen file with no hunk citation should not be merged.
 
 Existing citations of the upstream C (in port comments, docs and the freeze log) refer to
 `v2.10.3bfinal` (`f4dcd18e`) unless they name another version; they were not renumbered when the
-pin moved (to `94621aba`, then `43c9fe54`, then `e308765d`, then `24e47d42`, the re-tagged `v2.10.04` with 27c94dee, Delta T before -720). Cite new hunks against the current pin and say so if it is not obvious.
+pin moved (to `94621aba`, then `43c9fe54`, then `e308765d`, then `24e47d42`, the re-tagged `v2.10.04` with `27c94dee`, Delta T before -720). Cite new hunks against the current pin and say so if it is not obvious.
 `docs/known-issues.md` ("C file:line citations were written against `v2.10.3bfinal`") has the exact
 line offsets for mapping an old citation to the current pin.
 
@@ -517,16 +517,16 @@ porting work queue) and **parked** (every non-passing iteration in that
 testcase is `NOT-IMPLEMENTED` or `UNREPRODUCIBLE` -- blocked
 on something other than the port's logic: a 2.10-only API (currently none;
 the category is empty) or a structural gap). A testcase with zero failing iterations appears in neither list; it is
-not "parked", it is done. Of the 68, 28 have at least one row in
-`known-fail.tsv`; splitting those by `FormatByTestCase()`'s rule gives 28
-actionable and none parked, and the remaining 40 have no row in
+not "parked", it is done. Of the 68, 29 have at least one row in
+`known-fail.tsv`; splitting those by `FormatByTestCase()`'s rule gives 29
+actionable and none parked, and the remaining 39 have no row in
 `known-fail.tsv` at all -- they pass completely. ("Actionable"
 is the rule's name, not a verdict: at v2.10.04 all 1,405 `VALUE-MISMATCH` rows
 are triaged as drift, none a port defect.) Measured at v2.10.04 on 2026-11-24
 after the `DATA-MISSING` skips were lifted (earlier the same day: 29 testcases
 with a row, 22 actionable and 7 parked, the parked ones being the testcases
 whose only failures were skipped iterations: six of them, 1.2, 1.4, 1.5, 4.1, 7.3 and
-7.4, now carry `VALUE-MISMATCH` rows, and 5.3 passes completely); at
+7.4, now carry `VALUE-MISMATCH` rows, and 5.3 then passed completely; it has had rows since 2026-11-26, 5.3.5 to 5.3.8); at
 2.10.3.x the figures were 60 testcases, 31 actionable and 8 parked. A porting PR
 should be shrinking the actionable list's mismatch/error counts, or moving a
 testcase from actionable to fully passing -- not touching the parked list,

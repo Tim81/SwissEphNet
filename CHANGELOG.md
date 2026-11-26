@@ -21,8 +21,9 @@ this is a port revision of 2.10.4: `SE_VERSION` is still `"2.10.04"`. NuGet show
   TDB-UT within 0.001 s at -3000, -1000 and -721 and meets the spline at -720 within 0.001 s.
   Measured from the MSVC-built C at `24e47d42`, `swe_deltat_ex(0, SEFLG_MOSEPH)` is
   1.5401253137190427 days, where it was 1.5401243317097348 in 2.10.4.0: +0.085 s. At JD 1000000
-  the shift is +0.026 s. From the two formulas it is about -0.0008 s at -720 and grows
-  quadratically further back (+0.048 s at -3000). UT-input results before -720 therefore move slightly, through the UT to TT
+  the shift is +0.026 s. From the two formulas it is -0.0008 s just before 1 January -720,
+  crosses zero near -758 and grows linearly by about 0.002 s per century further back (+0.048 s at
+  -3000). UT-input results before -720 therefore move slightly, through the UT to TT
   conversion; results from -720 on are unchanged. TT-input results are unchanged, except on paths
   that convert to UT (topocentric observer, sidereal time, LMT/LAT, UT-epoch ayanamsas). No API
   change.
@@ -33,8 +34,8 @@ this is a port revision of 2.10.4: `SE_VERSION` is still `"2.10.04"`. NuGet show
 ### Verification
 
 - Oracle grids. Against the MSVC-built C at `24e47d42` the port is bit-identical on 27,437
-  analytic rows and 3,376 file rows. The unit tests, 513 per target framework, include the new
-  `DeltaTBeforeMinus720Test`.
+  analytic rows and 3,376 file rows.
+- Unit tests. 513 per target framework, including the new `DeltaTBeforeMinus720Test`.
 - Characterization baseline, regenerated deliberately with a deviation note (log entry 32): 10,024
   case ids change, all before -720.
 - Conformance. `known-fail.tsv` has 1,405 rows, all `VALUE-MISMATCH`, where it had 1,401. The 4 new

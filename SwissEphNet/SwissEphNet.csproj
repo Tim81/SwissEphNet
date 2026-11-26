@@ -104,7 +104,8 @@
   2387627.5 (1825 Jan 1.0, as in JPL Horizons) and dt = 65.62 + 31.351922682 T^2 s. It affects the
   default model SEMOD_DELTAT_STEPHENSON_ETC_2020. Measured from the MSVC-built C, swe_deltat_ex(0,
   SEFLG_MOSEPH) moves by +0.085 s and by +0.026 s at JD 1000000; from the two formulas, about
-  -0.0008 s at -720 and +0.048 s at -3000. UT-input results before -720 move slightly; results from -720 on are unchanged. No API
+  -0.0008 s just before 1 January -720, growing linearly by about 0.002 s per century further back
+  (+0.048 s at -3000). UT-input results before -720 move slightly; results from -720 on are unchanged. No API
   change. The other upstream commits (documentation, seasnam.txt, binaries) need no port change.
 
 2.10.4.0:

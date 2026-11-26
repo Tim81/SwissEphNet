@@ -3554,7 +3554,7 @@ against it within `setest`'s own tolerance for that field; before this the gate 
 category and the decade of the worst field, so another field could change unseen. The
 `DATA-MISSING` rows were not cross-checked against real C this way.
 
-**Update 2026-11-24 (last): 1,401 rows, no skips, `DATA-MISSING` removed.** The harness had parked four
+**Update 2026-11-24 (third): 1,401 rows, no skips, `DATA-MISSING` removed.** The harness had parked four
 kinds of iteration as `DATA-MISSING` without running them: `SEFLG_JPLEPH` (1,037), `SEFLG_CENTER_BODY` (30),
 planetary moons (18) and numbered asteroids beyond the four built-in (16), 1,101 in all. Upstream's
 `setest` skips nothing: on the same 8 files each of them runs, `swe_calc` takes its fallback (the Swiss
@@ -3577,8 +3577,6 @@ fails `CHECK_EQUALS_I(rc, iflag)` the same way: a JPL request is answered from t
 `DATA-ENV`, 705 `SERR-PATH` (395 differ from the official `t.exp` in a return code and 310 do not, 60 of
 those in `serr` only), 73 `LIBM-PLATFORM`. `known-fail-pins.tsv` has 5,239 field pins over the 1,401 rows.
 
-**Update 2026-11-26: 1,405 rows at `24e47d42`, category `TEXP-PREDATES-FIX`.** Upstream moved the `v2.10.04` tag from `e308765d` to `24e47d42`; the only library change is `swephlib.c` commit `27c94dee` (Delta T before -720), and `setest/t.exp` is identical at both because it was recorded before that commit. Four iterations that passed now fail, 5.3.5 to 5.3.8 (`deltat`; 5.3.5 has `t.exp` 0.4033867230909422, the port and the C at `24e47d42` 0.40338690733415938, and the C-generated corpus at `e308765d` agreed with `t.exp`). They are `DRIFT` with the note `TEXP-PREDATES-FIX`: the official `t.exp` was recorded before `27c94dee`, the C at `24e47d42` reproduces the port, and the C at `e308765d` reproduced `t.exp`. No row left. The change also moved the port's values on 134 rows already in the list, all dated before -720, and 18 of them changed note (10 `SERR-PATH` to `LIBM-PLATFORM`, 8 `LIBM-PLATFORM` to `SERR-PATH`, all in suites 10.2 and 10.8). The triage was redone in full against a C-generated corpus built at `24e47d42` and the MSVC-built C at `24e47d42`: 623 `DATA-ENV`, 703 `SERR-PATH`, 75 `LIBM-PLATFORM` (123 of 123 compared fields equal the MSVC-built C) and 4 `TEXP-PREDATES-FIX`; every row outside the 252 iterations whose C-generated value changed reproduces byte for byte. `known-fail-pins.tsv` has 5,243 field pins over the 1,405 rows. The counts above are those of 2026-11-24.
-
 Two defects in the pin gate, found by review, are fixed in the same change. The pin of a failing runtime
 self-check held only the first operand of the macro. In suite 10, `CHECK_EQUALS_D(xcross, xx[0])` passes the
 `t.exp` input first and the value the port computed second, so the pins of 10.1 to 10.4 (iterations 5, 11 and 17,
@@ -3589,6 +3587,8 @@ calling the computed one "t.exp". And a trailing separator on `SWISSEPH_CONFORMA
 `'<ephe>\/'` where the pin has `'<ephe>/'`, failing the gate on every `serr` pin (283 violations); both
 spellings now give the same pin. The `DATA-MISSING` rows had not been cross-checked against real C before
 this; the 868 that differ now have been, and the other 233 pass.
+
+**Update 2026-11-26: 1,405 rows at `24e47d42`, category `TEXP-PREDATES-FIX`.** Upstream moved the `v2.10.04` tag from `e308765d` to `24e47d42`; the only library change is `swephlib.c` commit `27c94dee` (Delta T before -720), and `setest/t.exp` is identical at both because it was recorded before that commit. Four iterations that passed now fail, 5.3.5 to 5.3.8 (`deltat`; 5.3.5 has `t.exp` 0.4033867230909422, the port and the C at `24e47d42` 0.40338690733415938, and the C-generated corpus at `e308765d` agreed with `t.exp`). They are `DRIFT` with the note `TEXP-PREDATES-FIX`: the official `t.exp` was recorded before `27c94dee`, the C at `24e47d42` reproduces the port, and the C at `e308765d` reproduced `t.exp`. No row left. The change also moved the port's values on 134 rows already in the list, all dated before -720, and 18 of them changed note (10 `SERR-PATH` to `LIBM-PLATFORM`, 8 `LIBM-PLATFORM` to `SERR-PATH`, all in suites 10.2 and 10.8). The triage was redone in full against a C-generated corpus built at `24e47d42` and the MSVC-built C at `24e47d42`: 623 `DATA-ENV`, 703 `SERR-PATH`, 75 `LIBM-PLATFORM` (123 of 123 compared fields equal the MSVC-built C) and 4 `TEXP-PREDATES-FIX`; every row outside the 252 iterations whose C-generated value changed reproduces byte for byte. `known-fail-pins.tsv` has 5,243 field pins over the 1,405 rows. The counts above are those of 2026-11-24.
 
 ## Ephemeris file byte order was taken from the host, not the file
 
