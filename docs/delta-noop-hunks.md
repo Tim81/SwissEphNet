@@ -17,10 +17,10 @@ since moved to upstream master at `94621aba`, which adds one hunk each to `swehe
 two to `swephexp.h` and three to `swetest.c`; the pin then moved on to `6c989727`, which adds 13
 hunks to `swehouse.c` and 3 to `sweph.c`, and then to `43c9fe54`, where removing the `TRACE` blocks
 takes one hunk out of `swehouse.c` (68) and `get_new_segment()` adds one to `sweph.c` (130);
-the 428 total was unchanged there. The pin then moved to the tag `v2.10.04` (`e308765d`; the tag was later re-pointed to `24e47d42`, whose only library change is one `swephlib.c` hunk, `27c94dee`, not counted in the figures below), which
+the 428 total was unchanged there. The pin then moved to the tag `v2.10.04` (`e308765d`; the tag was later re-pointed to `24e47d42`, whose only library change, `27c94dee` in `swephlib.c`, lies inside an existing hunk and lengthens it by 2 lines, so the figures below hold at `24e47d42`), which
 re-pins `swejpl.h` 0 to 1, `sweph.c` 130 to 145, `sweph.h` 4 to 6, `swephexp.h` 16 to 17, `swephlib.c`
-29 to 37, `swephlib.h` 3 to 4 and `swetest.c` 103 to 105: 30 more hunks, 458 in all: the totals as measured at
-`e308765d`, to which `27c94dee` adds one `swephlib.c` hunk. The analysis in this file was not extended to those 30 hunks, except the three
+29 to 37, `swephlib.h` 3 to 4 and `swetest.c` 103 to 105: 30 more hunks, 458 in all (`swephlib.c` stays at 37 and the total at 458 at `24e47d42`: `gen-delta`
+reports 458 filtered hunks there, as `scripts/gen-delta-hunk-counts.tsv` pins). The analysis in this file was not extended to those 30 hunks, except the three
 comment-and-whitespace hunks recorded in the last section below, and the "33 hunks across
 eight files" above is the figure for the earlier pins. None of the hunks added at the earlier
 moves is a no-op hunk; and no line cited in this file was re-checked at `e308765d`, so treat the

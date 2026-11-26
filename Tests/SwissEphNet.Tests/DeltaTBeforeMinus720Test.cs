@@ -10,7 +10,7 @@ namespace SwissEphNet.Tests
     /// (Julian centuries since 1825 Jan 1.0, as in JPL Horizons), replacing
     ///   dt = 65 + 31.351922682 * T^2 + 0.6754326,  T = (dyear - 1825) / 100.
     /// The default model (SEMOD_DELTAT_STEPHENSON_ETC_2020) is affected. Model 5 (Stephenson/Morrison/Hohenkerk
-    /// 2016, with its own -720 branch, unchanged upstream) is pinned too, to show that it did not move.
+    /// 2016) is pinned too as a control: its own -720 branch is not touched by 27c94dee.
     ///
     /// Reference values: C probe against external/.c-reference/build-2.10.03/libswe-2.10.03.lib (built from
     /// 24e47d42; MSVC /O2 /fp:precise /MD), a fresh process per model, %.17g:

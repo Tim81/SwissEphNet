@@ -307,7 +307,7 @@ The package version tracks upstream, with a fourth component for releases this p
 its own. `2.10.3` tracks Swiss Ephemeris C 2.10.03; a port-only release while upstream stays put
 would be `2.10.3.1`, then `2.10.3.2`, and the fourth component resets whenever upstream moves.
 `2.10.4.0` tracks Swiss Ephemeris C 2.10.04 (upstream tag `v2.10.04`); NuGet shows it as `2.10.4`.
-`2.10.4.1` tracks the same upstream version, with the tag re-tagged by Astrodienst at `24e47d42`.
+`2.10.4.1` tracks the same upstream version, tracking the same tag, which Astrodienst moved to `24e47d42`.
 
 Two things about that are worth knowing rather than discovering. NuGet normalizes a trailing zero
 away, so `2.10.3.0` and `2.10.3` are the same package and writing the `.0` achieves nothing.

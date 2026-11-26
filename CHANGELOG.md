@@ -24,9 +24,9 @@ this is a port revision of 2.10.4: `SE_VERSION` is still `"2.10.04"`. NuGet show
   the shift is +0.026 s. From the two formulas it is -0.0008 s just before 1 January -720,
   crosses zero near -758 and grows linearly by about 0.002 s per century further back (+0.048 s at
   -3000). UT-input results before -720 therefore move slightly, through the UT to TT
-  conversion; results from -720 on are unchanged. TT-input results are unchanged, except on paths
-  that convert to UT (topocentric observer, sidereal time, LMT/LAT, UT-epoch ayanamsas). No API
-  change.
+  conversion; results from -720 on are unchanged. TT-input results are unchanged, except where they
+  convert to UT internally (the topocentric observer, whose position uses the sidereal time, and
+  sidereal modes whose ayanamsa has a UT epoch). No API change.
 - The other upstream commits need no port change: the documentation rebuilt from Markdown
   (`swephprg.md`, `swisseph.md`), `ephe/seasnam.txt` and `astlistn.md` (92 newly named asteroids;
   the port reads `seasnam.txt` at run time), and the Windows binaries.
@@ -41,7 +41,7 @@ this is a port revision of 2.10.4: `SE_VERSION` is still `"2.10.04"`. NuGet show
 - Conformance. `known-fail.tsv` has 1,405 rows, all `VALUE-MISMATCH`, where it had 1,401. The 4 new
   rows are `deltat` 5.3.5 to 5.3.8: upstream's `t.exp` was recorded before `27c94dee`, so it still
   holds the old Delta T. All 1,405 rows are triaged as drift, none a port defect: 623 `DATA-ENV`,
-  703 `SERR-PATH`, 75 `LIBM-PLATFORM` and 4 `TEXP-PREDATES-FIX` (the new category: the C at
+  703 `SERR-PATH`, 75 `LIBM-PLATFORM` and 4 `TEXP-PREDATES-FIX` (the new note: the C at
   `24e47d42` reproduces the port, and the C at `e308765d` reproduced `t.exp`).
 
 ## 2.10.4.0
